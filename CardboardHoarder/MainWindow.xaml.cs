@@ -1,15 +1,6 @@
-﻿using System.Data.SQLite;
-using System.Data;
-using System.Text;
+﻿using System.Data;
+using System.Data.SQLite;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace CardboardHoarder
 {
@@ -21,7 +12,7 @@ namespace CardboardHoarder
         public MainWindow()
         {
             InitializeComponent();
-            GridSearchAndFilter.Visibility = Visibility.Hidden;
+            GridSearchAndFilter.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Hidden;
             LoadData();
         }
@@ -46,14 +37,18 @@ namespace CardboardHoarder
             using (SQLiteConnection connection = DatabaseHelper.GetConnection())
             {
                 connection.Open();
-                string query = "SELECT name FROM cards"; // Adjust the query accordingly
+                string query = "SELECT name, SetCode FROM cards"; // Adjust the query accordingly
                 SQLiteCommand command = new SQLiteCommand(query, connection);
+
 
                 using (SQLiteDataReader reader = command.ExecuteReader())
                 {
-                    // Assuming you have a DataGrid named "mainCardWindowDatagrid" in your XAML
                     mainCardWindowDatagrid.ItemsSource = reader.Cast<IDataRecord>()
-                                                              .Select(r => new CardSet { Name = r["Name"].ToString() })
+                                                              .Select(r => new CardSet
+                                                              {
+                                                                  Name = r["Name"]?.ToString() ?? string.Empty,
+                                                                  SetCode = r["SetCode"]?.ToString() ?? string.Empty
+                                                              })
                                                               .ToList();
                 }
             }
