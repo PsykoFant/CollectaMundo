@@ -1,0 +1,33 @@
+# Visual Studio 2022 WPF project .gitignore
+
+# Temporary and build files
+**/.vs/
+**/bin/
+**/obj/
+**/Release/
+**/Debug/
+*.user
+
+# Locally generated or machine-specific settings
+*.localsettings.json
+LocalAppData/
+bin/AnyCPU/Local/
+
+# Version control system metadata
+.git/
+.svn/
+
+# NuGet and other package management artifacts
+packages/
+project.assets.json
+project.lock.json
+
+# Unnecessary logs and caches
+*.log
+*.cache
+
+# IDE-specific artifacts
+*.suo
+*.sln.cache
+
+
