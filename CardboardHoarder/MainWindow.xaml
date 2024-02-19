@@ -11,9 +11,13 @@
         <Button x:Name="MenuMyCollection" Content="My Collection" HorizontalAlignment="Left" Margin="174,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuMyCollection_Click"/>
         <Button x:Name="MenuDecks" Content="Decks" HorizontalAlignment="Left" Margin="338,10,0,0" VerticalAlignment="Top" Width="159"/>
         <Rectangle x:Name="MainScreen" HorizontalAlignment="Center" Height="707" Margin="0,35,0,0" Stroke="Black" VerticalAlignment="Top" Width="1004"/>
-        <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Height="681" Margin="0,48,0,0" VerticalAlignment="Top" Width="969" d:IsHidden="True">
+        <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Height="681" Margin="0,48,0,0" VerticalAlignment="Top" Width="969">
             <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Left" Margin="369,0,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
-            <DataGrid x:Name="mainCardWindowDatagrid" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="144,218,0,0"/>
+            <DataGrid x:Name="mainCardWindowDatagrid" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="144,218,0,0" AutoGenerateColumns="False">
+                <DataGrid.Columns>
+                    <DataGridTextColumn/>
+                </DataGrid.Columns>
+            </DataGrid>
             <ComboBox x:Name="filterCardNameComboBox" HorizontalAlignment="Left" Margin="0,20,0,0" VerticalAlignment="Top" Width="120"/>
 
         </Grid>
