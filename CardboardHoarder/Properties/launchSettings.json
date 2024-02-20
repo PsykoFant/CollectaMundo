@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CardboardHoarder": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    }
+  }
+}

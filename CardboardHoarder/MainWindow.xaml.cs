@@ -1,6 +1,8 @@
 ﻿using System.Data;
 using System.Data.SQLite;
 using System.Windows;
+using System.Diagnostics;
+
 
 namespace CardboardHoarder
 {
@@ -10,7 +12,7 @@ namespace CardboardHoarder
     public partial class MainWindow : Window
     {
         public MainWindow()
-        {
+        {                    
             InitializeComponent();
             GridSearchAndFilter.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Hidden;
@@ -36,22 +38,39 @@ namespace CardboardHoarder
         {
             using (SQLiteConnection connection = DatabaseHelper.GetConnection())
             {
-                connection.Open();
-                string query = "SELECT name, SetCode FROM cards"; // Adjust the query accordingly
-                SQLiteCommand command = new SQLiteCommand(query, connection);
-
-
-                using (SQLiteDataReader reader = command.ExecuteReader())
+                try
                 {
-                    mainCardWindowDatagrid.ItemsSource = reader.Cast<IDataRecord>()
-                                                              .Select(r => new CardSet
-                                                              {
-                                                                  Name = r["Name"]?.ToString() ?? string.Empty,
-                                                                  SetCode = r["SetCode"]?.ToString() ?? string.Empty
-                                                              })
-                                                              .ToList();
+                    connection.Open();
+                    string query = "SELECT name, SetCode FROM cards"; // Adjust the query accordingly
+                    SQLiteCommand command = new SQLiteCommand(query, connection);
+
+                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    {
+                        mainCardWindowDatagrid.ItemsSource = reader.Cast<IDataRecord>()
+                            .Select(r => new CardSet
+                            {
+                                Name = r["Name"]?.ToString() ?? string.Empty,
+                                SetCode = r["SetCode"]?.ToString() ?? string.Empty
+                            })
+                            .ToList();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Handle exceptions (e.g., log, show error message, etc.)
+                    Console.WriteLine($"Error while loading data: {ex.Message}");
+                }
+                finally
+                {
+                    // Ensure the connection is closed in the finally block
+                    if (connection.State == ConnectionState.Open)
+                    {
+                        connection.Close();
+                    }
                 }
             }
         }
+
+
     }
 }
