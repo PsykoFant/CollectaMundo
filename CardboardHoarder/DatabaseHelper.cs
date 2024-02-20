@@ -1,15 +1,25 @@
 ﻿using System.Data.SQLite;
+using Microsoft.Extensions.Configuration;
 
-namespace CardboardHoarder
+public class DatabaseHelper
 {
-    public class DatabaseHelper
-    {
-        private static string connectionString = "Data Source=c:/code/AllPrintings/AllPrintings.sqlite;Version=3;";
+    private static IConfiguration Configuration { get; set; }
 
-        public static SQLiteConnection GetConnection()
-        {
-            return new SQLiteConnection(connectionString);
-        }
+    static DatabaseHelper()
+    {
+        // Set up configuration
+        var builder = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
+        Configuration = builder.Build();
     }
 
+    public static SQLiteConnection GetConnection()
+    {
+        // Retrieve the connection string from appsettings.json
+        string connectionString = Configuration.GetConnectionString("SQLiteConnection")!;
+
+        // Create and return SQLiteConnection
+        return new SQLiteConnection(connectionString);
+    }
 }
