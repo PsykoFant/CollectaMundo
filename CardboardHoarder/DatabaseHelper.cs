@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System;
 using System.Data.SQLite;
+using System.Diagnostics;
+using System.IO;
 
 public class DatabaseHelper
 {
@@ -14,7 +16,6 @@ public class DatabaseHelper
 
         Configuration = builder.Build();
     }
-
     public static SQLiteConnection GetConnection()
     {
         try
@@ -40,20 +41,51 @@ public class DatabaseHelper
             // Build the connection string using the retrieved path
             string fullConnectionString = connectionString.Replace("{SQLitePath}", sqlitePath);
 
+            // Check if the database file exists before creating the connection
+            string databasePath = Path.Combine(sqlitePath, "AllPrintings.sqlite");
+
+            if (!File.Exists(databasePath))
+            {
+                throw new InvalidOperationException($"Database file '{databasePath}' does not exist.");
+            }
+
             // Create and return SQLiteConnection
             return new SQLiteConnection(fullConnectionString);
         }
         catch (Exception ex)
         {
             // Handle the exception (e.g., log, show error message, etc.)
-            Console.WriteLine($"Error: {ex.Message}");
+            Debug.WriteLine($"Error: {ex.Message}");
             throw;
         }
     }
-
-    public static string GetSQLitePath()
+    private static string GetSQLitePath()
     {
         // Retrieve the SQLite database path from appsettings.json
         return Configuration["DatabaseSettings:SQLitePath"] ?? string.Empty;
     }
+    public static void CheckDatabaseExistence()
+    {
+        Debug.WriteLine("Inside CheckDatabaseExistence()");
+        try
+        {
+            // Retrieve the SQLite database path from appsettings.json
+            string sqlitePath = GetSQLitePath();
+            string databasePath = Path.Combine(sqlitePath, "AllPrintings.sqlite");
+
+            // Check if the database file exists
+            if (!File.Exists(databasePath))
+            {
+                // Output a message to the console
+                Debug.WriteLine($"The database file '{databasePath}' does not exist.");
+            }
+
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions (e.g., log, show error message, etc.)
+            Debug.WriteLine($"Error while checking database existence: {ex.Message}");
+        }
+    }
+
 }
