@@ -3,6 +3,8 @@ using System;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.Http;
 
 public class DatabaseHelper
 {
@@ -78,6 +80,9 @@ public class DatabaseHelper
             {
                 // Output a message to the console
                 Debug.WriteLine($"The database file '{databasePath}' does not exist.");
+                DownloadDatabaseIfNotExists();
+
+                // https://mtgjson.com/api/v5/AllPrintings.sqlite
             }
 
         }
@@ -87,5 +92,44 @@ public class DatabaseHelper
             Debug.WriteLine($"Error while checking database existence: {ex.Message}");
         }
     }
+    public static void DownloadDatabaseIfNotExists()
+    {
+        try
+        {
+            // Retrieve the SQLite database path from appsettings.json
+            string sqlitePath = Configuration["DatabaseSettings:SQLitePath"] ?? "defaultPath";
+            string databasePath = Path.Combine(sqlitePath, "AllPrintings.sqlite");
+
+            // Check if the database file exists
+            if (!File.Exists(databasePath))
+            {
+                // Output a message to the console
+                Debug.WriteLine($"The database file '{databasePath}' does not exist. Downloading...");
+
+                // Ensure the directory exists
+                Directory.CreateDirectory(sqlitePath);
+
+                // Download the database file from the specified URL using HttpClient
+                string downloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
+                using (HttpClient httpClient = new HttpClient())
+                {
+                    byte[] fileContent = httpClient.GetByteArrayAsync(downloadUrl).Result;
+                    File.WriteAllBytes(databasePath, fileContent);
+                }
+
+                Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
+            }
+            else
+            {
+                Debug.WriteLine($"The database file '{databasePath}' already exists.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions (e.g., log, show error message, etc.)
+            Debug.WriteLine($"Error while downloading database file: {ex.Message}");
+        }
+    }
+
 
 }
