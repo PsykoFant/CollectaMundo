@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using CardboardHoarder;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -109,6 +110,10 @@ public class DatabaseHelper
                 // Ensure the directory exists
                 Directory.CreateDirectory(sqlitePath);
 
+                // Create and show the DownloadProgressWindow
+                DownloadProgressWindow downloadProgressWindow = new DownloadProgressWindow();
+                downloadProgressWindow.Show();
+
                 // Download the database file from the specified URL using HttpClient
                 string downloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
                 using (HttpClient httpClient = new HttpClient())
@@ -118,6 +123,9 @@ public class DatabaseHelper
                 }
 
                 Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
+
+                // Close the DownloadProgressWindow after download completion
+                downloadProgressWindow.Close();
             }
             else
             {
@@ -130,6 +138,7 @@ public class DatabaseHelper
             Debug.WriteLine($"Error while downloading database file: {ex.Message}");
         }
     }
+
 
 
 }
