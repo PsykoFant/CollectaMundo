@@ -10,7 +10,6 @@ using System.Net.Http;
 public class DatabaseHelper
 {
     private static IConfiguration Configuration { get; set; }
-
     static DatabaseHelper()
     {
         // Set up configuration
@@ -124,18 +123,50 @@ public class DatabaseHelper
 
                 Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
 
-                // Close the DownloadProgressWindow after download completion
-                downloadProgressWindow.Close();
+                // Open the downloaded database
+                using (SQLiteConnection connection = GetConnection())
+                {
+                    connection.Open();
+
+                    // Create 'uniqueManaSymbols' table if it doesn't exist
+                    using (SQLiteCommand command = new SQLiteCommand(
+                        "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);",
+                        connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
+
+                    // Create 'uniqueManaSymbols' index
+                    using (SQLiteCommand command = new SQLiteCommand(
+                        "CREATE INDEX IF NOT EXISTS uniqueManaSymbols_uniqueManaSymbol ON uniqueManaSymbols(uniqueManaSymbol);",
+                        connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
+
+                    Debug.WriteLine("Created table and index for uniqueManaSymbols.");
+
+                    connection.Close();
+                }
+
+
             }
             else
             {
                 Debug.WriteLine($"The database file '{databasePath}' already exists.");
             }
         }
+
         catch (Exception ex)
         {
             // Handle exceptions (e.g., log, show error message, etc.)
             Debug.WriteLine($"Error while downloading database file: {ex.Message}");
+        }
+
+        finally
+        {
+            // Close the DownloadProgressWindow after download completion
+            downloadProgressWindow.Close();
         }
     }
 
