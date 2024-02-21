@@ -1,10 +1,8 @@
 ﻿using CardboardHoarder;
 using Microsoft.Extensions.Configuration;
-using System;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 
 public class DatabaseHelper
@@ -94,6 +92,11 @@ public class DatabaseHelper
     }
     public static void DownloadDatabaseIfNotExists()
     {
+
+        // Create and show the DownloadProgressWindow
+        DownloadWindow downloadWindow = new DownloadWindow();
+        downloadWindow.Show();
+
         try
         {
             // Retrieve the SQLite database path from appsettings.json
@@ -108,10 +111,6 @@ public class DatabaseHelper
 
                 // Ensure the directory exists
                 Directory.CreateDirectory(sqlitePath);
-
-                // Create and show the DownloadProgressWindow
-                DownloadProgressWindow downloadProgressWindow = new DownloadProgressWindow();
-                downloadProgressWindow.Show();
 
                 // Download the database file from the specified URL using HttpClient
                 string downloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
@@ -146,6 +145,60 @@ public class DatabaseHelper
 
                     Debug.WriteLine("Created table and index for uniqueManaSymbols.");
 
+                    // Create 'uniqueManaCostImages' table if it doesn't exist
+                    using (SQLiteCommand command = new SQLiteCommand(
+                        "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);",
+                        connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
+
+                    // Create 'uniqueManaCostImages' index
+                    using (SQLiteCommand command = new SQLiteCommand(
+                        "CREATE INDEX IF NOT EXISTS uniqueManaCostImages_uniqueManaCost ON uniqueManaCostImages(uniqueManaCost);",
+                        connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
+
+                    Debug.WriteLine("Created table and index for uniqueManaCostImages.");
+
+                    // Create 'cardImageStrings' table if it doesn't exist
+                    using (SQLiteCommand command = new SQLiteCommand(
+                        "CREATE TABLE IF NOT EXISTS cardImageStrings (uuid VARCHAR(36) PRIMARY KEY, imageLink TEXT);",
+                        connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
+
+                    // Create 'cardImageStrings' index
+                    using (SQLiteCommand command = new SQLiteCommand(
+                        "CREATE INDEX IF NOT EXISTS cardImageStrings_uuid ON cardImageStrings(uuid);",
+                        connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
+
+                    Debug.WriteLine("Created table and index for cardImageStrings.");
+
+                    // Create 'keyruneImages' table if it doesn't exist
+                    using (SQLiteCommand command = new SQLiteCommand(
+                        "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyRuneImage BLOB);",
+                        connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
+
+                    // Create 'keyruneImages' index
+                    using (SQLiteCommand command = new SQLiteCommand(
+                        "CREATE INDEX IF NOT EXISTS keyruneImages_setCode ON keyruneImages(setCode);",
+                        connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
+
+                    Debug.WriteLine("Created table and index for keyruneImages.");
+
                     connection.Close();
                 }
 
@@ -166,7 +219,7 @@ public class DatabaseHelper
         finally
         {
             // Close the DownloadProgressWindow after download completion
-            downloadProgressWindow.Close();
+            downloadWindow.Close();
         }
     }
 

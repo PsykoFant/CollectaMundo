@@ -2,9 +2,9 @@
 
 namespace CardboardHoarder
 {
-    public partial class DownloadProgressWindow : Window
+    public partial class DownloadWindow : Window
     {
-        public DownloadProgressWindow()
+        public DownloadWindow()
         {
             InitializeComponent();
         }
