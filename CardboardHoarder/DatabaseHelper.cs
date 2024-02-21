@@ -4,6 +4,7 @@ using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 
 public class DatabaseHelper
 {
@@ -79,8 +80,7 @@ public class DatabaseHelper
                 // Output a message to the console
                 Debug.WriteLine($"The database file '{databasePath}' does not exist.");
                 DownloadDatabaseIfNotExists();
-
-                // https://mtgjson.com/api/v5/AllPrintings.sqlite
+                GenerateCustomDbData();
             }
 
         }
@@ -90,6 +90,7 @@ public class DatabaseHelper
             Debug.WriteLine($"Error while checking database existence: {ex.Message}");
         }
     }
+    #region Download card database and create tables for custom data
     public static void DownloadDatabaseIfNotExists()
     {
 
@@ -122,87 +123,8 @@ public class DatabaseHelper
 
                 Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
 
-                // Open the downloaded database
-                using (SQLiteConnection connection = GetConnection())
-                {
-                    connection.Open();
-
-                    // Create 'uniqueManaSymbols' table if it doesn't exist
-                    using (SQLiteCommand command = new SQLiteCommand(
-                        "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);",
-                        connection))
-                    {
-                        command.ExecuteNonQuery();
-                    }
-
-                    // Create 'uniqueManaSymbols' index
-                    using (SQLiteCommand command = new SQLiteCommand(
-                        "CREATE INDEX IF NOT EXISTS uniqueManaSymbols_uniqueManaSymbol ON uniqueManaSymbols(uniqueManaSymbol);",
-                        connection))
-                    {
-                        command.ExecuteNonQuery();
-                    }
-
-                    Debug.WriteLine("Created table and index for uniqueManaSymbols.");
-
-                    // Create 'uniqueManaCostImages' table if it doesn't exist
-                    using (SQLiteCommand command = new SQLiteCommand(
-                        "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);",
-                        connection))
-                    {
-                        command.ExecuteNonQuery();
-                    }
-
-                    // Create 'uniqueManaCostImages' index
-                    using (SQLiteCommand command = new SQLiteCommand(
-                        "CREATE INDEX IF NOT EXISTS uniqueManaCostImages_uniqueManaCost ON uniqueManaCostImages(uniqueManaCost);",
-                        connection))
-                    {
-                        command.ExecuteNonQuery();
-                    }
-
-                    Debug.WriteLine("Created table and index for uniqueManaCostImages.");
-
-                    // Create 'cardImageStrings' table if it doesn't exist
-                    using (SQLiteCommand command = new SQLiteCommand(
-                        "CREATE TABLE IF NOT EXISTS cardImageStrings (uuid VARCHAR(36) PRIMARY KEY, imageLink TEXT);",
-                        connection))
-                    {
-                        command.ExecuteNonQuery();
-                    }
-
-                    // Create 'cardImageStrings' index
-                    using (SQLiteCommand command = new SQLiteCommand(
-                        "CREATE INDEX IF NOT EXISTS cardImageStrings_uuid ON cardImageStrings(uuid);",
-                        connection))
-                    {
-                        command.ExecuteNonQuery();
-                    }
-
-                    Debug.WriteLine("Created table and index for cardImageStrings.");
-
-                    // Create 'keyruneImages' table if it doesn't exist
-                    using (SQLiteCommand command = new SQLiteCommand(
-                        "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyRuneImage BLOB);",
-                        connection))
-                    {
-                        command.ExecuteNonQuery();
-                    }
-
-                    // Create 'keyruneImages' index
-                    using (SQLiteCommand command = new SQLiteCommand(
-                        "CREATE INDEX IF NOT EXISTS keyruneImages_setCode ON keyruneImages(setCode);",
-                        connection))
-                    {
-                        command.ExecuteNonQuery();
-                    }
-
-                    Debug.WriteLine("Created table and index for keyruneImages.");
-
-                    connection.Close();
-                }
-
-
+                // Setup the downloaded database
+                SetupDatabase(databasePath);
             }
             else
             {
@@ -222,7 +144,183 @@ public class DatabaseHelper
             downloadWindow.Close();
         }
     }
+    private static void SetupDatabase(string databasePath)
+    {
+        // Open the downloaded database
+        using (SQLiteConnection connection = GetConnection())
+        {
+            connection.Open();
+
+            // Define tables to create
+            Dictionary<string, string> tables = new Dictionary<string, string>
+            {
+                { "uniqueManaSymbols", "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);" },
+                { "uniqueManaCostImages", "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);" },
+                { "cardImageStrings", "CREATE TABLE IF NOT EXISTS cardImageStrings (uuid VARCHAR(36) PRIMARY KEY, imageLink TEXT);" },
+                { "keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyRuneImage BLOB);" }
+            };
+
+            // Create the tables
+            foreach (var item in tables)
+            {
+                using (SQLiteCommand command = new SQLiteCommand(item.Value, connection))
+                {
+                    command.ExecuteNonQuery();
+                }
+
+                Debug.WriteLine($"Created table for {item.Key}.");
+            }
+
+            // Define indices to create
+            Dictionary<string, string> indices = new Dictionary<string, string>
+            {
+                { "uniqueManaSymbols", "CREATE INDEX IF NOT EXISTS uniqueManaSymbols_uniqueManaSymbol ON uniqueManaSymbols(uniqueManaSymbol);" },
+                { "uniqueManaCostImages", "CREATE INDEX IF NOT EXISTS uniqueManaCostImages_uniqueManaCost ON uniqueManaCostImages(uniqueManaCost);" },
+                { "cardImageStrings", "CREATE INDEX IF NOT EXISTS cardImageStrings_uuid ON cardImageStrings(uuid);" },
+                { "keyruneImages", "CREATE INDEX IF NOT EXISTS keyruneImages_setCode ON keyruneImages(setCode);" },
+            };
+
+            // Create the indices
+            foreach (var item in indices)
+            {
+                using (SQLiteCommand command = new SQLiteCommand(item.Value, connection))
+                {
+                    command.ExecuteNonQuery();
+                }
+
+                Debug.WriteLine($"Created index for {item.Key}.");
+            }
+
+            connection.Close();
+        }
+    }
+    #endregion
+
+    // Husk at lave private
+    public static void GenerateCustomDbData()
+    {
+        GenerateManaSymbolsFromSvg();
+    }
+
+    public static void GenerateManaSymbolsFromSvg()
+    {
+        try
+        {
+            List<string> uniqueManaCosts = GetUniqueValues("cards", "manaCost");
+            List<string> uniqueSymbols = new List<string>();
+
+            foreach (var manaCost in uniqueManaCosts)
+            {
+                // Use regex to match all occurrences of values between '{' and '}'
+                MatchCollection matches = Regex.Matches(manaCost, @"\{(.*?)\}");
+
+                foreach (Match match in matches)
+                {
+                    string value = match.Groups[1].Value;
+
+                    // Add to the uniqueSymbols list if not already present
+                    if (!uniqueSymbols.Contains(value))
+                    {
+                        uniqueSymbols.Add(value);
+                    }
+                }
+            }
+
+            // Insert unique symbols into the 'uniqueManaSymbols' table
+            foreach (var symbol in uniqueSymbols)
+            {
+                // Check if the symbol already exists in the table
+                if (!SymbolExistsInTable(symbol, "uniqueManaSymbols", "uniqueManaSymbol"))
+                {
+                    // Insert the symbol into the table
+                    InsertSymbolIntoTable(symbol, "uniqueManaSymbols", "uniqueManaSymbol");
+                }
+            }
+
+            Debug.WriteLine("Insertion of uniqueManaSymbols completed.");
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions (e.g., log, show error message, etc.)
+            Debug.WriteLine($"Error during insertion of uniqueManaSymbols: {ex.Message}");
+        }
+    }
+
+    // Function to check if a symbol exists in the table
+    private static bool SymbolExistsInTable(string symbol, string tableName, string columnName)
+    {
+        using (SQLiteConnection connection = GetConnection())
+        {
+            connection.Open();
+
+            using (SQLiteCommand command = new SQLiteCommand(
+                $"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @symbol",
+                connection))
+            {
+                command.Parameters.AddWithValue("@symbol", symbol);
+
+                int count = Convert.ToInt32(command.ExecuteScalar());
+
+                return count > 0;
+            }
+        }
+    }
+
+    // Function to insert a symbol into the table
+    private static void InsertSymbolIntoTable(string symbol, string tableName, string columnName)
+    {
+        using (SQLiteConnection connection = GetConnection())
+        {
+            connection.Open();
+
+            using (SQLiteCommand command = new SQLiteCommand(
+                $"INSERT INTO {tableName} ({columnName}) VALUES (@symbol)",
+                connection))
+            {
+                command.Parameters.AddWithValue("@symbol", symbol);
+                command.ExecuteNonQuery();
+            }
+        }
+    }
 
 
 
+
+
+
+    private static List<string> GetUniqueValues(string tableName, string columnName)
+    {
+        List<string> uniqueValues = new List<string>();
+
+        using (SQLiteConnection connection = GetConnection())
+        {
+            connection.Open();
+
+            string query = $"SELECT DISTINCT {columnName} FROM {tableName};";
+
+            using (SQLiteCommand command = new SQLiteCommand(query, connection))
+            {
+                using (SQLiteDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        string value = reader[columnName]?.ToString();
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            uniqueValues.Add(value);
+                        }
+                    }
+                }
+            }
+
+            connection.Close();
+        }
+
+        return uniqueValues;
+    }
 }
+
+
+
+
+

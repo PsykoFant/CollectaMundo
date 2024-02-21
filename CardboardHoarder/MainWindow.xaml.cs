@@ -1,8 +1,6 @@
 ﻿using System.Data;
 using System.Data.SQLite;
 using System.Windows;
-using System.Diagnostics;
-using System.IO;
 
 
 namespace CardboardHoarder
@@ -15,6 +13,9 @@ namespace CardboardHoarder
         public MainWindow()
         {
             DatabaseHelper.CheckDatabaseExistence();
+
+            DatabaseHelper.GenerateCustomDbData();
+
             InitializeComponent();
             GridSearchAndFilter.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Hidden;
@@ -71,6 +72,6 @@ namespace CardboardHoarder
                     }
                 }
             }
-        }        
+        }
     }
 }
