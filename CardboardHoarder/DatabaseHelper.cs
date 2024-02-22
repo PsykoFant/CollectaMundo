@@ -384,12 +384,20 @@ public class DatabaseHelper
                 var svg = new SkiaSharp.Extended.Svg.SKSvg();
                 svg.Load(svgStream);
 
-                // Create SKBitmap from the SKSvg
-                using (var bitmap = new SKBitmap((int)svg.CanvasSize.Width, (int)svg.CanvasSize.Height))
+                // Calculate the scaling factor to limit height to 20 pixels
+                float scaleFactor = 20f / svg.CanvasSize.Height;
+
+                // Create SKBitmap with adjusted size
+                using (var bitmap = new SKBitmap((int)(svg.CanvasSize.Width * scaleFactor), 20))
                 {
                     using (var canvas = new SKCanvas(bitmap))
                     {
                         canvas.Clear(SKColors.Transparent);
+
+                        // Apply scaling to the canvas
+                        canvas.Scale(scaleFactor);
+
+                        // Draw the SVG picture on the canvas
                         canvas.DrawPicture(svg.Picture);
                     }
 
@@ -411,6 +419,7 @@ public class DatabaseHelper
             return null; // or throw an exception if you prefer
         }
     }
+
 
 
 
