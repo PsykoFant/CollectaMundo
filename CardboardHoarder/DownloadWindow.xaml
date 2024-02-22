@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="No card database found!" Height="150" Width="300">
     <Grid>
-        <TextBox Name="textBox" Text="Downloading card database - please wait..." HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10,50,10,0" IsReadOnly="True" />
+        <TextBox x:Name="downloadTextBox1" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,37,0,0" IsReadOnly="True" Height="19" />
+        <TextBox x:Name="downloadTextBox2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,67,0,0" IsReadOnly="True" Height="19" />
     </Grid>
 </Window>
 

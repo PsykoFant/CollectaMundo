@@ -15,11 +15,6 @@ namespace CardboardHoarder
         public MainWindow()
         {
             DatabaseHelper.CheckDatabaseExistence();
-
-            // den her skal flyttes tilbage til databasehelper...
-            DatabaseHelper.GenerateCustomDbData();
-
-
             InitializeComponent();
             GridSearchAndFilter.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Hidden;

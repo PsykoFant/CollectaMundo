@@ -69,7 +69,9 @@ public class DatabaseHelper
     }
     public static void CheckDatabaseExistence()
     {
-        Debug.WriteLine("Inside CheckDatabaseExistence()");
+        DownloadWindow downloadWindow = new();
+        downloadWindow.Show();
+
         try
         {
             // Retrieve the SQLite database path from appsettings.json
@@ -79,10 +81,19 @@ public class DatabaseHelper
             // Check if the database file exists
             if (!File.Exists(databasePath))
             {
-                // Output a message to the console
+                // Create and show the DownloadWindow
+
+
                 Debug.WriteLine($"The database file '{databasePath}' does not exist.");
+                downloadWindow.downloadTextBox1.Text = "Downloading card database - please wait";
+                downloadWindow.downloadTextBox2.Text = "(around 400 mb - only required once)";
                 DownloadDatabaseIfNotExists();
+                downloadWindow.downloadTextBox1.Text = "Generating custom data and images";
+                downloadWindow.downloadTextBox2.Text = "(should be fairly quick)";
                 GenerateCustomDbData();
+
+                // Close the DownloadWindow
+                downloadWindow.Close();
             }
 
         }
@@ -95,11 +106,6 @@ public class DatabaseHelper
     #region Download card database and create tables for custom data
     public static void DownloadDatabaseIfNotExists()
     {
-
-        // Create and show the DownloadProgressWindow
-        DownloadWindow downloadWindow = new();
-        downloadWindow.Show();
-
         try
         {
             // Retrieve the SQLite database path from appsettings.json
@@ -138,12 +144,6 @@ public class DatabaseHelper
         {
             // Handle exceptions (e.g., log, show error message, etc.)
             Debug.WriteLine($"Error while downloading database file: {ex.Message}");
-        }
-
-        finally
-        {
-            // Close the DownloadProgressWindow after download completion
-            downloadWindow.Close();
         }
     }
     private static void SetupDatabase(string databasePath)
@@ -197,14 +197,13 @@ public class DatabaseHelper
         }
     }
     #endregion
-
-    // Husk at lave private
-    public static void GenerateCustomDbData()
+    private static void GenerateCustomDbData()
     {
         GenerateManaSymbolsFromSvg();
     }
 
-    public static void GenerateManaSymbolsFromSvg()
+
+    private static void GenerateManaSymbolsFromSvg()
     {
         try
         {
@@ -236,27 +235,13 @@ public class DatabaseHelper
 
             Debug.WriteLine("Insertion of uniqueManaSymbols completed.");
 
-
             // Get a list of mana symbols without image
-            List<string> symbolsWithNullImage = new();
+            List<string> symbolsWithNullImage = GetValuesWithNull("uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
+
+            // Generate the missing mana cost symbols and insert them into table uniqueManaSymbols
             using (SQLiteConnection connection = GetConnection())
             {
                 connection.Open();
-
-                // Retrieve symbols with null 'manaSymbolImage'
-                using (SQLiteCommand command = new(
-                    "SELECT uniqueManaSymbol FROM uniqueManaSymbols WHERE manaSymbolImage IS NULL",
-                    connection))
-                {
-                    using (SQLiteDataReader reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            string symbol = reader["uniqueManaSymbol"].ToString();
-                            symbolsWithNullImage.Add(symbol);
-                        }
-                    }
-                }
 
                 foreach (string missingImage in symbolsWithNullImage)
                 {
@@ -276,13 +261,8 @@ public class DatabaseHelper
                         Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {missingImage}");
                     }
                 }
-
-
                 connection.Close();
             }
-
-
-
         }
         catch (Exception ex)
         {
@@ -308,7 +288,7 @@ public class DatabaseHelper
                     command.ExecuteNonQuery();
                 }
 
-
+                connection.Close();
             }
         }
         catch (Exception ex)
@@ -367,7 +347,7 @@ public class DatabaseHelper
             Debug.WriteLine($"Error during insertion or update: {ex.Message}");
         }
     }
-    public static byte[] ConvertSvgToPng(string svgLink)
+    private static byte[] ConvertSvgToPng(string svgLink)
     {
         try
         {
@@ -423,8 +403,32 @@ public class DatabaseHelper
 
 
 
+    private static List<string> GetValuesWithNull(string tableName, string returnColumnName, string searchColumnName)
+    {
+        List<string> valuesWithNull = new List<string>();
 
+        using (SQLiteConnection connection = GetConnection())
+        {
+            connection.Open();
 
+            // Retrieve values where specified column is null
+            string query = $"SELECT {returnColumnName} FROM {tableName} WHERE {searchColumnName} IS NULL";
+
+            using (SQLiteCommand command = new SQLiteCommand(query, connection))
+            {
+                using (SQLiteDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        string value = reader[returnColumnName].ToString();
+                        valuesWithNull.Add(value);
+                    }
+                }
+            }
+        }
+
+        return valuesWithNull;
+    }
     private static List<string> GetUniqueValues(string tableName, string columnName)
     {
         List<string> uniqueValues = new();
