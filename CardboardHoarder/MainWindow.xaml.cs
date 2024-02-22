@@ -1,6 +1,5 @@
 ﻿using System.Data;
 using System.Data.SQLite;
-using System.Drawing;
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
@@ -26,6 +25,92 @@ namespace CardboardHoarder
             GridMyCollection.Visibility = Visibility.Hidden;
             LoadData();
         }
+
+
+        private void DisplayImageFromDatabase()
+        {
+            try
+            {
+                // Get the uniqueManaSymbol from the textBox
+                string uniqueManaSymbol = imageInput.Text;
+
+                // Query to retrieve manaSymbolImage from uniqueManaSymbols
+                string query = "SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol";
+
+                using (SQLiteConnection connection = DatabaseHelper.GetConnection())
+                {
+                    connection.Open();
+
+                    using (SQLiteCommand command = new SQLiteCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@symbol", uniqueManaSymbol);
+
+                        using (SQLiteDataReader reader = command.ExecuteReader(CommandBehavior.SequentialAccess))
+                        {
+                            if (reader.Read())
+                            {
+                                // Get the BLOB data
+                                byte[] imageData = (byte[])reader["manaSymbolImage"];
+
+                                // Display the image in the testImage control
+                                DisplayImage(imageData);
+                            }
+                            else
+                            {
+                                MessageBox.Show("No image found for the specified uniqueManaSymbol.");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}");
+            }
+        }
+
+        private void DisplayImage(byte[] imageData)
+        {
+            try
+            {
+                // Convert byte array to BitmapImage
+                BitmapImage bitmapImage = ConvertByteArrayToBitmapImage(imageData);
+
+                // Display the image in the testImage control
+                testImage.Source = bitmapImage;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error displaying image: {ex.Message}");
+            }
+        }
+
+        public static BitmapImage ConvertByteArrayToBitmapImage(byte[] imageData)
+        {
+            try
+            {
+                if (imageData != null && imageData.Length > 0)
+                {
+                    using (MemoryStream stream = new MemoryStream(imageData))
+                    {
+                        BitmapImage bitmapImage = new BitmapImage();
+                        bitmapImage.BeginInit();
+                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage.StreamSource = stream;
+                        bitmapImage.EndInit();
+                        return bitmapImage;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error converting byte array to BitmapImage: {ex.Message}");
+            }
+
+            return null;
+        }
+
+
         private void reset_grids()
         {
             GridSearchAndFilter.Visibility = Visibility.Hidden;
@@ -78,6 +163,11 @@ namespace CardboardHoarder
                     }
                 }
             }
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            DisplayImageFromDatabase();
         }
     }
 }

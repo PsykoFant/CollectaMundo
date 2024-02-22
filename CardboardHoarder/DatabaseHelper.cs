@@ -1,13 +1,11 @@
 ﻿using CardboardHoarder;
 using Microsoft.Extensions.Configuration;
-using ServiceStack;
 using SkiaSharp;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Text.RegularExpressions;
-using System.Windows.Media.Imaging;
 
 
 public class DatabaseHelper
@@ -238,7 +236,7 @@ public class DatabaseHelper
 
             Debug.WriteLine("Insertion of uniqueManaSymbols completed.");
 
-            
+
             // Get a list of mana symbols without image
             List<string> symbolsWithNullImage = new();
             using (SQLiteConnection connection = GetConnection())
@@ -292,12 +290,6 @@ public class DatabaseHelper
             Debug.WriteLine($"Error during insertion of uniqueManaSymbols: {ex.Message}");
         }
     }
-
-
-
-    
-
-
     private static void UpdateImageInTable(string uniqueManaSymbol, string tableName, string columnName, byte[] imageData)
     {
         try
@@ -310,12 +302,12 @@ public class DatabaseHelper
                 using (SQLiteCommand command = new SQLiteCommand(
                         $"UPDATE {tableName} SET {columnName} = @imageData WHERE {columnName} IS NULL AND uniqueManaSymbol = @uniqueManaSymbol",
                         connection))
-                    {
-                        command.Parameters.AddWithValue("@uniqueManaSymbol", uniqueManaSymbol);
-                        command.Parameters.AddWithValue("@imageData", imageData);
-                        command.ExecuteNonQuery();
-                    }
-                
+                {
+                    command.Parameters.AddWithValue("@uniqueManaSymbol", uniqueManaSymbol);
+                    command.Parameters.AddWithValue("@imageData", imageData);
+                    command.ExecuteNonQuery();
+                }
+
 
             }
         }

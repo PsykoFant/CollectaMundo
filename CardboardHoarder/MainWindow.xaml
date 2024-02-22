@@ -25,6 +25,9 @@
 
             <ComboBox x:Name="filterCardNameComboBox" HorizontalAlignment="Left" Margin="0,20,0,0" VerticalAlignment="Top" Width="120"/>
             <Image x:Name="imageControl" HorizontalAlignment="Left" Height="100" Margin="427,77,0,0" VerticalAlignment="Top" Width="100"/>
+            <TextBox x:Name="imageInput" HorizontalAlignment="Left" Margin="306,99,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
+            <Image x:Name="testImage" HorizontalAlignment="Left" Height="172" Margin="427,41,0,0" VerticalAlignment="Top" Width="184" Stretch="None"/>
+            <Button Content="Button" HorizontalAlignment="Left" Margin="696,128,0,0" VerticalAlignment="Top" Width="104" Click="Button_Click"/>
 
         </Grid>
         <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="36" Margin="0,48,0,0" VerticalAlignment="Top" Width="138" d:IsHidden="True">
