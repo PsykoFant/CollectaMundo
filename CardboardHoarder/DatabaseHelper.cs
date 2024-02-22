@@ -233,6 +233,38 @@ public class DatabaseHelper
             }
 
             Debug.WriteLine("Insertion of uniqueManaSymbols completed.");
+
+            
+            // Get a list of mana symbols without image
+            List<string> symbolsWithNullImage = new List<string>();
+            using (SQLiteConnection connection = GetConnection())
+            {
+                connection.Open();
+
+                // Retrieve symbols with null 'manaSymbolImage'
+                using (SQLiteCommand command = new SQLiteCommand(
+                    "SELECT uniqueManaSymbol FROM uniqueManaSymbols WHERE manaSymbolImage IS NULL",
+                    connection))
+                {
+                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string symbol = reader["uniqueManaSymbol"].ToString();
+                            symbolsWithNullImage.Add(symbol);
+                        }
+                    }
+                }
+
+                connection.Close();
+            }
+
+            foreach (var missingImage in symbolsWithNullImage)
+            {
+                Debug.WriteLine(missingImage);
+            }
+
+
         }
         catch (Exception ex)
         {
