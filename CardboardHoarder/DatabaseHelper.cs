@@ -226,15 +226,10 @@ public class DatabaseHelper
                 }
             }
 
-            // Insert unique symbols into the 'uniqueManaSymbols' table
+            // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
             foreach (var symbol in uniqueSymbols)
             {
-                // Check if the symbol already exists in the table
-                if (!SymbolExistsInTable(symbol, "uniqueManaSymbols", "uniqueManaSymbol"))
-                {
-                    // Insert the symbol into the table
-                    InsertSymbolIntoTable(symbol, "uniqueManaSymbols", "uniqueManaSymbol");
-                }
+                InsertOrUpdateSymbolInTable(symbol, "uniqueManaSymbols", "uniqueManaSymbol");
             }
 
             Debug.WriteLine("Insertion of uniqueManaSymbols completed.");
@@ -246,42 +241,55 @@ public class DatabaseHelper
         }
     }
 
-    // Function to check if a symbol exists in the table
-    private static bool SymbolExistsInTable(string symbol, string tableName, string columnName)
+    private static void InsertOrUpdateSymbolInTable(string symbol, string tableName, string columnName)
     {
-        using (SQLiteConnection connection = GetConnection())
+        try
         {
-            connection.Open();
-
-            using (SQLiteCommand command = new SQLiteCommand(
-                $"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @symbol",
-                connection))
+            using (SQLiteConnection connection = GetConnection())
             {
-                command.Parameters.AddWithValue("@symbol", symbol);
+                connection.Open();
 
-                int count = Convert.ToInt32(command.ExecuteScalar());
+                // Check if the symbol already exists in the table
+                using (SQLiteCommand selectCommand = new SQLiteCommand(
+                    $"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @symbol",
+                    connection))
+                {
+                    selectCommand.Parameters.AddWithValue("@symbol", symbol);
 
-                return count > 0;
+                    int count = Convert.ToInt32(selectCommand.ExecuteScalar());
+
+                    if (count > 0)
+                    {
+                        // Symbol exists, perform an update
+                        using (SQLiteCommand updateCommand = new SQLiteCommand(
+                            $"UPDATE {tableName} SET {columnName} = @symbol WHERE {columnName} = @symbol",
+                            connection))
+                        {
+                            updateCommand.Parameters.AddWithValue("@symbol", symbol);
+                            updateCommand.ExecuteNonQuery();
+                        }
+                    }
+                    else
+                    {
+                        // Symbol doesn't exist, perform an insert
+                        using (SQLiteCommand insertCommand = new SQLiteCommand(
+                            $"INSERT INTO {tableName} ({columnName}) VALUES (@symbol)",
+                            connection))
+                        {
+                            insertCommand.Parameters.AddWithValue("@symbol", symbol);
+                            insertCommand.ExecuteNonQuery();
+                        }
+                    }
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions (e.g., log, show error message, etc.)
+            Debug.WriteLine($"Error during insertion or update: {ex.Message}");
         }
     }
 
-    // Function to insert a symbol into the table
-    private static void InsertSymbolIntoTable(string symbol, string tableName, string columnName)
-    {
-        using (SQLiteConnection connection = GetConnection())
-        {
-            connection.Open();
-
-            using (SQLiteCommand command = new SQLiteCommand(
-                $"INSERT INTO {tableName} ({columnName}) VALUES (@symbol)",
-                connection))
-            {
-                command.Parameters.AddWithValue("@symbol", symbol);
-                command.ExecuteNonQuery();
-            }
-        }
-    }
 
 
 
