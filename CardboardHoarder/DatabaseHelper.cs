@@ -1,10 +1,14 @@
 ﻿using CardboardHoarder;
 using Microsoft.Extensions.Configuration;
+using ServiceStack;
+using SkiaSharp;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Windows.Media.Imaging;
+
 
 public class DatabaseHelper
 {
@@ -12,7 +16,7 @@ public class DatabaseHelper
     static DatabaseHelper()
     {
         // Set up configuration
-        var builder = new ConfigurationBuilder()
+        IConfigurationBuilder builder = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
         Configuration = builder.Build();
@@ -95,7 +99,7 @@ public class DatabaseHelper
     {
 
         // Create and show the DownloadProgressWindow
-        DownloadWindow downloadWindow = new DownloadWindow();
+        DownloadWindow downloadWindow = new();
         downloadWindow.Show();
 
         try
@@ -115,7 +119,7 @@ public class DatabaseHelper
 
                 // Download the database file from the specified URL using HttpClient
                 string downloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
-                using (HttpClient httpClient = new HttpClient())
+                using (HttpClient httpClient = new())
                 {
                     byte[] fileContent = httpClient.GetByteArrayAsync(downloadUrl).Result;
                     File.WriteAllBytes(databasePath, fileContent);
@@ -152,7 +156,7 @@ public class DatabaseHelper
             connection.Open();
 
             // Define tables to create
-            Dictionary<string, string> tables = new Dictionary<string, string>
+            Dictionary<string, string> tables = new()
             {
                 { "uniqueManaSymbols", "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);" },
                 { "uniqueManaCostImages", "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);" },
@@ -161,9 +165,9 @@ public class DatabaseHelper
             };
 
             // Create the tables
-            foreach (var item in tables)
+            foreach (KeyValuePair<string, string> item in tables)
             {
-                using (SQLiteCommand command = new SQLiteCommand(item.Value, connection))
+                using (SQLiteCommand command = new(item.Value, connection))
                 {
                     command.ExecuteNonQuery();
                 }
@@ -172,7 +176,7 @@ public class DatabaseHelper
             }
 
             // Define indices to create
-            Dictionary<string, string> indices = new Dictionary<string, string>
+            Dictionary<string, string> indices = new()
             {
                 { "uniqueManaSymbols", "CREATE INDEX IF NOT EXISTS uniqueManaSymbols_uniqueManaSymbol ON uniqueManaSymbols(uniqueManaSymbol);" },
                 { "uniqueManaCostImages", "CREATE INDEX IF NOT EXISTS uniqueManaCostImages_uniqueManaCost ON uniqueManaCostImages(uniqueManaCost);" },
@@ -181,9 +185,9 @@ public class DatabaseHelper
             };
 
             // Create the indices
-            foreach (var item in indices)
+            foreach (KeyValuePair<string, string> item in indices)
             {
-                using (SQLiteCommand command = new SQLiteCommand(item.Value, connection))
+                using (SQLiteCommand command = new(item.Value, connection))
                 {
                     command.ExecuteNonQuery();
                 }
@@ -207,9 +211,9 @@ public class DatabaseHelper
         try
         {
             List<string> uniqueManaCosts = GetUniqueValues("cards", "manaCost");
-            List<string> uniqueSymbols = new List<string>();
+            List<string> uniqueSymbols = new();
 
-            foreach (var manaCost in uniqueManaCosts)
+            foreach (string manaCost in uniqueManaCosts)
             {
                 // Use regex to match all occurrences of values between '{' and '}'
                 MatchCollection matches = Regex.Matches(manaCost, @"\{(.*?)\}");
@@ -227,7 +231,7 @@ public class DatabaseHelper
             }
 
             // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
-            foreach (var symbol in uniqueSymbols)
+            foreach (string symbol in uniqueSymbols)
             {
                 InsertOrUpdateSymbolInTable(symbol, "uniqueManaSymbols", "uniqueManaSymbol");
             }
@@ -236,13 +240,13 @@ public class DatabaseHelper
 
             
             // Get a list of mana symbols without image
-            List<string> symbolsWithNullImage = new List<string>();
+            List<string> symbolsWithNullImage = new();
             using (SQLiteConnection connection = GetConnection())
             {
                 connection.Open();
 
                 // Retrieve symbols with null 'manaSymbolImage'
-                using (SQLiteCommand command = new SQLiteCommand(
+                using (SQLiteCommand command = new(
                     "SELECT uniqueManaSymbol FROM uniqueManaSymbols WHERE manaSymbolImage IS NULL",
                     connection))
                 {
@@ -256,13 +260,29 @@ public class DatabaseHelper
                     }
                 }
 
+                foreach (string missingImage in symbolsWithNullImage)
+                {
+                    Debug.WriteLine($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
+
+                    // Convert SVG to PNG using the ConvertSvgToPng function
+                    byte[] pngData = ConvertSvgToPng($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
+
+                    if (pngData != null)
+                    {
+                        // Update the 'uniqueManaSymbols' table with the PNG data
+                        UpdateImageInTable(missingImage, "uniqueManaSymbols", "manaSymbolImage", pngData);
+                    }
+                    else
+                    {
+                        // Handle the case when conversion fails (e.g., log, show error message, etc.)
+                        Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {missingImage}");
+                    }
+                }
+
+
                 connection.Close();
             }
 
-            foreach (var missingImage in symbolsWithNullImage)
-            {
-                Debug.WriteLine(missingImage);
-            }
 
 
         }
@@ -273,6 +293,38 @@ public class DatabaseHelper
         }
     }
 
+
+
+    
+
+
+    private static void UpdateImageInTable(string uniqueManaSymbol, string tableName, string columnName, byte[] imageData)
+    {
+        try
+        {
+            using (SQLiteConnection connection = GetConnection())
+            {
+                connection.Open();
+
+                // Update the existing row with the PNG data
+                using (SQLiteCommand command = new SQLiteCommand(
+                        $"UPDATE {tableName} SET {columnName} = @imageData WHERE {columnName} IS NULL AND uniqueManaSymbol = @uniqueManaSymbol",
+                        connection))
+                    {
+                        command.Parameters.AddWithValue("@uniqueManaSymbol", uniqueManaSymbol);
+                        command.Parameters.AddWithValue("@imageData", imageData);
+                        command.ExecuteNonQuery();
+                    }
+                
+
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions (e.g., log, show error message, etc.)
+            Debug.WriteLine($"Error while updating image in table: {ex.Message}");
+        }
+    }
     private static void InsertOrUpdateSymbolInTable(string symbol, string tableName, string columnName)
     {
         try
@@ -282,7 +334,7 @@ public class DatabaseHelper
                 connection.Open();
 
                 // Check if the symbol already exists in the table
-                using (SQLiteCommand selectCommand = new SQLiteCommand(
+                using (SQLiteCommand selectCommand = new(
                     $"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @symbol",
                     connection))
                 {
@@ -293,7 +345,7 @@ public class DatabaseHelper
                     if (count > 0)
                     {
                         // Symbol exists, perform an update
-                        using (SQLiteCommand updateCommand = new SQLiteCommand(
+                        using (SQLiteCommand updateCommand = new(
                             $"UPDATE {tableName} SET {columnName} = @symbol WHERE {columnName} = @symbol",
                             connection))
                         {
@@ -304,7 +356,7 @@ public class DatabaseHelper
                     else
                     {
                         // Symbol doesn't exist, perform an insert
-                        using (SQLiteCommand insertCommand = new SQLiteCommand(
+                        using (SQLiteCommand insertCommand = new(
                             $"INSERT INTO {tableName} ({columnName}) VALUES (@symbol)",
                             connection))
                         {
@@ -313,6 +365,8 @@ public class DatabaseHelper
                         }
                     }
                 }
+
+                connection.Close();
             }
         }
         catch (Exception ex)
@@ -321,8 +375,50 @@ public class DatabaseHelper
             Debug.WriteLine($"Error during insertion or update: {ex.Message}");
         }
     }
+    public static byte[] ConvertSvgToPng(string svgLink)
+    {
+        try
+        {
+            string svgContent;
 
+            // Download the SVG content from the link using HttpClient
+            using (HttpClient client = new HttpClient())
+            {
+                svgContent = client.GetStringAsync(svgLink).Result;
+            }
 
+            using (var svgStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(svgContent)))
+            {
+                var svg = new SkiaSharp.Extended.Svg.SKSvg();
+                svg.Load(svgStream);
+
+                // Create SKBitmap from the SKSvg
+                using (var bitmap = new SKBitmap((int)svg.CanvasSize.Width, (int)svg.CanvasSize.Height))
+                {
+                    using (var canvas = new SKCanvas(bitmap))
+                    {
+                        canvas.Clear(SKColors.Transparent);
+                        canvas.DrawPicture(svg.Picture);
+                    }
+
+                    // Save SKBitmap as PNG to a memory stream
+                    using (var image = SKImage.FromBitmap(bitmap))
+                    using (var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100))
+                    using (var stream = new MemoryStream())
+                    {
+                        data.SaveTo(stream);
+                        return stream.ToArray();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions (e.g., log, show error message, etc.)
+            Console.WriteLine($"Error while converting SVG to PNG: {ex.Message}");
+            return null; // or throw an exception if you prefer
+        }
+    }
 
 
 
@@ -330,7 +426,7 @@ public class DatabaseHelper
 
     private static List<string> GetUniqueValues(string tableName, string columnName)
     {
-        List<string> uniqueValues = new List<string>();
+        List<string> uniqueValues = new();
 
         using (SQLiteConnection connection = GetConnection())
         {
@@ -338,7 +434,7 @@ public class DatabaseHelper
 
             string query = $"SELECT DISTINCT {columnName} FROM {tableName};";
 
-            using (SQLiteCommand command = new SQLiteCommand(query, connection))
+            using (SQLiteCommand command = new(query, connection))
             {
                 using (SQLiteDataReader reader = command.ExecuteReader())
                 {

@@ -1,6 +1,9 @@
 ﻿using System.Data;
 using System.Data.SQLite;
+using System.Drawing;
+using System.IO;
 using System.Windows;
+using System.Windows.Media.Imaging;
 
 
 namespace CardboardHoarder
@@ -14,12 +17,13 @@ namespace CardboardHoarder
         {
             DatabaseHelper.CheckDatabaseExistence();
 
+            // den her skal flyttes tilbage til databasehelper...
             DatabaseHelper.GenerateCustomDbData();
+
 
             InitializeComponent();
             GridSearchAndFilter.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Hidden;
-
             LoadData();
         }
         private void reset_grids()
@@ -37,6 +41,8 @@ namespace CardboardHoarder
             reset_grids();
             GridMyCollection.Visibility = Visibility.Visible;
         }
+
+
         private void LoadData()
         {
             using (SQLiteConnection connection = DatabaseHelper.GetConnection())
