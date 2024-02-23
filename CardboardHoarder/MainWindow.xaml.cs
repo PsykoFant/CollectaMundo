@@ -15,6 +15,10 @@ namespace CardboardHoarder
         public MainWindow()
         {
             DatabaseHelper.CheckDatabaseExistence();
+
+            // Husk at fjerne den her
+            DatabaseHelper.GenerateManaCostImages();
+
             InitializeComponent();
             GridSearchAndFilter.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Hidden;
@@ -79,7 +83,6 @@ namespace CardboardHoarder
                 MessageBox.Show($"Error displaying image: {ex.Message}");
             }
         }
-
         public static BitmapImage ConvertByteArrayToBitmapImage(byte[] imageData)
         {
             try

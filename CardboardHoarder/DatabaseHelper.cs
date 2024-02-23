@@ -196,7 +196,21 @@ public class DatabaseHelper
     private static void GenerateCustomDbData()
     {
         GenerateManaSymbolsFromSvg();
+        GenerateManaCostImages();
     }
+
+    // Husk at lave private
+    public static void GenerateManaCostImages()
+    {
+        List<string> uniqueManaCosts = GetUniqueValues("cards", "manaCost");
+
+        // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
+        foreach (string manaCost in uniqueManaCosts)
+        {
+            InsertOrUpdateSymbolInTable(manaCost, "uniqueManaCostImages", "uniqueManaCost");
+        }
+    }
+
 
 
     private static void GenerateManaSymbolsFromSvg()
@@ -293,7 +307,7 @@ public class DatabaseHelper
             Debug.WriteLine($"Error while updating image in table: {ex.Message}");
         }
     }
-    private static void InsertOrUpdateSymbolInTable(string symbol, string tableName, string columnName)
+    private static void InsertOrUpdateSymbolInTable(string value, string tableName, string columnName)
     {
         try
         {
@@ -306,7 +320,7 @@ public class DatabaseHelper
                     $"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @symbol",
                     connection))
                 {
-                    selectCommand.Parameters.AddWithValue("@symbol", symbol);
+                    selectCommand.Parameters.AddWithValue("@symbol", value);
 
                     int count = Convert.ToInt32(selectCommand.ExecuteScalar());
 
@@ -317,7 +331,7 @@ public class DatabaseHelper
                             $"UPDATE {tableName} SET {columnName} = @symbol WHERE {columnName} = @symbol",
                             connection))
                         {
-                            updateCommand.Parameters.AddWithValue("@symbol", symbol);
+                            updateCommand.Parameters.AddWithValue("@symbol", value);
                             updateCommand.ExecuteNonQuery();
                         }
                     }
@@ -328,7 +342,7 @@ public class DatabaseHelper
                             $"INSERT INTO {tableName} ({columnName}) VALUES (@symbol)",
                             connection))
                         {
-                            insertCommand.Parameters.AddWithValue("@symbol", symbol);
+                            insertCommand.Parameters.AddWithValue("@symbol", value);
                             insertCommand.ExecuteNonQuery();
                         }
                     }
@@ -343,6 +357,8 @@ public class DatabaseHelper
             Debug.WriteLine($"Error during insertion or update: {ex.Message}");
         }
     }
+
+
     private static byte[] ConvertSvgToPng(string svgLink)
     {
         try
@@ -395,10 +411,6 @@ public class DatabaseHelper
             return null; // or throw an exception if you prefer
         }
     }
-
-
-
-
     private static List<string> GetValuesWithNull(string tableName, string returnColumnName, string searchColumnName)
     {
         List<string> valuesWithNull = new List<string>();
