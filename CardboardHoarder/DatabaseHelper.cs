@@ -69,8 +69,7 @@ public class DatabaseHelper
     }
     public static void CheckDatabaseExistence()
     {
-        DownloadWindow downloadWindow = new();
-        downloadWindow.Show();
+        
 
         try
         {
@@ -82,14 +81,11 @@ public class DatabaseHelper
             if (!File.Exists(databasePath))
             {
                 // Create and show the DownloadWindow
-
+                DownloadWindow downloadWindow = new();
+                downloadWindow.Show();
 
                 Debug.WriteLine($"The database file '{databasePath}' does not exist.");
-                downloadWindow.downloadTextBox1.Text = "Downloading card database - please wait";
-                downloadWindow.downloadTextBox2.Text = "(around 400 mb - only required once)";
                 DownloadDatabaseIfNotExists();
-                downloadWindow.downloadTextBox1.Text = "Generating custom data and images";
-                downloadWindow.downloadTextBox2.Text = "(should be fairly quick)";
                 GenerateCustomDbData();
 
                 // Close the DownloadWindow
