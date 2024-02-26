@@ -15,10 +15,6 @@ namespace CardboardHoarder
         public MainWindow()
         {
             DatabaseHelper.CheckDatabaseExistence();
-
-            // Husk at fjerne den her
-            DatabaseHelper.GenerateManaCostImages();
-
             InitializeComponent();
             GridSearchAndFilter.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Hidden;
@@ -34,7 +30,7 @@ namespace CardboardHoarder
                 string uniqueManaSymbol = imageInput.Text;
 
                 // Query to retrieve manaSymbolImage from uniqueManaSymbols
-                string query = "SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol";
+                string query = "SELECT manaCostImage FROM uniqueManaCostImages WHERE uniqueManaCost = @symbol";
 
                 using (SQLiteConnection connection = DatabaseHelper.GetConnection())
                 {
@@ -49,7 +45,7 @@ namespace CardboardHoarder
                             if (reader.Read())
                             {
                                 // Get the BLOB data
-                                byte[] imageData = (byte[])reader["manaSymbolImage"];
+                                byte[] imageData = (byte[])reader["manaCostImage"];
 
                                 // Display the image in the testImage control
                                 DisplayImage(imageData);

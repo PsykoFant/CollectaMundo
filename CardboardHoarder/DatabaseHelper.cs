@@ -1,11 +1,14 @@
 ﻿using CardboardHoarder;
 using Microsoft.Extensions.Configuration;
+using ServiceStack;
 using SkiaSharp;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Windows.Controls.Primitives;
 
 
 public class DatabaseHelper
@@ -198,21 +201,105 @@ public class DatabaseHelper
         GenerateManaSymbolsFromSvg();
         GenerateManaCostImages();
     }
-
-    // Husk at lave private
-    public static void GenerateManaCostImages()
+    private static void GenerateManaCostImages()
     {
         List<string> uniqueManaCosts = GetUniqueValues("cards", "manaCost");
 
         // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
         foreach (string manaCost in uniqueManaCosts)
         {
-            InsertOrUpdateSymbolInTable(manaCost, "uniqueManaCostImages", "uniqueManaCost");
+            InsertOrUpdateValueInTable(manaCost, "uniqueManaCostImages", "uniqueManaCost");
+        }
+
+        List<string> manaCostsWithNullImage = GetValuesWithNull("uniqueManaCostImages", "uniqueManaCost", "manaCostImage");
+
+        // Generate the missing mana cost images and insert them into table uniqueManaCostImages
+        using (SQLiteConnection connection = GetConnection())
+        {
+            connection.Open();
+
+            foreach (string missingImage in manaCostsWithNullImage)
+            {
+                Debug.WriteLine($"{missingImage}");
+
+                UpdateImageInTable(missingImage, "uniqueManaCostImages", "manaCostImage", "uniqueManaCost", ProcessManaCostInput(missingImage));
+            }
+            connection.Close();
         }
     }
 
 
 
+
+
+    // Creates a list of bitmaps for a single mana cost
+    private static byte[] ProcessManaCostInput(string manaCostInput)
+    {
+        string[] manaSymbols = manaCostInput.Trim(new char[] { '{', '}' }).Split(new string[] { "}{" }, StringSplitOptions.RemoveEmptyEntries);
+        List<Bitmap> manaSymbolImage = new List<Bitmap>();
+
+        foreach (string symbol in manaSymbols)
+        {
+            using (SQLiteConnection connection = GetConnection())
+            {
+                connection.Open();
+
+                using (SQLiteCommand command = new SQLiteCommand(
+                        $"SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol",
+                        connection))
+                {
+                    command.Parameters.AddWithValue("@symbol", symbol);
+
+                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            byte[] imageBytes = (byte[])reader["manaSymbolImage"];
+                            using (MemoryStream ms = new MemoryStream(imageBytes))
+                            {
+                                Bitmap bitmap = new Bitmap(ms);
+                                manaSymbolImage.Add(bitmap);
+                            }
+                        }
+                    }
+                }
+                connection.Close();
+            }
+        }
+
+        return CombineImages(manaSymbolImage);
+    }
+    // Combine list of mana cost bitmaps into a single png
+    private static byte[] CombineImages(List<Bitmap> images)
+    {
+        if (images == null || images.Count == 0)
+            throw new ArgumentException("Images list is null or empty", nameof(images));
+
+        int width = images.Sum(img => img.Width);
+        int height = images.Max(img => img.Height);
+
+        // Create a new bitmap with the total width and maximum height
+        using (Bitmap combinedImage = new Bitmap(width, height))
+        using (Graphics g = Graphics.FromImage(combinedImage))
+        {
+            g.Clear(Color.Transparent); // Optional: fill background if needed
+
+            int offset = 0;
+            foreach (Bitmap image in images)
+            {
+                g.DrawImage(image, new Point(offset, 0));
+                offset += image.Width;
+                image.Dispose(); // Dispose each image after drawing it
+            }
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                combinedImage.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                return ms.ToArray();
+            }
+        }
+    }
+    // Generates a mana cost symbol from svg retrieved from scryfall weblink
     private static void GenerateManaSymbolsFromSvg()
     {
         try
@@ -240,7 +327,7 @@ public class DatabaseHelper
             // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
             foreach (string symbol in uniqueSymbols)
             {
-                InsertOrUpdateSymbolInTable(symbol, "uniqueManaSymbols", "uniqueManaSymbol");
+                InsertOrUpdateValueInTable(symbol, "uniqueManaSymbols", "uniqueManaSymbol");
             }
 
             Debug.WriteLine("Insertion of uniqueManaSymbols completed.");
@@ -263,7 +350,7 @@ public class DatabaseHelper
                     if (pngData != null)
                     {
                         // Update the 'uniqueManaSymbols' table with the PNG data
-                        UpdateImageInTable(missingImage, "uniqueManaSymbols", "manaSymbolImage", pngData);
+                        UpdateImageInTable(missingImage, "uniqueManaSymbols", "manaSymbolImage", "uniqueManaSymbol", pngData);
                     }
                     else
                     {
@@ -280,7 +367,13 @@ public class DatabaseHelper
             Debug.WriteLine($"Error during insertion of uniqueManaSymbols: {ex.Message}");
         }
     }
-    private static void UpdateImageInTable(string uniqueManaSymbol, string tableName, string columnName, byte[] imageData)
+
+
+
+
+
+    
+    private static void UpdateImageInTable(string image, string tableName, string columnToUpdate, string columnToReference, byte[] imageData)
     {
         try
         {
@@ -290,10 +383,10 @@ public class DatabaseHelper
 
                 // Update the existing row with the PNG data
                 using (SQLiteCommand command = new SQLiteCommand(
-                        $"UPDATE {tableName} SET {columnName} = @imageData WHERE {columnName} IS NULL AND uniqueManaSymbol = @uniqueManaSymbol",
+                        $"UPDATE {tableName} SET {columnToUpdate} = @imageData WHERE {columnToUpdate} IS NULL AND {columnToReference} = @referenceColumn",
                         connection))
-                {
-                    command.Parameters.AddWithValue("@uniqueManaSymbol", uniqueManaSymbol);
+                {                    
+                    command.Parameters.AddWithValue("@referenceColumn", image);
                     command.Parameters.AddWithValue("@imageData", imageData);
                     command.ExecuteNonQuery();
                 }
@@ -307,7 +400,7 @@ public class DatabaseHelper
             Debug.WriteLine($"Error while updating image in table: {ex.Message}");
         }
     }
-    private static void InsertOrUpdateSymbolInTable(string value, string tableName, string columnName)
+    private static void InsertOrUpdateValueInTable(string value, string tableName, string columnName)
     {
         try
         {
@@ -315,35 +408,39 @@ public class DatabaseHelper
             {
                 connection.Open();
 
-                // Check if the symbol already exists in the table
+                // Check if the value already exists in the table
                 using (SQLiteCommand selectCommand = new(
-                    $"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @symbol",
+                    $"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @value",
                     connection))
                 {
-                    selectCommand.Parameters.AddWithValue("@symbol", value);
+                    selectCommand.Parameters.AddWithValue("@value", value);
 
                     int count = Convert.ToInt32(selectCommand.ExecuteScalar());
 
                     if (count > 0)
                     {
-                        // Symbol exists, perform an update
+                        /*
+                        // Value exists, perform an update
                         using (SQLiteCommand updateCommand = new(
-                            $"UPDATE {tableName} SET {columnName} = @symbol WHERE {columnName} = @symbol",
+                            $"UPDATE {tableName} SET {columnName} = @value WHERE {columnName} = @value",
                             connection))
                         {
-                            updateCommand.Parameters.AddWithValue("@symbol", value);
+                            updateCommand.Parameters.AddWithValue("@value", value);
                             updateCommand.ExecuteNonQuery();
+                            Debug.WriteLine($"Updated {value} in the table");
                         }
+                        */
                     }
                     else
                     {
-                        // Symbol doesn't exist, perform an insert
+                        // Value doesn't exist, perform an insert
                         using (SQLiteCommand insertCommand = new(
-                            $"INSERT INTO {tableName} ({columnName}) VALUES (@symbol)",
+                            $"INSERT INTO {tableName} ({columnName}) VALUES (@value)",
                             connection))
                         {
-                            insertCommand.Parameters.AddWithValue("@symbol", value);
+                            insertCommand.Parameters.AddWithValue("@value", value);
                             insertCommand.ExecuteNonQuery();
+                            Debug.WriteLine($"Added {value} to the table");
                         }
                     }
                 }
@@ -357,8 +454,6 @@ public class DatabaseHelper
             Debug.WriteLine($"Error during insertion or update: {ex.Message}");
         }
     }
-
-
     private static byte[] ConvertSvgToPng(string svgLink)
     {
         try
