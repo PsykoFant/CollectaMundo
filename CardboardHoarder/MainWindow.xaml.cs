@@ -79,7 +79,7 @@ namespace CardboardHoarder
                 MessageBox.Show($"Error displaying image: {ex.Message}");
             }
         }
-        public static BitmapImage ConvertByteArrayToBitmapImage(byte[] imageData)
+        public static BitmapImage? ConvertByteArrayToBitmapImage(byte[] imageData)
         {
             try
             {
@@ -103,8 +103,6 @@ namespace CardboardHoarder
 
             return null;
         }
-
-
         private void reset_grids()
         {
             GridSearchAndFilter.Visibility = Visibility.Hidden;

@@ -13,6 +13,19 @@ using System.Windows.Controls.Primitives;
 
 public class DatabaseHelper
 {
+    private static string _sqlitePath = string.Empty; // Direct initialization to satisfy CS8618
+    private static string sqlitePath
+    {
+        get
+        {
+            if (_sqlitePath == string.Empty) // Check for default value instead of null
+            {
+                _sqlitePath = Configuration["DatabaseSettings:SQLitePath"] ?? string.Empty;
+            }
+            return _sqlitePath;
+        }
+    }
+
     private static IConfiguration Configuration { get; set; }
     static DatabaseHelper()
     {
@@ -35,8 +48,7 @@ public class DatabaseHelper
                 throw new InvalidOperationException("Connection string not found in appsettings.json.");
             }
 
-            // Retrieve the SQLite database path from appsettings.json
-            string? sqlitePath = Configuration["DatabaseSettings:SQLitePath"];
+            // Retrieve the SQLite database path from appsettings.json            
 
             // Check for null and provide a default value or handle the case accordingly
             if (sqlitePath == null)
@@ -72,12 +84,9 @@ public class DatabaseHelper
     }
     public static void CheckDatabaseExistence()
     {
-        
-
         try
         {
             // Retrieve the SQLite database path from appsettings.json
-            string sqlitePath = GetSQLitePath();
             string databasePath = Path.Combine(sqlitePath, "AllPrintings.sqlite");
 
             // Check if the database file exists
@@ -227,11 +236,6 @@ public class DatabaseHelper
             connection.Close();
         }
     }
-
-
-
-
-
     // Creates a list of bitmaps for a single mana cost
     private static byte[] ProcessManaCostInput(string manaCostInput)
     {
@@ -367,12 +371,54 @@ public class DatabaseHelper
             Debug.WriteLine($"Error during insertion of uniqueManaSymbols: {ex.Message}");
         }
     }
+    // Generate a single mana symbol image from svg
+    private static byte[] ConvertSvgToPng(string svgLink)
+    {
+        try
+        {
+            string svgContent;
+
+            // Download the SVG content from the link using HttpClient
+            using (HttpClient client = new HttpClient())
+            {
+                svgContent = client.GetStringAsync(svgLink).Result;
+            }
+
+            using (var svgStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(svgContent)))
+            {
+                var svg = new SkiaSharp.Extended.Svg.SKSvg();
+                svg.Load(svgStream);
+
+                // Calculate the scaling factor to limit height to 20 pixels
+                float scaleFactor = 20f / svg.CanvasSize.Height;
+
+                // Create SKBitmap with adjusted size
+                using (var bitmap = new SKBitmap((int)(svg.CanvasSize.Width * scaleFactor), 20))
+                using (var canvas = new SKCanvas(bitmap))
+                {
+                    canvas.Clear(SKColors.Transparent);
+                    canvas.Scale(scaleFactor); // Apply scaling
+                    canvas.DrawPicture(svg.Picture); // Draw SVG
+
+                    // Save SKBitmap as PNG
+                    using (var image = SKImage.FromBitmap(bitmap))
+                    using (var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100))
+                    using (var stream = new MemoryStream())
+                    {
+                        data.SaveTo(stream);
+                        return stream.ToArray();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while converting SVG to PNG: {ex.Message}");
+            return Array.Empty<byte>(); // Return an empty byte array instead of null
+        }
+    }
 
 
-
-
-
-    
     private static void UpdateImageInTable(string image, string tableName, string columnToUpdate, string columnToReference, byte[] imageData)
     {
         try
@@ -417,21 +463,7 @@ public class DatabaseHelper
 
                     int count = Convert.ToInt32(selectCommand.ExecuteScalar());
 
-                    if (count > 0)
-                    {
-                        /*
-                        // Value exists, perform an update
-                        using (SQLiteCommand updateCommand = new(
-                            $"UPDATE {tableName} SET {columnName} = @value WHERE {columnName} = @value",
-                            connection))
-                        {
-                            updateCommand.Parameters.AddWithValue("@value", value);
-                            updateCommand.ExecuteNonQuery();
-                            Debug.WriteLine($"Updated {value} in the table");
-                        }
-                        */
-                    }
-                    else
+                    if (count == 0)
                     {
                         // Value doesn't exist, perform an insert
                         using (SQLiteCommand insertCommand = new(
@@ -454,58 +486,6 @@ public class DatabaseHelper
             Debug.WriteLine($"Error during insertion or update: {ex.Message}");
         }
     }
-    private static byte[] ConvertSvgToPng(string svgLink)
-    {
-        try
-        {
-            string svgContent;
-
-            // Download the SVG content from the link using HttpClient
-            using (HttpClient client = new HttpClient())
-            {
-                svgContent = client.GetStringAsync(svgLink).Result;
-            }
-
-            using (var svgStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(svgContent)))
-            {
-                var svg = new SkiaSharp.Extended.Svg.SKSvg();
-                svg.Load(svgStream);
-
-                // Calculate the scaling factor to limit height to 20 pixels
-                float scaleFactor = 20f / svg.CanvasSize.Height;
-
-                // Create SKBitmap with adjusted size
-                using (var bitmap = new SKBitmap((int)(svg.CanvasSize.Width * scaleFactor), 20))
-                {
-                    using (var canvas = new SKCanvas(bitmap))
-                    {
-                        canvas.Clear(SKColors.Transparent);
-
-                        // Apply scaling to the canvas
-                        canvas.Scale(scaleFactor);
-
-                        // Draw the SVG picture on the canvas
-                        canvas.DrawPicture(svg.Picture);
-                    }
-
-                    // Save SKBitmap as PNG to a memory stream
-                    using (var image = SKImage.FromBitmap(bitmap))
-                    using (var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100))
-                    using (var stream = new MemoryStream())
-                    {
-                        data.SaveTo(stream);
-                        return stream.ToArray();
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            // Handle exceptions (e.g., log, show error message, etc.)
-            Console.WriteLine($"Error while converting SVG to PNG: {ex.Message}");
-            return null; // or throw an exception if you prefer
-        }
-    }
     private static List<string> GetValuesWithNull(string tableName, string returnColumnName, string searchColumnName)
     {
         List<string> valuesWithNull = new List<string>();
@@ -523,7 +503,8 @@ public class DatabaseHelper
                 {
                     while (reader.Read())
                     {
-                        string value = reader[returnColumnName].ToString();
+                        // Check for null and use an empty string as a fallback
+                        string value = reader[returnColumnName]?.ToString() ?? string.Empty;
                         valuesWithNull.Add(value);
                     }
                 }
@@ -548,7 +529,8 @@ public class DatabaseHelper
                 {
                     while (reader.Read())
                     {
-                        string value = reader[columnName]?.ToString();
+                        // Ensures value is never null, avoiding CS8600 warning
+                        string value = reader[columnName]?.ToString() ?? string.Empty;
                         if (!string.IsNullOrEmpty(value))
                         {
                             uniqueValues.Add(value);
@@ -556,12 +538,11 @@ public class DatabaseHelper
                     }
                 }
             }
-
             connection.Close();
         }
-
         return uniqueValues;
     }
+
 }
 
 
