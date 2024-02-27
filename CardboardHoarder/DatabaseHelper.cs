@@ -200,6 +200,7 @@ public class DatabaseHelper
         GenerateManaSymbolsFromSvg();
         GenerateManaCostImages();
         GenerateSetKeyruneFromSvg();
+        
     }
     // Generates a mana cost symbol from svg retrieved from scryfall weblink
     private static void GenerateManaSymbolsFromSvg()
@@ -363,6 +364,7 @@ public class DatabaseHelper
         }
     }
     #endregion
+    // Generate set icon image
     private static void GenerateSetKeyruneFromSvg()
     {
         try
@@ -458,6 +460,67 @@ public class DatabaseHelper
         }
     }
 
+
+
+    private static void CopyColumnIfEmptyOrAddMissingRows(string targetTable, string targetColumn, string sourceTable, string sourceColumn)
+    {
+        try
+        {
+            using (SQLiteConnection connection = GetConnection())
+            {
+                connection.Open();
+
+                // Check if all values in targetTableColumn are null or empty
+                string checkQuery = $"SELECT COUNT(*) FROM {targetTable} WHERE {targetColumn} IS NOT NULL AND {targetColumn} != '';";
+
+                using (SQLiteCommand checkCommand = new SQLiteCommand(checkQuery, connection))
+                {
+                    int result = Convert.ToInt32(checkCommand.ExecuteScalar());
+
+                    // If result is 0, it means all rows are null or empty
+                    if (result == 0)
+                    {
+                        // Generate the SQL command to copy data from source to target
+                        string copyQuery = $@"
+                            BEGIN TRANSACTION;
+                            INSERT OR IGNORE INTO {targetTable} ({targetColumn})
+                            SELECT DISTINCT {sourceColumn} FROM {sourceTable};
+                            COMMIT;";
+
+                        using (SQLiteCommand copyCommand = new SQLiteCommand(copyQuery, connection))
+                        {
+                            // Execute the query
+                            copyCommand.ExecuteNonQuery();
+                            Debug.WriteLine($"Copied all rows from {sourceTable}, column {sourceColumn} to {targetTable}, targetColumn");
+                        }
+                    }
+                    // If it is not empty, copy any rows that are missing from targetTable from sourceTable
+                    else 
+                    {
+                        string copyQuery = $@"
+                            INSERT INTO {targetTable} ({targetColumn})
+                            SELECT {sourceTable}.{sourceColumn} FROM {sourceTable}
+                            LEFT JOIN {targetTable} ON {sourceTable}.{sourceColumn} = {targetTable}.{targetColumn}
+                            WHERE {targetTable}.{targetColumn} IS NULL;
+                            ";
+                                               
+                            using (SQLiteCommand command = new SQLiteCommand(copyQuery, connection))
+                            {
+                                command.ExecuteNonQuery();
+                            }
+
+                        Debug.WriteLine($"Updated missing rows in {targetTable}");
+                    }
+                }
+
+                connection.Close();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("An error occurred: " + ex.Message);
+        }
+    }
 
 
     #region Toolbox - functions used by multiple custom data functions
