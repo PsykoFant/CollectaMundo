@@ -14,11 +14,7 @@ namespace CardboardHoarder
     {
         public MainWindow()
         {
-            //DatabaseHelper.CheckDatabaseExistence();
-
-            DatabaseHelper.GenerateSetKeyruneFromSvg();
-
-
+            DatabaseHelper.CheckDatabaseExistence();            
             InitializeComponent();
             GridSearchAndFilter.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Hidden;

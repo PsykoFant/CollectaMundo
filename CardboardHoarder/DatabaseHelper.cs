@@ -199,7 +199,77 @@ public class DatabaseHelper
     {
         GenerateManaSymbolsFromSvg();
         GenerateManaCostImages();
+        GenerateSetKeyruneFromSvg();
     }
+    // Generates a mana cost symbol from svg retrieved from scryfall weblink
+    private static void GenerateManaSymbolsFromSvg()
+    {
+        try
+        {
+            List<string> uniqueManaCosts = GetUniqueValues("cards", "manaCost");
+            List<string> uniqueSymbols = new();
+
+            foreach (string manaCost in uniqueManaCosts)
+            {
+                // Use regex to match all occurrences of values between '{' and '}'
+                MatchCollection matches = Regex.Matches(manaCost, @"\{(.*?)\}");
+
+                foreach (Match match in matches)
+                {
+                    string value = match.Groups[1].Value;
+
+                    // Add to the uniqueSymbols list if not already present
+                    if (!uniqueSymbols.Contains(value))
+                    {
+                        uniqueSymbols.Add(value);
+                    }
+                }
+            }
+
+            // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
+            foreach (string symbol in uniqueSymbols)
+            {
+                InsertValueInTable(symbol, "uniqueManaSymbols", "uniqueManaSymbol");
+            }
+
+            Debug.WriteLine("Insertion of uniqueManaSymbols completed.");
+
+            // Get a list of mana symbols without image
+            List<string> symbolsWithNullImage = GetValuesWithNull("uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
+
+            // Generate the missing mana cost symbols and insert them into table uniqueManaSymbols
+            using (SQLiteConnection connection = GetConnection())
+            {
+                connection.Open();
+
+                foreach (string missingImage in symbolsWithNullImage)
+                {
+
+                    // Convert SVG to PNG using the ConvertSvgToPng function
+                    byte[] pngData = ConvertSvgToPng($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
+
+                    if (pngData.Length != 0)
+                    {
+                        // Update the 'uniqueManaSymbols' table with the PNG data
+                        UpdateImageInTable(missingImage, "uniqueManaSymbols", "manaSymbolImage", "uniqueManaSymbol", pngData);
+                        Debug.WriteLine($"Added image generated from https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
+                    }
+                    else
+                    {
+                        // Handle the case when conversion fails (e.g., log, show error message, etc.)
+                        Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {missingImage}");
+                    }
+                }
+                connection.Close();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions (e.g., log, show error message, etc.)
+            Debug.WriteLine($"Error during insertion of uniqueManaSymbols: {ex.Message}");
+        }
+    }
+    // Creates a list of bitmaps for a single mana cost
     private static void GenerateManaCostImages()
     {
         List<string> uniqueManaCosts = GetUniqueValues("cards", "manaCost");
@@ -225,7 +295,7 @@ public class DatabaseHelper
             connection.Close();
         }
     }
-    // Creates a list of bitmaps for a single mana cost
+    #region Helper functions for GenerateManaCostImages()
     private static byte[] ProcessManaCostInput(string manaCostInput)
     {
         string[] manaSymbols = manaCostInput.Trim(new char[] { '{', '}' }).Split(new string[] { "}{" }, StringSplitOptions.RemoveEmptyEntries);
@@ -292,78 +362,8 @@ public class DatabaseHelper
             }
         }
     }
-    // Generates a mana cost symbol from svg retrieved from scryfall weblink
-    private static void GenerateManaSymbolsFromSvg()
-    {
-        try
-        {
-            List<string> uniqueManaCosts = GetUniqueValues("cards", "manaCost");
-            List<string> uniqueSymbols = new();
-
-            foreach (string manaCost in uniqueManaCosts)
-            {
-                // Use regex to match all occurrences of values between '{' and '}'
-                MatchCollection matches = Regex.Matches(manaCost, @"\{(.*?)\}");
-
-                foreach (Match match in matches)
-                {
-                    string value = match.Groups[1].Value;
-
-                    // Add to the uniqueSymbols list if not already present
-                    if (!uniqueSymbols.Contains(value))
-                    {
-                        uniqueSymbols.Add(value);
-                    }
-                }
-            }
-
-            // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
-            foreach (string symbol in uniqueSymbols)
-            {
-                InsertValueInTable(symbol, "uniqueManaSymbols", "uniqueManaSymbol");
-            }
-
-            Debug.WriteLine("Insertion of uniqueManaSymbols completed.");
-
-            // Get a list of mana symbols without image
-            List<string> symbolsWithNullImage = GetValuesWithNull("uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
-
-            // Generate the missing mana cost symbols and insert them into table uniqueManaSymbols
-            using (SQLiteConnection connection = GetConnection())
-            {
-                connection.Open();
-
-                foreach (string missingImage in symbolsWithNullImage)
-                {               
-
-                    // Convert SVG to PNG using the ConvertSvgToPng function
-                    byte[] pngData = ConvertSvgToPng($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
-
-                    if (pngData.Length != 0)
-                    {
-                        // Update the 'uniqueManaSymbols' table with the PNG data
-                        UpdateImageInTable(missingImage, "uniqueManaSymbols", "manaSymbolImage", "uniqueManaSymbol", pngData);
-                        Debug.WriteLine($"Added image generated from https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
-                    }
-                    else
-                    {
-                        // Handle the case when conversion fails (e.g., log, show error message, etc.)
-                        Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {missingImage}");
-                    }
-                }
-                connection.Close();
-            }
-        }
-        catch (Exception ex)
-        {
-            // Handle exceptions (e.g., log, show error message, etc.)
-            Debug.WriteLine($"Error during insertion of uniqueManaSymbols: {ex.Message}");
-        }
-    }
-
-
-
-    public static void GenerateSetKeyruneFromSvg()
+    #endregion
+    private static void GenerateSetKeyruneFromSvg()
     {
         try
         {
@@ -457,6 +457,10 @@ public class DatabaseHelper
             Debug.WriteLine($"Error during insertion of keyRuneImages: {ex.Message}");
         }
     }
+
+
+
+    #region Toolbox - functions used by multiple custom data functions
     private static byte[] ConvertSvgToPng(string svgLink)
     {
         try
@@ -625,7 +629,7 @@ public class DatabaseHelper
         }
         return uniqueValues;
     }
-
+    #endregion
 }
 
 
