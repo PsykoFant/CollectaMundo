@@ -1,5 +1,6 @@
 ﻿using CardboardHoarder;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 using SkiaSharp;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -368,58 +369,61 @@ public class DatabaseHelper
     private static void GenerateSetKeyruneFromSvg()
     {
         try
-        {
-            // Get a list of set symbol codes
-            List<string> setCodes = GetUniqueValues("sets", "code");
-
+        {            
             // Insert setCode into the 'keyRuneImages' table if it's not already there
-            foreach (string setCode in setCodes)
-            {
-                InsertValueInTable(setCode, "keyruneImages", "setCode");
-            }
-            Debug.WriteLine("Insertion of set codes completed.");
+            CopyColumnIfEmptyOrAddMissingRows("keyruneImages", "setCode", "sets", "code");
 
-            // Get a list of setCodes without image
             List<string> setCodesWithNoImage = GetValuesWithNull("keyruneImages", "setCode", "keyruneImage");
 
             // Initialize an array of List<string> with two elements
             List<string>[] setCodesToGenerateImagesFrom = new List<string>[2];
 
+
             // Assign the first position with the list from the database
             setCodesToGenerateImagesFrom[0] = setCodesWithNoImage;
-
             setCodesToGenerateImagesFrom[1] = new List<string>();
 
             HttpClient client = new HttpClient();
+            string url = $"https://api.scryfall.com/sets/";
 
-            foreach (var setCode in setCodesToGenerateImagesFrom[0])
+            try
             {
-                string url = $"https://api.scryfall.com/sets/{setCode.ToLower()}";                
-
-                try
+                // Synchronously make a request to get all sets
+                HttpResponseMessage response = client.GetAsync(url).Result; // Synchronous call, use with caution
+                if (response.IsSuccessStatusCode)
                 {
-                    // Asynchronously get the response
-                    var response = client.GetAsync(url).Result;
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var contentString = response.Content.ReadAsStringAsync().Result;
-                        dynamic contentJson = Newtonsoft.Json.JsonConvert.DeserializeObject(contentString);
-                        string iconSvgUri = contentJson.icon_svg_uri;
+                    string jsonResponse = response.Content.ReadAsStringAsync().Result; // Synchronous call, use with caution
+                    JObject allSets = JObject.Parse(jsonResponse);
+                    JArray data = (JArray)allSets["data"];
 
-                        // Add the icon_svg_uri to the second list
-                        setCodesToGenerateImagesFrom[1].Add(iconSvgUri);
-                        Debug.WriteLine($"Successfully got an imagelink from {url}");
-                    }
-                    else
+                    foreach (string setCode in setCodesWithNoImage)
                     {
-                        setCodesToGenerateImagesFrom[1].Add("https://svgs.scryfall.io/sets/default.svg");
-                        Debug.WriteLine($"Could not get an imagelink from {url} - using link to default image");
+                        var matchingSet = data!.FirstOrDefault(x => x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
+
+                        if (matchingSet != null)
+                        {
+                            // Found a matching set, extract the SVG URI
+                            string svgUri = matchingSet["icon_svg_uri"]?.ToString() ?? "https://svgs.scryfall.io/sets/default.svg";
+                            setCodesToGenerateImagesFrom[1].Add(svgUri); // Add the found SVG URI to the list
+                        }
+                        else
+                        {
+                            // No matching set found, use the default SVG URI
+                            string defaultSvgUri = "https://svgs.scryfall.io/sets/default.svg";
+                            setCodesToGenerateImagesFrom[1].Add(defaultSvgUri); // Add the default SVG URI to the list
+                            Debug.WriteLine($"No matching setCode. Added {defaultSvgUri} to array");
+                        }
                     }
                 }
-                catch (Exception ex)
+                else
                 {
-                    Debug.WriteLine($"Error fetching SVG URI for set code {setCode}: {ex.Message}");
+                    Debug.WriteLine("Failed to retrieve set information from Scryfall.");
                 }
+            }
+            catch (Exception ex)
+            {
+                // Handle any errors that occur during the request or processing
+                Debug.WriteLine($"An error occurred: {ex.Message}");
             }
 
             // Generate the missing set images and insert them into table 'keyruneImages'
@@ -429,9 +433,9 @@ public class DatabaseHelper
 
                 for (int i = 0; i < setCodesToGenerateImagesFrom[0].Count; i++)
                 {
+
                     string setCode = setCodesToGenerateImagesFrom[0][i];
-                    string svgUri = setCodesToGenerateImagesFrom[1][i]; // Assuming this list is populated accordingly
-                    Console.WriteLine($"Set Code: {setCode}, SVG URI: {svgUri}");
+                    string svgUri = setCodesToGenerateImagesFrom[1][i]; 
 
                     // Convert SVG to PNG using the ConvertSvgToPng function
                     byte[] pngData = ConvertSvgToPng(svgUri);
@@ -446,12 +450,10 @@ public class DatabaseHelper
                     {
                         // Handle the case when conversion fails (e.g., log, show error message, etc.)
                         Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {setCode}");
-                    }
-                
+                    }                
                 }
                 connection.Close();
             }
-
         }
         catch (Exception ex)
         {
@@ -491,7 +493,7 @@ public class DatabaseHelper
                         {
                             // Execute the query
                             copyCommand.ExecuteNonQuery();
-                            Debug.WriteLine($"Copied all rows from {sourceTable}, column {sourceColumn} to {targetTable}, targetColumn");
+                            Debug.WriteLine($"Copied all rows from {sourceTable}, column {sourceColumn} to {targetTable}, {targetColumn}");
                         }
                     }
                     // If it is not empty, copy any rows that are missing from targetTable from sourceTable
