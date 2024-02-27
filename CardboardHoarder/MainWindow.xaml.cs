@@ -14,7 +14,11 @@ namespace CardboardHoarder
     {
         public MainWindow()
         {
-            DatabaseHelper.CheckDatabaseExistence();
+            //DatabaseHelper.CheckDatabaseExistence();
+
+            DatabaseHelper.GenerateSetKeyruneFromSvg();
+
+
             InitializeComponent();
             GridSearchAndFilter.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Hidden;
@@ -27,10 +31,10 @@ namespace CardboardHoarder
             try
             {
                 // Get the uniqueManaSymbol from the textBox
-                string uniqueManaSymbol = imageInput.Text;
+                string symbol = imageInput.Text;
 
                 // Query to retrieve manaSymbolImage from uniqueManaSymbols
-                string query = "SELECT manaCostImage FROM uniqueManaCostImages WHERE uniqueManaCost = @symbol";
+                string query = "SELECT keyruneImage FROM keyruneImages WHERE setCode = @symbol";
 
                 using (SQLiteConnection connection = DatabaseHelper.GetConnection())
                 {
@@ -38,14 +42,14 @@ namespace CardboardHoarder
 
                     using (SQLiteCommand command = new SQLiteCommand(query, connection))
                     {
-                        command.Parameters.AddWithValue("@symbol", uniqueManaSymbol);
+                        command.Parameters.AddWithValue("@symbol", symbol);
 
                         using (SQLiteDataReader reader = command.ExecuteReader(CommandBehavior.SequentialAccess))
                         {
                             if (reader.Read())
                             {
                                 // Get the BLOB data
-                                byte[] imageData = (byte[])reader["manaCostImage"];
+                                byte[] imageData = (byte[])reader["keyruneImage"];
 
                                 // Display the image in the testImage control
                                 DisplayImage(imageData);

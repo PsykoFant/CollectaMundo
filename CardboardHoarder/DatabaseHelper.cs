@@ -9,7 +9,7 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 public class DatabaseHelper
 {
-    private static string _sqlitePath = string.Empty; // Direct initialization to satisfy CS8618
+    private static string _sqlitePath = string.Empty; 
     private static string sqlitePath
     {
         get
@@ -21,7 +21,6 @@ public class DatabaseHelper
             return _sqlitePath;
         }
     }
-
     private static IConfiguration Configuration { get; set; }
     static DatabaseHelper()
     {
@@ -158,7 +157,7 @@ public class DatabaseHelper
                 { "uniqueManaSymbols", "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);" },
                 { "uniqueManaCostImages", "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);" },
                 { "cardImageStrings", "CREATE TABLE IF NOT EXISTS cardImageStrings (uuid VARCHAR(36) PRIMARY KEY, imageLink TEXT);" },
-                { "keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneCode TEXT, keyruneImage BLOB);" }
+                { "keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB);" }
             };
 
             // Create the tables
@@ -361,9 +360,103 @@ public class DatabaseHelper
             Debug.WriteLine($"Error during insertion of uniqueManaSymbols: {ex.Message}");
         }
     }
-    
 
 
+
+    public static void GenerateSetKeyruneFromSvg()
+    {
+        try
+        {
+            // Get a list of set symbol codes
+            List<string> setCodes = GetUniqueValues("sets", "code");
+
+            // Insert setCode into the 'keyRuneImages' table if it's not already there
+            foreach (string setCode in setCodes)
+            {
+                InsertValueInTable(setCode, "keyruneImages", "setCode");
+            }
+            Debug.WriteLine("Insertion of set codes completed.");
+
+            // Get a list of setCodes without image
+            List<string> setCodesWithNoImage = GetValuesWithNull("keyruneImages", "setCode", "keyruneImage");
+
+            // Initialize an array of List<string> with two elements
+            List<string>[] setCodesToGenerateImagesFrom = new List<string>[2];
+
+            // Assign the first position with the list from the database
+            setCodesToGenerateImagesFrom[0] = setCodesWithNoImage;
+
+            setCodesToGenerateImagesFrom[1] = new List<string>();
+
+            HttpClient client = new HttpClient();
+
+            foreach (var setCode in setCodesToGenerateImagesFrom[0])
+            {
+                string url = $"https://api.scryfall.com/sets/{setCode.ToLower()}";                
+
+                try
+                {
+                    // Asynchronously get the response
+                    var response = client.GetAsync(url).Result;
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var contentString = response.Content.ReadAsStringAsync().Result;
+                        dynamic contentJson = Newtonsoft.Json.JsonConvert.DeserializeObject(contentString);
+                        string iconSvgUri = contentJson.icon_svg_uri;
+
+                        // Add the icon_svg_uri to the second list
+                        setCodesToGenerateImagesFrom[1].Add(iconSvgUri);
+                        Debug.WriteLine($"Successfully got an imagelink from {url}");
+                    }
+                    else
+                    {
+                        setCodesToGenerateImagesFrom[1].Add("https://svgs.scryfall.io/sets/default.svg");
+                        Debug.WriteLine($"Could not get an imagelink from {url} - using link to default image");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error fetching SVG URI for set code {setCode}: {ex.Message}");
+                }
+            }
+
+            // Generate the missing set images and insert them into table 'keyruneImages'
+            using (SQLiteConnection connection = GetConnection())
+            {
+                connection.Open();
+
+                for (int i = 0; i < setCodesToGenerateImagesFrom[0].Count; i++)
+                {
+                    string setCode = setCodesToGenerateImagesFrom[0][i];
+                    string svgUri = setCodesToGenerateImagesFrom[1][i]; // Assuming this list is populated accordingly
+                    Console.WriteLine($"Set Code: {setCode}, SVG URI: {svgUri}");
+
+                    // Convert SVG to PNG using the ConvertSvgToPng function
+                    byte[] pngData = ConvertSvgToPng(svgUri);
+
+                    if (pngData.Length != 0)
+                    {
+                        // Update the 'uniqueManaSymbols' table with the PNG data
+                        UpdateImageInTable(setCode, "keyruneImages", "keyruneImage", "setCode", pngData);
+                        Debug.WriteLine($"Generated keyruneImage from {svgUri}");
+                    }
+                    else
+                    {
+                        // Handle the case when conversion fails (e.g., log, show error message, etc.)
+                        Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {setCode}");
+                    }
+                
+                }
+                connection.Close();
+            }
+
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions (e.g., log, show error message, etc.)
+            Debug.WriteLine($"Error during insertion of keyRuneImages: {ex.Message}");
+        }
+    }
     private static byte[] ConvertSvgToPng(string svgLink)
     {
         try
@@ -409,7 +502,7 @@ public class DatabaseHelper
             return Array.Empty<byte>(); // Return an empty byte array instead of null
         }
     }
-    private static void UpdateImageInTable(string image, string tableName, string columnToUpdate, string columnToReference, byte[] imageData)
+    private static void UpdateImageInTable(string imageToUpdate, string tableName, string columnToUpdate, string columnToReference, byte[] imageData)
     {
         try
         {
@@ -422,7 +515,7 @@ public class DatabaseHelper
                         $"UPDATE {tableName} SET {columnToUpdate} = @imageData WHERE {columnToUpdate} IS NULL AND {columnToReference} = @referenceColumn",
                         connection))
                 {                    
-                    command.Parameters.AddWithValue("@referenceColumn", image);
+                    command.Parameters.AddWithValue("@referenceColumn", imageToUpdate);
                     command.Parameters.AddWithValue("@imageData", imageData);
                     command.ExecuteNonQuery();
                 }
