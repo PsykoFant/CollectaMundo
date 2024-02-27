@@ -1,6 +1,5 @@
 ﻿using CardboardHoarder;
 using Microsoft.Extensions.Configuration;
-using ServiceStack;
 using SkiaSharp;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -8,9 +7,6 @@ using System.Drawing;
 using System.IO;
 using System.Net.Http;
 using System.Text.RegularExpressions;
-using System.Windows.Controls.Primitives;
-
-
 public class DatabaseHelper
 {
     private static string _sqlitePath = string.Empty; // Direct initialization to satisfy CS8618
@@ -76,11 +72,6 @@ public class DatabaseHelper
             Debug.WriteLine($"Error: {ex.Message}");
             throw;
         }
-    }
-    private static string GetSQLitePath()
-    {
-        // Retrieve the SQLite database path from appsettings.json
-        return Configuration["DatabaseSettings:SQLitePath"] ?? string.Empty;
     }
     public static void CheckDatabaseExistence()
     {
@@ -167,7 +158,7 @@ public class DatabaseHelper
                 { "uniqueManaSymbols", "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);" },
                 { "uniqueManaCostImages", "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);" },
                 { "cardImageStrings", "CREATE TABLE IF NOT EXISTS cardImageStrings (uuid VARCHAR(36) PRIMARY KEY, imageLink TEXT);" },
-                { "keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyRuneImage BLOB);" }
+                { "keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneCode TEXT, keyruneImage BLOB);" }
             };
 
             // Create the tables
@@ -217,7 +208,7 @@ public class DatabaseHelper
         // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
         foreach (string manaCost in uniqueManaCosts)
         {
-            InsertOrUpdateValueInTable(manaCost, "uniqueManaCostImages", "uniqueManaCost");
+            InsertValueInTable(manaCost, "uniqueManaCostImages", "uniqueManaCost");
         }
 
         List<string> manaCostsWithNullImage = GetValuesWithNull("uniqueManaCostImages", "uniqueManaCost", "manaCostImage");
@@ -229,9 +220,8 @@ public class DatabaseHelper
 
             foreach (string missingImage in manaCostsWithNullImage)
             {
-                Debug.WriteLine($"{missingImage}");
-
                 UpdateImageInTable(missingImage, "uniqueManaCostImages", "manaCostImage", "uniqueManaCost", ProcessManaCostInput(missingImage));
+                Debug.WriteLine($"Added image for the mana cost {missingImage}");
             }
             connection.Close();
         }
@@ -331,7 +321,7 @@ public class DatabaseHelper
             // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
             foreach (string symbol in uniqueSymbols)
             {
-                InsertOrUpdateValueInTable(symbol, "uniqueManaSymbols", "uniqueManaSymbol");
+                InsertValueInTable(symbol, "uniqueManaSymbols", "uniqueManaSymbol");
             }
 
             Debug.WriteLine("Insertion of uniqueManaSymbols completed.");
@@ -345,16 +335,16 @@ public class DatabaseHelper
                 connection.Open();
 
                 foreach (string missingImage in symbolsWithNullImage)
-                {
-                    Debug.WriteLine($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
+                {               
 
                     // Convert SVG to PNG using the ConvertSvgToPng function
                     byte[] pngData = ConvertSvgToPng($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
 
-                    if (pngData != null)
+                    if (pngData.Length != 0)
                     {
                         // Update the 'uniqueManaSymbols' table with the PNG data
                         UpdateImageInTable(missingImage, "uniqueManaSymbols", "manaSymbolImage", "uniqueManaSymbol", pngData);
+                        Debug.WriteLine($"Added image generated from https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
                     }
                     else
                     {
@@ -371,7 +361,9 @@ public class DatabaseHelper
             Debug.WriteLine($"Error during insertion of uniqueManaSymbols: {ex.Message}");
         }
     }
-    // Generate a single mana symbol image from svg
+    
+
+
     private static byte[] ConvertSvgToPng(string svgLink)
     {
         try
@@ -417,8 +409,6 @@ public class DatabaseHelper
             return Array.Empty<byte>(); // Return an empty byte array instead of null
         }
     }
-
-
     private static void UpdateImageInTable(string image, string tableName, string columnToUpdate, string columnToReference, byte[] imageData)
     {
         try
@@ -446,7 +436,7 @@ public class DatabaseHelper
             Debug.WriteLine($"Error while updating image in table: {ex.Message}");
         }
     }
-    private static void InsertOrUpdateValueInTable(string value, string tableName, string columnName)
+    private static void InsertValueInTable(string value, string tableName, string columnName)
     {
         try
         {
