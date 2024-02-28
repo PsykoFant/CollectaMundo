@@ -22,6 +22,8 @@ public class DatabaseHelper
             return _sqlitePath;
         }
     }
+
+    private static SQLiteConnection? connection;
     private static IConfiguration Configuration { get; set; }
     static DatabaseHelper()
     {
@@ -31,6 +33,7 @@ public class DatabaseHelper
 
         Configuration = builder.Build();
     }
+    // Den her bliver kun brugt af debug-felter på mainwindow
     public static SQLiteConnection GetConnection()
     {
         try
@@ -89,8 +92,13 @@ public class DatabaseHelper
 
                 Debug.WriteLine($"The database file '{databasePath}' does not exist.");
                 DownloadDatabaseIfNotExists(databasePath);
+
+                OpenConnection();
+
                 SetupDatabase(databasePath);
-                GenerateCustomDbData();
+                GenerateManaSymbolsFromSvg();
+                GenerateManaCostImages();
+                GenerateSetKeyruneFromSvg();
 
                 // Close the DownloadWindow
                 downloadWindow.Close();
@@ -101,6 +109,10 @@ public class DatabaseHelper
         {
             // Handle exceptions (e.g., log, show error message, etc.)
             Debug.WriteLine($"Error while checking database existence: {ex.Message}");
+        }
+        finally
+        {
+            CloseConnection();
         }
     }
     #region Download card database and create tables for custom data
@@ -141,13 +153,8 @@ public class DatabaseHelper
     }
     private static void SetupDatabase(string databasePath)
     {
-        // Open the downloaded database
-        using (SQLiteConnection connection = GetConnection())
-        {
-            connection.Open();
-
-            // Define tables to create
-            Dictionary<string, string> tables = new()
+        // Define tables to create
+        Dictionary<string, string> tables = new()
             {
                 { "uniqueManaSymbols", "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);" },
                 { "uniqueManaCostImages", "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);" },
@@ -155,19 +162,19 @@ public class DatabaseHelper
                 { "keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB);" }
             };
 
-            // Create the tables
-            foreach (KeyValuePair<string, string> item in tables)
+        // Create the tables
+        foreach (KeyValuePair<string, string> item in tables)
+        {
+            using (SQLiteCommand command = new(item.Value, connection))
             {
-                using (SQLiteCommand command = new(item.Value, connection))
-                {
-                    command.ExecuteNonQuery();
-                }
-
-                Debug.WriteLine($"Created table for {item.Key}.");
+                command.ExecuteNonQuery();
             }
 
-            // Define indices to create
-            Dictionary<string, string> indices = new()
+            Debug.WriteLine($"Created table for {item.Key}.");
+        }
+
+        // Define indices to create
+        Dictionary<string, string> indices = new()
             {
                 { "uniqueManaSymbols", "CREATE INDEX IF NOT EXISTS uniqueManaSymbols_uniqueManaSymbol ON uniqueManaSymbols(uniqueManaSymbol);" },
                 { "uniqueManaCostImages", "CREATE INDEX IF NOT EXISTS uniqueManaCostImages_uniqueManaCost ON uniqueManaCostImages(uniqueManaCost);" },
@@ -175,28 +182,20 @@ public class DatabaseHelper
                 { "keyruneImages", "CREATE INDEX IF NOT EXISTS keyruneImages_setCode ON keyruneImages(setCode);" },
             };
 
-            // Create the indices
-            foreach (KeyValuePair<string, string> item in indices)
+        // Create the indices
+        foreach (KeyValuePair<string, string> item in indices)
+        {
+            using (SQLiteCommand command = new(item.Value, connection))
             {
-                using (SQLiteCommand command = new(item.Value, connection))
-                {
-                    command.ExecuteNonQuery();
-                }
-
-                Debug.WriteLine($"Created index for {item.Key}.");
+                command.ExecuteNonQuery();
             }
 
-            connection.Close();
+            Debug.WriteLine($"Created index for {item.Key}.");
         }
+
     }
     #endregion
-    private static void GenerateCustomDbData()
-    {
-        GenerateManaSymbolsFromSvg();
-        GenerateManaCostImages();
-        GenerateSetKeyruneFromSvg();
         
-    }
     // Generates a mana cost symbol from svg retrieved from scryfall weblink
     private static void GenerateManaSymbolsFromSvg()
     {
@@ -234,29 +233,23 @@ public class DatabaseHelper
             List<string> symbolsWithNullImage = GetValuesWithNull("uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
 
             // Generate the missing mana cost symbols and insert them into table uniqueManaSymbols
-            using (SQLiteConnection connection = GetConnection())
+            foreach (string missingImage in symbolsWithNullImage)
             {
-                connection.Open();
 
-                foreach (string missingImage in symbolsWithNullImage)
+                // Convert SVG to PNG using the ConvertSvgToPng function
+                byte[] pngData = ConvertSvgToPng($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
+
+                if (pngData.Length != 0)
                 {
-
-                    // Convert SVG to PNG using the ConvertSvgToPng function
-                    byte[] pngData = ConvertSvgToPng($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
-
-                    if (pngData.Length != 0)
-                    {
-                        // Update the 'uniqueManaSymbols' table with the PNG data
-                        UpdateImageInTable(missingImage, "uniqueManaSymbols", "manaSymbolImage", "uniqueManaSymbol", pngData);
-                        Debug.WriteLine($"Added image generated from https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
-                    }
-                    else
-                    {
-                        // Handle the case when conversion fails (e.g., log, show error message, etc.)
-                        Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {missingImage}");
-                    }
+                    // Update the 'uniqueManaSymbols' table with the PNG data
+                    UpdateImageInTable(missingImage, "uniqueManaSymbols", "manaSymbolImage", "uniqueManaSymbol", pngData);
+                    Debug.WriteLine($"Added image generated from https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
                 }
-                connection.Close();
+                else
+                {
+                    // Handle the case when conversion fails (e.g., log, show error message, etc.)
+                    Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {missingImage}");
+                }
             }
         }
         catch (Exception ex)
@@ -279,30 +272,23 @@ public class DatabaseHelper
         List<string> manaCostsWithNullImage = GetValuesWithNull("uniqueManaCostImages", "uniqueManaCost", "manaCostImage");
 
         // Generate the missing mana cost images and insert them into table uniqueManaCostImages
-        using (SQLiteConnection connection = GetConnection())
+        foreach (string missingImage in manaCostsWithNullImage)
         {
-            connection.Open();
-
-            foreach (string missingImage in manaCostsWithNullImage)
-            {
-                UpdateImageInTable(missingImage, "uniqueManaCostImages", "manaCostImage", "uniqueManaCost", ProcessManaCostInput(missingImage));
-                Debug.WriteLine($"Added image for the mana cost {missingImage}");
-            }
-            connection.Close();
+            UpdateImageInTable(missingImage, "uniqueManaCostImages", "manaCostImage", "uniqueManaCost", ProcessManaCostInput(missingImage));
+            Debug.WriteLine($"Added image for the mana cost {missingImage}");
         }
     }
     #region Helper functions for GenerateManaCostImages()
     private static byte[] ProcessManaCostInput(string manaCostInput)
     {
-        string[] manaSymbols = manaCostInput.Trim(new char[] { '{', '}' }).Split(new string[] { "}{" }, StringSplitOptions.RemoveEmptyEntries);
         List<Bitmap> manaSymbolImage = new List<Bitmap>();
 
-        foreach (string symbol in manaSymbols)
+        try
         {
-            using (SQLiteConnection connection = GetConnection())
-            {
-                connection.Open();
+            string[] manaSymbols = manaCostInput.Trim(new char[] { '{', '}' }).Split(new string[] { "}{" }, StringSplitOptions.RemoveEmptyEntries);
 
+            foreach (string symbol in manaSymbols)
+            {
                 using (SQLiteCommand command = new SQLiteCommand(
                         $"SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol",
                         connection))
@@ -322,12 +308,16 @@ public class DatabaseHelper
                         }
                     }
                 }
-                connection.Close();
             }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"An error occurred while processing mana cost input: {ex.Message}");
         }
 
         return CombineImages(manaSymbolImage);
     }
+
     // Combine list of mana cost bitmaps into a single png
     private static byte[] CombineImages(List<Bitmap> images)
     {
@@ -414,39 +404,34 @@ public class DatabaseHelper
                     Debug.WriteLine("Failed to retrieve set information from Scryfall.");
                 }
             }
+
             catch (Exception ex)
             {
                 // Handle any errors that occur during the request or processing
-                Debug.WriteLine($"An error occurred: {ex.Message}");
+                Debug.WriteLine($"An error occurred while trying to get set information from scryfall: {ex.Message}");
             }
 
             // Generate the missing set images and insert them into table 'keyruneImages'
-            using (SQLiteConnection connection = GetConnection())
+            for (int i = 0; i < setCodesToGenerateImagesFrom[0].Count; i++)
             {
-                connection.Open();
 
-                for (int i = 0; i < setCodesToGenerateImagesFrom[0].Count; i++)
+                string setCode = setCodesToGenerateImagesFrom[0][i];
+                string svgUri = setCodesToGenerateImagesFrom[1][i];
+
+                // Convert SVG to PNG using the ConvertSvgToPng function
+                byte[] pngData = ConvertSvgToPng(svgUri);
+
+                if (pngData.Length != 0)
                 {
-
-                    string setCode = setCodesToGenerateImagesFrom[0][i];
-                    string svgUri = setCodesToGenerateImagesFrom[1][i]; 
-
-                    // Convert SVG to PNG using the ConvertSvgToPng function
-                    byte[] pngData = ConvertSvgToPng(svgUri);
-
-                    if (pngData.Length != 0)
-                    {
-                        // Update the 'uniqueManaSymbols' table with the PNG data
-                        UpdateImageInTable(setCode, "keyruneImages", "keyruneImage", "setCode", pngData);
-                        Debug.WriteLine($"Generated keyruneImage from {svgUri}");
-                    }
-                    else
-                    {
-                        // Handle the case when conversion fails (e.g., log, show error message, etc.)
-                        Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {setCode}");
-                    }                
+                    // Update the 'uniqueManaSymbols' table with the PNG data
+                    UpdateImageInTable(setCode, "keyruneImages", "keyruneImage", "setCode", pngData);
+                    Debug.WriteLine($"Generated keyruneImage from {svgUri}");
                 }
-                connection.Close();
+                else
+                {
+                    // Handle the case when conversion fails (e.g., log, show error message, etc.)
+                    Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {setCode}");
+                }
             }
         }
         catch (Exception ex)
@@ -456,70 +441,39 @@ public class DatabaseHelper
         }
     }
 
-
-
-    private static void CopyColumnIfEmptyOrAddMissingRows(string targetTable, string targetColumn, string sourceTable, string sourceColumn)
+    #region Toolbox
+    public static void OpenConnection()
     {
-        try
+        if (connection == null)
         {
-            using (SQLiteConnection connection = GetConnection())
+            string connectionString = Configuration.GetConnectionString("SQLiteConnection");
+            if (string.IsNullOrEmpty(connectionString))
             {
-                connection.Open();
-
-                // Check if all values in targetTableColumn are null or empty
-                string checkQuery = $"SELECT COUNT(*) FROM {targetTable} WHERE {targetColumn} IS NOT NULL AND {targetColumn} != '';";
-
-                using (SQLiteCommand checkCommand = new SQLiteCommand(checkQuery, connection))
-                {
-                    int result = Convert.ToInt32(checkCommand.ExecuteScalar());
-
-                    // If result is 0, it means all rows are null or empty
-                    if (result == 0)
-                    {
-                        // Generate the SQL command to copy data from source to target
-                        string copyQuery = $@"
-                            BEGIN TRANSACTION;
-                            INSERT OR IGNORE INTO {targetTable} ({targetColumn})
-                            SELECT DISTINCT {sourceColumn} FROM {sourceTable};
-                            COMMIT;";
-
-                        using (SQLiteCommand copyCommand = new SQLiteCommand(copyQuery, connection))
-                        {
-                            // Execute the query
-                            copyCommand.ExecuteNonQuery();
-                            Debug.WriteLine($"Copied all rows from {sourceTable}, column {sourceColumn} to {targetTable}, {targetColumn}");
-                        }
-                    }
-                    // If it is not empty, copy any rows that are missing from targetTable from sourceTable
-                    else 
-                    {
-                        string copyQuery = $@"
-                            INSERT INTO {targetTable} ({targetColumn})
-                            SELECT {sourceTable}.{sourceColumn} FROM {sourceTable}
-                            LEFT JOIN {targetTable} ON {sourceTable}.{sourceColumn} = {targetTable}.{targetColumn}
-                            WHERE {targetTable}.{targetColumn} IS NULL;
-                            ";
-                                               
-                            using (SQLiteCommand command = new SQLiteCommand(copyQuery, connection))
-                            {
-                                command.ExecuteNonQuery();
-                            }
-
-                        Debug.WriteLine($"Updated missing rows in {targetTable}");
-                    }
-                }
-
-                connection.Close();
+                throw new InvalidOperationException("Connection string not found in appsettings.json.");
             }
+
+            if (string.IsNullOrEmpty(sqlitePath))
+            {
+                throw new InvalidOperationException("SQLite database path not found in appsettings.json.");
+            }
+
+            string fullConnectionString = connectionString.Replace("{SQLitePath}", sqlitePath);
+            connection = new SQLiteConnection(fullConnectionString);
         }
-        catch (Exception ex)
+
+        if (connection.State != System.Data.ConnectionState.Open)
         {
-            Console.WriteLine("An error occurred: " + ex.Message);
+            connection.Open();
         }
     }
-
-
-    #region Toolbox - functions used by multiple custom data functions
+    public static void CloseConnection()
+    {
+        if (connection != null && connection.State == System.Data.ConnectionState.Open)
+        {
+            connection.Close();
+            connection.Dispose();
+        }
+    }
     private static byte[] ConvertSvgToPng(string svgLink)
     {
         try
@@ -565,25 +519,70 @@ public class DatabaseHelper
             return Array.Empty<byte>(); // Return an empty byte array instead of null
         }
     }
+    private static void CopyColumnIfEmptyOrAddMissingRows(string targetTable, string targetColumn, string sourceTable, string sourceColumn)
+    {
+        try
+        {
+            // Check if all values in targetTableColumn are null or empty
+            string checkQuery = $"SELECT COUNT(*) FROM {targetTable} WHERE {targetColumn} IS NOT NULL AND {targetColumn} != '';";
+
+            using (SQLiteCommand checkCommand = new SQLiteCommand(checkQuery, connection))
+            {
+                int result = Convert.ToInt32(checkCommand.ExecuteScalar());
+
+                // If result is 0, it means all rows are null or empty
+                if (result == 0)
+                {
+                    // Generate the SQL command to copy data from source to target
+                    string copyQuery = $@"
+                            BEGIN TRANSACTION;
+                            INSERT OR IGNORE INTO {targetTable} ({targetColumn})
+                            SELECT DISTINCT {sourceColumn} FROM {sourceTable};
+                            COMMIT;";
+
+                    using (SQLiteCommand copyCommand = new SQLiteCommand(copyQuery, connection))
+                    {
+                        // Execute the query
+                        copyCommand.ExecuteNonQuery();
+                        Debug.WriteLine($"Copied all rows from {sourceTable}, column {sourceColumn} to {targetTable}, {targetColumn}");
+                    }
+                }
+                // If it is not empty, copy any rows that are missing from targetTable from sourceTable
+                else
+                {
+                    string copyQuery = $@"
+                            INSERT INTO {targetTable} ({targetColumn})
+                            SELECT {sourceTable}.{sourceColumn} FROM {sourceTable}
+                            LEFT JOIN {targetTable} ON {sourceTable}.{sourceColumn} = {targetTable}.{targetColumn}
+                            WHERE {targetTable}.{targetColumn} IS NULL;
+                            ";
+
+                    using (SQLiteCommand command = new SQLiteCommand(copyQuery, connection))
+                    {
+                        command.ExecuteNonQuery();
+                    }
+
+                    Debug.WriteLine($"Updated missing rows in {targetTable}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("An error occurred: " + ex.Message);
+        }
+    }
     private static void UpdateImageInTable(string imageToUpdate, string tableName, string columnToUpdate, string columnToReference, byte[] imageData)
     {
         try
         {
-            using (SQLiteConnection connection = GetConnection())
+            // Update the existing row with the PNG data                
+            using (SQLiteCommand command = new SQLiteCommand(
+                            $"UPDATE {tableName} SET {columnToUpdate} = @imageData WHERE {columnToUpdate} IS NULL AND {columnToReference} = @referenceColumn",
+                            connection))
             {
-                connection.Open();
-
-                // Update the existing row with the PNG data
-                using (SQLiteCommand command = new SQLiteCommand(
-                        $"UPDATE {tableName} SET {columnToUpdate} = @imageData WHERE {columnToUpdate} IS NULL AND {columnToReference} = @referenceColumn",
-                        connection))
-                {                    
-                    command.Parameters.AddWithValue("@referenceColumn", imageToUpdate);
-                    command.Parameters.AddWithValue("@imageData", imageData);
-                    command.ExecuteNonQuery();
-                }
-
-                connection.Close();
+                command.Parameters.AddWithValue("@referenceColumn", imageToUpdate);
+                command.Parameters.AddWithValue("@imageData", imageData);
+                command.ExecuteNonQuery();
             }
         }
         catch (Exception ex)
@@ -596,50 +595,39 @@ public class DatabaseHelper
     {
         try
         {
-            using (SQLiteConnection connection = GetConnection())
+            // Check if the value already exists in the table
+            using (SQLiteCommand selectCommand = new(
+                $"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @value",
+                connection))
             {
-                connection.Open();
+                selectCommand.Parameters.AddWithValue("@value", value);
 
-                // Check if the value already exists in the table
-                using (SQLiteCommand selectCommand = new(
-                    $"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @value",
-                    connection))
+                int count = Convert.ToInt32(selectCommand.ExecuteScalar());
+
+                if (count == 0)
                 {
-                    selectCommand.Parameters.AddWithValue("@value", value);
-
-                    int count = Convert.ToInt32(selectCommand.ExecuteScalar());
-
-                    if (count == 0)
+                    // Value doesn't exist, perform an insert
+                    using (SQLiteCommand insertCommand = new(
+                        $"INSERT INTO {tableName} ({columnName}) VALUES (@value)",
+                        connection))
                     {
-                        // Value doesn't exist, perform an insert
-                        using (SQLiteCommand insertCommand = new(
-                            $"INSERT INTO {tableName} ({columnName}) VALUES (@value)",
-                            connection))
-                        {
-                            insertCommand.Parameters.AddWithValue("@value", value);
-                            insertCommand.ExecuteNonQuery();
-                            Debug.WriteLine($"Added {value} to the table");
-                        }
+                        insertCommand.Parameters.AddWithValue("@value", value);
+                        insertCommand.ExecuteNonQuery();
+                        Debug.WriteLine($"Added {value} to the table");
                     }
                 }
-
-                connection.Close();
             }
         }
         catch (Exception ex)
         {
-            // Handle exceptions (e.g., log, show error message, etc.)
             Debug.WriteLine($"Error during insertion or update: {ex.Message}");
         }
     }
     private static List<string> GetValuesWithNull(string tableName, string returnColumnName, string searchColumnName)
     {
         List<string> valuesWithNull = new List<string>();
-
-        using (SQLiteConnection connection = GetConnection())
+        try
         {
-            connection.Open();
-
             // Retrieve values where specified column is null
             string query = $"SELECT {returnColumnName} FROM {tableName} WHERE {searchColumnName} IS NULL";
 
@@ -656,26 +644,28 @@ public class DatabaseHelper
                 }
             }
         }
-
+        catch (Exception ex)
+        {
+            // Handle or log the exception as needed
+            Debug.WriteLine($"Error retrieving values with null: {ex.Message}");
+            // Optionally, rethrow or handle the exception depending on your error handling policy
+        }
         return valuesWithNull;
     }
     private static List<string> GetUniqueValues(string tableName, string columnName)
     {
-        List<string> uniqueValues = new();
+        List<string> uniqueValues = new List<string>();
 
-        using (SQLiteConnection connection = GetConnection())
+        try
         {
-            connection.Open();
-
             string query = $"SELECT DISTINCT {columnName} FROM {tableName};";
 
-            using (SQLiteCommand command = new(query, connection))
+            using (SQLiteCommand command = new SQLiteCommand(query, connection))
             {
                 using (SQLiteDataReader reader = command.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        // Ensures value is never null, avoiding CS8600 warning
                         string value = reader[columnName]?.ToString() ?? string.Empty;
                         if (!string.IsNullOrEmpty(value))
                         {
@@ -684,11 +674,17 @@ public class DatabaseHelper
                     }
                 }
             }
-            connection.Close();
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"An error occurred while fetching unique values: {ex.Message}");
+        }
+
         return uniqueValues;
     }
+
     #endregion
+
 }
 
 

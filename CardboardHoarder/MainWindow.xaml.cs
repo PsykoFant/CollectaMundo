@@ -112,9 +112,6 @@ namespace CardboardHoarder
                     query = "SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol";
                     field = "manaSymbolImage";
                 }
-
-
-
                 using (SQLiteConnection connection = DatabaseHelper.GetConnection())
                 {
                     connection.Open();
