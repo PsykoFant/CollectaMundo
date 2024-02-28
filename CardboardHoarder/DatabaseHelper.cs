@@ -88,7 +88,8 @@ public class DatabaseHelper
                 downloadWindow.Show();
 
                 Debug.WriteLine($"The database file '{databasePath}' does not exist.");
-                DownloadDatabaseIfNotExists();
+                DownloadDatabaseIfNotExists(databasePath);
+                SetupDatabase(databasePath);
                 GenerateCustomDbData();
 
                 // Close the DownloadWindow
@@ -103,14 +104,10 @@ public class DatabaseHelper
         }
     }
     #region Download card database and create tables for custom data
-    public static void DownloadDatabaseIfNotExists()
+    public static void DownloadDatabaseIfNotExists(string databasePath)
     {
         try
         {
-            // Retrieve the SQLite database path from appsettings.json
-            string sqlitePath = Configuration["DatabaseSettings:SQLitePath"] ?? "defaultPath";
-            string databasePath = Path.Combine(sqlitePath, "AllPrintings.sqlite");
-
             // Check if the database file exists
             if (!File.Exists(databasePath))
             {
@@ -128,10 +125,7 @@ public class DatabaseHelper
                     File.WriteAllBytes(databasePath, fileContent);
                 }
 
-                Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
-
-                // Setup the downloaded database
-                SetupDatabase(databasePath);
+                Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");                
             }
             else
             {
