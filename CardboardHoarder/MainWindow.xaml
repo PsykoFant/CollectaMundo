@@ -33,7 +33,7 @@
             <TextBox x:Name="manaSymbolTextBox" HorizontalAlignment="Left" Margin="635,59,0,0" TextWrapping="Wrap" Text="G/U/P" VerticalAlignment="Top" Width="120"/>
             <Image x:Name="manaSymbolImageTester" HorizontalAlignment="Left" Height="29" Margin="672,96,0,0" VerticalAlignment="Top" Width="44"/>
             <Button Content="Check mana symbol image" HorizontalAlignment="Left" Margin="607,154,0,0" VerticalAlignment="Top" Width="176" Click="Button_Click_2"/>
-            <TextBox x:Name="statusTextBox" HorizontalAlignment="Left" Margin="464,195,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
+            <TextBox x:Name="statusTextBox" HorizontalAlignment="Left" Margin="369,195,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="251"/>
 
         </Grid>
         <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="36" Margin="0,48,0,0" VerticalAlignment="Top" Width="138" d:IsHidden="True">

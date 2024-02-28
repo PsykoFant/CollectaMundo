@@ -53,13 +53,15 @@ public class DatabaseHelper
             if (!File.Exists(databasePath))
             {
 
-                await DownloadDatabaseIfNotExistsAsync(databasePath);
-
-                    /*
-                OpenConnection(); // Assuming this remains synchronous as per your requirement
-
+                await DownloadDatabaseIfNotExistsAsync(databasePath);                    
+                OpenConnection();
                 await SetupDatabaseAsync(databasePath);
+
+                /*
                 await GenerateManaSymbolsFromSvgAsync();
+
+
+                StatusMessageUpdated?.Invoke("Downloading database");
 
                 // Now run the last two functions in parallel
                 var generateManaCostImagesTask = GenerateManaCostImagesAsync();
@@ -81,9 +83,7 @@ public class DatabaseHelper
     }
     #region Download card database and create tables for custom data
     private static async Task DownloadDatabaseIfNotExistsAsync(string databasePath)
-    {
-        
-        
+    {   
         try
         {            
             // Check if the database file exists
@@ -105,7 +105,6 @@ public class DatabaseHelper
                 }
 
                 Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
-                StatusMessageUpdated?.Invoke("Download complete");
             }
             else
             {
@@ -121,6 +120,8 @@ public class DatabaseHelper
     }
     private static async Task SetupDatabaseAsync(string databasePath)
     {
+
+        StatusMessageUpdated?.Invoke("Creating custom tables");
         // Define tables to create
         Dictionary<string, string> tables = new()
             {

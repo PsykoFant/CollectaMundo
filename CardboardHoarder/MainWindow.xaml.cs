@@ -25,10 +25,16 @@ namespace CardboardHoarder
 
             DatabaseHelper.StatusMessageUpdated += UpdateStatusTextBox;
 
-            DatabaseHelper.CheckDatabaseExistenceAsync();
+            PrepareSystem();
 
-                        
-            //LoadData();
+
+        }
+
+        private async Task PrepareSystem()
+        {
+            await DatabaseHelper.CheckDatabaseExistenceAsync();
+
+            await LoadData();
         }
 
         private void UpdateStatusTextBox(string message)
@@ -89,13 +95,17 @@ namespace CardboardHoarder
             }
         }
         */
-        private void LoadData()
+
+        private static SQLiteConnection? connection;
+        private async Task LoadData()
         {
-            using (SQLiteConnection connection = DatabaseHelper.GetConnection())
-            {
+            Debug.WriteLine("Den her skal ikke vises før til sidst!!!!");
+            
+            DatabaseHelper.OpenConnection();
+
                 try
                 {
-                    connection.Open();
+                    
                     string query = "SELECT name, SetCode FROM cards"; // Adjust the query accordingly
                     SQLiteCommand command = new SQLiteCommand(query, connection);
 
@@ -113,17 +123,14 @@ namespace CardboardHoarder
                 catch (Exception ex)
                 {
                     // Handle exceptions (e.g., log, show error message, etc.)
-                    Console.WriteLine($"Error while loading data: {ex.Message}");
+                    Debug.WriteLine($"Error while loading data: {ex.Message}");
                 }
                 finally
                 {
-                    // Ensure the connection is closed in the finally block
-                    if (connection.State == ConnectionState.Open)
-                    {
-                        connection.Close();
-                    }
+                    DatabaseHelper.CloseConnection();
                 }
-            }
+
+            
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
