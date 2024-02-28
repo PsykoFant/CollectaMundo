@@ -1,4 +1,6 @@
 ﻿using System.Windows;
+using System;
+using System.Diagnostics;
 
 namespace CardboardHoarder
 {
@@ -6,7 +8,9 @@ namespace CardboardHoarder
     {
         public DownloadWindow()
         {
-            InitializeComponent();
+            InitializeComponent();            
         }
+
+
     }
 }

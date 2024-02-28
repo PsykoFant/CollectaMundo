@@ -1,7 +1,11 @@
-﻿using System.Data;
+﻿using ServiceStack;
+using ServiceStack.Messaging;
+using System.Data;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Net.Http;
 using System.Windows;
 using System.Windows.Media.Imaging;
 
@@ -15,12 +19,25 @@ namespace CardboardHoarder
     {
         public MainWindow()
         {
-            DatabaseHelper.CheckDatabaseExistence();            
             InitializeComponent();
             GridSearchAndFilter.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Hidden;
-            LoadData();
-        }        
+
+            DatabaseHelper.StatusMessageUpdated += UpdateStatusTextBox;
+
+            DatabaseHelper.CheckDatabaseExistenceAsync();
+
+                        
+            //LoadData();
+        }
+
+        private void UpdateStatusTextBox(string message)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                statusTextBox.Text = message;
+            });
+        }
 
         private void reset_grids()
         {
@@ -38,7 +55,40 @@ namespace CardboardHoarder
             GridMyCollection.Visibility = Visibility.Visible;
         }
 
+        /*
+        private async Task DownloadDatabaseIfNotExistsAsync()
+        {
+            statusTextBox.Text = "Starting download...";
 
+            try
+            {
+                string databasePath = Path.Combine("c:/code/AllPrintings/", "AllPrintings.sqlite");
+
+                if (!File.Exists(databasePath))
+                {
+                    Debug.WriteLine($"The database file '{databasePath}' does not exist. Downloading...");
+                    Directory.CreateDirectory("c:/code/AllPrintings/");
+                    string downloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
+
+                    using (HttpClient httpClient = new HttpClient())
+                    {
+                        byte[] fileContent = await httpClient.GetByteArrayAsync(downloadUrl);
+                        File.WriteAllBytes(databasePath, fileContent);
+                    }
+
+                    Debug.WriteLine("Download completed.");
+                }
+                else
+                {
+                    Debug.WriteLine("The database file already exists.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while downloading database file: {ex.Message}");
+            }
+        }
+        */
         private void LoadData()
         {
             using (SQLiteConnection connection = DatabaseHelper.GetConnection())

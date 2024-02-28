@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Please stand by... " Height="150" Width="300">
     <Grid>
-        <TextBox x:Name="downloadTextBox1" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,37,0,0" IsReadOnly="True" Height="19" Text="Downloading and setting up card database..." />
-        <TextBox x:Name="downloadTextBox2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,67,0,0" IsReadOnly="True" Height="19" Text="(around 400 MB download)" />
+        <TextBox x:Name="downloadTextBox1" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,37,0,0" IsReadOnly="True" Height="19" Text="..." />
+        <TextBox x:Name="downloadTextBox2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,67,0,0" IsReadOnly="True" Height="19" />
     </Grid>
 </Window>
 

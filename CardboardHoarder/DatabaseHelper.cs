@@ -1,6 +1,7 @@
 ﻿using CardboardHoarder;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
+using ServiceStack.Messaging;
 using SkiaSharp;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -10,8 +11,10 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 public class DatabaseHelper
 {
+    public static event Action<string> StatusMessageUpdated;
+
     private static string _sqlitePath = string.Empty; 
-    private static string sqlitePath
+    public static string sqlitePath
     {
         get
         {
@@ -33,111 +36,76 @@ public class DatabaseHelper
 
         Configuration = builder.Build();
     }
-    // Den her bliver kun brugt af debug-felter på mainwindow
-    public static SQLiteConnection GetConnection()
+
+    public static event EventHandler<string> StatusUpdated;
+    public static void OnStatusUpdated(string message)
     {
-        try
-        {
-            // Retrieve the connection string from appsettings.json
-            string? connectionString = Configuration.GetConnectionString("SQLiteConnection");
-
-            // Check for null and provide a default value or handle the case accordingly
-            if (connectionString == null)
-            {
-                throw new InvalidOperationException("Connection string not found in appsettings.json.");
-            }
-
-            // Retrieve the SQLite database path from appsettings.json            
-
-            // Check for null and provide a default value or handle the case accordingly
-            if (sqlitePath == null)
-            {
-                throw new InvalidOperationException("SQLite database path not found in appsettings.json.");
-            }
-
-            // Build the connection string using the retrieved path
-            string fullConnectionString = connectionString.Replace("{SQLitePath}", sqlitePath);
-
-            // Check if the database file exists before creating the connection
-            string databasePath = Path.Combine(sqlitePath, "AllPrintings.sqlite");
-
-            if (!File.Exists(databasePath))
-            {
-                throw new InvalidOperationException($"Database file '{databasePath}' does not exist.");
-            }
-
-            // Create and return SQLiteConnection
-            return new SQLiteConnection(fullConnectionString);
-        }
-        catch (Exception ex)
-        {
-            // Handle the exception (e.g., log, show error message, etc.)
-            Debug.WriteLine($"Error: {ex.Message}");
-            throw;
-        }
+        StatusUpdated?.Invoke(null, message);
     }
-    public static void CheckDatabaseExistence()
+
+
+    public static async Task CheckDatabaseExistenceAsync()
     {
+        
         try
         {
-            // Retrieve the SQLite database path from appsettings.json
             string databasePath = Path.Combine(sqlitePath, "AllPrintings.sqlite");
-
-            // Check if the database file exists
             if (!File.Exists(databasePath))
             {
-                // Create and show the DownloadWindow
-                DownloadWindow downloadWindow = new();
-                downloadWindow.Show();
 
-                Debug.WriteLine($"The database file '{databasePath}' does not exist.");
-                DownloadDatabaseIfNotExists(databasePath);
+                await DownloadDatabaseIfNotExistsAsync(databasePath);
 
-                OpenConnection();
+                    /*
+                OpenConnection(); // Assuming this remains synchronous as per your requirement
 
-                SetupDatabase(databasePath);
-                GenerateManaSymbolsFromSvg();
-                GenerateManaCostImages();
-                GenerateSetKeyruneFromSvg();
+                await SetupDatabaseAsync(databasePath);
+                await GenerateManaSymbolsFromSvgAsync();
 
-                // Close the DownloadWindow
-                downloadWindow.Close();
+                // Now run the last two functions in parallel
+                var generateManaCostImagesTask = GenerateManaCostImagesAsync();
+                var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
+
+                await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
+                    */
             }
-
         }
         catch (Exception ex)
         {
-            // Handle exceptions (e.g., log, show error message, etc.)
             Debug.WriteLine($"Error while checking database existence: {ex.Message}");
         }
         finally
         {
-            CloseConnection();
+            
+            CloseConnection(); // Close connection after all operations
         }
     }
     #region Download card database and create tables for custom data
-    public static void DownloadDatabaseIfNotExists(string databasePath)
+    private static async Task DownloadDatabaseIfNotExistsAsync(string databasePath)
     {
+        
+        
         try
-        {
+        {            
             // Check if the database file exists
             if (!File.Exists(databasePath))
             {
                 // Output a message to the console
                 Debug.WriteLine($"The database file '{databasePath}' does not exist. Downloading...");
+                StatusMessageUpdated?.Invoke("Downloading database");
 
                 // Ensure the directory exists
                 Directory.CreateDirectory(sqlitePath);
 
                 // Download the database file from the specified URL using HttpClient
                 string downloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
-                using (HttpClient httpClient = new())
+                using (HttpClient httpClient = new HttpClient())
                 {
-                    byte[] fileContent = httpClient.GetByteArrayAsync(downloadUrl).Result;
+                    byte[] fileContent = await httpClient.GetByteArrayAsync(downloadUrl);
                     File.WriteAllBytes(databasePath, fileContent);
                 }
 
-                Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");                
+                Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
+                StatusMessageUpdated?.Invoke("Download complete");
             }
             else
             {
@@ -151,7 +119,7 @@ public class DatabaseHelper
             Debug.WriteLine($"Error while downloading database file: {ex.Message}");
         }
     }
-    private static void SetupDatabase(string databasePath)
+    private static async Task SetupDatabaseAsync(string databasePath)
     {
         // Define tables to create
         Dictionary<string, string> tables = new()
@@ -197,7 +165,7 @@ public class DatabaseHelper
     #endregion
         
     // Generates a mana cost symbol from svg retrieved from scryfall weblink
-    private static void GenerateManaSymbolsFromSvg()
+    private static async Task GenerateManaSymbolsFromSvgAsync()
     {
         try
         {
@@ -259,7 +227,7 @@ public class DatabaseHelper
         }
     }
     // Creates a list of bitmaps for a single mana cost
-    private static void GenerateManaCostImages()
+    private static async Task GenerateManaCostImagesAsync()
     {
         List<string> uniqueManaCosts = GetUniqueValues("cards", "manaCost");
 
@@ -350,7 +318,7 @@ public class DatabaseHelper
     }
     #endregion
     // Generate set icon image
-    private static void GenerateSetKeyruneFromSvg()
+    private static async Task GenerateSetKeyruneFromSvgAsync()
     {
         try
         {            
@@ -442,6 +410,49 @@ public class DatabaseHelper
     }
 
     #region Toolbox
+    // Den her bliver kun brugt af debug-felter på mainwindow
+    public static SQLiteConnection GetConnection()
+    {
+        try
+        {
+            // Retrieve the connection string from appsettings.json
+            string? connectionString = Configuration.GetConnectionString("SQLiteConnection");
+
+            // Check for null and provide a default value or handle the case accordingly
+            if (connectionString == null)
+            {
+                throw new InvalidOperationException("Connection string not found in appsettings.json.");
+            }
+
+            // Retrieve the SQLite database path from appsettings.json            
+
+            // Check for null and provide a default value or handle the case accordingly
+            if (sqlitePath == null)
+            {
+                throw new InvalidOperationException("SQLite database path not found in appsettings.json.");
+            }
+
+            // Build the connection string using the retrieved path
+            string fullConnectionString = connectionString.Replace("{SQLitePath}", sqlitePath);
+
+            // Check if the database file exists before creating the connection
+            string databasePath = Path.Combine(sqlitePath, "AllPrintings.sqlite");
+
+            if (!File.Exists(databasePath))
+            {
+                throw new InvalidOperationException($"Database file '{databasePath}' does not exist.");
+            }
+
+            // Create and return SQLiteConnection
+            return new SQLiteConnection(fullConnectionString);
+        }
+        catch (Exception ex)
+        {
+            // Handle the exception (e.g., log, show error message, etc.)
+            Debug.WriteLine($"Error: {ex.Message}");
+            throw;
+        }
+    }
     public static void OpenConnection()
     {
         if (connection == null)
