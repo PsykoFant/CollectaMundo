@@ -24,10 +24,15 @@
             </DataGrid>
 
             <ComboBox x:Name="filterCardNameComboBox" HorizontalAlignment="Left" Margin="0,20,0,0" VerticalAlignment="Top" Width="120"/>
-            <Image x:Name="imageControl" HorizontalAlignment="Left" Height="100" Margin="427,77,0,0" VerticalAlignment="Top" Width="100"/>
-            <TextBox x:Name="imageInput" HorizontalAlignment="Left" Margin="262,59,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
-            <Image x:Name="testImage" HorizontalAlignment="Left" Height="34" Margin="427,51,0,0" VerticalAlignment="Top" Width="295" Stretch="None"/>
-            <Button Content="Button" HorizontalAlignment="Left" Margin="270,122,0,0" VerticalAlignment="Top" Width="104" Click="Button_Click"/>
+            <TextBox x:Name="imageInput" HorizontalAlignment="Left" Margin="262,59,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Text="ODY"/>
+            <Image x:Name="testImage" HorizontalAlignment="Left" Height="26" Margin="262,96,0,0" VerticalAlignment="Top" Width="122" Stretch="None"/>
+            <Button Content="Check set keyrune" HorizontalAlignment="Left" Margin="270,154,0,0" VerticalAlignment="Top" Width="104" Click="Button_Click"/>
+            <TextBox x:Name="manaCostTextBox" HorizontalAlignment="Left" Margin="404,59,0,0" TextWrapping="Wrap" Text="{}{3}{G}{G}{G/P}{G/P}" VerticalAlignment="Top" Width="120" RenderTransformOrigin="0.488,0.002"/>
+            <Image x:Name="manaCostImageTester" HorizontalAlignment="Left" Height="19" Margin="404,96,0,0" VerticalAlignment="Top" Width="147"/>
+            <Button Content="Check mana cost image" HorizontalAlignment="Left" Margin="394,154,0,0" VerticalAlignment="Top" Width="152" Click="Button_Click_1"/>
+            <TextBox x:Name="manaSymbolTextBox" HorizontalAlignment="Left" Margin="635,59,0,0" TextWrapping="Wrap" Text="G/U/P" VerticalAlignment="Top" Width="120"/>
+            <Image x:Name="manaSymbolImageTester" HorizontalAlignment="Left" Height="29" Margin="672,96,0,0" VerticalAlignment="Top" Width="44"/>
+            <Button Content="Check mana symbol image" HorizontalAlignment="Left" Margin="607,154,0,0" VerticalAlignment="Top" Width="176" Click="Button_Click_2"/>
 
         </Grid>
         <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="36" Margin="0,48,0,0" VerticalAlignment="Top" Width="138" d:IsHidden="True">
