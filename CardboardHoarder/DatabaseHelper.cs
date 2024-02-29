@@ -26,7 +26,7 @@ public class DatabaseHelper
         }
     }
 
-    private static SQLiteConnection? connection;
+    public static SQLiteConnection? connection;
     private static IConfiguration Configuration { get; set; }
     static DatabaseHelper()
     {

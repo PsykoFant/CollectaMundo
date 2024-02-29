@@ -34,7 +34,7 @@ namespace CardboardHoarder
         {
             await DatabaseHelper.CheckDatabaseExistenceAsync();
 
-            await LoadData();
+            await LoadDataAsync();
         }
 
         private void UpdateStatusTextBox(string message)
@@ -97,41 +97,44 @@ namespace CardboardHoarder
         */
 
         private static SQLiteConnection? connection;
-        private async Task LoadData()
+        private async Task LoadDataAsync()
         {
-            Debug.WriteLine("Den her skal ikke vises før til sidst!!!!");
-            
-            DatabaseHelper.OpenConnection();
+            Debug.WriteLine("Loading data asynchronously...");
 
-                try
+            DatabaseHelper.OpenConnection(); // Ensure OpenConnection supports async or is non-blocking
+
+            try
+            {
+                string query = "SELECT name, SetCode FROM cards"; // Adjust the query accordingly
+                using var command = new SQLiteCommand(query, DatabaseHelper.connection);
+
+                using var reader = await command.ExecuteReaderAsync();
+                var items = new List<CardSet>();
+                while (await reader.ReadAsync())
                 {
-                    
-                    string query = "SELECT name, SetCode FROM cards"; // Adjust the query accordingly
-                    SQLiteCommand command = new SQLiteCommand(query, connection);
-
-                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    items.Add(new CardSet
                     {
-                        mainCardWindowDatagrid.ItemsSource = reader.Cast<IDataRecord>()
-                            .Select(r => new CardSet
-                            {
-                                Name = r["Name"]?.ToString() ?? string.Empty,
-                                SetCode = r["SetCode"]?.ToString() ?? string.Empty
-                            })
-                            .ToList();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Handle exceptions (e.g., log, show error message, etc.)
-                    Debug.WriteLine($"Error while loading data: {ex.Message}");
-                }
-                finally
-                {
-                    DatabaseHelper.CloseConnection();
+                        Name = reader["Name"].ToString(),
+                        SetCode = reader["SetCode"].ToString()
+                    });
                 }
 
-            
+                // Ensure UI updates are performed on the UI thread
+                Dispatcher.Invoke(() =>
+                {
+                    mainCardWindowDatagrid.ItemsSource = items;
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while loading data: {ex.Message}");
+            }
+            finally
+            {
+                DatabaseHelper.CloseConnection(); // Consider making CloseConnection async if possible
+            }
         }
+
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
