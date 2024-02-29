@@ -11,7 +11,12 @@
         <Button x:Name="MenuMyCollection" Content="My Collection" HorizontalAlignment="Left" Margin="174,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuMyCollection_Click"/>
         <Button x:Name="MenuDecks" Content="Decks" HorizontalAlignment="Left" Margin="338,10,0,0" VerticalAlignment="Top" Width="159"/>
         <Rectangle x:Name="MainScreen" HorizontalAlignment="Center" Height="707" Margin="0,35,0,0" Stroke="Black" VerticalAlignment="Top" Width="1004"/>
-        <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Height="681" Margin="0,48,0,0" VerticalAlignment="Top" Width="969">
+        <Grid x:Name="GridStatus" HorizontalAlignment="Center" Height="707" VerticalAlignment="Top" Margin="0,35,0,0" Width="1004">
+            <TextBox x:Name="statusTextBox" HorizontalAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Top" Width="520" Margin="0,336,0,0"/>
+            <ProgressBar x:Name="progressBar" HorizontalAlignment="Center" Height="12" Margin="0,371,0,0" VerticalAlignment="Top" Width="520"/>
+
+        </Grid>
+        <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Height="681" Margin="0,48,0,0" VerticalAlignment="Top" Width="969" d:IsHidden="True">
             <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Left" Margin="369,0,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
             <DataGrid x:Name="mainCardWindowDatagrid" Margin="144,218,0,0" AutoGenerateColumns="False">
                 <DataGrid.CellStyle>

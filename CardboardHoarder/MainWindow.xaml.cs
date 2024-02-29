@@ -1,27 +1,50 @@
 ﻿using System.Data;
 using System.Data.SQLite;
-using System.Drawing;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
 
-
 namespace CardboardHoarder
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
+
+        public static MainWindow? CurrentInstance { get; private set; } // Used by ShowOrHideStatusWindow to reference MainWindow
         public MainWindow()
         {
-            DatabaseHelper.CheckDatabaseExistence();            
             InitializeComponent();
-            GridSearchAndFilter.Visibility = Visibility.Visible;
+            CurrentInstance = this; // Used by ShowOrHideStatusWindow to reference MainWindow
+            DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox; // Update the statusbox with messages from methods in DownloadAndPrepareDB
+            GridSearchAndFilter.Visibility = Visibility.Hidden;
             GridMyCollection.Visibility = Visibility.Hidden;
-            LoadData();
-        }        
+            GridStatus.Visibility = Visibility.Hidden;
+            Loaded += async (sender, args) => { await PrepareSystem(); };
+        }
 
+        private async Task PrepareSystem()
+        {
+            await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
+            GridSearchAndFilter.Visibility = Visibility.Visible;
+            await DBAccess.OpenConnectionAsync();
+            await LoadDataAsync();
+            DBAccess.CloseConnection();
+        }
+        public static void ShowOrHideStatusWindow(bool visible)
+        {
+            if (CurrentInstance != null)
+            {
+                var gridStatus = CurrentInstance.GridStatus;
+                gridStatus.Visibility = visible ? Visibility.Visible : Visibility.Hidden;
+            }
+        }
+        private void UpdateStatusTextBox(string message)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                statusTextBox.Text = message;
+            });
+        }
         private void reset_grids()
         {
             GridSearchAndFilter.Visibility = Visibility.Hidden;
@@ -37,45 +60,40 @@ namespace CardboardHoarder
             reset_grids();
             GridMyCollection.Visibility = Visibility.Visible;
         }
-
-
-        private void LoadData()
+        private async Task LoadDataAsync()
         {
-            using (SQLiteConnection connection = DatabaseHelper.GetConnection())
-            {
-                try
-                {
-                    connection.Open();
-                    string query = "SELECT name, SetCode FROM cards"; // Adjust the query accordingly
-                    SQLiteCommand command = new SQLiteCommand(query, connection);
+            Debug.WriteLine("Loading data asynchronously...");
 
-                    using (SQLiteDataReader reader = command.ExecuteReader())
-                    {
-                        mainCardWindowDatagrid.ItemsSource = reader.Cast<IDataRecord>()
-                            .Select(r => new CardSet
-                            {
-                                Name = r["Name"]?.ToString() ?? string.Empty,
-                                SetCode = r["SetCode"]?.ToString() ?? string.Empty
-                            })
-                            .ToList();
-                    }
-                }
-                catch (Exception ex)
+            try
+            {
+                string query = "SELECT name, SetCode FROM cards";
+                using var command = new SQLiteCommand(query, DBAccess.connection);
+
+                using var reader = await command.ExecuteReaderAsync();
+                var items = new List<CardSet>();
+                while (await reader.ReadAsync())
                 {
-                    // Handle exceptions (e.g., log, show error message, etc.)
-                    Console.WriteLine($"Error while loading data: {ex.Message}");
-                }
-                finally
-                {
-                    // Ensure the connection is closed in the finally block
-                    if (connection.State == ConnectionState.Open)
+                    items.Add(new CardSet
                     {
-                        connection.Close();
-                    }
+                        Name = reader["Name"].ToString(),
+                        SetCode = reader["SetCode"].ToString()
+                    });
                 }
+
+                // Ensure UI updates are performed on the UI thread
+                Dispatcher.Invoke(() =>
+                {
+                    mainCardWindowDatagrid.ItemsSource = items;
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while loading data: {ex.Message}");
             }
         }
 
+
+        // Test kode
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             DisplayImageFromDatabase(imageInput.Text, testImage, 1);
@@ -88,7 +106,6 @@ namespace CardboardHoarder
         {
             DisplayImageFromDatabase(manaSymbolTextBox.Text, manaSymbolImageTester, 3);
         }
-
         private void DisplayImageFromDatabase(string inputFieldText, System.Windows.Controls.Image targetImageControl, int querySelector)
         {
             try
@@ -103,16 +120,18 @@ namespace CardboardHoarder
                 {
                     query = "SELECT keyruneImage FROM keyruneImages WHERE setCode = @symbol";
                     field = "keyruneImage";
-                } else if (querySelector == 2)
+                }
+                else if (querySelector == 2)
                 {
                     query = "SELECT manacostImage FROM uniqueManaCostImages WHERE uniqueManaCost = @symbol";
                     field = "manaCostImage";
-                } else if (querySelector == 3)
+                }
+                else if (querySelector == 3)
                 {
                     query = "SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol";
                     field = "manaSymbolImage";
                 }
-                using (SQLiteConnection connection = DatabaseHelper.GetConnection())
+                using (SQLiteConnection connection = DBAccess.GetConnection())
                 {
                     connection.Open();
 
