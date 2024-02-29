@@ -34,6 +34,7 @@ namespace CardboardHoarder
         {
             await DatabaseHelper.CheckDatabaseExistenceAsync();
 
+            await DatabaseHelper.OpenConnectionAsync(); // Ensure OpenConnection supports async or is non-blocking
             await LoadDataAsync();
         }
 
@@ -99,9 +100,7 @@ namespace CardboardHoarder
         private static SQLiteConnection? connection;
         private async Task LoadDataAsync()
         {
-            Debug.WriteLine("Loading data asynchronously...");
-
-            DatabaseHelper.OpenConnection(); // Ensure OpenConnection supports async or is non-blocking
+            Debug.WriteLine("Loading data asynchronously...");           
 
             try
             {

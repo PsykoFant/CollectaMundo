@@ -53,8 +53,8 @@ public class DatabaseHelper
             if (!File.Exists(databasePath))
             {
 
-                await DownloadDatabaseIfNotExistsAsync(databasePath);                    
-                OpenConnection();
+                await DownloadDatabaseIfNotExistsAsync(databasePath);
+                await OpenConnectionAsync();
                 await SetupDatabaseAsync(databasePath);
 
                 /*
@@ -69,6 +69,7 @@ public class DatabaseHelper
 
                 await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
                     */
+                //CloseConnection(); // Close connection after all operations
             }
         }
         catch (Exception ex)
@@ -78,7 +79,7 @@ public class DatabaseHelper
         finally
         {
             
-            CloseConnection(); // Close connection after all operations
+            
         }
     }
     #region Download card database and create tables for custom data
@@ -454,7 +455,7 @@ public class DatabaseHelper
             throw;
         }
     }
-    public static void OpenConnection()
+    public static async Task OpenConnectionAsync()
     {
         if (connection == null)
         {
@@ -475,9 +476,10 @@ public class DatabaseHelper
 
         if (connection.State != System.Data.ConnectionState.Open)
         {
-            connection.Open();
+            await connection.OpenAsync();
         }
     }
+
     public static void CloseConnection()
     {
         if (connection != null && connection.State == System.Data.ConnectionState.Open)
