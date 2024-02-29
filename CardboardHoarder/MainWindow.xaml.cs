@@ -17,26 +17,36 @@ namespace CardboardHoarder
     /// </summary>
     public partial class MainWindow : Window
     {
+        public static MainWindow? CurrentInstance { get; private set; }
         public MainWindow()
         {
             InitializeComponent();
-            GridSearchAndFilter.Visibility = Visibility.Visible;
-            GridMyCollection.Visibility = Visibility.Hidden;
-
+            CurrentInstance = this;
             DatabaseHelper.StatusMessageUpdated += UpdateStatusTextBox;
-
-            PrepareSystem();
-
-
+            GridSearchAndFilter.Visibility = Visibility.Hidden;
+            GridMyCollection.Visibility = Visibility.Hidden;
+            GridStatus.Visibility = Visibility.Hidden;
+            Loaded += async (sender, args) => { await PrepareSystem(); };
         }
 
         private async Task PrepareSystem()
         {
-            await DatabaseHelper.CheckDatabaseExistenceAsync();
-
-            await DatabaseHelper.OpenConnectionAsync(); // Ensure OpenConnection supports async or is non-blocking
+            await DatabaseHelper.CheckDatabaseExistenceAsync();            
+            GridSearchAndFilter.Visibility = Visibility.Visible;
+            await DatabaseHelper.OpenConnectionAsync();             
             await LoadDataAsync();
+            DatabaseHelper.CloseConnection();
         }
+
+        public static void ShowOrHideStatusWindow(bool visible)
+        {
+            if (CurrentInstance != null)
+            {
+                var gridStatus = CurrentInstance.GridStatus;
+                gridStatus.Visibility = visible ? Visibility.Visible : Visibility.Hidden;
+            }
+        }
+
 
         private void UpdateStatusTextBox(string message)
         {
@@ -97,7 +107,7 @@ namespace CardboardHoarder
         }
         */
 
-        private static SQLiteConnection? connection;
+        //private static SQLiteConnection? connection;
         private async Task LoadDataAsync()
         {
             Debug.WriteLine("Loading data asynchronously...");           
@@ -127,10 +137,6 @@ namespace CardboardHoarder
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error while loading data: {ex.Message}");
-            }
-            finally
-            {
-                DatabaseHelper.CloseConnection(); // Consider making CloseConnection async if possible
             }
         }
 
