@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Windows;
 public class DownloadAndPrepDB
 {
     public static event Action<string>? StatusMessageUpdated;
@@ -24,7 +25,22 @@ public class DownloadAndPrepDB
             if (!File.Exists(databasePath))
             {
                 MainWindow.ShowOrHideStatusWindow(true);
-                await DownloadDatabaseIfNotExistsAsync(databasePath);
+
+                var progress = new Progress<int>(value =>
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        if (MainWindow.CurrentInstance?.progressBar != null)
+                        {
+                            MainWindow.CurrentInstance.progressBar.Value = value;
+                        }
+                    });
+                });
+
+                // Call the download method with the progress handler
+                await DownloadDatabaseIfNotExistsAsync(databasePath, progress);
+
+                //await DownloadDatabaseIfNotExistsAsync(databasePath);
                 await DBAccess.OpenConnectionAsync();
                 await CreateCustomTablesAndIndices(databasePath);
                 await GenerateManaSymbolsFromSvgAsync();
@@ -45,28 +61,36 @@ public class DownloadAndPrepDB
     /// <summary>
     /// Download card database from mtgjson in SQLite format
     /// </summary>
-    private static async Task DownloadDatabaseIfNotExistsAsync(string databasePath)
+    private static async Task DownloadDatabaseIfNotExistsAsync(string databasePath, IProgress<int> progress)
     {
         try
         {
-            // Check if the database file exists
             if (!File.Exists(databasePath))
             {
-                // Output a message to the console
-                Debug.WriteLine($"The database file '{databasePath}' does not exist. Downloading...");
-                StatusMessageUpdated?.Invoke("Downloading database"); // Update status window
-
-                // Ensure the directory exists
-                Directory.CreateDirectory(DBAccess.sqlitePath);
-
-                // Download the database file from the specified URL using HttpClient
                 string downloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
-                using (HttpClient httpClient = new HttpClient())
+                using (var httpClient = new HttpClient())
+                using (var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl))
+                using (var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
                 {
-                    byte[] fileContent = await httpClient.GetByteArrayAsync(downloadUrl);
-                    File.WriteAllBytes(databasePath, fileContent);
+                    response.EnsureSuccessStatusCode();
+                    var totalBytes = response.Content.Headers.ContentLength ?? -1L;
+                    var megabytes = string.Format("{0:0.0} MB", totalBytes / 1000000.0);
+                    var totalBytesRead = 0L;
+                    var buffer = new byte[4096];
+                    using (var contentStream = await response.Content.ReadAsStreamAsync())
+                    using (var fileStream = new FileStream(databasePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
+                    {
+                        StatusMessageUpdated?.Invoke($"Downloading card database ({megabytes})");
+                        var bytesRead = 0;
+                        while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
+                        {
+                            await fileStream.WriteAsync(buffer, 0, bytesRead);
+                            totalBytesRead += bytesRead;
+                            var progressPercentage = totalBytes != -1 ? (int)((totalBytesRead * 100) / totalBytes) : -1;
+                            progress?.Report(progressPercentage);
+                        }
+                    }
                 }
-
                 Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
             }
             else
@@ -74,13 +98,23 @@ public class DownloadAndPrepDB
                 Debug.WriteLine($"The database file '{databasePath}' already exists.");
             }
         }
-
         catch (Exception ex)
         {
-            // Handle exceptions (e.g., log, show error message, etc.)
-            Debug.WriteLine($"Error while downloading database file: {ex.Message}");
+            Debug.WriteLine($"Error during download: {ex.Message}");
+            StatusMessageUpdated?.Invoke("Download failed.");
+        }
+        finally
+        {
+            if (MainWindow.CurrentInstance?.progressBar != null)
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MainWindow.CurrentInstance.progressBar.Visibility = Visibility.Hidden;
+                });
+            }
         }
     }
+
     /// <summary>
     /// Generate custom data such as manasymbols, mana cost, set images and save them as png in database
     /// </summary>
@@ -170,9 +204,10 @@ public class DownloadAndPrepDB
             List<string> symbolsWithNullImage = await GetValuesWithNullAsync("uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
 
             // Generate the missing mana cost symbols and insert them into table uniqueManaSymbols
+            int counter = 0;
             foreach (string missingImage in symbolsWithNullImage)
             {
-
+                counter++;
                 // Convert SVG to PNG using the ConvertSvgToPng function
                 byte[] pngData = await ConvertSvgToPngAsync($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
 
@@ -180,7 +215,7 @@ public class DownloadAndPrepDB
                 {
                     // Update the 'uniqueManaSymbols' table with the PNG data
                     await UpdateImageInTableAsync(missingImage, "uniqueManaSymbols", "manaSymbolImage", "uniqueManaSymbol", pngData);
-                    StatusMessageUpdated?.Invoke($"Added image generated from https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
+                    StatusMessageUpdated?.Invoke($"Added image generated from https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg ({counter} out of {symbolsWithNullImage.Count.ToString()})");
                     Debug.WriteLine($"Added image generated from https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
                 }
                 else
@@ -203,16 +238,19 @@ public class DownloadAndPrepDB
         foreach (string manaCost in uniqueManaCosts)
         {
             await InsertValueInTableAsync(manaCost, "uniqueManaCostImages", "uniqueManaCost");
+            StatusMessageUpdated?.Invoke($"Added {manaCost} to table");
         }
 
         List<string> manaCostsWithNullImage = await GetValuesWithNullAsync("uniqueManaCostImages", "uniqueManaCost", "manaCostImage");
 
         // Generate the missing mana cost images and insert them into table uniqueManaCostImages
+        int counter = 0;
         foreach (string missingImage in manaCostsWithNullImage)
         {
+            counter++;
             await UpdateImageInTableAsync(missingImage, "uniqueManaCostImages", "manaCostImage", "uniqueManaCost", await ProcessManaCostInputAsync(missingImage));
-            StatusMessageUpdated?.Invoke($"Added image for the mana cost {missingImage}");
-            Debug.WriteLine($"Added image for the mana cost {missingImage}");
+            StatusMessageUpdated?.Invoke($"Added image for the mana cost {missingImage} ({counter.ToString()} of {manaCostsWithNullImage.Count().ToString()}");
+            Debug.WriteLine($"Added image for the mana cost {missingImage} ({counter.ToString()} of {manaCostsWithNullImage.Count().ToString()})");
         }
     }
     private static async Task GenerateSetKeyruneFromSvgAsync()
@@ -220,6 +258,7 @@ public class DownloadAndPrepDB
         try
         {
             // Insert setCode into the 'keyRuneImages' table if it's not already there
+            StatusMessageUpdated?.Invoke($"Copying set image references");
             await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "code");
 
             List<string> setCodesWithNoImage = await GetValuesWithNullAsync("keyruneImages", "setCode", "keyruneImage");
@@ -291,8 +330,8 @@ public class DownloadAndPrepDB
                 {
                     // Update the 'uniqueManaSymbols' table with the PNG data
                     await UpdateImageInTableAsync(setCode, "keyruneImages", "keyruneImage", "setCode", pngData);
-                    StatusMessageUpdated?.Invoke($"Generated keyruneImage from {svgUri}");
-                    Debug.WriteLine($"Generated keyruneImage from {svgUri}");
+                    StatusMessageUpdated?.Invoke($"Generated keyruneImage from {svgUri} ({i} of {setCodesToGenerateImagesFrom[0].Count})");
+                    Debug.WriteLine($"Generated set icon image from {svgUri}");
                 }
                 else
                 {
@@ -368,7 +407,7 @@ public class DownloadAndPrepDB
             int offset = 0;
             foreach (Bitmap image in images)
             {
-                g.DrawImage(image, new Point(offset, 0));
+                g.DrawImage(image, new System.Drawing.Point(offset, 0));
                 offset += image.Width;
                 image.Dispose(); // Dispose each image after drawing it
             }
