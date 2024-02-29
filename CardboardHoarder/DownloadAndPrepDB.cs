@@ -1,7 +1,5 @@
 ﻿using CardboardHoarder;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
-using ServiceStack.Messaging;
 using SkiaSharp;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -9,55 +7,33 @@ using System.Drawing;
 using System.IO;
 using System.Net.Http;
 using System.Text.RegularExpressions;
-public class DatabaseHelper
+public class DownloadAndPrepDB
 {
     public static event Action<string>? StatusMessageUpdated;
 
-    private static string _sqlitePath = string.Empty; 
-    public static string sqlitePath
-    {
-        get
-        {
-            if (_sqlitePath == string.Empty) // Check for default value instead of null
-            {
-                _sqlitePath = Configuration["DatabaseSettings:SQLitePath"] ?? string.Empty;
-            }
-            return _sqlitePath;
-        }
-    }
-
-    public static SQLiteConnection? connection;
-    private static IConfiguration Configuration { get; set; }
-    static DatabaseHelper()
-    {
-        // Set up configuration
-        IConfigurationBuilder builder = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-
-        Configuration = builder.Build();
-    }
-
-    //public static event EventHandler<string> StatusUpdated;
+    /// <summary>
+    /// Check if the card database exists in the location specified by appsettings.json. 
+    /// If it doesn't download it and populate it with custom data, including image data for mana symbols and set images
+    /// </summary>
     public static async Task CheckDatabaseExistenceAsync()
     {
-        
         try
         {
-            string databasePath = Path.Combine(sqlitePath, "AllPrintings.sqlite");
+            string databasePath = Path.Combine(DBAccess.sqlitePath, "AllPrintings.sqlite");
 
             if (!File.Exists(databasePath))
             {
                 MainWindow.ShowOrHideStatusWindow(true);
                 await DownloadDatabaseIfNotExistsAsync(databasePath);
-                await OpenConnectionAsync();
-                await SetupDatabaseAsync(databasePath);
+                await DBAccess.OpenConnectionAsync();
+                await CreateCustomTablesAndIndices(databasePath);
                 await GenerateManaSymbolsFromSvgAsync();
                 // Now run the last two functions in parallel
                 var generateManaCostImagesTask = GenerateManaCostImagesAsync();
                 var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
                 await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
 
-                CloseConnection();
+                DBAccess.CloseConnection();
                 MainWindow.ShowOrHideStatusWindow(false);
             }
         }
@@ -66,11 +42,13 @@ public class DatabaseHelper
             Debug.WriteLine($"Error while checking database existence: {ex.Message}");
         }
     }
-    #region Download card database and create tables for custom data
+    /// <summary>
+    /// Download card database from mtgjson in SQLite format
+    /// </summary>
     private static async Task DownloadDatabaseIfNotExistsAsync(string databasePath)
-    {   
+    {
         try
-        {            
+        {
             // Check if the database file exists
             if (!File.Exists(databasePath))
             {
@@ -79,7 +57,7 @@ public class DatabaseHelper
                 StatusMessageUpdated?.Invoke("Downloading database"); // Update status window
 
                 // Ensure the directory exists
-                Directory.CreateDirectory(sqlitePath);
+                Directory.CreateDirectory(DBAccess.sqlitePath);
 
                 // Download the database file from the specified URL using HttpClient
                 string downloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
@@ -103,7 +81,10 @@ public class DatabaseHelper
             Debug.WriteLine($"Error while downloading database file: {ex.Message}");
         }
     }
-    private static async Task SetupDatabaseAsync(string databasePath)
+    /// <summary>
+    /// Generate custom data such as manasymbols, mana cost, set images and save them as png in database
+    /// </summary>
+    private static async Task CreateCustomTablesAndIndices(string databasePath)
     {
         try
         {
@@ -121,7 +102,7 @@ public class DatabaseHelper
             // Create the tables asynchronously
             foreach (var item in tables)
             {
-                using (var command = new SQLiteCommand(item.Value, connection))
+                using (var command = new SQLiteCommand(item.Value, DBAccess.connection))
                 {
                     await command.ExecuteNonQueryAsync();
                     Debug.WriteLine($"Created table for {item.Key}.");
@@ -140,7 +121,7 @@ public class DatabaseHelper
             // Create the indices asynchronously
             foreach (var item in indices)
             {
-                using (var command = new SQLiteCommand(item.Value, connection))
+                using (var command = new SQLiteCommand(item.Value, DBAccess.connection))
                 {
                     await command.ExecuteNonQueryAsync();
                     Debug.WriteLine($"Created index for {item.Key}.");
@@ -152,10 +133,6 @@ public class DatabaseHelper
             Debug.WriteLine($"Error during creation of tables and indices: {ex.Message}");
         }
     }
-
-    #endregion
-
-    // Generates a mana cost symbol from svg retrieved from scryfall weblink
     private static async Task GenerateManaSymbolsFromSvgAsync()
     {
         StatusMessageUpdated?.Invoke("Generating mana symbol images");
@@ -218,7 +195,6 @@ public class DatabaseHelper
             Debug.WriteLine($"Error during creation or insertion of uniqueManaSymbols: {ex.Message}");
         }
     }
-    // Creates a list of bitmaps for a single mana cost
     private static async Task GenerateManaCostImagesAsync()
     {
         List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
@@ -239,82 +215,6 @@ public class DatabaseHelper
             Debug.WriteLine($"Added image for the mana cost {missingImage}");
         }
     }
-    #region Helper functions for GenerateManaCostImages()
-    private static async Task<byte[]> ProcessManaCostInputAsync(string manaCostInput)
-    {
-        List<Bitmap> manaSymbolImage = new List<Bitmap>();
-
-        try
-        {
-            string[] manaSymbols = manaCostInput.Trim(new char[] { '{', '}' }).Split(new string[] { "}{" }, StringSplitOptions.RemoveEmptyEntries);
-
-            foreach (string symbol in manaSymbols)
-            {
-                using (SQLiteCommand command = new SQLiteCommand(
-                        $"SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol",
-                        connection))
-                {
-                    command.Parameters.AddWithValue("@symbol", symbol);
-
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync())
-                        {
-                            byte[] imageBytes = (byte[])reader["manaSymbolImage"];
-                            using (MemoryStream ms = new MemoryStream(imageBytes))
-                            {
-                                Bitmap bitmap = new Bitmap(ms); // Bitmap and SkiaSharp operations are not async
-                                manaSymbolImage.Add(bitmap);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"An error occurred while processing mana cost input: {ex.Message}");
-        }
-
-        return await CombineImagesAsync(manaSymbolImage); 
-    }
-
-    // Combine list of mana cost bitmaps into a single png
-    private static async Task<byte[]> CombineImagesAsync(List<Bitmap> images)
-    {
-        return await Task.Run(() => CombineImages(images));
-    }
-    private static byte[] CombineImages(List<Bitmap> images)
-    {
-        if (images == null || images.Count == 0)
-            throw new ArgumentException("Images list is null or empty", nameof(images));
-
-        int width = images.Sum(img => img.Width);
-        int height = images.Max(img => img.Height);
-
-        // Create a new bitmap with the total width and maximum height
-        using (Bitmap combinedImage = new Bitmap(width, height))
-        using (Graphics g = Graphics.FromImage(combinedImage))
-        {
-            g.Clear(Color.Transparent); // Optional: fill background if needed
-
-            int offset = 0;
-            foreach (Bitmap image in images)
-            {
-                g.DrawImage(image, new Point(offset, 0));
-                offset += image.Width;
-                image.Dispose(); // Dispose each image after drawing it
-            }
-
-            using (MemoryStream ms = new MemoryStream())
-            {
-                combinedImage.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                return ms.ToArray();
-            }
-        }
-    }
-    #endregion
-    // Generate set icon image
     private static async Task GenerateSetKeyruneFromSvgAsync()
     {
         try
@@ -337,6 +237,7 @@ public class DatabaseHelper
 
             try
             {
+                StatusMessageUpdated?.Invoke($"Downloading reference for set icons");
                 // Synchronously make a request to get all sets
                 HttpResponseMessage response = client.GetAsync(url).Result; // Synchronous call, use with caution
                 if (response.IsSuccessStatusCode)
@@ -407,98 +308,78 @@ public class DatabaseHelper
         }
     }
 
-    #region Toolbox
-    // Den her bliver kun brugt af debug-felter på mainwindow
-    public static SQLiteConnection GetConnection()
+    #region Helper methods
+    private static async Task<byte[]> ProcessManaCostInputAsync(string manaCostInput)
     {
+        List<Bitmap> manaSymbolImage = new List<Bitmap>();
+
         try
         {
-            // Retrieve the connection string from appsettings.json
-            string? connectionString = Configuration.GetConnectionString("SQLiteConnection");
+            string[] manaSymbols = manaCostInput.Trim(new char[] { '{', '}' }).Split(new string[] { "}{" }, StringSplitOptions.RemoveEmptyEntries);
 
-            // Check for null and provide a default value or handle the case accordingly
-            if (connectionString == null)
+            foreach (string symbol in manaSymbols)
             {
-                throw new InvalidOperationException("Connection string not found in appsettings.json.");
-            }
-
-            // Retrieve the SQLite database path from appsettings.json            
-
-            // Check for null and provide a default value or handle the case accordingly
-            if (sqlitePath == null)
-            {
-                throw new InvalidOperationException("SQLite database path not found in appsettings.json.");
-            }
-
-            // Build the connection string using the retrieved path
-            string fullConnectionString = connectionString.Replace("{SQLitePath}", sqlitePath);
-
-            // Check if the database file exists before creating the connection
-            string databasePath = Path.Combine(sqlitePath, "AllPrintings.sqlite");
-
-            if (!File.Exists(databasePath))
-            {
-                throw new InvalidOperationException($"Database file '{databasePath}' does not exist.");
-            }
-
-            // Create and return SQLiteConnection
-            return new SQLiteConnection(fullConnectionString);
-        }
-        catch (Exception ex)
-        {
-            // Handle the exception (e.g., log, show error message, etc.)
-            Debug.WriteLine($"Error: {ex.Message}");
-            throw;
-        }
-    }
-    public static async Task OpenConnectionAsync()
-    {
-        try
-        {
-            if (connection == null)
-            {
-                string? connectionString = Configuration.GetConnectionString("SQLiteConnection");
-                if (string.IsNullOrEmpty(connectionString))
+                using (SQLiteCommand command = new SQLiteCommand(
+                        $"SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol",
+                        DBAccess.connection))
                 {
-                    throw new InvalidOperationException("Connection string not found in appsettings.json.");
+                    command.Parameters.AddWithValue("@symbol", symbol);
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            byte[] imageBytes = (byte[])reader["manaSymbolImage"];
+                            using (MemoryStream ms = new MemoryStream(imageBytes))
+                            {
+                                Bitmap bitmap = new Bitmap(ms); // Bitmap and SkiaSharp operations are not async
+                                manaSymbolImage.Add(bitmap);
+                            }
+                        }
+                    }
                 }
-
-                if (string.IsNullOrEmpty(sqlitePath))
-                {
-                    throw new InvalidOperationException("SQLite database path not found in appsettings.json.");
-                }
-
-                string fullConnectionString = connectionString.Replace("{SQLitePath}", sqlitePath);
-                connection = new SQLiteConnection(fullConnectionString);
-            }
-
-            if (connection.State != System.Data.ConnectionState.Open)
-            {
-                await connection.OpenAsync();
             }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Opening connection failed {ex.Message}");
+            Debug.WriteLine($"An error occurred while processing mana cost input: {ex.Message}");
         }
+
+        return await CombineImagesAsync(manaSymbolImage);
     }
-    public static void CloseConnection()
+    private static async Task<byte[]> CombineImagesAsync(List<Bitmap> images)
     {
-        try
+        return await Task.Run(() => CombineImages(images));
+    }
+    private static byte[] CombineImages(List<Bitmap> images)
+    {
+        if (images == null || images.Count == 0)
+            throw new ArgumentException("Images list is null or empty", nameof(images));
+
+        int width = images.Sum(img => img.Width);
+        int height = images.Max(img => img.Height);
+
+        // Create a new bitmap with the total width and maximum height
+        using (Bitmap combinedImage = new Bitmap(width, height))
+        using (Graphics g = Graphics.FromImage(combinedImage))
         {
-            if (connection != null && connection.State == System.Data.ConnectionState.Open)
+            g.Clear(Color.Transparent); // Optional: fill background if needed
+
+            int offset = 0;
+            foreach (Bitmap image in images)
             {
-                connection.Close();
+                g.DrawImage(image, new Point(offset, 0));
+                offset += image.Width;
+                image.Dispose(); // Dispose each image after drawing it
+            }
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                combinedImage.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                return ms.ToArray();
             }
         }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Closing connection failed {ex.Message}");
-        }
     }
-
-
-
     private static async Task<byte[]> ConvertSvgToPngAsync(string svgLink)
     {
         try
@@ -543,7 +424,7 @@ public class DatabaseHelper
         try
         {
             string checkQuery = $"SELECT COUNT(*) FROM {targetTable} WHERE {targetColumn} IS NOT NULL AND {targetColumn} != '';";
-            using (var checkCommand = new SQLiteCommand(checkQuery, connection))
+            using (var checkCommand = new SQLiteCommand(checkQuery, DBAccess.connection))
             {
                 int result = Convert.ToInt32(await checkCommand.ExecuteScalarAsync());
 
@@ -554,7 +435,7 @@ public class DatabaseHelper
                         INSERT OR IGNORE INTO {targetTable} ({targetColumn})
                         SELECT DISTINCT {sourceColumn} FROM {sourceTable};
                         COMMIT;";
-                    using (var copyCommand = new SQLiteCommand(copyQuery, connection))
+                    using (var copyCommand = new SQLiteCommand(copyQuery, DBAccess.connection))
                     {
                         await copyCommand.ExecuteNonQueryAsync();
                         Debug.WriteLine($"Copied all rows from {sourceTable}, column {sourceColumn} to {targetTable}, {targetColumn}");
@@ -567,7 +448,7 @@ public class DatabaseHelper
                         SELECT {sourceTable}.{sourceColumn} FROM {sourceTable}
                         LEFT JOIN {targetTable} ON {sourceTable}.{sourceColumn} = {targetTable}.{targetColumn}
                         WHERE {targetTable}.{targetColumn} IS NULL;";
-                    using (var command = new SQLiteCommand(copyQuery, connection))
+                    using (var command = new SQLiteCommand(copyQuery, DBAccess.connection))
                     {
                         await command.ExecuteNonQueryAsync();
                     }
@@ -580,14 +461,13 @@ public class DatabaseHelper
             Console.WriteLine("An error occurred: " + ex.Message);
         }
     }
-
     private static async Task UpdateImageInTableAsync(string imageToUpdate, string tableName, string columnToUpdate, string columnToReference, byte[] imageData)
     {
         try
         {
             using (var command = new SQLiteCommand(
                             $"UPDATE {tableName} SET {columnToUpdate} = @imageData WHERE {columnToUpdate} IS NULL AND {columnToReference} = @referenceColumn",
-                            connection))
+                            DBAccess.connection))
             {
                 command.Parameters.AddWithValue("@referenceColumn", imageToUpdate);
                 command.Parameters.AddWithValue("@imageData", imageData);
@@ -599,13 +479,12 @@ public class DatabaseHelper
             Debug.WriteLine($"Error while updating image in table: {ex.Message}");
         }
     }
-
     private static async Task InsertValueInTableAsync(string value, string tableName, string columnName)
     {
         try
         {
             using (var selectCommand = new SQLiteCommand(
-                $"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @value", connection))
+                $"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @value", DBAccess.connection))
             {
                 selectCommand.Parameters.AddWithValue("@value", value);
                 var count = Convert.ToInt32(await selectCommand.ExecuteScalarAsync());
@@ -613,7 +492,7 @@ public class DatabaseHelper
                 if (count == 0)
                 {
                     using (var insertCommand = new SQLiteCommand(
-                        $"INSERT INTO {tableName} ({columnName}) VALUES (@value)", connection))
+                        $"INSERT INTO {tableName} ({columnName}) VALUES (@value)", DBAccess.connection))
                     {
                         insertCommand.Parameters.AddWithValue("@value", value);
                         await insertCommand.ExecuteNonQueryAsync();
@@ -633,7 +512,7 @@ public class DatabaseHelper
         try
         {
             string query = $"SELECT {returnColumnName} FROM {tableName} WHERE {searchColumnName} IS NULL";
-            using (var command = new SQLiteCommand(query, connection))
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
             {
                 using (var reader = await command.ExecuteReaderAsync())
                 {
@@ -651,7 +530,6 @@ public class DatabaseHelper
         }
         return valuesWithNull;
     }
-
     private static async Task<List<string>> GetUniqueValuesAsync(string tableName, string columnName)
     {
         List<string> uniqueValues = new List<string>();
@@ -660,7 +538,7 @@ public class DatabaseHelper
         {
             string query = $"SELECT DISTINCT {columnName} FROM {tableName};";
 
-            using (var command = new SQLiteCommand(query, connection))
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
             {
                 using (var reader = await command.ExecuteReaderAsync())
                 {
@@ -682,10 +560,7 @@ public class DatabaseHelper
 
         return uniqueValues;
     }
-
-
     #endregion
-
 }
 
 

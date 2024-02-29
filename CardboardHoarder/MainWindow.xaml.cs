@@ -1,28 +1,21 @@
-﻿using ServiceStack;
-using ServiceStack.Messaging;
-using System.Data;
+﻿using System.Data;
 using System.Data.SQLite;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
-using System.Net.Http;
 using System.Windows;
 using System.Windows.Media.Imaging;
 
-
 namespace CardboardHoarder
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
-        public static MainWindow? CurrentInstance { get; private set; }
+
+        public static MainWindow? CurrentInstance { get; private set; } // Used by ShowOrHideStatusWindow to reference MainWindow
         public MainWindow()
         {
             InitializeComponent();
-            CurrentInstance = this;
-            DatabaseHelper.StatusMessageUpdated += UpdateStatusTextBox;
+            CurrentInstance = this; // Used by ShowOrHideStatusWindow to reference MainWindow
+            DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox; // Update the statusbox with messages from methods in DownloadAndPrepareDB
             GridSearchAndFilter.Visibility = Visibility.Hidden;
             GridMyCollection.Visibility = Visibility.Hidden;
             GridStatus.Visibility = Visibility.Hidden;
@@ -31,13 +24,12 @@ namespace CardboardHoarder
 
         private async Task PrepareSystem()
         {
-            await DatabaseHelper.CheckDatabaseExistenceAsync();            
+            await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
             GridSearchAndFilter.Visibility = Visibility.Visible;
-            await DatabaseHelper.OpenConnectionAsync();             
+            await DBAccess.OpenConnectionAsync();
             await LoadDataAsync();
-            DatabaseHelper.CloseConnection();
+            DBAccess.CloseConnection();
         }
-
         public static void ShowOrHideStatusWindow(bool visible)
         {
             if (CurrentInstance != null)
@@ -46,8 +38,6 @@ namespace CardboardHoarder
                 gridStatus.Visibility = visible ? Visibility.Visible : Visibility.Hidden;
             }
         }
-
-
         private void UpdateStatusTextBox(string message)
         {
             Dispatcher.Invoke(() =>
@@ -55,7 +45,6 @@ namespace CardboardHoarder
                 statusTextBox.Text = message;
             });
         }
-
         private void reset_grids()
         {
             GridSearchAndFilter.Visibility = Visibility.Hidden;
@@ -71,51 +60,14 @@ namespace CardboardHoarder
             reset_grids();
             GridMyCollection.Visibility = Visibility.Visible;
         }
-
-        /*
-        private async Task DownloadDatabaseIfNotExistsAsync()
-        {
-            statusTextBox.Text = "Starting download...";
-
-            try
-            {
-                string databasePath = Path.Combine("c:/code/AllPrintings/", "AllPrintings.sqlite");
-
-                if (!File.Exists(databasePath))
-                {
-                    Debug.WriteLine($"The database file '{databasePath}' does not exist. Downloading...");
-                    Directory.CreateDirectory("c:/code/AllPrintings/");
-                    string downloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
-
-                    using (HttpClient httpClient = new HttpClient())
-                    {
-                        byte[] fileContent = await httpClient.GetByteArrayAsync(downloadUrl);
-                        File.WriteAllBytes(databasePath, fileContent);
-                    }
-
-                    Debug.WriteLine("Download completed.");
-                }
-                else
-                {
-                    Debug.WriteLine("The database file already exists.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while downloading database file: {ex.Message}");
-            }
-        }
-        */
-
-        //private static SQLiteConnection? connection;
         private async Task LoadDataAsync()
         {
-            Debug.WriteLine("Loading data asynchronously...");           
+            Debug.WriteLine("Loading data asynchronously...");
 
             try
             {
-                string query = "SELECT name, SetCode FROM cards"; // Adjust the query accordingly
-                using var command = new SQLiteCommand(query, DatabaseHelper.connection);
+                string query = "SELECT name, SetCode FROM cards";
+                using var command = new SQLiteCommand(query, DBAccess.connection);
 
                 using var reader = await command.ExecuteReaderAsync();
                 var items = new List<CardSet>();
@@ -141,6 +93,7 @@ namespace CardboardHoarder
         }
 
 
+        // Test kode
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             DisplayImageFromDatabase(imageInput.Text, testImage, 1);
@@ -153,7 +106,6 @@ namespace CardboardHoarder
         {
             DisplayImageFromDatabase(manaSymbolTextBox.Text, manaSymbolImageTester, 3);
         }
-
         private void DisplayImageFromDatabase(string inputFieldText, System.Windows.Controls.Image targetImageControl, int querySelector)
         {
             try
@@ -168,16 +120,18 @@ namespace CardboardHoarder
                 {
                     query = "SELECT keyruneImage FROM keyruneImages WHERE setCode = @symbol";
                     field = "keyruneImage";
-                } else if (querySelector == 2)
+                }
+                else if (querySelector == 2)
                 {
                     query = "SELECT manacostImage FROM uniqueManaCostImages WHERE uniqueManaCost = @symbol";
                     field = "manaCostImage";
-                } else if (querySelector == 3)
+                }
+                else if (querySelector == 3)
                 {
                     query = "SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol";
                     field = "manaSymbolImage";
                 }
-                using (SQLiteConnection connection = DatabaseHelper.GetConnection())
+                using (SQLiteConnection connection = DBAccess.GetConnection())
                 {
                     connection.Open();
 
