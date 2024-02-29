@@ -24,23 +24,9 @@ public class DownloadAndPrepDB
 
             if (!File.Exists(databasePath))
             {
-                MainWindow.ShowOrHideStatusWindow(true);
-
-                var progress = new Progress<int>(value =>
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        if (MainWindow.CurrentInstance?.progressBar != null)
-                        {
-                            MainWindow.CurrentInstance.progressBar.Value = value;
-                        }
-                    });
-                });
 
                 // Call the download method with the progress handler
-                await DownloadDatabaseIfNotExistsAsync(databasePath, progress);
-
-                //await DownloadDatabaseIfNotExistsAsync(databasePath);
+                await DownloadDatabaseIfNotExistsAsync(databasePath);
                 await DBAccess.OpenConnectionAsync();
                 await CreateCustomTablesAndIndices(databasePath);
                 await GenerateManaSymbolsFromSvgAsync();
@@ -61,42 +47,48 @@ public class DownloadAndPrepDB
     /// <summary>
     /// Download card database from mtgjson in SQLite format
     /// </summary>
-    private static async Task DownloadDatabaseIfNotExistsAsync(string databasePath, IProgress<int> progress)
+    public static async Task DownloadDatabaseIfNotExistsAsync(string databasePath)
     {
         try
         {
-            if (!File.Exists(databasePath))
+            MainWindow.ShowOrHideStatusWindow(true);
+
+            IProgress<int> progress = new Progress<int>(value =>
             {
-                string downloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
-                using (var httpClient = new HttpClient())
-                using (var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl))
-                using (var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    response.EnsureSuccessStatusCode();
-                    var totalBytes = response.Content.Headers.ContentLength ?? -1L;
-                    var megabytes = string.Format("{0:0.0} MB", totalBytes / 1000000.0);
-                    var totalBytesRead = 0L;
-                    var buffer = new byte[4096];
-                    using (var contentStream = await response.Content.ReadAsStreamAsync())
-                    using (var fileStream = new FileStream(databasePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
+                    if (MainWindow.CurrentInstance?.progressBar != null)
                     {
-                        StatusMessageUpdated?.Invoke($"Downloading card database ({megabytes})");
-                        var bytesRead = 0;
-                        while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
-                        {
-                            await fileStream.WriteAsync(buffer, 0, bytesRead);
-                            totalBytesRead += bytesRead;
-                            var progressPercentage = totalBytes != -1 ? (int)((totalBytesRead * 100) / totalBytes) : -1;
-                            progress?.Report(progressPercentage);
-                        }
+                        MainWindow.CurrentInstance.progressBar.Value = value;
+                    }
+                });
+            });
+
+            string downloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
+            using (var httpClient = new HttpClient())
+            using (var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl))
+            using (var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
+            {
+                response.EnsureSuccessStatusCode();
+                var totalBytes = response.Content.Headers.ContentLength ?? -1L;
+                var megabytes = string.Format("{0:0.0} MB", totalBytes / 1000000.0);
+                var totalBytesRead = 0L;
+                var buffer = new byte[4096];
+                using (var contentStream = await response.Content.ReadAsStreamAsync())
+                using (var fileStream = new FileStream(databasePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
+                {
+                    StatusMessageUpdated?.Invoke($"Downloading card database ({megabytes})");
+                    var bytesRead = 0;
+                    while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
+                    {
+                        await fileStream.WriteAsync(buffer, 0, bytesRead);
+                        totalBytesRead += bytesRead;
+                        var progressPercentage = totalBytes != -1 ? (int)((totalBytesRead * 100) / totalBytes) : -1;
+                        progress?.Report(progressPercentage);
                     }
                 }
-                Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
             }
-            else
-            {
-                Debug.WriteLine($"The database file '{databasePath}' already exists.");
-            }
+            Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
         }
         catch (Exception ex)
         {

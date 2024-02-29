@@ -45,19 +45,19 @@ namespace CardboardHoarder
                 statusTextBox.Text = message;
             });
         }
-        private void reset_grids()
+        private void ResetGrids()
         {
             GridSearchAndFilter.Visibility = Visibility.Hidden;
             GridMyCollection.Visibility = Visibility.Hidden;
         }
         private void MenuSearchAndFilter_Click(object sender, RoutedEventArgs e)
         {
-            reset_grids();
+            ResetGrids();
             GridSearchAndFilter.Visibility = Visibility.Visible;
         }
         private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
         {
-            reset_grids();
+            ResetGrids();
             GridMyCollection.Visibility = Visibility.Visible;
         }
         private async Task LoadDataAsync()
@@ -202,6 +202,19 @@ namespace CardboardHoarder
             return null;
         }
 
+        private async void checkForUpdatesButton_Click(object sender, RoutedEventArgs e)
+        {
+            await UpdateDB.CheckForUpdatesAsync(); // Assuming the method is named CheckForUpdatesAsync and is async
+        }
 
+        private async void updateDbButton_Click(object sender, RoutedEventArgs e)
+        {
+            ResetGrids();
+            // Download into currentuser/downloads
+            string downloadsPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            string databasePath = Path.Combine(downloadsPath, "Downloads", "AllPrintings.sqlite");
+
+            await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(databasePath);
+        }
     }
 }
