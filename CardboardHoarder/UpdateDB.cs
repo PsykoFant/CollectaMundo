@@ -1,5 +1,6 @@
 ﻿using System.Data.SQLite;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 
 namespace CardboardHoarder
@@ -41,6 +42,15 @@ namespace CardboardHoarder
             {
                 DBAccess.CloseConnection();
             }
+        }
+        public static async Task UpdateCardDatabaseAsync()
+        {
+            // Download new card database to currentuser/downloads
+            string downloadsPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            string newDatabasePath = Path.Combine(downloadsPath, "Downloads", "AllPrintings.sqlite");
+
+            await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(newDatabasePath);
+
         }
 
     }

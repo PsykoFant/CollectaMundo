@@ -11,6 +11,7 @@ using System.Windows;
 public class DownloadAndPrepDB
 {
     public static event Action<string>? StatusMessageUpdated;
+    public static string databasePath = Path.Combine(DBAccess.sqlitePath, "AllPrintings.sqlite");
 
     /// <summary>
     /// Check if the card database exists in the location specified by appsettings.json. 
@@ -20,7 +21,7 @@ public class DownloadAndPrepDB
     {
         try
         {
-            string databasePath = Path.Combine(DBAccess.sqlitePath, "AllPrintings.sqlite");
+
 
             if (!File.Exists(databasePath))
             {
@@ -385,7 +386,9 @@ public class DownloadAndPrepDB
     private static byte[] CombineImages(List<Bitmap> images)
     {
         if (images == null || images.Count == 0)
+        {
             throw new ArgumentException("Images list is null or empty", nameof(images));
+        }
 
         int width = images.Sum(img => img.Width);
         int height = images.Max(img => img.Height);

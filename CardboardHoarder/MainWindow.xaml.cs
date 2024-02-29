@@ -210,11 +210,7 @@ namespace CardboardHoarder
         private async void updateDbButton_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
-            // Download into currentuser/downloads
-            string downloadsPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            string databasePath = Path.Combine(downloadsPath, "Downloads", "AllPrintings.sqlite");
-
-            await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(databasePath);
+            await UpdateDB.UpdateCardDatabaseAsync();
         }
     }
 }
