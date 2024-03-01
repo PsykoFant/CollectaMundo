@@ -26,9 +26,9 @@ namespace CardboardHoarder
         {
             await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
             GridSearchAndFilter.Visibility = Visibility.Visible;
-            await DBAccess.OpenConnectionAsync();
+            await DBAccess.OpenConnectionAsync(DBAccess.connection, DBAccess.connectionString);
             await LoadDataAsync();
-            DBAccess.CloseConnection();
+            DBAccess.CloseConnection(DBAccess.connection);
         }
         public static void ShowOrHideStatusWindow(bool visible)
         {

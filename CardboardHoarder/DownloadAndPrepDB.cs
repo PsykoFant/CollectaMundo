@@ -28,7 +28,7 @@ public class DownloadAndPrepDB
 
                 // Call the download method with the progress handler
                 await DownloadDatabaseIfNotExistsAsync(databasePath);
-                await DBAccess.OpenConnectionAsync();
+                await DBAccess.OpenConnectionAsync(DBAccess.connection, DBAccess.connectionString);
                 await CreateCustomTablesAndIndices(databasePath);
                 await GenerateManaSymbolsFromSvgAsync();
                 // Now run the last two functions in parallel
@@ -36,7 +36,7 @@ public class DownloadAndPrepDB
                 var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
                 await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
 
-                DBAccess.CloseConnection();
+                DBAccess.CloseConnection(DBAccess.connection);
                 MainWindow.ShowOrHideStatusWindow(false);
             }
         }
