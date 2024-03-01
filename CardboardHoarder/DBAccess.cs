@@ -30,15 +30,13 @@ namespace CardboardHoarder
         }
 
         public static SQLiteConnection? connection;
-        public static string? connectionString = Configuration.GetConnectionString("SQLiteConnection");
-        public static async Task OpenConnectionAsync(SQLiteConnection connection, string connectionString)
+        public static async Task OpenConnectionAsync()
         {
-            Debug.WriteLine(connectionString);
             try
             {
                 if (connection == null)
                 {
-                    
+                    string? connectionString = Configuration.GetConnectionString("SQLiteConnection");
                     if (string.IsNullOrEmpty(connectionString))
                     {
                         throw new InvalidOperationException("Connection string not found in appsettings.json.");
@@ -63,7 +61,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Opening connection failed {ex.Message}");
             }
         }
-        public static void CloseConnection(SQLiteConnection? connection)
+        public static void CloseConnection()
         {
             try
             {

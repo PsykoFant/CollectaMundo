@@ -9,7 +9,7 @@ namespace CardboardHoarder
     {
         public static async Task CheckForUpdatesAsync()
         {
-            await DBAccess.OpenConnectionAsync(DBAccess.connection, DBAccess.connectionString);
+            await DBAccess.OpenConnectionAsync();
             string query = "SELECT date FROM meta WHERE rowid = 1;";
             try
             {
@@ -40,7 +40,7 @@ namespace CardboardHoarder
             }
             finally
             {
-                DBAccess.CloseConnection(DBAccess.connection);
+                DBAccess.CloseConnection();
             }
         }
         public static async Task UpdateCardDatabaseAsync()
