@@ -38,41 +38,30 @@ namespace CardboardHoarder
         {
             try
             {
-                // Open the regular card database
+                SQLiteConnection conn = openRegularDB ? connection : temDbConnection;
+
+                if (conn == null)
+                {
+                    string connString = openRegularDB ? Configuration.GetConnectionString("SQLiteConnection").Replace("{SQLitePath}", sqlitePath) : newDatabasePath;
+                    if (string.IsNullOrEmpty(connString))
+                    {
+                        throw new InvalidOperationException("Connection string not found.");
+                    }
+                    conn = new SQLiteConnection(connString);
+                }
+
                 if (openRegularDB)
                 {
-                    if (connection == null)
-                    {
-                        string? connectionString = Configuration.GetConnectionString("SQLiteConnection");
-                        if (string.IsNullOrEmpty(connectionString))
-                        {
-                            throw new InvalidOperationException("Connection string not found in appsettings.json.");
-                        }
-                        if (string.IsNullOrEmpty(sqlitePath))
-                        {
-                            throw new InvalidOperationException("SQLite database path not found in appsettings.json.");
-                        }
-
-                        connection = new SQLiteConnection(connectionString.Replace("{SQLitePath}", sqlitePath));
-                    }
-
-                    if (connection.State != System.Data.ConnectionState.Open)
-                    {
-                        await connection.OpenAsync();
-                    }
+                    connection = conn;
                 }
-                // Open the downloaded temp database used when updating db
                 else
                 {
-                    if (temDbConnection == null)
-                    {
-                        temDbConnection = new SQLiteConnection(newDatabasePath);
-                    }
+                    temDbConnection = conn;
+                }
 
-                    if (temDbConnection.State != System.Data.ConnectionState.Open)
-                    {
-                        await temDbConnection.OpenAsync();
-                    }
+                if (conn.State != System.Data.ConnectionState.Open)
+                {
+                    await conn.OpenAsync();
                 }
             }
             catch (Exception ex)
