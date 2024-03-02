@@ -1,6 +1,5 @@
 ﻿using System.Data.SQLite;
 using System.Diagnostics;
-using System.IO;
 using System.Windows;
 
 namespace CardboardHoarder
@@ -9,7 +8,7 @@ namespace CardboardHoarder
     {
         public static async Task CheckForUpdatesAsync()
         {
-            await DBAccess.OpenConnectionAsync();
+            await DBAccess.OpenConnectionAsync(true);
             string query = "SELECT date FROM meta WHERE rowid = 1;";
             try
             {
@@ -40,16 +39,13 @@ namespace CardboardHoarder
             }
             finally
             {
-                DBAccess.CloseConnection();
+                DBAccess.CloseConnection(true);
             }
         }
         public static async Task UpdateCardDatabaseAsync()
         {
             // Download new card database to currentuser/downloads
-            string downloadsPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            string newDatabasePath = Path.Combine(downloadsPath, "Downloads", "AllPrintings.sqlite");
-
-            await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(newDatabasePath);
+            await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(DBAccess.newDatabasePath);
 
         }
 
