@@ -6,7 +6,7 @@ namespace CardboardHoarder
 {
     public class UpdateDB
     {
-        public static event Action<string>? StatusMessageUpdated;
+        public static event Action<string>? StatusMessageUpdatedFuck;
         public static async Task CheckForUpdatesAsync()
         {
             await DBAccess.OpenConnectionAsync();
@@ -45,35 +45,50 @@ namespace CardboardHoarder
         }
         public static async Task UpdateCardDatabaseAsync()
         {
-
-            MainWindow.ShowOrHideStatusWindow(true);
-
             // Download new card database to currentuser/downloads
             //await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(DBAccess.newDatabasePath);
 
-            //await DBAccess.OpenTempConnectionAsync(false);
+            // Copy tables from new card database
             await DBAccess.OpenConnectionAsync();
 
-            await CopyTableAsync("meta");
+            await CopyTableAsync();
 
             DBAccess.CloseConnection();
-            //DBAccess.CloseConnection(false);
-
         }
-        public static async Task CopyTableAsync(string tableName)
+        public static async Task CopyTableAsync()
         {
+            // debug
+            MainWindow.ShowOrHideStatusWindow(true);
+
             try
             {
+                StatusMessageUpdatedFuck?.Invoke("Copying updated tables to card database");
+
                 // Check and drop the table in regularDb if it exists
                 Dictionary<string, string> tables = new()
                     {
-                        {"meta", $"DROP TABLE IF EXISTS meta;" },
+                    {"cardForeignData", $"DROP TABLE IF EXISTS cardForeignData;" },
+                    {"cardIdentifiers", $"DROP TABLE IF EXISTS cardIdentifiers;" },
+                    {"cardLegalities", $"DROP TABLE IF EXISTS cardLegalities;" },
+                    {"cardPurchaseUrls", $"DROP TABLE IF EXISTS cardPurchaseUrls;" },
+                    {"cardRulings", $"DROP TABLE IF EXISTS cardRulings;" },
+                    {"cards", $"DROP TABLE IF EXISTS cards;" },
+                    {"meta", $"DROP TABLE IF EXISTS meta;" },
+                    {"setBoosterContentWeights", $"DROP TABLE IF EXISTS setBoosterContentWeights;" },
+                    {"setBoosterContents", $"DROP TABLE IF EXISTS setBoosterContents;" },
+                    {"setBoosterSheetCards", $"DROP TABLE IF EXISTS setBoosterSheetCards;" },
+                    {"setBoosterSheets", $"DROP TABLE IF EXISTS setBoosterSheets;" },
+                    {"setTranslations", $"DROP TABLE IF EXISTS setTranslations;" },
+                    {"sets", $"DROP TABLE IF EXISTS sets;" },
+                    {"tokenIdentifiers", $"DROP TABLE IF EXISTS tokenIdentifiers;" },
+                    {"tokens", $"DROP TABLE IF EXISTS tokens;" },
                     };
                 foreach (var item in tables)
                 {
                     using (var dropCommand = new SQLiteCommand(item.Value, DBAccess.connection))
                     {
                         await dropCommand.ExecuteNonQueryAsync();
+                        StatusMessageUpdatedFuck?.Invoke($"Updated table {item.Key} has been copied from download...");
                         Debug.WriteLine($"Table {item.Key} has been dropped");
                     }
                 }
@@ -89,6 +104,7 @@ namespace CardboardHoarder
                     using (var copyCmd = new SQLiteCommand(copyTable, DBAccess.connection))
                     {
                         await copyCmd.ExecuteNonQueryAsync();
+                        await updateFuckingStatusWindow();
                         Debug.WriteLine($"Updated table {item.Key} has been copied from download...");
                     }
                 }
@@ -107,7 +123,10 @@ namespace CardboardHoarder
             }
         }
 
-
+        public static async Task updateFuckingStatusWindow()
+        {
+            StatusMessageUpdatedFuck?.Invoke($"fuck fuck fuck");
+        }
 
 
 

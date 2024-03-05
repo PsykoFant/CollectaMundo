@@ -16,7 +16,7 @@ namespace CardboardHoarder
             InitializeComponent();
             CurrentInstance = this; // Used by ShowOrHideStatusWindow to reference MainWindow
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox; // Update the statusbox with messages from methods in DownloadAndPrepareDB
-            UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
+            UpdateDB.StatusMessageUpdatedFuck += UpdateStatusTextBox;
 
             GridSearchAndFilter.Visibility = Visibility.Hidden;
             GridMyCollection.Visibility = Visibility.Hidden;

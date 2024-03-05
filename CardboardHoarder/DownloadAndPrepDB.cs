@@ -21,8 +21,6 @@ public class DownloadAndPrepDB
     {
         try
         {
-
-
             if (!File.Exists(databasePath))
             {
 
