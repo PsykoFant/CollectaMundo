@@ -11,7 +11,7 @@ namespace CardboardHoarder
         private static string _sqlitePath = string.Empty;
 
         public static SQLiteConnection? connection; // instantiate SQLite connection to use for db access
-        private static SQLiteConnection? temDbConnection; // instantiate SQLite connection to use for temp db access when updating        
+        public static SQLiteConnection? temDbConnection; // instantiate SQLite connection to use for temp db access when updating        
 
         private static string downloadsPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         public static string newDatabasePath = Path.Combine(downloadsPath, "Downloads", "AllPrintings.sqlite");
@@ -38,37 +38,70 @@ namespace CardboardHoarder
         {
             try
             {
-                SQLiteConnection conn = openRegularDB ? connection : temDbConnection;
-
-                if (conn == null)
+                // Create connectionstring to use with regular db
+                string? regularDbconnString = Configuration.GetConnectionString("SQLiteConnection");
+                if (string.IsNullOrEmpty(regularDbconnString))
                 {
-                    string connString = openRegularDB ? Configuration.GetConnectionString("SQLiteConnection").Replace("{SQLitePath}", sqlitePath) : newDatabasePath;
-                    if (string.IsNullOrEmpty(connString))
-                    {
-                        throw new InvalidOperationException("Connection string not found.");
-                    }
-                    conn = new SQLiteConnection(connString);
+                    throw new InvalidOperationException("Base connection string not found.");
                 }
 
-                if (openRegularDB)
-                {
-                    connection = conn;
-                }
-                else
-                {
-                    temDbConnection = conn;
-                }
+                // Create connectionstring to use with temp db
+                string formattedNewDatabasePath = newDatabasePath.Replace("\\", "/");
+                string tempDbConnString = $"Data Source={formattedNewDatabasePath};Version=3;";
+                string connString = openRegularDB ? regularDbconnString.Replace("{SQLitePath}", sqlitePath) : tempDbConnString;
+
+                SQLiteConnection conn = new SQLiteConnection(connString);
+                (openRegularDB ? ref connection : ref temDbConnection) = conn;
+
+                Debug.WriteLine($"trying to open the {(openRegularDB ? "regular" : "temp")} db. This is the connectionstring: {connString}");
 
                 if (conn.State != System.Data.ConnectionState.Open)
                 {
                     await conn.OpenAsync();
                 }
+
+
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Opening connection failed {ex.Message}");
             }
         }
+
+        public static async Task OpenTempConnectionAsync(bool openRegularDB)
+        {
+            try
+            {
+                // Create connectionstring to use with regular db
+                string? regularDbconnString = Configuration.GetConnectionString("SQLiteConnection");
+                if (string.IsNullOrEmpty(regularDbconnString))
+                {
+                    throw new InvalidOperationException("Base connection string not found.");
+                }
+
+                // Create connectionstring to use with temp db
+                string formattedNewDatabasePath = newDatabasePath.Replace("\\", "/");
+                string tempDbConnString = $"Data Source={formattedNewDatabasePath};Version=3;";
+                string connString = openRegularDB ? regularDbconnString.Replace("{SQLitePath}", sqlitePath) : tempDbConnString;
+
+                SQLiteConnection conn = new SQLiteConnection(connString);
+                (openRegularDB ? ref connection : ref temDbConnection) = conn;
+
+                Debug.WriteLine($"trying to open the {(openRegularDB ? "regular" : "temp")} db. This is the connectionstring: {connString}");
+
+                if (conn.State != System.Data.ConnectionState.Open)
+                {
+                    await conn.OpenAsync();
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Opening connection failed {ex.Message}");
+            }
+        }
+
         public static void CloseConnection(bool closeRegularDB)
         {
             try
@@ -76,6 +109,7 @@ namespace CardboardHoarder
                 var conn = closeRegularDB ? connection : temDbConnection;
                 if (conn != null && conn.State == System.Data.ConnectionState.Open)
                 {
+                    Debug.WriteLine($"trying to close the {(closeRegularDB ? "regular" : "temp")} db.");
                     conn.Close();
                 }
 
