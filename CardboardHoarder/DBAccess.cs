@@ -34,64 +34,24 @@ namespace CardboardHoarder
 
             Configuration = builder.Build();
         }
-        public static async Task OpenConnectionAsync(bool openRegularDB)
+        public static async Task OpenConnectionAsync()
         {
             try
             {
                 // Create connectionstring to use with regular db
-                string? regularDbconnString = Configuration.GetConnectionString("SQLiteConnection");
-                if (string.IsNullOrEmpty(regularDbconnString))
+                string? connectionString = Configuration.GetConnectionString("SQLiteConnection");
+                if (string.IsNullOrEmpty(connectionString))
                 {
                     throw new InvalidOperationException("Base connection string not found.");
                 }
 
-                // Create connectionstring to use with temp db
-                string formattedNewDatabasePath = newDatabasePath.Replace("\\", "/");
-                string tempDbConnString = $"Data Source={formattedNewDatabasePath};Version=3;";
-                string connString = openRegularDB ? regularDbconnString.Replace("{SQLitePath}", sqlitePath) : tempDbConnString;
+                SQLiteConnection connection = new SQLiteConnection(connectionString);
+                DBAccess.connection = connection;
 
-                SQLiteConnection conn = new SQLiteConnection(connString);
-                (openRegularDB ? ref connection : ref temDbConnection) = conn;
-
-                Debug.WriteLine($"trying to open the {(openRegularDB ? "regular" : "temp")} db. This is the connectionstring: {connString}");
-
-                if (conn.State != System.Data.ConnectionState.Open)
+                if (connection.State != System.Data.ConnectionState.Open)
                 {
-                    await conn.OpenAsync();
-                }
-
-
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Opening connection failed {ex.Message}");
-            }
-        }
-
-        public static async Task OpenTempConnectionAsync(bool openRegularDB)
-        {
-            try
-            {
-                // Create connectionstring to use with regular db
-                string? regularDbconnString = Configuration.GetConnectionString("SQLiteConnection");
-                if (string.IsNullOrEmpty(regularDbconnString))
-                {
-                    throw new InvalidOperationException("Base connection string not found.");
-                }
-
-                // Create connectionstring to use with temp db
-                string formattedNewDatabasePath = newDatabasePath.Replace("\\", "/");
-                string tempDbConnString = $"Data Source={formattedNewDatabasePath};Version=3;";
-                string connString = openRegularDB ? regularDbconnString.Replace("{SQLitePath}", sqlitePath) : tempDbConnString;
-
-                SQLiteConnection conn = new SQLiteConnection(connString);
-                (openRegularDB ? ref connection : ref temDbConnection) = conn;
-
-                Debug.WriteLine($"trying to open the {(openRegularDB ? "regular" : "temp")} db. This is the connectionstring: {connString}");
-
-                if (conn.State != System.Data.ConnectionState.Open)
-                {
-                    await conn.OpenAsync();
+                    await connection.OpenAsync();
+                    Debug.WriteLine($"Connection open. This is the connectionstring: {connectionString}");
                 }
 
 

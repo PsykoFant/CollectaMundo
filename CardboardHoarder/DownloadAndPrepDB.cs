@@ -28,7 +28,7 @@ public class DownloadAndPrepDB
 
                 // Call the download method with the progress handler
                 await DownloadDatabaseIfNotExistsAsync(databasePath);
-                await DBAccess.OpenConnectionAsync(true);
+                await DBAccess.OpenConnectionAsync();
                 await CreateCustomTablesAndIndices(databasePath);
                 await GenerateManaSymbolsFromSvgAsync();
                 // Now run the last two functions in parallel
