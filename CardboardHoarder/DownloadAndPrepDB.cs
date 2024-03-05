@@ -23,17 +23,34 @@ public class DownloadAndPrepDB
         {
             if (!File.Exists(databasePath))
             {
+                // Disbale buttons while updating
+                MainWindow.CurrentInstance.updateCheckLabel.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.updateCheckLabel.Content = "No card database found...";
+                await MainWindow.ShowStatusWindowAsync(true);
+
                 // Call the download method with the progress handler
                 await DownloadDatabaseIfNotExistsAsync(databasePath);
+
                 await DBAccess.OpenConnectionAsync();
+                // Read last updated from the newly updated database                
+                string lastUpdated = await UpdateDB.GetDateFromMetaAsync();
+                // Update Last updated in appsettings.json
+                await UpdateDB.UpdateLastUpdatedDateAsync(lastUpdated);
+
+                /*
+
                 await CreateCustomTablesAndIndices(databasePath);
                 await GenerateManaSymbolsFromSvgAsync();
                 // Now run the last two functions in parallel
                 var generateManaCostImagesTask = GenerateManaCostImagesAsync();
                 var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
                 await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
+
+                */
+
                 DBAccess.CloseConnection();
-                MainWindow.ShowOrHideStatusWindow(false);
+                MainWindow.CurrentInstance.ResetGrids();
+                await MainWindow.ShowStatusWindowAsync(false);
             }
         }
         catch (Exception ex)
@@ -48,7 +65,13 @@ public class DownloadAndPrepDB
     {
         try
         {
-            MainWindow.ShowOrHideStatusWindow(true);
+            if (MainWindow.CurrentInstance?.progressBar != null)
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MainWindow.CurrentInstance.progressBar.Visibility = Visibility.Visible;
+                });
+            }
 
             IProgress<int> progress = new Progress<int>(value =>
             {
@@ -156,7 +179,7 @@ public class DownloadAndPrepDB
             Debug.WriteLine($"Error during creation of tables and indices: {ex.Message}");
         }
     }
-    private static async Task GenerateManaSymbolsFromSvgAsync()
+    public static async Task GenerateManaSymbolsFromSvgAsync()
     {
         StatusMessageUpdated?.Invoke("Generating mana symbol images");
         try
@@ -219,7 +242,7 @@ public class DownloadAndPrepDB
             Debug.WriteLine($"Error during creation or insertion of uniqueManaSymbols: {ex.Message}");
         }
     }
-    private static async Task GenerateManaCostImagesAsync()
+    public static async Task GenerateManaCostImagesAsync()
     {
         List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
 
@@ -242,7 +265,7 @@ public class DownloadAndPrepDB
             Debug.WriteLine($"Added image for the mana cost {missingImage} ({counter.ToString()} of {manaCostsWithNullImage.Count().ToString()})");
         }
     }
-    private static async Task GenerateSetKeyruneFromSvgAsync()
+    public static async Task GenerateSetKeyruneFromSvgAsync()
     {
         try
         {

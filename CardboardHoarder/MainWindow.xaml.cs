@@ -10,11 +10,22 @@ namespace CardboardHoarder
     public partial class MainWindow : Window
     {
 
-        public static MainWindow? CurrentInstance { get; private set; } // Used by ShowOrHideStatusWindow to reference MainWindow
+        // Used by ShowOrHideStatusWindow to reference MainWindow
+        private static MainWindow? _currentInstance;
+        public static MainWindow CurrentInstance
+        {
+            get
+            {
+                if (_currentInstance == null) throw new InvalidOperationException("CurrentInstance is not initialized.");
+                return _currentInstance;
+            }
+            private set => _currentInstance = value;
+        }
+
         public MainWindow()
         {
             InitializeComponent();
-            CurrentInstance = this; // Used by ShowOrHideStatusWindow to reference MainWindow
+            _currentInstance = this;
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox; // Update the statusbox with messages from methods in DownloadAndPrepareDB            
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox; // Update the statusbox with messages from methods in UpdateDB
 
@@ -32,14 +43,38 @@ namespace CardboardHoarder
             await LoadDataAsync();
             DBAccess.CloseConnection();
         }
-        public static void ShowOrHideStatusWindow(bool visible)
+        public static async Task ShowStatusWindowAsync(bool visible)
         {
             if (CurrentInstance != null)
             {
-                var gridStatus = CurrentInstance.GridStatus;
-                gridStatus.Visibility = visible ? Visibility.Visible : Visibility.Hidden;
+                await CurrentInstance.Dispatcher.InvokeAsync(() =>
+                {
+                    if (visible)
+                    {
+                        CurrentInstance.MenuSearchAndFilterButton.IsEnabled = false;
+                        CurrentInstance.MenuMyCollectionButton.IsEnabled = false;
+                        CurrentInstance.MenuDecksButton.IsEnabled = false;
+                        CurrentInstance.updateDbButton.IsEnabled = false;
+                        CurrentInstance.checkForUpdatesButton.IsEnabled = false;
+
+                        CurrentInstance.GridStatus.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        CurrentInstance.MenuSearchAndFilterButton.IsEnabled = true;
+                        CurrentInstance.MenuMyCollectionButton.IsEnabled = true;
+                        CurrentInstance.MenuDecksButton.IsEnabled = true;
+                        CurrentInstance.updateDbButton.IsEnabled = true;
+                        CurrentInstance.updateDbButton.Visibility = Visibility.Hidden;
+                        CurrentInstance.checkForUpdatesButton.IsEnabled = true;
+
+
+                        CurrentInstance.GridStatus.Visibility = Visibility.Hidden;
+                    }
+                });
             }
         }
+
         private void UpdateStatusTextBox(string message)
         {
             Dispatcher.Invoke(() =>
@@ -47,8 +82,9 @@ namespace CardboardHoarder
                 statusTextBox.Text = message;
             });
         }
-        private void ResetGrids()
+        public void ResetGrids()
         {
+            updateCheckLabel.Content = "";
             GridSearchAndFilter.Visibility = Visibility.Hidden;
             GridMyCollection.Visibility = Visibility.Hidden;
         }
@@ -62,6 +98,18 @@ namespace CardboardHoarder
             ResetGrids();
             GridMyCollection.Visibility = Visibility.Visible;
         }
+        private async void checkForUpdatesButton_Click(object sender, RoutedEventArgs e)
+        {
+            await UpdateDB.CheckForUpdatesAsync(); // Assuming the method is named CheckForUpdatesAsync and is async
+        }
+        private async void updateDbButton_Click(object sender, RoutedEventArgs e)
+        {
+            ResetGrids();
+            await UpdateDB.UpdateCardDatabaseAsync();
+        }
+
+
+
         private async Task LoadDataAsync()
         {
             Debug.WriteLine("Loading data asynchronously...");
@@ -93,6 +141,8 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while loading data: {ex.Message}");
             }
         }
+
+
 
 
         // Test kode
@@ -204,16 +254,6 @@ namespace CardboardHoarder
             return null;
         }
 
-        private async void checkForUpdatesButton_Click(object sender, RoutedEventArgs e)
-        {
-            await UpdateDB.CheckForUpdatesAsync(); // Assuming the method is named CheckForUpdatesAsync and is async
-        }
 
-        private async void updateDbButton_Click(object sender, RoutedEventArgs e)
-        {
-            ResetGrids();
-            await UpdateDB.UpdateCardDatabaseAsync();
-
-        }
     }
 }

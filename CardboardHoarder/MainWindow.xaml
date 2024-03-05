@@ -7,9 +7,9 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="768" Width="1024">
     <Grid>
-        <Button x:Name="MenuSearchAndFilter" Content="Search and Filter" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuSearchAndFilter_Click"/>
-        <Button x:Name="MenuMyCollection" Content="My Collection" HorizontalAlignment="Left" Margin="174,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuMyCollection_Click"/>
-        <Button x:Name="MenuDecks" Content="Decks" HorizontalAlignment="Left" Margin="338,10,0,0" VerticalAlignment="Top" Width="159"/>
+        <Button x:Name="MenuSearchAndFilterButton" Content="Search and Filter" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuSearchAndFilter_Click"/>
+        <Button x:Name="MenuMyCollectionButton" Content="My Collection" HorizontalAlignment="Left" Margin="174,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuMyCollection_Click"/>
+        <Button x:Name="MenuDecksButton" Content="Decks" HorizontalAlignment="Left" Margin="338,10,0,0" VerticalAlignment="Top" Width="159"/>
         <Rectangle x:Name="MainScreen" HorizontalAlignment="Center" Height="707" Margin="0,35,0,0" Stroke="Black" VerticalAlignment="Top" Width="1004"/>
         <Grid x:Name="GridStatus" HorizontalAlignment="Center" Height="707" VerticalAlignment="Top" Margin="0,35,0,0" Width="1004" d:IsHidden="True">
             <TextBox x:Name="statusTextBox" HorizontalAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Top" Width="520" Margin="0,336,0,0"/>
@@ -45,8 +45,7 @@
         </Grid>
         <Button x:Name="checkForUpdatesButton" Content="Check for updates" HorizontalAlignment="Left" Margin="877,10,0,0" VerticalAlignment="Top" Width="130" Click="checkForUpdatesButton_Click"/>
         <Label x:Name="updateCheckLabel" Content="" HorizontalAlignment="Left" Margin="550,7,0,0" VerticalAlignment="Top" Width="182" Visibility="Hidden"/>
-        <Button x:Name="updateButton" Content="Update" HorizontalAlignment="Left" Margin="824,10,0,0" VerticalAlignment="Top" Width="51" Visibility="Hidden"/>
-        <Button x:Name="updateDbButton" Content="Update card database" HorizontalAlignment="Left" Margin="743,10,0,0" VerticalAlignment="Top" Width="129" Click="updateDbButton_Click"/>
+        <Button x:Name="updateDbButton" Content="Update card database" HorizontalAlignment="Left" Margin="743,10,0,0" VerticalAlignment="Top" Width="129" Click="updateDbButton_Click" Visibility="Hidden"/>
 
     </Grid>
 </Window>
