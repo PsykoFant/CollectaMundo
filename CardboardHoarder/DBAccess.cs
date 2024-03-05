@@ -38,23 +38,27 @@ namespace CardboardHoarder
         {
             try
             {
-                // Create connectionstring to use with regular db
-                string? connectionString = Configuration.GetConnectionString("SQLiteConnection");
-                if (string.IsNullOrEmpty(connectionString))
+                if (connection == null)
                 {
-                    throw new InvalidOperationException("Base connection string not found.");
-                }
+                    string? connectionString = Configuration.GetConnectionString("SQLiteConnection");
+                    if (string.IsNullOrEmpty(connectionString))
+                    {
+                        throw new InvalidOperationException("Connection string not found in appsettings.json.");
+                    }
 
-                SQLiteConnection connection = new SQLiteConnection(connectionString);
-                DBAccess.connection = connection;
+                    if (string.IsNullOrEmpty(sqlitePath))
+                    {
+                        throw new InvalidOperationException("SQLite database path not found in appsettings.json.");
+                    }
+
+                    string fullConnectionString = connectionString.Replace("{SQLitePath}", sqlitePath);
+                    connection = new SQLiteConnection(fullConnectionString);
+                }
 
                 if (connection.State != System.Data.ConnectionState.Open)
                 {
                     await connection.OpenAsync();
-                    Debug.WriteLine($"Connection open. This is the connectionstring: {connectionString}");
                 }
-
-
             }
             catch (Exception ex)
             {
@@ -62,25 +66,20 @@ namespace CardboardHoarder
             }
         }
 
-        public static void CloseConnection(bool closeRegularDB)
+        public static void CloseConnection()
         {
             try
             {
-                var conn = closeRegularDB ? connection : temDbConnection;
-                if (conn != null && conn.State == System.Data.ConnectionState.Open)
+                if (connection != null && connection.State == System.Data.ConnectionState.Open)
                 {
-                    Debug.WriteLine($"trying to close the {(closeRegularDB ? "regular" : "temp")} db.");
-                    conn.Close();
+                    connection.Close();
                 }
-
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Closing connection failed {ex.Message} (closeRegularDB was set to {closeRegularDB.ToString()})");
+                Debug.WriteLine($"Closing connection failed {ex.Message}");
             }
         }
-
-
 
         // Den her bliver kun brugt af debug-felter på mainwindow
         public static SQLiteConnection GetConnection()

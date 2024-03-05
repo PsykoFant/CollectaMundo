@@ -30,7 +30,7 @@ namespace CardboardHoarder
             GridSearchAndFilter.Visibility = Visibility.Visible;
             await DBAccess.OpenConnectionAsync();
             await LoadDataAsync();
-            DBAccess.CloseConnection(true);
+            DBAccess.CloseConnection();
         }
         public static void ShowOrHideStatusWindow(bool visible)
         {

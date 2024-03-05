@@ -36,7 +36,7 @@ public class DownloadAndPrepDB
                 var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
                 await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
 
-                DBAccess.CloseConnection(true);
+                DBAccess.CloseConnection();
                 MainWindow.ShowOrHideStatusWindow(false);
             }
         }

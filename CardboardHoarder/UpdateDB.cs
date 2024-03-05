@@ -40,7 +40,7 @@ namespace CardboardHoarder
             }
             finally
             {
-                DBAccess.CloseConnection(true);
+                DBAccess.CloseConnection();
             }
         }
         public static async Task UpdateCardDatabaseAsync()
@@ -56,7 +56,7 @@ namespace CardboardHoarder
 
             await CopyTableAsync("meta");
 
-            DBAccess.CloseConnection(true);
+            DBAccess.CloseConnection();
             //DBAccess.CloseConnection(false);
 
         }
