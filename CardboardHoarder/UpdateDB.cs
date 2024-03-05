@@ -1,9 +1,7 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
-using System.IO;
 using System.Net.Http;
 using System.Windows;
 
@@ -11,35 +9,40 @@ namespace CardboardHoarder
 {
     public class UpdateDB
     {
+        /// <summary>
+        /// Perform an update check by comparing the date from meta table in card db with data fetched from mtgjson server (meta)
+        /// If the date fetched from mtgjson is newer enable the update database button.
+        /// Pushing the button will download the latest version of AllPrintings.sqlite to the users download folder.
+        /// Drop all non-custom data tables and copy the tables from the downloaded AllPrintings to the existing AllPrintings
+        /// Then create any new set icons, mana symbols or mana cost images that might need to be created from any new cards added to AllPrintings
+        /// </summary>
+
+        // For updating statuswindow
         public static event Action<string>? StatusMessageUpdated;
         public static async Task CheckForUpdatesAsync()
         {
             try
             {
+                // Read updated date from card db
                 await DBAccess.OpenConnectionAsync();
-                await GetDateFromMetaAsync();
+                string lastUpdatedInDb = await GetDateFromMetaAsync();
+                DBAccess.CloseConnection();
 
-                /*
-                string lastUpdatedInDb = await ReadLastUpdatedDateAsync();
+                // Fetch last updated from server
                 string lastUpdatedOnServer = await FetchDataDateAsync();
 
-
+                // Compare the two
                 if (CompareDates(lastUpdatedInDb, lastUpdatedOnServer) < 0)
                 {
                     Debug.WriteLine("There is a newer database");
-                    Debug.WriteLine("There is a newer database");
-                    MainWindow.CurrentInstance.updateCheckLabel.Visibility = Visibility.Visible;
+                    MainWindow.CurrentInstance.infoLabel.Content = "There is a newer database";
                     MainWindow.CurrentInstance.updateDbButton.Visibility = Visibility.Visible;
-                    MainWindow.CurrentInstance.updateCheckLabel.Content = "There is a newer database";
                 }
                 else
                 {
-                    Debug.WriteLine("Database is up to date");
                     Debug.WriteLine("You are already up to date");
-                    MainWindow.CurrentInstance.updateCheckLabel.Visibility = Visibility.Visible;
-                    MainWindow.CurrentInstance.updateCheckLabel.Content = "You are already up to date";
+                    MainWindow.CurrentInstance.infoLabel.Content = "You are already up to date";
                 }
-                */
             }
             catch (Exception ex)
             {
@@ -51,7 +54,7 @@ namespace CardboardHoarder
         {
             // Disbale buttons while updating
             await MainWindow.ShowStatusWindowAsync(true);
-            MainWindow.CurrentInstance.updateCheckLabel.Content = "Updating card database...";
+            MainWindow.CurrentInstance.infoLabel.Content = "Updating card database...";
 
             // Download new card database to currentuser/downloads
             await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(DBAccess.newDatabasePath);
@@ -60,8 +63,6 @@ namespace CardboardHoarder
             // Copy tables from new card database
             await CopyTablesAsync();
 
-            /*
-
             // Generate new custom data if needed
             await DownloadAndPrepDB.GenerateManaSymbolsFromSvgAsync();
             // Now run the last two functions in parallel
@@ -69,12 +70,10 @@ namespace CardboardHoarder
             var generateSetKeyruneFromSvgTask = DownloadAndPrepDB.GenerateSetKeyruneFromSvgAsync();
             await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
 
-            */
-
             DBAccess.CloseConnection();
 
             StatusMessageUpdated?.Invoke($"Card database has been updated!");
-            await Task.Delay(3000); // for UI to update
+            await Task.Delay(3000); // Leave the message for a few seconds
             await MainWindow.ShowStatusWindowAsync(false);
 
             // Reenable buttons and go to search and filter
@@ -138,39 +137,10 @@ namespace CardboardHoarder
                     await detachCommand.ExecuteNonQueryAsync();
                     Debug.WriteLine($"Detached tempDb...");
                 }
-                // Read last updated from the newly updated database
-                string lastUpdated = await GetDateFromMetaAsync();
-                // Update Last updated in appsettings.json
-                await UpdateLastUpdatedDateAsync(lastUpdated);
             }
             catch (SQLiteException ex)
             {
                 Debug.WriteLine($"Error copying table: {ex.Message}");
-            }
-        }
-        public static async Task UpdateLastUpdatedDateAsync(string updatedDate)
-        {
-            try
-            {
-                string filePath = Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json");
-
-                // Load the current JSON from the file or create a new JObject if the file doesn't exist
-                JObject json = File.Exists(filePath) ? JObject.Parse(await File.ReadAllTextAsync(filePath)) : new JObject();
-
-                // Update or create the LastUpdated section
-                if (json["LastUpdated"] == null)
-                    json["LastUpdated"] = new JObject();
-
-                json["LastUpdated"]["LastUpdatedDate"] = updatedDate;
-
-                // Write the updated JSON back to the file
-                await File.WriteAllTextAsync(filePath, json.ToString());
-                Debug.WriteLine($"Updated date: {updatedDate}");
-            }
-            catch (Exception ex)
-            {
-                // Properly handle exceptions
-                Debug.WriteLine($"Error updating appsettings.json: {ex.Message}");
             }
         }
         public static async Task<string> GetDateFromMetaAsync()
@@ -186,7 +156,7 @@ namespace CardboardHoarder
                     {
                         if (reader.Read())
                         {
-                            dateValue = reader["date"].ToString();
+                            dateValue = reader["date"]?.ToString() ?? string.Empty;
                         }
                     }
                 }
@@ -198,38 +168,6 @@ namespace CardboardHoarder
             }
             Debug.WriteLine($"This is the date that was read from db: {dateValue}");
             return dateValue;
-        }
-
-        private static async Task<string> ReadLastUpdatedDateAsync()
-        {
-            // Assuming "appsettings.json" is in the output directory next to the executable
-            string filePath = Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json");
-
-            try
-            {
-                var jsonText = await File.ReadAllTextAsync(filePath);
-                var json = JObject.Parse(jsonText);
-
-                // Retrieve the LastUpdatedDate
-                string lastUpdatedDate = json["LastUpdated"]?["LastUpdatedDate"]?.ToString();
-
-                return lastUpdatedDate ?? "Date not found.";
-            }
-            catch (FileNotFoundException)
-            {
-                return "appsettings.json not found.";
-            }
-            catch (JsonException)
-            {
-                return "Error parsing appsettings.json.";
-            }
-        }
-        private static int CompareDates(string dbDate, string serverDate)
-        {
-            DateTime date1 = DateTime.Parse(dbDate);
-            DateTime date2 = DateTime.Parse(serverDate);
-
-            return DateTime.Compare(date1, date2);
         }
         private static async Task<string> FetchDataDateAsync()
         {
@@ -256,5 +194,13 @@ namespace CardboardHoarder
 
             return string.Empty;
         }
+        private static int CompareDates(string dbDate, string serverDate)
+        {
+            DateTime date1 = DateTime.Parse(dbDate);
+            DateTime date2 = DateTime.Parse(serverDate);
+
+            return DateTime.Compare(date1, date2);
+        }
+
     }
 }

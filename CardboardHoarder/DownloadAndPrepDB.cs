@@ -23,21 +23,16 @@ public class DownloadAndPrepDB
         {
             if (!File.Exists(databasePath))
             {
+
+                MainWindow.CurrentInstance.infoLabel.Content = "No card database found...";
+
                 // Disbale buttons while updating
-                MainWindow.CurrentInstance.updateCheckLabel.Visibility = Visibility.Visible;
-                MainWindow.CurrentInstance.updateCheckLabel.Content = "No card database found...";
                 await MainWindow.ShowStatusWindowAsync(true);
 
                 // Call the download method with the progress handler
                 await DownloadDatabaseIfNotExistsAsync(databasePath);
 
                 await DBAccess.OpenConnectionAsync();
-                // Read last updated from the newly updated database                
-                string lastUpdated = await UpdateDB.GetDateFromMetaAsync();
-                // Update Last updated in appsettings.json
-                await UpdateDB.UpdateLastUpdatedDateAsync(lastUpdated);
-
-                /*
 
                 await CreateCustomTablesAndIndices(databasePath);
                 await GenerateManaSymbolsFromSvgAsync();
@@ -45,8 +40,6 @@ public class DownloadAndPrepDB
                 var generateManaCostImagesTask = GenerateManaCostImagesAsync();
                 var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
                 await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
-
-                */
 
                 DBAccess.CloseConnection();
                 MainWindow.CurrentInstance.ResetGrids();
@@ -141,7 +134,6 @@ public class DownloadAndPrepDB
         {
             {"uniqueManaSymbols", "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);"},
             {"uniqueManaCostImages", "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);"},
-            {"cardImageStrings", "CREATE TABLE IF NOT EXISTS cardImageStrings (uuid VARCHAR(36) PRIMARY KEY, imageLink TEXT);"},
             {"keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB);"}
         };
 
@@ -160,7 +152,6 @@ public class DownloadAndPrepDB
         {
             {"uniqueManaSymbols", "CREATE INDEX IF NOT EXISTS uniqueManaSymbols_uniqueManaSymbol ON uniqueManaSymbols(uniqueManaSymbol);"},
             {"uniqueManaCostImages", "CREATE INDEX IF NOT EXISTS uniqueManaCostImages_uniqueManaCost ON uniqueManaCostImages(uniqueManaCost);"},
-            {"cardImageStrings", "CREATE INDEX IF NOT EXISTS cardImageStrings_uuid ON cardImageStrings(uuid);"},
             {"keyruneImages", "CREATE INDEX IF NOT EXISTS keyruneImages_setCode ON keyruneImages(setCode);"}
         };
 
@@ -331,7 +322,6 @@ public class DownloadAndPrepDB
             // Generate the missing set images and insert them into table 'keyruneImages'
             for (int i = 0; i < setCodesToGenerateImagesFrom[0].Count; i++)
             {
-
                 string setCode = setCodesToGenerateImagesFrom[0][i];
                 string svgUri = setCodesToGenerateImagesFrom[1][i];
 
@@ -342,7 +332,7 @@ public class DownloadAndPrepDB
                 {
                     // Update the 'uniqueManaSymbols' table with the PNG data
                     await UpdateImageInTableAsync(setCode, "keyruneImages", "keyruneImage", "setCode", pngData);
-                    StatusMessageUpdated?.Invoke($"Generated keyruneImage from {svgUri} ({i} of {setCodesToGenerateImagesFrom[0].Count})");
+                    StatusMessageUpdated?.Invoke($"Generated set icon from {svgUri} ({i} of {setCodesToGenerateImagesFrom[0].Count})");
                     Debug.WriteLine($"Generated set icon image from {svgUri}");
                 }
                 else

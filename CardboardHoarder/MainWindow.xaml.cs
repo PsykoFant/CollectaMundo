@@ -79,12 +79,12 @@ namespace CardboardHoarder
         {
             Dispatcher.Invoke(() =>
             {
-                statusTextBox.Text = message;
+                statusLabel.Content = message;
             });
         }
         public void ResetGrids()
         {
-            updateCheckLabel.Content = "";
+            infoLabel.Content = "";
             GridSearchAndFilter.Visibility = Visibility.Hidden;
             GridMyCollection.Visibility = Visibility.Hidden;
         }

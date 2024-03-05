@@ -12,8 +12,8 @@
         <Button x:Name="MenuDecksButton" Content="Decks" HorizontalAlignment="Left" Margin="338,10,0,0" VerticalAlignment="Top" Width="159"/>
         <Rectangle x:Name="MainScreen" HorizontalAlignment="Center" Height="707" Margin="0,35,0,0" Stroke="Black" VerticalAlignment="Top" Width="1004"/>
         <Grid x:Name="GridStatus" HorizontalAlignment="Center" Height="707" VerticalAlignment="Top" Margin="0,35,0,0" Width="1004" d:IsHidden="True">
-            <TextBox x:Name="statusTextBox" HorizontalAlignment="Center" TextWrapping="Wrap" VerticalAlignment="Top" Width="520" Margin="0,336,0,0"/>
-            <ProgressBar x:Name="progressBar" HorizontalAlignment="Center" Height="12" Margin="0,371,0,0" VerticalAlignment="Top" Width="520"/>
+            <ProgressBar x:Name="progressBar" HorizontalAlignment="Center" Height="11" Margin="0,652,0,0" VerticalAlignment="Top" Width="738" d:IsHidden="True"/>
+            <Label x:Name="statusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top" Width="738" d:IsHidden="True"/>
 
         </Grid>
         <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Height="681" Margin="0,48,0,0" VerticalAlignment="Top" Width="969">
@@ -44,7 +44,7 @@
             <Label x:Name="headlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" FontFamily="Bodoni MT"/>
         </Grid>
         <Button x:Name="checkForUpdatesButton" Content="Check for updates" HorizontalAlignment="Left" Margin="877,10,0,0" VerticalAlignment="Top" Width="130" Click="checkForUpdatesButton_Click"/>
-        <Label x:Name="updateCheckLabel" Content="" HorizontalAlignment="Left" Margin="550,7,0,0" VerticalAlignment="Top" Width="182" Visibility="Hidden"/>
+        <Label x:Name="infoLabel" Content="" HorizontalAlignment="Left" Margin="550,7,0,0" VerticalAlignment="Top" Width="182"/>
         <Button x:Name="updateDbButton" Content="Update card database" HorizontalAlignment="Left" Margin="743,10,0,0" VerticalAlignment="Top" Width="129" Click="updateDbButton_Click" Visibility="Hidden"/>
 
     </Grid>
