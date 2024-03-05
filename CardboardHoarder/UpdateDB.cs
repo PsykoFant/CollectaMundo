@@ -54,58 +54,71 @@ namespace CardboardHoarder
             await DBAccess.OpenTempConnectionAsync(false);
             await DBAccess.OpenConnectionAsync(true);
 
+            //await DeleteTablesAsync();
             await CopyTableAsync("meta", DBAccess.temDbConnection, DBAccess.connection);
+
+            DBAccess.CloseConnection(true);
+            DBAccess.CloseConnection(false);
 
         }
 
+        public static async Task DeleteTablesAsync()
+        {
+            // Check and drop the table in regularDb if it exists
+
+            Dictionary<string, string> tables = new()
+        {
+            {"meta", $"DROP TABLE IF EXISTS meta;" },
+        };
+
+            // Create the tables asynchronously
+            foreach (var item in tables)
+            {
+                using (var command = new SQLiteCommand(item.Value, DBAccess.connection))
+                {
+                    await command.ExecuteNonQueryAsync();
+                    Debug.WriteLine($"Table {item.Key} has been dropped");
+                }
+            }
+        }
         public static async Task CopyTableAsync(string tableName, SQLiteConnection tempDbConnection, SQLiteConnection regularDbConnection)
         {
             try
             {
+                /*
+                // Attach databases with aliases
+                string attachMainDb = $"ATTACH DATABASE 'c:/code/AllPrintings/AllPrintings.sqlite' AS mainDb;";
+                string attachTempDb = $"ATTACH DATABASE 'c:/Users/Energinet/Downloads/AllPrintings.sqlite' AS tempDb;";
+                await new SQLiteCommand(attachMainDb, regularDbConnection).ExecuteNonQueryAsync();
+                await new SQLiteCommand(attachTempDb, regularDbConnection).ExecuteNonQueryAsync();
+                */
+
+
+                // Check and drop the table in regularDb if it exists
+                Dictionary<string, string> tables = new()
+                    {
+                        {"meta", $"DROP TABLE IF EXISTS meta;" },
+                    };
+                foreach (var item in tables)
                 {
-                    // Attach databases with aliases
-                    string attachMainDb = $"ATTACH DATABASE 'c:/code/AllPrintings/AllPrintings.sqlite' AS mainDb;";
-                    string attachTempDb = $"ATTACH DATABASE 'c:/Users/Energinet/Downloads/AllPrintings.sqlite' AS tempDb;";
-                    await new SQLiteCommand(attachMainDb, regularDbConnection).ExecuteNonQueryAsync();
-                    await new SQLiteCommand(attachTempDb, regularDbConnection).ExecuteNonQueryAsync();
-
-                    // Check and drop the table in regularDb if it exists
-                    try
+                    using (var command = new SQLiteCommand(item.Value, DBAccess.connection))
                     {
-                        string checkTable = $"SELECT name FROM sqlite_master WHERE type='table' AND name='{tableName}';";
-                        using (var cmd = new SQLiteCommand(checkTable, regularDbConnection))
-                        {
-                            var result = cmd.ExecuteScalar();
-                            if (result != null && result.ToString() == tableName)
-                            {
-                                string dropTable = $"DROP TABLE {tableName};";
-                                using (var dropCmd = new SQLiteCommand(dropTable, regularDbConnection))
-                                {
-                                    Debug.WriteLine("Trying to drop table");
-                                    await dropCmd.ExecuteNonQueryAsync();
-                                    Debug.WriteLine("Table has been dropped");
-                                }
-                            }
-                            else
-                            {
-                                Debug.WriteLine("Table does not exist - proceeding with creation.");
-                            }
-                        }
+                        await command.ExecuteNonQueryAsync();
+                        Debug.WriteLine($"Table {item.Key} has been dropped");
                     }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine(ex.ToString());
-                    }
+                }
 
-                    // Copy table from tempDb to regularDb
-                    string copyTable = $"CREATE TABLE mainDb.{tableName} AS SELECT * FROM tempDb.{tableName};";
-                    using (var copyCmd = new SQLiteCommand(copyTable, regularDbConnection))
-                    {
-                        Debug.WriteLine("Trying to create the new table...");
-                        await copyCmd.ExecuteNonQueryAsync();
-                        Debug.WriteLine("Table has been created...");
-                    }
+                // Attach the newly downloaded database to update from
+                string attachTempDb = $"ATTACH DATABASE 'c:/Users/Energinet/Downloads/AllPrintings.sqlite' AS tempDb;";
+                await new SQLiteCommand(attachTempDb, regularDbConnection).ExecuteNonQueryAsync();
 
+                // Copy table from tempDb to regularDb
+                string copyTable = $"CREATE TABLE {tableName} AS SELECT * FROM tempDb.{tableName};";
+                using (var copyCmd = new SQLiteCommand(copyTable, regularDbConnection))
+                {
+                    Debug.WriteLine("Trying to create the new table...");
+                    await copyCmd.ExecuteNonQueryAsync();
+                    Debug.WriteLine("Table has been created...");
                 }
             }
             catch (SQLiteException ex)
