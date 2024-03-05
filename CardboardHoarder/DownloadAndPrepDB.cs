@@ -23,7 +23,6 @@ public class DownloadAndPrepDB
         {
             if (!File.Exists(databasePath))
             {
-
                 // Call the download method with the progress handler
                 await DownloadDatabaseIfNotExistsAsync(databasePath);
                 await DBAccess.OpenConnectionAsync();
@@ -33,7 +32,6 @@ public class DownloadAndPrepDB
                 var generateManaCostImagesTask = GenerateManaCostImagesAsync();
                 var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
                 await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
-
                 DBAccess.CloseConnection();
                 MainWindow.ShowOrHideStatusWindow(false);
             }
@@ -593,6 +591,8 @@ public class DownloadAndPrepDB
         return uniqueValues;
     }
     #endregion
+
+
 }
 
 

@@ -15,8 +15,8 @@ namespace CardboardHoarder
         {
             InitializeComponent();
             CurrentInstance = this; // Used by ShowOrHideStatusWindow to reference MainWindow
-            DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox; // Update the statusbox with messages from methods in DownloadAndPrepareDB
-            UpdateDB.StatusMessageUpdatedFuck += UpdateStatusTextBox;
+            DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox; // Update the statusbox with messages from methods in DownloadAndPrepareDB            
+            UpdateDB.StatusMessageUpdated += UpdateStatusTextBox; // Update the statusbox with messages from methods in UpdateDB
 
             GridSearchAndFilter.Visibility = Visibility.Hidden;
             GridMyCollection.Visibility = Visibility.Hidden;
@@ -213,6 +213,7 @@ namespace CardboardHoarder
         {
             ResetGrids();
             await UpdateDB.UpdateCardDatabaseAsync();
+
         }
     }
 }

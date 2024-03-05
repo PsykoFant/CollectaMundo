@@ -6,7 +6,7 @@ namespace CardboardHoarder
 {
     public class UpdateDB
     {
-        public static event Action<string>? StatusMessageUpdatedFuck;
+        public static event Action<string>? StatusMessageUpdated;
         public static async Task CheckForUpdatesAsync()
         {
             await DBAccess.OpenConnectionAsync();
@@ -46,23 +46,20 @@ namespace CardboardHoarder
         public static async Task UpdateCardDatabaseAsync()
         {
             // Download new card database to currentuser/downloads
-            //await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(DBAccess.newDatabasePath);
+            //await DownloadDatabaseIfNotExistsAsync(DBAccess.newDatabasePath);
 
-            // Copy tables from new card database
             await DBAccess.OpenConnectionAsync();
-
-            await CopyTableAsync();
+            // Copy tables from new card database
+            await CopyTablesAsync();
 
             DBAccess.CloseConnection();
         }
-        public static async Task CopyTableAsync()
+        public static async Task CopyTablesAsync()
         {
-            // debug
-            MainWindow.ShowOrHideStatusWindow(true);
-
             try
             {
-                StatusMessageUpdatedFuck?.Invoke("Copying updated tables to card database");
+                //debug
+                MainWindow.ShowOrHideStatusWindow(true);
 
                 // Check and drop the table in regularDb if it exists
                 Dictionary<string, string> tables = new()
@@ -88,25 +85,26 @@ namespace CardboardHoarder
                     using (var dropCommand = new SQLiteCommand(item.Value, DBAccess.connection))
                     {
                         await dropCommand.ExecuteNonQueryAsync();
-                        StatusMessageUpdatedFuck?.Invoke($"Updated table {item.Key} has been copied from download...");
-                        Debug.WriteLine($"Table {item.Key} has been dropped");
                     }
+                    await Task.Delay(50); // for UI to update
+                    StatusMessageUpdated?.Invoke($"Table {item.Key} dropped...");
                 }
 
                 // Attach the newly downloaded database to update from
                 string attachTempDb = $"ATTACH DATABASE 'c:/Users/Energinet/Downloads/AllPrintings.sqlite' AS tempDb;";
                 await new SQLiteCommand(attachTempDb, DBAccess.connection).ExecuteNonQueryAsync();
 
-
                 foreach (var item in tables)
                 {
-                    string copyTable = $"CREATE TABLE {item.Key} AS SELECT * FROM tempDb.{item.Key};";
-                    using (var copyCmd = new SQLiteCommand(copyTable, DBAccess.connection))
+                    using (var command = new SQLiteCommand(
+                       $"CREATE TABLE {item.Key} AS SELECT * FROM tempDb.{item.Key};",
+                        DBAccess.connection))
                     {
-                        await copyCmd.ExecuteNonQueryAsync();
-                        await updateFuckingStatusWindow();
-                        Debug.WriteLine($"Updated table {item.Key} has been copied from download...");
+                        await command.ExecuteNonQueryAsync();
                     }
+                    await Task.Delay(50); // for UI to update
+                    StatusMessageUpdated?.Invoke($"Updated table {item.Key} has been copied from download...");
+                    Debug.WriteLine($"Updated table {item.Key} has been copied from download...");
                 }
 
                 // Copy table from tempDb to regularDb
@@ -122,13 +120,6 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error copying table: {ex.Message}");
             }
         }
-
-        public static async Task updateFuckingStatusWindow()
-        {
-            StatusMessageUpdatedFuck?.Invoke($"fuck fuck fuck");
-        }
-
-
 
     }
 
