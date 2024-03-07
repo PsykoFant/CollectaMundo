@@ -113,24 +113,26 @@ namespace CardboardHoarder
         private async Task LoadDataAsync()
         {
             Debug.WriteLine("Loading data asynchronously...");
-
             try
             {
-                string query = "SELECT name, SetCode FROM cards";
+                string query = "SELECT c.name as Name, c.setCode as SetCode, k.keyruneImage FROM cards c LEFT JOIN keyruneImages k ON c.SetCode = k.setCode";
                 using var command = new SQLiteCommand(query, DBAccess.connection);
 
                 using var reader = await command.ExecuteReaderAsync();
                 var items = new List<CardSet>();
                 while (await reader.ReadAsync())
                 {
+                    var keyruneImage = reader["keyruneImage"] as byte[];
+                    var imageSource = ConvertByteArrayToBitmapImage(keyruneImage); // Implement this method to convert byte[] to ImageSource or similar
+
                     items.Add(new CardSet
                     {
                         Name = reader["Name"].ToString(),
-                        SetCode = reader["SetCode"].ToString()
+                        SetCode = reader["SetCode"].ToString(),
+                        SetIcon = imageSource
                     });
                 }
 
-                // Ensure UI updates are performed on the UI thread
                 Dispatcher.Invoke(() =>
                 {
                     mainCardWindowDatagrid.ItemsSource = items;
@@ -141,6 +143,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while loading data: {ex.Message}");
             }
         }
+
 
 
 

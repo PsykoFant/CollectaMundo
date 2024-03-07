@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace CardboardHoarder
 {
@@ -92,6 +93,7 @@ namespace CardboardHoarder
         public string Uuid { get; set; }
         public List<string> Variations { get; set; }
         public string Watermark { get; set; }
+        public ImageSource SetIcon { get; set; }
     }
 
 }
