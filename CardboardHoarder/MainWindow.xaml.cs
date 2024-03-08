@@ -1,8 +1,10 @@
-﻿using System.Data;
+﻿using SharpVectors.Converters;
+using System.Data;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Markup;
 using System.Windows.Media.Imaging;
 
 namespace CardboardHoarder
@@ -108,13 +110,17 @@ namespace CardboardHoarder
             await UpdateDB.UpdateCardDatabaseAsync();
         }
 
-
-
         private async Task LoadDataAsync()
         {
             Debug.WriteLine("Loading data asynchronously...");
             try
             {
+
+                var stringXaml = ConvertSvgToXaml("https://svgs.scryfall.io/sets/aer.svg?1709528400");
+                var xamlContent = System.Windows.Markup.XamlReader.Parse(stringXaml) as UIElement;
+                ContentGrid.Children.Add(xamlContent);
+
+
                 string query = "SELECT c.name as Name, c.setCode as SetCode, k.keyruneImage FROM cards c LEFT JOIN keyruneImages k ON c.SetCode = k.setCode";
                 using var command = new SQLiteCommand(query, DBAccess.connection);
 
@@ -141,6 +147,26 @@ namespace CardboardHoarder
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error while loading data: {ex.Message}");
+            }
+        }
+
+
+        public static string ConvertSvgToXaml(string svgUrl)
+        {
+            try
+            {
+                var svgViewbox = new SvgViewbox();
+                svgViewbox.Source = new Uri(svgUrl);
+
+                // Once loaded, you can convert the content of SvgViewbox to XAML
+                // This is a simplistic approach; more complex SVGs might require detailed handling
+                var xaml = XamlWriter.Save(svgViewbox.Child);
+                return xaml;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred during SVG to XAML conversion: {ex.Message}");
+                return string.Empty;
             }
         }
 

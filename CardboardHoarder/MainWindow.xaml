@@ -17,6 +17,7 @@
 
         </Grid>
         <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Height="681" Margin="0,48,0,0" VerticalAlignment="Top" Width="969">
+            <Grid x:Name="ContentGrid"/>
             <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Left" Margin="369,0,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
             <DataGrid x:Name="mainCardWindowDatagrid" Margin="144,218,0,0" AutoGenerateColumns="False">
                 <DataGrid.CellStyle>
