@@ -21,18 +21,11 @@ public class DownloadAndPrepDB
     {
         try
         {
-            //if (!File.Exists(databasePath))
-            if (true) // debug
+            if (!File.Exists(databasePath))
             {
-                await DBAccess.OpenConnectionAsync();
-                MainWindow.CurrentInstance.infoLabel.Content = "No card database found...";
-
                 // Disbale buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
 
-                await GenerateSetKeyruneFromSvgAsync();
-
-                /*
                 // Call the download method with the progress handler
                 await DownloadDatabaseIfNotExistsAsync(databasePath);
 
@@ -48,7 +41,6 @@ public class DownloadAndPrepDB
                 DBAccess.CloseConnection();
                 MainWindow.CurrentInstance.ResetGrids();
                 await MainWindow.ShowStatusWindowAsync(false);
-                */
             }
         }
         catch (Exception ex)
@@ -442,9 +434,6 @@ public class DownloadAndPrepDB
             {
                 var svg = new SkiaSharp.Extended.Svg.SKSvg();
                 svg.Load(svgStream);
-                Debug.WriteLine($"Length of svgStream: {svgStream.Length}");
-                Debug.WriteLine($"svg højde: {svg.CanvasSize.Width}");
-                Debug.WriteLine($"svg bredde: {svg.CanvasSize.Width}");
 
                 float scaleFactor = 20f / svg.CanvasSize.Height;
 
@@ -460,7 +449,6 @@ public class DownloadAndPrepDB
                     using (var stream = new MemoryStream())
                     {
                         data.SaveTo(stream);
-                        Debug.WriteLine($"Length of stream: {stream.Length}");
                         return stream.ToArray();
                     }
                 }
