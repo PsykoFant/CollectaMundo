@@ -21,18 +21,13 @@ public class DownloadAndPrepDB
     {
         try
         {
-            //if (!File.Exists(databasePath))
-            if (true) // debug
+            if (!File.Exists(databasePath))
             {
-                await DBAccess.OpenConnectionAsync();
                 MainWindow.CurrentInstance.infoLabel.Content = "No card database found...";
 
                 // Disbale buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
 
-                await GenerateSetKeyruneFromSvgAsync();
-
-                /*
                 // Call the download method with the progress handler
                 await DownloadDatabaseIfNotExistsAsync(databasePath);
 
@@ -48,7 +43,6 @@ public class DownloadAndPrepDB
                 DBAccess.CloseConnection();
                 MainWindow.CurrentInstance.ResetGrids();
                 await MainWindow.ShowStatusWindowAsync(false);
-                */
             }
         }
         catch (Exception ex)
