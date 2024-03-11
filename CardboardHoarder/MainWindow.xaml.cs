@@ -43,7 +43,7 @@ namespace CardboardHoarder
             GridStatus.Visibility = Visibility.Hidden;
             Loaded += async (sender, args) => { await PrepareSystem(); };
 
-            DisplaySvgImage("https://svgs.scryfall.io/sets/y22.svg");
+            DisplaySvgImage("https://svgs.scryfall.io/sets/mid.svg");
         }
 
         private async Task PrepareSystem()
@@ -51,7 +51,7 @@ namespace CardboardHoarder
             await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
             GridSearchAndFilter.Visibility = Visibility.Visible;
             await DBAccess.OpenConnectionAsync();
-            //await LoadDataAsync();
+            await LoadDataAsync();
             DBAccess.CloseConnection();
         }
         public static async Task ShowStatusWindowAsync(bool visible)

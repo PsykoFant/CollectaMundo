@@ -1,13 +1,18 @@
 ﻿using CardboardHoarder;
 using Newtonsoft.Json.Linq;
-using SkiaSharp;
+using SharpVectors.Converters;
+using SharpVectors.Renderers.Wpf;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Net.Http;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using Color = System.Drawing.Color;
 public class DownloadAndPrepDB
 {
     public static event Action<string>? StatusMessageUpdated;
@@ -21,7 +26,8 @@ public class DownloadAndPrepDB
     {
         try
         {
-            if (!File.Exists(databasePath))
+            //if (!File.Exists(databasePath))
+            if (true)
             {
                 MainWindow.CurrentInstance.infoLabel.Content = "No card database found...";
 
@@ -29,11 +35,11 @@ public class DownloadAndPrepDB
                 await MainWindow.ShowStatusWindowAsync(true);
 
                 // Call the download method with the progress handler
-                await DownloadDatabaseIfNotExistsAsync(databasePath);
+                //await DownloadDatabaseIfNotExistsAsync(databasePath);
 
                 await DBAccess.OpenConnectionAsync();
 
-                await CreateCustomTablesAndIndices(databasePath);
+                //await CreateCustomTablesAndIndices(databasePath);
                 await GenerateManaSymbolsFromSvgAsync();
                 // Now run the last two functions in parallel
                 var generateManaCostImagesTask = GenerateManaCostImagesAsync();
@@ -211,7 +217,7 @@ public class DownloadAndPrepDB
             {
                 counter++;
                 // Convert SVG to PNG using the ConvertSvgToPng function
-                byte[] pngData = await ConvertSvgToPngAsync($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
+                byte[] pngData = await ConvertSvgToByteArrayAsync($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
 
                 if (pngData.Length != 0)
                 {
@@ -325,7 +331,7 @@ public class DownloadAndPrepDB
                 string svgUri = setCodesToGenerateImagesFrom[1][i];
 
                 // Convert SVG to PNG using the ConvertSvgToPng function
-                byte[] pngData = await ConvertSvgToPngAsync(svgUri);
+                byte[] pngData = await ConvertSvgToByteArrayAsync(svgUri);
 
                 if (pngData.Length != 0)
                 {
@@ -422,6 +428,48 @@ public class DownloadAndPrepDB
             }
         }
     }
+
+    private static async Task<byte[]> ConvertSvgToByteArrayAsync(string svgUrl)
+    {
+        try
+        {
+            using (var httpClient = new HttpClient())
+            {
+                var svgData = await httpClient.GetStringAsync(svgUrl);
+                var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgData));
+                var settings = new WpfDrawingSettings();
+                var reader = new FileSvgReader(settings);
+                var drawing = reader.Read(svgStream);
+
+                DrawingImage drawingImage = new DrawingImage(drawing);
+                var drawingVisual = new DrawingVisual();
+                using (var drawingContext = drawingVisual.RenderOpen())
+                {
+                    drawingContext.DrawImage(drawingImage, new Rect(0, 0, drawingImage.Width, drawingImage.Height));
+                }
+                RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap((int)drawingImage.Width, (int)drawingImage.Height, 96, 96, PixelFormats.Pbgra32);
+                renderTargetBitmap.Render(drawingVisual);
+
+                BitmapEncoder encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(renderTargetBitmap));
+
+                using (MemoryStream memoryStream = new MemoryStream())
+                {
+                    encoder.Save(memoryStream);
+                    Debug.WriteLine($"Length of {memoryStream}: {memoryStream.Length.ToString()}");
+                    return memoryStream.ToArray();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error converting SVG to byte array: {ex.Message}");
+            return null;
+        }
+    }
+
+
+    /*
     private static async Task<byte[]> ConvertSvgToPngAsync(string svgLink)
     {
         try
@@ -466,6 +514,7 @@ public class DownloadAndPrepDB
             return Array.Empty<byte>();
         }
     }
+    */
     private static async Task CopyColumnIfEmptyOrAddMissingRowsAsync(string targetTable, string targetColumn, string sourceTable, string sourceColumn)
     {
         try

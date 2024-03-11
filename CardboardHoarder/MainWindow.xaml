@@ -20,7 +20,7 @@
             <Image x:Name="iconTester" HorizontalAlignment="Left" Height="154" Margin="27,59,0,0" VerticalAlignment="Top" Width="138"/>
 
             <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Left" Margin="369,0,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
-            <DataGrid x:Name="mainCardWindowDatagrid" Margin="144,218,0,0" AutoGenerateColumns="False" d:IsHidden="True">
+            <DataGrid x:Name="mainCardWindowDatagrid" Margin="144,218,0,0" AutoGenerateColumns="False">
                 <DataGrid.CellStyle>
                     <Style/>
                 </DataGrid.CellStyle>
@@ -30,7 +30,7 @@
                     <DataGridTemplateColumn Header="Icon">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Image Source="{Binding SetIcon}" Width="15" Height="15" />
+                                <Image Source="{Binding SetIcon}" Width="20" Height="20" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -39,7 +39,7 @@
 
             <ComboBox x:Name="filterCardNameComboBox" HorizontalAlignment="Left" Margin="0,20,0,0" VerticalAlignment="Top" Width="120"/>
             <TextBox x:Name="imageInput" HorizontalAlignment="Left" Margin="262,59,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Text="MID"/>
-            <Image x:Name="testImage" HorizontalAlignment="Left" Height="26" Margin="262,96,0,0" VerticalAlignment="Top" Width="122" Stretch="None"/>
+            <Image x:Name="testImage" HorizontalAlignment="Left" Height="26" Margin="262,96,0,0" VerticalAlignment="Top" Width="122"/>
             <Button Content="Check set keyrune" HorizontalAlignment="Left" Margin="270,154,0,0" VerticalAlignment="Top" Width="104" Click="Button_Click"/>
             <TextBox x:Name="manaCostTextBox" HorizontalAlignment="Left" Margin="404,59,0,0" TextWrapping="Wrap" Text="{}{3}{G}{G}{G/P}{G/P}" VerticalAlignment="Top" Width="120" RenderTransformOrigin="0.488,0.002"/>
             <Image x:Name="manaCostImageTester" HorizontalAlignment="Left" Height="19" Margin="404,96,0,0" VerticalAlignment="Top" Width="147"/>
