@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media;
+﻿using System.Windows.Media;
 
 namespace CardboardHoarder
 {
@@ -80,6 +75,7 @@ namespace CardboardHoarder
         //public List<Rulings> Rulings { get; set; }
         public string SecurityStamp { get; set; }
         public string SetCode { get; set; }
+        public string SetName { get; set; }
         public string Side { get; set; }
         public string Signature { get; set; }
         public List<string> SourceProducts { get; set; }

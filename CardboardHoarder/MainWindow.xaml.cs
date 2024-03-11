@@ -1,13 +1,8 @@
-﻿using SharpVectors.Converters;
-using SharpVectors.Renderers.Wpf;
-using System.Data;
+﻿using System.Data;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
-using System.Net.Http;
-using System.Text;
 using System.Windows;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace CardboardHoarder
@@ -138,55 +133,20 @@ namespace CardboardHoarder
                 Dispatcher.Invoke(() => iconTester.Source = bitmapImage);
             }
         }
-
-
-
-        private static async Task<byte[]> ConvertSvgToByteArrayAsync(string svgUrl)
-        {
-            try
-            {
-                using (var httpClient = new HttpClient())
-                {
-                    var svgData = await httpClient.GetStringAsync(svgUrl);
-                    var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgData));
-                    var settings = new WpfDrawingSettings();
-                    var reader = new FileSvgReader(settings);
-                    var drawing = reader.Read(svgStream);
-
-                    DrawingImage drawingImage = new DrawingImage(drawing);
-                    var drawingVisual = new DrawingVisual();
-                    using (var drawingContext = drawingVisual.RenderOpen())
-                    {
-                        drawingContext.DrawImage(drawingImage, new Rect(0, 0, drawingImage.Width, drawingImage.Height));
-                    }
-                    RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap((int)drawingImage.Width, (int)drawingImage.Height, 96, 96, PixelFormats.Pbgra32);
-                    renderTargetBitmap.Render(drawingVisual);
-
-                    BitmapEncoder encoder = new PngBitmapEncoder();
-                    encoder.Frames.Add(BitmapFrame.Create(renderTargetBitmap));
-
-                    using (MemoryStream memoryStream = new MemoryStream())
-                    {
-                        encoder.Save(memoryStream);
-                        return memoryStream.ToArray();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error converting SVG to byte array: {ex.Message}");
-                return null;
-            }
-        }
-
-
-
         private async Task LoadDataAsync()
         {
             Debug.WriteLine("Loading data asynchronously...");
             try
             {
-                string query = "SELECT c.name as Name, c.setCode as SetCode, k.keyruneImage FROM cards c LEFT JOIN keyruneImages k ON c.SetCode = k.setCode";
+                string query =
+                    "SELECT c.name as Name, " +
+                    "c.setCode as SetCode, " +
+                    "s.name as SetName, " +
+                    "k.keyruneImage " +
+                    "FROM cards c " +
+                    "JOIN sets s ON c.setCode = s.code " +
+                    "LEFT JOIN keyruneImages k ON c.SetCode = k.setCode";
+
                 using var command = new SQLiteCommand(query, DBAccess.connection);
 
                 using var reader = await command.ExecuteReaderAsync();
@@ -200,6 +160,7 @@ namespace CardboardHoarder
                     {
                         Name = reader["Name"].ToString(),
                         SetCode = reader["SetCode"].ToString(),
+                        SetName = reader["SetName"].ToString(),
                         SetIcon = imageSource
                     });
                 }

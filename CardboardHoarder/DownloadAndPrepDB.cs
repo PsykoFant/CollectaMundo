@@ -2,7 +2,6 @@
 using Newtonsoft.Json.Linq;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
-using SkiaSharp;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Drawing;
@@ -430,8 +429,6 @@ public class DownloadAndPrepDB
             }
         }
     }
-
-    // Sharpvectors
     public static async Task<byte[]> ConvertSvgToByteArraySharpVectorsAsync(string svgUrl)
     {
         try
@@ -477,49 +474,6 @@ public class DownloadAndPrepDB
         catch (Exception ex)
         {
             Debug.WriteLine($"Error converting SVG to byte array: {ex.Message}");
-            return Array.Empty<byte>();
-        }
-    }
-    // Skia
-    public static async Task<byte[]> ConvertSvgToPngAsync(string svgLink)
-    {
-        try
-        {
-            string svgContent;
-            using (HttpClient client = new HttpClient())
-            {
-                svgContent = await client.GetStringAsync(svgLink);
-            }
-
-            using (var svgStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(svgContent)))
-            {
-                var svg = new SkiaSharp.Extended.Svg.SKSvg();
-                svg.Load(svgStream);
-                Debug.WriteLine($"Length of svgStream: {svgStream.Length}");
-
-                float scaleFactor = 20f / svg.CanvasSize.Height;
-
-                using (var bitmap = new SKBitmap((int)(svg.CanvasSize.Width * scaleFactor), 20))
-                using (var canvas = new SKCanvas(bitmap))
-                {
-                    canvas.Clear(SKColors.Transparent);
-                    canvas.Scale(scaleFactor);
-                    canvas.DrawPicture(svg.Picture);
-
-                    using (var image = SKImage.FromBitmap(bitmap))
-                    using (var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100))
-                    using (var stream = new MemoryStream())
-                    {
-                        data.SaveTo(stream);
-                        Debug.WriteLine($"Length of stream (Skia) : {stream.Length}");
-                        return stream.ToArray();
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error while converting SVG to PNG: {ex.Message}");
             return Array.Empty<byte>();
         }
     }

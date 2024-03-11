@@ -27,6 +27,7 @@
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" />
                     <DataGridTextColumn Header="Set" Binding="{Binding SetCode}" />
+                    <DataGridTextColumn Header="SetName" Binding="{Binding SetName}" />
                     <DataGridTemplateColumn Header="Icon">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
