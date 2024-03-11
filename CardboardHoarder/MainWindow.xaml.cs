@@ -140,12 +140,13 @@ namespace CardboardHoarder
             {
                 string query =
                     "SELECT c.name as Name, " +
-                    "c.setCode as SetCode, " +
                     "s.name as SetName, " +
-                    "k.keyruneImage " +
+                    "k.keyruneImage, " +
+                    "u.manaCostImage " +
                     "FROM cards c " +
                     "JOIN sets s ON c.setCode = s.code " +
-                    "LEFT JOIN keyruneImages k ON c.SetCode = k.setCode";
+                    "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
+                    "LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost";
 
                 using var command = new SQLiteCommand(query, DBAccess.connection);
 
@@ -154,14 +155,16 @@ namespace CardboardHoarder
                 while (await reader.ReadAsync())
                 {
                     var keyruneImage = reader["keyruneImage"] as byte[];
-                    var imageSource = ConvertByteArrayToBitmapImage(keyruneImage); // Implement this method to convert byte[] to ImageSource or similar
+                    var setIconImageSource = ConvertByteArrayToBitmapImage(keyruneImage);
+                    var manaCostImage = reader["manaCostImage"] as byte[];
+                    var manaCostImageSource = ConvertByteArrayToBitmapImage(manaCostImage);
 
                     items.Add(new CardSet
                     {
                         Name = reader["Name"].ToString(),
-                        SetCode = reader["SetCode"].ToString(),
                         SetName = reader["SetName"].ToString(),
-                        SetIcon = imageSource
+                        SetIcon = setIconImageSource,
+                        ManaCostImage = manaCostImageSource
                     });
                 }
 

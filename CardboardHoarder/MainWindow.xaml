@@ -26,12 +26,18 @@
                 </DataGrid.CellStyle>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" />
-                    <DataGridTextColumn Header="Set" Binding="{Binding SetCode}" />
                     <DataGridTextColumn Header="SetName" Binding="{Binding SetName}" />
                     <DataGridTemplateColumn Header="Icon">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Image Source="{Binding SetIcon}" Width="20" Height="20" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Mana Cost">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Image Source="{Binding ManaCostImage}" Height="20" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

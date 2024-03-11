@@ -90,6 +90,7 @@ namespace CardboardHoarder
         public List<string> Variations { get; set; }
         public string Watermark { get; set; }
         public ImageSource SetIcon { get; set; }
+        public ImageSource ManaCostImage { get; set; }
     }
 
 }
