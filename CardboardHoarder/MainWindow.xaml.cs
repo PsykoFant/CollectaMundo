@@ -1,8 +1,13 @@
-﻿using System.Data;
+﻿using SharpVectors.Converters;
+using SharpVectors.Renderers.Wpf;
+using System.Data;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
+using System.Text;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace CardboardHoarder
@@ -16,7 +21,11 @@ namespace CardboardHoarder
         {
             get
             {
-                if (_currentInstance == null) throw new InvalidOperationException("CurrentInstance is not initialized.");
+                if (_currentInstance == null)
+                {
+                    throw new InvalidOperationException("CurrentInstance is not initialized.");
+                }
+
                 return _currentInstance;
             }
             private set => _currentInstance = value;
@@ -33,6 +42,8 @@ namespace CardboardHoarder
             GridMyCollection.Visibility = Visibility.Hidden;
             GridStatus.Visibility = Visibility.Hidden;
             Loaded += async (sender, args) => { await PrepareSystem(); };
+
+            DisplaySvgImage("https://svgs.scryfall.io/sets/y22.svg");
         }
 
         private async Task PrepareSystem()
@@ -40,7 +51,7 @@ namespace CardboardHoarder
             await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
             GridSearchAndFilter.Visibility = Visibility.Visible;
             await DBAccess.OpenConnectionAsync();
-            await LoadDataAsync();
+            //await LoadDataAsync();
             DBAccess.CloseConnection();
         }
         public static async Task ShowStatusWindowAsync(bool visible)
@@ -106,6 +117,64 @@ namespace CardboardHoarder
         {
             ResetGrids();
             await UpdateDB.UpdateCardDatabaseAsync();
+        }
+
+
+        private async void DisplaySvgImage(string svgUrl)
+        {
+            var byteArray = await ConvertSvgToByteArrayAsync(svgUrl);
+            if (byteArray != null)
+            {
+                using var stream = new MemoryStream(byteArray);
+                BitmapImage bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.StreamSource = stream;
+                bitmapImage.EndInit();
+
+                // Ensure the image is set on the UI thread
+                Dispatcher.Invoke(() => iconTester.Source = bitmapImage);
+            }
+        }
+
+
+
+        private static async Task<byte[]> ConvertSvgToByteArrayAsync(string svgUrl)
+        {
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    var svgData = await httpClient.GetStringAsync(svgUrl);
+                    var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgData));
+                    var settings = new WpfDrawingSettings();
+                    var reader = new FileSvgReader(settings);
+                    var drawing = reader.Read(svgStream);
+
+                    DrawingImage drawingImage = new DrawingImage(drawing);
+                    var drawingVisual = new DrawingVisual();
+                    using (var drawingContext = drawingVisual.RenderOpen())
+                    {
+                        drawingContext.DrawImage(drawingImage, new Rect(0, 0, drawingImage.Width, drawingImage.Height));
+                    }
+                    RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap((int)drawingImage.Width, (int)drawingImage.Height, 96, 96, PixelFormats.Pbgra32);
+                    renderTargetBitmap.Render(drawingVisual);
+
+                    BitmapEncoder encoder = new PngBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(renderTargetBitmap));
+
+                    using (MemoryStream memoryStream = new MemoryStream())
+                    {
+                        encoder.Save(memoryStream);
+                        return memoryStream.ToArray();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error converting SVG to byte array: {ex.Message}");
+                return null;
+            }
         }
 
 
