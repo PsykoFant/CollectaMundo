@@ -588,7 +588,7 @@ public class DownloadAndPrepDB
         }
         return valuesWithNull;
     }
-    private static async Task<List<string>> GetUniqueValuesAsync(string tableName, string columnName)
+    public static async Task<List<string>> GetUniqueValuesAsync(string tableName, string columnName)
     {
         List<string> uniqueValues = new List<string>();
 

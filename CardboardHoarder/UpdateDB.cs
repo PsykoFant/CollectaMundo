@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json.Linq;
-using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Net.Http;
@@ -25,14 +24,15 @@ namespace CardboardHoarder
             {
                 // Read updated date from card db
                 await DBAccess.OpenConnectionAsync();
-                string lastUpdatedInDb = await GetDateFromMetaAsync();
+                int numberOfSetsInDb = (await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "code")).Count;
+                Debug.WriteLine(numberOfSetsInDb.ToString());
                 DBAccess.CloseConnection();
 
                 // Fetch last updated from server
-                string lastUpdatedOnServer = await FetchDataDateAsync();
+                int numberOfSetsOnServer = await FetchSetsCountAsync();
 
                 // Compare the two
-                if (CompareDates(lastUpdatedInDb, lastUpdatedOnServer) < 0)
+                if (numberOfSetsOnServer > numberOfSetsInDb)
                 {
                     Debug.WriteLine("There is a newer database");
                     MainWindow.CurrentInstance.infoLabel.Content = "There is a newer database";
@@ -143,64 +143,29 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error copying table: {ex.Message}");
             }
         }
-        public static async Task<string> GetDateFromMetaAsync()
-        {
-            string query = "SELECT date FROM meta WHERE rowid = 1;";
-            string dateValue = "";
-
-            try
-            {
-                using (SQLiteCommand command = new SQLiteCommand(query, DBAccess.connection))
-                {
-                    using (DbDataReader reader = await command.ExecuteReaderAsync())
-                    {
-                        if (reader.Read())
-                        {
-                            dateValue = reader["date"]?.ToString() ?? string.Empty;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // Handle exception
-                Console.WriteLine($"An error occurred: {ex.Message}");
-            }
-            Debug.WriteLine($"This is the date that was read from db: {dateValue}");
-            return dateValue;
-        }
-        private static async Task<string> FetchDataDateAsync()
+        private static async Task<int> FetchSetsCountAsync()
         {
             try
             {
                 using (var httpClient = new HttpClient())
                 {
-                    var response = await httpClient.GetStringAsync("https://mtgjson.com/api/v5/Meta.json");
+                    var response = await httpClient.GetStringAsync("https://mtgjson.com/api/v5/SetList.json");
                     var json = JObject.Parse(response);
-                    Debug.WriteLine($"Date fetched from server: {json["data"]?["date"]?.ToString()}");
-                    return json["data"]?["date"]?.ToString() ?? string.Empty;
+                    var sets = json["data"] as JArray;
+                    int count = sets?.Count ?? 0;
+                    Debug.WriteLine($"Number of sets fetched: {count}");
+                    return count;
                 }
             }
             catch (HttpRequestException httpEx)
             {
-                // Handle HTTP request exceptions
                 Debug.WriteLine($"An error occurred during HTTP request: {httpEx.Message}");
             }
             catch (Exception ex)
             {
-                // Handle other exceptions
                 Debug.WriteLine($"An error occurred: {ex.Message}");
             }
-
-            return string.Empty;
+            return 0;
         }
-        private static int CompareDates(string dbDate, string serverDate)
-        {
-            DateTime date1 = DateTime.Parse(dbDate);
-            DateTime date2 = DateTime.Parse(serverDate);
-
-            return DateTime.Compare(date1, date2);
-        }
-
     }
 }

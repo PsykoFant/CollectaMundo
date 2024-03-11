@@ -114,25 +114,6 @@ namespace CardboardHoarder
             await UpdateDB.UpdateCardDatabaseAsync();
         }
 
-
-        private async void DisplaySvgImage(string svgUrl)
-        {
-            //var byteArray = await DownloadAndPrepDB.ConvertSvgToPngAsync(svgUrl);
-            var byteArray = await DownloadAndPrepDB.ConvertSvgToByteArraySharpVectorsAsync(svgUrl);
-
-            if (byteArray != null)
-            {
-                using var stream = new MemoryStream(byteArray);
-                BitmapImage bitmapImage = new BitmapImage();
-                bitmapImage.BeginInit();
-                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                bitmapImage.StreamSource = stream;
-                bitmapImage.EndInit();
-
-                // Ensure the image is set on the UI thread
-                Dispatcher.Invoke(() => iconTester.Source = bitmapImage);
-            }
-        }
         private async Task LoadDataAsync()
         {
             Debug.WriteLine("Loading data asynchronously...");
@@ -141,8 +122,9 @@ namespace CardboardHoarder
                 string query =
                     "SELECT c.name as Name, " +
                     "s.name as SetName, " +
-                    "k.keyruneImage, " +
-                    "u.manaCostImage " +
+                    "k.keyruneImage as KeyRuneImage, " +
+                    "c.manaCost as ManaCost, " +
+                    "u.manaCostImage as ManaCostImage " +
                     "FROM cards c " +
                     "JOIN sets s ON c.setCode = s.code " +
                     "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
@@ -154,9 +136,9 @@ namespace CardboardHoarder
                 var items = new List<CardSet>();
                 while (await reader.ReadAsync())
                 {
-                    var keyruneImage = reader["keyruneImage"] as byte[];
+                    var keyruneImage = reader["KeyRuneImage"] as byte[];
                     var setIconImageSource = ConvertByteArrayToBitmapImage(keyruneImage);
-                    var manaCostImage = reader["manaCostImage"] as byte[];
+                    var manaCostImage = reader["ManaCostImage"] as byte[];
                     var manaCostImageSource = ConvertByteArrayToBitmapImage(manaCostImage);
 
                     items.Add(new CardSet
@@ -164,6 +146,7 @@ namespace CardboardHoarder
                         Name = reader["Name"].ToString(),
                         SetName = reader["SetName"].ToString(),
                         SetIcon = setIconImageSource,
+                        ManaCost = reader["ManaCost"].ToString(),
                         ManaCostImage = manaCostImageSource
                     });
                 }
@@ -178,8 +161,30 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while loading data: {ex.Message}");
             }
         }
+        public static BitmapImage? ConvertByteArrayToBitmapImage(byte[] imageData)
+        {
+            try
+            {
+                if (imageData != null && imageData.Length > 0)
+                {
+                    using (MemoryStream stream = new MemoryStream(imageData))
+                    {
+                        BitmapImage bitmapImage = new BitmapImage();
+                        bitmapImage.BeginInit();
+                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage.StreamSource = stream;
+                        bitmapImage.EndInit();
+                        return bitmapImage;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error converting byte array to BitmapImage: {ex.Message}");
+            }
 
-
+            return null;
+        }
 
 
 
@@ -267,31 +272,24 @@ namespace CardboardHoarder
                 MessageBox.Show($"Error displaying image: {ex.Message}");
             }
         }
-        public static BitmapImage? ConvertByteArrayToBitmapImage(byte[] imageData)
+        private async void DisplaySvgImage(string svgUrl)
         {
-            try
-            {
-                if (imageData != null && imageData.Length > 0)
-                {
-                    using (MemoryStream stream = new MemoryStream(imageData))
-                    {
-                        BitmapImage bitmapImage = new BitmapImage();
-                        bitmapImage.BeginInit();
-                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmapImage.StreamSource = stream;
-                        bitmapImage.EndInit();
-                        return bitmapImage;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error converting byte array to BitmapImage: {ex.Message}");
-            }
+            //var byteArray = await DownloadAndPrepDB.ConvertSvgToPngAsync(svgUrl);
+            var byteArray = await DownloadAndPrepDB.ConvertSvgToByteArraySharpVectorsAsync(svgUrl);
 
-            return null;
+            if (byteArray != null)
+            {
+                using var stream = new MemoryStream(byteArray);
+                BitmapImage bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.StreamSource = stream;
+                bitmapImage.EndInit();
+
+                // Ensure the image is set on the UI thread
+                Dispatcher.Invoke(() => iconTester.Source = bitmapImage);
+            }
         }
-
 
     }
 }
