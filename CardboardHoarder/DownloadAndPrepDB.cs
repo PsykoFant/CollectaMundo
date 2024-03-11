@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
+using SkiaSharp;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Drawing;
@@ -26,8 +27,7 @@ public class DownloadAndPrepDB
     {
         try
         {
-            //if (!File.Exists(databasePath))
-            if (true)
+            if (!File.Exists(databasePath))
             {
                 MainWindow.CurrentInstance.infoLabel.Content = "No card database found...";
 
@@ -35,11 +35,11 @@ public class DownloadAndPrepDB
                 await MainWindow.ShowStatusWindowAsync(true);
 
                 // Call the download method with the progress handler
-                //await DownloadDatabaseIfNotExistsAsync(databasePath);
+                await DownloadDatabaseIfNotExistsAsync(databasePath);
 
                 await DBAccess.OpenConnectionAsync();
 
-                //await CreateCustomTablesAndIndices(databasePath);
+                await CreateCustomTablesAndIndices(databasePath);
                 await GenerateManaSymbolsFromSvgAsync();
                 // Now run the last two functions in parallel
                 var generateManaCostImagesTask = GenerateManaCostImagesAsync();
@@ -217,7 +217,8 @@ public class DownloadAndPrepDB
             {
                 counter++;
                 // Convert SVG to PNG using the ConvertSvgToPng function
-                byte[] pngData = await ConvertSvgToByteArrayAsync($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
+                byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
+                //byte[] pngData = await ConvertSvgToPngAsync($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
 
                 if (pngData.Length != 0)
                 {
@@ -331,7 +332,8 @@ public class DownloadAndPrepDB
                 string svgUri = setCodesToGenerateImagesFrom[1][i];
 
                 // Convert SVG to PNG using the ConvertSvgToPng function
-                byte[] pngData = await ConvertSvgToByteArrayAsync(svgUri);
+                byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync(svgUri);
+                //byte[] pngData = await ConvertSvgToPngAsync(svgUri);
 
                 if (pngData.Length != 0)
                 {
@@ -429,7 +431,8 @@ public class DownloadAndPrepDB
         }
     }
 
-    private static async Task<byte[]> ConvertSvgToByteArrayAsync(string svgUrl)
+    // Sharpvectors
+    public static async Task<byte[]> ConvertSvgToByteArraySharpVectorsAsync(string svgUrl)
     {
         try
         {
@@ -437,26 +440,36 @@ public class DownloadAndPrepDB
             {
                 var svgData = await httpClient.GetStringAsync(svgUrl);
                 var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgData));
-                var settings = new WpfDrawingSettings();
+                Debug.WriteLine($"Length of svgStream: {svgStream.Length}");
+                var settings = new WpfDrawingSettings
+                {
+                    IncludeRuntime = false,
+                    TextAsGeometry = false,
+                    OptimizePath = true,
+                };
                 var reader = new FileSvgReader(settings);
                 var drawing = reader.Read(svgStream);
 
                 DrawingImage drawingImage = new DrawingImage(drawing);
                 var drawingVisual = new DrawingVisual();
+                double aspectRatio = drawingImage.Width / drawingImage.Height;
+                int newHeight = 20;
+                int newWidth = (int)(newHeight * aspectRatio);
+
                 using (var drawingContext = drawingVisual.RenderOpen())
                 {
-                    drawingContext.DrawImage(drawingImage, new Rect(0, 0, drawingImage.Width, drawingImage.Height));
+                    drawingContext.DrawImage(drawingImage, new Rect(0, 0, newWidth, newHeight));
                 }
-                RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap((int)drawingImage.Width, (int)drawingImage.Height, 96, 96, PixelFormats.Pbgra32);
+                RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap(newWidth, newHeight, 96, 96, PixelFormats.Pbgra32);
                 renderTargetBitmap.Render(drawingVisual);
 
-                BitmapEncoder encoder = new PngBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(renderTargetBitmap));
+                System.Windows.Media.Imaging.BitmapEncoder encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(renderTargetBitmap));
 
                 using (MemoryStream memoryStream = new MemoryStream())
                 {
                     encoder.Save(memoryStream);
-                    Debug.WriteLine($"Length of {memoryStream}: {memoryStream.Length.ToString()}");
+                    Debug.WriteLine($"Length of stream (Sharpvectors): {memoryStream.Length.ToString()}");
                     return memoryStream.ToArray();
                 }
             }
@@ -464,13 +477,11 @@ public class DownloadAndPrepDB
         catch (Exception ex)
         {
             Debug.WriteLine($"Error converting SVG to byte array: {ex.Message}");
-            return null;
+            return Array.Empty<byte>();
         }
     }
-
-
-    /*
-    private static async Task<byte[]> ConvertSvgToPngAsync(string svgLink)
+    // Skia
+    public static async Task<byte[]> ConvertSvgToPngAsync(string svgLink)
     {
         try
         {
@@ -485,8 +496,6 @@ public class DownloadAndPrepDB
                 var svg = new SkiaSharp.Extended.Svg.SKSvg();
                 svg.Load(svgStream);
                 Debug.WriteLine($"Length of svgStream: {svgStream.Length}");
-                Debug.WriteLine($"svg højde: {svg.CanvasSize.Width}");
-                Debug.WriteLine($"svg bredde: {svg.CanvasSize.Width}");
 
                 float scaleFactor = 20f / svg.CanvasSize.Height;
 
@@ -502,7 +511,7 @@ public class DownloadAndPrepDB
                     using (var stream = new MemoryStream())
                     {
                         data.SaveTo(stream);
-                        Debug.WriteLine($"Length of stream: {stream.Length}");
+                        Debug.WriteLine($"Length of stream (Skia) : {stream.Length}");
                         return stream.ToArray();
                     }
                 }
@@ -514,7 +523,6 @@ public class DownloadAndPrepDB
             return Array.Empty<byte>();
         }
     }
-    */
     private static async Task CopyColumnIfEmptyOrAddMissingRowsAsync(string targetTable, string targetColumn, string sourceTable, string sourceColumn)
     {
         try

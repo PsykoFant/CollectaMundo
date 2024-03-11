@@ -122,7 +122,9 @@ namespace CardboardHoarder
 
         private async void DisplaySvgImage(string svgUrl)
         {
-            var byteArray = await ConvertSvgToByteArrayAsync(svgUrl);
+            //var byteArray = await DownloadAndPrepDB.ConvertSvgToPngAsync(svgUrl);
+            var byteArray = await DownloadAndPrepDB.ConvertSvgToByteArraySharpVectorsAsync(svgUrl);
+
             if (byteArray != null)
             {
                 using var stream = new MemoryStream(byteArray);
