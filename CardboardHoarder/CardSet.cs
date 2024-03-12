@@ -81,7 +81,8 @@ namespace CardboardHoarder
         public List<string> SourceProducts { get; set; }
         public List<string> Subsets { get; set; }
         public List<string> Subtypes { get; set; }
-        public List<string> Supertypes { get; set; }
+        //public List<string> Supertypes { get; set; }
+        public string SuperTypes { get; set; }
         public string Text { get; set; }
         public string Toughness { get; set; }
         public string Type { get; set; }

@@ -47,6 +47,7 @@ namespace CardboardHoarder
             filterCardNameComboBox.SelectionChanged += FilterDataGrid;
             filterSetNameComboBox.SelectionChanged += FilterDataGrid;
             filterTypesNameComboBox.SelectionChanged += FilterDataGrid;
+            filterSuperTypesNameListBox.SelectionChanged += FilterDataGrid;
 
 
 
@@ -70,12 +71,14 @@ namespace CardboardHoarder
             var cardNames = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "name");
             var setNames = await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "name");
             var types = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "types");
+            var superTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "supertypes");
 
             Dispatcher.Invoke(() =>
             {
                 filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                 filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                 filterTypesNameComboBox.ItemsSource = types.OrderBy(types => types).ToList();
+                filterSuperTypesNameListBox.ItemsSource = superTypes.OrderBy(types => types).ToList();
             });
         }
         private void FilterDataGrid(object sender, SelectionChangedEventArgs e)
@@ -83,15 +86,67 @@ namespace CardboardHoarder
             string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
             string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
             string typesFilter = filterTypesNameComboBox.SelectedItem?.ToString() ?? "";
+            string superTypesFilter = filterSuperTypesNameListBox.SelectedItem?.ToString() ?? "";
 
             var filteredItems = items.Where(item => (string.IsNullOrEmpty(cardFilter) || item.Name.Contains(cardFilter)) &&
                                                     (string.IsNullOrEmpty(setFilter) || item.SetName.Contains(setFilter)) &&
-                                                    (string.IsNullOrEmpty(typesFilter) || item.Types.Contains(typesFilter))).ToList();
+                                                    (string.IsNullOrEmpty(typesFilter) || item.Types.Contains(typesFilter)) &&
+                                                    (string.IsNullOrEmpty(superTypesFilter) || item.SuperTypes.Contains(superTypesFilter))).ToList();
 
             Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = filteredItems; });
         }
 
+        private async Task LoadDataAsync()
+        {
+            Debug.WriteLine("Loading data asynchronously...");
+            try
+            {
+                string query =
+                    "SELECT c.name AS Name, " +
+                    "s.name AS SetName, " +
+                    "k.keyruneImage AS KeyRuneImage, " +
+                    "c.manaCost AS ManaCost, " +
+                    "u.manaCostImage AS ManaCostImage, " +
+                    "c.types AS Types, " +
+                    "c.supertypes AS SuperTypes " +
+                    "FROM cards c " +
+                    "JOIN sets s ON c.setCode = s.code " +
+                    "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
+                    "LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost";
 
+                using var command = new SQLiteCommand(query, DBAccess.connection);
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var keyruneImage = reader["KeyRuneImage"] as byte[];
+                    var setIconImageSource = ConvertByteArrayToBitmapImage(keyruneImage);
+                    var manaCostImage = reader["ManaCostImage"] as byte[];
+                    var manaCostImageSource = ConvertByteArrayToBitmapImage(manaCostImage);
+
+                    items.Add(new CardSet
+                    {
+                        Name = reader["Name"].ToString(),
+                        SetName = reader["SetName"].ToString(),
+                        SetIcon = setIconImageSource,
+                        ManaCost = reader["ManaCost"].ToString(),
+                        ManaCostImage = manaCostImageSource,
+                        Types = reader["Types"].ToString(),
+                        SuperTypes = reader["SuperTypes"].ToString(),
+                    });
+                }
+
+                Dispatcher.Invoke(() =>
+                {
+                    mainCardWindowDatagrid.ItemsSource = items;
+                    dataView = CollectionViewSource.GetDefaultView(items);
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while loading data: {ex.Message}");
+            }
+        }
 
         public static async Task ShowStatusWindowAsync(bool visible)
         {
@@ -157,55 +212,7 @@ namespace CardboardHoarder
             await UpdateDB.UpdateCardDatabaseAsync();
         }
 
-        private async Task LoadDataAsync()
-        {
-            Debug.WriteLine("Loading data asynchronously...");
-            try
-            {
-                string query =
-                    "SELECT c.name AS Name, " +
-                    "s.name AS SetName, " +
-                    "k.keyruneImage AS KeyRuneImage, " +
-                    "c.manaCost AS ManaCost, " +
-                    "c.types AS Types, " +
-                    "u.manaCostImage AS ManaCostImage " +
-                    "FROM cards c " +
-                    "JOIN sets s ON c.setCode = s.code " +
-                    "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
-                    "LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost";
 
-                using var command = new SQLiteCommand(query, DBAccess.connection);
-
-                using var reader = await command.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    var keyruneImage = reader["KeyRuneImage"] as byte[];
-                    var setIconImageSource = ConvertByteArrayToBitmapImage(keyruneImage);
-                    var manaCostImage = reader["ManaCostImage"] as byte[];
-                    var manaCostImageSource = ConvertByteArrayToBitmapImage(manaCostImage);
-
-                    items.Add(new CardSet
-                    {
-                        Name = reader["Name"].ToString(),
-                        SetName = reader["SetName"].ToString(),
-                        SetIcon = setIconImageSource,
-                        ManaCost = reader["ManaCost"].ToString(),
-                        ManaCostImage = manaCostImageSource,
-                        Types = reader["Types"].ToString(),
-                    });
-                }
-
-                Dispatcher.Invoke(() =>
-                {
-                    mainCardWindowDatagrid.ItemsSource = items;
-                    dataView = CollectionViewSource.GetDefaultView(items);
-                });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while loading data: {ex.Message}");
-            }
-        }
         private static BitmapImage? ConvertByteArrayToBitmapImage(byte[] imageData)
         {
             try
