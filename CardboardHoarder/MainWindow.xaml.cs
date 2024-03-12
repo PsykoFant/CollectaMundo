@@ -1,8 +1,11 @@
-﻿using System.Data;
+﻿using System.ComponentModel;
+using System.Data;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media.Imaging;
 
 namespace CardboardHoarder
@@ -12,6 +15,9 @@ namespace CardboardHoarder
 
         // Used by ShowOrHideStatusWindow to reference MainWindow
         private static MainWindow? _currentInstance;
+        private ICollectionView dataView;
+        private List<CardSet> items = new List<CardSet>();
+
         public static MainWindow CurrentInstance
         {
             get
@@ -38,7 +44,12 @@ namespace CardboardHoarder
             GridStatus.Visibility = Visibility.Hidden;
             Loaded += async (sender, args) => { await PrepareSystem(); };
 
-            DisplaySvgImage("https://svgs.scryfall.io/sets/mid.svg");
+            filterCardNameComboBox.SelectionChanged += FilterDataGrid;
+            filterSetNameComboBox.SelectionChanged += FilterDataGrid;
+
+
+
+            //DisplaySvgImage("https://svgs.scryfall.io/sets/mid.svg");
         }
 
         private async Task PrepareSystem()
@@ -46,9 +57,39 @@ namespace CardboardHoarder
             await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
             GridSearchAndFilter.Visibility = Visibility.Visible;
             await DBAccess.OpenConnectionAsync();
+            var LoadDataAsyncTask = LoadDataAsync();
+            var FillComboBoxesAsyncTask = FillComboBoxesAsync();
+            await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
             await LoadDataAsync();
+            await FillComboBoxesAsync();
             DBAccess.CloseConnection();
         }
+
+
+        private async Task FillComboBoxesAsync()
+        {
+            var cardNames = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "name");
+            var setNames = await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "name");
+
+            Dispatcher.Invoke(() =>
+            {
+                filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
+                filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
+            });
+        }
+        private void FilterDataGrid(object sender, SelectionChangedEventArgs e)
+        {
+            string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
+            string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
+
+            var filteredItems = items.Where(item => (string.IsNullOrEmpty(cardFilter) || item.Name.Contains(cardFilter)) &&
+                                                    (string.IsNullOrEmpty(setFilter) || item.SetName.Contains(setFilter))).ToList();
+
+            Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = filteredItems; });
+        }
+
+
+
         public static async Task ShowStatusWindowAsync(bool visible)
         {
             if (CurrentInstance != null)
@@ -80,7 +121,6 @@ namespace CardboardHoarder
                 });
             }
         }
-
         private void UpdateStatusTextBox(string message)
         {
             Dispatcher.Invoke(() =>
@@ -133,7 +173,6 @@ namespace CardboardHoarder
                 using var command = new SQLiteCommand(query, DBAccess.connection);
 
                 using var reader = await command.ExecuteReaderAsync();
-                var items = new List<CardSet>();
                 while (await reader.ReadAsync())
                 {
                     var keyruneImage = reader["KeyRuneImage"] as byte[];
@@ -154,6 +193,7 @@ namespace CardboardHoarder
                 Dispatcher.Invoke(() =>
                 {
                     mainCardWindowDatagrid.ItemsSource = items;
+                    dataView = CollectionViewSource.GetDefaultView(items);
                 });
             }
             catch (Exception ex)
