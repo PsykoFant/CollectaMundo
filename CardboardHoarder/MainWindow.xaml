@@ -72,7 +72,7 @@
             <ListBox x:Name="filterSuperTypesNameListBox" SelectionMode="Extended" Margin="10,105,814,468">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <CheckBox Content="{Binding SuperTypes}" IsChecked="{Binding IsSelected, Mode=TwoWay}"/>
+                        <CheckBox Content="{Binding}" IsChecked="{Binding IsSelected, Mode=TwoWay}"/>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>

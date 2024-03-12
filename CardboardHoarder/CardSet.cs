@@ -93,6 +93,7 @@ namespace CardboardHoarder
         public string Watermark { get; set; }
         public ImageSource SetIcon { get; set; }
         public ImageSource ManaCostImage { get; set; }
+        public bool IsSelected { get; set; }
     }
 
 }

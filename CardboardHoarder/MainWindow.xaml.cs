@@ -83,6 +83,8 @@ namespace CardboardHoarder
         }
         private void FilterDataGrid(object sender, SelectionChangedEventArgs e)
         {
+            var selectedItems = items.Where(item => item.IsSelected).ToList();
+
             string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
             string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
             string typesFilter = filterTypesNameComboBox.SelectedItem?.ToString() ?? "";
