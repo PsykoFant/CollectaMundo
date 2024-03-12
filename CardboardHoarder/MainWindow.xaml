@@ -19,7 +19,9 @@
         <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Height="681" Margin="0,48,0,0" VerticalAlignment="Top" Width="969">
             <Image x:Name="iconTester" HorizontalAlignment="Left" Height="44" Margin="843,42,0,0" VerticalAlignment="Top" Width="59"/>
             <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Left" Margin="369,0,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
-            <DataGrid x:Name="mainCardWindowDatagrid" Margin="144,218,0,0" AutoGenerateColumns="False">
+            <DataGrid x:Name="mainCardWindowDatagrid" Margin="144,218,0,0" 
+                      AutoGenerateColumns="False"
+                      ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" CanUserAddRows="False">
                 <DataGrid.CellStyle>
                     <Style/>
                 </DataGrid.CellStyle>
@@ -41,6 +43,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Card Types" Binding="{Binding Types}" />
                 </DataGrid.Columns>
             </DataGrid>
             <ComboBox x:Name="filterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,10,814,645">
@@ -51,6 +54,13 @@
                 </ComboBox.ItemsPanel>
             </ComboBox>
             <ComboBox x:Name="filterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,43,814,612">
+                <ComboBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                </ComboBox.ItemsPanel>
+            </ComboBox>
+            <ComboBox x:Name="filterTypesNameComboBox" IsTextSearchEnabled="True" Margin="10,74,814,581">
                 <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel />

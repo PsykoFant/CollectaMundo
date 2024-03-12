@@ -46,6 +46,7 @@ namespace CardboardHoarder
 
             filterCardNameComboBox.SelectionChanged += FilterDataGrid;
             filterSetNameComboBox.SelectionChanged += FilterDataGrid;
+            filterTypesNameComboBox.SelectionChanged += FilterDataGrid;
 
 
 
@@ -60,8 +61,6 @@ namespace CardboardHoarder
             var LoadDataAsyncTask = LoadDataAsync();
             var FillComboBoxesAsyncTask = FillComboBoxesAsync();
             await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
-            await LoadDataAsync();
-            await FillComboBoxesAsync();
             DBAccess.CloseConnection();
         }
 
@@ -70,20 +69,24 @@ namespace CardboardHoarder
         {
             var cardNames = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "name");
             var setNames = await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "name");
+            var types = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "types");
 
             Dispatcher.Invoke(() =>
             {
                 filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                 filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
+                filterTypesNameComboBox.ItemsSource = types.OrderBy(types => types).ToList();
             });
         }
         private void FilterDataGrid(object sender, SelectionChangedEventArgs e)
         {
             string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
             string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
+            string typesFilter = filterTypesNameComboBox.SelectedItem?.ToString() ?? "";
 
             var filteredItems = items.Where(item => (string.IsNullOrEmpty(cardFilter) || item.Name.Contains(cardFilter)) &&
-                                                    (string.IsNullOrEmpty(setFilter) || item.SetName.Contains(setFilter))).ToList();
+                                                    (string.IsNullOrEmpty(setFilter) || item.SetName.Contains(setFilter)) &&
+                                                    (string.IsNullOrEmpty(typesFilter) || item.Types.Contains(typesFilter))).ToList();
 
             Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = filteredItems; });
         }
@@ -160,11 +163,12 @@ namespace CardboardHoarder
             try
             {
                 string query =
-                    "SELECT c.name as Name, " +
-                    "s.name as SetName, " +
-                    "k.keyruneImage as KeyRuneImage, " +
-                    "c.manaCost as ManaCost, " +
-                    "u.manaCostImage as ManaCostImage " +
+                    "SELECT c.name AS Name, " +
+                    "s.name AS SetName, " +
+                    "k.keyruneImage AS KeyRuneImage, " +
+                    "c.manaCost AS ManaCost, " +
+                    "c.types AS Types, " +
+                    "u.manaCostImage AS ManaCostImage " +
                     "FROM cards c " +
                     "JOIN sets s ON c.setCode = s.code " +
                     "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
@@ -186,7 +190,8 @@ namespace CardboardHoarder
                         SetName = reader["SetName"].ToString(),
                         SetIcon = setIconImageSource,
                         ManaCost = reader["ManaCost"].ToString(),
-                        ManaCostImage = manaCostImageSource
+                        ManaCostImage = manaCostImageSource,
+                        Types = reader["Types"].ToString(),
                     });
                 }
 
@@ -201,7 +206,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while loading data: {ex.Message}");
             }
         }
-        public static BitmapImage? ConvertByteArrayToBitmapImage(byte[] imageData)
+        private static BitmapImage? ConvertByteArrayToBitmapImage(byte[] imageData)
         {
             try
             {
@@ -225,7 +230,6 @@ namespace CardboardHoarder
 
             return null;
         }
-
 
 
         // Test kode
