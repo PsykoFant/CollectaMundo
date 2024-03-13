@@ -6,6 +6,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace CardboardHoarder
@@ -17,6 +18,8 @@ namespace CardboardHoarder
         private static MainWindow? _currentInstance;
         private ICollectionView dataView;
         private List<CardSet> items = new List<CardSet>();
+        private HashSet<string> selectedSuperTypes = new HashSet<string>();
+
 
         public static MainWindow CurrentInstance
         {
@@ -52,23 +55,79 @@ namespace CardboardHoarder
             //DisplaySvgImage("https://svgs.scryfall.io/sets/mid.svg");
         }
 
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
+            if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
+            {
+                var label = contentPresenter.Content as string; // Assuming the content is directly a string.
+                if (!string.IsNullOrEmpty(label))
+                {
+                    selectedSuperTypes.Add(label);
+                    UpdateFilterLabel();
+                }
+            }
+        }
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
+            if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
+            {
+                var label = contentPresenter.Content as string; // Assuming the content is directly a string.
+                if (!string.IsNullOrEmpty(label))
+                {
+                    selectedSuperTypes.Remove(label);
+                    UpdateFilterLabel();
+                }
+            }
+        }
+
+
+        private static T FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+            {
+                DependencyObject child = VisualTreeHelper.GetChild(obj, i);
+                if (child != null && child is T)
+                    return (T)child;
+                else
+                {
+                    T childOfChild = FindVisualChild<T>(child);
+                    if (childOfChild != null)
+                        return childOfChild;
+                }
+            }
+            return null;
+        }
+
+
+        private void UpdateFilterLabel()
+        {
+            if (selectedSuperTypes.Count > 0)
+            {
+                filterLabel.Content = "SuperTypes: " + string.Join(", ", selectedSuperTypes);
+            }
+            else
+            {
+                filterLabel.Content = "";
+            }
+        }
+
+
+
+
+
         private async Task PrepareSystem()
         {
             await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
             GridSearchAndFilter.Visibility = Visibility.Visible;
             await DBAccess.OpenConnectionAsync();
 
-            FillComboBoxesAsync();
-
-            /*
             var LoadDataAsyncTask = LoadDataAsync();
             var FillComboBoxesAsyncTask = FillComboBoxesAsync();
             await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
-            */
             DBAccess.CloseConnection();
         }
-
-
         private async Task FillComboBoxesAsync()
         {
             // Get the values to populate the comboboxes
@@ -94,7 +153,7 @@ namespace CardboardHoarder
                 filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                 filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                 filterTypesNameComboBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
-                filterSuperTypesNameComboBox.ItemsSource = superTypesList.OrderBy(types => types).Distinct().ToList();
+                filterSuperTypesListBox.ItemsSource = superTypesList.OrderBy(types => types).Distinct().ToList();
 
             });
         }
@@ -103,15 +162,18 @@ namespace CardboardHoarder
             string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
             string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
             string typesFilter = filterTypesNameComboBox.SelectedItem?.ToString() ?? "";
-            string superTypesFilter = filterSuperTypesNameComboBox.SelectedItem?.ToString() ?? "";
 
-            var filteredItems = items.Where(item => (string.IsNullOrEmpty(cardFilter) || item.Name.Contains(cardFilter)) &&
-                                                    (string.IsNullOrEmpty(setFilter) || item.SetName.Contains(setFilter)) &&
-                                                    (string.IsNullOrEmpty(typesFilter) || item.Types.Contains(typesFilter)) &&
-                                                    (string.IsNullOrEmpty(superTypesFilter) || item.SuperTypes.Contains(superTypesFilter))).ToList();
+            // Use the HashSet selectedSuperTypes directly for filtering
+            var filteredItems = items.Where(item =>
+                (string.IsNullOrEmpty(cardFilter) || item.Name.Contains(cardFilter)) &&
+                (string.IsNullOrEmpty(setFilter) || item.SetName.Contains(setFilter)) &&
+                (string.IsNullOrEmpty(typesFilter) || item.Types.Contains(typesFilter)) &&
+                (selectedSuperTypes.Count == 0 || selectedSuperTypes.Any(superType => item.SuperTypes.Contains(superType)))
+            ).ToList();
 
             Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = filteredItems; });
         }
+
 
         private async Task LoadDataAsync()
         {

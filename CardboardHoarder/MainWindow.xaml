@@ -19,7 +19,7 @@
         <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Height="681" Margin="0,48,0,0" VerticalAlignment="Top" Width="969">
             <Image x:Name="iconTester" HorizontalAlignment="Left" Height="44" Margin="843,42,0,0" VerticalAlignment="Top" Width="59"/>
             <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Left" Margin="369,0,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
-            <DataGrid x:Name="mainCardWindowDatagrid" Margin="144,218,0,0" 
+            <DataGrid x:Name="mainCardWindowDatagrid" Margin="159,218,0,0" 
                       AutoGenerateColumns="False"
                       ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" CanUserAddRows="False">
                 <DataGrid.CellStyle>
@@ -69,13 +69,31 @@
                     </ItemsPanelTemplate>
                 </ComboBox.ItemsPanel>
             </ComboBox>
-            <ComboBox x:Name="filterSuperTypesNameComboBox" IsTextSearchEnabled="True" Margin="10,105,815,550">
-                <ComboBox.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <VirtualizingStackPanel />
-                    </ItemsPanelTemplate>
-                </ComboBox.ItemsPanel>
-            </ComboBox>
+            <ListBox x:Name="filterSuperTypesListBox" Margin="10,136,815,481"
+                 ItemsSource="{Binding}"
+                 SelectionMode="Extended">
+                <ListBox.Resources>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="OverridesDefaultStyle" Value="true" />
+                        <Setter Property="SnapsToDevicePixels" Value="true" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}">
+                                        <ContentPresenter />
+                                    </CheckBox>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <EventSetter Event="CheckBox.Checked" Handler="CheckBox_Checked" />
+                        <EventSetter Event="CheckBox.Unchecked" Handler="CheckBox_Unchecked" />
+                    </Style>
+                </ListBox.Resources>
+            </ListBox>
+
+
+
+
 
             <TextBox x:Name="imageInput" HorizontalAlignment="Left" Margin="262,59,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Text="MID"/>
             <Image x:Name="testImage" HorizontalAlignment="Left" Height="26" Margin="262,96,0,0" VerticalAlignment="Top" Width="122"/>
@@ -86,6 +104,8 @@
             <TextBox x:Name="manaSymbolTextBox" HorizontalAlignment="Left" Margin="635,59,0,0" TextWrapping="Wrap" Text="G/U/P" VerticalAlignment="Top" Width="120"/>
             <Image x:Name="manaSymbolImageTester" HorizontalAlignment="Left" Height="29" Margin="672,96,0,0" VerticalAlignment="Top" Width="44"/>
             <Button Content="Check mana symbol image" HorizontalAlignment="Left" Margin="607,154,0,0" VerticalAlignment="Top" Width="176" Click="Button_Click_2"/>
+            <Label x:Name="filterLabel" Content="" HorizontalAlignment="Left" Margin="159,187,0,0" VerticalAlignment="Top"/>
+
 
 
 
