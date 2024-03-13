@@ -69,13 +69,13 @@
                     </ItemsPanelTemplate>
                 </ComboBox.ItemsPanel>
             </ComboBox>
-            <ListBox x:Name="filterSuperTypesNameListBox" SelectionMode="Extended" Margin="10,105,814,468">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <CheckBox Content="{Binding}" IsChecked="{Binding IsSelected, Mode=TwoWay}"/>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+            <ComboBox x:Name="filterSuperTypesNameComboBox" IsTextSearchEnabled="True" Margin="10,105,815,550">
+                <ComboBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                </ComboBox.ItemsPanel>
+            </ComboBox>
 
             <TextBox x:Name="imageInput" HorizontalAlignment="Left" Margin="262,59,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Text="MID"/>
             <Image x:Name="testImage" HorizontalAlignment="Left" Height="26" Margin="262,96,0,0" VerticalAlignment="Top" Width="122"/>
@@ -86,6 +86,7 @@
             <TextBox x:Name="manaSymbolTextBox" HorizontalAlignment="Left" Margin="635,59,0,0" TextWrapping="Wrap" Text="G/U/P" VerticalAlignment="Top" Width="120"/>
             <Image x:Name="manaSymbolImageTester" HorizontalAlignment="Left" Height="29" Margin="672,96,0,0" VerticalAlignment="Top" Width="44"/>
             <Button Content="Check mana symbol image" HorizontalAlignment="Left" Margin="607,154,0,0" VerticalAlignment="Top" Width="176" Click="Button_Click_2"/>
+
 
 
 

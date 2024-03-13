@@ -47,8 +47,6 @@ namespace CardboardHoarder
             filterCardNameComboBox.SelectionChanged += FilterDataGrid;
             filterSetNameComboBox.SelectionChanged += FilterDataGrid;
             filterTypesNameComboBox.SelectionChanged += FilterDataGrid;
-            filterSuperTypesNameListBox.SelectionChanged += FilterDataGrid;
-
 
 
             //DisplaySvgImage("https://svgs.scryfall.io/sets/mid.svg");
@@ -59,36 +57,53 @@ namespace CardboardHoarder
             await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
             GridSearchAndFilter.Visibility = Visibility.Visible;
             await DBAccess.OpenConnectionAsync();
+
+            FillComboBoxesAsync();
+
+            /*
             var LoadDataAsyncTask = LoadDataAsync();
             var FillComboBoxesAsyncTask = FillComboBoxesAsync();
             await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
+            */
             DBAccess.CloseConnection();
         }
 
 
         private async Task FillComboBoxesAsync()
         {
+            // Get the values to populate the comboboxes
             var cardNames = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "name");
             var setNames = await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "name");
             var types = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "types");
             var superTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "supertypes");
 
+            // types with commas should not be listed. We don't want "Summon, Wolf" in the dropdown. We want "Summon" and "Wolf"
+            var typesList = new List<string>();
+            foreach (var type in types)
+            {
+                typesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+            }
+            var superTypesList = new List<string>();
+            foreach (var type in superTypes)
+            {
+                superTypesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+            }
+
             Dispatcher.Invoke(() =>
             {
                 filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                 filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
-                filterTypesNameComboBox.ItemsSource = types.OrderBy(types => types).ToList();
-                filterSuperTypesNameListBox.ItemsSource = superTypes.OrderBy(types => types).ToList();
+                filterTypesNameComboBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
+                filterSuperTypesNameComboBox.ItemsSource = superTypesList.OrderBy(types => types).Distinct().ToList();
+
             });
         }
         private void FilterDataGrid(object sender, SelectionChangedEventArgs e)
         {
-            var selectedItems = items.Where(item => item.IsSelected).ToList();
-
             string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
             string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
             string typesFilter = filterTypesNameComboBox.SelectedItem?.ToString() ?? "";
-            string superTypesFilter = filterSuperTypesNameListBox.SelectedItem?.ToString() ?? "";
+            string superTypesFilter = filterSuperTypesNameComboBox.SelectedItem?.ToString() ?? "";
 
             var filteredItems = items.Where(item => (string.IsNullOrEmpty(cardFilter) || item.Name.Contains(cardFilter)) &&
                                                     (string.IsNullOrEmpty(setFilter) || item.SetName.Contains(setFilter)) &&
