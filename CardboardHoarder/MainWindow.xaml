@@ -69,7 +69,28 @@
                     </ItemsPanelTemplate>
                 </ComboBox.ItemsPanel>
             </ComboBox>
-            <ListBox x:Name="filterSuperTypesListBox" Margin="10,136,815,481"
+            <ListBox x:Name="filterTypesListBox" Margin="10,136,815,468"
+                ItemsSource="{Binding}"
+                SelectionMode="Extended">
+                <ListBox.Resources>
+                    <Style TargetType="{x:Type ListBoxItem}">
+                        <Setter Property="OverridesDefaultStyle" Value="true" />
+                        <Setter Property="SnapsToDevicePixels" Value="true" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}">
+                                        <ContentPresenter />
+                                    </CheckBox>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <EventSetter Event="ToggleButton.Checked" Handler="TypeCheckBox_Checked" />
+                        <EventSetter Event="ToggleButton.Unchecked" Handler="TypeCheckBox_Unchecked" />
+                    </Style>
+                </ListBox.Resources>
+            </ListBox>
+            <ListBox x:Name="filterSuperTypesListBox" Margin="10,218,815,386"
                  ItemsSource="{Binding}"
                  SelectionMode="Extended">
                 <ListBox.Resources>
@@ -85,11 +106,12 @@
                                 </ControlTemplate>
                             </Setter.Value>
                         </Setter>
-                        <EventSetter Event="CheckBox.Checked" Handler="CheckBox_Checked" />
-                        <EventSetter Event="CheckBox.Unchecked" Handler="CheckBox_Unchecked" />
+                        <EventSetter Event="CheckBox.Checked" Handler="SupreTypesCheckBox_Checked" />
+                        <EventSetter Event="CheckBox.Unchecked" Handler="SuperTypesCheckBox_Unchecked" />
                     </Style>
                 </ListBox.Resources>
             </ListBox>
+
 
 
 
@@ -105,6 +127,7 @@
             <Image x:Name="manaSymbolImageTester" HorizontalAlignment="Left" Height="29" Margin="672,96,0,0" VerticalAlignment="Top" Width="44"/>
             <Button Content="Check mana symbol image" HorizontalAlignment="Left" Margin="607,154,0,0" VerticalAlignment="Top" Width="176" Click="Button_Click_2"/>
             <Label x:Name="filterLabel" Content="" HorizontalAlignment="Left" Margin="159,187,0,0" VerticalAlignment="Top"/>
+
 
 
 

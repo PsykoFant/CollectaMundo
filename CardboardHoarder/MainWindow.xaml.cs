@@ -18,6 +18,7 @@ namespace CardboardHoarder
         private static MainWindow? _currentInstance;
         private ICollectionView dataView;
         private List<CardSet> items = new List<CardSet>();
+        private HashSet<string> selectedTypes = new HashSet<string>();
         private HashSet<string> selectedSuperTypes = new HashSet<string>();
 
 
@@ -55,7 +56,36 @@ namespace CardboardHoarder
             //DisplaySvgImage("https://svgs.scryfall.io/sets/mid.svg");
         }
 
-        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+
+        private void TypeCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
+            if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
+            {
+                var label = contentPresenter.Content as string;
+                if (!string.IsNullOrEmpty(label))
+                {
+                    selectedTypes.Add(label);
+                    UpdateFilterLabel();
+                    FilterDataGrid(null, null); // Trigger filtering
+                }
+            }
+        }
+        private void TypeCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
+            if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
+            {
+                var label = contentPresenter.Content as string;
+                if (!string.IsNullOrEmpty(label))
+                {
+                    selectedTypes.Remove(label);
+                    UpdateFilterLabel();
+                    FilterDataGrid(null, null); // Trigger filtering
+                }
+            }
+        }
+        private void SupreTypesCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
             if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
@@ -69,8 +99,7 @@ namespace CardboardHoarder
                 }
             }
         }
-
-        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        private void SuperTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
             if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
@@ -84,42 +113,42 @@ namespace CardboardHoarder
                 }
             }
         }
-
-
-
         private static T FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
         {
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
             {
                 DependencyObject child = VisualTreeHelper.GetChild(obj, i);
                 if (child != null && child is T)
+                {
                     return (T)child;
+                }
                 else
                 {
                     T childOfChild = FindVisualChild<T>(child);
                     if (childOfChild != null)
+                    {
                         return childOfChild;
+                    }
                 }
             }
             return null;
         }
-
-
         private void UpdateFilterLabel()
         {
+            var contentParts = new List<string>();
+
+            if (selectedTypes.Count > 0)
+            {
+                contentParts.Add("Types: " + string.Join(", ", selectedTypes));
+            }
+
             if (selectedSuperTypes.Count > 0)
             {
-                filterLabel.Content = "SuperTypes: " + string.Join(", ", selectedSuperTypes);
+                contentParts.Add("SuperTypes: " + string.Join(", ", selectedSuperTypes));
             }
-            else
-            {
-                filterLabel.Content = "";
-            }
+
+            filterLabel.Content = contentParts.Count > 0 ? string.Join(" - ", contentParts) : "";
         }
-
-
-
-
 
         private async Task PrepareSystem()
         {
@@ -157,6 +186,7 @@ namespace CardboardHoarder
                 filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                 filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                 filterTypesNameComboBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
+                filterTypesListBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
                 filterSuperTypesListBox.ItemsSource = superTypesList.OrderBy(types => types).Distinct().ToList();
 
             });
@@ -172,6 +202,7 @@ namespace CardboardHoarder
                 (string.IsNullOrEmpty(cardFilter) || item.Name.Contains(cardFilter)) &&
                 (string.IsNullOrEmpty(setFilter) || item.SetName.Contains(setFilter)) &&
                 (string.IsNullOrEmpty(typesFilter) || item.Types.Contains(typesFilter)) &&
+                (selectedTypes.Count == 0 || selectedTypes.Any(Type => item.Types.Contains(Type))) &&
                 (selectedSuperTypes.Count == 0 || selectedSuperTypes.Any(superType => item.SuperTypes.Contains(superType)))
             ).ToList();
 
