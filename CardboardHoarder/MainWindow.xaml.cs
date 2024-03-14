@@ -50,8 +50,6 @@ namespace CardboardHoarder
 
             filterCardNameComboBox.SelectionChanged += FilterDataGrid;
             filterSetNameComboBox.SelectionChanged += FilterDataGrid;
-            filterTypesNameComboBox.SelectionChanged += FilterDataGrid;
-
 
             //DisplaySvgImage("https://svgs.scryfall.io/sets/mid.svg");
         }
@@ -59,7 +57,13 @@ namespace CardboardHoarder
 
         private void TypeCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
+            var dependencyObject = sender as DependencyObject;
+            if (dependencyObject == null)
+            {
+                return; // Exit if casting failed
+            }
+
+            var checkBox = FindVisualChild<CheckBox>(dependencyObject);
             if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
             {
                 var label = contentPresenter.Content as string;
@@ -67,10 +71,11 @@ namespace CardboardHoarder
                 {
                     selectedTypes.Add(label);
                     UpdateFilterLabel();
-                    FilterDataGrid(null, null); // Trigger filtering
+                    FilterDataGrid(null, null);
                 }
             }
         }
+
         private void TypeCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
@@ -185,7 +190,6 @@ namespace CardboardHoarder
             {
                 filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                 filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
-                filterTypesNameComboBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
                 filterTypesListBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
                 filterSuperTypesListBox.ItemsSource = superTypesList.OrderBy(types => types).Distinct().ToList();
 
@@ -195,13 +199,11 @@ namespace CardboardHoarder
         {
             string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
             string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
-            string typesFilter = filterTypesNameComboBox.SelectedItem?.ToString() ?? "";
 
             // Use the HashSet selectedSuperTypes directly for filtering
             var filteredItems = items.Where(item =>
                 (string.IsNullOrEmpty(cardFilter) || item.Name.Contains(cardFilter)) &&
                 (string.IsNullOrEmpty(setFilter) || item.SetName.Contains(setFilter)) &&
-                (string.IsNullOrEmpty(typesFilter) || item.Types.Contains(typesFilter)) &&
                 (selectedTypes.Count == 0 || selectedTypes.Any(Type => item.Types.Contains(Type))) &&
                 (selectedSuperTypes.Count == 0 || selectedSuperTypes.Any(superType => item.SuperTypes.Contains(superType)))
             ).ToList();

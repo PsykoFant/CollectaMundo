@@ -62,13 +62,6 @@
                     </ItemsPanelTemplate>
                 </ComboBox.ItemsPanel>
             </ComboBox>
-            <ComboBox x:Name="filterTypesNameComboBox" IsTextSearchEnabled="True" Margin="10,74,814,581">
-                <ComboBox.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <VirtualizingStackPanel />
-                    </ItemsPanelTemplate>
-                </ComboBox.ItemsPanel>
-            </ComboBox>
             <ListBox x:Name="filterTypesListBox" Margin="10,136,815,468"
                 ItemsSource="{Binding}"
                 SelectionMode="Extended">
