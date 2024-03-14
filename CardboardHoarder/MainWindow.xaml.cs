@@ -65,9 +65,11 @@ namespace CardboardHoarder
                 {
                     selectedSuperTypes.Add(label);
                     UpdateFilterLabel();
+                    FilterDataGrid(null, null); // Trigger filtering
                 }
             }
         }
+
         private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
@@ -78,9 +80,11 @@ namespace CardboardHoarder
                 {
                     selectedSuperTypes.Remove(label);
                     UpdateFilterLabel();
+                    FilterDataGrid(null, null); // Trigger filtering
                 }
             }
         }
+
 
 
         private static T FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
