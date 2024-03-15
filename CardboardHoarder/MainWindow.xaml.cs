@@ -78,7 +78,13 @@ namespace CardboardHoarder
 
         private void TypeCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
+            var dependencyObject = sender as DependencyObject;
+            if (dependencyObject == null)
+            {
+                return; // Exit if casting failed
+            }
+
+            var checkBox = FindVisualChild<CheckBox>(dependencyObject);
             if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
             {
                 var label = contentPresenter.Content as string;
@@ -92,7 +98,13 @@ namespace CardboardHoarder
         }
         private void SupreTypesCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
+            var dependencyObject = sender as DependencyObject;
+            if (dependencyObject == null)
+            {
+                return; // Exit if casting failed
+            }
+
+            var checkBox = FindVisualChild<CheckBox>(dependencyObject);
             if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
             {
                 var label = contentPresenter.Content as string; // Assuming the content is directly a string.
@@ -106,7 +118,13 @@ namespace CardboardHoarder
         }
         private void SuperTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
+            var dependencyObject = sender as DependencyObject;
+            if (dependencyObject == null)
+            {
+                return; // Exit if casting failed
+            }
+
+            var checkBox = FindVisualChild<CheckBox>(dependencyObject);
             if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
             {
                 var label = contentPresenter.Content as string; // Assuming the content is directly a string.
@@ -118,26 +136,34 @@ namespace CardboardHoarder
                 }
             }
         }
-        private static T FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
+        private static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
         {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+            try
             {
-                DependencyObject child = VisualTreeHelper.GetChild(obj, i);
-                if (child != null && child is T)
+                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
                 {
-                    return (T)child;
-                }
-                else
-                {
-                    T childOfChild = FindVisualChild<T>(child);
+                    DependencyObject child = VisualTreeHelper.GetChild(obj, i);
+                    if (child is T correctChild)
+                    {
+                        return correctChild;
+                    }
+
+                    T? childOfChild = FindVisualChild<T>(child);
                     if (childOfChild != null)
                     {
                         return childOfChild;
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                // Optionally log the exception if needed
+                Debug.WriteLine($"An error occurred while searching for visual child: {ex}");
+            }
+
             return null;
         }
+
         private void UpdateFilterLabel()
         {
             var contentParts = new List<string>();
@@ -195,7 +221,7 @@ namespace CardboardHoarder
 
             });
         }
-        private void FilterDataGrid(object sender, SelectionChangedEventArgs e)
+        private void FilterDataGrid(object? sender, SelectionChangedEventArgs? e)
         {
             string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
             string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
@@ -353,110 +379,5 @@ namespace CardboardHoarder
 
             return null;
         }
-
-
-        // Test kode
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            DisplayImageFromDatabase(imageInput.Text, testImage, 1);
-        }
-        private void Button_Click_1(object sender, RoutedEventArgs e)
-        {
-            DisplayImageFromDatabase(manaCostTextBox.Text, manaCostImageTester, 2);
-        }
-        private void Button_Click_2(object sender, RoutedEventArgs e)
-        {
-            DisplayImageFromDatabase(manaSymbolTextBox.Text, manaSymbolImageTester, 3);
-        }
-        private void DisplayImageFromDatabase(string inputFieldText, System.Windows.Controls.Image targetImageControl, int querySelector)
-        {
-            try
-            {
-                // Get the uniqueManaSymbol from the textBox
-                string symbol = inputFieldText;
-
-                // Query to retrieve manaSymbolImage from uniqueManaSymbols
-                string query = "";
-                string field = "";
-                if (querySelector == 1)
-                {
-                    query = "SELECT keyruneImage FROM keyruneImages WHERE setCode = @symbol";
-                    field = "keyruneImage";
-                }
-                else if (querySelector == 2)
-                {
-                    query = "SELECT manacostImage FROM uniqueManaCostImages WHERE uniqueManaCost = @symbol";
-                    field = "manaCostImage";
-                }
-                else if (querySelector == 3)
-                {
-                    query = "SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol";
-                    field = "manaSymbolImage";
-                }
-                using (SQLiteConnection connection = DBAccess.GetConnection())
-                {
-                    connection.Open();
-
-                    using (SQLiteCommand command = new SQLiteCommand(query, connection))
-                    {
-                        command.Parameters.AddWithValue("@symbol", symbol);
-
-                        using (SQLiteDataReader reader = command.ExecuteReader(CommandBehavior.SequentialAccess))
-                        {
-                            if (reader.Read())
-                            {
-                                // Get the BLOB data
-                                byte[] imageData = (byte[])reader[field];
-
-                                // Display the image in the testImage control
-                                DisplayImage(imageData, targetImageControl);
-                            }
-                            else
-                            {
-                                MessageBox.Show("No image found for the specified uniqueManaSymbol.");
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error: {ex.Message}");
-            }
-        }
-        private void DisplayImage(byte[] imageData, System.Windows.Controls.Image targetImageControl)
-        {
-            try
-            {
-                // Convert byte array to BitmapImage
-                BitmapImage bitmapImage = ConvertByteArrayToBitmapImage(imageData);
-
-                // Display the image in the testImage control
-                targetImageControl.Source = bitmapImage;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error displaying image: {ex.Message}");
-            }
-        }
-        private async void DisplaySvgImage(string svgUrl)
-        {
-            //var byteArray = await DownloadAndPrepDB.ConvertSvgToPngAsync(svgUrl);
-            var byteArray = await DownloadAndPrepDB.ConvertSvgToByteArraySharpVectorsAsync(svgUrl);
-
-            if (byteArray != null)
-            {
-                using var stream = new MemoryStream(byteArray);
-                BitmapImage bitmapImage = new BitmapImage();
-                bitmapImage.BeginInit();
-                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                bitmapImage.StreamSource = stream;
-                bitmapImage.EndInit();
-
-                // Ensure the image is set on the UI thread
-                Dispatcher.Invoke(() => iconTester.Source = bitmapImage);
-            }
-        }
-
     }
 }

@@ -26,13 +26,21 @@ public class DownloadAndPrepDB
     {
         try
         {
-            if (!File.Exists(databasePath))
+            //if (!File.Exists(databasePath))
+            if (true)
             {
                 MainWindow.CurrentInstance.infoLabel.Content = "No card database found...";
 
                 // Disbale buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
 
+
+                await DBAccess.OpenConnectionAsync();
+                await GenerateManaSymbolsFromSvgAsync();
+                await GenerateManaCostImagesAsync();
+
+
+                /*
                 // Call the download method with the progress handler
                 await DownloadDatabaseIfNotExistsAsync(databasePath);
 
@@ -44,6 +52,8 @@ public class DownloadAndPrepDB
                 var generateManaCostImagesTask = GenerateManaCostImagesAsync();
                 var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
                 await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
+
+                */
 
                 DBAccess.CloseConnection();
                 MainWindow.CurrentInstance.ResetGrids();
@@ -332,7 +342,6 @@ public class DownloadAndPrepDB
 
                 // Convert SVG to PNG using the ConvertSvgToPng function
                 byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync(svgUri);
-                //byte[] pngData = await ConvertSvgToPngAsync(svgUri);
 
                 if (pngData.Length != 0)
                 {
@@ -408,6 +417,8 @@ public class DownloadAndPrepDB
         int width = images.Sum(img => img.Width);
         int height = images.Max(img => img.Height);
 
+        Debug.WriteLine($"Width {width} Height {height}");
+
         // Create a new bitmap with the total width and maximum height
         using (Bitmap combinedImage = new Bitmap(width, height))
         using (Graphics g = Graphics.FromImage(combinedImage))
@@ -425,6 +436,7 @@ public class DownloadAndPrepDB
             using (MemoryStream ms = new MemoryStream())
             {
                 combinedImage.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                Debug.WriteLine($"Width of combinedimage: {combinedImage.Width.ToString()}");
                 return ms.ToArray();
             }
         }
