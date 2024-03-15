@@ -388,7 +388,6 @@ public class DownloadAndPrepDB
                             using (MemoryStream ms = new MemoryStream(imageBytes))
                             {
                                 Bitmap bitmap = new Bitmap(ms);
-                                Debug.WriteLine(bitmap.Width.ToString());
                                 manaSymbolImage.Add(bitmap);
                             }
                         }
@@ -415,6 +414,7 @@ public class DownloadAndPrepDB
 
         int width = images.Sum(img => img.Width);
         int height = images.Max(img => img.Height);
+        Debug.WriteLine(width.ToString());
 
         // Create a new bitmap with the total width and maximum height
         using (Bitmap combinedImage = new Bitmap(width, height))
@@ -433,6 +433,7 @@ public class DownloadAndPrepDB
             using (MemoryStream ms = new MemoryStream())
             {
                 combinedImage.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                Debug.WriteLine(combinedImage.Width.ToString());
                 return ms.ToArray();
             }
         }
