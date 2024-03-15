@@ -430,6 +430,7 @@ namespace CardboardHoarder
             {
                 // Convert byte array to BitmapImage
                 BitmapImage bitmapImage = ConvertByteArrayToBitmapImage(imageData);
+                Debug.WriteLine(bitmapImage.Width.ToString());
 
                 // Display the image in the testImage control
                 targetImageControl.Source = bitmapImage;

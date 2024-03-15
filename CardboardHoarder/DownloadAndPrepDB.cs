@@ -26,13 +26,20 @@ public class DownloadAndPrepDB
     {
         try
         {
-            if (!File.Exists(databasePath))
+            //if (!File.Exists(databasePath))
+            if (true)
             {
                 MainWindow.CurrentInstance.infoLabel.Content = "No card database found...";
 
                 // Disbale buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
 
+                await DBAccess.OpenConnectionAsync();
+                await GenerateManaSymbolsFromSvgAsync();
+                await GenerateManaCostImagesAsync();
+
+
+                /*
                 // Call the download method with the progress handler
                 await DownloadDatabaseIfNotExistsAsync(databasePath);
 
@@ -44,6 +51,7 @@ public class DownloadAndPrepDB
                 var generateManaCostImagesTask = GenerateManaCostImagesAsync();
                 var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
                 await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
+                */
 
                 DBAccess.CloseConnection();
                 MainWindow.CurrentInstance.ResetGrids();
@@ -379,7 +387,8 @@ public class DownloadAndPrepDB
                             byte[] imageBytes = (byte[])reader["manaSymbolImage"];
                             using (MemoryStream ms = new MemoryStream(imageBytes))
                             {
-                                Bitmap bitmap = new Bitmap(ms); // Bitmap and SkiaSharp operations are not async
+                                Bitmap bitmap = new Bitmap(ms);
+                                Debug.WriteLine(bitmap.Width.ToString());
                                 manaSymbolImage.Add(bitmap);
                             }
                         }
@@ -391,7 +400,6 @@ public class DownloadAndPrepDB
         {
             Debug.WriteLine($"An error occurred while processing mana cost input: {ex.Message}");
         }
-
         return await CombineImagesAsync(manaSymbolImage);
     }
     private static async Task<byte[]> CombineImagesAsync(List<Bitmap> images)
@@ -437,7 +445,6 @@ public class DownloadAndPrepDB
             {
                 var svgData = await httpClient.GetStringAsync(svgUrl);
                 var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgData));
-                Debug.WriteLine($"Length of svgStream: {svgStream.Length}");
                 var settings = new WpfDrawingSettings
                 {
                     IncludeRuntime = false,
@@ -466,7 +473,6 @@ public class DownloadAndPrepDB
                 using (MemoryStream memoryStream = new MemoryStream())
                 {
                     encoder.Save(memoryStream);
-                    Debug.WriteLine($"Length of stream (Sharpvectors): {memoryStream.Length.ToString()}");
                     return memoryStream.ToArray();
                 }
             }
