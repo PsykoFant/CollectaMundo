@@ -113,11 +113,11 @@
             <TextBox x:Name="imageInput" HorizontalAlignment="Left" Margin="262,59,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Text="MID"/>
             <Image x:Name="testImage" HorizontalAlignment="Left" Height="26" Margin="262,96,0,0" VerticalAlignment="Top" Width="122"/>
             <Button Content="Check set keyrune" HorizontalAlignment="Left" Margin="270,154,0,0" VerticalAlignment="Top" Width="104" Click="Button_Click"/>
-            <TextBox x:Name="manaCostTextBox" HorizontalAlignment="Left" Margin="404,59,0,0" TextWrapping="Wrap" Text="{}{5}{W}{W}" VerticalAlignment="Top" Width="120" RenderTransformOrigin="0.488,0.002"/>
-            <Image x:Name="manaCostImageTester" HorizontalAlignment="Left" Height="39" Margin="404,96,0,0" VerticalAlignment="Top" Width="143"/>
+            <TextBox x:Name="manaCostTextBox" HorizontalAlignment="Left" Margin="404,59,0,0" TextWrapping="Wrap" Text="{}{W}" VerticalAlignment="Top" Width="120" RenderTransformOrigin="0.488,0.002"/>
+            <Image x:Name="manaCostImageTester" HorizontalAlignment="Left" Height="39" Margin="404,96,0,0" VerticalAlignment="Top" Width="143" Stretch="None"/>
             <Button Content="Check mana cost image" HorizontalAlignment="Left" Margin="394,154,0,0" VerticalAlignment="Top" Width="152" Click="Button_Click_1"/>
-            <TextBox x:Name="manaSymbolTextBox" HorizontalAlignment="Left" Margin="635,59,0,0" TextWrapping="Wrap" Text="G/U/P" VerticalAlignment="Top" Width="120"/>
-            <Image x:Name="manaSymbolImageTester" HorizontalAlignment="Left" Height="29" Margin="672,96,0,0" VerticalAlignment="Top" Width="44"/>
+            <TextBox x:Name="manaSymbolTextBox" HorizontalAlignment="Left" Margin="635,59,0,0" TextWrapping="Wrap" Text="W" VerticalAlignment="Top" Width="120"/>
+            <Image x:Name="manaSymbolImageTester" HorizontalAlignment="Left" Height="29" Margin="672,96,0,0" VerticalAlignment="Top" Width="44" Stretch="None"/>
             <Button Content="Check mana symbol image" HorizontalAlignment="Left" Margin="607,154,0,0" VerticalAlignment="Top" Width="176" Click="Button_Click_2"/>
             <Label x:Name="filterLabel" Content="" HorizontalAlignment="Left" Margin="159,187,0,0" VerticalAlignment="Top"/>
 

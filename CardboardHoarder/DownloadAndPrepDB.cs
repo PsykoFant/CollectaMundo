@@ -5,6 +5,7 @@ using SharpVectors.Renderers.Wpf;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -12,7 +13,6 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Color = System.Drawing.Color;
 public class DownloadAndPrepDB
 {
     public static event Action<string>? StatusMessageUpdated;
@@ -26,24 +26,16 @@ public class DownloadAndPrepDB
     {
         try
         {
-            //if (!File.Exists(databasePath))
-            if (true)
+            if (!File.Exists(databasePath))
             {
                 MainWindow.CurrentInstance.infoLabel.Content = "No card database found...";
 
                 // Disbale buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
 
-                await DBAccess.OpenConnectionAsync();
-                await GenerateManaSymbolsFromSvgAsync();
-                await GenerateManaCostImagesAsync();
-
-
-                /*
                 // Call the download method with the progress handler
                 await DownloadDatabaseIfNotExistsAsync(databasePath);
 
-                await DBAccess.OpenConnectionAsync();
 
                 await CreateCustomTablesAndIndices(databasePath);
                 await GenerateManaSymbolsFromSvgAsync();
@@ -51,7 +43,7 @@ public class DownloadAndPrepDB
                 var generateManaCostImagesTask = GenerateManaCostImagesAsync();
                 var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
                 await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
-                */
+
 
                 DBAccess.CloseConnection();
                 MainWindow.CurrentInstance.ResetGrids();
@@ -405,38 +397,58 @@ public class DownloadAndPrepDB
     {
         return await Task.Run(() => CombineImages(images));
     }
-    private static byte[] CombineImages(List<Bitmap> images)
+    public static byte[] CombineImages(List<Bitmap> images)
     {
         if (images == null || images.Count == 0)
+            throw new ArgumentException("Images list is null or empty");
+
+        int totalWidth = 0;
+        int maxHeight = 0;
+
+        // Calculate total width and maximum height
+        foreach (var image in images)
         {
-            throw new ArgumentException("Images list is null or empty", nameof(images));
+            totalWidth += image.Width;
+            if (image.Height > maxHeight)
+                maxHeight = image.Height;
         }
 
-        int width = images.Sum(img => img.Width);
-        int height = images.Max(img => img.Height);
-        Debug.WriteLine(width.ToString());
-
-        // Create a new bitmap with the total width and maximum height
-        using (Bitmap combinedImage = new Bitmap(width, height))
-        using (Graphics g = Graphics.FromImage(combinedImage))
+        // Ensure the list has at least one image to reference DPI and pixel format
+        if (images.Count > 0)
         {
-            g.Clear(Color.Transparent); // Optional: fill background if needed
-
-            int offset = 0;
-            foreach (Bitmap image in images)
+            var firstImage = images[0];
+            // Create a new bitmap with the total width and maximum height, matching the first image's DPI and pixel format
+            using (var combinedImage = new Bitmap(totalWidth, maxHeight, firstImage.PixelFormat))
             {
-                g.DrawImage(image, new System.Drawing.Point(offset, 0));
-                offset += image.Width;
-                image.Dispose(); // Dispose each image after drawing it
-            }
+                combinedImage.SetResolution(firstImage.HorizontalResolution, firstImage.VerticalResolution);
 
-            using (MemoryStream ms = new MemoryStream())
-            {
-                combinedImage.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                Debug.WriteLine(combinedImage.Width.ToString());
-                return ms.ToArray();
+                using (var g = Graphics.FromImage(combinedImage))
+                {
+                    // Ensure high-quality rendering
+                    g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
+                    // Draw each image side by side
+                    int offset = 0;
+                    foreach (var image in images)
+                    {
+                        g.DrawImage(image, new System.Drawing.Point(offset, 0));
+                        offset += image.Width;
+                    }
+                }
+
+                // Convert the combined image to a byte array
+                using (var ms = new MemoryStream())
+                {
+                    combinedImage.Save(ms, ImageFormat.Png);
+                    return ms.ToArray();
+                }
             }
         }
+
+        // Return an empty array if there were no images
+        return new byte[0];
     }
     public static async Task<byte[]> ConvertSvgToByteArraySharpVectorsAsync(string svgUrl)
     {
