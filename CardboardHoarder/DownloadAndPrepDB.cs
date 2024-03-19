@@ -399,56 +399,63 @@ public class DownloadAndPrepDB
     }
     public static byte[] CombineImages(List<Bitmap> images)
     {
-        if (images == null || images.Count == 0)
-            throw new ArgumentException("Images list is null or empty");
-
-        int totalWidth = 0;
-        int maxHeight = 0;
-
-        // Calculate total width and maximum height
-        foreach (var image in images)
+        try
         {
-            totalWidth += image.Width;
-            if (image.Height > maxHeight)
-                maxHeight = image.Height;
-        }
+            if (images == null || images.Count == 0)
+                throw new ArgumentException("Images list is null or empty");
 
-        // Ensure the list has at least one image to reference DPI and pixel format
-        if (images.Count > 0)
-        {
-            var firstImage = images[0];
-            // Create a new bitmap with the total width and maximum height, matching the first image's DPI and pixel format
-            using (var combinedImage = new Bitmap(totalWidth, maxHeight, firstImage.PixelFormat))
+            int totalWidth = 0;
+            int maxHeight = 0;
+
+            // Calculate total width and maximum height
+            foreach (var image in images)
             {
-                combinedImage.SetResolution(firstImage.HorizontalResolution, firstImage.VerticalResolution);
+                totalWidth += image.Width;
+                if (image.Height > maxHeight)
+                    maxHeight = image.Height;
+            }
 
-                using (var g = Graphics.FromImage(combinedImage))
+            // Check if there's at least one image to reference DPI and pixel format
+            if (images.Count > 0)
+            {
+                var firstImage = images[0];
+                // Create a new bitmap with matching DPI and pixel format
+                using (var combinedImage = new Bitmap(totalWidth, maxHeight, firstImage.PixelFormat))
                 {
-                    // Ensure high-quality rendering
-                    g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                    combinedImage.SetResolution(firstImage.HorizontalResolution, firstImage.VerticalResolution);
 
-                    // Draw each image side by side
-                    int offset = 0;
-                    foreach (var image in images)
+                    using (var g = Graphics.FromImage(combinedImage))
                     {
-                        g.DrawImage(image, new System.Drawing.Point(offset, 0));
-                        offset += image.Width;
-                    }
-                }
+                        // Set high-quality rendering options
+                        g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
 
-                // Convert the combined image to a byte array
-                using (var ms = new MemoryStream())
-                {
-                    combinedImage.Save(ms, ImageFormat.Png);
-                    return ms.ToArray();
+                        // Draw each image side by side
+                        int offset = 0;
+                        foreach (var image in images)
+                        {
+                            g.DrawImage(image, new System.Drawing.Point(offset, 0));
+                            offset += image.Width;
+                        }
+                    }
+
+                    // Convert the combined image to a byte array
+                    using (var ms = new MemoryStream())
+                    {
+                        combinedImage.Save(ms, ImageFormat.Png);
+                        return ms.ToArray();
+                    }
                 }
             }
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"An error occurred while combining images: {ex.Message}");
+        }
 
-        // Return an empty array if there were no images
-        return new byte[0];
+        // Return an empty array or null to indicate failure
+        return null;
     }
     public static async Task<byte[]> ConvertSvgToByteArraySharpVectorsAsync(string svgUrl)
     {
