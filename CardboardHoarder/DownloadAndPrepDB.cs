@@ -5,6 +5,7 @@ using SharpVectors.Renderers.Wpf;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -12,7 +13,6 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Color = System.Drawing.Color;
 public class DownloadAndPrepDB
 {
     public static event Action<string>? StatusMessageUpdated;
@@ -407,39 +407,65 @@ public class DownloadAndPrepDB
     {
         return await Task.Run(() => CombineImages(images));
     }
-    private static byte[] CombineImages(List<Bitmap> images)
+    public static byte[] CombineImages(List<Bitmap> images)
     {
-        if (images == null || images.Count == 0)
+        try
         {
-            throw new ArgumentException("Images list is null or empty", nameof(images));
-        }
+            if (images == null || images.Count == 0)
+                throw new ArgumentException("Images list is null or empty");
 
-        int width = images.Sum(img => img.Width);
-        int height = images.Max(img => img.Height);
+            int totalWidth = 0;
+            int maxHeight = 0;
 
-        Debug.WriteLine($"Width {width} Height {height}");
-
-        // Create a new bitmap with the total width and maximum height
-        using (Bitmap combinedImage = new Bitmap(width, height))
-        using (Graphics g = Graphics.FromImage(combinedImage))
-        {
-            g.Clear(Color.Transparent); // Optional: fill background if needed
-
-            int offset = 0;
-            foreach (Bitmap image in images)
+            // Calculate total width and maximum height
+            foreach (var image in images)
             {
-                g.DrawImage(image, new System.Drawing.Point(offset, 0));
-                offset += image.Width;
-                image.Dispose(); // Dispose each image after drawing it
+                totalWidth += image.Width;
+                if (image.Height > maxHeight)
+                    maxHeight = image.Height;
             }
 
-            using (MemoryStream ms = new MemoryStream())
+            // Check if there's at least one image to reference DPI and pixel format
+            if (images.Count > 0)
             {
-                combinedImage.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                Debug.WriteLine($"Width of combinedimage: {combinedImage.Width.ToString()}");
-                return ms.ToArray();
+                var firstImage = images[0];
+                // Create a new bitmap with matching DPI and pixel format
+                using (var combinedImage = new Bitmap(totalWidth, maxHeight, firstImage.PixelFormat))
+                {
+                    combinedImage.SetResolution(firstImage.HorizontalResolution, firstImage.VerticalResolution);
+
+                    using (var g = Graphics.FromImage(combinedImage))
+                    {
+                        // Set high-quality rendering options
+                        g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
+                        // Draw each image side by side
+                        int offset = 0;
+                        foreach (var image in images)
+                        {
+                            g.DrawImage(image, new System.Drawing.Point(offset, 0));
+                            offset += image.Width;
+                        }
+                    }
+
+                    // Convert the combined image to a byte array
+                    using (var ms = new MemoryStream())
+                    {
+                        combinedImage.Save(ms, ImageFormat.Png);
+                        return ms.ToArray();
+                    }
+                }
             }
         }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"An error occurred while combining images: {ex.Message}");
+        }
+
+        // Return an empty array or null to indicate failure
+        return null;
     }
     public static async Task<byte[]> ConvertSvgToByteArraySharpVectorsAsync(string svgUrl)
     {
