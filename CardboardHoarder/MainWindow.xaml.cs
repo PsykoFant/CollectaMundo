@@ -262,19 +262,21 @@ namespace CardboardHoarder
                 while (await reader.ReadAsync())
                 {
                     var keyruneImage = reader["KeyRuneImage"] as byte[];
-                    var setIconImageSource = ConvertByteArrayToBitmapImage(keyruneImage);
+                    BitmapImage? setIconImageSource = keyruneImage != null ? ConvertByteArrayToBitmapImage(keyruneImage) : null;
+
                     var manaCostImage = reader["ManaCostImage"] as byte[];
-                    var manaCostImageSource = ConvertByteArrayToBitmapImage(manaCostImage);
+                    BitmapImage? manaCostImageSource = manaCostImage != null ? ConvertByteArrayToBitmapImage(manaCostImage) : null;
+
 
                     items.Add(new CardSet
                     {
-                        Name = reader["Name"].ToString(),
-                        SetName = reader["SetName"].ToString(),
+                        Name = reader["Name"]?.ToString() ?? string.Empty,
+                        SetName = reader["SetName"]?.ToString() ?? string.Empty,
                         SetIcon = setIconImageSource,
-                        ManaCost = reader["ManaCost"].ToString(),
+                        ManaCost = reader["ManaCost"]?.ToString() ?? string.Empty,
                         ManaCostImage = manaCostImageSource,
-                        Types = reader["Types"].ToString(),
-                        SuperTypes = reader["SuperTypes"].ToString(),
+                        Types = reader["Types"]?.ToString() ?? string.Empty,
+                        SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty,
                     });
                 }
 
