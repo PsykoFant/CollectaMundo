@@ -1,8 +1,9 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Data;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
+using System.Linq.Dynamic.Core;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -48,94 +49,123 @@ namespace CardboardHoarder
             GridStatus.Visibility = Visibility.Hidden;
             Loaded += async (sender, args) => { await PrepareSystem(); };
 
-            filterCardNameComboBox.SelectionChanged += FilterDataGrid;
-            filterSetNameComboBox.SelectionChanged += FilterDataGrid;
+            // Pick up filtering input
+            typesAndOr.Checked += CheckBox_Toggled;
+            typesAndOr.Unchecked += CheckBox_Toggled;
+            superTypesAndOr.Checked += CheckBox_Toggled;
+            superTypesAndOr.Unchecked += CheckBox_Toggled;
+            filterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
+            filterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
+
 
             //DisplaySvgImage("https://svgs.scryfall.io/sets/mid.svg");
         }
+        private async Task PrepareSystem()
+        {
+            await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
+            GridSearchAndFilter.Visibility = Visibility.Visible;
+            await DBAccess.OpenConnectionAsync();
 
-
+            var LoadDataAsyncTask = LoadDataAsync();
+            var FillComboBoxesAsyncTask = FillComboBoxesAsync();
+            await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
+            DBAccess.CloseConnection();
+        }
         private void TypeCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            var dependencyObject = sender as DependencyObject;
-            if (dependencyObject == null)
-            {
-                return; // Exit if casting failed
-            }
-
-            var checkBox = FindVisualChild<CheckBox>(dependencyObject);
-            if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
-            {
-                var label = contentPresenter.Content as string;
-                if (!string.IsNullOrEmpty(label))
-                {
-                    selectedTypes.Add(label);
-                    UpdateFilterLabel();
-                    FilterDataGrid(null, null);
-                }
-            }
+            CheckBox_Checked(sender, selectedTypes);
         }
-
+        private void SuperTypesCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox_Checked(sender, selectedSuperTypes);
+        }
         private void TypeCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
-            if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
-            {
-                var label = contentPresenter.Content as string;
-                if (!string.IsNullOrEmpty(label))
-                {
-                    selectedTypes.Remove(label);
-                    UpdateFilterLabel();
-                    FilterDataGrid(null, null); // Trigger filtering
-                }
-            }
-        }
-        private void SupreTypesCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
-            if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
-            {
-                var label = contentPresenter.Content as string; // Assuming the content is directly a string.
-                if (!string.IsNullOrEmpty(label))
-                {
-                    selectedSuperTypes.Add(label);
-                    UpdateFilterLabel();
-                    FilterDataGrid(null, null); // Trigger filtering
-                }
-            }
+            CheckBox_Unchecked(sender, selectedTypes);
         }
         private void SuperTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            var checkBox = FindVisualChild<CheckBox>(sender as DependencyObject);
-            if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
+            CheckBox_Unchecked(sender, selectedSuperTypes);
+        }
+        private void CheckBox_Checked(object sender, HashSet<string> targetCollection)
+        {
+            try
             {
-                var label = contentPresenter.Content as string; // Assuming the content is directly a string.
-                if (!string.IsNullOrEmpty(label))
+                var dependencyObject = sender as DependencyObject;
+                if (dependencyObject == null)
                 {
-                    selectedSuperTypes.Remove(label);
-                    UpdateFilterLabel();
-                    FilterDataGrid(null, null); // Trigger filtering
+                    return; // Exit if casting failed
+                }
+
+                var checkBox = FindVisualChild<CheckBox>(dependencyObject);
+                if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
+                {
+                    var label = contentPresenter.Content as string; // Assuming the content is directly a string.
+                    if (!string.IsNullOrEmpty(label))
+                    {
+                        targetCollection.Add(label);
+                        UpdateFilterLabel();
+                        ApplyFilter(); // Trigger filtering
+                    }
                 }
             }
-        }
-        private static T FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+            catch (Exception ex)
             {
-                DependencyObject child = VisualTreeHelper.GetChild(obj, i);
-                if (child != null && child is T)
+                Debug.WriteLine($"An error occurred checking the checkbox: {ex}");
+            }
+        }
+        private void CheckBox_Unchecked(object sender, HashSet<string> targetCollection)
+        {
+            try
+            {
+                var dependencyObject = sender as DependencyObject;
+                if (dependencyObject == null)
                 {
-                    return (T)child;
+                    return; // Exit if casting failed
                 }
-                else
+
+                var checkBox = FindVisualChild<CheckBox>(dependencyObject);
+                if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
                 {
-                    T childOfChild = FindVisualChild<T>(child);
+                    var label = contentPresenter.Content as string; // Assuming the content is directly a string.
+                    if (!string.IsNullOrEmpty(label))
+                    {
+                        targetCollection.Remove(label);
+                        UpdateFilterLabel();
+                        ApplyFilter(); // Trigger filtering
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"An error occurred unchecking the checkbox: {ex}");
+            }
+        }
+        private static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
+        {
+            try
+            {
+                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+                {
+                    DependencyObject child = VisualTreeHelper.GetChild(obj, i);
+                    if (child is T correctChild)
+                    {
+                        return correctChild;
+                    }
+
+                    T? childOfChild = FindVisualChild<T>(child);
                     if (childOfChild != null)
                     {
                         return childOfChild;
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                // Optionally log the exception if needed
+                Debug.WriteLine($"An error occurred while searching for visual child: {ex}");
+            }
+
             return null;
         }
         private void UpdateFilterLabel()
@@ -155,62 +185,62 @@ namespace CardboardHoarder
             filterLabel.Content = contentParts.Count > 0 ? string.Join(" - ", contentParts) : "";
         }
 
-        private async Task PrepareSystem()
-        {
-            await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
-            GridSearchAndFilter.Visibility = Visibility.Visible;
-            await DBAccess.OpenConnectionAsync();
 
-            var LoadDataAsyncTask = LoadDataAsync();
-            var FillComboBoxesAsyncTask = FillComboBoxesAsync();
-            await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
-            DBAccess.CloseConnection();
+        private void CheckBox_Toggled(object sender, RoutedEventArgs e)
+        {
+            ApplyFilter();
         }
-        private async Task FillComboBoxesAsync()
+        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Get the values to populate the comboboxes
-            var cardNames = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "name");
-            var setNames = await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "name");
-            var types = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "types");
-            var superTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "supertypes");
-
-            // types with commas should not be listed. We don't want "Summon, Wolf" in the dropdown. We want "Summon" and "Wolf"
-            var typesList = new List<string>();
-            foreach (var type in types)
+            ApplyFilter();
+        }
+        private void ApplyFilter()
+        {
+            try
             {
-                typesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                // Read and/or checkboxes to use in filtering
+                bool? typesAndOrIsChecked = CurrentInstance.typesAndOr.IsChecked;
+                bool? superTypesAndOrIsChecked = CurrentInstance.superTypesAndOr.IsChecked;
+                string typesAndOr = typesAndOrIsChecked == true ? "&&" : "||";
+                string superTypesAndOr = superTypesAndOrIsChecked == true ? "&&" : "||";
+
+                string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
+                string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
+
+                // Construct the filtering query based on the input from UI
+                var query = items.AsQueryable();
+
+                if (!string.IsNullOrEmpty(cardFilter))
+                {
+                    query = query.Where($"Name.Contains(@0)", cardFilter);
+                }
+
+                if (!string.IsNullOrEmpty(setFilter))
+                {
+                    query = query.Where($"SetName.Contains(@0)", setFilter);
+                }
+
+                if (selectedTypes.Count > 0)
+                {
+                    var typesPredicate = string.Join($" {typesAndOr} ", selectedTypes.Select(t => $"Types.Contains(\"{t}\")"));
+                    query = query.Where(typesPredicate);
+                }
+
+                if (selectedSuperTypes.Count > 0)
+                {
+                    var superTypesPredicate = string.Join($" {superTypesAndOr} ", selectedSuperTypes.Select(st => $"SuperTypes.Contains(\"{st}\")"));
+                    query = query.Where(superTypesPredicate);
+                }
+
+                var filteredItems = query.ToList();
+                cardCountLabel.Content = $"Cards shown: {filteredItems.Count}";
+                Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = filteredItems; });
             }
-            var superTypesList = new List<string>();
-            foreach (var type in superTypes)
+            catch (Exception ex)
             {
-                superTypesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
             }
-
-            Dispatcher.Invoke(() =>
-            {
-                filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
-                filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
-                filterTypesListBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
-                filterSuperTypesListBox.ItemsSource = superTypesList.OrderBy(types => types).Distinct().ToList();
-
-            });
         }
-        private void FilterDataGrid(object sender, SelectionChangedEventArgs e)
-        {
-            string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
-            string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
-
-            // Use the HashSet selectedSuperTypes directly for filtering
-            var filteredItems = items.Where(item =>
-                (string.IsNullOrEmpty(cardFilter) || item.Name.Contains(cardFilter)) &&
-                (string.IsNullOrEmpty(setFilter) || item.SetName.Contains(setFilter)) &&
-                (selectedTypes.Count == 0 || selectedTypes.Any(Type => item.Types.Contains(Type))) &&
-                (selectedSuperTypes.Count == 0 || selectedSuperTypes.Any(superType => item.SuperTypes.Contains(superType)))
-            ).ToList();
-
-            Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = filteredItems; });
-        }
-
 
         private async Task LoadDataAsync()
         {
@@ -228,7 +258,8 @@ namespace CardboardHoarder
                     "FROM cards c " +
                     "JOIN sets s ON c.setCode = s.code " +
                     "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
-                    "LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost";
+                    "LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost " +
+                    "WHERE c.availability LIKE '%paper%'";
 
                 using var command = new SQLiteCommand(query, DBAccess.connection);
 
@@ -236,24 +267,27 @@ namespace CardboardHoarder
                 while (await reader.ReadAsync())
                 {
                     var keyruneImage = reader["KeyRuneImage"] as byte[];
-                    var setIconImageSource = ConvertByteArrayToBitmapImage(keyruneImage);
+                    BitmapImage? setIconImageSource = keyruneImage != null ? ConvertByteArrayToBitmapImage(keyruneImage) : null;
+
                     var manaCostImage = reader["ManaCostImage"] as byte[];
-                    var manaCostImageSource = ConvertByteArrayToBitmapImage(manaCostImage);
+                    BitmapImage? manaCostImageSource = manaCostImage != null ? ConvertByteArrayToBitmapImage(manaCostImage) : null;
+
 
                     items.Add(new CardSet
                     {
-                        Name = reader["Name"].ToString(),
-                        SetName = reader["SetName"].ToString(),
+                        Name = reader["Name"]?.ToString() ?? string.Empty,
+                        SetName = reader["SetName"]?.ToString() ?? string.Empty,
                         SetIcon = setIconImageSource,
-                        ManaCost = reader["ManaCost"].ToString(),
+                        ManaCost = reader["ManaCost"]?.ToString() ?? string.Empty,
                         ManaCostImage = manaCostImageSource,
-                        Types = reader["Types"].ToString(),
-                        SuperTypes = reader["SuperTypes"].ToString(),
+                        Types = reader["Types"]?.ToString() ?? string.Empty,
+                        SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty,
                     });
                 }
 
                 Dispatcher.Invoke(() =>
                 {
+                    cardCountLabel.Content = $"Cards shown: {items.Count}";
                     mainCardWindowDatagrid.ItemsSource = items;
                     dataView = CollectionViewSource.GetDefaultView(items);
                 });
@@ -261,6 +295,47 @@ namespace CardboardHoarder
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error while loading data: {ex.Message}");
+            }
+        }
+        private async Task FillComboBoxesAsync()
+        {
+            try
+            {
+                // Get the values to populate the comboboxes
+                var cardNames = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "name");
+                var setNames = await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "name");
+                var types = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "types");
+                var superTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "supertypes");
+
+                var typesList = new List<string>();
+                foreach (var type in types)
+                {
+                    typesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                }
+
+                // Remove silly Types entries from un-sets, old cards etc. 
+                var entriesToRemove = new HashSet<string> { "Eaturecray", "Ever", "Goblin", "Horror", "Jaguar", "See", "Knights", "Wolf", "You'll" };
+
+                // Remove the specified entries from typesList
+                typesList = typesList.Where(type => !entriesToRemove.Contains(type)).ToList();
+
+                var superTypesList = new List<string>();
+                foreach (var type in superTypes)
+                {
+                    superTypesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                }
+
+                Dispatcher.Invoke(() =>
+                {
+                    filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
+                    filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
+                    filterTypesListBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
+                    filterSuperTypesListBox.ItemsSource = superTypesList.OrderBy(types => types).Distinct().ToList();
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
             }
         }
 
@@ -353,111 +428,5 @@ namespace CardboardHoarder
 
             return null;
         }
-
-
-        // Test kode
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            DisplayImageFromDatabase(imageInput.Text, testImage, 1);
-        }
-        private void Button_Click_1(object sender, RoutedEventArgs e)
-        {
-            DisplayImageFromDatabase(manaCostTextBox.Text, manaCostImageTester, 2);
-        }
-        private void Button_Click_2(object sender, RoutedEventArgs e)
-        {
-            DisplayImageFromDatabase(manaSymbolTextBox.Text, manaSymbolImageTester, 3);
-        }
-        private void DisplayImageFromDatabase(string inputFieldText, System.Windows.Controls.Image targetImageControl, int querySelector)
-        {
-            try
-            {
-                // Get the uniqueManaSymbol from the textBox
-                string symbol = inputFieldText;
-
-                // Query to retrieve manaSymbolImage from uniqueManaSymbols
-                string query = "";
-                string field = "";
-                if (querySelector == 1)
-                {
-                    query = "SELECT keyruneImage FROM keyruneImages WHERE setCode = @symbol";
-                    field = "keyruneImage";
-                }
-                else if (querySelector == 2)
-                {
-                    query = "SELECT manacostImage FROM uniqueManaCostImages WHERE uniqueManaCost = @symbol";
-                    field = "manaCostImage";
-                }
-                else if (querySelector == 3)
-                {
-                    query = "SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol";
-                    field = "manaSymbolImage";
-                }
-                using (SQLiteConnection connection = DBAccess.GetConnection())
-                {
-                    connection.Open();
-
-                    using (SQLiteCommand command = new SQLiteCommand(query, connection))
-                    {
-                        command.Parameters.AddWithValue("@symbol", symbol);
-
-                        using (SQLiteDataReader reader = command.ExecuteReader(CommandBehavior.SequentialAccess))
-                        {
-                            if (reader.Read())
-                            {
-                                // Get the BLOB data
-                                byte[] imageData = (byte[])reader[field];
-
-                                // Display the image in the testImage control
-                                DisplayImage(imageData, targetImageControl);
-                            }
-                            else
-                            {
-                                MessageBox.Show("No image found for the specified uniqueManaSymbol.");
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error: {ex.Message}");
-            }
-        }
-        private void DisplayImage(byte[] imageData, System.Windows.Controls.Image targetImageControl)
-        {
-            try
-            {
-                // Convert byte array to BitmapImage
-                BitmapImage bitmapImage = ConvertByteArrayToBitmapImage(imageData);
-                Debug.WriteLine($"Width of tested image: {bitmapImage.Width.ToString()}");
-
-                // Display the image in the testImage control
-                targetImageControl.Source = bitmapImage;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error displaying image: {ex.Message}");
-            }
-        }
-        private async void DisplaySvgImage(string svgUrl)
-        {
-            //var byteArray = await DownloadAndPrepDB.ConvertSvgToPngAsync(svgUrl);
-            var byteArray = await DownloadAndPrepDB.ConvertSvgToByteArraySharpVectorsAsync(svgUrl);
-
-            if (byteArray != null)
-            {
-                using var stream = new MemoryStream(byteArray);
-                BitmapImage bitmapImage = new BitmapImage();
-                bitmapImage.BeginInit();
-                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                bitmapImage.StreamSource = stream;
-                bitmapImage.EndInit();
-
-                // Ensure the image is set on the UI thread
-                Dispatcher.Invoke(() => iconTester.Source = bitmapImage);
-            }
-        }
-
     }
 }

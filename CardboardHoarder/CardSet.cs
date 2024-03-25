@@ -90,8 +90,8 @@ namespace CardboardHoarder
         public string Uuid { get; set; }
         public List<string> Variations { get; set; }
         public string Watermark { get; set; }
-        public ImageSource SetIcon { get; set; }
-        public ImageSource ManaCostImage { get; set; }
+        public ImageSource? SetIcon { get; set; }
+        public ImageSource? ManaCostImage { get; set; }
         public bool IsSelected { get; set; }
     }
 

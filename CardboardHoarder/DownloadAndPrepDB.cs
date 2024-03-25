@@ -1,4 +1,4 @@
-﻿using CardboardHoarder;
+using CardboardHoarder;
 using Newtonsoft.Json.Linq;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
@@ -36,6 +36,7 @@ public class DownloadAndPrepDB
                 // Call the download method with the progress handler
                 await DownloadDatabaseIfNotExistsAsync(databasePath);
 
+                await DBAccess.OpenConnectionAsync();
 
                 await CreateCustomTablesAndIndices(databasePath);
                 await GenerateManaSymbolsFromSvgAsync();
@@ -43,7 +44,6 @@ public class DownloadAndPrepDB
                 var generateManaCostImagesTask = GenerateManaCostImagesAsync();
                 var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
                 await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
-
 
                 DBAccess.CloseConnection();
                 MainWindow.CurrentInstance.ResetGrids();
@@ -240,26 +240,34 @@ public class DownloadAndPrepDB
     }
     public static async Task GenerateManaCostImagesAsync()
     {
-        List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
-
-        // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
-        foreach (string manaCost in uniqueManaCosts)
+        try
         {
-            await InsertValueInTableAsync(manaCost, "uniqueManaCostImages", "uniqueManaCost");
-            StatusMessageUpdated?.Invoke($"Added {manaCost} to table");
+            List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
+
+            // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
+            foreach (string manaCost in uniqueManaCosts)
+            {
+                await InsertValueInTableAsync(manaCost, "uniqueManaCostImages", "uniqueManaCost");
+                StatusMessageUpdated?.Invoke($"Added {manaCost} to table");
+            }
+
+            List<string> manaCostsWithNullImage = await GetValuesWithNullAsync("uniqueManaCostImages", "uniqueManaCost", "manaCostImage");
+
+            // Generate the missing mana cost images and insert them into table uniqueManaCostImages
+            int counter = 0;
+            foreach (string missingImage in manaCostsWithNullImage)
+            {
+                counter++;
+                await UpdateImageInTableAsync(missingImage, "uniqueManaCostImages", "manaCostImage", "uniqueManaCost", await ProcessManaCostInputAsync(missingImage));
+                StatusMessageUpdated?.Invoke($"Added image for the mana cost {missingImage} ({counter.ToString()} of {manaCostsWithNullImage.Count().ToString()}");
+                Debug.WriteLine($"Added image for the mana cost {missingImage} ({counter.ToString()} of {manaCostsWithNullImage.Count().ToString()})");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error during generation of mana cost images: {ex.Message}");
         }
 
-        List<string> manaCostsWithNullImage = await GetValuesWithNullAsync("uniqueManaCostImages", "uniqueManaCost", "manaCostImage");
-
-        // Generate the missing mana cost images and insert them into table uniqueManaCostImages
-        int counter = 0;
-        foreach (string missingImage in manaCostsWithNullImage)
-        {
-            counter++;
-            await UpdateImageInTableAsync(missingImage, "uniqueManaCostImages", "manaCostImage", "uniqueManaCost", await ProcessManaCostInputAsync(missingImage));
-            StatusMessageUpdated?.Invoke($"Added image for the mana cost {missingImage} ({counter.ToString()} of {manaCostsWithNullImage.Count().ToString()}");
-            Debug.WriteLine($"Added image for the mana cost {missingImage} ({counter.ToString()} of {manaCostsWithNullImage.Count().ToString()})");
-        }
     }
     public static async Task GenerateSetKeyruneFromSvgAsync()
     {
@@ -285,30 +293,33 @@ public class DownloadAndPrepDB
             try
             {
                 StatusMessageUpdated?.Invoke($"Downloading reference for set icons");
-                // Synchronously make a request to get all sets
-                HttpResponseMessage response = client.GetAsync(url).Result; // Synchronous call, use with caution
+                // Asynchronously make a request to get all sets
+                HttpResponseMessage response = await client.GetAsync(url); // Use async/await instead of .Result
                 if (response.IsSuccessStatusCode)
                 {
-                    string jsonResponse = response.Content.ReadAsStringAsync().Result; // Synchronous call, use with caution
+                    string jsonResponse = await response.Content.ReadAsStringAsync(); // Use async/await instead of .Result
                     JObject allSets = JObject.Parse(jsonResponse);
-                    JArray data = (JArray)allSets["data"];
+                    JArray? data = allSets["data"] as JArray;
 
-                    foreach (string setCode in setCodesWithNoImage)
+                    if (data != null)
                     {
-                        var matchingSet = data!.FirstOrDefault(x => x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
+                        foreach (string setCode in setCodesWithNoImage)
+                        {
+                            var matchingSet = data.FirstOrDefault(x => x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
 
-                        if (matchingSet != null)
-                        {
-                            // Found a matching set, extract the SVG URI
-                            string svgUri = matchingSet["icon_svg_uri"]?.ToString() ?? "https://svgs.scryfall.io/sets/default.svg";
-                            setCodesToGenerateImagesFrom[1].Add(svgUri); // Add the found SVG URI to the list
-                        }
-                        else
-                        {
-                            // No matching set found, use the default SVG URI
-                            string defaultSvgUri = "https://svgs.scryfall.io/sets/default.svg";
-                            setCodesToGenerateImagesFrom[1].Add(defaultSvgUri); // Add the default SVG URI to the list
-                            Debug.WriteLine($"No matching setCode. Added {defaultSvgUri} to array");
+                            if (matchingSet != null)
+                            {
+                                // Found a matching set, extract the SVG URI
+                                string svgUri = matchingSet["icon_svg_uri"]?.ToString() ?? "https://svgs.scryfall.io/sets/default.svg";
+                                setCodesToGenerateImagesFrom[1].Add(svgUri);
+                            }
+                            else
+                            {
+                                // No matching set found, use the default SVG URI
+                                string defaultSvgUri = "https://svgs.scryfall.io/sets/default.svg";
+                                setCodesToGenerateImagesFrom[1].Add(defaultSvgUri);
+                                Debug.WriteLine($"No matching setCode. Added {defaultSvgUri} to array");
+                            }
                         }
                     }
                 }
@@ -317,12 +328,11 @@ public class DownloadAndPrepDB
                     Debug.WriteLine("Failed to retrieve set information from Scryfall.");
                 }
             }
-
             catch (Exception ex)
             {
-                // Handle any errors that occur during the request or processing
-                Debug.WriteLine($"An error occurred while trying to get set information from scryfall: {ex.Message}");
+                Debug.WriteLine($"An error occurred while trying to get set information from Scryfall: {ex.Message}");
             }
+
 
             // Generate the missing set images and insert them into table 'keyruneImages'
             for (int i = 0; i < setCodesToGenerateImagesFrom[0].Count; i++)
@@ -332,7 +342,6 @@ public class DownloadAndPrepDB
 
                 // Convert SVG to PNG using the ConvertSvgToPng function
                 byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync(svgUri);
-                //byte[] pngData = await ConvertSvgToPngAsync(svgUri);
 
                 if (pngData.Length != 0)
                 {
@@ -379,7 +388,7 @@ public class DownloadAndPrepDB
                             byte[] imageBytes = (byte[])reader["manaSymbolImage"];
                             using (MemoryStream ms = new MemoryStream(imageBytes))
                             {
-                                Bitmap bitmap = new Bitmap(ms);
+                                Bitmap bitmap = new Bitmap(ms); // Bitmap and SkiaSharp operations are not async
                                 manaSymbolImage.Add(bitmap);
                             }
                         }
@@ -391,6 +400,7 @@ public class DownloadAndPrepDB
         {
             Debug.WriteLine($"An error occurred while processing mana cost input: {ex.Message}");
         }
+
         return await CombineImagesAsync(manaSymbolImage);
     }
     private static async Task<byte[]> CombineImagesAsync(List<Bitmap> images)
@@ -402,7 +412,9 @@ public class DownloadAndPrepDB
         try
         {
             if (images == null || images.Count == 0)
+            {
                 throw new ArgumentException("Images list is null or empty");
+            }
 
             int totalWidth = 0;
             int maxHeight = 0;
@@ -412,7 +424,9 @@ public class DownloadAndPrepDB
             {
                 totalWidth += image.Width;
                 if (image.Height > maxHeight)
+                {
                     maxHeight = image.Height;
+                }
             }
 
             // Check if there's at least one image to reference DPI and pixel format
@@ -454,8 +468,8 @@ public class DownloadAndPrepDB
             Debug.WriteLine($"An error occurred while combining images: {ex.Message}");
         }
 
-        // Return an empty array or null to indicate failure
-        return null;
+        // Return an empty array failure
+        return new byte[0];
     }
     public static async Task<byte[]> ConvertSvgToByteArraySharpVectorsAsync(string svgUrl)
     {
@@ -465,6 +479,7 @@ public class DownloadAndPrepDB
             {
                 var svgData = await httpClient.GetStringAsync(svgUrl);
                 var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgData));
+                Debug.WriteLine($"Length of svgStream: {svgStream.Length}");
                 var settings = new WpfDrawingSettings
                 {
                     IncludeRuntime = false,
@@ -493,6 +508,7 @@ public class DownloadAndPrepDB
                 using (MemoryStream memoryStream = new MemoryStream())
                 {
                     encoder.Save(memoryStream);
+                    Debug.WriteLine($"Length of stream (Sharpvectors): {memoryStream.Length.ToString()}");
                     return memoryStream.ToArray();
                 }
             }
@@ -648,8 +664,3 @@ public class DownloadAndPrepDB
 
 
 }
-
-
-
-
-
