@@ -55,26 +55,45 @@ namespace CardboardHoarder
         }
 
 
+        private void SuperTypesCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox_Checked(sender, e, selectedSuperTypes);
+        }
+
         private void TypeCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            var dependencyObject = sender as DependencyObject;
-            if (dependencyObject == null)
-            {
-                return; // Exit if casting failed
-            }
+            CheckBox_Checked(sender, e, selectedTypes);
+        }
 
-            var checkBox = FindVisualChild<CheckBox>(dependencyObject);
-            if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
+
+        private void CheckBox_Checked(object sender, RoutedEventArgs e, HashSet<string> targetCollection)
+        {
+            try
             {
-                var label = contentPresenter.Content as string;
-                if (!string.IsNullOrEmpty(label))
+                var dependencyObject = sender as DependencyObject;
+                if (dependencyObject == null)
                 {
-                    selectedTypes.Add(label);
-                    UpdateFilterLabel();
-                    FilterDataGrid(null, null);
+                    return; // Exit if casting failed
+                }
+
+                var checkBox = FindVisualChild<CheckBox>(dependencyObject);
+                if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
+                {
+                    var label = contentPresenter.Content as string; // Assuming the content is directly a string.
+                    if (!string.IsNullOrEmpty(label))
+                    {
+                        targetCollection.Add(label);
+                        UpdateFilterLabel();
+                        FilterDataGrid(null, null); // Trigger filtering
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"An error occurred checking the checkbox: {ex}");
+            }
         }
+
 
         private void TypeCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
@@ -96,26 +115,7 @@ namespace CardboardHoarder
                 }
             }
         }
-        private void SupreTypesCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            var dependencyObject = sender as DependencyObject;
-            if (dependencyObject == null)
-            {
-                return; // Exit if casting failed
-            }
 
-            var checkBox = FindVisualChild<CheckBox>(dependencyObject);
-            if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
-            {
-                var label = contentPresenter.Content as string; // Assuming the content is directly a string.
-                if (!string.IsNullOrEmpty(label))
-                {
-                    selectedSuperTypes.Add(label);
-                    UpdateFilterLabel();
-                    FilterDataGrid(null, null); // Trigger filtering
-                }
-            }
-        }
         private void SuperTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             var dependencyObject = sender as DependencyObject;

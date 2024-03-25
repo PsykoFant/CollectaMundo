@@ -99,7 +99,7 @@
                                 </ControlTemplate>
                             </Setter.Value>
                         </Setter>
-                        <EventSetter Event="CheckBox.Checked" Handler="SupreTypesCheckBox_Checked" />
+                        <EventSetter Event="CheckBox.Checked" Handler="SuperTypesCheckBox_Checked" />
                         <EventSetter Event="CheckBox.Unchecked" Handler="SuperTypesCheckBox_Unchecked" />
                     </Style>
                 </ListBox.Resources>
