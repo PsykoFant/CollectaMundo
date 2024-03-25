@@ -97,43 +97,39 @@ namespace CardboardHoarder
 
         private void TypeCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            var dependencyObject = sender as DependencyObject;
-            if (dependencyObject == null)
-            {
-                return; // Exit if casting failed
-            }
-
-            var checkBox = FindVisualChild<CheckBox>(dependencyObject);
-            if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
-            {
-                var label = contentPresenter.Content as string;
-                if (!string.IsNullOrEmpty(label))
-                {
-                    selectedTypes.Remove(label);
-                    UpdateFilterLabel();
-                    FilterDataGrid(null, null); // Trigger filtering
-                }
-            }
+            CheckBox_Unchecked(sender, e, selectedTypes);
         }
 
         private void SuperTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            var dependencyObject = sender as DependencyObject;
-            if (dependencyObject == null)
-            {
-                return; // Exit if casting failed
-            }
+            CheckBox_Unchecked(sender, e, selectedSuperTypes);
+        }
 
-            var checkBox = FindVisualChild<CheckBox>(dependencyObject);
-            if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e, HashSet<string> targetCollection)
+        {
+            try
             {
-                var label = contentPresenter.Content as string; // Assuming the content is directly a string.
-                if (!string.IsNullOrEmpty(label))
+                var dependencyObject = sender as DependencyObject;
+                if (dependencyObject == null)
                 {
-                    selectedSuperTypes.Remove(label);
-                    UpdateFilterLabel();
-                    FilterDataGrid(null, null); // Trigger filtering
+                    return; // Exit if casting failed
                 }
+
+                var checkBox = FindVisualChild<CheckBox>(dependencyObject);
+                if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
+                {
+                    var label = contentPresenter.Content as string; // Assuming the content is directly a string.
+                    if (!string.IsNullOrEmpty(label))
+                    {
+                        selectedSuperTypes.Remove(label);
+                        UpdateFilterLabel();
+                        FilterDataGrid(null, null); // Trigger filtering
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"An error occurred unchecking the checkbox: {ex}");
             }
         }
         private static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
