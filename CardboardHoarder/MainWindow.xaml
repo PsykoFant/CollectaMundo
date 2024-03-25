@@ -45,6 +45,7 @@
                     </DataGridTemplateColumn>
                     <DataGridTextColumn Header="Card Types" Binding="{Binding Types}" />
                     <DataGridTextColumn Header="Card Supertypes" Binding="{Binding SuperTypes}" />
+                    <DataGridTextColumn Header="Card Subtypes" Binding="{Binding SubTypes}" />
 
                 </DataGrid.Columns>
             </DataGrid>
@@ -62,7 +63,7 @@
                     </ItemsPanelTemplate>
                 </ComboBox.ItemsPanel>
             </ComboBox>
-            <ListBox x:Name="filterTypesListBox" Margin="10,136,815,454"
+            <ListBox x:Name="filterTypesListBox" Margin="10,136,783,449"
                 ItemsSource="{Binding}"
                 SelectionMode="Extended">
                 <ListBox.Resources>
@@ -82,7 +83,7 @@
                     </Style>
                 </ListBox.Resources>
             </ListBox>
-            <ListBox x:Name="filterSuperTypesListBox" Margin="11,256,814,328"
+            <ListBox x:Name="filterSuperTypesListBox" Margin="11,256,783,312"
                  ItemsSource="{Binding}"
                  SelectionMode="Extended">
                 <ListBox.Resources>
@@ -102,13 +103,40 @@
                     </Style>
                 </ListBox.Resources>
             </ListBox>
-            <Label x:Name="filterLabel" Content="" HorizontalAlignment="Left" Margin="209,187,0,0" VerticalAlignment="Top"/>
+            <ListBox x:Name="filterSubTypesListBox" Margin="11,417,783,139"
+                ItemsSource="{Binding}"
+                SelectionMode="Extended">
+                <ListBox.Resources>
+                    <Style TargetType="{x:Type ListBoxItem}">
+                        <Setter Property="SnapsToDevicePixels" Value="true" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}">
+                                        <ContentPresenter />
+                                    </CheckBox>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <EventSetter Event="ToggleButton.Checked" Handler="SubTypesCheckBox_Checked" />
+                        <EventSetter Event="ToggleButton.Unchecked" Handler="SubTypesCheckBox_Unchecked" />
+                    </Style>
+                </ListBox.Resources>
+            </ListBox>
+            
+            <Label x:Name="filterLabel" Content="" HorizontalAlignment="Left" Margin="209,187,0,0" VerticalAlignment="Top"/>            
             <Label x:Name="cardCountLabel" Content="" HorizontalAlignment="Left" Margin="843,187,0,0" VerticalAlignment="Top" Width="116"/>
-            <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,116,0,0" VerticalAlignment="Top"/>
+
             <Label x:Name="cardTypeLabel" Content="Card types" HorizontalAlignment="Left" Margin="11,109,0,0" VerticalAlignment="Top"/>
             <Label x:Name="cardSuperTypesLabel" Content="Supertypes" HorizontalAlignment="Left" Margin="11,232,0,0" VerticalAlignment="Top"/>
+            <Label x:Name="cardSubTypeLabel" Content="Subtypes" HorizontalAlignment="Left" Margin="11,386,0,0" VerticalAlignment="Top"/>
+
+            <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,116,0,0" VerticalAlignment="Top"/>
             <CheckBox x:Name="superTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,238,0,0" VerticalAlignment="Top"/>
-            <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="11,651,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
+            <CheckBox x:Name="subTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="75,392,0,0" VerticalAlignment="Top"/>
+
+            <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="11,651,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>           
+
         </Grid>
         <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="36" Margin="0,48,0,0" VerticalAlignment="Top" Width="138" d:IsHidden="True">
             <Label x:Name="headlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" FontFamily="Bodoni MT"/>

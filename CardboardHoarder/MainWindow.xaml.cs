@@ -21,6 +21,7 @@ namespace CardboardHoarder
         private List<CardSet> items = new List<CardSet>();
         private HashSet<string> selectedTypes = new HashSet<string>();
         private HashSet<string> selectedSuperTypes = new HashSet<string>();
+        private HashSet<string> selectedSubTypes = new HashSet<string>();
 
 
         public static MainWindow CurrentInstance
@@ -54,6 +55,8 @@ namespace CardboardHoarder
             typesAndOr.Unchecked += CheckBox_Toggled;
             superTypesAndOr.Checked += CheckBox_Toggled;
             superTypesAndOr.Unchecked += CheckBox_Toggled;
+            subTypesAndOr.Checked += CheckBox_Toggled;
+            subTypesAndOr.Unchecked += CheckBox_Toggled;
             filterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             filterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
 
@@ -79,6 +82,11 @@ namespace CardboardHoarder
         {
             CheckBox_Checked(sender, selectedSuperTypes);
         }
+        private void SubTypesCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox_Checked(sender, selectedSubTypes);
+        }
+
         private void TypeCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             CheckBox_Unchecked(sender, selectedTypes);
@@ -87,6 +95,11 @@ namespace CardboardHoarder
         {
             CheckBox_Unchecked(sender, selectedSuperTypes);
         }
+        private void SubTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox_Unchecked(sender, selectedSubTypes);
+        }
+
         private void CheckBox_Checked(object sender, HashSet<string> targetCollection)
         {
             try
@@ -174,12 +187,17 @@ namespace CardboardHoarder
 
             if (selectedTypes.Count > 0)
             {
-                contentParts.Add("Types: " + string.Join(", ", selectedTypes));
+                contentParts.Add("Card types: " + string.Join(", ", selectedTypes));
             }
 
             if (selectedSuperTypes.Count > 0)
             {
-                contentParts.Add("SuperTypes: " + string.Join(", ", selectedSuperTypes));
+                contentParts.Add("Supertypes: " + string.Join(", ", selectedSuperTypes));
+            }
+
+            if (selectedSubTypes.Count > 0)
+            {
+                contentParts.Add("Subtypes: " + string.Join(", ", selectedSubTypes));
             }
 
             filterLabel.Content = contentParts.Count > 0 ? string.Join(" - ", contentParts) : "";
@@ -208,7 +226,6 @@ namespace CardboardHoarder
                 {
                     filteredItems = filteredItems.Where(item => item.Name.Contains(cardFilter));
                 }
-
                 if (!string.IsNullOrEmpty(setFilter))
                 {
                     filteredItems = filteredItems.Where(item => item.SetName.Contains(setFilter));
@@ -226,7 +243,6 @@ namespace CardboardHoarder
                     });
                 }
 
-
                 if (selectedSuperTypes.Count > 0)
                 {
                     bool useAndForSuperTypes = CurrentInstance.superTypesAndOr.IsChecked == true;
@@ -234,6 +250,16 @@ namespace CardboardHoarder
                         useAndForSuperTypes
                         ? selectedSuperTypes.All(st => item.SuperTypes.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Contains(st))
                         : selectedSuperTypes.Any(st => item.SuperTypes.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Contains(st))
+                    );
+                }
+
+                if (selectedSubTypes.Count > 0)
+                {
+                    bool useAndForSubTypes = CurrentInstance.subTypesAndOr.IsChecked == true;
+                    filteredItems = filteredItems.Where(item =>
+                        useAndForSubTypes
+                        ? selectedSubTypes.All(st => item.SubTypes.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Contains(st))
+                        : selectedSubTypes.Any(st => item.SubTypes.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Contains(st))
                     );
                 }
 
@@ -256,14 +282,17 @@ namespace CardboardHoarder
             // Clear selections in the ListBoxes
             ClearListBoxSelections(filterTypesListBox);
             ClearListBoxSelections(filterSuperTypesListBox);
+            ClearListBoxSelections(filterSubTypesListBox);
 
             // Clear the internal HashSets
             selectedTypes.Clear();
             selectedSuperTypes.Clear();
+            selectedSubTypes.Clear();
 
             // Uncheck CheckBoxes if necessary
             typesAndOr.IsChecked = false;
             superTypesAndOr.IsChecked = false;
+            subTypesAndOr.IsChecked = false;
 
             // Update filter label and apply filters to refresh the DataGrid
             UpdateFilterLabel();
@@ -299,7 +328,8 @@ namespace CardboardHoarder
                     "c.manaCost AS ManaCost, " +
                     "u.manaCostImage AS ManaCostImage, " +
                     "c.types AS Types, " +
-                    "c.supertypes AS SuperTypes " +
+                    "c.supertypes AS SuperTypes, " +
+                    "c.subtypes AS SubTypes " +
                     "FROM cards c " +
                     "JOIN sets s ON c.setCode = s.code " +
                     "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
@@ -327,6 +357,7 @@ namespace CardboardHoarder
                         ManaCostImage = manaCostImageSource,
                         Types = reader["Types"]?.ToString() ?? string.Empty,
                         SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty,
+                        SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty,
                     });
                 }
 
@@ -351,6 +382,7 @@ namespace CardboardHoarder
                 var setNames = await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "name");
                 var types = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "types");
                 var superTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "supertypes");
+                var subTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "subtypes");
 
                 var typesList = new List<string>();
                 foreach (var type in types)
@@ -360,8 +392,6 @@ namespace CardboardHoarder
 
                 // Remove silly Types entries from un-sets, old cards etc. 
                 var entriesToRemove = new HashSet<string> { "Eaturecray", "Ever", "Goblin", "Horror", "Jaguar", "See", "Knights", "Wolf", "Scariest", "You'll" };
-
-                // Remove the specified entries from typesList
                 typesList = typesList.Where(type => !entriesToRemove.Contains(type)).ToList();
 
                 var superTypesList = new List<string>();
@@ -370,12 +400,19 @@ namespace CardboardHoarder
                     superTypesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
                 }
 
+                var subTypesList = new List<string>();
+                foreach (var type in subTypes)
+                {
+                    subTypesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                }
+
                 Dispatcher.Invoke(() =>
                 {
                     filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                     filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                     filterTypesListBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
                     filterSuperTypesListBox.ItemsSource = superTypesList.OrderBy(types => types).Distinct().ToList();
+                    filterSubTypesListBox.ItemsSource = subTypesList.OrderBy(types => types).Distinct().ToList();
                 });
             }
             catch (Exception ex)
