@@ -194,53 +194,98 @@ namespace CardboardHoarder
         {
             ApplyFilter();
         }
+
         private void ApplyFilter()
         {
             try
             {
-                // Read and/or checkboxes to use in filtering
-                bool? typesAndOrIsChecked = CurrentInstance.typesAndOr.IsChecked;
-                bool? superTypesAndOrIsChecked = CurrentInstance.superTypesAndOr.IsChecked;
-                string typesAndOr = typesAndOrIsChecked == true ? "&&" : "||";
-                string superTypesAndOr = superTypesAndOrIsChecked == true ? "&&" : "||";
-
                 string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
                 string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
 
-                // Construct the filtering query based on the input from UI
-                var query = items.AsQueryable();
+                var filteredItems = items.AsEnumerable();
 
                 if (!string.IsNullOrEmpty(cardFilter))
                 {
-                    query = query.Where($"Name.Contains(@0)", cardFilter);
+                    filteredItems = filteredItems.Where(item => item.Name.Contains(cardFilter));
                 }
 
                 if (!string.IsNullOrEmpty(setFilter))
                 {
-                    query = query.Where($"SetName.Contains(@0)", setFilter);
+                    filteredItems = filteredItems.Where(item => item.SetName.Contains(setFilter));
                 }
 
                 if (selectedTypes.Count > 0)
                 {
-                    var typesPredicate = string.Join($" {typesAndOr} ", selectedTypes.Select(t => $"Types.Contains(\"{t}\")"));
-                    query = query.Where(typesPredicate);
+                    bool useAndForTypes = CurrentInstance.typesAndOr.IsChecked == true;
+                    filteredItems = filteredItems.Where(item =>
+                    {
+                        var itemTypes = item.Types.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        return useAndForTypes
+                            ? selectedTypes.All(selectedType => itemTypes.Contains(selectedType))
+                            : selectedTypes.Any(selectedType => itemTypes.Contains(selectedType));
+                    });
                 }
+
 
                 if (selectedSuperTypes.Count > 0)
                 {
-                    var superTypesPredicate = string.Join($" {superTypesAndOr} ", selectedSuperTypes.Select(st => $"SuperTypes.Contains(\"{st}\")"));
-                    query = query.Where(superTypesPredicate);
+                    bool useAndForSuperTypes = CurrentInstance.superTypesAndOr.IsChecked == true;
+                    filteredItems = filteredItems.Where(item =>
+                        useAndForSuperTypes
+                        ? selectedSuperTypes.All(st => item.SuperTypes.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Contains(st))
+                        : selectedSuperTypes.Any(st => item.SuperTypes.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Contains(st))
+                    );
                 }
 
-                var filteredItems = query.ToList();
-                cardCountLabel.Content = $"Cards shown: {filteredItems.Count}";
-                Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = filteredItems; });
+                var finalFilteredItems = filteredItems.ToList();
+                cardCountLabel.Content = $"Cards shown: {finalFilteredItems.Count}";
+                Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = finalFilteredItems; });
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
             }
         }
+
+        private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Reset filter-related controls
+            filterCardNameComboBox.SelectedIndex = -1;
+            filterSetNameComboBox.SelectedIndex = -1;
+
+            // Clear selections in the ListBoxes
+            ClearListBoxSelections(filterTypesListBox);
+            ClearListBoxSelections(filterSuperTypesListBox);
+
+            // Clear the internal HashSets
+            selectedTypes.Clear();
+            selectedSuperTypes.Clear();
+
+            // Uncheck CheckBoxes if necessary
+            typesAndOr.IsChecked = false;
+            superTypesAndOr.IsChecked = false;
+
+            // Update filter label and apply filters to refresh the DataGrid
+            UpdateFilterLabel();
+            ApplyFilter();
+        }
+        // We need this method because we use a customized listbox
+        private void ClearListBoxSelections(ListBox listBox)
+        {
+            foreach (var item in listBox.Items)
+            {
+                var container = listBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+                if (container != null)
+                {
+                    var checkBox = FindVisualChild<CheckBox>(container);
+                    if (checkBox != null)
+                    {
+                        checkBox.IsChecked = false;
+                    }
+                }
+            }
+        }
+
 
         private async Task LoadDataAsync()
         {
@@ -314,7 +359,7 @@ namespace CardboardHoarder
                 }
 
                 // Remove silly Types entries from un-sets, old cards etc. 
-                var entriesToRemove = new HashSet<string> { "Eaturecray", "Ever", "Goblin", "Horror", "Jaguar", "See", "Knights", "Wolf", "You'll" };
+                var entriesToRemove = new HashSet<string> { "Eaturecray", "Ever", "Goblin", "Horror", "Jaguar", "See", "Knights", "Wolf", "Scariest", "You'll" };
 
                 // Remove the specified entries from typesList
                 typesList = typesList.Where(type => !entriesToRemove.Contains(type)).ToList();
@@ -338,7 +383,6 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
             }
         }
-
         public static async Task ShowStatusWindowAsync(bool visible)
         {
             if (CurrentInstance != null)
@@ -428,5 +472,8 @@ namespace CardboardHoarder
 
             return null;
         }
+
+
+
     }
 }

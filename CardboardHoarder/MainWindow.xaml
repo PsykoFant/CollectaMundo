@@ -48,21 +48,21 @@
 
                 </DataGrid.Columns>
             </DataGrid>
-            <ComboBox x:Name="filterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,10,814,645">
+            <ComboBox x:Name="filterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,41,814,614">
                 <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel />
                     </ItemsPanelTemplate>
                 </ComboBox.ItemsPanel>
             </ComboBox>
-            <ComboBox x:Name="filterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,43,814,612">
+            <ComboBox x:Name="filterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,74,814,581">
                 <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel />
                     </ItemsPanelTemplate>
                 </ComboBox.ItemsPanel>
             </ComboBox>
-            <ListBox x:Name="filterTypesListBox" Margin="10,136,815,468"
+            <ListBox x:Name="filterTypesListBox" Margin="10,136,815,454"
                 ItemsSource="{Binding}"
                 SelectionMode="Extended">
                 <ListBox.Resources>
@@ -82,7 +82,7 @@
                     </Style>
                 </ListBox.Resources>
             </ListBox>
-            <ListBox x:Name="filterSuperTypesListBox" Margin="11,246,814,358"
+            <ListBox x:Name="filterSuperTypesListBox" Margin="11,256,814,328"
                  ItemsSource="{Binding}"
                  SelectionMode="Extended">
                 <ListBox.Resources>
@@ -106,8 +106,9 @@
             <Label x:Name="cardCountLabel" Content="" HorizontalAlignment="Left" Margin="843,187,0,0" VerticalAlignment="Top" Width="116"/>
             <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,116,0,0" VerticalAlignment="Top"/>
             <Label x:Name="cardTypeLabel" Content="Card types" HorizontalAlignment="Left" Margin="11,109,0,0" VerticalAlignment="Top"/>
-            <Label x:Name="cardSuperTypesLabel" Content="Supertypes" HorizontalAlignment="Left" Margin="11,222,0,0" VerticalAlignment="Top"/>
-            <CheckBox x:Name="superTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,228,0,0" VerticalAlignment="Top"/>
+            <Label x:Name="cardSuperTypesLabel" Content="Supertypes" HorizontalAlignment="Left" Margin="11,232,0,0" VerticalAlignment="Top"/>
+            <CheckBox x:Name="superTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,238,0,0" VerticalAlignment="Top"/>
+            <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="11,651,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
         </Grid>
         <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="36" Margin="0,48,0,0" VerticalAlignment="Top" Width="138" d:IsHidden="True">
             <Label x:Name="headlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" FontFamily="Bodoni MT"/>
