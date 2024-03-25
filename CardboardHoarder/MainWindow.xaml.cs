@@ -55,18 +55,23 @@ namespace CardboardHoarder
         }
 
 
-        private void SuperTypesCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            CheckBox_Checked(sender, e, selectedSuperTypes);
-        }
-
         private void TypeCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            CheckBox_Checked(sender, e, selectedTypes);
+            CheckBox_Checked(sender, selectedTypes);
         }
-
-
-        private void CheckBox_Checked(object sender, RoutedEventArgs e, HashSet<string> targetCollection)
+        private void SuperTypesCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox_Checked(sender, selectedSuperTypes);
+        }
+        private void TypeCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox_Unchecked(sender, selectedTypes);
+        }
+        private void SuperTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox_Unchecked(sender, selectedSuperTypes);
+        }
+        private void CheckBox_Checked(object sender, HashSet<string> targetCollection)
         {
             try
             {
@@ -93,19 +98,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"An error occurred checking the checkbox: {ex}");
             }
         }
-
-
-        private void TypeCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            CheckBox_Unchecked(sender, e, selectedTypes);
-        }
-
-        private void SuperTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            CheckBox_Unchecked(sender, e, selectedSuperTypes);
-        }
-
-        private void CheckBox_Unchecked(object sender, RoutedEventArgs e, HashSet<string> targetCollection)
+        private void CheckBox_Unchecked(object sender, HashSet<string> targetCollection)
         {
             try
             {
@@ -121,7 +114,7 @@ namespace CardboardHoarder
                     var label = contentPresenter.Content as string; // Assuming the content is directly a string.
                     if (!string.IsNullOrEmpty(label))
                     {
-                        selectedSuperTypes.Remove(label);
+                        targetCollection.Remove(label);
                         UpdateFilterLabel();
                         FilterDataGrid(null, null); // Trigger filtering
                     }
@@ -159,7 +152,6 @@ namespace CardboardHoarder
 
             return null;
         }
-
         private void UpdateFilterLabel()
         {
             var contentParts = new List<string>();
@@ -190,49 +182,62 @@ namespace CardboardHoarder
         }
         private async Task FillComboBoxesAsync()
         {
-            // Get the values to populate the comboboxes
-            var cardNames = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "name");
-            var setNames = await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "name");
-            var types = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "types");
-            var superTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "supertypes");
-
-            // types with commas should not be listed. We don't want "Summon, Wolf" in the dropdown. We want "Summon" and "Wolf"
-            var typesList = new List<string>();
-            foreach (var type in types)
+            try
             {
-                typesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                // Get the values to populate the comboboxes
+                var cardNames = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "name");
+                var setNames = await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "name");
+                var types = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "types");
+                var superTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "supertypes");
+
+                // types with commas should not be listed. We don't want "Summon, Wolf" in the dropdown. We want "Summon" and "Wolf"
+                var typesList = new List<string>();
+                foreach (var type in types)
+                {
+                    typesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                }
+                var superTypesList = new List<string>();
+                foreach (var type in superTypes)
+                {
+                    superTypesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                }
+
+                Dispatcher.Invoke(() =>
+                {
+                    filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
+                    filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
+                    filterTypesListBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
+                    filterSuperTypesListBox.ItemsSource = superTypesList.OrderBy(types => types).Distinct().ToList();
+
+                });
             }
-            var superTypesList = new List<string>();
-            foreach (var type in superTypes)
+            catch (Exception ex)
             {
-                superTypesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
             }
-
-            Dispatcher.Invoke(() =>
-            {
-                filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
-                filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
-                filterTypesListBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
-                filterSuperTypesListBox.ItemsSource = superTypesList.OrderBy(types => types).Distinct().ToList();
-
-            });
         }
         private void FilterDataGrid(object? sender, SelectionChangedEventArgs? e)
         {
-            string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
-            string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
+            try
+            {
+                string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
+                string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
 
-            // Use the HashSet selectedSuperTypes directly for filtering
-            var filteredItems = items.Where(item =>
-                (string.IsNullOrEmpty(cardFilter) || item.Name.Contains(cardFilter)) &&
-                (string.IsNullOrEmpty(setFilter) || item.SetName.Contains(setFilter)) &&
-                (selectedTypes.Count == 0 || selectedTypes.Any(Type => item.Types.Contains(Type))) &&
-                (selectedSuperTypes.Count == 0 || selectedSuperTypes.Any(superType => item.SuperTypes.Contains(superType)))
-            ).ToList();
-
-            Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = filteredItems; });
+                // Use the HashSet selectedSuperTypes directly for filtering
+                var filteredItems = items.Where(item =>
+                    (string.IsNullOrEmpty(cardFilter) || item.Name.Contains(cardFilter)) &&
+                    (string.IsNullOrEmpty(setFilter) || item.SetName.Contains(setFilter)) &&
+                    (selectedTypes.Count == 0 || selectedTypes.Any(Type => item.Types.Contains(Type))) &&
+                    (selectedSuperTypes.Count == 0 || selectedSuperTypes.Any(superType => item.SuperTypes.Contains(superType)))
+                ).ToList();
+                cardCountLabel.Content = $"Cards shown: {filteredItems.Count}";
+                Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = filteredItems; });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
+            }
         }
-
 
         private async Task LoadDataAsync()
         {
@@ -250,7 +255,8 @@ namespace CardboardHoarder
                     "FROM cards c " +
                     "JOIN sets s ON c.setCode = s.code " +
                     "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
-                    "LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost";
+                    "LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost " +
+                    "WHERE c.availability LIKE '%paper%'";
 
                 using var command = new SQLiteCommand(query, DBAccess.connection);
 
@@ -278,6 +284,7 @@ namespace CardboardHoarder
 
                 Dispatcher.Invoke(() =>
                 {
+                    cardCountLabel.Content = $"Cards shown: {items.Count}";
                     mainCardWindowDatagrid.ItemsSource = items;
                     dataView = CollectionViewSource.GetDefaultView(items);
                 });

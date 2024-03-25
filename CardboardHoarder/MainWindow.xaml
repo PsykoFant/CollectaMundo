@@ -45,7 +45,7 @@
                     </DataGridTemplateColumn>
                     <DataGridTextColumn Header="Card Types" Binding="{Binding Types}" />
                     <DataGridTextColumn Header="Card Supertypes" Binding="{Binding SuperTypes}" />
-                    
+
                 </DataGrid.Columns>
             </DataGrid>
             <ComboBox x:Name="filterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,10,814,645">
@@ -105,6 +105,7 @@
                 </ListBox.Resources>
             </ListBox>
             <Label x:Name="filterLabel" Content="" HorizontalAlignment="Left" Margin="159,187,0,0" VerticalAlignment="Top"/>
+            <Label x:Name="cardCountLabel" Content="" HorizontalAlignment="Left" Margin="843,187,0,0" VerticalAlignment="Top" Width="116"/>
 
 
 
