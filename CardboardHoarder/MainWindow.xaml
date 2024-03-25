@@ -19,7 +19,7 @@
         <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Height="681" Margin="0,48,0,0" VerticalAlignment="Top" Width="969">
             <Image x:Name="iconTester" HorizontalAlignment="Left" Height="44" Margin="843,42,0,0" VerticalAlignment="Top" Width="59"/>
             <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Left" Margin="369,0,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
-            <DataGrid x:Name="mainCardWindowDatagrid" Margin="159,218,0,0" 
+            <DataGrid x:Name="mainCardWindowDatagrid" Margin="208,218,0,0" 
                       AutoGenerateColumns="False"
                       ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" CanUserAddRows="False">
                 <DataGrid.CellStyle>
@@ -67,7 +67,6 @@
                 SelectionMode="Extended">
                 <ListBox.Resources>
                     <Style TargetType="{x:Type ListBoxItem}">
-                        <!--<Setter Property="OverridesDefaultStyle" Value="true" />-->
                         <Setter Property="SnapsToDevicePixels" Value="true" />
                         <Setter Property="Template">
                             <Setter.Value>
@@ -83,12 +82,11 @@
                     </Style>
                 </ListBox.Resources>
             </ListBox>
-            <ListBox x:Name="filterSuperTypesListBox" Margin="10,218,815,386"
+            <ListBox x:Name="filterSuperTypesListBox" Margin="11,246,814,358"
                  ItemsSource="{Binding}"
                  SelectionMode="Extended">
                 <ListBox.Resources>
                     <Style TargetType="ListBoxItem">
-                        <!--<Setter Property="OverridesDefaultStyle" Value="true" />-->
                         <Setter Property="SnapsToDevicePixels" Value="true" />
                         <Setter Property="Template">
                             <Setter.Value>
@@ -104,14 +102,12 @@
                     </Style>
                 </ListBox.Resources>
             </ListBox>
-            <Label x:Name="filterLabel" Content="" HorizontalAlignment="Left" Margin="159,187,0,0" VerticalAlignment="Top"/>
+            <Label x:Name="filterLabel" Content="" HorizontalAlignment="Left" Margin="209,187,0,0" VerticalAlignment="Top"/>
             <Label x:Name="cardCountLabel" Content="" HorizontalAlignment="Left" Margin="843,187,0,0" VerticalAlignment="Top" Width="116"/>
-
-
-
-
-
-
+            <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,116,0,0" VerticalAlignment="Top"/>
+            <Label x:Name="cardTypeLabel" Content="Card types" HorizontalAlignment="Left" Margin="11,109,0,0" VerticalAlignment="Top"/>
+            <Label x:Name="cardSuperTypesLabel" Content="Supertypes" HorizontalAlignment="Left" Margin="11,222,0,0" VerticalAlignment="Top"/>
+            <CheckBox x:Name="superTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,228,0,0" VerticalAlignment="Top"/>
         </Grid>
         <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="36" Margin="0,48,0,0" VerticalAlignment="Top" Width="138" d:IsHidden="True">
             <Label x:Name="headlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" FontFamily="Bodoni MT"/>

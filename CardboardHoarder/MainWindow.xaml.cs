@@ -3,6 +3,7 @@ using System.Data;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
+using System.Linq.Dynamic.Core;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -48,13 +49,28 @@ namespace CardboardHoarder
             GridStatus.Visibility = Visibility.Hidden;
             Loaded += async (sender, args) => { await PrepareSystem(); };
 
-            filterCardNameComboBox.SelectionChanged += FilterDataGrid;
-            filterSetNameComboBox.SelectionChanged += FilterDataGrid;
+            // Pick up filtering input
+            typesAndOr.Checked += CheckBox_Toggled;
+            typesAndOr.Unchecked += CheckBox_Toggled;
+            superTypesAndOr.Checked += CheckBox_Toggled;
+            superTypesAndOr.Unchecked += CheckBox_Toggled;
+            filterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
+            filterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
+
 
             //DisplaySvgImage("https://svgs.scryfall.io/sets/mid.svg");
         }
+        private async Task PrepareSystem()
+        {
+            await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
+            GridSearchAndFilter.Visibility = Visibility.Visible;
+            await DBAccess.OpenConnectionAsync();
 
-
+            var LoadDataAsyncTask = LoadDataAsync();
+            var FillComboBoxesAsyncTask = FillComboBoxesAsync();
+            await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
+            DBAccess.CloseConnection();
+        }
         private void TypeCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             CheckBox_Checked(sender, selectedTypes);
@@ -89,7 +105,7 @@ namespace CardboardHoarder
                     {
                         targetCollection.Add(label);
                         UpdateFilterLabel();
-                        FilterDataGrid(null, null); // Trigger filtering
+                        ApplyFilter(); // Trigger filtering
                     }
                 }
             }
@@ -116,7 +132,7 @@ namespace CardboardHoarder
                     {
                         targetCollection.Remove(label);
                         UpdateFilterLabel();
-                        FilterDataGrid(null, null); // Trigger filtering
+                        ApplyFilter(); // Trigger filtering
                     }
                 }
             }
@@ -169,67 +185,54 @@ namespace CardboardHoarder
             filterLabel.Content = contentParts.Count > 0 ? string.Join(" - ", contentParts) : "";
         }
 
-        private async Task PrepareSystem()
-        {
-            await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
-            GridSearchAndFilter.Visibility = Visibility.Visible;
-            await DBAccess.OpenConnectionAsync();
 
-            var LoadDataAsyncTask = LoadDataAsync();
-            var FillComboBoxesAsyncTask = FillComboBoxesAsync();
-            await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
-            DBAccess.CloseConnection();
+        private void CheckBox_Toggled(object sender, RoutedEventArgs e)
+        {
+            ApplyFilter();
         }
-        private async Task FillComboBoxesAsync()
+        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ApplyFilter();
+        }
+        private void ApplyFilter()
         {
             try
             {
-                // Get the values to populate the comboboxes
-                var cardNames = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "name");
-                var setNames = await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "name");
-                var types = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "types");
-                var superTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "supertypes");
+                // Read and/or checkboxes to use in filtering
+                bool? typesAndOrIsChecked = CurrentInstance.typesAndOr.IsChecked;
+                bool? superTypesAndOrIsChecked = CurrentInstance.superTypesAndOr.IsChecked;
+                string typesAndOr = typesAndOrIsChecked == true ? "&&" : "||";
+                string superTypesAndOr = superTypesAndOrIsChecked == true ? "&&" : "||";
 
-                // types with commas should not be listed. We don't want "Summon, Wolf" in the dropdown. We want "Summon" and "Wolf"
-                var typesList = new List<string>();
-                foreach (var type in types)
-                {
-                    typesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
-                }
-                var superTypesList = new List<string>();
-                foreach (var type in superTypes)
-                {
-                    superTypesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
-                }
-
-                Dispatcher.Invoke(() =>
-                {
-                    filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
-                    filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
-                    filterTypesListBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
-                    filterSuperTypesListBox.ItemsSource = superTypesList.OrderBy(types => types).Distinct().ToList();
-
-                });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
-            }
-        }
-        private void FilterDataGrid(object? sender, SelectionChangedEventArgs? e)
-        {
-            try
-            {
                 string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
                 string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
 
-                // Use the HashSet selectedSuperTypes directly for filtering
-                var filteredItems = items.Where(item =>
-                    (string.IsNullOrEmpty(cardFilter) || item.Name.Contains(cardFilter)) &&
-                    (string.IsNullOrEmpty(setFilter) || item.SetName.Contains(setFilter)) &&
-                    (selectedTypes.Count == 0 || selectedTypes.Any(Type => item.Types.Contains(Type))) &&
-                    (selectedSuperTypes.Count == 0 || selectedSuperTypes.Any(superType => item.SuperTypes.Contains(superType)))
-                ).ToList();
+                // Construct the filtering query based on the input from UI
+                var query = items.AsQueryable();
+
+                if (!string.IsNullOrEmpty(cardFilter))
+                {
+                    query = query.Where($"Name.Contains(@0)", cardFilter);
+                }
+
+                if (!string.IsNullOrEmpty(setFilter))
+                {
+                    query = query.Where($"SetName.Contains(@0)", setFilter);
+                }
+
+                if (selectedTypes.Count > 0)
+                {
+                    var typesPredicate = string.Join($" {typesAndOr} ", selectedTypes.Select(t => $"Types.Contains(\"{t}\")"));
+                    query = query.Where(typesPredicate);
+                }
+
+                if (selectedSuperTypes.Count > 0)
+                {
+                    var superTypesPredicate = string.Join($" {superTypesAndOr} ", selectedSuperTypes.Select(st => $"SuperTypes.Contains(\"{st}\")"));
+                    query = query.Where(superTypesPredicate);
+                }
+
+                var filteredItems = query.ToList();
                 cardCountLabel.Content = $"Cards shown: {filteredItems.Count}";
                 Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = filteredItems; });
             }
@@ -292,6 +295,47 @@ namespace CardboardHoarder
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error while loading data: {ex.Message}");
+            }
+        }
+        private async Task FillComboBoxesAsync()
+        {
+            try
+            {
+                // Get the values to populate the comboboxes
+                var cardNames = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "name");
+                var setNames = await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "name");
+                var types = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "types");
+                var superTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "supertypes");
+
+                var typesList = new List<string>();
+                foreach (var type in types)
+                {
+                    typesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                }
+
+                // Remove silly Types entries from un-sets, old cards etc. 
+                var entriesToRemove = new HashSet<string> { "Eaturecray", "Ever", "Goblin", "Horror", "Jaguar", "See", "Knights", "Wolf", "You'll" };
+
+                // Remove the specified entries from typesList
+                typesList = typesList.Where(type => !entriesToRemove.Contains(type)).ToList();
+
+                var superTypesList = new List<string>();
+                foreach (var type in superTypes)
+                {
+                    superTypesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                }
+
+                Dispatcher.Invoke(() =>
+                {
+                    filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
+                    filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
+                    filterTypesListBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
+                    filterSuperTypesListBox.ItemsSource = superTypesList.OrderBy(types => types).Distinct().ToList();
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
             }
         }
 
