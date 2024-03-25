@@ -1,4 +1,4 @@
-﻿using CardboardHoarder;
+using CardboardHoarder;
 using Newtonsoft.Json.Linq;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
@@ -26,21 +26,13 @@ public class DownloadAndPrepDB
     {
         try
         {
-            //if (!File.Exists(databasePath))
-            if (true)
+            if (!File.Exists(databasePath))
             {
                 MainWindow.CurrentInstance.infoLabel.Content = "No card database found...";
 
                 // Disbale buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
 
-
-                await DBAccess.OpenConnectionAsync();
-                await GenerateManaSymbolsFromSvgAsync();
-                await GenerateManaCostImagesAsync();
-
-
-                /*
                 // Call the download method with the progress handler
                 await DownloadDatabaseIfNotExistsAsync(databasePath);
 
@@ -52,8 +44,6 @@ public class DownloadAndPrepDB
                 var generateManaCostImagesTask = GenerateManaCostImagesAsync();
                 var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
                 await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
-
-                */
 
                 DBAccess.CloseConnection();
                 MainWindow.CurrentInstance.ResetGrids();
@@ -674,8 +664,3 @@ public class DownloadAndPrepDB
 
 
 }
-
-
-
-
-
