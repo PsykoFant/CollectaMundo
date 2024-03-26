@@ -19,7 +19,7 @@
         <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Height="681" Margin="0,48,0,0" VerticalAlignment="Top" Width="969">
             <Image x:Name="iconTester" HorizontalAlignment="Left" Height="44" Margin="843,42,0,0" VerticalAlignment="Top" Width="59"/>
             <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Left" Margin="369,0,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
-            
+
             <!--The main card view datagrid-->
             <DataGrid x:Name="mainCardWindowDatagrid" Margin="208,218,0,0" 
                       AutoGenerateColumns="False"
@@ -45,13 +45,14 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Card Types" Binding="{Binding Types}" />
-                    <DataGridTextColumn Header="Card Supertypes" Binding="{Binding SuperTypes}" />
-                    <DataGridTextColumn Header="Card Subtypes" Binding="{Binding SubTypes}" />
+                    <DataGridTextColumn Header="Card Types" Visibility="Collapsed" Binding="{Binding Types}" />
+                    <DataGridTextColumn Header="Card Supertypes" Visibility="Collapsed" Binding="{Binding SuperTypes}" />
+                    <DataGridTextColumn Header="Card Subtypes" Visibility="Collapsed" Binding="{Binding SubTypes}" />
+                    <DataGridTextColumn Header="Card type" Binding="{Binding Type}" />
 
                 </DataGrid.Columns>
             </DataGrid>
-            
+
             <!--Card name and set comboboxes-->
             <ComboBox x:Name="filterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,41,814,614">
                 <ComboBox.ItemsPanel>
@@ -69,9 +70,13 @@
             </ComboBox>
 
             <!--Card type listbox and filtering-->
-            <Label x:Name="cardTypeLabel" Content="Card types" HorizontalAlignment="Left" Margin="11,109,0,0" VerticalAlignment="Top"/>
-            <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,116,0,0" VerticalAlignment="Top"/>
-            <ListBox x:Name="filterTypesListBox" Margin="10,136,783,449"
+            <Label x:Name="cardTypeLabel" Content="Card types" HorizontalAlignment="Left" Margin="11,168,0,0" VerticalAlignment="Top"/>
+            <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,175,0,0" VerticalAlignment="Top"/>
+            <TextBox x:Name="filterTypesTextBox" HorizontalAlignment="Left" Margin="11,203,0,0" TextWrapping="Wrap" Text=""
+                GotFocus="FilterTypesTextBox_GotFocus" 
+                LostFocus="FilterTypesTextBox_LostFocus" 
+                TextChanged="FilterTypesTextBox_TextChanged" VerticalAlignment="Top" Width="176"/>
+            <ListBox x:Name="filterTypesListBox" Margin="11,220,782,404"
                 ItemsSource="{Binding}"
                 SelectionMode="Extended">
                 <ListBox.Resources>
@@ -91,11 +96,15 @@
                     </Style>
                 </ListBox.Resources>
             </ListBox>
-            
+
             <!--Supertype listbox and filtering-->
-            <Label x:Name="cardSuperTypesLabel" Content="Supertypes" HorizontalAlignment="Left" Margin="11,232,0,0" VerticalAlignment="Top"/>
-            <CheckBox x:Name="superTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,238,0,0" VerticalAlignment="Top"/>
-            <ListBox x:Name="filterSuperTypesListBox" Margin="11,256,783,312"
+            <Label x:Name="cardSuperTypesLabel" Content="Supertypes" HorizontalAlignment="Left" Margin="11,282,0,0" VerticalAlignment="Top"/>
+            <CheckBox x:Name="superTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,288,0,0" VerticalAlignment="Top"/>
+            <TextBox x:Name="filterSuperTypesTextBox" HorizontalAlignment="Left" Margin="11,316,0,0" TextWrapping="Wrap" Text=""
+                GotFocus="FilterSuperTypesTextBox_GotFocus" 
+                LostFocus="FilterSuperTypesTextBox_LostFocus" 
+                TextChanged="FilterSuperTypesTextBox_TextChanged" VerticalAlignment="Top" Width="175"/>
+            <ListBox x:Name="filterSuperTypesListBox" Margin="11,333,783,288"
                  ItemsSource="{Binding}"
                  SelectionMode="Extended">
                 <ListBox.Resources>
@@ -115,11 +124,11 @@
                     </Style>
                 </ListBox.Resources>
             </ListBox>
-            
+
             <!--Subtype listbox and filtering-->
             <Label x:Name="cardSubTypeLabel" Content="Subtypes" HorizontalAlignment="Left" Margin="11,398,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684"/>
-            <CheckBox x:Name="subTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,404,0,0" VerticalAlignment="Top"/>            
-            <TextBox x:Name="filterSubTypesTextBox" HorizontalAlignment="Left" Margin="11,429,0,0" TextWrapping="Wrap" Text=""
+            <CheckBox x:Name="subTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,404,0,0" VerticalAlignment="Top"/>
+            <TextBox x:Name="filterSubTypesTextBox" HorizontalAlignment="Left" Margin="11,430,0,0" TextWrapping="Wrap" Text=""
                  GotFocus="FilterSubTypesTextBox_GotFocus" 
                  LostFocus="FilterSubTypesTextBox_LostFocus" 
                  TextChanged="FilterSubTypesTextBox_TextChanged" VerticalAlignment="Top" Width="175"/>
@@ -147,7 +156,8 @@
             <Label x:Name="filterLabel" Content="" HorizontalAlignment="Left" Margin="209,187,0,0" VerticalAlignment="Top"/>
             <Label x:Name="cardCountLabel" Content="" HorizontalAlignment="Left" Margin="843,187,0,0" VerticalAlignment="Top" Width="116"/>
             <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="11,651,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
-            
+
+
 
         </Grid>
         <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="36" Margin="0,48,0,0" VerticalAlignment="Top" Width="138" d:IsHidden="True">
@@ -156,6 +166,7 @@
         <Button x:Name="checkForUpdatesButton" Content="Check for updates" HorizontalAlignment="Left" Margin="877,10,0,0" VerticalAlignment="Top" Width="130" Click="checkForUpdatesButton_Click"/>
         <Label x:Name="infoLabel" Content="" HorizontalAlignment="Left" Margin="550,7,0,0" VerticalAlignment="Top" Width="182"/>
         <Button x:Name="updateDbButton" Content="Update card database" HorizontalAlignment="Left" Margin="743,10,0,0" VerticalAlignment="Top" Width="129" Click="updateDbButton_Click" Visibility="Hidden"/>
+
 
     </Grid>
 </Window>

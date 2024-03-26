@@ -19,7 +19,13 @@ namespace CardboardHoarder
         private static MainWindow? _currentInstance;
         private ICollectionView dataView;
         private List<CardSet> items = new List<CardSet>();
+
+        // Used for card type listbox and filtering
+        private List<string> allTypes = new List<string>();
         private HashSet<string> selectedTypes = new HashSet<string>();
+
+        // Used for supertypes listbox and filtering
+        private List<string> allSuperTypes = new List<string>();
         private HashSet<string> selectedSuperTypes = new HashSet<string>();
 
         // Used for subtypes listbox and filtering
@@ -52,13 +58,21 @@ namespace CardboardHoarder
             GridStatus.Visibility = Visibility.Hidden;
             Loaded += async (sender, args) => { await PrepareSystem(); };
 
-            // Pick up filtering input
-            typesAndOr.Checked += CheckBox_Toggled;
-            typesAndOr.Unchecked += CheckBox_Toggled;
-            superTypesAndOr.Checked += CheckBox_Toggled;
-            superTypesAndOr.Unchecked += CheckBox_Toggled;
+            // Handle card name and set filtering
             filterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             filterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
+
+            // Handle card type filtering
+            filterTypesTextBox.Text = "Filter card types...";
+            filterTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            typesAndOr.Checked += CheckBox_Toggled;
+            typesAndOr.Unchecked += CheckBox_Toggled;
+
+            // Handle supertype filtering
+            filterSuperTypesTextBox.Text = "Filter supertypes...";
+            filterSuperTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            superTypesAndOr.Checked += CheckBox_Toggled;
+            superTypesAndOr.Unchecked += CheckBox_Toggled;
 
             // Handle subtype filtering
             filterSubTypesTextBox.Text = "Filter subtypes...";
@@ -79,6 +93,32 @@ namespace CardboardHoarder
         }
 
         // Card types filtering logic
+        private void FilterTypesTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (filterTypesTextBox.Text != "Filter card types...")
+            {
+                var filteredTypes = string.IsNullOrWhiteSpace(filterTypesTextBox.Text)
+                ? allTypes
+                : allTypes.Where(type => type.IndexOf(filterTypesTextBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                filterTypesListBox.ItemsSource = filteredTypes;
+            }
+        }
+        private void FilterTypesTextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (filterTypesTextBox.Text == "Filter card types...")
+            {
+                filterTypesTextBox.Text = "";
+                filterTypesTextBox.Foreground = new SolidColorBrush(Colors.Black); // Or any other color for input text
+            }
+        }
+        private void FilterTypesTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(filterTypesTextBox.Text))
+            {
+                filterTypesTextBox.Text = "Filter card types...";
+                filterTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            }
+        }
         private void TypeCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             CheckBox_Checked(sender, selectedTypes);
@@ -88,6 +128,41 @@ namespace CardboardHoarder
             CheckBox_Unchecked(sender, selectedTypes);
         }
 
+        // Supertypes filtering logic
+        private void FilterSuperTypesTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (filterSuperTypesTextBox.Text != "Filter supertypes...")
+            {
+                var filteredSuperTypes = string.IsNullOrWhiteSpace(filterSuperTypesTextBox.Text)
+                ? allSuperTypes
+                : allSuperTypes.Where(type => type.IndexOf(filterSuperTypesTextBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                filterSuperTypesListBox.ItemsSource = filteredSuperTypes;
+            }
+        }
+        private void FilterSuperTypesTextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (filterSuperTypesTextBox.Text == "Filter supertypes...")
+            {
+                filterSuperTypesTextBox.Text = "";
+                filterSuperTypesTextBox.Foreground = new SolidColorBrush(Colors.Black); // Or any other color for input text
+            }
+        }
+        private void FilterSuperTypesTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(filterSuperTypesTextBox.Text))
+            {
+                filterSuperTypesTextBox.Text = "Filter subtypes...";
+                filterSuperTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            }
+        }
+        private void SuperTypesCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox_Checked(sender, selectedSuperTypes);
+        }
+        private void SuperTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox_Unchecked(sender, selectedSuperTypes);
+        }
 
         // Subtypes filtering logic
         private void FilterSubTypesTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -123,16 +198,6 @@ namespace CardboardHoarder
         private void SubTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             CheckBox_Unchecked(sender, selectedSubTypes);
-        }
-
-        // Supertypes filtering logic        
-        private void SuperTypesCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            CheckBox_Checked(sender, selectedSuperTypes);
-        }
-        private void SuperTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            CheckBox_Unchecked(sender, selectedSuperTypes);
         }
 
         // Common methods for listbox filtering elements
@@ -244,6 +309,8 @@ namespace CardboardHoarder
             selectedSubTypes.Clear();
 
             // Clear listbox searchboxes
+            filterTypesTextBox.Text = string.Empty;
+            filterSuperTypesTextBox.Text = string.Empty;
             filterSubTypesTextBox.Text = string.Empty;
 
             // Uncheck CheckBoxes if necessary
@@ -369,7 +436,8 @@ namespace CardboardHoarder
                     "u.manaCostImage AS ManaCostImage, " +
                     "c.types AS Types, " +
                     "c.supertypes AS SuperTypes, " +
-                    "c.subtypes AS SubTypes " +
+                    "c.subtypes AS SubTypes, " +
+                    "c.type AS Type " +
                     "FROM cards c " +
                     "JOIN sets s ON c.setCode = s.code " +
                     "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
@@ -398,6 +466,7 @@ namespace CardboardHoarder
                         Types = reader["Types"]?.ToString() ?? string.Empty,
                         SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty,
                         SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty,
+                        Type = reader["Type"]?.ToString() ?? string.Empty,
                     });
                 }
 
@@ -424,22 +493,23 @@ namespace CardboardHoarder
                 var superTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "supertypes");
                 var subTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "subtypes");
 
-                var typesList = new List<string>();
+                // Set up elements in card type listbox
+                allTypes.Clear();
                 foreach (var type in types)
                 {
-                    typesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                    allTypes.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
                 }
+                allTypes = allTypes.Distinct().OrderBy(type => type).ToList();
 
-                // Remove silly Types entries from un-sets, old cards etc. 
-                var entriesToRemove = new HashSet<string> { "Eaturecray", "Ever", "Goblin", "Horror", "Jaguar", "See", "Knights", "Wolf", "Scariest", "You'll" };
-                typesList = typesList.Where(type => !entriesToRemove.Contains(type)).ToList();
-
-                var superTypesList = new List<string>();
+                // Set up elements in supertype listbox
+                allSuperTypes.Clear();
                 foreach (var type in superTypes)
                 {
-                    superTypesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                    allSuperTypes.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
                 }
+                allSuperTypes = allSuperTypes.Distinct().OrderBy(type => type).ToList();
 
+                // Set up elements in subtype listbox
                 allSubTypes.Clear();
                 foreach (var type in subTypes)
                 {
@@ -451,8 +521,8 @@ namespace CardboardHoarder
                 {
                     filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                     filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
-                    filterTypesListBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
-                    filterSuperTypesListBox.ItemsSource = superTypesList.OrderBy(types => types).Distinct().ToList();
+                    filterTypesListBox.ItemsSource = allTypes;
+                    filterSuperTypesListBox.ItemsSource = allSuperTypes;
                     filterSubTypesListBox.ItemsSource = allSubTypes;
                 });
             }
