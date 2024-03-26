@@ -21,8 +21,10 @@ namespace CardboardHoarder
         private List<CardSet> items = new List<CardSet>();
         private HashSet<string> selectedTypes = new HashSet<string>();
         private HashSet<string> selectedSuperTypes = new HashSet<string>();
-        private HashSet<string> selectedSubTypes = new HashSet<string>();
 
+        // Used for subtypes listbox and filtering
+        private List<string> allSubTypes = new List<string>();
+        private HashSet<string> selectedSubTypes = new HashSet<string>();
 
         public static MainWindow CurrentInstance
         {
@@ -55,13 +57,14 @@ namespace CardboardHoarder
             typesAndOr.Unchecked += CheckBox_Toggled;
             superTypesAndOr.Checked += CheckBox_Toggled;
             superTypesAndOr.Unchecked += CheckBox_Toggled;
-            subTypesAndOr.Checked += CheckBox_Toggled;
-            subTypesAndOr.Unchecked += CheckBox_Toggled;
             filterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             filterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
 
-
-            //DisplaySvgImage("https://svgs.scryfall.io/sets/mid.svg");
+            // Handle subtype filtering
+            filterSubTypesTextBox.Text = "Filter subtypes...";
+            filterSubTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            subTypesAndOr.Checked += CheckBox_Toggled;
+            subTypesAndOr.Unchecked += CheckBox_Toggled;
         }
         private async Task PrepareSystem()
         {
@@ -74,32 +77,65 @@ namespace CardboardHoarder
             await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
             DBAccess.CloseConnection();
         }
+
+        // Card types filtering logic
         private void TypeCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             CheckBox_Checked(sender, selectedTypes);
         }
-        private void SuperTypesCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            CheckBox_Checked(sender, selectedSuperTypes);
-        }
-        private void SubTypesCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            CheckBox_Checked(sender, selectedSubTypes);
-        }
-
         private void TypeCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             CheckBox_Unchecked(sender, selectedTypes);
         }
-        private void SuperTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
+
+
+        // Subtypes filtering logic
+        private void FilterSubTypesTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            CheckBox_Unchecked(sender, selectedSuperTypes);
+            if (filterSubTypesTextBox.Text != "Filter subtypes...")
+            {
+                var filteredSubTypes = string.IsNullOrWhiteSpace(filterSubTypesTextBox.Text)
+                ? allSubTypes
+                : allSubTypes.Where(type => type.IndexOf(filterSubTypesTextBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                filterSubTypesListBox.ItemsSource = filteredSubTypes;
+            }
+        }
+        private void FilterSubTypesTextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (filterSubTypesTextBox.Text == "Filter subtypes...")
+            {
+                filterSubTypesTextBox.Text = "";
+                filterSubTypesTextBox.Foreground = new SolidColorBrush(Colors.Black); // Or any other color for input text
+            }
+        }
+        private void FilterSubTypesTextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(filterSubTypesTextBox.Text))
+            {
+                filterSubTypesTextBox.Text = "Filter subtypes...";
+                filterSubTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            }
+        }
+        private void SubTypesCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox_Checked(sender, selectedSubTypes);
         }
         private void SubTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             CheckBox_Unchecked(sender, selectedSubTypes);
         }
 
+        // Supertypes filtering logic        
+        private void SuperTypesCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox_Checked(sender, selectedSuperTypes);
+        }
+        private void SuperTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox_Unchecked(sender, selectedSuperTypes);
+        }
+
+        // Common methods for listbox filtering elements
         private void CheckBox_Checked(object sender, HashSet<string> targetCollection)
         {
             try
@@ -154,6 +190,10 @@ namespace CardboardHoarder
                 Debug.WriteLine($"An error occurred unchecking the checkbox: {ex}");
             }
         }
+        private void CheckBox_Toggled(object sender, RoutedEventArgs e)
+        {
+            ApplyFilter();
+        }
         private static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
         {
             try
@@ -181,6 +221,57 @@ namespace CardboardHoarder
 
             return null;
         }
+        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ApplyFilter();
+        }
+
+        // Reset filter elements
+        private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Reset filter-related controls
+            filterCardNameComboBox.SelectedIndex = -1;
+            filterSetNameComboBox.SelectedIndex = -1;
+
+            // Clear selections in the ListBoxes
+            ClearListBoxSelections(filterTypesListBox);
+            ClearListBoxSelections(filterSuperTypesListBox);
+            ClearListBoxSelections(filterSubTypesListBox);
+
+            // Clear the internal HashSets
+            selectedTypes.Clear();
+            selectedSuperTypes.Clear();
+            selectedSubTypes.Clear();
+
+            // Clear listbox searchboxes
+            filterSubTypesTextBox.Text = string.Empty;
+
+            // Uncheck CheckBoxes if necessary
+            typesAndOr.IsChecked = false;
+            superTypesAndOr.IsChecked = false;
+            subTypesAndOr.IsChecked = false;
+
+            // Update filter label and apply filters to refresh the DataGrid
+            UpdateFilterLabel();
+            ApplyFilter();
+        }
+        private void ClearListBoxSelections(ListBox listBox)
+        {
+            foreach (var item in listBox.Items)
+            {
+                var container = listBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+                if (container != null)
+                {
+                    var checkBox = FindVisualChild<CheckBox>(container);
+                    if (checkBox != null)
+                    {
+                        checkBox.IsChecked = false;
+                    }
+                }
+            }
+        }
+
+        // Apply filtering
         private void UpdateFilterLabel()
         {
             var contentParts = new List<string>();
@@ -202,17 +293,6 @@ namespace CardboardHoarder
 
             filterLabel.Content = contentParts.Count > 0 ? string.Join(" - ", contentParts) : "";
         }
-
-
-        private void CheckBox_Toggled(object sender, RoutedEventArgs e)
-        {
-            ApplyFilter();
-        }
-        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            ApplyFilter();
-        }
-
         private void ApplyFilter()
         {
             try
@@ -273,47 +353,7 @@ namespace CardboardHoarder
             }
         }
 
-        private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Reset filter-related controls
-            filterCardNameComboBox.SelectedIndex = -1;
-            filterSetNameComboBox.SelectedIndex = -1;
 
-            // Clear selections in the ListBoxes
-            ClearListBoxSelections(filterTypesListBox);
-            ClearListBoxSelections(filterSuperTypesListBox);
-            ClearListBoxSelections(filterSubTypesListBox);
-
-            // Clear the internal HashSets
-            selectedTypes.Clear();
-            selectedSuperTypes.Clear();
-            selectedSubTypes.Clear();
-
-            // Uncheck CheckBoxes if necessary
-            typesAndOr.IsChecked = false;
-            superTypesAndOr.IsChecked = false;
-            subTypesAndOr.IsChecked = false;
-
-            // Update filter label and apply filters to refresh the DataGrid
-            UpdateFilterLabel();
-            ApplyFilter();
-        }
-        // We need this method because we use a customized listbox
-        private void ClearListBoxSelections(ListBox listBox)
-        {
-            foreach (var item in listBox.Items)
-            {
-                var container = listBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
-                if (container != null)
-                {
-                    var checkBox = FindVisualChild<CheckBox>(container);
-                    if (checkBox != null)
-                    {
-                        checkBox.IsChecked = false;
-                    }
-                }
-            }
-        }
 
 
         private async Task LoadDataAsync()
@@ -400,11 +440,12 @@ namespace CardboardHoarder
                     superTypesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
                 }
 
-                var subTypesList = new List<string>();
+                allSubTypes.Clear();
                 foreach (var type in subTypes)
                 {
-                    subTypesList.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                    allSubTypes.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
                 }
+                allSubTypes = allSubTypes.Distinct().OrderBy(type => type).ToList();
 
                 Dispatcher.Invoke(() =>
                 {
@@ -412,7 +453,7 @@ namespace CardboardHoarder
                     filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                     filterTypesListBox.ItemsSource = typesList.OrderBy(types => types).Distinct().ToList();
                     filterSuperTypesListBox.ItemsSource = superTypesList.OrderBy(types => types).Distinct().ToList();
-                    filterSubTypesListBox.ItemsSource = subTypesList.OrderBy(types => types).Distinct().ToList();
+                    filterSubTypesListBox.ItemsSource = allSubTypes;
                 });
             }
             catch (Exception ex)
