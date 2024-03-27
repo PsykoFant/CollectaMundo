@@ -77,43 +77,72 @@ namespace CardboardHoarder
         // Filter helper methods
         private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (sender is TextBox textBox)
+            try
             {
-                List<string> allItems;
-                ListBox targetListBox;
-                string placeholderText;
-
-                switch (textBox.Name)
+                if (sender is TextBox textBox)
                 {
-                    case "filterTypesTextBox":
-                        allItems = allTypes;
-                        targetListBox = filterTypesListBox;
-                        placeholderText = "Filter card types...";
-                        break;
-                    case "filterSubTypesTextBox":
-                        allItems = allSubTypes;
-                        targetListBox = filterSubTypesListBox;
-                        placeholderText = "Filter subtypes...";
-                        break;
-                    case "filterSuperTypesTextBox":
-                        allItems = allSuperTypes; // Assuming you have a list called allSuperTypes
-                        targetListBox = filterSuperTypesListBox; // Assuming you have a ListBox called filterSuperTypesListBox
-                        placeholderText = "Filter supertypes...";
-                        break;
-                    default:
-                        return;
-                }
+                    List<string> allItems = new List<string>();
+                    ListBox targetListBox = null;
+                    HashSet<string> selectedItems = new HashSet<string>();
+                    string placeholderText = string.Empty;
 
-                if (textBox.Text != placeholderText)
-                {
-                    var filteredItems = string.IsNullOrWhiteSpace(textBox.Text)
-                        ? allItems
-                        : allItems.Where(type => type.IndexOf(textBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                    // Determine the context based on which TextBox is sending the event
+                    switch (textBox.Name)
+                    {
+                        case "filterTypesTextBox":
+                            allItems = allTypes;
+                            targetListBox = filterTypesListBox;
+                            selectedItems = selectedTypes;
+                            placeholderText = "Filter card types...";
+                            break;
+                        case "filterSuperTypesTextBox":
+                            allItems = allSuperTypes;
+                            targetListBox = filterSuperTypesListBox;
+                            selectedItems = selectedSuperTypes;
+                            placeholderText = "Filter supertypes...";
+                            break;
+                        case "filterSubTypesTextBox":
+                            allItems = allSubTypes;
+                            targetListBox = filterSubTypesListBox;
+                            selectedItems = selectedSubTypes;
+                            placeholderText = "Filter subtypes...";
+                            break;
+                    }
 
-                    targetListBox.ItemsSource = filteredItems;
+                    if (targetListBox != null && textBox.Text != placeholderText)
+                    {
+                        var filteredItems = string.IsNullOrWhiteSpace(textBox.Text)
+                            ? allItems
+                            : allItems.Where(type => type.IndexOf(textBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+
+                        targetListBox.ItemsSource = filteredItems;
+
+                        // Reapply the selected state to the checkboxes
+                        targetListBox.Dispatcher.Invoke(() =>
+                        {
+                            foreach (var item in filteredItems)
+                            {
+                                var listBoxItem = targetListBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+                                if (listBoxItem != null)
+                                {
+                                    var checkBox = FindVisualChild<CheckBox>(listBoxItem);
+                                    if (checkBox != null && selectedItems.Contains(item))
+                                    {
+                                        checkBox.IsChecked = true;
+                                    }
+                                }
+                            }
+                        }, System.Windows.Threading.DispatcherPriority.Loaded);
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in FilterTextBox_TextChanged: {ex.Message}");
+            }
         }
+
+
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
             try
@@ -131,7 +160,7 @@ namespace CardboardHoarder
                     if (textBox.Text == placeholderText)
                     {
                         textBox.Text = "";
-                        textBox.Foreground = new SolidColorBrush(Colors.Black); // Or any other color for input text
+                        textBox.Foreground = new SolidColorBrush(Colors.Black);
                     }
                 }
             }
@@ -158,6 +187,8 @@ namespace CardboardHoarder
                     {
                         textBox.Text = placeholderText;
                         textBox.Foreground = new SolidColorBrush(Colors.Gray);
+                        // Trigger the filtering logic to reset or maintain the item list based on the placeholder.
+                        FilterTextBox_TextChanged(textBox, new TextChangedEventArgs(TextBox.TextChangedEvent, UndoAction.None));
                     }
                 }
             }
@@ -166,6 +197,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error in TextBox_LostFocus: {ex.Message}");
             }
         }
+
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
             try
