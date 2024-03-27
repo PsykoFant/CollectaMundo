@@ -17,7 +17,7 @@ namespace CardboardHoarder
 
         // Used by ShowOrHideStatusWindow to reference MainWindow
         private static MainWindow? _currentInstance;
-        private ICollectionView dataView;
+        private ICollectionView? dataView;
         private List<CardSet> items = new List<CardSet>();
 
         // Used for card type listbox and filtering
@@ -72,33 +72,6 @@ namespace CardboardHoarder
             var FillComboBoxesAsyncTask = FillComboBoxesAsync();
             await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
             DBAccess.CloseConnection();
-        }
-
-        private void TypeCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            CheckBox_Checked(sender, selectedTypes);
-        }
-        private void TypeCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            CheckBox_Unchecked(sender, selectedTypes);
-        }
-
-        private void SuperTypesCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            CheckBox_Checked(sender, selectedSuperTypes);
-        }
-        private void SuperTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            CheckBox_Unchecked(sender, selectedSuperTypes);
-        }
-
-        private void SubTypesCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            CheckBox_Checked(sender, selectedSubTypes);
-        }
-        private void SubTypesCheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            CheckBox_Unchecked(sender, selectedSubTypes);
         }
 
         // Filter helper methods
@@ -193,7 +166,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error in TextBox_LostFocus: {ex.Message}");
             }
         }
-        private void CheckBox_Checked(object sender, HashSet<string> targetCollection)
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -206,21 +179,32 @@ namespace CardboardHoarder
                 var checkBox = FindVisualChild<CheckBox>(dependencyObject);
                 if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
                 {
-                    var label = contentPresenter.Content as string; // 
+                    var label = contentPresenter.Content as string;
                     if (!string.IsNullOrEmpty(label))
                     {
-                        targetCollection.Add(label);
-                        UpdateFilterLabel();
-                        ApplyFilter(); // Trigger filtering
+                        HashSet<string>? targetCollection = checkBox.Tag switch
+                        {
+                            "Type" => selectedTypes,
+                            "SuperType" => selectedSuperTypes,
+                            "SubType" => selectedSubTypes,
+                            _ => null
+                        };
+
+                        if (targetCollection != null)
+                        {
+                            targetCollection.Add(label);
+                            UpdateFilterLabel();
+                            ApplyFilter(); // Trigger filtering
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"An error occurred checking the checkbox: {ex}");
+                Debug.WriteLine($"An error occurred while checking the checkbox: {ex.Message}");
             }
         }
-        private void CheckBox_Unchecked(object sender, HashSet<string> targetCollection)
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -233,18 +217,29 @@ namespace CardboardHoarder
                 var checkBox = FindVisualChild<CheckBox>(dependencyObject);
                 if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
                 {
-                    var label = contentPresenter.Content as string; // Assuming the content is directly a string.
+                    var label = contentPresenter.Content as string;
                     if (!string.IsNullOrEmpty(label))
                     {
-                        targetCollection.Remove(label);
-                        UpdateFilterLabel();
-                        ApplyFilter(); // Trigger filtering
+                        HashSet<string>? targetCollection = checkBox.Tag switch
+                        {
+                            "Type" => selectedTypes,
+                            "SuperType" => selectedSuperTypes,
+                            "SubType" => selectedSubTypes,
+                            _ => null
+                        };
+
+                        if (targetCollection != null)
+                        {
+                            targetCollection.Remove(label);
+                            UpdateFilterLabel();
+                            ApplyFilter(); // Trigger filtering
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"An error occurred unchecking the checkbox: {ex}");
+                Debug.WriteLine($"An error occurred while unchecking the checkbox: {ex.Message}");
             }
         }
         private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)

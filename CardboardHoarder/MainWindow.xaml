@@ -87,14 +87,14 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}">
+                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Tag="Type">
                                         <ContentPresenter />
                                     </CheckBox>
                                 </ControlTemplate>
                             </Setter.Value>
                         </Setter>
-                        <EventSetter Event="ToggleButton.Checked" Handler="TypeCheckBox_Checked" />
-                        <EventSetter Event="ToggleButton.Unchecked" Handler="TypeCheckBox_Unchecked" />
+                        <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked" />
+                        <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked" />
                     </Style>
                 </ListBox.Resources>
             </ListBox>
@@ -117,14 +117,14 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ListBoxItem">
-                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}">
+                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Tag="SuperType">
                                         <ContentPresenter />
                                     </CheckBox>
                                 </ControlTemplate>
                             </Setter.Value>
                         </Setter>
-                        <EventSetter Event="CheckBox.Checked" Handler="SuperTypesCheckBox_Checked" />
-                        <EventSetter Event="CheckBox.Unchecked" Handler="SuperTypesCheckBox_Unchecked" />
+                        <EventSetter Event="CheckBox.Checked" Handler="CheckBox_Checked" />
+                        <EventSetter Event="CheckBox.Unchecked" Handler="CheckBox_Unchecked" />
                     </Style>
                 </ListBox.Resources>
             </ListBox>
@@ -147,14 +147,14 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}">
+                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Tag="SubType">
                                         <ContentPresenter />
                                     </CheckBox>
                                 </ControlTemplate>
                             </Setter.Value>
                         </Setter>
-                        <EventSetter Event="ToggleButton.Checked" Handler="SubTypesCheckBox_Checked" />
-                        <EventSetter Event="ToggleButton.Unchecked" Handler="SubTypesCheckBox_Unchecked" />
+                        <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked" />
+                        <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked" />
                     </Style>
                 </ListBox.Resources>
             </ListBox>
