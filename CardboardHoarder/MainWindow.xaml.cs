@@ -61,24 +61,6 @@ namespace CardboardHoarder
             // Handle card name and set filtering
             filterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             filterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
-
-            // Handle card type filtering
-            filterTypesTextBox.Text = "Filter card types...";
-            filterTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            typesAndOr.Checked += CheckBox_Toggled;
-            typesAndOr.Unchecked += CheckBox_Toggled;
-
-            // Handle supertype filtering
-            filterSuperTypesTextBox.Text = "Filter supertypes...";
-            filterSuperTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            superTypesAndOr.Checked += CheckBox_Toggled;
-            superTypesAndOr.Unchecked += CheckBox_Toggled;
-
-            // Handle subtype filtering
-            filterSubTypesTextBox.Text = "Filter subtypes...";
-            filterSubTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            subTypesAndOr.Checked += CheckBox_Toggled;
-            subTypesAndOr.Unchecked += CheckBox_Toggled;
         }
         private async Task PrepareSystem()
         {
@@ -92,33 +74,6 @@ namespace CardboardHoarder
             DBAccess.CloseConnection();
         }
 
-        // Card types filtering logic
-        private void FilterTypesTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (filterTypesTextBox.Text != "Filter card types...")
-            {
-                var filteredTypes = string.IsNullOrWhiteSpace(filterTypesTextBox.Text)
-                ? allTypes
-                : allTypes.Where(type => type.IndexOf(filterTypesTextBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-                filterTypesListBox.ItemsSource = filteredTypes;
-            }
-        }
-        private void FilterTypesTextBox_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (filterTypesTextBox.Text == "Filter card types...")
-            {
-                filterTypesTextBox.Text = "";
-                filterTypesTextBox.Foreground = new SolidColorBrush(Colors.Black); // Or any other color for input text
-            }
-        }
-        private void FilterTypesTextBox_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(filterTypesTextBox.Text))
-            {
-                filterTypesTextBox.Text = "Filter card types...";
-                filterTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            }
-        }
         private void TypeCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             CheckBox_Checked(sender, selectedTypes);
@@ -128,33 +83,6 @@ namespace CardboardHoarder
             CheckBox_Unchecked(sender, selectedTypes);
         }
 
-        // Supertypes filtering logic
-        private void FilterSuperTypesTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (filterSuperTypesTextBox.Text != "Filter supertypes...")
-            {
-                var filteredSuperTypes = string.IsNullOrWhiteSpace(filterSuperTypesTextBox.Text)
-                ? allSuperTypes
-                : allSuperTypes.Where(type => type.IndexOf(filterSuperTypesTextBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-                filterSuperTypesListBox.ItemsSource = filteredSuperTypes;
-            }
-        }
-        private void FilterSuperTypesTextBox_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (filterSuperTypesTextBox.Text == "Filter supertypes...")
-            {
-                filterSuperTypesTextBox.Text = "";
-                filterSuperTypesTextBox.Foreground = new SolidColorBrush(Colors.Black); // Or any other color for input text
-            }
-        }
-        private void FilterSuperTypesTextBox_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(filterSuperTypesTextBox.Text))
-            {
-                filterSuperTypesTextBox.Text = "Filter subtypes...";
-                filterSuperTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            }
-        }
         private void SuperTypesCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             CheckBox_Checked(sender, selectedSuperTypes);
@@ -164,33 +92,6 @@ namespace CardboardHoarder
             CheckBox_Unchecked(sender, selectedSuperTypes);
         }
 
-        // Subtypes filtering logic
-        private void FilterSubTypesTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (filterSubTypesTextBox.Text != "Filter subtypes...")
-            {
-                var filteredSubTypes = string.IsNullOrWhiteSpace(filterSubTypesTextBox.Text)
-                ? allSubTypes
-                : allSubTypes.Where(type => type.IndexOf(filterSubTypesTextBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-                filterSubTypesListBox.ItemsSource = filteredSubTypes;
-            }
-        }
-        private void FilterSubTypesTextBox_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (filterSubTypesTextBox.Text == "Filter subtypes...")
-            {
-                filterSubTypesTextBox.Text = "";
-                filterSubTypesTextBox.Foreground = new SolidColorBrush(Colors.Black); // Or any other color for input text
-            }
-        }
-        private void FilterSubTypesTextBox_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (string.IsNullOrWhiteSpace(filterSubTypesTextBox.Text))
-            {
-                filterSubTypesTextBox.Text = "Filter subtypes...";
-                filterSubTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            }
-        }
         private void SubTypesCheckBox_Checked(object sender, RoutedEventArgs e)
         {
             CheckBox_Checked(sender, selectedSubTypes);
@@ -200,7 +101,98 @@ namespace CardboardHoarder
             CheckBox_Unchecked(sender, selectedSubTypes);
         }
 
-        // Common methods for listbox filtering elements
+        // Filter helper methods
+        private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is TextBox textBox)
+            {
+                List<string> allItems;
+                ListBox targetListBox;
+                string placeholderText;
+
+                switch (textBox.Name)
+                {
+                    case "filterTypesTextBox":
+                        allItems = allTypes;
+                        targetListBox = filterTypesListBox;
+                        placeholderText = "Filter card types...";
+                        break;
+                    case "filterSubTypesTextBox":
+                        allItems = allSubTypes;
+                        targetListBox = filterSubTypesListBox;
+                        placeholderText = "Filter subtypes...";
+                        break;
+                    case "filterSuperTypesTextBox":
+                        allItems = allSuperTypes; // Assuming you have a list called allSuperTypes
+                        targetListBox = filterSuperTypesListBox; // Assuming you have a ListBox called filterSuperTypesListBox
+                        placeholderText = "Filter supertypes...";
+                        break;
+                    default:
+                        return;
+                }
+
+                if (textBox.Text != placeholderText)
+                {
+                    var filteredItems = string.IsNullOrWhiteSpace(textBox.Text)
+                        ? allItems
+                        : allItems.Where(type => type.IndexOf(textBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+
+                    targetListBox.ItemsSource = filteredItems;
+                }
+            }
+        }
+        private void TextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is TextBox textBox)
+                {
+                    string placeholderText = textBox.Name switch
+                    {
+                        "filterTypesTextBox" => "Filter card types...",
+                        "filterSuperTypesTextBox" => "Filter supertypes...",
+                        "filterSubTypesTextBox" => "Filter subtypes...",
+                        _ => ""
+                    };
+
+                    if (textBox.Text == placeholderText)
+                    {
+                        textBox.Text = "";
+                        textBox.Foreground = new SolidColorBrush(Colors.Black); // Or any other color for input text
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in TextBox_GotFocus: {ex.Message}");
+            }
+        }
+        private void TextBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is TextBox textBox)
+                {
+                    string placeholderText = textBox.Name switch
+                    {
+                        "filterTypesTextBox" => "Filter card types...",
+                        "filterSuperTypesTextBox" => "Filter supertypes...",
+                        "filterSubTypesTextBox" => "Filter subtypes...",
+                        _ => ""
+                    };
+
+                    if (string.IsNullOrWhiteSpace(textBox.Text))
+                    {
+                        textBox.Text = placeholderText;
+                        textBox.Foreground = new SolidColorBrush(Colors.Gray);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in TextBox_LostFocus: {ex.Message}");
+            }
+        }
         private void CheckBox_Checked(object sender, HashSet<string> targetCollection)
         {
             try
@@ -214,7 +206,7 @@ namespace CardboardHoarder
                 var checkBox = FindVisualChild<CheckBox>(dependencyObject);
                 if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
                 {
-                    var label = contentPresenter.Content as string; // Assuming the content is directly a string.
+                    var label = contentPresenter.Content as string; // 
                     if (!string.IsNullOrEmpty(label))
                     {
                         targetCollection.Add(label);
@@ -255,7 +247,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"An error occurred unchecking the checkbox: {ex}");
             }
         }
-        private void CheckBox_Toggled(object sender, RoutedEventArgs e)
+        private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)
         {
             ApplyFilter();
         }
@@ -310,8 +302,19 @@ namespace CardboardHoarder
 
             // Clear listbox searchboxes
             filterTypesTextBox.Text = string.Empty;
+            filterTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            filterTypesTextBox.Text = "Filter card types...";
+
             filterSuperTypesTextBox.Text = string.Empty;
+            filterSuperTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            filterSuperTypesTextBox.Text = "Filter supertypes...";
+
             filterSubTypesTextBox.Text = string.Empty;
+            filterSubTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            filterSubTypesTextBox.Text = "Filter subtypes...";
+
+
+
 
             // Uncheck CheckBoxes if necessary
             typesAndOr.IsChecked = false;
