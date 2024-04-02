@@ -87,7 +87,10 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Tag="Type">
+                                    <CheckBox Margin="5,2" 
+                                              IsChecked="{TemplateBinding IsSelected}"
+                                              Loaded="CheckBox_Loaded"
+                                              Tag="Type">
                                         <ContentPresenter />
                                     </CheckBox>
                                 </ControlTemplate>
@@ -117,7 +120,10 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ListBoxItem">
-                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Tag="SuperType">
+                                    <CheckBox Margin="5,2" 
+                                              IsChecked="{TemplateBinding IsSelected}" 
+                                              Loaded="CheckBox_Loaded"
+                                              Tag="SuperType">
                                         <ContentPresenter />
                                     </CheckBox>
                                 </ControlTemplate>
@@ -147,7 +153,10 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Tag="SubType">
+                                    <CheckBox Margin="5,2" 
+                                              IsChecked="{TemplateBinding IsSelected}" 
+                                              Loaded="CheckBox_Loaded"
+                                              Tag="SubType">
                                         <ContentPresenter />
                                     </CheckBox>
                                 </ControlTemplate>

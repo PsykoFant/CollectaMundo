@@ -141,8 +141,6 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error in FilterTextBox_TextChanged: {ex.Message}");
             }
         }
-
-
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
             try
@@ -187,8 +185,6 @@ namespace CardboardHoarder
                     {
                         textBox.Text = placeholderText;
                         textBox.Foreground = new SolidColorBrush(Colors.Gray);
-                        // Trigger the filtering logic to reset or maintain the item list based on the placeholder.
-                        FilterTextBox_TextChanged(textBox, new TextChangedEventArgs(TextBox.TextChangedEvent, UndoAction.None));
                     }
                 }
             }
@@ -197,7 +193,6 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error in TextBox_LostFocus: {ex.Message}");
             }
         }
-
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
             try
@@ -272,6 +267,24 @@ namespace CardboardHoarder
             catch (Exception ex)
             {
                 Debug.WriteLine($"An error occurred while unchecking the checkbox: {ex.Message}");
+            }
+        }
+        private void CheckBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is CheckBox checkBox && checkBox.DataContext is string dataContext)
+            {
+                switch (checkBox.Tag as string)
+                {
+                    case "Type":
+                        checkBox.IsChecked = selectedTypes.Contains(dataContext);
+                        break;
+                    case "SuperType":
+                        checkBox.IsChecked = selectedSuperTypes.Contains(dataContext);
+                        break;
+                    case "SubType":
+                        checkBox.IsChecked = selectedSubTypes.Contains(dataContext);
+                        break;
+                }
             }
         }
         private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)
