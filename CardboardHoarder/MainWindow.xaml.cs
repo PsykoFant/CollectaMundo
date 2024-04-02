@@ -20,16 +20,14 @@ namespace CardboardHoarder
         private ICollectionView? dataView;
         private List<CardSet> items = new List<CardSet>();
 
-        // Used for card type listbox and filtering
+        // Lists for populating listboxes
         private List<string> allTypes = new List<string>();
-        private HashSet<string> selectedTypes = new HashSet<string>();
-
-        // Used for supertypes listbox and filtering
         private List<string> allSuperTypes = new List<string>();
-        private HashSet<string> selectedSuperTypes = new HashSet<string>();
-
-        // Used for subtypes listbox and filtering
         private List<string> allSubTypes = new List<string>();
+
+        // Hashsets to store selected checkbox items in listboxes
+        private HashSet<string> selectedTypes = new HashSet<string>();
+        private HashSet<string> selectedSuperTypes = new HashSet<string>();
         private HashSet<string> selectedSubTypes = new HashSet<string>();
 
         public static MainWindow CurrentInstance
@@ -66,15 +64,15 @@ namespace CardboardHoarder
         {
             await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
             GridSearchAndFilter.Visibility = Visibility.Visible;
-            await DBAccess.OpenConnectionAsync();
 
+            await DBAccess.OpenConnectionAsync();
             var LoadDataAsyncTask = LoadDataAsync();
             var FillComboBoxesAsyncTask = FillComboBoxesAsync();
             await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
             DBAccess.CloseConnection();
         }
 
-        // Filter helper methods
+        #region Filter elements handling        
         private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             try
@@ -380,8 +378,9 @@ namespace CardboardHoarder
                 }
             }
         }
+        #endregion
 
-        // Apply filtering
+        #region Apply filtering
         private void UpdateFilterLabel()
         {
             var contentParts = new List<string>();
@@ -462,10 +461,9 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
             }
         }
+        #endregion
 
-
-
-
+        #region Load data and populate UI elements
         private async Task LoadDataAsync()
         {
             Debug.WriteLine("Loading data asynchronously...");
@@ -574,6 +572,46 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
             }
         }
+        #endregion        
+
+        #region UI elements for updating card database
+        private async void checkForUpdatesButton_Click(object sender, RoutedEventArgs e)
+        {
+            await UpdateDB.CheckForUpdatesAsync(); // Assuming the method is named CheckForUpdatesAsync and is async
+        }
+        private async void updateDbButton_Click(object sender, RoutedEventArgs e)
+        {
+            ResetGrids();
+            await UpdateDB.UpdateCardDatabaseAsync();
+        }
+        private void UpdateStatusTextBox(string message)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                statusLabel.Content = message;
+            });
+        }
+        #endregion
+
+        #region Top menu navigation
+        private void MenuSearchAndFilter_Click(object sender, RoutedEventArgs e)
+        {
+            ResetGrids();
+            GridSearchAndFilter.Visibility = Visibility.Visible;
+        }
+        private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
+        {
+            ResetGrids();
+            GridMyCollection.Visibility = Visibility.Visible;
+        }
+        public void ResetGrids()
+        {
+            infoLabel.Content = "";
+            GridSearchAndFilter.Visibility = Visibility.Hidden;
+            GridMyCollection.Visibility = Visibility.Hidden;
+        }
+        #endregion
+
         public static async Task ShowStatusWindowAsync(bool visible)
         {
             if (CurrentInstance != null)
@@ -605,40 +643,6 @@ namespace CardboardHoarder
                 });
             }
         }
-        private void UpdateStatusTextBox(string message)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                statusLabel.Content = message;
-            });
-        }
-        public void ResetGrids()
-        {
-            infoLabel.Content = "";
-            GridSearchAndFilter.Visibility = Visibility.Hidden;
-            GridMyCollection.Visibility = Visibility.Hidden;
-        }
-        private void MenuSearchAndFilter_Click(object sender, RoutedEventArgs e)
-        {
-            ResetGrids();
-            GridSearchAndFilter.Visibility = Visibility.Visible;
-        }
-        private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
-        {
-            ResetGrids();
-            GridMyCollection.Visibility = Visibility.Visible;
-        }
-        private async void checkForUpdatesButton_Click(object sender, RoutedEventArgs e)
-        {
-            await UpdateDB.CheckForUpdatesAsync(); // Assuming the method is named CheckForUpdatesAsync and is async
-        }
-        private async void updateDbButton_Click(object sender, RoutedEventArgs e)
-        {
-            ResetGrids();
-            await UpdateDB.UpdateCardDatabaseAsync();
-        }
-
-
         private static BitmapImage? ConvertByteArrayToBitmapImage(byte[] imageData)
         {
             try
