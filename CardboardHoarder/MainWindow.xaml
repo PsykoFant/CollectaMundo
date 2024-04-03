@@ -6,31 +6,24 @@
         xmlns:local="clr-namespace:CardboardHoarder"
         mc:Ignorable="d"
         Title="MainWindow">
-    <Window.Resources>
-        <local:DimensionMinusConverter x:Key="DimensionMinusConverter"/>
-    </Window.Resources>
 
     <Grid>
         <Button x:Name="MenuSearchAndFilterButton" Content="Search and Filter" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuSearchAndFilter_Click"/>
         <Button x:Name="MenuMyCollectionButton" Content="My Collection" HorizontalAlignment="Left" Margin="174,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuMyCollection_Click"/>
         <Button x:Name="MenuDecksButton" Content="Decks" HorizontalAlignment="Left" Margin="338,10,0,0" VerticalAlignment="Top" Width="159"/>
-        <Rectangle x:Name="MainScreen" HorizontalAlignment="Center" Margin="0,35,0,0" Stroke="Black" VerticalAlignment="Top" 
-                   Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource DimensionMinusConverter}, ConverterParameter=30}"
-                   Height="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource DimensionMinusConverter}, ConverterParameter=100}" />
         <Grid x:Name="GridStatus" HorizontalAlignment="Center" Height="707" VerticalAlignment="Top" Margin="0,35,0,0" Width="1004" d:IsHidden="True">
             <ProgressBar x:Name="progressBar" HorizontalAlignment="Center" Height="11" Margin="0,652,0,0" VerticalAlignment="Top" Width="738" d:IsHidden="True"/>
             <Label x:Name="statusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top" Width="738" d:IsHidden="True"/>
 
         </Grid>
-        <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Left" Height="681" Margin="0,48,0,0" VerticalAlignment="Top" Width="969">
+        <Grid x:Name="GridSearchAndFilter" Margin="0,48,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Height="800">
             <Image x:Name="iconTester" HorizontalAlignment="Left" Height="44" Margin="843,42,0,0" VerticalAlignment="Top" Width="59"/>
             <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Left" Margin="369,0,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
 
             <!--The main card view datagrid-->
-            <DataGrid x:Name="mainCardWindowDatagrid" Margin="208,218,0,0" 
-                      HorizontalAlignment="Left"
-                      Width="{Binding ActualWidth, ElementName=GridSearchAndFilter}"
+            <DataGrid x:Name="mainCardWindowDatagrid" Margin="224,205,10,10"
                       AutoGenerateColumns="False"
+                      Width="{Binding ActualWidth, ElementName=ParentGrid}"
                       ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" CanUserAddRows="False">
                 <DataGrid.CellStyle>
                     <Style/>
@@ -62,14 +55,14 @@
             </DataGrid>
 
             <!--Card name and set comboboxes-->
-            <ComboBox x:Name="filterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,41,814,614" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left" Width="145">
+            <ComboBox x:Name="filterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,41,783,614" Width="200" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top">
                 <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel />
                     </ItemsPanelTemplate>
                 </ComboBox.ItemsPanel>
             </ComboBox>
-            <ComboBox x:Name="filterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,74,814,581">
+            <ComboBox x:Name="filterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,74,783,581" Width="200" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top">
                 <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel />
@@ -82,13 +75,13 @@
             <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,175,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>
-            <TextBox x:Name="filterTypesTextBox" HorizontalAlignment="Left" Margin="11,203,0,0" TextWrapping="Wrap" Text="Filter card types..." Foreground="Gray"
+            <TextBox x:Name="filterTypesTextBox" HorizontalAlignment="Left" Margin="10,200,0,0" TextWrapping="Wrap" Text="Filter card types..." Foreground="Gray"
                 GotFocus="TextBox_GotFocus" 
                 LostFocus="TextBox_LostFocus" 
-                TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="176"/>
-            <ListBox x:Name="filterTypesListBox" Margin="11,220,782,404"
+                TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="200" Height="20"/>
+            <ListBox x:Name="filterTypesListBox" Margin="10,220,791,404" Width="200" HorizontalAlignment="Left"
                 ItemsSource="{Binding}"
-                SelectionMode="Extended">
+                SelectionMode="Extended" Height="50" VerticalAlignment="Top">
                 <ListBox.Resources>
                     <Style TargetType="{x:Type ListBoxItem}">
                         <Setter Property="SnapsToDevicePixels" Value="true" />
@@ -115,13 +108,13 @@
             <CheckBox x:Name="superTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,288,0,0" VerticalAlignment="Top"
                Checked="AndOrCheckBox_Toggled"
                Unchecked="AndOrCheckBox_Toggled"/>
-            <TextBox x:Name="filterSuperTypesTextBox" HorizontalAlignment="Left" Margin="11,316,0,0" TextWrapping="Wrap" Text="Filter supertypes..." Foreground="Gray"
+            <TextBox x:Name="filterSuperTypesTextBox" HorizontalAlignment="Left" Margin="10,313,0,0" TextWrapping="Wrap" Text="Filter supertypes..." Foreground="Gray"
                 GotFocus="TextBox_GotFocus" 
                 LostFocus="TextBox_LostFocus" 
-                TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="175"/>
-            <ListBox x:Name="filterSuperTypesListBox" Margin="11,333,783,288"
+                TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="200" Height="20"/>
+            <ListBox x:Name="filterSuperTypesListBox" Margin="10,333,783,288" Width="200" HorizontalAlignment="Left"
                  ItemsSource="{Binding}"
-                 SelectionMode="Extended">
+                 SelectionMode="Extended" Height="50" VerticalAlignment="Top">
                 <ListBox.Resources>
                     <Style TargetType="ListBoxItem">
                         <Setter Property="SnapsToDevicePixels" Value="true" />
@@ -148,13 +141,13 @@
             <CheckBox x:Name="subTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,404,0,0" VerticalAlignment="Top"
                Checked="AndOrCheckBox_Toggled"
                Unchecked="AndOrCheckBox_Toggled"/>
-            <TextBox x:Name="filterSubTypesTextBox" HorizontalAlignment="Left" Margin="11,430,0,0" TextWrapping="Wrap" Text="Filter subtypes..." Foreground="Gray"
+            <TextBox x:Name="filterSubTypesTextBox" HorizontalAlignment="Left" Margin="10,430,0,0" TextWrapping="Wrap" Text="Filter subtypes..." Foreground="Gray"
                  GotFocus="TextBox_GotFocus" 
                  LostFocus="TextBox_LostFocus" 
-                 TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="175"/>
-            <ListBox x:Name="filterSubTypesListBox" Margin="11,447,783,174"
+                 TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="200" Height="20"/>
+            <ListBox x:Name="filterSubTypesListBox" Margin="10,450,0,0" Width="200" HorizontalAlignment="Left"
                 ItemsSource="{Binding}"
-                SelectionMode="Extended">
+                SelectionMode="Extended" Height="50" VerticalAlignment="Top">
                 <ListBox.Resources>
                     <Style TargetType="{x:Type ListBoxItem}">
                         <Setter Property="SnapsToDevicePixels" Value="true" />
