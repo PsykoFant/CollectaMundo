@@ -288,6 +288,7 @@ namespace CardboardHoarder
         private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)
         {
             ApplyFilter();
+            UpdateFilterLabel();
         }
         private static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
         {
@@ -384,10 +385,17 @@ namespace CardboardHoarder
         private void UpdateFilterLabel()
         {
             var contentParts = new List<string>();
+            var typesContentParts = new List<string>();
 
             if (selectedTypes.Count > 0)
             {
-                contentParts.Add("Card types: " + string.Join(", ", selectedTypes));
+                bool useAndForTypes = CurrentInstance.typesAndOr.IsChecked == true;
+                string conjunction = useAndForTypes ? " AND " : " OR ";
+                typesContentParts.Add("Card types: " + string.Join(conjunction, selectedTypes));
+
+                // Join the typesContentParts list into a single string
+                string typesContent = string.Join(", ", typesContentParts);
+                cardTypeLabel.Content = typesContent;
             }
 
             if (selectedSuperTypes.Count > 0)

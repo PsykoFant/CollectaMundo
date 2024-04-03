@@ -71,8 +71,8 @@
             </ComboBox>
 
             <!--Card type listbox and filtering-->
-            <Label x:Name="cardTypeLabel" Content="Card types" HorizontalAlignment="Left" Margin="11,168,0,0" VerticalAlignment="Top"/>
-            <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="82,175,0,0" VerticalAlignment="Top"
+            <Label x:Name="cardTypeLabel" Content="xxx" HorizontalAlignment="Left" Margin="224,169,0,0" VerticalAlignment="Top" Width="614" Height="30"/>
+            <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="11,148,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>
             <TextBox x:Name="filterTypesTextBox" HorizontalAlignment="Left" Margin="10,200,0,0" TextWrapping="Wrap" Text="Filter card types..." Foreground="Gray"
