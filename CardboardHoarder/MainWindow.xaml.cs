@@ -24,11 +24,13 @@ namespace CardboardHoarder
         private List<string> allTypes = new List<string>();
         private List<string> allSuperTypes = new List<string>();
         private List<string> allSubTypes = new List<string>();
+        private List<string> allKeywords = new List<string>();
 
         // Hashsets to store selected checkbox items in listboxes
         private HashSet<string> selectedTypes = new HashSet<string>();
         private HashSet<string> selectedSuperTypes = new HashSet<string>();
         private HashSet<string> selectedSubTypes = new HashSet<string>();
+        private HashSet<string> selectedKeywords = new HashSet<string>();
 
         public static MainWindow CurrentInstance
         {
@@ -105,6 +107,12 @@ namespace CardboardHoarder
                             selectedItems = selectedSubTypes;
                             placeholderText = "Filter subtypes...";
                             break;
+                        case "filterKeywordsTextBox":
+                            allItems = allKeywords;
+                            targetListBox = filterKeywordsListBox;
+                            selectedItems = selectedKeywords;
+                            placeholderText = "Filter keywords...";
+                            break;
                     }
 
                     if (targetListBox != null && textBox.Text != placeholderText)
@@ -150,6 +158,7 @@ namespace CardboardHoarder
                         "filterTypesTextBox" => "Filter card types...",
                         "filterSuperTypesTextBox" => "Filter supertypes...",
                         "filterSubTypesTextBox" => "Filter subtypes...",
+                        "filterKeywordsTextBox" => "Filter keywords...",
                         _ => ""
                     };
 
@@ -176,6 +185,7 @@ namespace CardboardHoarder
                         "filterTypesTextBox" => "Filter card types...",
                         "filterSuperTypesTextBox" => "Filter supertypes...",
                         "filterSubTypesTextBox" => "Filter subtypes...",
+                        "filterKeywordsTextBox" => "Filter subtypes...",
                         _ => ""
                     };
 
@@ -212,6 +222,7 @@ namespace CardboardHoarder
                             "Type" => selectedTypes,
                             "SuperType" => selectedSuperTypes,
                             "SubType" => selectedSubTypes,
+                            "Keywords" => selectedKeywords,
                             _ => null
                         };
 
@@ -250,6 +261,7 @@ namespace CardboardHoarder
                             "Type" => selectedTypes,
                             "SuperType" => selectedSuperTypes,
                             "SubType" => selectedSubTypes,
+                            "Keywords" => selectedKeywords,
                             _ => null
                         };
 
@@ -281,6 +293,9 @@ namespace CardboardHoarder
                         break;
                     case "SubType":
                         checkBox.IsChecked = selectedSubTypes.Contains(dataContext);
+                        break;
+                    case "Keywords":
+                        checkBox.IsChecked = selectedKeywords.Contains(dataContext);
                         break;
                 }
             }
@@ -333,11 +348,13 @@ namespace CardboardHoarder
             ClearListBoxSelections(filterTypesListBox);
             ClearListBoxSelections(filterSuperTypesListBox);
             ClearListBoxSelections(filterSubTypesListBox);
+            ClearListBoxSelections(filterKeywordsListBox);
 
             // Clear the internal HashSets
             selectedTypes.Clear();
             selectedSuperTypes.Clear();
             selectedSubTypes.Clear();
+            selectedKeywords.Clear();
 
             // Clear listbox searchboxes
             filterTypesTextBox.Text = string.Empty;
@@ -352,15 +369,21 @@ namespace CardboardHoarder
             filterSubTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
             filterSubTypesTextBox.Text = "Filter subtypes...";
 
+            filterKeywordsTextBox.Text = string.Empty;
+            filterKeywordsTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            filterKeywordsTextBox.Text = "Filter keywords...";
+
             // Clear search items labels
             cardTypeLabel.Content = "";
             cardSuperTypesLabel.Content = "";
             cardSubTypeLabel.Content = "";
+            cardKeywordsLabel.Content = "";
 
             // Uncheck CheckBoxes if necessary
             typesAndOr.IsChecked = false;
             superTypesAndOr.IsChecked = false;
             subTypesAndOr.IsChecked = false;
+            keywordsAndOr.IsChecked = false;
 
             // Update filter label and apply filters to refresh the DataGrid
             UpdateFilterLabel();
@@ -389,6 +412,7 @@ namespace CardboardHoarder
             UpdateLabelContent(selectedTypes, cardTypeLabel, CurrentInstance.typesAndOr.IsChecked ?? false, "Card types");
             UpdateLabelContent(selectedSuperTypes, cardSuperTypesLabel, CurrentInstance.superTypesAndOr.IsChecked ?? false, "Card supertypes");
             UpdateLabelContent(selectedSubTypes, cardSubTypeLabel, CurrentInstance.subTypesAndOr.IsChecked ?? false, "Card subtypes");
+            UpdateLabelContent(selectedKeywords, cardKeywordsLabel, CurrentInstance.keywordsAndOr.IsChecked ?? false, "Keywords");
         }
         private void UpdateLabelContent(HashSet<string> selectedItems, Label targetLabel, bool useAnd, string prefix)
         {
@@ -407,10 +431,11 @@ namespace CardboardHoarder
         {
             try
             {
+                var filteredItems = items.AsEnumerable();
+
+                // Card name and set combobox filtering
                 string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
                 string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
-
-                var filteredItems = items.AsEnumerable();
 
                 if (!string.IsNullOrEmpty(cardFilter))
                 {
@@ -421,10 +446,11 @@ namespace CardboardHoarder
                     filteredItems = filteredItems.Where(item => item.SetName.Contains(setFilter));
                 }
 
-                // Refactored filtering logic
+                // Listbox filter selections
                 filteredItems = FilterByCriteria(filteredItems, selectedTypes, CurrentInstance.typesAndOr.IsChecked ?? false, item => item.Types);
                 filteredItems = FilterByCriteria(filteredItems, selectedSuperTypes, CurrentInstance.superTypesAndOr.IsChecked ?? false, item => item.SuperTypes);
                 filteredItems = FilterByCriteria(filteredItems, selectedSubTypes, CurrentInstance.subTypesAndOr.IsChecked ?? false, item => item.SubTypes);
+                filteredItems = FilterByCriteria(filteredItems, selectedKeywords, CurrentInstance.keywordsAndOr.IsChecked ?? false, item => item.Keywords);
 
                 var finalFilteredItems = filteredItems.ToList();
                 cardCountLabel.Content = $"Cards shown: {finalFilteredItems.Count}";
@@ -437,31 +463,27 @@ namespace CardboardHoarder
         }
         private IEnumerable<CardSet> FilterByCriteria(IEnumerable<CardSet> items, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector)
         {
+            if (items == null)
+            {
+                return Enumerable.Empty<CardSet>();
+            }
+
+            if (selectedCriteria == null || selectedCriteria.Count == 0)
+            {
+                return items;
+            }
+
             try
             {
-                if (selectedCriteria.Count == 0)
-                {
-                    return items;
-                }
-
                 return items.Where(item =>
                 {
-                    try
-                    {
-                        var criteria = propertySelector(item).Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                        return useAnd ? selectedCriteria.All(c => criteria.Contains(c)) : selectedCriteria.Any(c => criteria.Contains(c));
-                    }
-                    catch (Exception innerEx)
-                    {
-                        Debug.WriteLine($"Error while filtering an item: {innerEx.Message}");
-                        return false;
-                    }
+                    var criteria = propertySelector(item)?.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+                    return useAnd ? selectedCriteria.All(st => criteria.Contains(st)) : selectedCriteria.Any(st => criteria.Contains(st));
                 });
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error while executing FilterByCriteria: {ex.Message}");
-                // Returning an empty enumerable as a fallback.
+                Debug.WriteLine($"Error while filtering items: {ex.Message}");
                 return Enumerable.Empty<CardSet>();
             }
         }
@@ -489,8 +511,7 @@ namespace CardboardHoarder
                     "FROM cards c " +
                     "JOIN sets s ON c.setCode = s.code " +
                     "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
-                    "LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost " +
-                    "WHERE c.availability LIKE '%paper%'";
+                    "LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost";
 
                 using var command = new SQLiteCommand(query, DBAccess.connection);
 
@@ -541,6 +562,7 @@ namespace CardboardHoarder
                 var types = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "types");
                 var superTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "supertypes");
                 var subTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "subtypes");
+                var keywords = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "keywords");
 
                 // Set up elements in card type listbox
                 allTypes.Clear();
@@ -566,6 +588,14 @@ namespace CardboardHoarder
                 }
                 allSubTypes = allSubTypes.Distinct().OrderBy(type => type).ToList();
 
+                // Set up elements in keywords listbox
+                allKeywords.Clear();
+                foreach (var keyword in keywords)
+                {
+                    allKeywords.AddRange(keyword.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+                }
+                allKeywords = allKeywords.Distinct().OrderBy(keyword => keyword).ToList();
+
                 Dispatcher.Invoke(() =>
                 {
                     filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
@@ -573,6 +603,7 @@ namespace CardboardHoarder
                     filterTypesListBox.ItemsSource = allTypes;
                     filterSuperTypesListBox.ItemsSource = allSuperTypes;
                     filterSubTypesListBox.ItemsSource = allSubTypes;
+                    filterKeywordsListBox.ItemsSource = allKeywords;
                 });
             }
             catch (Exception ex)
