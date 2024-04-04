@@ -50,6 +50,7 @@
                     <DataGridTextColumn Header="Card Supertypes" Visibility="Collapsed" Binding="{Binding SuperTypes}" />
                     <DataGridTextColumn Header="Card Subtypes" Visibility="Collapsed" Binding="{Binding SubTypes}" />
                     <DataGridTextColumn Header="Card type" Binding="{Binding Type}" />
+                    <DataGridTextColumn Header="Keywords" Binding="{Binding Keywords}" />
 
                 </DataGrid.Columns>
             </DataGrid>

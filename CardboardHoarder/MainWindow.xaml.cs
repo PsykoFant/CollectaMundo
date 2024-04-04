@@ -357,8 +357,6 @@ namespace CardboardHoarder
             cardSuperTypesLabel.Content = "";
             cardSubTypeLabel.Content = "";
 
-
-
             // Uncheck CheckBoxes if necessary
             typesAndOr.IsChecked = false;
             superTypesAndOr.IsChecked = false;
@@ -437,17 +435,37 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
             }
         }
-
-        private IEnumerable<ItemType> FilterByCriteria(IEnumerable<ItemType> items, HashSet<string> selectedCriteria, bool useAnd, Func<ItemType, string> propertySelector)
+        private IEnumerable<CardSet> FilterByCriteria(IEnumerable<CardSet> items, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector)
         {
-            if (selectedCriteria.Count == 0) return items;
-
-            return items.Where(item =>
+            try
             {
-                var criteria = propertySelector(item).Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                return useAnd ? selectedCriteria.All(c => criteria.Contains(c)) : selectedCriteria.Any(c => criteria.Contains(c));
-            });
+                if (selectedCriteria.Count == 0)
+                {
+                    return items;
+                }
+
+                return items.Where(item =>
+                {
+                    try
+                    {
+                        var criteria = propertySelector(item).Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        return useAnd ? selectedCriteria.All(c => criteria.Contains(c)) : selectedCriteria.Any(c => criteria.Contains(c));
+                    }
+                    catch (Exception innerEx)
+                    {
+                        Debug.WriteLine($"Error while filtering an item: {innerEx.Message}");
+                        return false;
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while executing FilterByCriteria: {ex.Message}");
+                // Returning an empty enumerable as a fallback.
+                return Enumerable.Empty<CardSet>();
+            }
         }
+
 
         #endregion
 
@@ -466,7 +484,8 @@ namespace CardboardHoarder
                     "c.types AS Types, " +
                     "c.supertypes AS SuperTypes, " +
                     "c.subtypes AS SubTypes, " +
-                    "c.type AS Type " +
+                    "c.type AS Type, " +
+                    "c.keywords AS Keywords " +
                     "FROM cards c " +
                     "JOIN sets s ON c.setCode = s.code " +
                     "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
@@ -496,6 +515,7 @@ namespace CardboardHoarder
                         SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty,
                         SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty,
                         Type = reader["Type"]?.ToString() ?? string.Empty,
+                        Keywords = reader["Keywords"]?.ToString() ?? string.Empty,
                     });
                 }
 
