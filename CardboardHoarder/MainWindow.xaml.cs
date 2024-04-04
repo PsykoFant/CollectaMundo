@@ -388,35 +388,21 @@ namespace CardboardHoarder
         #region Apply filtering
         private void UpdateFilterLabel()
         {
-            var typesContentParts = new List<string>();
-            var superTypesContentParts = new List<string>();
-            var subTypesContentParts = new List<string>();
-
-            if (selectedTypes.Count > 0)
+            UpdateLabelContent(selectedTypes, cardTypeLabel, CurrentInstance.typesAndOr.IsChecked ?? false, "Card types");
+            UpdateLabelContent(selectedSuperTypes, cardSuperTypesLabel, CurrentInstance.superTypesAndOr.IsChecked ?? false, "Card supertypes");
+            UpdateLabelContent(selectedSubTypes, cardSubTypeLabel, CurrentInstance.subTypesAndOr.IsChecked ?? false, "Card subtypes");
+        }
+        private void UpdateLabelContent(HashSet<string> selectedItems, Label targetLabel, bool useAnd, string prefix)
+        {
+            if (selectedItems.Count > 0)
             {
-                bool useAndForTypes = CurrentInstance.typesAndOr.IsChecked == true;
-                string conjunction = useAndForTypes ? " AND " : " OR ";
-                typesContentParts.Add("Card types: " + string.Join(conjunction, selectedTypes));
-                string typesContent = string.Join(", ", typesContentParts);
-                cardTypeLabel.Content = typesContent;
+                string conjunction = useAnd ? " AND " : " OR ";
+                string content = $"{prefix}: {string.Join(conjunction, selectedItems)}";
+                targetLabel.Content = content;
             }
-
-            if (selectedSuperTypes.Count > 0)
+            else
             {
-                bool useAndForSuperTypes = CurrentInstance.superTypesAndOr.IsChecked == true;
-                string conjunction = useAndForSuperTypes ? " AND " : " OR ";
-                superTypesContentParts.Add("Card types: " + string.Join(conjunction, selectedSuperTypes));
-                string superTypesContent = string.Join(", ", superTypesContentParts);
-                cardSuperTypesLabel.Content = superTypesContent;
-            }
-
-            if (selectedSubTypes.Count > 0)
-            {
-                bool useAndForSubTypes = CurrentInstance.subTypesAndOr.IsChecked == true;
-                string conjunction = useAndForSubTypes ? " AND " : " OR ";
-                subTypesContentParts.Add("Card types: " + string.Join(conjunction, selectedSubTypes));
-                string subTypesContent = string.Join(", ", subTypesContentParts);
-                cardSubTypeLabel.Content = subTypesContent;
+                targetLabel.Content = "";
             }
         }
         private void ApplyFilter()
@@ -437,37 +423,10 @@ namespace CardboardHoarder
                     filteredItems = filteredItems.Where(item => item.SetName.Contains(setFilter));
                 }
 
-                if (selectedTypes.Count > 0)
-                {
-                    bool useAndForTypes = CurrentInstance.typesAndOr.IsChecked == true;
-                    filteredItems = filteredItems.Where(item =>
-                    {
-                        var itemTypes = item.Types.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                        return useAndForTypes
-                            ? selectedTypes.All(selectedType => itemTypes.Contains(selectedType))
-                            : selectedTypes.Any(selectedType => itemTypes.Contains(selectedType));
-                    });
-                }
-
-                if (selectedSuperTypes.Count > 0)
-                {
-                    bool useAndForSuperTypes = CurrentInstance.superTypesAndOr.IsChecked == true;
-                    filteredItems = filteredItems.Where(item =>
-                        useAndForSuperTypes
-                        ? selectedSuperTypes.All(st => item.SuperTypes.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Contains(st))
-                        : selectedSuperTypes.Any(st => item.SuperTypes.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Contains(st))
-                    );
-                }
-
-                if (selectedSubTypes.Count > 0)
-                {
-                    bool useAndForSubTypes = CurrentInstance.subTypesAndOr.IsChecked == true;
-                    filteredItems = filteredItems.Where(item =>
-                        useAndForSubTypes
-                        ? selectedSubTypes.All(st => item.SubTypes.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Contains(st))
-                        : selectedSubTypes.Any(st => item.SubTypes.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).Contains(st))
-                    );
-                }
+                // Refactored filtering logic
+                filteredItems = FilterByCriteria(filteredItems, selectedTypes, CurrentInstance.typesAndOr.IsChecked ?? false, item => item.Types);
+                filteredItems = FilterByCriteria(filteredItems, selectedSuperTypes, CurrentInstance.superTypesAndOr.IsChecked ?? false, item => item.SuperTypes);
+                filteredItems = FilterByCriteria(filteredItems, selectedSubTypes, CurrentInstance.subTypesAndOr.IsChecked ?? false, item => item.SubTypes);
 
                 var finalFilteredItems = filteredItems.ToList();
                 cardCountLabel.Content = $"Cards shown: {finalFilteredItems.Count}";
@@ -478,6 +437,18 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
             }
         }
+
+        private IEnumerable<ItemType> FilterByCriteria(IEnumerable<ItemType> items, HashSet<string> selectedCriteria, bool useAnd, Func<ItemType, string> propertySelector)
+        {
+            if (selectedCriteria.Count == 0) return items;
+
+            return items.Where(item =>
+            {
+                var criteria = propertySelector(item).Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                return useAnd ? selectedCriteria.All(c => criteria.Contains(c)) : selectedCriteria.Any(c => criteria.Contains(c));
+            });
+        }
+
         #endregion
 
         #region Load data and populate UI elements
