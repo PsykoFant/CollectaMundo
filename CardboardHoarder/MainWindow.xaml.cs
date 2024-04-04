@@ -352,6 +352,10 @@ namespace CardboardHoarder
             filterSubTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
             filterSubTypesTextBox.Text = "Filter subtypes...";
 
+            // Clear search items labels
+            cardTypeLabel.Content = "";
+            cardSuperTypesLabel.Content = "";
+            cardSubTypeLabel.Content = "";
 
 
 
@@ -384,31 +388,36 @@ namespace CardboardHoarder
         #region Apply filtering
         private void UpdateFilterLabel()
         {
-            var contentParts = new List<string>();
             var typesContentParts = new List<string>();
+            var superTypesContentParts = new List<string>();
+            var subTypesContentParts = new List<string>();
 
             if (selectedTypes.Count > 0)
             {
                 bool useAndForTypes = CurrentInstance.typesAndOr.IsChecked == true;
                 string conjunction = useAndForTypes ? " AND " : " OR ";
                 typesContentParts.Add("Card types: " + string.Join(conjunction, selectedTypes));
-
-                // Join the typesContentParts list into a single string
                 string typesContent = string.Join(", ", typesContentParts);
                 cardTypeLabel.Content = typesContent;
             }
 
             if (selectedSuperTypes.Count > 0)
             {
-                contentParts.Add("Supertypes: " + string.Join(", ", selectedSuperTypes));
+                bool useAndForSuperTypes = CurrentInstance.superTypesAndOr.IsChecked == true;
+                string conjunction = useAndForSuperTypes ? " AND " : " OR ";
+                superTypesContentParts.Add("Card types: " + string.Join(conjunction, selectedSuperTypes));
+                string superTypesContent = string.Join(", ", superTypesContentParts);
+                cardSuperTypesLabel.Content = superTypesContent;
             }
 
             if (selectedSubTypes.Count > 0)
             {
-                contentParts.Add("Subtypes: " + string.Join(", ", selectedSubTypes));
+                bool useAndForSubTypes = CurrentInstance.subTypesAndOr.IsChecked == true;
+                string conjunction = useAndForSubTypes ? " AND " : " OR ";
+                subTypesContentParts.Add("Card types: " + string.Join(conjunction, selectedSubTypes));
+                string subTypesContent = string.Join(", ", subTypesContentParts);
+                cardSubTypeLabel.Content = subTypesContent;
             }
-
-            filterLabel.Content = contentParts.Count > 0 ? string.Join(" - ", contentParts) : "";
         }
         private void ApplyFilter()
         {
