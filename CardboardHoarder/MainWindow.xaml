@@ -16,12 +16,12 @@
             <Label x:Name="statusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top" Width="738" d:IsHidden="True"/>
 
         </Grid>
-        <Grid x:Name="GridSearchAndFilter" Margin="0,48,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Height="800">
+        <Grid x:Name="GridSearchAndFilter" Margin="0,48,0,0" VerticalAlignment="Top" HorizontalAlignment="Left">
             <Image x:Name="iconTester" HorizontalAlignment="Left" Height="44" Margin="843,42,0,0" VerticalAlignment="Top" Width="59"/>
             <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Left" Margin="369,0,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
 
             <!--The main card view datagrid-->
-            <DataGrid x:Name="mainCardWindowDatagrid" Margin="224,205,0,10"
+            <DataGrid x:Name="mainCardWindowDatagrid" Margin="272,205,0,10"
                       AutoGenerateColumns="False"
                       Width="{Binding ActualWidth, ElementName=ParentGrid}"
                       ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" CanUserAddRows="False">
@@ -51,6 +51,7 @@
                     <DataGridTextColumn Header="Card Subtypes" Visibility="Collapsed" Binding="{Binding SubTypes}" />
                     <DataGridTextColumn Header="Card type" Binding="{Binding Type}" />
                     <DataGridTextColumn Header="Keywords" Binding="{Binding Keywords}" />
+                    <DataGridTextColumn Header="Rules Text" Binding="{Binding Text}" />
 
                 </DataGrid.Columns>
             </DataGrid>
@@ -72,15 +73,15 @@
             </ComboBox>
 
             <!--Card type listbox and filtering-->
-            <Label x:Name="cardTypeLabel" Content="" HorizontalAlignment="Left" Margin="224,80,0,0" VerticalAlignment="Top" Width="619" Height="30"/>
+            <Label x:Name="cardTypeLabel" Content="" HorizontalAlignment="Left" Margin="274,80,0,0" VerticalAlignment="Top" Width="620" Height="30"/>
             <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,180,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>
             <TextBox x:Name="filterTypesTextBox" HorizontalAlignment="Left" Margin="10,200,0,0" TextWrapping="Wrap" Text="Filter card types..." Foreground="Gray"
                 GotFocus="TextBox_GotFocus" 
                 LostFocus="TextBox_LostFocus" 
-                TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="200" Height="20"/>
-            <ListBox x:Name="filterTypesListBox" Margin="10,219,0,0" Width="200" HorizontalAlignment="Left"
+                TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="257" Height="20"/>
+            <ListBox x:Name="filterTypesListBox" Margin="10,219,0,0" Width="257" HorizontalAlignment="Left"
                 ItemsSource="{Binding}"
                 SelectionMode="Extended" Height="50" VerticalAlignment="Top">
                 <ListBox.Resources>
@@ -105,15 +106,15 @@
             </ListBox>
 
             <!--Supertype listbox and filtering-->
-            <Label x:Name="cardSuperTypesLabel" Content="" HorizontalAlignment="Left" Margin="224,110,0,0" VerticalAlignment="Top" Width="619" Height="30"/>
+            <Label x:Name="cardSuperTypesLabel" Content="" HorizontalAlignment="Left" Margin="274,110,0,0" VerticalAlignment="Top" Width="620" Height="30"/>
             <CheckBox x:Name="superTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,293,0,0" VerticalAlignment="Top"
                Checked="AndOrCheckBox_Toggled"
                Unchecked="AndOrCheckBox_Toggled"/>
             <TextBox x:Name="filterSuperTypesTextBox" HorizontalAlignment="Left" Margin="10,313,0,0" TextWrapping="Wrap" Text="Filter supertypes..." Foreground="Gray"
                 GotFocus="TextBox_GotFocus" 
                 LostFocus="TextBox_LostFocus" 
-                TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="200" Height="20"/>
-            <ListBox x:Name="filterSuperTypesListBox" Margin="10,332,0,0" Width="200" HorizontalAlignment="Left"
+                TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="257" Height="20"/>
+            <ListBox x:Name="filterSuperTypesListBox" Margin="10,332,0,0" Width="257" HorizontalAlignment="Left"
                  ItemsSource="{Binding}"
                  SelectionMode="Extended" Height="50" VerticalAlignment="Top">
                 <ListBox.Resources>
@@ -138,15 +139,15 @@
             </ListBox>
 
             <!--Subtype listbox and filtering-->
-            <Label x:Name="cardSubTypeLabel" Content="" HorizontalAlignment="Left" Margin="224,140,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="619" Height="30"/>
+            <Label x:Name="cardSubTypeLabel" Content="" HorizontalAlignment="Left" Margin="274,140,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="620" Height="30"/>
             <CheckBox x:Name="subTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,410,0,0" VerticalAlignment="Top"
                Checked="AndOrCheckBox_Toggled"
                Unchecked="AndOrCheckBox_Toggled"/>
             <TextBox x:Name="filterSubTypesTextBox" HorizontalAlignment="Left" Margin="10,430,0,0" TextWrapping="Wrap" Text="Filter subtypes..." Foreground="Gray"
                  GotFocus="TextBox_GotFocus" 
                  LostFocus="TextBox_LostFocus" 
-                 TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="200" Height="20"/>
-            <ListBox x:Name="filterSubTypesListBox" Margin="10,449,0,0" Width="200" HorizontalAlignment="Left"
+                 TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="257" Height="20"/>
+            <ListBox x:Name="filterSubTypesListBox" Margin="10,449,0,0" Width="257" HorizontalAlignment="Left"
                 ItemsSource="{Binding}"
                 SelectionMode="Extended" Height="50" VerticalAlignment="Top">
                 <ListBox.Resources>
@@ -171,15 +172,15 @@
             </ListBox>
 
             <!--Keywords listbox and filtering-->
-            <Label x:Name="cardKeywordsLabel" Content="" HorizontalAlignment="Left" Margin="224,170,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="619" Height="30"/>
+            <Label x:Name="cardKeywordsLabel" Content="" HorizontalAlignment="Left" Margin="274,170,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="620" Height="30"/>
             <CheckBox x:Name="keywordsAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,526,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>
             <TextBox x:Name="filterKeywordsTextBox" HorizontalAlignment="Left" Margin="10,546,0,0" TextWrapping="Wrap" Text="Filter keywords..." Foreground="Gray"
                 GotFocus="TextBox_GotFocus" 
                 LostFocus="TextBox_LostFocus" 
-                TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="200" Height="20"/>
-            <ListBox x:Name="filterKeywordsListBox" Margin="10,565,0,0" Width="200" HorizontalAlignment="Left"
+                TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="257" Height="20"/>
+            <ListBox x:Name="filterKeywordsListBox" Margin="10,565,0,0" Width="257" HorizontalAlignment="Left"
                 ItemsSource="{Binding}"
                 SelectionMode="Extended" Height="50" VerticalAlignment="Top">
                 <ListBox.Resources>
@@ -205,7 +206,7 @@
 
             <Label x:Name="cardCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="116" Height="30"/>
             <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="11,651,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
-            
+
 
 
         </Grid>

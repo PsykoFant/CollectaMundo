@@ -82,7 +82,7 @@ namespace CardboardHoarder
                 if (sender is TextBox textBox)
                 {
                     List<string> allItems = new List<string>();
-                    ListBox targetListBox = null;
+                    ListBox? targetListBox = null;
                     HashSet<string> selectedItems = new HashSet<string>();
                     string placeholderText = string.Empty;
 
@@ -439,11 +439,11 @@ namespace CardboardHoarder
 
                 if (!string.IsNullOrEmpty(cardFilter))
                 {
-                    filteredItems = filteredItems.Where(item => item.Name.Contains(cardFilter));
+                    filteredItems = filteredItems.Where(item => item.Name != null && item.Name.Contains(cardFilter));
                 }
                 if (!string.IsNullOrEmpty(setFilter))
                 {
-                    filteredItems = filteredItems.Where(item => item.SetName.Contains(setFilter));
+                    filteredItems = filteredItems.Where(item => item.SetName != null && item.SetName.Contains(setFilter));
                 }
 
                 // Listbox filter selections
@@ -463,21 +463,19 @@ namespace CardboardHoarder
         }
         private IEnumerable<CardSet> FilterByCriteria(IEnumerable<CardSet> items, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector)
         {
-            if (items == null)
-            {
-                return Enumerable.Empty<CardSet>();
-            }
-
-            if (selectedCriteria == null || selectedCriteria.Count == 0)
-            {
-                return items;
-            }
+            if (items == null) return Enumerable.Empty<CardSet>();
+            if (selectedCriteria == null || selectedCriteria.Count == 0) return items;
 
             try
             {
                 return items.Where(item =>
                 {
-                    var criteria = propertySelector(item)?.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+                    // Split only by comma and trim spaces
+                    var criteria = propertySelector(item)?
+                        .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => s.Trim()) ?? Array.Empty<string>();
+
+                    // Check if all or any of the selected criteria are present in the item's criteria
                     return useAnd ? selectedCriteria.All(st => criteria.Contains(st)) : selectedCriteria.Any(st => criteria.Contains(st));
                 });
             }
@@ -487,6 +485,7 @@ namespace CardboardHoarder
                 return Enumerable.Empty<CardSet>();
             }
         }
+
 
 
         #endregion
@@ -507,7 +506,8 @@ namespace CardboardHoarder
                     "c.supertypes AS SuperTypes, " +
                     "c.subtypes AS SubTypes, " +
                     "c.type AS Type, " +
-                    "c.keywords AS Keywords " +
+                    "c.keywords AS Keywords, " +
+                    "c.text AS RulesText " +
                     "FROM cards c " +
                     "JOIN sets s ON c.setCode = s.code " +
                     "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
@@ -537,6 +537,7 @@ namespace CardboardHoarder
                         SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty,
                         Type = reader["Type"]?.ToString() ?? string.Empty,
                         Keywords = reader["Keywords"]?.ToString() ?? string.Empty,
+                        Text = reader["RulesText"]?.ToString() ?? string.Empty,
                     });
                 }
 
