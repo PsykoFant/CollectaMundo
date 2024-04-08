@@ -16,14 +16,13 @@
             <Label x:Name="statusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top" Width="738" d:IsHidden="True"/>
 
         </Grid>
-        <Grid x:Name="GridSearchAndFilter" Margin="0,48,0,0" VerticalAlignment="Top" HorizontalAlignment="Left">
+        <Grid x:Name="GridSearchAndFilter" Margin="0,48,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Height="756">
             <Image x:Name="iconTester" HorizontalAlignment="Left" Height="44" Margin="843,42,0,0" VerticalAlignment="Top" Width="59"/>
             <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Left" Margin="369,0,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
 
             <!--The main card view datagrid-->
             <DataGrid x:Name="mainCardWindowDatagrid" Margin="272,205,0,0"
-                      AutoGenerateColumns="False"
-                      Width="{Binding ActualWidth, ElementName=ParentGrid}"
+                      AutoGenerateColumns="False"                      
                       ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" CanUserAddRows="False">
                 <DataGrid.CellStyle>
                     <Style/>
@@ -38,7 +37,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Mana Cost" Binding="{Binding ManaCost}" />
+                    <DataGridTextColumn Header="Mana Cost text" Binding="{Binding ManaCost}" />
                     <DataGridTemplateColumn Header="Mana Cost">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -213,14 +212,17 @@
             </ListBox>
 
             <Label x:Name="cardCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="116" Height="30"/>
-            <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="180,655,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
+            <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="180,697,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
 
-            <CheckBox x:Name="colorsAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="155,562,0,0" VerticalAlignment="Top"
+            <CheckBox x:Name="colorsAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="145,562,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>
-            <ListBox x:Name="filterColorsListBox" Margin="10,562,0,0" Width="140" HorizontalAlignment="Left"
-            ItemsSource="{Binding}"
-            SelectionMode="Extended" Height="133" VerticalAlignment="Top" BorderBrush="White">
+            <CheckBox x:Name="colorsNone" Content="Must contain none" HorizontalAlignment="Left" Margin="145,581,0,0" VerticalAlignment="Top"
+                Checked="AndOrCheckBox_Toggled"
+                Unchecked="AndOrCheckBox_Toggled"/>
+            <ListBox x:Name="filterColorsListBox" Margin="10,562,0,0" Width="130" HorizontalAlignment="Left"
+                ItemsSource="{Binding}"
+                SelectionMode="Extended" Height="155" VerticalAlignment="Top" BorderBrush="White">
                 <ListBox.Resources>
                     <Style TargetType="{x:Type ListBoxItem}">
                         <Setter Property="SnapsToDevicePixels" Value="true" />
@@ -241,7 +243,8 @@
                     </Style>
                 </ListBox.Resources>
             </ListBox>
-            
+
+
 
 
 

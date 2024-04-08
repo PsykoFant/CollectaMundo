@@ -18,7 +18,7 @@ namespace CardboardHoarder
         // Used by ShowOrHideStatusWindow to reference MainWindow
         private static MainWindow? _currentInstance;
         private ICollectionView? dataView;
-        private List<CardSet> items = new List<CardSet>();
+        private List<CardSet> cards = new List<CardSet>();
 
         // Lists for populating listboxes
         private List<string> allColors = new List<string>();
@@ -232,6 +232,7 @@ namespace CardboardHoarder
                 }
 
                 var checkBox = FindVisualChild<CheckBox>(dependencyObject);
+
                 if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
                 {
                     var label = contentPresenter.Content as string;
@@ -251,7 +252,7 @@ namespace CardboardHoarder
                         {
                             targetCollection.Add(label);
                             UpdateFilterLabel();
-                            ApplyFilter(); // Trigger filtering
+                            ApplyFilter();
                         }
                     }
                 }
@@ -421,6 +422,7 @@ namespace CardboardHoarder
             superTypesAndOr.IsChecked = false;
             subTypesAndOr.IsChecked = false;
             keywordsAndOr.IsChecked = false;
+            colorsAndOr.IsChecked = false;
 
             // Update filter label and apply filters to refresh the DataGrid
             UpdateFilterLabel();
@@ -473,7 +475,7 @@ namespace CardboardHoarder
         {
             try
             {
-                var filteredItems = items.AsEnumerable();
+                var filteredItems = cards.AsEnumerable();
 
                 // Card name and set combobox filtering
                 string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
@@ -482,23 +484,26 @@ namespace CardboardHoarder
 
                 if (!string.IsNullOrEmpty(cardFilter))
                 {
-                    filteredItems = filteredItems.Where(item => item.Name != null && item.Name.Contains(cardFilter));
+                    filteredItems = filteredItems.Where(card => card.Name != null && card.Name.Contains(cardFilter));
                 }
                 if (!string.IsNullOrEmpty(setFilter))
                 {
-                    filteredItems = filteredItems.Where(item => item.SetName != null && item.SetName.Contains(setFilter));
+                    filteredItems = filteredItems.Where(card => card.SetName != null && card.SetName.Contains(setFilter));
                 }
                 if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != rulesTextDefaultText)
                 {
-                    filteredItems = filteredItems.Where(item => item.Text != null && item.Text.Contains(rulesTextFilter));
+                    filteredItems = filteredItems.Where(card => card.Text != null && card.Text.Contains(rulesTextFilter));
                 }
 
+                // Special handling for ManaCost based on colorsNone.IsChecked
+                bool excludeColors = CurrentInstance.colorsNone.IsChecked ?? false;
+                filteredItems = FilterByCriteria(filteredItems, selectedColors, CurrentInstance.colorsAndOr.IsChecked ?? false, item => item.ManaCost, excludeColors);
+
                 // Listbox filter selections
-                filteredItems = FilterByCriteria(filteredItems, selectedTypes, CurrentInstance.typesAndOr.IsChecked ?? false, item => item.Types);
-                filteredItems = FilterByCriteria(filteredItems, selectedSuperTypes, CurrentInstance.superTypesAndOr.IsChecked ?? false, item => item.SuperTypes);
-                filteredItems = FilterByCriteria(filteredItems, selectedSubTypes, CurrentInstance.subTypesAndOr.IsChecked ?? false, item => item.SubTypes);
-                filteredItems = FilterByCriteria(filteredItems, selectedKeywords, CurrentInstance.keywordsAndOr.IsChecked ?? false, item => item.Keywords);
-                filteredItems = FilterByCriteria(filteredItems, selectedColors, CurrentInstance.colorsAndOr.IsChecked ?? false, item => item.ManaCost);
+                filteredItems = FilterByCriteria(filteredItems, selectedTypes, CurrentInstance.typesAndOr.IsChecked ?? false, card => card.Types);
+                filteredItems = FilterByCriteria(filteredItems, selectedSuperTypes, CurrentInstance.superTypesAndOr.IsChecked ?? false, card => card.SuperTypes);
+                filteredItems = FilterByCriteria(filteredItems, selectedSubTypes, CurrentInstance.subTypesAndOr.IsChecked ?? false, card => card.SubTypes);
+                filteredItems = FilterByCriteria(filteredItems, selectedKeywords, CurrentInstance.keywordsAndOr.IsChecked ?? false, card => card.Keywords);
 
                 var finalFilteredItems = filteredItems.ToList();
                 cardCountLabel.Content = $"Cards shown: {finalFilteredItems.Count}";
@@ -509,30 +514,29 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
             }
         }
-        private IEnumerable<CardSet> FilterByCriteria(IEnumerable<CardSet> items, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector)
+        private IEnumerable<CardSet> FilterByCriteria(IEnumerable<CardSet> cards, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector, bool exclude = false)
         {
-            if (items == null) return Enumerable.Empty<CardSet>();
-            if (selectedCriteria == null || selectedCriteria.Count == 0) return items;
+            if (cards == null) return Enumerable.Empty<CardSet>();
+            if (selectedCriteria == null || selectedCriteria.Count == 0) return cards;
 
             try
             {
-                return items.Where(item =>
+                return cards.Where(card =>
                 {
-                    // Split only by comma and trim spaces
-                    var criteria = propertySelector(item)?
-                        .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                        .Select(s => s.Trim()) ?? Array.Empty<string>();
+                    var propertyValue = propertySelector(card);
+                    var criteria = propertyValue.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
 
-                    // Check if all or any of the selected criteria are present in the item's criteria
-                    return useAnd ? selectedCriteria.All(st => criteria.Contains(st)) : selectedCriteria.Any(st => criteria.Contains(st));
+                    bool match = useAnd ? selectedCriteria.All(c => criteria.Contains(c)) : selectedCriteria.Any(c => criteria.Contains(c));
+                    return exclude ? !match : match;
                 });
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error while filtering items: {ex.Message}");
+                Debug.WriteLine($"Error while filtering cards: {ex.Message}");
                 return Enumerable.Empty<CardSet>();
             }
         }
+
         #endregion
 
         #region Load data and populate UI elements
@@ -559,8 +563,8 @@ namespace CardboardHoarder
                     "LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost";
 
                 using var command = new SQLiteCommand(query, DBAccess.connection);
-
                 using var reader = await command.ExecuteReaderAsync();
+
                 while (await reader.ReadAsync())
                 {
                     var keyruneImage = reader["KeyRuneImage"] as byte[];
@@ -569,13 +573,15 @@ namespace CardboardHoarder
                     var manaCostImage = reader["ManaCostImage"] as byte[];
                     BitmapImage? manaCostImageSource = manaCostImage != null ? ConvertByteArrayToBitmapImage(manaCostImage) : null;
 
+                    var manaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
+                    var manaCostProcessed = string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
 
-                    items.Add(new CardSet
+                    cards.Add(new CardSet
                     {
                         Name = reader["Name"]?.ToString() ?? string.Empty,
                         SetName = reader["SetName"]?.ToString() ?? string.Empty,
                         SetIcon = setIconImageSource,
-                        ManaCost = reader["ManaCost"]?.ToString() ?? string.Empty,
+                        ManaCost = manaCostProcessed,
                         ManaCostImage = manaCostImageSource,
                         Types = reader["Types"]?.ToString() ?? string.Empty,
                         SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty,
@@ -588,9 +594,9 @@ namespace CardboardHoarder
 
                 Dispatcher.Invoke(() =>
                 {
-                    cardCountLabel.Content = $"Cards shown: {items.Count}";
-                    mainCardWindowDatagrid.ItemsSource = items;
-                    dataView = CollectionViewSource.GetDefaultView(items);
+                    cardCountLabel.Content = $"Cards shown: {cards.Count}";
+                    mainCardWindowDatagrid.ItemsSource = cards;
+                    dataView = CollectionViewSource.GetDefaultView(cards);
                 });
             }
             catch (Exception ex)
@@ -610,7 +616,7 @@ namespace CardboardHoarder
                 var subTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "subtypes");
                 var keywords = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "keywords");
 
-                allColors.AddRange(new[] { "W", "U", "B", "R", "G", "C" });
+                allColors.AddRange(new[] { "W", "U", "B", "R", "G", "C", "X" });
 
                 // Set up elements in card type listbox
                 allTypes.Clear();
