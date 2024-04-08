@@ -14,7 +14,8 @@ namespace CardboardHoarder
         public List<string>? CardParts { get; set; }
         public List<string>? ColorIdentity { get; set; }
         public List<string>? ColorIndicator { get; set; }
-        public List<string>? Colors { get; set; }
+        //public List<string>? Colors { get; set; }
+        public string? Colors { get; set; }
         public double? ConvertedManaCost { get; set; }
         public string? Defense { get; set; }
         public string? DuelDeck { get; set; }
