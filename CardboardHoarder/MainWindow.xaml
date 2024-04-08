@@ -37,7 +37,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Mana Cost text" Binding="{Binding ManaCost}" />
+                    <DataGridTextColumn Header="Mana Cost text" Visibility="Collapsed" Binding="{Binding ManaCost}" />
                     <DataGridTemplateColumn Header="Mana Cost">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -50,7 +50,7 @@
                     <DataGridTextColumn Header="Card Subtypes" Visibility="Collapsed" Binding="{Binding SubTypes}" />
                     <DataGridTextColumn Header="Card type" Binding="{Binding Type}" />
                     <DataGridTextColumn Header="Keywords" Binding="{Binding Keywords}" />
-                    <DataGridTextColumn Header="Rules Text" Binding="{Binding Text}" />
+                    <DataGridTextColumn Header="Rules Text" Visibility="Collapsed" Binding="{Binding Text}" />
 
                 </DataGrid.Columns>
             </DataGrid>
@@ -211,15 +211,7 @@
                 </ListBox.Resources>
             </ListBox>
 
-            <Label x:Name="cardCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="116" Height="30"/>
-            <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="180,697,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
-
-            <CheckBox x:Name="colorsAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="145,562,0,0" VerticalAlignment="Top"
-                Checked="AndOrCheckBox_Toggled"
-                Unchecked="AndOrCheckBox_Toggled"/>
-            <CheckBox x:Name="colorsNone" Content="Must contain none" HorizontalAlignment="Left" Margin="145,581,0,0" VerticalAlignment="Top"
-                Checked="AndOrCheckBox_Toggled"
-                Unchecked="AndOrCheckBox_Toggled"/>
+            <!--Color filtering-->
             <ListBox x:Name="filterColorsListBox" Margin="10,562,0,0" Width="130" HorizontalAlignment="Left"
                 ItemsSource="{Binding}"
                 SelectionMode="Extended" Height="155" VerticalAlignment="Top" BorderBrush="White">
@@ -244,10 +236,9 @@
                 </ListBox.Resources>
             </ListBox>
 
-
-
-
-
+            <Label x:Name="cardCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="116" Height="30"/>
+            <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="180,697,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
+            <ComboBox x:Name="allOrNoneComboBox" HorizontalAlignment="Left" Margin="68,570,0,0" VerticalAlignment="Top" Width="199"/>
 
 
         </Grid>

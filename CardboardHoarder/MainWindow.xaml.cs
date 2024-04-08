@@ -78,6 +78,7 @@ namespace CardboardHoarder
             // Handle card name and set filtering
             filterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             filterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
+            allOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
         }
         private async Task PrepareSystem()
         {
@@ -422,7 +423,8 @@ namespace CardboardHoarder
             superTypesAndOr.IsChecked = false;
             subTypesAndOr.IsChecked = false;
             keywordsAndOr.IsChecked = false;
-            colorsAndOr.IsChecked = false;
+
+            allOrNoneComboBox.SelectedIndex = 0;
 
             // Update filter label and apply filters to refresh the DataGrid
             UpdateFilterLabel();
@@ -475,7 +477,7 @@ namespace CardboardHoarder
         {
             try
             {
-                var filteredItems = cards.AsEnumerable();
+                var filteredCards = cards.AsEnumerable();
 
                 // Card name and set combobox filtering
                 string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
@@ -484,30 +486,30 @@ namespace CardboardHoarder
 
                 if (!string.IsNullOrEmpty(cardFilter))
                 {
-                    filteredItems = filteredItems.Where(card => card.Name != null && card.Name.Contains(cardFilter));
+                    filteredCards = filteredCards.Where(card => card.Name != null && card.Name.Contains(cardFilter));
                 }
                 if (!string.IsNullOrEmpty(setFilter))
                 {
-                    filteredItems = filteredItems.Where(card => card.SetName != null && card.SetName.Contains(setFilter));
+                    filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.Contains(setFilter));
                 }
                 if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != rulesTextDefaultText)
                 {
-                    filteredItems = filteredItems.Where(card => card.Text != null && card.Text.Contains(rulesTextFilter));
+                    filteredCards = filteredCards.Where(card => card.Text != null && card.Text.Contains(rulesTextFilter));
                 }
 
-                // Special handling for ManaCost based on colorsNone.IsChecked
-                bool excludeColors = CurrentInstance.colorsNone.IsChecked ?? false;
-                filteredItems = FilterByCriteria(filteredItems, selectedColors, CurrentInstance.colorsAndOr.IsChecked ?? false, item => item.ManaCost, excludeColors);
+                bool useAnd = allOrNoneComboBox.SelectedIndex == 1;
+                bool exclude = allOrNoneComboBox.SelectedIndex == 2;
+                filteredCards = FilterByCriteria(filteredCards, selectedColors, useAnd, card => card.ManaCost, exclude);
 
                 // Listbox filter selections
-                filteredItems = FilterByCriteria(filteredItems, selectedTypes, CurrentInstance.typesAndOr.IsChecked ?? false, card => card.Types);
-                filteredItems = FilterByCriteria(filteredItems, selectedSuperTypes, CurrentInstance.superTypesAndOr.IsChecked ?? false, card => card.SuperTypes);
-                filteredItems = FilterByCriteria(filteredItems, selectedSubTypes, CurrentInstance.subTypesAndOr.IsChecked ?? false, card => card.SubTypes);
-                filteredItems = FilterByCriteria(filteredItems, selectedKeywords, CurrentInstance.keywordsAndOr.IsChecked ?? false, card => card.Keywords);
+                filteredCards = FilterByCriteria(filteredCards, selectedTypes, CurrentInstance.typesAndOr.IsChecked ?? false, card => card.Types);
+                filteredCards = FilterByCriteria(filteredCards, selectedSuperTypes, CurrentInstance.superTypesAndOr.IsChecked ?? false, card => card.SuperTypes);
+                filteredCards = FilterByCriteria(filteredCards, selectedSubTypes, CurrentInstance.subTypesAndOr.IsChecked ?? false, card => card.SubTypes);
+                filteredCards = FilterByCriteria(filteredCards, selectedKeywords, CurrentInstance.keywordsAndOr.IsChecked ?? false, card => card.Keywords);
 
-                var finalFilteredItems = filteredItems.ToList();
-                cardCountLabel.Content = $"Cards shown: {finalFilteredItems.Count}";
-                Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = finalFilteredItems; });
+                var finalFilteredCards = filteredCards.ToList();
+                cardCountLabel.Content = $"Cards shown: {finalFilteredCards.Count}";
+                Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = finalFilteredCards; });
             }
             catch (Exception ex)
             {
@@ -618,6 +620,10 @@ namespace CardboardHoarder
 
                 allColors.AddRange(new[] { "W", "U", "B", "R", "G", "C", "X" });
 
+                var allOrNoneColorsOption = new List<string> { "Cards with any of these colors", "Cards with all of these colors", "Cards with none of these colors" };
+
+
+
                 // Set up elements in card type listbox
                 allTypes.Clear();
                 foreach (var type in types)
@@ -659,6 +665,8 @@ namespace CardboardHoarder
                     filterSuperTypesListBox.ItemsSource = allSuperTypes;
                     filterSubTypesListBox.ItemsSource = allSubTypes;
                     filterKeywordsListBox.ItemsSource = allKeywords;
+                    allOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
+                    allOrNoneComboBox.SelectedIndex = 0;
                 });
             }
             catch (Exception ex)
