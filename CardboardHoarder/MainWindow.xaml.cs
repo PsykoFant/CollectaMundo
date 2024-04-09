@@ -11,9 +11,31 @@ using System.Windows.Media.Imaging;
 
 namespace CardboardHoarder
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
         #region Set up varibales
+        // Used for displaying images
+        private string _imageSourceUrl = string.Empty;
+
+        public string ImageSourceUrl
+        {
+            get => _imageSourceUrl;
+            set
+            {
+                if (_imageSourceUrl != value)
+                {
+                    _imageSourceUrl = value;
+                    OnPropertyChanged(nameof(ImageSourceUrl));
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         // Used by ShowOrHideStatusWindow to reference MainWindow
         private static MainWindow? _currentInstance;
         private ICollectionView? dataView;
@@ -54,7 +76,6 @@ namespace CardboardHoarder
             }
             private set => _currentInstance = value;
         }
-
         public MainWindow()
         {
             InitializeComponent();
@@ -602,30 +623,25 @@ namespace CardboardHoarder
         }
 
         #endregion
-
-
-
         private async void MainCardWindowDatagrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             try
             {
-                // Assuming 'Name' is a property of the bound items
-                if (mainCardWindowDatagrid.SelectedItem is CardSet selectedCard)
+                if (mainCardWindowDatagrid.SelectedItem is CardSet selectedCard && !string.IsNullOrEmpty(selectedCard.Uuid))
                 {
                     await DBAccess.OpenConnectionAsync();
-                    string scryfallId = await GetScryfallIdByUuidAsync(selectedCard.Uuid);
+                    string? scryfallId = await GetScryfallIdByUuidAsync(selectedCard.Uuid);
                     DBAccess.CloseConnection();
 
-                    char dir1 = scryfallId[0];
-                    char dir2 = scryfallId[1];
+                    // Only proceed if scryfallId is not null and has the expected length
+                    if (!string.IsNullOrEmpty(scryfallId) && scryfallId.Length >= 2)
+                    {
+                        char dir1 = scryfallId[0];
+                        char dir2 = scryfallId[1];
 
-                    string cardImageUrl = $"https://cards.scryfall.io/large/front/{dir1}/{dir2}/{scryfallId}.jpg";
-
-                    //string = `https://cards.scryfall.io/${fileType}/${fileFace}/${dir1}/${dir2}/${fileName}.${fileFormat}`;
-
-                    Debug.WriteLine($"Image url: {cardImageUrl}");
-                    Debug.WriteLine($"Scryfall id: {scryfallId}");
-                    LoadImageFromWeb(cardImageUrl);
+                        string cardImageUrl = $"https://cards.scryfall.io/large/front/{dir1}/{dir2}/{scryfallId}.jpg";
+                        ImageSourceUrl = cardImageUrl;
+                    }
                 }
             }
             catch (Exception ex)
@@ -634,8 +650,7 @@ namespace CardboardHoarder
             }
         }
 
-
-        public async Task<string> GetScryfallIdByUuidAsync(string uuid)
+        public async Task<string?> GetScryfallIdByUuidAsync(string uuid)
         {
             string query = "SELECT scryfallId FROM cardIdentifiers WHERE uuid = @uuid";
 
@@ -660,35 +675,6 @@ namespace CardboardHoarder
             }
             return null;
         }
-
-        private void LoadImageFromWeb(string imageUrl)
-        {
-            try
-            {
-                // Append a unique query string to the URL
-                string uniqueUrl = $"{imageUrl}?{DateTime.Now.Ticks}";
-
-                var image = new BitmapImage();
-                image.BeginInit();
-                image.CacheOption = BitmapCacheOption.OnLoad;  // Load the image data immediately
-                image.UriSource = new Uri(uniqueUrl, UriKind.Absolute);
-                image.EndInit();
-
-                image.DownloadCompleted += (s, e) =>
-                {
-                    CardImage.Source = image;
-                };
-
-                Debug.WriteLine($"Image should be loaded now using this url: {uniqueUrl}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to load image from web: {ex.Message}");
-                // Consider setting a default or error image here
-            }
-        }
-
-
 
         #region Load data and populate UI elements
         private async Task LoadDataAsync()
