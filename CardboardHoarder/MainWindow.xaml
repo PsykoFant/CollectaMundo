@@ -21,8 +21,9 @@
             <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Left" Margin="369,0,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
 
             <!--The main card view datagrid-->
-            <DataGrid x:Name="mainCardWindowDatagrid" Margin="272,205,0,0"
-                      AutoGenerateColumns="False"                      
+            <DataGrid x:Name="mainCardWindowDatagrid" Margin="272,391,0,0"
+                      AutoGenerateColumns="False"
+                      SelectionChanged="MainCardWindowDatagrid_SelectionChanged"
                       ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" CanUserAddRows="False">
                 <DataGrid.CellStyle>
                     <Style/>
@@ -50,8 +51,9 @@
                     <DataGridTextColumn Header="Card Subtypes" Visibility="Collapsed" Binding="{Binding SubTypes}" />
                     <DataGridTextColumn Header="Card type" Binding="{Binding Type}" />
                     <DataGridTextColumn Header="Keywords" Binding="{Binding Keywords}" />
-                    <DataGridTextColumn Header="Rules Text" Visibility="Collapsed" Binding="{Binding Text}" />
+                    <DataGridTextColumn Header="Rules Text" Binding="{Binding Text}" />
                     <DataGridTextColumn Header="Mana Value" Binding="{Binding ManaValue}" />
+                    <DataGridTextColumn Header="Uuid" Binding="{Binding Uuid}" />
 
                 </DataGrid.Columns>
             </DataGrid>
@@ -73,7 +75,7 @@
             </ComboBox>
 
             <!--Rulestext filtering-->
-            <Label x:Name="cardRulesTextLabel" Content="" HorizontalAlignment="Left" Margin="274,50,0,0" VerticalAlignment="Top" Width="620" Height="30"/>
+            <Label x:Name="cardRulesTextLabel" Content="" HorizontalAlignment="Left" Margin="272,140,0,0" VerticalAlignment="Top" Width="547" Height="30"/>
             <TextBox x:Name="filterRulesTextTextBox" HorizontalAlignment="Left" Margin="11,107,0,0" TextWrapping="Wrap" Foreground="Gray"
                 GotFocus="TextBox_GotFocus" 
                 LostFocus="TextBox_LostFocus" 
@@ -81,7 +83,7 @@
             <Button x:Name="filterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="11,151,0,0" VerticalAlignment="Top" Click="filterRulesTextButton_Click"/>
 
             <!--Card type listbox and filtering-->
-            <Label x:Name="cardTypeLabel" Content="" HorizontalAlignment="Left" Margin="274,80,0,0" VerticalAlignment="Top" Width="620" Height="30"/>
+            <Label x:Name="cardTypeLabel" Content="" HorizontalAlignment="Left" Margin="272,170,0,0" VerticalAlignment="Top" Width="547" Height="30"/>
             <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,180,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>
@@ -114,7 +116,7 @@
             </ListBox>
 
             <!--Supertype listbox and filtering-->
-            <Label x:Name="cardSuperTypesLabel" Content="" HorizontalAlignment="Left" Margin="274,110,0,0" VerticalAlignment="Top" Width="620" Height="30"/>
+            <Label x:Name="cardSuperTypesLabel" Content="" HorizontalAlignment="Left" Margin="272,200,0,0" VerticalAlignment="Top" Width="547" Height="30"/>
             <CheckBox x:Name="superTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,275,0,0" VerticalAlignment="Top"
                Checked="AndOrCheckBox_Toggled"
                Unchecked="AndOrCheckBox_Toggled"/>
@@ -147,7 +149,7 @@
             </ListBox>
 
             <!--Subtype listbox and filtering-->
-            <Label x:Name="cardSubTypeLabel" Content="" HorizontalAlignment="Left" Margin="274,140,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="620" Height="30"/>
+            <Label x:Name="cardSubTypeLabel" Content="" HorizontalAlignment="Left" Margin="272,230,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="547" Height="30"/>
             <CheckBox x:Name="subTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,371,0,0" VerticalAlignment="Top"
                Checked="AndOrCheckBox_Toggled"
                Unchecked="AndOrCheckBox_Toggled"/>
@@ -180,7 +182,7 @@
             </ListBox>
 
             <!--Keywords listbox and filtering-->
-            <Label x:Name="cardKeywordsLabel" Content="" HorizontalAlignment="Left" Margin="274,170,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="620" Height="30"/>
+            <Label x:Name="cardKeywordsLabel" Content="" HorizontalAlignment="Left" Margin="272,260,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="547" Height="30"/>
             <CheckBox x:Name="keywordsAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,468,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>
@@ -241,10 +243,11 @@
             <!--Mana value filtering-->
             <Label x:Name="manaValueLabel" Content="Mana value is " HorizontalAlignment="Left" Margin="10,751,0,0" VerticalAlignment="Top"/>
             <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="192,755,0,0" VerticalAlignment="Top" Width="75"/>
-            <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="98,755,0,0" VerticalAlignment="Top" Width="89"/>            
+            <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="98,755,0,0" VerticalAlignment="Top" Width="89"/>
 
             <Label x:Name="cardCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="116" Height="30"/>
             <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="180,786,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
+            <Image x:Name="CardImage" HorizontalAlignment="Left" Height="369" Margin="853,10,0,0" VerticalAlignment="Top" Width="288"/>
 
 
         </Grid>

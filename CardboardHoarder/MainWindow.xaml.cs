@@ -3,7 +3,6 @@ using System.Data;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
-using System.Linq.Dynamic.Core;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -517,8 +516,15 @@ namespace CardboardHoarder
         }
         private IEnumerable<CardSet> FilterByCriteria(IEnumerable<CardSet> cards, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector, bool exclude = false)
         {
-            if (cards == null) return Enumerable.Empty<CardSet>();
-            if (selectedCriteria == null || selectedCriteria.Count == 0) return cards;
+            if (cards == null)
+            {
+                return Enumerable.Empty<CardSet>();
+            }
+
+            if (selectedCriteria == null || selectedCriteria.Count == 0)
+            {
+                return cards;
+            }
 
             try
             {
@@ -597,6 +603,93 @@ namespace CardboardHoarder
 
         #endregion
 
+
+
+        private async void MainCardWindowDatagrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                // Assuming 'Name' is a property of the bound items
+                if (mainCardWindowDatagrid.SelectedItem is CardSet selectedCard)
+                {
+                    await DBAccess.OpenConnectionAsync();
+                    string scryfallId = await GetScryfallIdByUuidAsync(selectedCard.Uuid);
+                    DBAccess.CloseConnection();
+
+                    char dir1 = scryfallId[0];
+                    char dir2 = scryfallId[1];
+
+                    string cardImageUrl = $"https://cards.scryfall.io/large/front/{dir1}/{dir2}/{scryfallId}.jpg";
+
+                    //string = `https://cards.scryfall.io/${fileType}/${fileFace}/${dir1}/${dir2}/${fileName}.${fileFormat}`;
+
+                    Debug.WriteLine($"Image url: {cardImageUrl}");
+                    Debug.WriteLine($"Scryfall id: {scryfallId}");
+                    LoadImageFromWeb(cardImageUrl);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in selection changed: {ex.Message}");
+            }
+        }
+
+
+        public async Task<string> GetScryfallIdByUuidAsync(string uuid)
+        {
+            string query = "SELECT scryfallId FROM cardIdentifiers WHERE uuid = @uuid";
+
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@uuid", uuid);
+
+                try
+                {
+                    var result = await command.ExecuteScalarAsync();
+
+                    if (result != null && result != DBNull.Value)
+                    {
+                        return result.ToString();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Handle exceptions (e.g., log the error or notify the user)
+                    Debug.WriteLine($"Error in GetScryfallIdByUuidAsync: {ex.Message}");
+                }
+            }
+            return null;
+        }
+
+        private void LoadImageFromWeb(string imageUrl)
+        {
+            try
+            {
+                // Append a unique query string to the URL
+                string uniqueUrl = $"{imageUrl}?{DateTime.Now.Ticks}";
+
+                var image = new BitmapImage();
+                image.BeginInit();
+                image.CacheOption = BitmapCacheOption.OnLoad;  // Load the image data immediately
+                image.UriSource = new Uri(uniqueUrl, UriKind.Absolute);
+                image.EndInit();
+
+                image.DownloadCompleted += (s, e) =>
+                {
+                    CardImage.Source = image;
+                };
+
+                Debug.WriteLine($"Image should be loaded now using this url: {uniqueUrl}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to load image from web: {ex.Message}");
+                // Consider setting a default or error image here
+            }
+        }
+
+
+
         #region Load data and populate UI elements
         private async Task LoadDataAsync()
         {
@@ -615,7 +708,8 @@ namespace CardboardHoarder
                     "c.type AS Type, " +
                     "c.keywords AS Keywords, " +
                     "c.text AS RulesText, " +
-                    "c.manaValue AS ManaValue " +
+                    "c.manaValue AS ManaValue, " +
+                    "c.uuid AS Uuid " +
                     "FROM cards c " +
                     "JOIN sets s ON c.setCode = s.code " +
                     "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
@@ -649,6 +743,7 @@ namespace CardboardHoarder
                         Keywords = reader["Keywords"]?.ToString() ?? string.Empty,
                         Text = reader["RulesText"]?.ToString() ?? string.Empty,
                         ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0,
+                        Uuid = reader["Uuid"]?.ToString() ?? string.Empty,
                     });
                 }
 
