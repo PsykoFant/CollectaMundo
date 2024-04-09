@@ -75,10 +75,12 @@ namespace CardboardHoarder
             GridStatus.Visibility = Visibility.Hidden;
             Loaded += async (sender, args) => { await PrepareSystem(); };
 
-            // Handle card name and set filtering
+            // Pick up filtering comboboxes changes
             filterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             filterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             allOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
+            ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
+            ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
         }
         private async Task PrepareSystem()
         {
@@ -372,9 +374,12 @@ namespace CardboardHoarder
         // Reset filter elements
         private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
-            // Reset filter-related controls
+            // Clear comboboxes
             filterCardNameComboBox.SelectedIndex = -1;
             filterSetNameComboBox.SelectedIndex = -1;
+            allOrNoneComboBox.SelectedIndex = 0;
+            ManaValueComboBox.SelectedIndex = -1;
+            ManaValueOperatorComboBox.SelectedIndex = -1;
 
             // Clear selections in the ListBoxes
             ClearListBoxSelections(filterTypesListBox);
@@ -424,8 +429,6 @@ namespace CardboardHoarder
             subTypesAndOr.IsChecked = false;
             keywordsAndOr.IsChecked = false;
 
-            allOrNoneComboBox.SelectedIndex = 0;
-
             // Update filter label and apply filters to refresh the DataGrid
             UpdateFilterLabel();
             ApplyFilter();
@@ -448,6 +451,124 @@ namespace CardboardHoarder
         #endregion
 
         #region Apply filtering
+        private void ApplyFilter()
+        {
+            try
+            {
+                var filteredCards = cards.AsEnumerable();
+
+
+                string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? string.Empty;
+                string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? string.Empty;
+                string rulesTextFilter = filterRulesTextTextBox.Text;
+                bool useAnd = allOrNoneComboBox.SelectedIndex == 1;
+                bool exclude = allOrNoneComboBox.SelectedIndex == 2;
+                string compareOperator = ManaValueOperatorComboBox.SelectedItem?.ToString() ?? string.Empty;
+                double.TryParse(ManaValueComboBox.SelectedItem?.ToString(), out double manaValueCompare);
+
+                // Filter by mana value
+                filteredCards = FilterByManaValue(filteredCards, compareOperator, manaValueCompare);
+
+                // Filtering by card name, set name, and rules text
+                filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter);
+
+                // Filter by colors
+                filteredCards = FilterByCriteria(filteredCards, selectedColors, useAnd, card => card.ManaCost, exclude);
+
+                // Filter by listbox selections
+                filteredCards = FilterByCriteria(filteredCards, selectedTypes, CurrentInstance.typesAndOr.IsChecked ?? false, card => card.Types);
+                filteredCards = FilterByCriteria(filteredCards, selectedSuperTypes, CurrentInstance.superTypesAndOr.IsChecked ?? false, card => card.SuperTypes);
+                filteredCards = FilterByCriteria(filteredCards, selectedSubTypes, CurrentInstance.subTypesAndOr.IsChecked ?? false, card => card.SubTypes);
+                filteredCards = FilterByCriteria(filteredCards, selectedKeywords, CurrentInstance.keywordsAndOr.IsChecked ?? false, card => card.Keywords);
+
+                var finalFilteredCards = filteredCards.ToList();
+                cardCountLabel.Content = $"Cards shown: {finalFilteredCards.Count}";
+                Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = finalFilteredCards; });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
+            }
+        }
+        private IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
+        {
+            try
+            {
+                var filteredCards = cards;
+                if (!string.IsNullOrEmpty(cardFilter))
+                {
+                    filteredCards = filteredCards.Where(card => card.Name != null && card.Name.Contains(cardFilter));
+                }
+                if (!string.IsNullOrEmpty(setFilter))
+                {
+                    filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.Contains(setFilter));
+                }
+                if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != rulesTextDefaultText)
+                {
+                    filteredCards = filteredCards.Where(card => card.Text != null && card.Text.Contains(rulesTextFilter));
+                }
+                return filteredCards;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while filtering cards: {ex.Message}");
+                return Enumerable.Empty<CardSet>();
+            }
+        }
+        private IEnumerable<CardSet> FilterByCriteria(IEnumerable<CardSet> cards, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector, bool exclude = false)
+        {
+            if (cards == null) return Enumerable.Empty<CardSet>();
+            if (selectedCriteria == null || selectedCriteria.Count == 0) return cards;
+
+            try
+            {
+                return cards.Where(card =>
+                {
+                    var propertyValue = propertySelector(card);
+                    var criteria = propertyValue.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
+
+                    bool match = useAnd ? selectedCriteria.All(c => criteria.Contains(c)) : selectedCriteria.Any(c => criteria.Contains(c));
+                    return exclude ? !match : match;
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while filtering cards: {ex.Message}");
+                return Enumerable.Empty<CardSet>();
+            }
+        }
+        private IEnumerable<CardSet> FilterByManaValue(IEnumerable<CardSet> cards, string compareOperator, double manaValueCompare)
+        {
+            try
+            {
+                if (ManaValueComboBox.SelectedIndex != -1 && ManaValueOperatorComboBox.SelectedIndex != -1)
+                {
+                    return cards.Where(card =>
+                    {
+                        return compareOperator switch
+                        {
+                            "less than" => card.ManaValue < manaValueCompare,
+                            "greater than" => card.ManaValue > manaValueCompare,
+                            "less than/eq" => card.ManaValue <= manaValueCompare,
+                            "greater than/eq" => card.ManaValue >= manaValueCompare,
+                            "equal to" => card.ManaValue == manaValueCompare,
+                            _ => true,  // If no valid operator is selected, don't filter on ManaValue
+                        };
+                    });
+                }
+                else
+                {
+                    // If conditions for filtering are not met, return all cards unfiltered.
+                    return cards;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while filtering cards: {ex.Message}");
+                return Enumerable.Empty<CardSet>();
+            }
+        }
+
         private void UpdateFilterLabel()
         {
             if (filterRulesTextTextBox.Text != rulesTextDefaultText)
@@ -473,71 +594,6 @@ namespace CardboardHoarder
                 targetLabel.Content = string.Empty;
             }
         }
-        private void ApplyFilter()
-        {
-            try
-            {
-                var filteredCards = cards.AsEnumerable();
-
-                // Card name and set combobox filtering
-                string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? "";
-                string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? "";
-                string rulesTextFilter = filterRulesTextTextBox.Text;
-
-                if (!string.IsNullOrEmpty(cardFilter))
-                {
-                    filteredCards = filteredCards.Where(card => card.Name != null && card.Name.Contains(cardFilter));
-                }
-                if (!string.IsNullOrEmpty(setFilter))
-                {
-                    filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.Contains(setFilter));
-                }
-                if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != rulesTextDefaultText)
-                {
-                    filteredCards = filteredCards.Where(card => card.Text != null && card.Text.Contains(rulesTextFilter));
-                }
-
-                bool useAnd = allOrNoneComboBox.SelectedIndex == 1;
-                bool exclude = allOrNoneComboBox.SelectedIndex == 2;
-                filteredCards = FilterByCriteria(filteredCards, selectedColors, useAnd, card => card.ManaCost, exclude);
-
-                // Listbox filter selections
-                filteredCards = FilterByCriteria(filteredCards, selectedTypes, CurrentInstance.typesAndOr.IsChecked ?? false, card => card.Types);
-                filteredCards = FilterByCriteria(filteredCards, selectedSuperTypes, CurrentInstance.superTypesAndOr.IsChecked ?? false, card => card.SuperTypes);
-                filteredCards = FilterByCriteria(filteredCards, selectedSubTypes, CurrentInstance.subTypesAndOr.IsChecked ?? false, card => card.SubTypes);
-                filteredCards = FilterByCriteria(filteredCards, selectedKeywords, CurrentInstance.keywordsAndOr.IsChecked ?? false, card => card.Keywords);
-
-                var finalFilteredCards = filteredCards.ToList();
-                cardCountLabel.Content = $"Cards shown: {finalFilteredCards.Count}";
-                Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = finalFilteredCards; });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
-            }
-        }
-        private IEnumerable<CardSet> FilterByCriteria(IEnumerable<CardSet> cards, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector, bool exclude = false)
-        {
-            if (cards == null) return Enumerable.Empty<CardSet>();
-            if (selectedCriteria == null || selectedCriteria.Count == 0) return cards;
-
-            try
-            {
-                return cards.Where(card =>
-                {
-                    var propertyValue = propertySelector(card);
-                    var criteria = propertyValue.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
-
-                    bool match = useAnd ? selectedCriteria.All(c => criteria.Contains(c)) : selectedCriteria.Any(c => criteria.Contains(c));
-                    return exclude ? !match : match;
-                });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while filtering cards: {ex.Message}");
-                return Enumerable.Empty<CardSet>();
-            }
-        }
 
         #endregion
 
@@ -558,7 +614,8 @@ namespace CardboardHoarder
                     "c.subtypes AS SubTypes, " +
                     "c.type AS Type, " +
                     "c.keywords AS Keywords, " +
-                    "c.text AS RulesText " +
+                    "c.text AS RulesText, " +
+                    "c.manaValue AS ManaValue " +
                     "FROM cards c " +
                     "JOIN sets s ON c.setCode = s.code " +
                     "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
@@ -591,6 +648,7 @@ namespace CardboardHoarder
                         Type = reader["Type"]?.ToString() ?? string.Empty,
                         Keywords = reader["Keywords"]?.ToString() ?? string.Empty,
                         Text = reader["RulesText"]?.ToString() ?? string.Empty,
+                        ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0,
                     });
                 }
 
@@ -621,7 +679,8 @@ namespace CardboardHoarder
                 allColors.AddRange(new[] { "W", "U", "B", "R", "G", "C", "X" });
 
                 var allOrNoneColorsOption = new List<string> { "Cards with any of these colors", "Cards with all of these colors", "Cards with none of these colors" };
-
+                var manaValueOptions = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000 };
+                var manaValueCompareOptions = new List<string> { "less than", "less than/eq", "greater than", "greater than/eq", "equal to" };
 
 
                 // Set up elements in card type listbox
@@ -667,6 +726,10 @@ namespace CardboardHoarder
                     filterKeywordsListBox.ItemsSource = allKeywords;
                     allOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
                     allOrNoneComboBox.SelectedIndex = 0;
+                    ManaValueComboBox.ItemsSource = manaValueOptions;
+                    ManaValueComboBox.SelectedIndex = -1;
+                    ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
+                    ManaValueOperatorComboBox.SelectedIndex = -1;
                 });
             }
             catch (Exception ex)
