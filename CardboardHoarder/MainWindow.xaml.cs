@@ -759,17 +759,17 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while loading data: {ex.Message}");
             }
         }
-        private async Task FillComboBoxesAsync()
+        private Task FillComboBoxesAsync()
         {
             try
             {
                 // Get the values to populate the comboboxes
-                var cardNames = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "name");
-                var setNames = await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "name");
-                var types = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "types");
-                var superTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "supertypes");
-                var subTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "subtypes");
-                var keywords = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "keywords");
+                var cardNames = cards.Select(card => card.Name).Distinct().ToList();
+                var setNames = cards.Select(card => card.SetName).Distinct().ToList();
+                var types = cards.Select(card => card.Types).Distinct().ToList();
+                var superTypes = cards.Select(card => card.SuperTypes).Distinct().ToList();
+                var subTypes = cards.Select(card => card.SubTypes).Distinct().ToList();
+                var keywords = cards.Select(card => card.Keywords).Distinct().ToList();
 
                 allColors.AddRange(new[] { "W", "U", "B", "R", "G", "C", "X" });
 
@@ -777,38 +777,41 @@ namespace CardboardHoarder
                 var manaValueOptions = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000 };
                 var manaValueCompareOptions = new List<string> { "less than", "less than/eq", "greater than", "greater than/eq", "equal to" };
 
-
                 // Set up elements in card type listbox
-                allTypes.Clear();
-                foreach (var type in types)
-                {
-                    allTypes.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
-                }
-                allTypes = allTypes.Distinct().OrderBy(type => type).ToList();
+                allTypes = types
+                    .Where(type => type != null)
+                    .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                    .Select(p => p.Trim())
+                    .Distinct()
+                    .OrderBy(type => type)
+                    .ToList();
 
                 // Set up elements in supertype listbox
-                allSuperTypes.Clear();
-                foreach (var type in superTypes)
-                {
-                    allSuperTypes.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
-                }
-                allSuperTypes = allSuperTypes.Distinct().OrderBy(type => type).ToList();
+                allSuperTypes = superTypes
+                    .Where(type => type != null)
+                    .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                    .Select(p => p.Trim())
+                    .Distinct()
+                    .OrderBy(type => type)
+                    .ToList();
 
                 // Set up elements in subtype listbox
-                allSubTypes.Clear();
-                foreach (var type in subTypes)
-                {
-                    allSubTypes.AddRange(type.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
-                }
-                allSubTypes = allSubTypes.Distinct().OrderBy(type => type).ToList();
+                allSubTypes = subTypes
+                    .Where(type => type != null)
+                    .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                    .Select(p => p.Trim())
+                    .Distinct()
+                    .OrderBy(type => type)
+                    .ToList();
 
                 // Set up elements in keywords listbox
-                allKeywords.Clear();
-                foreach (var keyword in keywords)
-                {
-                    allKeywords.AddRange(keyword.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
-                }
-                allKeywords = allKeywords.Distinct().OrderBy(keyword => keyword).ToList();
+                allKeywords = keywords
+                    .Where(keyword => keyword != null)
+                    .SelectMany(keyword => keyword!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                    .Select(p => p.Trim())
+                    .Distinct()
+                    .OrderBy(keyword => keyword)
+                    .ToList();
 
                 Dispatcher.Invoke(() =>
                 {
@@ -831,6 +834,7 @@ namespace CardboardHoarder
             {
                 Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
             }
+            return Task.CompletedTask;
         }
         #endregion
 
