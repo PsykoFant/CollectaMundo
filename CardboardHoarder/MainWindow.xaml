@@ -61,13 +61,6 @@
             </DataGrid>
 
             <!--Card name and set comboboxes-->
-            <ComboBox x:Name="filterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,41,783,614" Width="200" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top">
-                <ComboBox.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <VirtualizingStackPanel />
-                    </ItemsPanelTemplate>
-                </ComboBox.ItemsPanel>
-            </ComboBox>
             <ComboBox x:Name="filterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,74,783,581" Width="200" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top">
                 <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -262,12 +255,12 @@
                 </Image.RenderTransform>
             </Image>
             <Image x:Name="CardImageSecondary" Source="{Binding ImageSourceUrl, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}" HorizontalAlignment="Right" Height="337" Margin="0,41,250,0" VerticalAlignment="Top" Width="241"/>
-            
-            <TextBox x:Name="filterCardNamesTextBox" HorizontalAlignment="Left" Margin="272,22,0,0" TextWrapping="Wrap" Foreground="Gray"
+
+            <TextBox x:Name="filterCardNamesTextBox" HorizontalAlignment="Left" Margin="10,49,0,0" TextWrapping="Wrap" Foreground="Gray"
                 GotFocus="TextBox_GotFocus" 
                 LostFocus="TextBox_LostFocus" 
                 VerticalAlignment="Top" Width="257" Height="20"/>
-            <Button x:Name="filterCardNameButton" Content="Filter card name" HorizontalAlignment="Left" Margin="538,17,0,0" VerticalAlignment="Top" Click="filterCardNameButton_Click"/>
+            <Button x:Name="filterCardNameButton" Content="Filter card name" HorizontalAlignment="Left" Margin="272,49,0,0" VerticalAlignment="Top" Click="filterCardNameButton_Click"/>
 
 
 

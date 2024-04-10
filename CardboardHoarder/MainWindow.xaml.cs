@@ -42,7 +42,6 @@ namespace CardboardHoarder
         private List<CardSet> cards = new List<CardSet>();
 
         // Lists for populating listboxes
-        private List<string> allNames = new List<string>();
         private List<string> allColors = new List<string>();
         private List<string> allTypes = new List<string>();
         private List<string> allSuperTypes = new List<string>();
@@ -50,7 +49,6 @@ namespace CardboardHoarder
         private List<string> allKeywords = new List<string>();
 
         // Hashsets to store selected checkbox items in listboxes
-        private HashSet<string> selectedNames = new HashSet<string>();
         private HashSet<string> selectedColors = new HashSet<string>();
         private HashSet<string> selectedTypes = new HashSet<string>();
         private HashSet<string> selectedSuperTypes = new HashSet<string>();
@@ -100,7 +98,6 @@ namespace CardboardHoarder
             Loaded += async (sender, args) => { await PrepareSystem(); };
 
             // Pick up filtering comboboxes changes
-            filterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             filterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             allOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
@@ -324,7 +321,7 @@ namespace CardboardHoarder
                         {
                             targetCollection.Remove(label);
                             UpdateFilterLabel();
-                            ApplyFilter(); // Trigger filtering
+                            ApplyFilter();
                         }
                     }
                 }
@@ -408,7 +405,6 @@ namespace CardboardHoarder
         private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
             // Clear comboboxes
-            filterCardNameComboBox.SelectedIndex = -1;
             filterSetNameComboBox.SelectedIndex = -1;
             allOrNoneComboBox.SelectedIndex = 0;
             ManaValueComboBox.SelectedIndex = -1;
@@ -497,8 +493,6 @@ namespace CardboardHoarder
 
 
                 string nameFilter = filterCardNamesTextBox.Text;
-
-                string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? string.Empty;
                 string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? string.Empty;
                 string rulesTextFilter = filterRulesTextTextBox.Text;
                 bool useAnd = allOrNoneComboBox.SelectedIndex == 1;
@@ -510,7 +504,7 @@ namespace CardboardHoarder
                 filteredCards = FilterByManaValue(filteredCards, compareOperator, manaValueCompare);
 
                 // Filtering by card name, set name, and rules text
-                filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter, nameFilter);
+                filteredCards = FilterByText(filteredCards, setFilter, rulesTextFilter, nameFilter);
 
                 // Filter by colors
                 filteredCards = FilterByCriteria(filteredCards, selectedColors, useAnd, card => card.ManaCost, exclude);
@@ -530,18 +524,14 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
             }
         }
-        private IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter, string nameFilter)
+        private IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string setFilter, string rulesTextFilter, string nameFilter)
         {
             try
             {
                 var filteredCards = cards;
-                if (!string.IsNullOrEmpty(nameFilter))
+                if (!string.IsNullOrEmpty(nameFilter) && nameFilter != namesDefaultText)
                 {
                     filteredCards = filteredCards.Where(card => card.Name != null && card.Name.IndexOf(nameFilter, StringComparison.OrdinalIgnoreCase) >= 0);
-                }
-                if (!string.IsNullOrEmpty(cardFilter))
-                {
-                    filteredCards = filteredCards.Where(card => card.Name != null && card.Name.IndexOf(cardFilter, StringComparison.OrdinalIgnoreCase) >= 0);
                 }
                 if (!string.IsNullOrEmpty(setFilter))
                 {
@@ -559,7 +549,6 @@ namespace CardboardHoarder
                 return Enumerable.Empty<CardSet>();
             }
         }
-
         private IEnumerable<CardSet> FilterByCriteria(IEnumerable<CardSet> cards, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector, bool exclude = false)
         {
             if (cards == null)
@@ -777,7 +766,6 @@ namespace CardboardHoarder
             try
             {
                 // Get the values to populate the comboboxes
-                var cardNames = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "name");
                 var setNames = await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "name");
                 var types = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "types");
                 var superTypes = await DownloadAndPrepDB.GetUniqueValuesAsync("cards", "supertypes");
@@ -825,7 +813,6 @@ namespace CardboardHoarder
 
                 Dispatcher.Invoke(() =>
                 {
-                    filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                     filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                     filterColorsListBox.ItemsSource = allColors;
                     filterTypesListBox.ItemsSource = allTypes;
