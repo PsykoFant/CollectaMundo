@@ -56,6 +56,7 @@
                     <DataGridTextColumn Header="Mana Value" Visibility="Collapsed" Binding="{Binding ManaValue}" />
                     <DataGridTextColumn Header="Uuid" Visibility="Collapsed" Binding="{Binding Uuid}" />
                     <DataGridTextColumn Header="Finishes" Binding="{Binding Finishes}" />
+                    <DataGridTextColumn Header="Side" Binding="{Binding Side}" />
 
                 </DataGrid.Columns>
             </DataGrid>
@@ -261,7 +262,9 @@
                     </TransformGroup>
                 </Image.RenderTransform>
             </Image>
-            <Image x:Name="CardImageSecondary" Source="{Binding ImageSourceUrl, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}" HorizontalAlignment="Right" Height="337" Margin="0,41,250,0" VerticalAlignment="Top" Width="241"/>
+
+
+            <Image x:Name="CardImageSecondary" Source="{Binding ImageSourceUrl1, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}" HorizontalAlignment="Right" Height="337" Margin="0,41,250,0" VerticalAlignment="Top" Width="241"/>
 
 
 

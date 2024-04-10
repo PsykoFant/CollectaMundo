@@ -16,7 +16,7 @@ namespace CardboardHoarder
         #region Set up varibales
         // Used for displaying images
         private string _imageSourceUrl = string.Empty;
-
+        private string _imageSourceUrl1 = string.Empty;
         public string ImageSourceUrl
         {
             get => _imageSourceUrl;
@@ -26,6 +26,18 @@ namespace CardboardHoarder
                 {
                     _imageSourceUrl = value;
                     OnPropertyChanged(nameof(ImageSourceUrl));
+                }
+            }
+        }
+        public string ImageSourceUrl1
+        {
+            get => _imageSourceUrl1;
+            set
+            {
+                if (_imageSourceUrl1 != value)
+                {
+                    _imageSourceUrl1 = value;
+                    OnPropertyChanged(nameof(ImageSourceUrl1));
                 }
             }
         }
@@ -407,7 +419,9 @@ namespace CardboardHoarder
         private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
             // Clear comboboxes
+            filterCardNameComboBox.Text = string.Empty;
             filterCardNameComboBox.SelectedIndex = -1;
+            filterSetNameComboBox.Text = string.Empty;
             filterSetNameComboBox.SelectedIndex = -1;
             allOrNoneComboBox.SelectedIndex = 0;
             ManaValueComboBox.SelectedIndex = -1;
@@ -645,14 +659,24 @@ namespace CardboardHoarder
                     string? scryfallId = await GetScryfallIdByUuidAsync(selectedCard.Uuid);
                     DBAccess.CloseConnection();
 
-                    // Only proceed if scryfallId is not null and has the expected length
                     if (!string.IsNullOrEmpty(scryfallId) && scryfallId.Length >= 2)
                     {
                         char dir1 = scryfallId[0];
                         char dir2 = scryfallId[1];
 
                         string cardImageUrl = $"https://cards.scryfall.io/normal/front/{dir1}/{dir2}/{scryfallId}.jpg";
-                        ImageSourceUrl = cardImageUrl;
+                        string secondCardImageUrl = $"https://cards.scryfall.io/normal/back/{dir1}/{dir2}/{scryfallId}.jpg";
+
+
+                        if (selectedCard.Side == "a" || selectedCard.Side == "b")
+                        {
+                            ImageSourceUrl = cardImageUrl;
+                            ImageSourceUrl1 = secondCardImageUrl;
+                        }
+                        else
+                        {
+                            ImageSourceUrl = cardImageUrl;
+                        }
                     }
                 }
             }
@@ -680,7 +704,6 @@ namespace CardboardHoarder
                 }
                 catch (Exception ex)
                 {
-                    // Handle exceptions (e.g., log the error or notify the user)
                     Debug.WriteLine($"Error in GetScryfallIdByUuidAsync: {ex.Message}");
                 }
             }
@@ -707,7 +730,8 @@ namespace CardboardHoarder
                     "c.text AS RulesText, " +
                     "c.manaValue AS ManaValue, " +
                     "c.uuid AS Uuid, " +
-                    "c.finishes AS Finishes " +
+                    "c.finishes AS Finishes, " +
+                    "c.side AS Side " +
                     "FROM cards c " +
                     "JOIN sets s ON c.setCode = s.code " +
                     "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
@@ -744,6 +768,7 @@ namespace CardboardHoarder
                         ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0,
                         Uuid = reader["Uuid"]?.ToString() ?? string.Empty,
                         Finishes = reader["Finishes"]?.ToString() ?? string.Empty,
+                        Side = reader["Side"]?.ToString() ?? string.Empty,
                     });
                 }
 
