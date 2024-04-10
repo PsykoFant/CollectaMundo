@@ -42,6 +42,7 @@ namespace CardboardHoarder
         private List<CardSet> cards = new List<CardSet>();
 
         // Lists for populating listboxes
+        private List<string> allNames = new List<string>();
         private List<string> allColors = new List<string>();
         private List<string> allTypes = new List<string>();
         private List<string> allSuperTypes = new List<string>();
@@ -49,6 +50,7 @@ namespace CardboardHoarder
         private List<string> allKeywords = new List<string>();
 
         // Hashsets to store selected checkbox items in listboxes
+        private HashSet<string> selectedNames = new HashSet<string>();
         private HashSet<string> selectedColors = new HashSet<string>();
         private HashSet<string> selectedTypes = new HashSet<string>();
         private HashSet<string> selectedSuperTypes = new HashSet<string>();
@@ -56,6 +58,7 @@ namespace CardboardHoarder
         private HashSet<string> selectedKeywords = new HashSet<string>();
 
         // Default text for filter elements
+        private string namesDefaultText = "Filter card names...";
         private string rulesTextDefaultText = "Filter rulestext...";
         private string typesDefaultText = "Filter card types...";
         private string superTypesDefaultText = "Filter supertypes...";
@@ -84,6 +87,7 @@ namespace CardboardHoarder
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox; // Update the statusbox with messages from methods in UpdateDB
 
             // Set filter elements default text
+            filterCardNamesTextBox.Text = namesDefaultText;
             filterRulesTextTextBox.Text = rulesTextDefaultText;
             filterTypesTextBox.Text = typesDefaultText;
             filterSuperTypesTextBox.Text = superTypesDefaultText;
@@ -134,27 +138,28 @@ namespace CardboardHoarder
                             allItems = allTypes;
                             targetListBox = filterTypesListBox;
                             selectedItems = selectedTypes;
-                            placeholderText = "Filter card types...";
+                            placeholderText = typesDefaultText;
                             break;
                         case "filterSuperTypesTextBox":
                             allItems = allSuperTypes;
                             targetListBox = filterSuperTypesListBox;
                             selectedItems = selectedSuperTypes;
-                            placeholderText = "Filter supertypes...";
+                            placeholderText = superTypesDefaultText;
                             break;
                         case "filterSubTypesTextBox":
                             allItems = allSubTypes;
                             targetListBox = filterSubTypesListBox;
                             selectedItems = selectedSubTypes;
-                            placeholderText = "Filter subtypes...";
+                            placeholderText = subTypesDefualtText;
                             break;
                         case "filterKeywordsTextBox":
                             allItems = allKeywords;
                             targetListBox = filterKeywordsListBox;
                             selectedItems = selectedKeywords;
-                            placeholderText = "Filter keywords...";
+                            placeholderText = keywordsDefaultText;
                             break;
                     }
+
 
                     if (targetListBox != null && textBox.Text != placeholderText)
                     {
@@ -163,6 +168,7 @@ namespace CardboardHoarder
                             : allItems.Where(type => type.IndexOf(textBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
 
                         targetListBox.ItemsSource = filteredItems;
+
 
                         // Reapply the selected state to the checkboxes
                         targetListBox.Dispatcher.Invoke(() =>
@@ -179,6 +185,7 @@ namespace CardboardHoarder
                                     }
                                 }
                             }
+
                         }, System.Windows.Threading.DispatcherPriority.Loaded);
                     }
                 }
@@ -196,6 +203,7 @@ namespace CardboardHoarder
                 {
                     string placeholderText = textBox.Name switch
                     {
+                        "filterCardNamesTextBox" => namesDefaultText,
                         "filterTypesTextBox" => typesDefaultText,
                         "filterSuperTypesTextBox" => superTypesDefaultText,
                         "filterSubTypesTextBox" => subTypesDefualtText,
@@ -224,6 +232,7 @@ namespace CardboardHoarder
                 {
                     string placeholderText = textBox.Name switch
                     {
+                        "filterCardNamesTextBox" => namesDefaultText,
                         "filterTypesTextBox" => typesDefaultText,
                         "filterSuperTypesTextBox" => superTypesDefaultText,
                         "filterSubTypesTextBox" => subTypesDefualtText,
@@ -390,6 +399,10 @@ namespace CardboardHoarder
             ApplyFilter();
             UpdateFilterLabel();
         }
+        private void filterCardNameButton_Click(object sender, RoutedEventArgs e)
+        {
+            ApplyFilter();
+        }
 
         // Reset filter elements
         private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
@@ -414,6 +427,11 @@ namespace CardboardHoarder
             selectedSubTypes.Clear();
             selectedKeywords.Clear();
             selectedColors.Clear();
+
+
+            filterCardNamesTextBox.Text = string.Empty;
+            filterCardNamesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            filterCardNamesTextBox.Text = namesDefaultText;
 
             filterRulesTextTextBox.Text = string.Empty;
             filterRulesTextTextBox.Foreground = new SolidColorBrush(Colors.Gray);
@@ -478,6 +496,8 @@ namespace CardboardHoarder
                 var filteredCards = cards.AsEnumerable();
 
 
+                string nameFilter = filterCardNamesTextBox.Text;
+
                 string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? string.Empty;
                 string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? string.Empty;
                 string rulesTextFilter = filterRulesTextTextBox.Text;
@@ -490,7 +510,7 @@ namespace CardboardHoarder
                 filteredCards = FilterByManaValue(filteredCards, compareOperator, manaValueCompare);
 
                 // Filtering by card name, set name, and rules text
-                filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter);
+                filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter, nameFilter);
 
                 // Filter by colors
                 filteredCards = FilterByCriteria(filteredCards, selectedColors, useAnd, card => card.ManaCost, exclude);
@@ -510,22 +530,26 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
             }
         }
-        private IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
+        private IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter, string nameFilter)
         {
             try
             {
                 var filteredCards = cards;
+                if (!string.IsNullOrEmpty(nameFilter))
+                {
+                    filteredCards = filteredCards.Where(card => card.Name != null && card.Name.IndexOf(nameFilter, StringComparison.OrdinalIgnoreCase) >= 0);
+                }
                 if (!string.IsNullOrEmpty(cardFilter))
                 {
-                    filteredCards = filteredCards.Where(card => card.Name != null && card.Name.Contains(cardFilter));
+                    filteredCards = filteredCards.Where(card => card.Name != null && card.Name.IndexOf(cardFilter, StringComparison.OrdinalIgnoreCase) >= 0);
                 }
                 if (!string.IsNullOrEmpty(setFilter))
                 {
-                    filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.Contains(setFilter));
+                    filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.IndexOf(setFilter, StringComparison.OrdinalIgnoreCase) >= 0);
                 }
                 if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != rulesTextDefaultText)
                 {
-                    filteredCards = filteredCards.Where(card => card.Text != null && card.Text.Contains(rulesTextFilter));
+                    filteredCards = filteredCards.Where(card => card.Text != null && card.Text.IndexOf(rulesTextFilter, StringComparison.OrdinalIgnoreCase) >= 0);
                 }
                 return filteredCards;
             }
@@ -535,6 +559,7 @@ namespace CardboardHoarder
                 return Enumerable.Empty<CardSet>();
             }
         }
+
         private IEnumerable<CardSet> FilterByCriteria(IEnumerable<CardSet> cards, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector, bool exclude = false)
         {
             if (cards == null)
@@ -739,7 +764,6 @@ namespace CardboardHoarder
                 {
                     cardCountLabel.Content = $"Cards shown: {cards.Count}";
                     mainCardWindowDatagrid.ItemsSource = cards;
-                    FaceNameListBox.ItemsSource = cards;
                     dataView = CollectionViewSource.GetDefaultView(cards);
                 });
             }
@@ -821,7 +845,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
             }
         }
-        #endregion        
+        #endregion
 
         #region UI elements for updating card database
         private async void checkForUpdatesButton_Click(object sender, RoutedEventArgs e)
@@ -916,7 +940,5 @@ namespace CardboardHoarder
 
             return null;
         }
-
-
     }
 }
