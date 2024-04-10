@@ -639,7 +639,7 @@ namespace CardboardHoarder
                         char dir1 = scryfallId[0];
                         char dir2 = scryfallId[1];
 
-                        string cardImageUrl = $"https://cards.scryfall.io/large/front/{dir1}/{dir2}/{scryfallId}.jpg";
+                        string cardImageUrl = $"https://cards.scryfall.io/normal/front/{dir1}/{dir2}/{scryfallId}.jpg";
                         ImageSourceUrl = cardImageUrl;
                     }
                 }
@@ -649,7 +649,6 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error in selection changed: {ex.Message}");
             }
         }
-
         public async Task<string?> GetScryfallIdByUuidAsync(string uuid)
         {
             string query = "SELECT scryfallId FROM cardIdentifiers WHERE uuid = @uuid";
@@ -684,6 +683,7 @@ namespace CardboardHoarder
             {
                 string query =
                     "SELECT c.name AS Name, " +
+                    "c.faceName AS FaceName, " +
                     "s.name AS SetName, " +
                     "k.keyruneImage AS KeyRuneImage, " +
                     "c.manaCost AS ManaCost, " +
@@ -695,7 +695,8 @@ namespace CardboardHoarder
                     "c.keywords AS Keywords, " +
                     "c.text AS RulesText, " +
                     "c.manaValue AS ManaValue, " +
-                    "c.uuid AS Uuid " +
+                    "c.uuid AS Uuid, " +
+                    "c.finishes AS Finishes " +
                     "FROM cards c " +
                     "JOIN sets s ON c.setCode = s.code " +
                     "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
@@ -730,6 +731,7 @@ namespace CardboardHoarder
                         Text = reader["RulesText"]?.ToString() ?? string.Empty,
                         ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0,
                         Uuid = reader["Uuid"]?.ToString() ?? string.Empty,
+                        Finishes = reader["Finishes"]?.ToString() ?? string.Empty,
                     });
                 }
 
@@ -737,6 +739,7 @@ namespace CardboardHoarder
                 {
                     cardCountLabel.Content = $"Cards shown: {cards.Count}";
                     mainCardWindowDatagrid.ItemsSource = cards;
+                    FaceNameListBox.ItemsSource = cards;
                     dataView = CollectionViewSource.GetDefaultView(cards);
                 });
             }

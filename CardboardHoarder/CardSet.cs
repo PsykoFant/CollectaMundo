@@ -25,7 +25,8 @@ namespace CardboardHoarder
         public string? FaceFlavorName { get; set; }
         public double? FaceManaValue { get; set; }
         public string? FaceName { get; set; }
-        public List<string>? Finishes { get; set; }
+        //public List<string>? Finishes { get; set; }
+        public string? Finishes { get; set; }
         public string? FlavorName { get; set; }
         public string? FlavorText { get; set; }
         //public List<ForeignData> ForeignData { get; set; }

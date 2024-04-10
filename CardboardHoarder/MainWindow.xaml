@@ -18,9 +18,8 @@
             <Label x:Name="statusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top" Width="738" d:IsHidden="True"/>
 
         </Grid>
-        <Grid x:Name="GridSearchAndFilter" Margin="0,48,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Height="815">
+        <Grid x:Name="GridSearchAndFilter" Margin="0,48,0,0" HorizontalAlignment="Left" Width="1337">
             <Image x:Name="iconTester" HorizontalAlignment="Left" Height="44" Margin="843,42,0,0" VerticalAlignment="Top" Width="59"/>
-            <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Left" Margin="369,0,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
 
             <!--The main card view datagrid-->
             <DataGrid x:Name="mainCardWindowDatagrid" Margin="272,391,0,0"
@@ -52,10 +51,12 @@
                     <DataGridTextColumn Header="Card Supertypes" Visibility="Collapsed" Binding="{Binding SuperTypes}" />
                     <DataGridTextColumn Header="Card Subtypes" Visibility="Collapsed" Binding="{Binding SubTypes}" />
                     <DataGridTextColumn Header="Card type" Binding="{Binding Type}" />
-                    <DataGridTextColumn Header="Keywords" Binding="{Binding Keywords}" />
-                    <DataGridTextColumn Header="Rules Text" Binding="{Binding Text}" />
-                    <DataGridTextColumn Header="Mana Value" Binding="{Binding ManaValue}" />
-                    <DataGridTextColumn Header="Uuid" Binding="{Binding Uuid}" />
+                    <DataGridTextColumn Header="Keywords" Visibility="Collapsed" Binding="{Binding Keywords}" />
+                    <DataGridTextColumn Header="Rules Text" Visibility="Collapsed" Binding="{Binding Text}" />
+                    <DataGridTextColumn Header="Mana Value" Visibility="Collapsed" Binding="{Binding ManaValue}" />
+                    <DataGridTextColumn Header="Uuid" Visibility="Collapsed" Binding="{Binding Uuid}" />
+                    <DataGridTextColumn Header="Finishes" Binding="{Binding Finishes}" />
+                    <DataGridTextColumn Header="Facename" Binding="{Binding FaceName}" />
 
                 </DataGrid.Columns>
             </DataGrid>
@@ -77,7 +78,7 @@
             </ComboBox>
 
             <!--Rulestext filtering-->
-            <Label x:Name="cardRulesTextLabel" Content="" HorizontalAlignment="Left" Margin="272,140,0,0" VerticalAlignment="Top" Width="547" Height="30"/>
+            <Label x:Name="cardRulesTextLabel" Content="" HorizontalAlignment="Left" Margin="272,239,0,0" VerticalAlignment="Top" Width="571" Height="30"/>
             <TextBox x:Name="filterRulesTextTextBox" HorizontalAlignment="Left" Margin="11,107,0,0" TextWrapping="Wrap" Foreground="Gray"
                 GotFocus="TextBox_GotFocus" 
                 LostFocus="TextBox_LostFocus" 
@@ -85,7 +86,7 @@
             <Button x:Name="filterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="11,151,0,0" VerticalAlignment="Top" Click="filterRulesTextButton_Click"/>
 
             <!--Card type listbox and filtering-->
-            <Label x:Name="cardTypeLabel" Content="" HorizontalAlignment="Left" Margin="272,170,0,0" VerticalAlignment="Top" Width="547" Height="30"/>
+            <Label x:Name="cardTypeLabel" Content="" HorizontalAlignment="Left" Margin="272,269,0,0" VerticalAlignment="Top" Width="571" Height="30"/>
             <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,180,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>
@@ -118,7 +119,7 @@
             </ListBox>
 
             <!--Supertype listbox and filtering-->
-            <Label x:Name="cardSuperTypesLabel" Content="" HorizontalAlignment="Left" Margin="272,200,0,0" VerticalAlignment="Top" Width="547" Height="30"/>
+            <Label x:Name="cardSuperTypesLabel" Content="" HorizontalAlignment="Left" Margin="272,299,0,0" VerticalAlignment="Top" Width="571" Height="30"/>
             <CheckBox x:Name="superTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,275,0,0" VerticalAlignment="Top"
                Checked="AndOrCheckBox_Toggled"
                Unchecked="AndOrCheckBox_Toggled"/>
@@ -151,7 +152,7 @@
             </ListBox>
 
             <!--Subtype listbox and filtering-->
-            <Label x:Name="cardSubTypeLabel" Content="" HorizontalAlignment="Left" Margin="272,230,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="547" Height="30"/>
+            <Label x:Name="cardSubTypeLabel" Content="" HorizontalAlignment="Left" Margin="272,329,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="571" Height="30"/>
             <CheckBox x:Name="subTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,371,0,0" VerticalAlignment="Top"
                Checked="AndOrCheckBox_Toggled"
                Unchecked="AndOrCheckBox_Toggled"/>
@@ -184,7 +185,7 @@
             </ListBox>
 
             <!--Keywords listbox and filtering-->
-            <Label x:Name="cardKeywordsLabel" Content="" HorizontalAlignment="Left" Margin="272,260,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="547" Height="30"/>
+            <Label x:Name="cardKeywordsLabel" Content="" HorizontalAlignment="Left" Margin="272,359,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="571" Height="30"/>
             <CheckBox x:Name="keywordsAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,468,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>
@@ -246,12 +247,24 @@
             <Label x:Name="manaValueLabel" Content="Mana value is " HorizontalAlignment="Left" Margin="10,751,0,0" VerticalAlignment="Top"/>
             <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="192,755,0,0" VerticalAlignment="Top" Width="75"/>
             <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="98,755,0,0" VerticalAlignment="Top" Width="89"/>
-            
+
             <!--Misc filtering-->
             <Label x:Name="cardCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="116" Height="30"/>
             <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="180,786,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
 
-            <Image x:Name="CardImage" Source="{Binding ImageSourceUrl, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}"  HorizontalAlignment="Left" Height="369" Margin="853,10,0,0" VerticalAlignment="Top" Width="288"/>
+            <Image x:Name="CardImage" Source="{Binding ImageSourceUrl, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}"  HorizontalAlignment="Right" Height="338" Margin="0,41,0,0" VerticalAlignment="Top" Width="242" RenderTransformOrigin="0.5,0.5">
+                <Image.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform/>
+                        <SkewTransform/>
+                        <RotateTransform Angle="0"/>
+                        <TranslateTransform/>
+                    </TransformGroup>
+                </Image.RenderTransform>
+            </Image>
+            <Image x:Name="CardImageSecondary" Source="{Binding ImageSourceUrl, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}" HorizontalAlignment="Right" Height="337" Margin="0,41,250,0" VerticalAlignment="Top" Width="241"/>
+            <ListBox x:Name="FaceNameListBox" ItemsSource="{Binding cards}" DisplayMemberPath="FaceName" Margin="272,42,607,720"/>
+
 
 
 
@@ -261,9 +274,10 @@
         <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="36" Margin="0,48,0,0" VerticalAlignment="Top" Width="138" d:IsHidden="True">
             <Label x:Name="headlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" FontFamily="Bodoni MT"/>
         </Grid>
-        <Button x:Name="checkForUpdatesButton" Content="Check for updates" HorizontalAlignment="Left" Margin="867,10,0,0" VerticalAlignment="Top" Width="130" Click="checkForUpdatesButton_Click"/>
-        <Label x:Name="infoLabel" Content="" HorizontalAlignment="Left" Margin="550,7,0,0" VerticalAlignment="Top" Width="182"/>
+        <Button x:Name="checkForUpdatesButton" Content="Check for updates" HorizontalAlignment="Right" Margin="1011,13,0,0" VerticalAlignment="Top" Width="130" Click="checkForUpdatesButton_Click"/>
+        <Label x:Name="infoLabel" Content="" HorizontalAlignment="Right" Margin="0,7,135,0" VerticalAlignment="Top" Width="182" Height="30"/>
         <Button x:Name="updateDbButton" Content="Update card database" HorizontalAlignment="Left" Margin="743,10,0,0" VerticalAlignment="Top" Width="129" Click="updateDbButton_Click" Visibility="Hidden"/>
+        <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" Margin="516,4,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
 
 
     </Grid>
