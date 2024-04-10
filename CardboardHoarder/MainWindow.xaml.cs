@@ -682,8 +682,7 @@ namespace CardboardHoarder
             try
             {
                 string query =
-                    "SELECT c.name AS Name, " +
-                    "c.faceName AS FaceName, " +
+                    "SELECT COALESCE(c.faceName, c.name) AS Name, " +
                     "s.name AS SetName, " +
                     "k.keyruneImage AS KeyRuneImage, " +
                     "c.manaCost AS ManaCost, " +
@@ -701,6 +700,7 @@ namespace CardboardHoarder
                     "JOIN sets s ON c.setCode = s.code " +
                     "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
                     "LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost";
+
 
                 using var command = new SQLiteCommand(query, DBAccess.connection);
                 using var reader = await command.ExecuteReaderAsync();
