@@ -710,6 +710,7 @@ namespace CardboardHoarder
             return null;
         }
 
+
         #region Load data and populate UI elements
         private async Task LoadDataAsync()
         {
