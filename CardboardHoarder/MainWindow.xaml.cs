@@ -48,6 +48,8 @@ namespace CardboardHoarder
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        private ListBox filterTypesListBoxNew;
+
         // Used by ShowOrHideStatusWindow to reference MainWindow
         private static MainWindow? _currentInstance;
         private ICollectionView? dataView;
@@ -131,6 +133,16 @@ namespace CardboardHoarder
         }
 
         #region Filter elements handling        
+        private void ComboBox_DropDownOpened(object sender, EventArgs e)
+        {
+            ComboBox comboBox = sender as ComboBox;
+            if (comboBox.Template.FindName("filterTypesListBoxNew", comboBox) is ListBox listBox)
+            {
+                filterTypesListBoxNew = listBox; // Assign it to the field
+            }
+        }
+
+
         private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             try
@@ -138,55 +150,24 @@ namespace CardboardHoarder
                 if (sender is TextBox textBox)
                 {
                     List<string> allItems = new List<string>();
-                    ListBox? targetListBox = null;
-                    HashSet<string> selectedItems = new HashSet<string>();
-                    string placeholderText = string.Empty;
+                    HashSet<string> selectedItems = selectedTypes;
+                    string placeholderText = typesDefaultText;
 
-                    // Determine the context based on which TextBox is sending the event
-                    switch (textBox.Name)
+                    if (filterTypesListBoxNew != null && textBox.Text != placeholderText)
                     {
-                        case "filterTypesTextBox":
-                            allItems = allTypes;
-                            targetListBox = filterTypesListBox;
-                            selectedItems = selectedTypes;
-                            placeholderText = typesDefaultText;
-                            break;
-                        case "filterSuperTypesTextBox":
-                            allItems = allSuperTypes;
-                            targetListBox = filterSuperTypesListBox;
-                            selectedItems = selectedSuperTypes;
-                            placeholderText = superTypesDefaultText;
-                            break;
-                        case "filterSubTypesTextBox":
-                            allItems = allSubTypes;
-                            targetListBox = filterSubTypesListBox;
-                            selectedItems = selectedSubTypes;
-                            placeholderText = subTypesDefualtText;
-                            break;
-                        case "filterKeywordsTextBox":
-                            allItems = allKeywords;
-                            targetListBox = filterKeywordsListBox;
-                            selectedItems = selectedKeywords;
-                            placeholderText = keywordsDefaultText;
-                            break;
-                    }
-
-
-                    if (targetListBox != null && textBox.Text != placeholderText)
-                    {
+                        allItems = allTypes;
                         var filteredItems = string.IsNullOrWhiteSpace(textBox.Text)
                             ? allItems
                             : allItems.Where(type => type.IndexOf(textBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
 
-                        targetListBox.ItemsSource = filteredItems;
-
+                        filterTypesListBoxNew.ItemsSource = filteredItems;
 
                         // Reapply the selected state to the checkboxes
-                        targetListBox.Dispatcher.Invoke(() =>
+                        filterTypesListBoxNew.Dispatcher.Invoke(() =>
                         {
                             foreach (var item in filteredItems)
                             {
-                                var listBoxItem = targetListBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+                                var listBoxItem = filterTypesListBoxNew.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
                                 if (listBoxItem != null)
                                 {
                                     var checkBox = FindVisualChild<CheckBox>(listBoxItem);
@@ -196,7 +177,6 @@ namespace CardboardHoarder
                                     }
                                 }
                             }
-
                         }, System.Windows.Threading.DispatcherPriority.Loaded);
                     }
                 }
@@ -206,6 +186,89 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error in FilterTextBox_TextChanged: {ex.Message}");
             }
         }
+
+
+        //private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        //{
+        //    try
+        //    {
+        //        if (sender is TextBox textBox)
+        //        {
+        //            List<string> allItems = new List<string>();
+        //            ListBox? targetListBox = null;
+        //            HashSet<string> selectedItems = new HashSet<string>();
+        //            string placeholderText = string.Empty;
+
+        //            // Determine the context based on which TextBox is sending the event
+        //            switch (textBox.Name)
+        //            {
+        //                case "filterTypesTextBoxNew":
+        //                    allItems = allTypes;
+        //                    targetListBox = filterTypesListBoxNew;
+        //                    selectedItems = selectedTypes;
+        //                    placeholderText = typesDefaultText;
+        //                    break;
+        //                case "filterTypesTextBox":
+        //                    allItems = allTypes;
+        //                    targetListBox = filterTypesListBox;
+        //                    selectedItems = selectedTypes;
+        //                    placeholderText = typesDefaultText;
+        //                    break;
+        //                case "filterSuperTypesTextBox":
+        //                    allItems = allSuperTypes;
+        //                    targetListBox = filterSuperTypesListBox;
+        //                    selectedItems = selectedSuperTypes;
+        //                    placeholderText = superTypesDefaultText;
+        //                    break;
+        //                case "filterSubTypesTextBox":
+        //                    allItems = allSubTypes;
+        //                    targetListBox = filterSubTypesListBox;
+        //                    selectedItems = selectedSubTypes;
+        //                    placeholderText = subTypesDefualtText;
+        //                    break;
+        //                case "filterKeywordsTextBox":
+        //                    allItems = allKeywords;
+        //                    targetListBox = filterKeywordsListBox;
+        //                    selectedItems = selectedKeywords;
+        //                    placeholderText = keywordsDefaultText;
+        //                    break;
+        //            }
+
+
+        //            if (targetListBox != null && textBox.Text != placeholderText)
+        //            {
+        //                var filteredItems = string.IsNullOrWhiteSpace(textBox.Text)
+        //                    ? allItems
+        //                    : allItems.Where(type => type.IndexOf(textBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+
+        //                targetListBox.ItemsSource = filteredItems;
+
+
+        //                // Reapply the selected state to the checkboxes
+        //                targetListBox.Dispatcher.Invoke(() =>
+        //                {
+        //                    foreach (var item in filteredItems)
+        //                    {
+        //                        var listBoxItem = targetListBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+        //                        if (listBoxItem != null)
+        //                        {
+        //                            var checkBox = FindVisualChild<CheckBox>(listBoxItem);
+        //                            if (checkBox != null && selectedItems.Contains(item))
+        //                            {
+        //                                checkBox.IsChecked = true;
+        //                            }
+        //                        }
+        //                    }
+
+        //                }, System.Windows.Threading.DispatcherPriority.Loaded);
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"Error in FilterTextBox_TextChanged: {ex.Message}");
+        //    }
+        //}
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
             try
