@@ -276,7 +276,45 @@
                Margin="0,41,0,0"
                VerticalAlignment="Top"
                Width="241"/>
-            <ComboBox x:Name="typesComboBox" HorizontalAlignment="Left" Margin="360,200,0,0" VerticalAlignment="Top" Width="399"/>
+
+            <ComboBox x:Name="typesComboBox" HorizontalAlignment="Left" Margin="272,41,0,0" VerticalAlignment="Top" Width="399">
+                <ComboBox.Template>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <!-- This toggle button will show or hide the popup -->
+                            <ToggleButton Name="ToggleButton" Content="V" Focusable="false" ClickMode="Press" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            <ContentPresenter Content="{TemplateBinding SelectedItem}" Visibility="Hidden"/>
+                            <Popup Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
+                                <Border Background="White" BorderThickness="1" BorderBrush="Black">
+                                    <ListBox x:Name="filterTypesListBox" ItemsSource="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=ItemsSource}" 
+                                    SelectionMode="Multiple">
+                                        <ListBox.Resources>
+                                            <Style TargetType="{x:Type ListBoxItem}">
+                                                <Setter Property="SnapsToDevicePixels" Value="true" />
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                            <CheckBox Margin="5,2" 
+                                                                  IsChecked="{TemplateBinding IsSelected}"
+                                                                  Loaded="CheckBox_Loaded"
+                                                                  Tag="Type">
+                                                                <ContentPresenter />
+                                                            </CheckBox>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked" />
+                                                <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked" />
+                                            </Style>
+                                        </ListBox.Resources>
+                                    </ListBox>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </ComboBox.Template>
+            </ComboBox>
+
 
 
 

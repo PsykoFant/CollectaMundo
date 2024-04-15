@@ -841,6 +841,8 @@ namespace CardboardHoarder
 
                 Dispatcher.Invoke(() =>
                 {
+                    typesComboBox.ItemsSource = allTypes;
+
                     filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                     filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                     filterColorsListBox.ItemsSource = allColors;
