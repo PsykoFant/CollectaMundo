@@ -136,56 +136,87 @@ namespace CardboardHoarder
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
             ComboBox comboBox = sender as ComboBox;
-            if (comboBox.Template.FindName("filterTypesListBoxNew", comboBox) is ListBox listBox)
+            if (comboBox != null)
             {
-                filterTypesListBoxNew = listBox; // Assign it to the field
+                var filterTextBox = comboBox.Template.FindName("FilterTextBox", comboBox) as TextBox;
+                if (filterTextBox != null && string.IsNullOrWhiteSpace(filterTextBox.Text))
+                {
+                    PopulateListBoxWithInitialValues();
+                }
             }
         }
 
+
+        private void PopulateListBoxWithInitialValues()
+        {
+            if (typesComboBox.Template.FindName("filterTypesListBoxNew", typesComboBox) is ListBox listBox)
+            {
+                var itemsSource = allTypes.Distinct().OrderBy(type => type).ToList();
+                listBox.ItemsSource = itemsSource;
+
+                listBox.Dispatcher.Invoke(() =>
+                {
+                    foreach (var item in itemsSource)
+                    {
+                        var listBoxItem = listBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+                        if (listBoxItem != null)
+                        {
+                            var checkBox = FindVisualChild<CheckBox>(listBoxItem);
+                            if (checkBox != null && selectedTypes.Contains(item))
+                            {
+                                checkBox.IsChecked = true;
+                            }
+                        }
+                    }
+                }, System.Windows.Threading.DispatcherPriority.Loaded);
+            }
+        }
 
         private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            try
+            if (sender is TextBox textBox)
             {
-                if (sender is TextBox textBox)
+                if (filterTypesListBoxNew == null)
                 {
-                    List<string> allItems = new List<string>();
-                    HashSet<string> selectedItems = selectedTypes;
-                    string placeholderText = typesDefaultText;
-
-                    if (filterTypesListBoxNew != null && textBox.Text != placeholderText)
-                    {
-                        allItems = allTypes;
-                        var filteredItems = string.IsNullOrWhiteSpace(textBox.Text)
-                            ? allItems
-                            : allItems.Where(type => type.IndexOf(textBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-
-                        filterTypesListBoxNew.ItemsSource = filteredItems;
-
-                        // Reapply the selected state to the checkboxes
-                        filterTypesListBoxNew.Dispatcher.Invoke(() =>
-                        {
-                            foreach (var item in filteredItems)
-                            {
-                                var listBoxItem = filterTypesListBoxNew.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
-                                if (listBoxItem != null)
-                                {
-                                    var checkBox = FindVisualChild<CheckBox>(listBoxItem);
-                                    if (checkBox != null && selectedItems.Contains(item))
-                                    {
-                                        checkBox.IsChecked = true;
-                                    }
-                                }
-                            }
-                        }, System.Windows.Threading.DispatcherPriority.Loaded);
-                    }
+                    filterTypesListBoxNew = typesComboBox.Template.FindName("filterTypesListBoxNew", typesComboBox) as ListBox;
+                    if (filterTypesListBoxNew == null) return;  // Ensure the list box is found
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in FilterTextBox_TextChanged: {ex.Message}");
+
+                List<string> filteredItems;
+                if (!string.IsNullOrWhiteSpace(textBox.Text))
+                {
+                    filteredItems = allTypes.Where(type => type.IndexOf(textBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                }
+                else
+                {
+                    filteredItems = allTypes.Distinct().OrderBy(type => type).ToList();
+                }
+
+                filterTypesListBoxNew.ItemsSource = filteredItems;
+
+                filterTypesListBoxNew.Dispatcher.Invoke(() =>
+                {
+                    foreach (var item in filteredItems)
+                    {
+                        var listBoxItem = filterTypesListBoxNew.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+                        if (listBoxItem != null)
+                        {
+                            var checkBox = FindVisualChild<CheckBox>(listBoxItem);
+                            if (checkBox != null)
+                            {
+                                checkBox.IsChecked = selectedTypes.Contains(item);
+                            }
+                        }
+                    }
+                }, System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
+
+
+
+
+
+
 
 
         //private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)

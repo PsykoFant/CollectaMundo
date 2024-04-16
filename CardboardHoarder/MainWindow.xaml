@@ -283,7 +283,7 @@
                         <Grid>
                             <TextBox x:Name="FilterTextBox"
                          VerticalAlignment="Top"
-                         BorderThickness="0"
+                         BorderThickness="1"
                          Background="Transparent"
                          TextChanged="FilterTextBox_TextChanged"
                          Foreground="{TemplateBinding Foreground}"
