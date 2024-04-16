@@ -281,29 +281,29 @@
                 <ComboBox.Template>
                     <ControlTemplate TargetType="ComboBox">
                         <Grid>
-                            <TextBox x:Name="FilterTextBox"
-                         VerticalAlignment="Top"
-                         BorderThickness="1"
-                         Background="Transparent"
-                         TextChanged="FilterTextBox_TextChanged"
-                         Foreground="{TemplateBinding Foreground}"
-                         FontFamily="{TemplateBinding FontFamily}"
-                         FontSize="{TemplateBinding FontSize}"
-                         Padding="3,3,0,0"
-                         Margin="0,0,0,25"/>
+                            <TextBox x:Name="FilterTypesTextBox"
+                                 VerticalAlignment="Top"
+                                 BorderThickness="1"
+                                 Background="Transparent"
+                                 TextChanged="FilterTextBox_TextChanged"
+                                 Foreground="{TemplateBinding Foreground}"
+                                 FontFamily="{TemplateBinding FontFamily}"
+                                 FontSize="{TemplateBinding FontSize}"
+                                 Padding="3,3,0,0"
+                                 Margin="0,0,0,0"/>
 
-                            <ToggleButton Grid.Row="0" Name="ToggleButton" Content="V" Focusable="false"
+                            <ToggleButton Grid.Row="0" Name="ToggleButton" Content="Types" Focusable="false"
                               ClickMode="Press"
                               IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
                               VerticalAlignment="Top"
                               HorizontalAlignment="Right"
-                              Width="20" Height="20"/>
+                              Width="40" Height="20"/>
 
                             <Popup Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                 <Border Background="White" BorderThickness="1" BorderBrush="Black">
                                     <ListBox x:Name="filterTypesListBoxNew" 
-                                 ItemsSource="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=ItemsSource}" 
-                                 SelectionMode="Multiple">
+                                     ItemsSource="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=ItemsSource}" 
+                                     SelectionMode="Multiple">
                                         <ListBox.Resources>
                                             <Style TargetType="{x:Type ListBoxItem}">
                                                 <Setter Property="SnapsToDevicePixels" Value="true"/>

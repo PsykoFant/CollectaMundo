@@ -145,8 +145,6 @@ namespace CardboardHoarder
                 }
             }
         }
-
-
         private void PopulateListBoxWithInitialValues()
         {
             if (typesComboBox.Template.FindName("filterTypesListBoxNew", typesComboBox) is ListBox listBox)
@@ -171,7 +169,6 @@ namespace CardboardHoarder
                 }, System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
-
         private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (sender is TextBox textBox)
@@ -186,6 +183,12 @@ namespace CardboardHoarder
                 if (!string.IsNullOrWhiteSpace(textBox.Text))
                 {
                     filteredItems = allTypes.Where(type => type.IndexOf(textBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+
+                    // Check if the ComboBox's dropdown is open; if not, open it
+                    if (!typesComboBox.IsDropDownOpen)
+                    {
+                        typesComboBox.IsDropDownOpen = true;
+                    }
                 }
                 else
                 {
@@ -211,6 +214,7 @@ namespace CardboardHoarder
                 }, System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
+
 
 
 
@@ -512,6 +516,12 @@ namespace CardboardHoarder
         // Reset filter elements
         private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
+
+            if (typesComboBox.Template.FindName("FilterTypesTextBox", typesComboBox) is TextBox filterTextBox)
+            {
+                filterTextBox.Text = string.Empty;  // Assuming you want to clear any text entered
+            }
+
             // Clear comboboxes
             filterCardNameComboBox.Text = string.Empty;
             filterCardNameComboBox.SelectedIndex = -1;
@@ -540,6 +550,7 @@ namespace CardboardHoarder
             filterRulesTextTextBox.Text = rulesTextDefaultText;
 
             // Clear listbox searchboxes
+
             filterTypesTextBox.Text = string.Empty;
             filterTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
             filterTypesTextBox.Text = typesDefaultText;
@@ -935,7 +946,7 @@ namespace CardboardHoarder
 
                 Dispatcher.Invoke(() =>
                 {
-                    typesComboBox.ItemsSource = allTypes;
+                    //typesComboBox.ItemsSource = allTypes;
 
                     filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                     filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
