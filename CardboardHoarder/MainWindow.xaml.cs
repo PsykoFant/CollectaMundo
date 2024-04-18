@@ -48,7 +48,7 @@ namespace CardboardHoarder
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private ListBox filterTypesListBoxNew;
+        private ListBox filterTypesListBox;
 
         // Used by ShowOrHideStatusWindow to reference MainWindow
         private static MainWindow? _currentInstance;
@@ -102,7 +102,7 @@ namespace CardboardHoarder
 
             // Set filter elements default text
             filterRulesTextTextBox.Text = rulesTextDefaultText;
-            filterTypesTextBox.Text = typesDefaultText;
+            //filterTypesTextBoxNew.Text = typesDefaultText;
             filterSuperTypesTextBox.Text = superTypesDefaultText;
             filterSubTypesTextBox.Text = subTypesDefualtText;
             filterKeywordsTextBox.Text = keywordsDefaultText;
@@ -147,7 +147,7 @@ namespace CardboardHoarder
         }
         private void PopulateListBoxWithInitialValues()
         {
-            if (typesComboBox.Template.FindName("filterTypesListBoxNew", typesComboBox) is ListBox listBox)
+            if (typesComboBox.Template.FindName("filterTypesListBox", typesComboBox) is ListBox listBox)
             {
                 var itemsSource = allTypes.Distinct().OrderBy(type => type).ToList();
                 listBox.ItemsSource = itemsSource;
@@ -173,10 +173,10 @@ namespace CardboardHoarder
         {
             if (sender is TextBox textBox)
             {
-                if (filterTypesListBoxNew == null)
+                if (filterTypesListBox == null)
                 {
-                    filterTypesListBoxNew = typesComboBox.Template.FindName("filterTypesListBoxNew", typesComboBox) as ListBox;
-                    if (filterTypesListBoxNew == null) return;  // Ensure the list box is found
+                    filterTypesListBox = typesComboBox.Template.FindName("filterTypesListBox", typesComboBox) as ListBox;
+                    if (filterTypesListBox == null) return;  // Ensure the list box is found
                 }
 
                 List<string> filteredItems;
@@ -195,13 +195,13 @@ namespace CardboardHoarder
                     filteredItems = allTypes.Distinct().OrderBy(type => type).ToList();
                 }
 
-                filterTypesListBoxNew.ItemsSource = filteredItems;
+                filterTypesListBox.ItemsSource = filteredItems;
 
-                filterTypesListBoxNew.Dispatcher.Invoke(() =>
+                filterTypesListBox.Dispatcher.Invoke(() =>
                 {
                     foreach (var item in filteredItems)
                     {
-                        var listBoxItem = filterTypesListBoxNew.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+                        var listBoxItem = filterTypesListBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
                         if (listBoxItem != null)
                         {
                             var checkBox = FindVisualChild<CheckBox>(listBoxItem);
@@ -313,7 +313,6 @@ namespace CardboardHoarder
                     string placeholderText = textBox.Name switch
                     {
                         "filterCardNamesTextBox" => namesDefaultText,
-                        "filterTypesTextBox" => typesDefaultText,
                         "filterSuperTypesTextBox" => superTypesDefaultText,
                         "filterSubTypesTextBox" => subTypesDefualtText,
                         "filterKeywordsTextBox" => keywordsDefaultText,
@@ -342,7 +341,6 @@ namespace CardboardHoarder
                     string placeholderText = textBox.Name switch
                     {
                         "filterCardNamesTextBox" => namesDefaultText,
-                        "filterTypesTextBox" => typesDefaultText,
                         "filterSuperTypesTextBox" => superTypesDefaultText,
                         "filterSubTypesTextBox" => subTypesDefualtText,
                         "filterKeywordsTextBox" => keywordsDefaultText,
@@ -532,7 +530,6 @@ namespace CardboardHoarder
             ManaValueOperatorComboBox.SelectedIndex = -1;
 
             // Clear selections in the ListBoxes
-            ClearListBoxSelections(filterTypesListBox);
             ClearListBoxSelections(filterSuperTypesListBox);
             ClearListBoxSelections(filterSubTypesListBox);
             ClearListBoxSelections(filterKeywordsListBox);
@@ -550,10 +547,6 @@ namespace CardboardHoarder
             filterRulesTextTextBox.Text = rulesTextDefaultText;
 
             // Clear listbox searchboxes
-
-            filterTypesTextBox.Text = string.Empty;
-            filterTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            filterTypesTextBox.Text = typesDefaultText;
 
             filterSuperTypesTextBox.Text = string.Empty;
             filterSuperTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
@@ -951,7 +944,6 @@ namespace CardboardHoarder
                     filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                     filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                     filterColorsListBox.ItemsSource = allColors;
-                    filterTypesListBox.ItemsSource = allTypes;
                     filterSuperTypesListBox.ItemsSource = allSuperTypes;
                     filterSubTypesListBox.ItemsSource = allSubTypes;
                     filterKeywordsListBox.ItemsSource = allKeywords;

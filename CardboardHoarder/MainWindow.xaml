@@ -9,11 +9,11 @@
         mc:Ignorable="d"
         Title="MainWindow">
 
-        <!-- Define resources accessible by all elements in this Window -->
-        <Window.Resources>
-            <!-- Add the image source converter here -->
-            <local:StringToImageSourceConverter x:Key="StringToImageSourceConverter"/>
-        </Window.Resources>
+    <!-- Define resources accessible by all elements in this Window -->
+    <Window.Resources>
+        <!-- Add the image source converter here -->
+        <local:StringToImageSourceConverter x:Key="StringToImageSourceConverter"/>
+    </Window.Resources>
 
     <Grid>
         <Button x:Name="MenuSearchAndFilterButton" Content="Search and Filter" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuSearchAndFilter_Click"/>
@@ -96,33 +96,6 @@
             <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,180,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>
-            <TextBox x:Name="filterTypesTextBox" HorizontalAlignment="Left" Margin="10,200,0,0" TextWrapping="Wrap" Foreground="Gray"
-                GotFocus="TextBox_GotFocus" 
-                LostFocus="TextBox_LostFocus" 
-                TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="257" Height="20"/>
-            <ListBox x:Name="filterTypesListBox" Margin="10,219,0,0" Width="257" HorizontalAlignment="Left"
-                ItemsSource="{Binding}"
-                SelectionMode="Extended" Height="50" VerticalAlignment="Top">
-                <ListBox.Resources>
-                    <Style TargetType="{x:Type ListBoxItem}">
-                        <Setter Property="SnapsToDevicePixels" Value="true" />
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                    <CheckBox Margin="5,2" 
-                                              IsChecked="{TemplateBinding IsSelected}"
-                                              Loaded="CheckBox_Loaded"
-                                              Tag="Type">
-                                        <ContentPresenter />
-                                    </CheckBox>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                        <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked" />
-                        <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked" />
-                    </Style>
-                </ListBox.Resources>
-            </ListBox>
 
             <!--Supertype listbox and filtering-->
             <Label x:Name="cardSuperTypesLabel" Content="" HorizontalAlignment="Left" Margin="272,299,0,0" VerticalAlignment="Top" Width="571" Height="30"/>
@@ -277,7 +250,7 @@
                VerticalAlignment="Top"
                Width="241"/>
 
-            <ComboBox x:Name="typesComboBox" HorizontalAlignment="Left" Margin="272,41,0,0" VerticalAlignment="Top" Width="399" DropDownOpened="ComboBox_DropDownOpened">>
+            <ComboBox x:Name="typesComboBox" HorizontalAlignment="Left" Margin="10,200,0,0" VerticalAlignment="Top" Width="257" DropDownOpened="ComboBox_DropDownOpened">>
                 <ComboBox.Template>
                     <ControlTemplate TargetType="ComboBox">
                         <Grid>
@@ -301,7 +274,7 @@
 
                             <Popup Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                 <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                    <ListBox x:Name="filterTypesListBoxNew" 
+                                    <ListBox x:Name="filterTypesListBox" 
                                      ItemsSource="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=ItemsSource}" 
                                      SelectionMode="Multiple">
                                         <ListBox.Resources>
