@@ -145,7 +145,6 @@ namespace CardboardHoarder
                 }
             }
         }
-
         private void EnsureFilterTypesListBox(ComboBox comboBox)
         {
             if (filterTypesListBox == null)
@@ -153,9 +152,6 @@ namespace CardboardHoarder
                 filterTypesListBox = comboBox.Template.FindName("filterTypesListBox", comboBox) as ListBox;
             }
         }
-
-
-
         private void PopulateListBoxWithInitialValues()
         {
             if (typesComboBox.Template.FindName("filterTypesListBox", typesComboBox) is ListBox listBox)
@@ -677,7 +673,6 @@ namespace CardboardHoarder
                 return Enumerable.Empty<CardSet>();
             }
         }
-
         private IEnumerable<CardSet> FilterByCriteria(IEnumerable<CardSet> cards, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector, bool exclude = false)
         {
             if (cards == null)
@@ -738,7 +733,6 @@ namespace CardboardHoarder
                 return Enumerable.Empty<CardSet>();
             }
         }
-
         private void UpdateFilterLabel()
         {
             if (filterRulesTextTextBox.Text != rulesTextDefaultText)
@@ -764,7 +758,6 @@ namespace CardboardHoarder
                 targetLabel.Content = string.Empty;
             }
         }
-
         #endregion
         private async void MainCardWindowDatagrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -958,8 +951,6 @@ namespace CardboardHoarder
 
                 Dispatcher.Invoke(() =>
                 {
-                    //typesComboBox.ItemsSource = allTypes;
-
                     filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                     filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                     filterColorsListBox.ItemsSource = allColors;
