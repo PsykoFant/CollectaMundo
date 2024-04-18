@@ -138,13 +138,24 @@ namespace CardboardHoarder
             ComboBox comboBox = sender as ComboBox;
             if (comboBox != null)
             {
-                var filterTextBox = comboBox.Template.FindName("FilterTextBox", comboBox) as TextBox;
-                if (filterTextBox != null && string.IsNullOrWhiteSpace(filterTextBox.Text))
+                EnsureFilterTypesListBox(comboBox); // Ensure ListBox is ready
+                if (filterTypesListBox != null)
                 {
                     PopulateListBoxWithInitialValues();
                 }
             }
         }
+
+        private void EnsureFilterTypesListBox(ComboBox comboBox)
+        {
+            if (filterTypesListBox == null)
+            {
+                filterTypesListBox = comboBox.Template.FindName("filterTypesListBox", comboBox) as ListBox;
+            }
+        }
+
+
+
         private void PopulateListBoxWithInitialValues()
         {
             if (typesComboBox.Template.FindName("filterTypesListBox", typesComboBox) is ListBox listBox)
@@ -173,48 +184,56 @@ namespace CardboardHoarder
         {
             if (sender is TextBox textBox)
             {
-                if (filterTypesListBox == null)
+                // Assuming TextBox is a direct child or within the template of the ComboBox, traverse up the logical or visual tree to find the ComboBox
+                var parent = VisualTreeHelper.GetParent(textBox);
+                while (parent != null && !(parent is ComboBox))
                 {
-                    filterTypesListBox = typesComboBox.Template.FindName("filterTypesListBox", typesComboBox) as ListBox;
-                    if (filterTypesListBox == null) return;  // Ensure the list box is found
+                    parent = VisualTreeHelper.GetParent(parent);
                 }
 
-                List<string> filteredItems;
-                if (!string.IsNullOrWhiteSpace(textBox.Text))
+                ComboBox comboBox = parent as ComboBox;
+                if (comboBox != null)
                 {
-                    filteredItems = allTypes.Where(type => type.IndexOf(textBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-
-                    // Check if the ComboBox's dropdown is open; if not, open it
-                    if (!typesComboBox.IsDropDownOpen)
+                    EnsureFilterTypesListBox(comboBox); // Ensure ListBox is ready
+                    if (filterTypesListBox != null)
                     {
-                        typesComboBox.IsDropDownOpen = true;
-                    }
-                }
-                else
-                {
-                    filteredItems = allTypes.Distinct().OrderBy(type => type).ToList();
-                }
-
-                filterTypesListBox.ItemsSource = filteredItems;
-
-                filterTypesListBox.Dispatcher.Invoke(() =>
-                {
-                    foreach (var item in filteredItems)
-                    {
-                        var listBoxItem = filterTypesListBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
-                        if (listBoxItem != null)
+                        List<string> filteredItems;
+                        if (!string.IsNullOrWhiteSpace(textBox.Text))
                         {
-                            var checkBox = FindVisualChild<CheckBox>(listBoxItem);
-                            if (checkBox != null)
+                            filteredItems = allTypes.Where(type => type.IndexOf(textBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+
+                            // Check if the ComboBox's dropdown is open; if not, open it
+                            if (!comboBox.IsDropDownOpen)
                             {
-                                checkBox.IsChecked = selectedTypes.Contains(item);
+                                comboBox.IsDropDownOpen = true;
                             }
                         }
+                        else
+                        {
+                            filteredItems = allTypes.Distinct().OrderBy(type => type).ToList();
+                        }
+
+                        filterTypesListBox.ItemsSource = filteredItems;
+
+                        filterTypesListBox.Dispatcher.Invoke(() =>
+                        {
+                            foreach (var item in filteredItems)
+                            {
+                                var listBoxItem = filterTypesListBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+                                if (listBoxItem != null)
+                                {
+                                    var checkBox = FindVisualChild<CheckBox>(listBoxItem);
+                                    if (checkBox != null)
+                                    {
+                                        checkBox.IsChecked = selectedTypes.Contains(item);
+                                    }
+                                }
+                            }
+                        }, System.Windows.Threading.DispatcherPriority.Loaded);
                     }
-                }, System.Windows.Threading.DispatcherPriority.Loaded);
+                }
             }
         }
-
 
 
 
