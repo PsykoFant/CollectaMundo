@@ -1,4 +1,4 @@
-<Window x:Class="CardboardHoarder.MainWindow"
+<Window
         
 
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -6,6 +6,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CardboardHoarder"
+        xmlns:System="clr-namespace:System;assembly=System.Runtime" x:Class="CardboardHoarder.MainWindow"
+        
+
         mc:Ignorable="d"
         Title="MainWindow">
 
@@ -110,11 +113,11 @@
                  ItemsSource="{Binding}"
                  SelectionMode="Extended" Height="50" VerticalAlignment="Top">
                 <ListBox.Resources>
-                    <Style TargetType="ListBoxItem">
+                    <Style TargetType="{x:Type ListBoxItem}">
                         <Setter Property="SnapsToDevicePixels" Value="true" />
                         <Setter Property="Template">
                             <Setter.Value>
-                                <ControlTemplate TargetType="ListBoxItem">
+                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                     <CheckBox Margin="5,2" 
                                               IsChecked="{TemplateBinding IsSelected}" 
                                               Loaded="CheckBox_Loaded"
@@ -124,8 +127,8 @@
                                 </ControlTemplate>
                             </Setter.Value>
                         </Setter>
-                        <EventSetter Event="CheckBox.Checked" Handler="CheckBox_Checked" />
-                        <EventSetter Event="CheckBox.Unchecked" Handler="CheckBox_Unchecked" />
+                        <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked" />
+                        <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked" />
                     </Style>
                 </ListBox.Resources>
             </ListBox>
@@ -204,7 +207,7 @@
             <Label x:Name="cardCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="116" Height="30"/>
             <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="180,786,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
 
-            <Image x:Name="CardImage" Source="{Binding ImageSourceUrl, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}"  HorizontalAlignment="Right" Height="338" Margin="0,41,245,0" VerticalAlignment="Top" Width="242" RenderTransformOrigin="0.5,0.5">
+            <Image x:Name="CardImage" Source="{Binding ImageSourceUrl, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}"  HorizontalAlignment="Right" Height="338" Margin="0,41,245,0" VerticalAlignment="Top" Width="242" RenderTransformOrigin="0.5,0.5">
                 <Image.RenderTransform>
                     <TransformGroup>
                         <ScaleTransform/>
@@ -216,16 +219,16 @@
             </Image>
 
             <Image x:Name="CardImageSecondary"
-               Source="{Binding ImageSourceUrl1, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}"
+               Source="{Binding ImageSourceUrl1, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}"
                HorizontalAlignment="Right"
                Height="337"
                Margin="0,41,0,0"
                VerticalAlignment="Top"
                Width="241"/>
 
-            <ComboBox x:Name="typesComboBox" HorizontalAlignment="Left" Margin="10,200,0,0" VerticalAlignment="Top" Width="257" DropDownOpened="ComboBox_DropDownOpened">>
+            <ComboBox x:Name="typesComboBox" HorizontalAlignment="Left" Margin="10,200,0,0" VerticalAlignment="Top" Width="257" DropDownOpened="ComboBox_DropDownOpened">
                 <ComboBox.Template>
-                    <ControlTemplate TargetType="ComboBox">
+                    <ControlTemplate TargetType="{x:Type ComboBox}">
                         <Grid>
                             <TextBox x:Name="FilterTypesTextBox"
                                  VerticalAlignment="Top"
@@ -240,17 +243,17 @@
                                  Padding="3,3,0,0"
                                  Margin="0,0,0,0"/>
 
-                            <ToggleButton Grid.Row="0" Name="ToggleButton" Content="Types" Focusable="false"
+                            <ToggleButton Grid.Row="0" x:Name="ToggleButton" Content="Types" Focusable="false"
                               ClickMode="Press"
-                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
                               VerticalAlignment="Top"
                               HorizontalAlignment="Right"
                               Width="40" Height="20"/>
 
-                            <Popup Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
+                            <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                 <Border Background="White" BorderThickness="1" BorderBrush="Black">
                                     <ListBox x:Name="filterTypesListBox" 
-                                     ItemsSource="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=ItemsSource}" 
+                                     ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" 
                                      SelectionMode="Multiple">
                                         <ListBox.Resources>
                                             <Style TargetType="{x:Type ListBoxItem}">
@@ -277,6 +280,73 @@
                         </Grid>
                     </ControlTemplate>
                 </ComboBox.Template>
+                <System:String>&gt;</System:String>
+            </ComboBox>
+
+
+
+
+
+
+
+
+
+
+            <ComboBox x:Name="subTypesComboBox" HorizontalAlignment="Left" Margin="10,391,0,0" VerticalAlignment="Top" Width="257" DropDownOpened="ComboBox_DropDownOpened">
+                <ComboBox.Template>
+                    <ControlTemplate TargetType="{x:Type ComboBox}">
+                        <Grid>
+                            <TextBox x:Name="FilterSubTypesTextBox"
+                            VerticalAlignment="Top"
+                            BorderThickness="1"
+                            Background="Transparent"
+                            TextChanged="FilterTextBox_TextChanged"
+                            GotFocus="TextBox_GotFocus"
+                            LostFocus="TextBox_LostFocus"
+                            Foreground="{TemplateBinding Foreground}"
+                            FontFamily="{TemplateBinding FontFamily}"
+                            FontSize="{TemplateBinding FontSize}"
+                            Padding="3,3,0,0"
+                            Margin="0,0,0,0"/>
+
+                            <ToggleButton Grid.Row="0" x:Name="ToggleButton" Content="Types" Focusable="false"
+                            ClickMode="Press"
+                            IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+                            VerticalAlignment="Top"
+                            HorizontalAlignment="Right"
+                            Width="40" Height="20"/>
+
+                            <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
+                                <Border Background="White" BorderThickness="1" BorderBrush="Black">
+                                    <ListBox x:Name="filterSubTypesListBox" 
+                                    ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" 
+                                    SelectionMode="Multiple">
+                                        <ListBox.Resources>
+                                            <Style TargetType="{x:Type ListBoxItem}">
+                                                <Setter Property="SnapsToDevicePixels" Value="true"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                            <CheckBox Margin="5,2" 
+                                                            IsChecked="{TemplateBinding IsSelected}"
+                                                            Loaded="CheckBox_Loaded"
+                                                            Tag="Type">
+                                                                <ContentPresenter/>
+                                                            </CheckBox>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked"/>
+                                                <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked"/>
+                                            </Style>
+                                        </ListBox.Resources>
+                                    </ListBox>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </ComboBox.Template>
+                <System:String>&gt;</System:String>
             </ComboBox>
 
 
