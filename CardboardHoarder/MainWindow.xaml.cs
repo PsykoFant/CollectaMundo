@@ -104,7 +104,7 @@ namespace CardboardHoarder
             filterRulesTextTextBox.Text = rulesTextDefaultText;
             //filterTypesTextBox.Text = typesDefaultText;
             filterSuperTypesTextBox.Text = superTypesDefaultText;
-            filterSubTypesTextBox.Text = subTypesDefualtText;
+            //filterSubTypesTextBox.Text = subTypesDefualtText;
             filterKeywordsTextBox.Text = keywordsDefaultText;
 
             GridSearchAndFilter.Visibility = Visibility.Hidden;
@@ -554,7 +554,6 @@ namespace CardboardHoarder
 
             // Clear selections in the ListBoxes
             ClearListBoxSelections(filterSuperTypesListBox);
-            ClearListBoxSelections(filterSubTypesListBox);
             ClearListBoxSelections(filterKeywordsListBox);
             ClearListBoxSelections(filterColorsListBox);
 
@@ -574,10 +573,6 @@ namespace CardboardHoarder
             filterSuperTypesTextBox.Text = string.Empty;
             filterSuperTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
             filterSuperTypesTextBox.Text = superTypesDefaultText;
-
-            filterSubTypesTextBox.Text = string.Empty;
-            filterSubTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            filterSubTypesTextBox.Text = subTypesDefualtText;
 
             filterKeywordsTextBox.Text = string.Empty;
             filterKeywordsTextBox.Foreground = new SolidColorBrush(Colors.Gray);
@@ -963,7 +958,6 @@ namespace CardboardHoarder
                     filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                     filterColorsListBox.ItemsSource = allColors;
                     filterSuperTypesListBox.ItemsSource = allSuperTypes;
-                    filterSubTypesListBox.ItemsSource = allSubTypes;
                     filterKeywordsListBox.ItemsSource = allKeywords;
                     allOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
                     allOrNoneComboBox.SelectedIndex = 0;

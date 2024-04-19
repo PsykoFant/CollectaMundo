@@ -135,33 +135,6 @@
             <CheckBox x:Name="subTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,371,0,0" VerticalAlignment="Top"
                Checked="AndOrCheckBox_Toggled"
                Unchecked="AndOrCheckBox_Toggled"/>
-            <TextBox x:Name="filterSubTypesTextBox" HorizontalAlignment="Left" Margin="10,391,0,0" TextWrapping="Wrap" Foreground="Gray"
-                 GotFocus="TextBox_GotFocus" 
-                 LostFocus="TextBox_LostFocus" 
-                 TextChanged="FilterTextBox_TextChanged" VerticalAlignment="Top" Width="257" Height="20"/>
-            <ListBox x:Name="filterSubTypesListBox" Margin="10,410,0,0" Width="257" HorizontalAlignment="Left"
-                ItemsSource="{Binding}"
-                SelectionMode="Extended" Height="50" VerticalAlignment="Top">
-                <ListBox.Resources>
-                    <Style TargetType="{x:Type ListBoxItem}">
-                        <Setter Property="SnapsToDevicePixels" Value="true" />
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                    <CheckBox Margin="5,2" 
-                                              IsChecked="{TemplateBinding IsSelected}" 
-                                              Loaded="CheckBox_Loaded"
-                                              Tag="SubType">
-                                        <ContentPresenter />
-                                    </CheckBox>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                        <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked" />
-                        <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked" />
-                    </Style>
-                </ListBox.Resources>
-            </ListBox>
 
             <!--Keywords listbox and filtering-->
             <Label x:Name="cardKeywordsLabel" Content="" HorizontalAlignment="Left" Margin="272,359,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="571" Height="30"/>
