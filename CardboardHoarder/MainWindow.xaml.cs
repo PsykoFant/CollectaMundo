@@ -184,27 +184,17 @@ namespace CardboardHoarder
                 }, System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
-        private void EnsureFilterTypesListBox(ComboBox comboBox)
-        {
-            if (filterTypesListBox == null)
-            {
-                filterTypesListBox = comboBox.Template.FindName("filterTypesListBox", comboBox) as ListBox;
-            }
-        }
         private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (sender is TextBox textBox)
             {
-
+                // Ignore the default text
                 if (textBox.Text == typesDefaultText)
                 {
-                    textBox.Foreground = new SolidColorBrush(Colors.Gray);
-                    return;  // Ignore the default text
+                    return;
                 }
 
-                textBox.Foreground = new SolidColorBrush(Colors.Black);
-
-                // Assuming TextBox is a direct child or within the template of the ComboBox, traverse up the logical or visual tree to find the ComboBox
+                // Traverse up the logical or visual tree to find the ComboBox
                 var parent = VisualTreeHelper.GetParent(textBox);
                 while (parent != null && !(parent is ComboBox))
                 {
@@ -214,7 +204,7 @@ namespace CardboardHoarder
                 ComboBox comboBox = parent as ComboBox;
                 if (comboBox != null)
                 {
-                    EnsureFilterTypesListBox(comboBox); // Ensure ListBox is ready
+                    filterTypesListBox = comboBox.Template.FindName("filterTypesListBox", comboBox) as ListBox;
                     if (filterTypesListBox != null)
                     {
                         List<string> filteredItems;
@@ -254,13 +244,6 @@ namespace CardboardHoarder
                 }
             }
         }
-
-
-
-
-
-
-
 
         //private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
         //{
