@@ -102,7 +102,7 @@ namespace CardboardHoarder
 
             // Set filter elements default text
             filterRulesTextTextBox.Text = rulesTextDefaultText;
-            //filterTypesTextBoxNew.Text = typesDefaultText;
+            //filterTypesTextBox.Text = typesDefaultText;
             filterSuperTypesTextBox.Text = superTypesDefaultText;
             filterSubTypesTextBox.Text = subTypesDefualtText;
             filterKeywordsTextBox.Text = keywordsDefaultText;
@@ -111,6 +111,17 @@ namespace CardboardHoarder
             GridMyCollection.Visibility = Visibility.Hidden;
             GridStatus.Visibility = Visibility.Hidden;
             Loaded += async (sender, args) => { await PrepareSystem(); };
+
+            // Ensuring the UI is fully loaded before accessing template parts
+            this.Loaded += (sender, e) =>
+            {
+                var filterTextBox = typesComboBox.Template.FindName("FilterTypesTextBox", typesComboBox) as TextBox;
+                if (filterTextBox != null)
+                {
+                    filterTextBox.Text = typesDefaultText;
+                    filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+                }
+            };
 
             // Pick up filtering comboboxes changes
             filterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
@@ -138,18 +149,15 @@ namespace CardboardHoarder
             ComboBox comboBox = sender as ComboBox;
             if (comboBox != null)
             {
-                EnsureFilterTypesListBox(comboBox); // Ensure ListBox is ready
-                if (filterTypesListBox != null)
+
+
+                var filterTextBox = comboBox.Template.FindName("FilterTypesTextBox", comboBox) as TextBox;
+                if (filterTextBox != null && (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == typesDefaultText))
                 {
                     PopulateListBoxWithInitialValues();
+                    filterTextBox.Text = typesDefaultText;
+                    filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
                 }
-            }
-        }
-        private void EnsureFilterTypesListBox(ComboBox comboBox)
-        {
-            if (filterTypesListBox == null)
-            {
-                filterTypesListBox = comboBox.Template.FindName("filterTypesListBox", comboBox) as ListBox;
             }
         }
         private void PopulateListBoxWithInitialValues()
@@ -176,10 +184,26 @@ namespace CardboardHoarder
                 }, System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
+        private void EnsureFilterTypesListBox(ComboBox comboBox)
+        {
+            if (filterTypesListBox == null)
+            {
+                filterTypesListBox = comboBox.Template.FindName("filterTypesListBox", comboBox) as ListBox;
+            }
+        }
         private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (sender is TextBox textBox)
             {
+
+                if (textBox.Text == typesDefaultText)
+                {
+                    textBox.Foreground = new SolidColorBrush(Colors.Gray);
+                    return;  // Ignore the default text
+                }
+
+                textBox.Foreground = new SolidColorBrush(Colors.Black);
+
                 // Assuming TextBox is a direct child or within the template of the ComboBox, traverse up the logical or visual tree to find the ComboBox
                 var parent = VisualTreeHelper.GetParent(textBox);
                 while (parent != null && !(parent is ComboBox))
@@ -327,7 +351,7 @@ namespace CardboardHoarder
                 {
                     string placeholderText = textBox.Name switch
                     {
-                        "filterCardNamesTextBox" => namesDefaultText,
+                        "FilterTypesTextBox" => typesDefaultText,
                         "filterSuperTypesTextBox" => superTypesDefaultText,
                         "filterSubTypesTextBox" => subTypesDefualtText,
                         "filterKeywordsTextBox" => keywordsDefaultText,
@@ -337,7 +361,7 @@ namespace CardboardHoarder
 
                     if (textBox.Text == placeholderText)
                     {
-                        textBox.Text = "";
+                        textBox.Text = string.Empty;
                         textBox.Foreground = new SolidColorBrush(Colors.Black);
                     }
                 }
@@ -355,7 +379,7 @@ namespace CardboardHoarder
                 {
                     string placeholderText = textBox.Name switch
                     {
-                        "filterCardNamesTextBox" => namesDefaultText,
+                        "FilterTypesTextBox" => typesDefaultText,
                         "filterSuperTypesTextBox" => superTypesDefaultText,
                         "filterSubTypesTextBox" => subTypesDefualtText,
                         "filterKeywordsTextBox" => keywordsDefaultText,
@@ -532,7 +556,8 @@ namespace CardboardHoarder
 
             if (typesComboBox.Template.FindName("FilterTypesTextBox", typesComboBox) is TextBox filterTextBox)
             {
-                filterTextBox.Text = string.Empty;  // Assuming you want to clear any text entered
+                filterTextBox.Text = typesDefaultText;  // Assuming you want to clear any text entered
+                filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
             }
 
             // Clear comboboxes
