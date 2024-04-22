@@ -48,9 +48,6 @@ namespace CardboardHoarder
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private ListBox filterTypesListBox;
-        private ListBox filterSubTypesListBox;
-
         // Used by ShowOrHideStatusWindow to reference MainWindow
         private static MainWindow? _currentInstance;
         private ICollectionView? dataView;
@@ -100,7 +97,6 @@ namespace CardboardHoarder
 
             // Set filter elements default text
             filterRulesTextTextBox.Text = rulesTextDefaultText;
-            filterSuperTypesTextBox.Text = superTypesDefaultText;
             filterKeywordsTextBox.Text = keywordsDefaultText;
 
             GridSearchAndFilter.Visibility = Visibility.Hidden;
@@ -155,14 +151,12 @@ namespace CardboardHoarder
             {
                 try
                 {
-                    string defaultText = GetDefaultTextByComboBoxName(comboBox.Name);
-                    string filterTextBoxName = GetTextBoxNameByComboBoxName(comboBox.Name);
-                    string listBoxName = GetListBoxNameByTextBox(filterTextBoxName);
+                    var (defaultText, filterTextBoxName, listBoxName) = GetComboBoxConfig(comboBox.Name);
 
                     var filterTextBox = comboBox.Template.FindName(filterTextBoxName, comboBox) as TextBox;
                     if (filterTextBox != null && (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == defaultText))
                     {
-                        PopulateListBoxWithInitialValues(comboBox, listBoxName);
+                        PopulateListBoxWithValues(comboBox, listBoxName);
                         filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
                     }
                 }
@@ -172,34 +166,16 @@ namespace CardboardHoarder
                 }
             }
         }
-        private string GetDefaultTextByComboBoxName(string comboBoxName)
-        {
-            // Map the ComboBox to its default text based on naming conventions or specific rules
-            return comboBoxName switch
-            {
-                "typesComboBox" => typesDefaultText,
-                "subTypesComboBox" => subTypesDefaultText,
-                _ => throw new InvalidOperationException("No default text found for given ComboBox.")
-            };
-        }
-        private string GetTextBoxNameByComboBoxName(string comboBoxName)
-        {
-            // Map the ComboBox to its TextBox name
-            return comboBoxName switch
-            {
-                "typesComboBox" => "FilterTypesTextBox",
-                "subTypesComboBox" => "FilterSubTypesTextBox",
-                _ => throw new InvalidOperationException("No corresponding TextBox found for given ComboBox.")
-            };
-        }
-        private void PopulateListBoxWithInitialValues(ComboBox comboBox, string listBoxName)
+        // Make sure the embedded listbox has the right values
+        private void PopulateListBoxWithValues(ComboBox comboBox, string listBoxName)
         {
             try
             {
                 var listBox = comboBox.Template.FindName(listBoxName, comboBox) as ListBox;
                 if (listBox != null)
                 {
-                    var itemsSource = GetItemsSourceByListBoxName(listBoxName);
+                    // Get both items source and the corresponding selected items set.
+                    var (itemsSource, selectedItems) = GetDataSetAndSelection(listBoxName);
                     listBox.ItemsSource = itemsSource;
 
                     listBox.Dispatcher.Invoke(() =>
@@ -212,7 +188,7 @@ namespace CardboardHoarder
                                 var checkBox = FindVisualChild<CheckBox>(listBoxItem);
                                 if (checkBox != null)
                                 {
-                                    checkBox.IsChecked = GetSelectionHashSetByListBoxName(listBoxName).Contains(item);
+                                    checkBox.IsChecked = selectedItems.Contains(item);
                                 }
                             }
                         }
@@ -221,74 +197,74 @@ namespace CardboardHoarder
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in PopulateListBoxWithInitialValues: {ex.Message}");
+                Debug.WriteLine($"Error in PopulateListBoxWithValues: {ex.Message}");
             }
         }
-
-
-        private IEnumerable<string> GetItemsSourceByListBoxName(string listBoxName)
+        // Get the data to populate the listbox with, including already selected items
+        private (IEnumerable<string> items, HashSet<string> selectedItems) GetDataSetAndSelection(string listBoxName)
         {
-            // Depending on the listBoxName, select the correct data source
-            IEnumerable<string> itemsSource = listBoxName switch
+            IEnumerable<string> itemsSource;
+            HashSet<string> selectedItemsSet;
+
+            switch (listBoxName)
             {
-                "filterTypesListBox" => allTypes,
-                "filterSubTypesListBox" => allSubTypes,
-                // Add more mappings as necessary
-                _ => Enumerable.Empty<string>() // Provide a default empty enumerable
-            };
+                case "filterTypesListBox":
+                    itemsSource = allTypes;
+                    selectedItemsSet = selectedTypes;
+                    break;
+                case "filterSubTypesListBox":
+                    itemsSource = allSubTypes;
+                    selectedItemsSet = selectedSubTypes;
+                    break;
+                default:
+                    throw new InvalidOperationException($"ListBox name not recognized: {listBoxName}");
+            }
 
-            return itemsSource.Distinct().OrderBy(type => type).ToList();
+            return (itemsSource.Distinct().OrderBy(type => type).ToList(), selectedItemsSet);
         }
-
-        private HashSet<string> GetSelectionHashSetByListBoxName(string listBoxName)
-        {
-            return listBoxName switch
-            {
-                "filterTypesListBox" => selectedTypes,
-                "filterSubTypesListBox" => selectedSubTypes,
-                // Add more mappings as necessary
-                _ => throw new InvalidOperationException($"No selection set found for ListBox: {listBoxName}")
-            };
-        }
-
-
+        // Filter checkbox elements in the embedded listbox based text typed in the embedded testbox
         private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (sender is TextBox textBox)
             {
                 try
                 {
-                    // Determine the context from the TextBox name and get the default text
-                    var defaultText = GetDefaultText(textBox.Name);
-                    if (textBox.Text == defaultText)
-                    {
-                        return; // Ignore the default placeholder text
-                    }
-
-                    // Finding the parent ComboBox
-                    var parent = VisualTreeHelper.GetParent(textBox);
+                    // Finding the parent ComboBox by traversing up the visual tree
+                    DependencyObject parent = VisualTreeHelper.GetParent(textBox);
                     while (parent != null && !(parent is ComboBox))
                     {
                         parent = VisualTreeHelper.GetParent(parent);
                     }
 
-                    ComboBox comboBox = parent as ComboBox;
-                    if (comboBox != null)
+                    // Explicitly check for null before casting
+                    if (parent is ComboBox comboBox)
                     {
-                        // Dynamic determination of the ListBox based on the ComboBox
-                        var listBoxName = GetListBoxNameByTextBox(textBox.Name);
-                        var listBox = comboBox.Template.FindName(listBoxName, comboBox) as ListBox;
+                        // Get configuration for this specific ComboBox
+                        var (defaultText, _, listBoxName) = GetComboBoxConfig(comboBox.Name);
 
+                        // Check if the typed text is the default text
+                        if (textBox.Text == defaultText)
+                        {
+                            return; // Ignore the default placeholder text
+                        }
+
+                        // Finding the associated ListBox using the dynamically determined name
+                        var listBox = comboBox.Template.FindName(listBoxName, comboBox) as ListBox;
                         if (listBox != null)
                         {
                             UpdateListBoxItems(listBox, textBox.Text);
 
-                            // Open the ComboBox's dropdown if not already open
+                            // Ensure the ComboBox's dropdown is open to show filtered results
                             if (!comboBox.IsDropDownOpen)
                             {
                                 comboBox.IsDropDownOpen = true;
                             }
                         }
+                    }
+                    else
+                    {
+                        // Log or handle the scenario where the parent ComboBox is not found
+                        Debug.WriteLine("Parent ComboBox not found.");
                     }
                 }
                 catch (Exception ex)
@@ -297,64 +273,29 @@ namespace CardboardHoarder
                 }
             }
         }
-        private string GetListBoxNameByTextBox(string textBoxName)
-        {
-            // Map the TextBox to its corresponding ListBox based on naming conventions or specific rules
-            return textBoxName switch
-            {
-                "FilterTypesTextBox" => "filterTypesListBox",
-                "FilterSubTypesTextBox" => "filterSubTypesListBox",
-                _ => throw new InvalidOperationException("No corresponding list box found for given TextBox.")
-            };
-        }
-        private string GetDefaultText(string textBoxName)
-        {
-            return textBoxName switch
-            {
-                "FilterTypesTextBox" => typesDefaultText,
-                "FilterSubTypesTextBox" => subTypesDefaultText,
-                _ => string.Empty
-            };
-        }
+
+        // This method updates the listbox items based on text typed in FilterTextBox
         private void UpdateListBoxItems(ListBox listBox, string filterText)
         {
             try
             {
-                // Determine the appropriate data set and selected items set based on the ListBox's name
-                IEnumerable<string> dataSet;
-                HashSet<string> selectedItems;
-                switch (listBox.Name)
-                {
-                    case "filterTypesListBox":
-                        dataSet = allTypes;
-                        selectedItems = selectedTypes;
-                        break;
-                    case "filterSubTypesListBox":
-                        dataSet = allSubTypes;
-                        selectedItems = selectedSubTypes;
-                        break;
-                    default:
-                        throw new InvalidOperationException("ListBox name not recognized for filtering.");
-                }
+                var (dataSet, selectedItems) = GetDataSetAndSelection(listBox.Name);
 
-                // Generate the filtered list of items
                 List<string> filteredItems = !string.IsNullOrWhiteSpace(filterText)
                     ? dataSet.Where(type => type.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList()
                     : dataSet.Distinct().OrderBy(type => type).ToList();
 
-                // Update the ListBox's items source
                 listBox.ItemsSource = filteredItems;
 
-                // Ensure checkboxes are checked/unchecked appropriately
                 listBox.Dispatcher.Invoke(() =>
                 {
                     foreach (var item in filteredItems)
                     {
                         var listBoxItem = listBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
-                        if (listBoxItem != null)
+                        if (listBoxItem != null) // Check if listBoxItem is not null
                         {
                             var checkBox = FindVisualChild<CheckBox>(listBoxItem);
-                            if (checkBox != null)
+                            if (checkBox != null) // Check if checkBox is not null
                             {
                                 checkBox.IsChecked = selectedItems.Contains(item);
                             }
@@ -369,7 +310,16 @@ namespace CardboardHoarder
         }
 
 
-
+        // Generic method for embedded textbox and listbox elements based on the combobox
+        private (string defaultText, string textBoxName, string listBoxName) GetComboBoxConfig(string comboBoxName)
+        {
+            return comboBoxName switch
+            {
+                "typesComboBox" => (typesDefaultText, "FilterTypesTextBox", "filterTypesListBox"),
+                "subTypesComboBox" => (subTypesDefaultText, "FilterSubTypesTextBox", "filterSubTypesListBox"),
+                _ => throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}")
+            };
+        }
 
         //private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
         //{
@@ -674,7 +624,6 @@ namespace CardboardHoarder
             ManaValueOperatorComboBox.SelectedIndex = -1;
 
             // Clear selections in the ListBoxes
-            ClearListBoxSelections(filterSuperTypesListBox);
             ClearListBoxSelections(filterKeywordsListBox);
             ClearListBoxSelections(filterColorsListBox);
 
@@ -687,7 +636,6 @@ namespace CardboardHoarder
 
             // Clear other TextBoxes
             ResetText(filterRulesTextTextBox, rulesTextDefaultText);
-            ResetText(filterSuperTypesTextBox, superTypesDefaultText);
             ResetText(filterKeywordsTextBox, keywordsDefaultText);
             // More TextBox resets can be added here
 
@@ -1085,7 +1033,6 @@ namespace CardboardHoarder
                     filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                     filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                     filterColorsListBox.ItemsSource = allColors;
-                    filterSuperTypesListBox.ItemsSource = allSuperTypes;
                     filterKeywordsListBox.ItemsSource = allKeywords;
                     allOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
                     allOrNoneComboBox.SelectedIndex = 0;
