@@ -100,9 +100,7 @@ namespace CardboardHoarder
 
             // Set filter elements default text
             filterRulesTextTextBox.Text = rulesTextDefaultText;
-            //filterTypesTextBox.Text = typesDefaultText;
             filterSuperTypesTextBox.Text = superTypesDefaultText;
-            //filterSubTypesTextBox.Text = subTypesDefualtText;
             filterKeywordsTextBox.Text = keywordsDefaultText;
 
             GridSearchAndFilter.Visibility = Visibility.Hidden;
@@ -155,44 +153,105 @@ namespace CardboardHoarder
         {
             if (sender is ComboBox comboBox)
             {
-                string defaultText = comboBox.Name == "typesComboBox" ? typesDefaultText : subTypesDefaultText;
-                var filterTextBoxName = comboBox.Name == "typesComboBox" ? "FilterTypesTextBox" : "FilterSubTypesTextBox";
-                var listBoxName = comboBox.Name == "typesComboBox" ? "filterTypesListBox" : "filterSubTypesListBox";
-
-                var filterTextBox = comboBox.Template.FindName(filterTextBoxName, comboBox) as TextBox;
-                if (filterTextBox != null && (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == defaultText))
+                try
                 {
-                    PopulateListBoxWithInitialValues(comboBox, listBoxName, defaultText);
-                    filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+                    string defaultText = GetDefaultTextByComboBoxName(comboBox.Name);
+                    string filterTextBoxName = GetTextBoxNameByComboBoxName(comboBox.Name);
+                    string listBoxName = GetListBoxNameByTextBox(filterTextBoxName);
+
+                    var filterTextBox = comboBox.Template.FindName(filterTextBoxName, comboBox) as TextBox;
+                    if (filterTextBox != null && (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == defaultText))
+                    {
+                        PopulateListBoxWithInitialValues(comboBox, listBoxName);
+                        filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error in ComboBox_DropDownOpened: {ex.Message}");
                 }
             }
         }
-        private void PopulateListBoxWithInitialValues(ComboBox comboBox, string listBoxName, string defaultText)
+        private string GetDefaultTextByComboBoxName(string comboBoxName)
         {
-            var itemsSource = comboBox.Name == "typesComboBox" ? allTypes : allSubTypes;
-            itemsSource = itemsSource.Distinct().OrderBy(type => type).ToList();
-
-            if (comboBox.Template.FindName(listBoxName, comboBox) is ListBox listBox)
+            // Map the ComboBox to its default text based on naming conventions or specific rules
+            return comboBoxName switch
             {
-                listBox.ItemsSource = itemsSource;
-                listBox.Dispatcher.Invoke(() =>
+                "typesComboBox" => typesDefaultText,
+                "subTypesComboBox" => subTypesDefaultText,
+                _ => throw new InvalidOperationException("No default text found for given ComboBox.")
+            };
+        }
+        private string GetTextBoxNameByComboBoxName(string comboBoxName)
+        {
+            // Map the ComboBox to its TextBox name
+            return comboBoxName switch
+            {
+                "typesComboBox" => "FilterTypesTextBox",
+                "subTypesComboBox" => "FilterSubTypesTextBox",
+                _ => throw new InvalidOperationException("No corresponding TextBox found for given ComboBox.")
+            };
+        }
+        private void PopulateListBoxWithInitialValues(ComboBox comboBox, string listBoxName)
+        {
+            try
+            {
+                var listBox = comboBox.Template.FindName(listBoxName, comboBox) as ListBox;
+                if (listBox != null)
                 {
-                    foreach (var item in itemsSource)
+                    var itemsSource = GetItemsSourceByListBoxName(listBoxName);
+                    listBox.ItemsSource = itemsSource;
+
+                    listBox.Dispatcher.Invoke(() =>
                     {
-                        var listBoxItem = listBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
-                        if (listBoxItem != null)
+                        foreach (var item in itemsSource)
                         {
-                            var checkBox = FindVisualChild<CheckBox>(listBoxItem);
-                            var isSelected = comboBox.Name == "typesComboBox" ? selectedTypes.Contains(item) : selectedSubTypes.Contains(item);
-                            if (checkBox != null && isSelected)
+                            var listBoxItem = listBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+                            if (listBoxItem != null)
                             {
-                                checkBox.IsChecked = true;
+                                var checkBox = FindVisualChild<CheckBox>(listBoxItem);
+                                if (checkBox != null)
+                                {
+                                    checkBox.IsChecked = GetSelectionHashSetByListBoxName(listBoxName).Contains(item);
+                                }
                             }
                         }
-                    }
-                }, System.Windows.Threading.DispatcherPriority.Loaded);
+                    }, System.Windows.Threading.DispatcherPriority.Loaded);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in PopulateListBoxWithInitialValues: {ex.Message}");
             }
         }
+
+
+        private IEnumerable<string> GetItemsSourceByListBoxName(string listBoxName)
+        {
+            // Depending on the listBoxName, select the correct data source
+            IEnumerable<string> itemsSource = listBoxName switch
+            {
+                "filterTypesListBox" => allTypes,
+                "filterSubTypesListBox" => allSubTypes,
+                // Add more mappings as necessary
+                _ => Enumerable.Empty<string>() // Provide a default empty enumerable
+            };
+
+            return itemsSource.Distinct().OrderBy(type => type).ToList();
+        }
+
+        private HashSet<string> GetSelectionHashSetByListBoxName(string listBoxName)
+        {
+            return listBoxName switch
+            {
+                "filterTypesListBox" => selectedTypes,
+                "filterSubTypesListBox" => selectedSubTypes,
+                // Add more mappings as necessary
+                _ => throw new InvalidOperationException($"No selection set found for ListBox: {listBoxName}")
+            };
+        }
+
+
         private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (sender is TextBox textBox)
@@ -603,17 +662,12 @@ namespace CardboardHoarder
         // Reset filter elements
         private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
-
-            if (typesComboBox.Template.FindName("FilterTypesTextBox", typesComboBox) is TextBox filterTextBox)
-            {
-                filterTextBox.Text = typesDefaultText;  // Assuming you want to clear any text entered
-                filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            }
+            // Reset filter TextBoxes for each ComboBox
+            ResetFilterTextBox(typesComboBox, "FilterTypesTextBox", typesDefaultText);
+            ResetFilterTextBox(subTypesComboBox, "FilterSubTypesTextBox", subTypesDefaultText);
 
             // Clear comboboxes
-            filterCardNameComboBox.Text = string.Empty;
             filterCardNameComboBox.SelectedIndex = -1;
-            filterSetNameComboBox.Text = string.Empty;
             filterSetNameComboBox.SelectedIndex = -1;
             allOrNoneComboBox.SelectedIndex = 0;
             ManaValueComboBox.SelectedIndex = -1;
@@ -631,21 +685,13 @@ namespace CardboardHoarder
             selectedKeywords.Clear();
             selectedColors.Clear();
 
-            filterRulesTextTextBox.Text = string.Empty;
-            filterRulesTextTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            filterRulesTextTextBox.Text = rulesTextDefaultText;
+            // Clear other TextBoxes
+            ResetText(filterRulesTextTextBox, rulesTextDefaultText);
+            ResetText(filterSuperTypesTextBox, superTypesDefaultText);
+            ResetText(filterKeywordsTextBox, keywordsDefaultText);
+            // More TextBox resets can be added here
 
-            // Clear listbox searchboxes
-
-            filterSuperTypesTextBox.Text = string.Empty;
-            filterSuperTypesTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            filterSuperTypesTextBox.Text = superTypesDefaultText;
-
-            filterKeywordsTextBox.Text = string.Empty;
-            filterKeywordsTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            filterKeywordsTextBox.Text = keywordsDefaultText;
-
-            // Clear search items labels
+            // Clear search item labels
             cardRulesTextLabel.Content = string.Empty;
             cardTypeLabel.Content = string.Empty;
             cardSuperTypesLabel.Content = string.Empty;
@@ -662,6 +708,21 @@ namespace CardboardHoarder
             UpdateFilterLabel();
             ApplyFilter();
         }
+
+        private void ResetText(TextBox textBox, string defaultText)
+        {
+            textBox.Text = defaultText;
+            textBox.Foreground = new SolidColorBrush(Colors.Gray);
+        }
+        private void ResetFilterTextBox(ComboBox comboBox, string textBoxName, string defaultText)
+        {
+            if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
+            {
+                filterTextBox.Text = defaultText;
+                filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            }
+        }
+
         private void ClearListBoxSelections(ListBox listBox)
         {
             foreach (var item in listBox.Items)
