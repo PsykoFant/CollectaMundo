@@ -330,7 +330,7 @@
                                                             <CheckBox Margin="5,2" 
                                                             IsChecked="{TemplateBinding IsSelected}"
                                                             Loaded="CheckBox_Loaded"
-                                                            Tag="Type">
+                                                            Tag="SubType">
                                                                 <ContentPresenter/>
                                                             </CheckBox>
                                                         </ControlTemplate>

@@ -49,6 +49,7 @@ namespace CardboardHoarder
         }
 
         private ListBox filterTypesListBox;
+        private ListBox filterSubTypesListBox;
 
         // Used by ShowOrHideStatusWindow to reference MainWindow
         private static MainWindow? _currentInstance;
@@ -56,7 +57,6 @@ namespace CardboardHoarder
         private List<CardSet> cards = new List<CardSet>();
 
         // Lists for populating listboxes
-        private List<string> allNames = new List<string>();
         private List<string> allColors = new List<string>();
         private List<string> allTypes = new List<string>();
         private List<string> allSuperTypes = new List<string>();
@@ -64,7 +64,6 @@ namespace CardboardHoarder
         private List<string> allKeywords = new List<string>();
 
         // Hashsets to store selected checkbox items in listboxes
-        private HashSet<string> selectedNames = new HashSet<string>();
         private HashSet<string> selectedColors = new HashSet<string>();
         private HashSet<string> selectedTypes = new HashSet<string>();
         private HashSet<string> selectedSuperTypes = new HashSet<string>();
@@ -72,11 +71,10 @@ namespace CardboardHoarder
         private HashSet<string> selectedKeywords = new HashSet<string>();
 
         // Default text for filter elements
-        private string namesDefaultText = "Filter card names...";
         private string rulesTextDefaultText = "Filter rulestext...";
         private string typesDefaultText = "Filter card types...";
         private string superTypesDefaultText = "Filter supertypes...";
-        private string subTypesDefualtText = "Filter subtypes...";
+        private string subTypesDefaultText = "Filter subtypes...";
         private string keywordsDefaultText = "Filter keywords...";
         #endregion
 
@@ -115,12 +113,11 @@ namespace CardboardHoarder
             // Ensuring the UI is fully loaded before accessing template parts
             this.Loaded += (sender, e) =>
             {
-                var filterTextBox = typesComboBox.Template.FindName("FilterTypesTextBox", typesComboBox) as TextBox;
-                if (filterTextBox != null)
-                {
-                    filterTextBox.Text = typesDefaultText;
-                    filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-                }
+                // Handle for typesComboBox
+                SetDefaultTextInComboBox(typesComboBox, "FilterTypesTextBox", typesDefaultText);
+
+                // Handle for subTypesComboBox
+                SetDefaultTextInComboBox(subTypesComboBox, "FilterSubTypesTextBox", subTypesDefaultText);
             };
 
             // Pick up filtering comboboxes changes
@@ -144,29 +141,40 @@ namespace CardboardHoarder
         }
 
         #region Filter elements handling        
+        // Method to set default text in a ComboBox's TextBox based on its template
+        void SetDefaultTextInComboBox(ComboBox comboBox, string textBoxName, string defaultText)
+        {
+            var filterTextBox = comboBox.Template.FindName(textBoxName, comboBox) as TextBox;
+            if (filterTextBox != null)
+            {
+                filterTextBox.Text = defaultText;
+                filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            }
+        }
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
-            ComboBox comboBox = sender as ComboBox;
-            if (comboBox != null)
+            if (sender is ComboBox comboBox)
             {
+                string defaultText = comboBox.Name == "typesComboBox" ? typesDefaultText : subTypesDefaultText;
+                var filterTextBoxName = comboBox.Name == "typesComboBox" ? "FilterTypesTextBox" : "FilterSubTypesTextBox";
+                var listBoxName = comboBox.Name == "typesComboBox" ? "filterTypesListBox" : "filterSubTypesListBox";
 
-
-                var filterTextBox = comboBox.Template.FindName("FilterTypesTextBox", comboBox) as TextBox;
-                if (filterTextBox != null && (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == typesDefaultText))
+                var filterTextBox = comboBox.Template.FindName(filterTextBoxName, comboBox) as TextBox;
+                if (filterTextBox != null && (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == defaultText))
                 {
-                    PopulateListBoxWithInitialValues();
-                    filterTextBox.Text = typesDefaultText;
+                    PopulateListBoxWithInitialValues(comboBox, listBoxName, defaultText);
                     filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
                 }
             }
         }
-        private void PopulateListBoxWithInitialValues()
+        private void PopulateListBoxWithInitialValues(ComboBox comboBox, string listBoxName, string defaultText)
         {
-            if (typesComboBox.Template.FindName("filterTypesListBox", typesComboBox) is ListBox listBox)
-            {
-                var itemsSource = allTypes.Distinct().OrderBy(type => type).ToList();
-                listBox.ItemsSource = itemsSource;
+            var itemsSource = comboBox.Name == "typesComboBox" ? allTypes : allSubTypes;
+            itemsSource = itemsSource.Distinct().OrderBy(type => type).ToList();
 
+            if (comboBox.Template.FindName(listBoxName, comboBox) is ListBox listBox)
+            {
+                listBox.ItemsSource = itemsSource;
                 listBox.Dispatcher.Invoke(() =>
                 {
                     foreach (var item in itemsSource)
@@ -175,7 +183,8 @@ namespace CardboardHoarder
                         if (listBoxItem != null)
                         {
                             var checkBox = FindVisualChild<CheckBox>(listBoxItem);
-                            if (checkBox != null && selectedTypes.Contains(item))
+                            var isSelected = comboBox.Name == "typesComboBox" ? selectedTypes.Contains(item) : selectedSubTypes.Contains(item);
+                            if (checkBox != null && isSelected)
                             {
                                 checkBox.IsChecked = true;
                             }
@@ -188,62 +197,120 @@ namespace CardboardHoarder
         {
             if (sender is TextBox textBox)
             {
-                // Ignore the default text
-                if (textBox.Text == typesDefaultText)
+                try
                 {
-                    return;
-                }
-
-                // Traverse up the logical or visual tree to find the ComboBox
-                var parent = VisualTreeHelper.GetParent(textBox);
-                while (parent != null && !(parent is ComboBox))
-                {
-                    parent = VisualTreeHelper.GetParent(parent);
-                }
-
-                ComboBox comboBox = parent as ComboBox;
-                if (comboBox != null)
-                {
-                    filterTypesListBox = comboBox.Template.FindName("filterTypesListBox", comboBox) as ListBox;
-                    if (filterTypesListBox != null)
+                    // Determine the context from the TextBox name and get the default text
+                    var defaultText = GetDefaultText(textBox.Name);
+                    if (textBox.Text == defaultText)
                     {
-                        List<string> filteredItems;
-                        if (!string.IsNullOrWhiteSpace(textBox.Text))
-                        {
-                            filteredItems = allTypes.Where(type => type.IndexOf(textBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                        return; // Ignore the default placeholder text
+                    }
 
-                            // Check if the ComboBox's dropdown is open; if not, open it
+                    // Finding the parent ComboBox
+                    var parent = VisualTreeHelper.GetParent(textBox);
+                    while (parent != null && !(parent is ComboBox))
+                    {
+                        parent = VisualTreeHelper.GetParent(parent);
+                    }
+
+                    ComboBox comboBox = parent as ComboBox;
+                    if (comboBox != null)
+                    {
+                        // Dynamic determination of the ListBox based on the ComboBox
+                        var listBoxName = GetListBoxNameByTextBox(textBox.Name);
+                        var listBox = comboBox.Template.FindName(listBoxName, comboBox) as ListBox;
+
+                        if (listBox != null)
+                        {
+                            UpdateListBoxItems(listBox, textBox.Text);
+
+                            // Open the ComboBox's dropdown if not already open
                             if (!comboBox.IsDropDownOpen)
                             {
                                 comboBox.IsDropDownOpen = true;
                             }
                         }
-                        else
-                        {
-                            filteredItems = allTypes.Distinct().OrderBy(type => type).ToList();
-                        }
-
-                        filterTypesListBox.ItemsSource = filteredItems;
-
-                        filterTypesListBox.Dispatcher.Invoke(() =>
-                        {
-                            foreach (var item in filteredItems)
-                            {
-                                var listBoxItem = filterTypesListBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
-                                if (listBoxItem != null)
-                                {
-                                    var checkBox = FindVisualChild<CheckBox>(listBoxItem);
-                                    if (checkBox != null)
-                                    {
-                                        checkBox.IsChecked = selectedTypes.Contains(item);
-                                    }
-                                }
-                            }
-                        }, System.Windows.Threading.DispatcherPriority.Loaded);
                     }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error in FilterTextBox_TextChanged: {ex.Message}");
                 }
             }
         }
+        private string GetListBoxNameByTextBox(string textBoxName)
+        {
+            // Map the TextBox to its corresponding ListBox based on naming conventions or specific rules
+            return textBoxName switch
+            {
+                "FilterTypesTextBox" => "filterTypesListBox",
+                "FilterSubTypesTextBox" => "filterSubTypesListBox",
+                _ => throw new InvalidOperationException("No corresponding list box found for given TextBox.")
+            };
+        }
+        private string GetDefaultText(string textBoxName)
+        {
+            return textBoxName switch
+            {
+                "FilterTypesTextBox" => typesDefaultText,
+                "FilterSubTypesTextBox" => subTypesDefaultText,
+                _ => string.Empty
+            };
+        }
+        private void UpdateListBoxItems(ListBox listBox, string filterText)
+        {
+            try
+            {
+                // Determine the appropriate data set and selected items set based on the ListBox's name
+                IEnumerable<string> dataSet;
+                HashSet<string> selectedItems;
+                switch (listBox.Name)
+                {
+                    case "filterTypesListBox":
+                        dataSet = allTypes;
+                        selectedItems = selectedTypes;
+                        break;
+                    case "filterSubTypesListBox":
+                        dataSet = allSubTypes;
+                        selectedItems = selectedSubTypes;
+                        break;
+                    default:
+                        throw new InvalidOperationException("ListBox name not recognized for filtering.");
+                }
+
+                // Generate the filtered list of items
+                List<string> filteredItems = !string.IsNullOrWhiteSpace(filterText)
+                    ? dataSet.Where(type => type.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList()
+                    : dataSet.Distinct().OrderBy(type => type).ToList();
+
+                // Update the ListBox's items source
+                listBox.ItemsSource = filteredItems;
+
+                // Ensure checkboxes are checked/unchecked appropriately
+                listBox.Dispatcher.Invoke(() =>
+                {
+                    foreach (var item in filteredItems)
+                    {
+                        var listBoxItem = listBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
+                        if (listBoxItem != null)
+                        {
+                            var checkBox = FindVisualChild<CheckBox>(listBoxItem);
+                            if (checkBox != null)
+                            {
+                                checkBox.IsChecked = selectedItems.Contains(item);
+                            }
+                        }
+                    }
+                }, System.Windows.Threading.DispatcherPriority.Loaded);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in UpdateListBoxItems: {ex.Message}");
+            }
+        }
+
+
+
 
         //private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
         //{
@@ -332,17 +399,17 @@ namespace CardboardHoarder
             {
                 if (sender is TextBox textBox)
                 {
-                    string placeholderText = textBox.Name switch
+                    string defaultText = textBox.Name switch
                     {
                         "FilterTypesTextBox" => typesDefaultText,
                         "filterSuperTypesTextBox" => superTypesDefaultText,
-                        "filterSubTypesTextBox" => subTypesDefualtText,
+                        "FilterSubTypesTextBox" => subTypesDefaultText,
                         "filterKeywordsTextBox" => keywordsDefaultText,
                         "filterRulesTextTextBox" => rulesTextDefaultText,
                         _ => ""
                     };
 
-                    if (textBox.Text == placeholderText)
+                    if (textBox.Text == defaultText)
                     {
                         textBox.Text = string.Empty;
                         textBox.Foreground = new SolidColorBrush(Colors.Black);
@@ -360,11 +427,11 @@ namespace CardboardHoarder
             {
                 if (sender is TextBox textBox)
                 {
-                    string placeholderText = textBox.Name switch
+                    string defaultText = textBox.Name switch
                     {
                         "FilterTypesTextBox" => typesDefaultText,
                         "filterSuperTypesTextBox" => superTypesDefaultText,
-                        "filterSubTypesTextBox" => subTypesDefualtText,
+                        "FilterSubTypesTextBox" => subTypesDefaultText,
                         "filterKeywordsTextBox" => keywordsDefaultText,
                         "filterRulesTextTextBox" => rulesTextDefaultText,
                         _ => ""
@@ -372,7 +439,7 @@ namespace CardboardHoarder
 
                     if (string.IsNullOrWhiteSpace(textBox.Text))
                     {
-                        textBox.Text = placeholderText;
+                        textBox.Text = defaultText;
                         textBox.Foreground = new SolidColorBrush(Colors.Gray);
                     }
                 }
