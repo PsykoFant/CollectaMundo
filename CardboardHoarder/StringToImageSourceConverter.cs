@@ -6,7 +6,7 @@ namespace CardboardHoarder
 {
     public class StringToImageSourceConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             var imageUrl = value as string;
             if (string.IsNullOrEmpty(imageUrl))
@@ -21,7 +21,6 @@ namespace CardboardHoarder
                 return null;  // In case the URL is not valid
             }
         }
-
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotSupportedException();

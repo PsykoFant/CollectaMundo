@@ -74,7 +74,6 @@ namespace CardboardHoarder
         private string subTypesDefaultText = "Filter subtypes...";
         private string keywordsDefaultText = "Filter keywords...";
         #endregion
-
         public static MainWindow CurrentInstance
         {
             get
@@ -92,26 +91,30 @@ namespace CardboardHoarder
         {
             InitializeComponent();
             _currentInstance = this;
-            DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox; // Update the statusbox with messages from methods in DownloadAndPrepareDB            
-            UpdateDB.StatusMessageUpdated += UpdateStatusTextBox; // Update the statusbox with messages from methods in UpdateDB
 
-            // Set filter elements default text
-            filterRulesTextTextBox.Text = rulesTextDefaultText;
-            filterKeywordsTextBox.Text = keywordsDefaultText;
-
+            // Hide app sections not selected
             GridSearchAndFilter.Visibility = Visibility.Hidden;
             GridMyCollection.Visibility = Visibility.Hidden;
             GridStatus.Visibility = Visibility.Hidden;
+
+            // Update the statusbox with messages from methods in DownloadAndPrepareDB
+            DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
+            // Update the statusbox with messages from methods in UpdateDB
+            UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
+
+            // Set rules text default text
+            FilterRulesTextTextBox.Text = rulesTextDefaultText;
+
+            // Set up system
             Loaded += async (sender, args) => { await PrepareSystem(); };
 
             // Ensuring the UI is fully loaded before accessing template parts
             this.Loaded += (sender, e) =>
             {
-                // Handle for typesComboBox
+                SetDefaultTextInComboBox(SuperTypesComboBox, "FilterSuperTypesTextBox", superTypesDefaultText);
                 SetDefaultTextInComboBox(TypesComboBox, "FilterTypesTextBox", typesDefaultText);
-
-                // Handle for subTypesComboBox
                 SetDefaultTextInComboBox(SubTypesComboBox, "FilterSubTypesTextBox", subTypesDefaultText);
+                SetDefaultTextInComboBox(KeywordsComboBox, "FilterKeywordsTextBox", keywordsDefaultText);
             };
 
             // Pick up filtering comboboxes changes
@@ -208,6 +211,10 @@ namespace CardboardHoarder
 
             switch (listBoxName)
             {
+                case "FilterSuperTypesListBox":
+                    itemsSource = allSuperTypes;
+                    selectedItemsSet = selectedSuperTypes;
+                    break;
                 case "FilterTypesListBox":
                     itemsSource = allTypes;
                     selectedItemsSet = selectedTypes;
@@ -215,6 +222,10 @@ namespace CardboardHoarder
                 case "FilterSubTypesListBox":
                     itemsSource = allSubTypes;
                     selectedItemsSet = selectedSubTypes;
+                    break;
+                case "FilterKeywordsListBox":
+                    itemsSource = allKeywords;
+                    selectedItemsSet = selectedKeywords;
                     break;
                 default:
                     throw new InvalidOperationException($"ListBox name not recognized: {listBoxName}");
@@ -312,8 +323,10 @@ namespace CardboardHoarder
         {
             return comboBoxName switch
             {
+                "SuperTypesComboBox" => (superTypesDefaultText, "FilterSuperTypesTextBox", "FilterSuperTypesListBox"),
                 "TypesComboBox" => (typesDefaultText, "FilterTypesTextBox", "FilterTypesListBox"),
                 "SubTypesComboBox" => (subTypesDefaultText, "FilterSubTypesTextBox", "FilterSubTypesListBox"),
+                "KeywordsComboBox" => (keywordsDefaultText, "FilterKeywordsTextBox", "FilterKeywordsListBox"),
                 _ => throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}")
             };
         }
@@ -332,11 +345,11 @@ namespace CardboardHoarder
                 {
                     string defaultText = textBox.Name switch
                     {
+                        "FilterSuperTypesTextBox" => superTypesDefaultText,
                         "FilterTypesTextBox" => typesDefaultText,
-                        "filterSuperTypesTextBox" => superTypesDefaultText,
                         "FilterSubTypesTextBox" => subTypesDefaultText,
-                        "filterKeywordsTextBox" => keywordsDefaultText,
-                        "filterRulesTextTextBox" => rulesTextDefaultText,
+                        "FilterKeywordsTextBox" => keywordsDefaultText,
+                        "FilterRulesTextTextBox" => rulesTextDefaultText,
                         _ => ""
                     };
 
@@ -360,11 +373,11 @@ namespace CardboardHoarder
                 {
                     string defaultText = textBox.Name switch
                     {
+                        "FilterSuperTypesTextBox" => superTypesDefaultText,
                         "FilterTypesTextBox" => typesDefaultText,
-                        "filterSuperTypesTextBox" => superTypesDefaultText,
                         "FilterSubTypesTextBox" => subTypesDefaultText,
-                        "filterKeywordsTextBox" => keywordsDefaultText,
-                        "filterRulesTextTextBox" => rulesTextDefaultText,
+                        "FilterKeywordsTextBox" => keywordsDefaultText,
+                        "FilterRulesTextTextBox" => rulesTextDefaultText,
                         _ => ""
                     };
 
@@ -530,18 +543,19 @@ namespace CardboardHoarder
         private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
             // Reset filter TextBoxes for each ComboBox
+            ResetFilterTextBox(SubTypesComboBox, "FilterSuperTypesTextBox", superTypesDefaultText);
             ResetFilterTextBox(TypesComboBox, "FilterTypesTextBox", typesDefaultText);
             ResetFilterTextBox(SubTypesComboBox, "FilterSubTypesTextBox", subTypesDefaultText);
+            ResetFilterTextBox(KeywordsComboBox, "FilterKeywordsTextBox", keywordsDefaultText);
 
-            // Clear comboboxes
+            // Clear non-custom comboboxes
             filterCardNameComboBox.SelectedIndex = -1;
             filterSetNameComboBox.SelectedIndex = -1;
             allOrNoneComboBox.SelectedIndex = 0;
             ManaValueComboBox.SelectedIndex = -1;
             ManaValueOperatorComboBox.SelectedIndex = -1;
 
-            // Clear selections in the ListBoxes
-            ClearListBoxSelections(filterKeywordsListBox);
+            // Clear selections in the colors listbox
             ClearListBoxSelections(filterColorsListBox);
 
             // Clear the internal HashSets
@@ -551,10 +565,9 @@ namespace CardboardHoarder
             selectedKeywords.Clear();
             selectedColors.Clear();
 
-            // Clear other TextBoxes
-            ResetText(filterRulesTextTextBox, rulesTextDefaultText);
-            ResetText(filterKeywordsTextBox, keywordsDefaultText);
-            // More TextBox resets can be added here
+            // Clear rulestext textbox
+            FilterRulesTextTextBox.Text = rulesTextDefaultText;
+            FilterRulesTextTextBox.Foreground = new SolidColorBrush(Colors.Gray);
 
             // Clear search item labels
             cardRulesTextLabel.Content = string.Empty;
@@ -574,11 +587,6 @@ namespace CardboardHoarder
             ApplyFilter();
         }
         // Helper methods for resetting filter elements
-        private void ResetText(TextBox textBox, string defaultText)
-        {
-            textBox.Text = defaultText;
-            textBox.Foreground = new SolidColorBrush(Colors.Gray);
-        }
         private void ResetFilterTextBox(ComboBox comboBox, string textBoxName, string defaultText)
         {
             if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
@@ -613,7 +621,7 @@ namespace CardboardHoarder
 
                 string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? string.Empty;
                 string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? string.Empty;
-                string rulesTextFilter = filterRulesTextTextBox.Text;
+                string rulesTextFilter = FilterRulesTextTextBox.Text;
                 bool useAnd = allOrNoneComboBox.SelectedIndex == 1;
                 bool exclude = allOrNoneComboBox.SelectedIndex == 2;
                 string compareOperator = ManaValueOperatorComboBox.SelectedItem?.ToString() ?? string.Empty;
@@ -732,9 +740,9 @@ namespace CardboardHoarder
         // Update the labels which show which filters have been applied
         private void UpdateFilterLabel()
         {
-            if (filterRulesTextTextBox.Text != rulesTextDefaultText)
+            if (FilterRulesTextTextBox.Text != rulesTextDefaultText)
             {
-                cardRulesTextLabel.Content = $"Rulestext: \"{filterRulesTextTextBox.Text}\"";
+                cardRulesTextLabel.Content = $"Rulestext: \"{FilterRulesTextTextBox.Text}\"";
             }
 
             UpdateLabelContent(selectedTypes, cardTypeLabel, CurrentInstance.typesAndOr.IsChecked ?? false, "Card types");
@@ -980,7 +988,6 @@ namespace CardboardHoarder
                     filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                     filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                     filterColorsListBox.ItemsSource = allColors;
-                    filterKeywordsListBox.ItemsSource = allKeywords;
                     allOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
                     allOrNoneComboBox.SelectedIndex = 0;
                     ManaValueComboBox.ItemsSource = manaValueOptions;
