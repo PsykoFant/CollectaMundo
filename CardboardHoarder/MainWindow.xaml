@@ -199,7 +199,7 @@
                VerticalAlignment="Top"
                Width="241"/>
 
-            <ComboBox x:Name="typesComboBox" HorizontalAlignment="Left" Margin="10,200,0,0" VerticalAlignment="Top" Width="257" DropDownOpened="ComboBox_DropDownOpened">
+            <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,200,0,0" VerticalAlignment="Top" Width="257" DropDownOpened="ComboBox_DropDownOpened">
                 <ComboBox.Template>
                     <ControlTemplate TargetType="{x:Type ComboBox}">
                         <Grid>
@@ -216,7 +216,7 @@
                                  Padding="3,3,0,0"
                                  Margin="0,0,0,0"/>
 
-                            <ToggleButton Grid.Row="0" x:Name="ToggleButton" Content="Types" Focusable="false"
+                            <ToggleButton Grid.Row="0" x:Name="ToggleButtonTypes" Content="Types" Focusable="false"
                               ClickMode="Press"
                               IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
                               VerticalAlignment="Top"
@@ -225,7 +225,7 @@
 
                             <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                 <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                    <ListBox x:Name="filterTypesListBox" 
+                                    <ListBox x:Name="FilterTypesListBox" 
                                      ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" 
                                      SelectionMode="Multiple">
                                         <ListBox.Resources>
@@ -235,9 +235,9 @@
                                                     <Setter.Value>
                                                         <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                             <CheckBox Margin="5,2" 
-                                                          IsChecked="{TemplateBinding IsSelected}"
-                                                          Loaded="CheckBox_Loaded"
-                                                          Tag="Type">
+                                                              IsChecked="{TemplateBinding IsSelected}"
+                                                              Loaded="CheckBox_Loaded"
+                                                              Tag="Type">
                                                                 <ContentPresenter/>
                                                             </CheckBox>
                                                         </ControlTemplate>
@@ -265,7 +265,7 @@
 
 
 
-            <ComboBox x:Name="subTypesComboBox" HorizontalAlignment="Left" Margin="10,391,0,0" VerticalAlignment="Top" Width="257" DropDownOpened="ComboBox_DropDownOpened">
+            <ComboBox x:Name="SubTypesComboBox" HorizontalAlignment="Left" Margin="10,391,0,0" VerticalAlignment="Top" Width="257" DropDownOpened="ComboBox_DropDownOpened">
                 <ComboBox.Template>
                     <ControlTemplate TargetType="{x:Type ComboBox}">
                         <Grid>
@@ -282,16 +282,16 @@
                             Padding="3,3,0,0"
                             Margin="0,0,0,0"/>
 
-                            <ToggleButton Grid.Row="0" x:Name="ToggleButton" Content="Types" Focusable="false"
+                            <ToggleButton x:Name="ToggleButtonSubTypes" Content="Subtypes" Focusable="false"
                             ClickMode="Press"
                             IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                            VerticalAlignment="Top"
-                            HorizontalAlignment="Right"
-                            Width="40" Height="20"/>
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Left"
+                            Width="56" Height="20" Margin="201,0,0,0"/>
 
                             <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                 <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                    <ListBox x:Name="filterSubTypesListBox" 
+                                    <ListBox x:Name="FilterSubTypesListBox" 
                                     ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" 
                                     SelectionMode="Multiple">
                                         <ListBox.Resources>
@@ -301,9 +301,9 @@
                                                     <Setter.Value>
                                                         <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                             <CheckBox Margin="5,2" 
-                                                            IsChecked="{TemplateBinding IsSelected}"
-                                                            Loaded="CheckBox_Loaded"
-                                                            Tag="SubType">
+                                                                IsChecked="{TemplateBinding IsSelected}"
+                                                                Loaded="CheckBox_Loaded"
+                                                                Tag="SubType">
                                                                 <ContentPresenter/>
                                                             </CheckBox>
                                                         </ControlTemplate>

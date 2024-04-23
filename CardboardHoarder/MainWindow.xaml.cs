@@ -16,7 +16,7 @@ namespace CardboardHoarder
         #region Set up varibales
         // Used for displaying images
         private string _imageSourceUrl = string.Empty;
-        private string _imageSourceUrl1 = string.Empty;
+        private string _imageSourceUrl2nd = string.Empty;
         public string ImageSourceUrl
         {
             get => _imageSourceUrl;
@@ -29,15 +29,15 @@ namespace CardboardHoarder
                 }
             }
         }
-        public string ImageSourceUrl1
+        public string ImageSourceUrl2nd
         {
-            get => _imageSourceUrl1;
+            get => _imageSourceUrl2nd;
             set
             {
-                if (_imageSourceUrl1 != value)
+                if (_imageSourceUrl2nd != value)
                 {
-                    _imageSourceUrl1 = value;
-                    OnPropertyChanged(nameof(ImageSourceUrl1));
+                    _imageSourceUrl2nd = value;
+                    OnPropertyChanged(nameof(ImageSourceUrl2nd));
                 }
             }
         }
@@ -108,10 +108,10 @@ namespace CardboardHoarder
             this.Loaded += (sender, e) =>
             {
                 // Handle for typesComboBox
-                SetDefaultTextInComboBox(typesComboBox, "FilterTypesTextBox", typesDefaultText);
+                SetDefaultTextInComboBox(TypesComboBox, "FilterTypesTextBox", typesDefaultText);
 
                 // Handle for subTypesComboBox
-                SetDefaultTextInComboBox(subTypesComboBox, "FilterSubTypesTextBox", subTypesDefaultText);
+                SetDefaultTextInComboBox(SubTypesComboBox, "FilterSubTypesTextBox", subTypesDefaultText);
             };
 
             // Pick up filtering comboboxes changes
@@ -208,11 +208,11 @@ namespace CardboardHoarder
 
             switch (listBoxName)
             {
-                case "filterTypesListBox":
+                case "FilterTypesListBox":
                     itemsSource = allTypes;
                     selectedItemsSet = selectedTypes;
                     break;
-                case "filterSubTypesListBox":
+                case "FilterSubTypesListBox":
                     itemsSource = allSubTypes;
                     selectedItemsSet = selectedSubTypes;
                     break;
@@ -309,14 +309,13 @@ namespace CardboardHoarder
             }
         }
 
-
         // Generic method for embedded textbox and listbox elements based on the combobox
         private (string defaultText, string textBoxName, string listBoxName) GetComboBoxConfig(string comboBoxName)
         {
             return comboBoxName switch
             {
-                "typesComboBox" => (typesDefaultText, "FilterTypesTextBox", "filterTypesListBox"),
-                "subTypesComboBox" => (subTypesDefaultText, "FilterSubTypesTextBox", "filterSubTypesListBox"),
+                "TypesComboBox" => (typesDefaultText, "FilterTypesTextBox", "FilterTypesListBox"),
+                "SubTypesComboBox" => (subTypesDefaultText, "FilterSubTypesTextBox", "FilterSubTypesListBox"),
                 _ => throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}")
             };
         }
@@ -613,8 +612,8 @@ namespace CardboardHoarder
         private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
             // Reset filter TextBoxes for each ComboBox
-            ResetFilterTextBox(typesComboBox, "FilterTypesTextBox", typesDefaultText);
-            ResetFilterTextBox(subTypesComboBox, "FilterSubTypesTextBox", subTypesDefaultText);
+            ResetFilterTextBox(TypesComboBox, "FilterTypesTextBox", typesDefaultText);
+            ResetFilterTextBox(SubTypesComboBox, "FilterSubTypesTextBox", subTypesDefaultText);
 
             // Clear comboboxes
             filterCardNameComboBox.SelectedIndex = -1;
@@ -860,7 +859,7 @@ namespace CardboardHoarder
                         if (selectedCard.Side == "a" || selectedCard.Side == "b")
                         {
                             ImageSourceUrl = cardImageUrl;
-                            ImageSourceUrl1 = secondCardImageUrl;
+                            ImageSourceUrl2nd = secondCardImageUrl;
                         }
                         else
                         {
