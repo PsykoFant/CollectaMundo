@@ -41,38 +41,16 @@ namespace CardboardHoarder
                 }
             }
         }
-
         public event PropertyChangedEventHandler? PropertyChanged;
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
-        // Used by ShowOrHideStatusWindow to reference MainWindow
         private static MainWindow? _currentInstance;
         private ICollectionView? dataView;
         private List<CardSet> cards = new List<CardSet>();
+        private FilterContext filterContext = new FilterContext();
 
-        // Lists for populating listboxes
-        private List<string> allColors = new List<string>();
-        private List<string> allTypes = new List<string>();
-        private List<string> allSuperTypes = new List<string>();
-        private List<string> allSubTypes = new List<string>();
-        private List<string> allKeywords = new List<string>();
-
-        // Hashsets to store selected checkbox items in listboxes
-        private HashSet<string> selectedColors = new HashSet<string>();
-        private HashSet<string> selectedTypes = new HashSet<string>();
-        private HashSet<string> selectedSuperTypes = new HashSet<string>();
-        private HashSet<string> selectedSubTypes = new HashSet<string>();
-        private HashSet<string> selectedKeywords = new HashSet<string>();
-
-        // Default text for filter elements
-        private string rulesTextDefaultText = "Filter rulestext...";
-        private string typesDefaultText = "Filter card types...";
-        private string superTypesDefaultText = "Filter supertypes...";
-        private string subTypesDefaultText = "Filter subtypes...";
-        private string keywordsDefaultText = "Filter keywords...";
         #endregion
         public static MainWindow CurrentInstance
         {
@@ -102,8 +80,6 @@ namespace CardboardHoarder
             // Update the statusbox with messages from methods in UpdateDB
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
 
-
-
             // Set up system
             Loaded += async (sender, args) => { await PrepareSystem(); };
 
@@ -128,16 +104,6 @@ namespace CardboardHoarder
         }
 
         #region Filter elements handling        
-        // Method to set default text in a ComboBox's TextBox based on its template
-        void SetDefaultTextInComboBox(ComboBox comboBox, string textBoxName, string defaultText)
-        {
-            var filterTextBox = comboBox.Template.FindName(textBoxName, comboBox) as TextBox;
-            if (filterTextBox != null)
-            {
-                filterTextBox.Text = defaultText;
-                filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            }
-        }
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
             if (sender is ComboBox comboBox)
@@ -202,20 +168,20 @@ namespace CardboardHoarder
             switch (listBoxName)
             {
                 case "FilterSuperTypesListBox":
-                    itemsSource = allSuperTypes;
-                    selectedItemsSet = selectedSuperTypes;
+                    itemsSource = filterContext.AllSuperTypes;
+                    selectedItemsSet = filterContext.SelectedSuperTypes;
                     break;
                 case "FilterTypesListBox":
-                    itemsSource = allTypes;
-                    selectedItemsSet = selectedTypes;
+                    itemsSource = filterContext.AllTypes;
+                    selectedItemsSet = filterContext.SelectedTypes;
                     break;
                 case "FilterSubTypesListBox":
-                    itemsSource = allSubTypes;
-                    selectedItemsSet = selectedSubTypes;
+                    itemsSource = filterContext.AllSubTypes;
+                    selectedItemsSet = filterContext.SelectedSubTypes;
                     break;
                 case "FilterKeywordsListBox":
-                    itemsSource = allKeywords;
-                    selectedItemsSet = selectedKeywords;
+                    itemsSource = filterContext.AllKeywords;
+                    selectedItemsSet = filterContext.SelectedKeywords;
                     break;
                 default:
                     throw new InvalidOperationException($"ListBox name not recognized: {listBoxName}");
@@ -313,10 +279,10 @@ namespace CardboardHoarder
         {
             return comboBoxName switch
             {
-                "SuperTypesComboBox" => (superTypesDefaultText, "FilterSuperTypesTextBox", "FilterSuperTypesListBox"),
-                "TypesComboBox" => (typesDefaultText, "FilterTypesTextBox", "FilterTypesListBox"),
-                "SubTypesComboBox" => (subTypesDefaultText, "FilterSubTypesTextBox", "FilterSubTypesListBox"),
-                "KeywordsComboBox" => (keywordsDefaultText, "FilterKeywordsTextBox", "FilterKeywordsListBox"),
+                "SuperTypesComboBox" => (filterContext.SuperTypesDefaultText, "FilterSuperTypesTextBox", "FilterSuperTypesListBox"),
+                "TypesComboBox" => (filterContext.TypesDefaultText, "FilterTypesTextBox", "FilterTypesListBox"),
+                "SubTypesComboBox" => (filterContext.SubTypesDefaultText, "FilterSubTypesTextBox", "FilterSubTypesListBox"),
+                "KeywordsComboBox" => (filterContext.KeywordsDefaultText, "FilterKeywordsTextBox", "FilterKeywordsListBox"),
                 _ => throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}")
             };
         }
@@ -335,11 +301,11 @@ namespace CardboardHoarder
                 {
                     string defaultText = textBox.Name switch
                     {
-                        "FilterSuperTypesTextBox" => superTypesDefaultText,
-                        "FilterTypesTextBox" => typesDefaultText,
-                        "FilterSubTypesTextBox" => subTypesDefaultText,
-                        "FilterKeywordsTextBox" => keywordsDefaultText,
-                        "FilterRulesTextTextBox" => rulesTextDefaultText,
+                        "FilterSuperTypesTextBox" => filterContext.SuperTypesDefaultText,
+                        "FilterTypesTextBox" => filterContext.TypesDefaultText,
+                        "FilterSubTypesTextBox" => filterContext.SubTypesDefaultText,
+                        "FilterKeywordsTextBox" => filterContext.KeywordsDefaultText,
+                        "FilterRulesTextTextBox" => filterContext.RulesTextDefaultText,
                         _ => ""
                     };
 
@@ -363,11 +329,11 @@ namespace CardboardHoarder
                 {
                     string defaultText = textBox.Name switch
                     {
-                        "FilterSuperTypesTextBox" => superTypesDefaultText,
-                        "FilterTypesTextBox" => typesDefaultText,
-                        "FilterSubTypesTextBox" => subTypesDefaultText,
-                        "FilterKeywordsTextBox" => keywordsDefaultText,
-                        "FilterRulesTextTextBox" => rulesTextDefaultText,
+                        "FilterSuperTypesTextBox" => filterContext.SuperTypesDefaultText,
+                        "FilterTypesTextBox" => filterContext.TypesDefaultText,
+                        "FilterSubTypesTextBox" => filterContext.SubTypesDefaultText,
+                        "FilterKeywordsTextBox" => filterContext.KeywordsDefaultText,
+                        "FilterRulesTextTextBox" => filterContext.RulesTextDefaultText,
                         _ => ""
                     };
 
@@ -403,11 +369,11 @@ namespace CardboardHoarder
                     {
                         HashSet<string>? targetCollection = checkBox.Tag switch
                         {
-                            "Type" => selectedTypes,
-                            "SuperType" => selectedSuperTypes,
-                            "SubType" => selectedSubTypes,
-                            "Keywords" => selectedKeywords,
-                            "Colors" => selectedColors,
+                            "Type" => filterContext.SelectedTypes,
+                            "SuperType" => filterContext.SelectedSuperTypes,
+                            "SubType" => filterContext.SelectedSubTypes,
+                            "Keywords" => filterContext.SelectedKeywords,
+                            "Colors" => filterContext.SelectedColors,
                             _ => null
                         };
 
@@ -443,11 +409,11 @@ namespace CardboardHoarder
                     {
                         HashSet<string>? targetCollection = checkBox.Tag switch
                         {
-                            "Type" => selectedTypes,
-                            "SuperType" => selectedSuperTypes,
-                            "SubType" => selectedSubTypes,
-                            "Keywords" => selectedKeywords,
-                            "Colors" => selectedColors,
+                            "Type" => filterContext.SelectedTypes,
+                            "SuperType" => filterContext.SelectedSuperTypes,
+                            "SubType" => filterContext.SelectedSubTypes,
+                            "Keywords" => filterContext.SelectedKeywords,
+                            "Colors" => filterContext.SelectedColors,
                             _ => null
                         };
 
@@ -473,19 +439,19 @@ namespace CardboardHoarder
                 switch (checkBox.Tag as string)
                 {
                     case "Type":
-                        checkBox.IsChecked = selectedTypes.Contains(dataContext);
+                        checkBox.IsChecked = filterContext.SelectedTypes.Contains(dataContext);
                         break;
                     case "SuperType":
-                        checkBox.IsChecked = selectedSuperTypes.Contains(dataContext);
+                        checkBox.IsChecked = filterContext.SelectedSuperTypes.Contains(dataContext);
                         break;
                     case "SubType":
-                        checkBox.IsChecked = selectedSubTypes.Contains(dataContext);
+                        checkBox.IsChecked = filterContext.SelectedSubTypes.Contains(dataContext);
                         break;
                     case "Keywords":
-                        checkBox.IsChecked = selectedKeywords.Contains(dataContext);
+                        checkBox.IsChecked = filterContext.SelectedKeywords.Contains(dataContext);
                         break;
                     case "Colors":
-                        checkBox.IsChecked = selectedColors.Contains(dataContext);
+                        checkBox.IsChecked = filterContext.SelectedColors.Contains(dataContext);
                         break;
                 }
             }
@@ -533,10 +499,10 @@ namespace CardboardHoarder
         private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
             // Reset filter TextBoxes for each ComboBox
-            ResetFilterTextBox(SubTypesComboBox, "FilterSuperTypesTextBox", superTypesDefaultText);
-            ResetFilterTextBox(TypesComboBox, "FilterTypesTextBox", typesDefaultText);
-            ResetFilterTextBox(SubTypesComboBox, "FilterSubTypesTextBox", subTypesDefaultText);
-            ResetFilterTextBox(KeywordsComboBox, "FilterKeywordsTextBox", keywordsDefaultText);
+            ResetFilterTextBox(SubTypesComboBox, "FilterSuperTypesTextBox", filterContext.SuperTypesDefaultText);
+            ResetFilterTextBox(TypesComboBox, "FilterTypesTextBox", filterContext.TypesDefaultText);
+            ResetFilterTextBox(SubTypesComboBox, "FilterSubTypesTextBox", filterContext.SubTypesDefaultText);
+            ResetFilterTextBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);
 
             // Clear non-custom comboboxes
             filterCardNameComboBox.SelectedIndex = -1;
@@ -549,14 +515,14 @@ namespace CardboardHoarder
             ClearListBoxSelections(filterColorsListBox);
 
             // Clear the internal HashSets
-            selectedTypes.Clear();
-            selectedSuperTypes.Clear();
-            selectedSubTypes.Clear();
-            selectedKeywords.Clear();
-            selectedColors.Clear();
+            filterContext.SelectedTypes.Clear();
+            filterContext.SelectedSuperTypes.Clear();
+            filterContext.SelectedSubTypes.Clear();
+            filterContext.SelectedKeywords.Clear();
+            filterContext.SelectedColors.Clear();
 
             // Clear rulestext textbox
-            FilterRulesTextTextBox.Text = rulesTextDefaultText;
+            FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
             FilterRulesTextTextBox.Foreground = new SolidColorBrush(Colors.Gray);
 
             // Clear search item labels
@@ -624,13 +590,13 @@ namespace CardboardHoarder
                 filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter);
 
                 // Filter by colors
-                filteredCards = FilterByCriteria(filteredCards, selectedColors, useAnd, card => card.ManaCost, exclude);
+                filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedColors, useAnd, card => card.ManaCost, exclude);
 
                 // Filter by listbox selections
-                filteredCards = FilterByCriteria(filteredCards, selectedTypes, CurrentInstance.typesAndOr.IsChecked ?? false, card => card.Types);
-                filteredCards = FilterByCriteria(filteredCards, selectedSuperTypes, CurrentInstance.superTypesAndOr.IsChecked ?? false, card => card.SuperTypes);
-                filteredCards = FilterByCriteria(filteredCards, selectedSubTypes, CurrentInstance.subTypesAndOr.IsChecked ?? false, card => card.SubTypes);
-                filteredCards = FilterByCriteria(filteredCards, selectedKeywords, CurrentInstance.keywordsAndOr.IsChecked ?? false, card => card.Keywords);
+                filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedTypes, CurrentInstance.typesAndOr.IsChecked ?? false, card => card.Types);
+                filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedSuperTypes, CurrentInstance.superTypesAndOr.IsChecked ?? false, card => card.SuperTypes);
+                filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedSubTypes, CurrentInstance.subTypesAndOr.IsChecked ?? false, card => card.SubTypes);
+                filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedKeywords, CurrentInstance.keywordsAndOr.IsChecked ?? false, card => card.Keywords);
 
                 var finalFilteredCards = filteredCards.ToList();
                 cardCountLabel.Content = $"Cards shown: {finalFilteredCards.Count}";
@@ -655,7 +621,7 @@ namespace CardboardHoarder
                 {
                     filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.IndexOf(setFilter, StringComparison.OrdinalIgnoreCase) >= 0);
                 }
-                if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != rulesTextDefaultText)
+                if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != filterContext.RulesTextDefaultText)
                 {
                     filteredCards = filteredCards.Where(card => card.Text != null && card.Text.IndexOf(rulesTextFilter, StringComparison.OrdinalIgnoreCase) >= 0);
                 }
@@ -730,15 +696,15 @@ namespace CardboardHoarder
         // Update the labels which show which filters have been applied
         private void UpdateFilterLabel()
         {
-            if (FilterRulesTextTextBox.Text != rulesTextDefaultText)
+            if (FilterRulesTextTextBox.Text != filterContext.RulesTextDefaultText)
             {
                 cardRulesTextLabel.Content = $"Rulestext: \"{FilterRulesTextTextBox.Text}\"";
             }
 
-            UpdateLabelContent(selectedTypes, cardTypeLabel, CurrentInstance.typesAndOr.IsChecked ?? false, "Card types");
-            UpdateLabelContent(selectedSuperTypes, cardSuperTypesLabel, CurrentInstance.superTypesAndOr.IsChecked ?? false, "Card supertypes");
-            UpdateLabelContent(selectedSubTypes, cardSubTypeLabel, CurrentInstance.subTypesAndOr.IsChecked ?? false, "Card subtypes");
-            UpdateLabelContent(selectedKeywords, cardKeywordsLabel, CurrentInstance.keywordsAndOr.IsChecked ?? false, "Keywords");
+            UpdateLabelContent(filterContext.SelectedTypes, cardTypeLabel, CurrentInstance.typesAndOr.IsChecked ?? false, "Card types");
+            UpdateLabelContent(filterContext.SelectedSuperTypes, cardSuperTypesLabel, CurrentInstance.superTypesAndOr.IsChecked ?? false, "Card supertypes");
+            UpdateLabelContent(filterContext.SelectedSubTypes, cardSubTypeLabel, CurrentInstance.subTypesAndOr.IsChecked ?? false, "Card subtypes");
+            UpdateLabelContent(filterContext.SelectedKeywords, cardKeywordsLabel, CurrentInstance.keywordsAndOr.IsChecked ?? false, "Keywords");
         }
         private void UpdateLabelContent(HashSet<string> selectedItems, Label targetLabel, bool useAnd, string prefix)
         {
@@ -931,14 +897,14 @@ namespace CardboardHoarder
                 var subTypes = cards.Select(card => card.SubTypes).Distinct().ToList();
                 var keywords = cards.Select(card => card.Keywords).Distinct().ToList();
 
-                allColors.AddRange(new[] { "W", "U", "B", "R", "G", "C", "X" });
+                filterContext.AllColors.AddRange(new[] { "W", "U", "B", "R", "G", "C", "X" });
 
                 var allOrNoneColorsOption = new List<string> { "Cards with any of these colors", "Cards with all of these colors", "Cards with none of these colors" };
                 var manaValueOptions = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000 };
                 var manaValueCompareOptions = new List<string> { "less than", "less than/eq", "greater than", "greater than/eq", "equal to" };
 
                 // Set up elements in card type listbox
-                allTypes = types
+                filterContext.AllTypes = types
                     .Where(type => type != null)
                     .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                     .Select(p => p.Trim())
@@ -947,7 +913,7 @@ namespace CardboardHoarder
                     .ToList();
 
                 // Set up elements in supertype listbox
-                allSuperTypes = superTypes
+                filterContext.AllSuperTypes = superTypes
                     .Where(type => type != null)
                     .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                     .Select(p => p.Trim())
@@ -956,7 +922,7 @@ namespace CardboardHoarder
                     .ToList();
 
                 // Set up elements in subtype listbox
-                allSubTypes = subTypes
+                filterContext.AllSubTypes = subTypes
                     .Where(type => type != null)
                     .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                     .Select(p => p.Trim())
@@ -965,7 +931,7 @@ namespace CardboardHoarder
                     .ToList();
 
                 // Set up elements in keywords listbox
-                allKeywords = keywords
+                filterContext.AllKeywords = keywords
                     .Where(keyword => keyword != null)
                     .SelectMany(keyword => keyword!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                     .Select(p => p.Trim())
@@ -975,20 +941,20 @@ namespace CardboardHoarder
 
                 Dispatcher.Invoke(() =>
                 {
-                    FilterRulesTextTextBox.Text = rulesTextDefaultText;
+                    FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
                     filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                     filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
-                    filterColorsListBox.ItemsSource = allColors;
+                    filterColorsListBox.ItemsSource = filterContext.AllColors;
                     allOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
                     allOrNoneComboBox.SelectedIndex = 0;
                     ManaValueComboBox.ItemsSource = manaValueOptions;
                     ManaValueComboBox.SelectedIndex = -1;
                     ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
                     ManaValueOperatorComboBox.SelectedIndex = -1;
-                    SetDefaultTextInComboBox(SuperTypesComboBox, "FilterSuperTypesTextBox", superTypesDefaultText);
-                    SetDefaultTextInComboBox(TypesComboBox, "FilterTypesTextBox", typesDefaultText);
-                    SetDefaultTextInComboBox(SubTypesComboBox, "FilterSubTypesTextBox", subTypesDefaultText);
-                    SetDefaultTextInComboBox(KeywordsComboBox, "FilterKeywordsTextBox", keywordsDefaultText);
+                    SetDefaultTextInComboBox(SuperTypesComboBox, "FilterSuperTypesTextBox", filterContext.SuperTypesDefaultText);
+                    SetDefaultTextInComboBox(TypesComboBox, "FilterTypesTextBox", filterContext.TypesDefaultText);
+                    SetDefaultTextInComboBox(SubTypesComboBox, "FilterSubTypesTextBox", filterContext.SubTypesDefaultText);
+                    SetDefaultTextInComboBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);
                 });
             }
             catch (Exception ex)
@@ -997,6 +963,16 @@ namespace CardboardHoarder
             }
             return Task.CompletedTask;
         }
+        void SetDefaultTextInComboBox(ComboBox comboBox, string textBoxName, string defaultText)
+        {
+            var filterTextBox = comboBox.Template.FindName(textBoxName, comboBox) as TextBox;
+            if (filterTextBox != null)
+            {
+                filterTextBox.Text = defaultText;
+                filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            }
+        }
+
         #endregion
 
         #region UI elements for updating card database
