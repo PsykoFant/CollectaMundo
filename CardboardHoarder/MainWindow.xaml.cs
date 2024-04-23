@@ -107,15 +107,6 @@ namespace CardboardHoarder
             // Set up system
             Loaded += async (sender, args) => { await PrepareSystem(); };
 
-            // Ensuring the UI is fully loaded before accessing template parts
-            this.Loaded += (sender, e) =>
-            {
-                SetDefaultTextInComboBox(SuperTypesComboBox, "FilterSuperTypesTextBox", superTypesDefaultText);
-                SetDefaultTextInComboBox(TypesComboBox, "FilterTypesTextBox", typesDefaultText);
-                SetDefaultTextInComboBox(SubTypesComboBox, "FilterSubTypesTextBox", subTypesDefaultText);
-                SetDefaultTextInComboBox(KeywordsComboBox, "FilterKeywordsTextBox", keywordsDefaultText);
-            };
-
             // Pick up filtering comboboxes changes
             filterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             filterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
@@ -994,6 +985,10 @@ namespace CardboardHoarder
                     ManaValueComboBox.SelectedIndex = -1;
                     ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
                     ManaValueOperatorComboBox.SelectedIndex = -1;
+                    SetDefaultTextInComboBox(SuperTypesComboBox, "FilterSuperTypesTextBox", superTypesDefaultText);
+                    SetDefaultTextInComboBox(TypesComboBox, "FilterTypesTextBox", typesDefaultText);
+                    SetDefaultTextInComboBox(SubTypesComboBox, "FilterSubTypesTextBox", subTypesDefaultText);
+                    SetDefaultTextInComboBox(KeywordsComboBox, "FilterKeywordsTextBox", keywordsDefaultText);
                 });
             }
             catch (Exception ex)
