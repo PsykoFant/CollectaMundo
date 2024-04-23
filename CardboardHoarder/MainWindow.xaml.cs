@@ -102,8 +102,7 @@ namespace CardboardHoarder
             // Update the statusbox with messages from methods in UpdateDB
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
 
-            // Set rules text default text
-            FilterRulesTextTextBox.Text = rulesTextDefaultText;
+
 
             // Set up system
             Loaded += async (sender, args) => { await PrepareSystem(); };
@@ -318,7 +317,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error in UpdateListBoxItems: {ex.Message}");
             }
         }
-        // Generic method for embedded textbox and listbox elements based on the combobox
+        // Generic method for getting embedded textbox and listbox elements based on the combobox
         private (string defaultText, string textBoxName, string listBoxName) GetComboBoxConfig(string comboBoxName)
         {
             return comboBoxName switch
@@ -985,6 +984,7 @@ namespace CardboardHoarder
 
                 Dispatcher.Invoke(() =>
                 {
+                    FilterRulesTextTextBox.Text = rulesTextDefaultText;
                     filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                     filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                     filterColorsListBox.ItemsSource = allColors;
