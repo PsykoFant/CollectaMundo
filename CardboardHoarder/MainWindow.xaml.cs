@@ -273,7 +273,6 @@ namespace CardboardHoarder
                 }
             }
         }
-
         // This method updates the listbox items based on text typed in FilterTextBox
         private void UpdateListBoxItems(ListBox listBox, string filterText)
         {
@@ -308,7 +307,6 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error in UpdateListBoxItems: {ex.Message}");
             }
         }
-
         // Generic method for embedded textbox and listbox elements based on the combobox
         private (string defaultText, string textBoxName, string listBoxName) GetComboBoxConfig(string comboBoxName)
         {
@@ -319,88 +317,13 @@ namespace CardboardHoarder
                 _ => throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}")
             };
         }
-
-        //private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        //{
-        //    try
-        //    {
-        //        if (sender is TextBox textBox)
-        //        {
-        //            List<string> allItems = new List<string>();
-        //            ListBox? targetListBox = null;
-        //            HashSet<string> selectedItems = new HashSet<string>();
-        //            string placeholderText = string.Empty;
-
-        //            // Determine the context based on which TextBox is sending the event
-        //            switch (textBox.Name)
-        //            {
-        //                case "filterTypesTextBoxNew":
-        //                    allItems = allTypes;
-        //                    targetListBox = filterTypesListBoxNew;
-        //                    selectedItems = selectedTypes;
-        //                    placeholderText = typesDefaultText;
-        //                    break;
-        //                case "filterTypesTextBox":
-        //                    allItems = allTypes;
-        //                    targetListBox = filterTypesListBox;
-        //                    selectedItems = selectedTypes;
-        //                    placeholderText = typesDefaultText;
-        //                    break;
-        //                case "filterSuperTypesTextBox":
-        //                    allItems = allSuperTypes;
-        //                    targetListBox = filterSuperTypesListBox;
-        //                    selectedItems = selectedSuperTypes;
-        //                    placeholderText = superTypesDefaultText;
-        //                    break;
-        //                case "filterSubTypesTextBox":
-        //                    allItems = allSubTypes;
-        //                    targetListBox = filterSubTypesListBox;
-        //                    selectedItems = selectedSubTypes;
-        //                    placeholderText = subTypesDefualtText;
-        //                    break;
-        //                case "filterKeywordsTextBox":
-        //                    allItems = allKeywords;
-        //                    targetListBox = filterKeywordsListBox;
-        //                    selectedItems = selectedKeywords;
-        //                    placeholderText = keywordsDefaultText;
-        //                    break;
-        //            }
-
-
-        //            if (targetListBox != null && textBox.Text != placeholderText)
-        //            {
-        //                var filteredItems = string.IsNullOrWhiteSpace(textBox.Text)
-        //                    ? allItems
-        //                    : allItems.Where(type => type.IndexOf(textBox.Text, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-
-        //                targetListBox.ItemsSource = filteredItems;
-
-
-        //                // Reapply the selected state to the checkboxes
-        //                targetListBox.Dispatcher.Invoke(() =>
-        //                {
-        //                    foreach (var item in filteredItems)
-        //                    {
-        //                        var listBoxItem = targetListBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
-        //                        if (listBoxItem != null)
-        //                        {
-        //                            var checkBox = FindVisualChild<CheckBox>(listBoxItem);
-        //                            if (checkBox != null && selectedItems.Contains(item))
-        //                            {
-        //                                checkBox.IsChecked = true;
-        //                            }
-        //                        }
-        //                    }
-
-        //                }, System.Windows.Threading.DispatcherPriority.Loaded);
-        //            }
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"Error in FilterTextBox_TextChanged: {ex.Message}");
-        //    }
-        //}
+        // Trigger filtering and update label when an and/or checkbox is toggled
+        private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)
+        {
+            ApplyFilter();
+            UpdateFilterLabel();
+        }
+        // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
             try
@@ -457,6 +380,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error in TextBox_LostFocus: {ex.Message}");
             }
         }
+        // When a combobox checkbox item is checked or unchecked
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
             try
@@ -538,6 +462,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"An error occurred while unchecking the checkbox: {ex.Message}");
             }
         }
+        // Make sure combobox checkbox items are loaded 
         private void CheckBox_Loaded(object sender, RoutedEventArgs e)
         {
             if (sender is CheckBox checkBox && checkBox.DataContext is string dataContext)
@@ -562,11 +487,7 @@ namespace CardboardHoarder
                 }
             }
         }
-        private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)
-        {
-            ApplyFilter();
-            UpdateFilterLabel();
-        }
+        // Because we use custom combobox, we need this method to find embedded elements
         private static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
         {
             try
@@ -594,20 +515,17 @@ namespace CardboardHoarder
 
             return null;
         }
+        // Trigger filtering when a non-customized checkbox is loaded
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ApplyFilter();
         }
+        // Apply filter for rulestext freetext search
         private void filterRulesTextButton_Click(object sender, RoutedEventArgs e)
         {
             ApplyFilter();
             UpdateFilterLabel();
         }
-        private void filterCardNameButton_Click(object sender, RoutedEventArgs e)
-        {
-            ApplyFilter();
-        }
-
         // Reset filter elements
         private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
@@ -655,7 +573,7 @@ namespace CardboardHoarder
             UpdateFilterLabel();
             ApplyFilter();
         }
-
+        // Helper methods for resetting filter elements
         private void ResetText(TextBox textBox, string defaultText)
         {
             textBox.Text = defaultText;
@@ -669,7 +587,6 @@ namespace CardboardHoarder
                 filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
             }
         }
-
         private void ClearListBoxSelections(ListBox listBox)
         {
             foreach (var item in listBox.Items)
@@ -726,6 +643,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
             }
         }
+        // Helper methods for applyfilter
         private IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
         {
             try
@@ -811,6 +729,7 @@ namespace CardboardHoarder
                 return Enumerable.Empty<CardSet>();
             }
         }
+        // Update the labels which show which filters have been applied
         private void UpdateFilterLabel()
         {
             if (filterRulesTextTextBox.Text != rulesTextDefaultText)
@@ -837,6 +756,9 @@ namespace CardboardHoarder
             }
         }
         #endregion
+
+        #region Show selected card image
+        // Show the card image for the highlighted datagrid row
         private async void MainCardWindowDatagrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             try
@@ -873,6 +795,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error in selection changed: {ex.Message}");
             }
         }
+        // Get the scryfallId for url to show the selected card image
         public async Task<string?> GetScryfallIdByUuidAsync(string uuid)
         {
             string query = "SELECT scryfallId FROM cardIdentifiers WHERE uuid = @uuid";
@@ -897,7 +820,7 @@ namespace CardboardHoarder
             }
             return null;
         }
-
+        #endregion
 
         #region Load data and populate UI elements
         private async Task LoadDataAsync()
@@ -972,6 +895,31 @@ namespace CardboardHoarder
             {
                 Debug.WriteLine($"Error while loading data: {ex.Message}");
             }
+        }
+        // Convert byte array (for set icon) into an image to display in the datagrid
+        private static BitmapImage? ConvertByteArrayToBitmapImage(byte[] imageData)
+        {
+            try
+            {
+                if (imageData != null && imageData.Length > 0)
+                {
+                    using (MemoryStream stream = new MemoryStream(imageData))
+                    {
+                        BitmapImage bitmapImage = new BitmapImage();
+                        bitmapImage.BeginInit();
+                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage.StreamSource = stream;
+                        bitmapImage.EndInit();
+                        return bitmapImage;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error converting byte array to BitmapImage: {ex.Message}");
+            }
+
+            return null;
         }
         private Task FillComboBoxesAsync()
         {
@@ -1117,30 +1065,6 @@ namespace CardboardHoarder
                     }
                 });
             }
-        }
-        private static BitmapImage? ConvertByteArrayToBitmapImage(byte[] imageData)
-        {
-            try
-            {
-                if (imageData != null && imageData.Length > 0)
-                {
-                    using (MemoryStream stream = new MemoryStream(imageData))
-                    {
-                        BitmapImage bitmapImage = new BitmapImage();
-                        bitmapImage.BeginInit();
-                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmapImage.StreamSource = stream;
-                        bitmapImage.EndInit();
-                        return bitmapImage;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error converting byte array to BitmapImage: {ex.Message}");
-            }
-
-            return null;
         }
     }
 }
