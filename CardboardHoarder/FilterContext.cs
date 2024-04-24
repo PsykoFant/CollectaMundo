@@ -14,11 +14,13 @@
         public HashSet<string> SelectedSubTypes { get; set; } = new HashSet<string>();
         public HashSet<string> SelectedKeywords { get; set; } = new HashSet<string>();
 
+        // Filter defaults
         public string RulesTextDefaultText { get; } = "Filter rulestext...";
         public string TypesDefaultText { get; } = "Filter card types...";
         public string SuperTypesDefaultText { get; } = "Filter supertypes...";
         public string SubTypesDefaultText { get; } = "Filter subtypes...";
         public string KeywordsDefaultText { get; } = "Filter keywords...";
+
     }
 
 }
