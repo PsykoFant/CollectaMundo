@@ -87,7 +87,7 @@
             </ComboBox>
 
             <!--Rulestext filtering-->
-            <Label x:Name="cardRulesTextLabel" Content="" HorizontalAlignment="Left" Margin="272,10,0,0" VerticalAlignment="Top" Width="500" Height="30"/>
+            <Label x:Name="CardRulesTextLabel" Content="" HorizontalAlignment="Left" Margin="272,10,0,0" VerticalAlignment="Top" Width="500" Height="30"/>
             <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="11,107,0,0" TextWrapping="Wrap" Foreground="Gray"
                 GotFocus="TextBox_GotFocus" 
                 LostFocus="TextBox_LostFocus" 
@@ -95,7 +95,7 @@
             <Button x:Name="filterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="11,151,0,0" VerticalAlignment="Top" Click="filterRulesTextButton_Click"/>
 
             <!--Supertype listbox and filtering-->
-            <Label x:Name="cardSuperTypesLabel" Content="" HorizontalAlignment="Left" Margin="272,40,0,0" VerticalAlignment="Top" Width="500" Height="30"/>
+            <Label x:Name="CardSuperTypesLabel" Content="" HorizontalAlignment="Left" Margin="272,40,0,0" VerticalAlignment="Top" Width="500" Height="30"/>
             <CheckBox x:Name="superTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,180,0,0" VerticalAlignment="Top"
                Checked="AndOrCheckBox_Toggled"
                Unchecked="AndOrCheckBox_Toggled"/>
@@ -157,7 +157,7 @@
             </ComboBox>
 
             <!--Card type listbox and filtering-->
-            <Label x:Name="cardTypeLabel" Content="" HorizontalAlignment="Left" Margin="272,70,0,0" VerticalAlignment="Top" Width="500" Height="30"/>
+            <Label x:Name="CardTypeLabel" Content="" HorizontalAlignment="Left" Margin="272,70,0,0" VerticalAlignment="Top" Width="500" Height="30"/>
             <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,221,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>
@@ -219,7 +219,7 @@
             </ComboBox>
 
             <!--Subtype listbox and filtering-->
-            <Label x:Name="cardSubTypeLabel" Content="" HorizontalAlignment="Left" Margin="272,100,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="500" Height="30"/>
+            <Label x:Name="CardSubTypeLabel" Content="" HorizontalAlignment="Left" Margin="272,100,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="500" Height="30"/>
             <CheckBox x:Name="subTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,265,0,0" VerticalAlignment="Top"
                Checked="AndOrCheckBox_Toggled"
                Unchecked="AndOrCheckBox_Toggled"/>
@@ -281,7 +281,7 @@
             </ComboBox>
 
             <!--Keywords listbox and filtering-->
-            <Label x:Name="cardKeywordsLabel" Content="" HorizontalAlignment="Left" Margin="272,130,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="500" Height="30"/>
+            <Label x:Name="CardKeywordsLabel" Content="" HorizontalAlignment="Left" Margin="272,130,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="500" Height="30"/>
             <CheckBox x:Name="keywordsAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,307,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>

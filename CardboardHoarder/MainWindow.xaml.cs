@@ -106,12 +106,6 @@ namespace CardboardHoarder
             DBAccess.CloseConnection();
         }
 
-        private void UpdateUI(IEnumerable<CardSet> filteredCards)
-        {
-            mainCardWindowDatagrid.ItemsSource = filteredCards;
-            cardCountLabel.Content = $"Cards shown: {filteredCards.Count()}";
-        }
-
         #region Filter elements handling        
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
@@ -298,8 +292,7 @@ namespace CardboardHoarder
         // Trigger filtering and update label when an and/or checkbox is toggled
         private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)
         {
-            UpdateUI(filterManager.ApplyFilter(cards));
-            UpdateFilterLabel();
+            ApplyFilterSelection(filterManager.ApplyFilter(cards));
         }
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -389,8 +382,7 @@ namespace CardboardHoarder
                         if (targetCollection != null)
                         {
                             targetCollection.Add(label);
-                            UpdateFilterLabel();
-                            UpdateUI(filterManager.ApplyFilter(cards));
+                            ApplyFilterSelection(filterManager.ApplyFilter(cards));
                         }
                     }
                 }
@@ -429,8 +421,7 @@ namespace CardboardHoarder
                         if (targetCollection != null)
                         {
                             targetCollection.Remove(label);
-                            UpdateFilterLabel();
-                            UpdateUI(filterManager.ApplyFilter(cards));
+                            ApplyFilterSelection(filterManager.ApplyFilter(cards));
                         }
                     }
                 }
@@ -496,14 +487,18 @@ namespace CardboardHoarder
         // Trigger filtering when a non-customized checkbox is loaded
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            UpdateUI(filterManager.ApplyFilter(cards));
+            ApplyFilterSelection(filterManager.ApplyFilter(cards));
         }
         // Apply filter for rulestext freetext search
         private void filterRulesTextButton_Click(object sender, RoutedEventArgs e)
         {
-            var filteredCards = filterManager.ApplyFilter(cards);  // Assuming 'cards' holds the original list of CardSet items
-            UpdateUI(filteredCards);
-            UpdateFilterLabel();
+            ApplyFilterSelection(filterManager.ApplyFilter(cards));
+        }
+        // Apply filter selection
+        private void ApplyFilterSelection(IEnumerable<CardSet> filteredCards)
+        {
+            mainCardWindowDatagrid.ItemsSource = filteredCards;
+            cardCountLabel.Content = $"Cards shown: {filteredCards.Count()}";
         }
         // Reset filter elements
         private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
@@ -536,11 +531,11 @@ namespace CardboardHoarder
             FilterRulesTextTextBox.Foreground = new SolidColorBrush(Colors.Gray);
 
             // Clear search item labels
-            cardRulesTextLabel.Content = string.Empty;
-            cardTypeLabel.Content = string.Empty;
-            cardSuperTypesLabel.Content = string.Empty;
-            cardSubTypeLabel.Content = string.Empty;
-            cardKeywordsLabel.Content = string.Empty;
+            CardRulesTextLabel.Content = string.Empty;
+            CardTypeLabel.Content = string.Empty;
+            CardSuperTypesLabel.Content = string.Empty;
+            CardSubTypeLabel.Content = string.Empty;
+            CardKeywordsLabel.Content = string.Empty;
 
             // Uncheck CheckBoxes if necessary
             typesAndOr.IsChecked = false;
@@ -548,12 +543,9 @@ namespace CardboardHoarder
             subTypesAndOr.IsChecked = false;
             keywordsAndOr.IsChecked = false;
 
-            // Update filter label and apply filters to refresh the DataGrid
-            UpdateFilterLabel();
-            var filteredCards = filterManager.ApplyFilter(cards);  // Assuming 'cards' holds the original list of CardSet items
-            UpdateUI(filteredCards);
+            // Update filter label and apply filters to refresh the DataGrid            
+            ApplyFilterSelection(filterManager.ApplyFilter(cards));
         }
-        // Helper methods for resetting filter elements
         private void ResetFilterTextBox(ComboBox comboBox, string textBoxName, string defaultText)
         {
             if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
@@ -575,159 +567,6 @@ namespace CardboardHoarder
                         checkBox.IsChecked = false;
                     }
                 }
-            }
-        }
-        #endregion
-
-        #region Apply filtering
-        //private void ApplyFilter()
-        //{
-        //    try
-        //    {
-        //        var filteredCards = cards.AsEnumerable();
-
-        //        string cardFilter = filterCardNameComboBox.SelectedItem?.ToString() ?? string.Empty;
-        //        string setFilter = filterSetNameComboBox.SelectedItem?.ToString() ?? string.Empty;
-        //        string rulesTextFilter = FilterRulesTextTextBox.Text;
-        //        bool useAnd = allOrNoneComboBox.SelectedIndex == 1;
-        //        bool exclude = allOrNoneComboBox.SelectedIndex == 2;
-        //        string compareOperator = ManaValueOperatorComboBox.SelectedItem?.ToString() ?? string.Empty;
-        //        double.TryParse(ManaValueComboBox.SelectedItem?.ToString(), out double manaValueCompare);
-
-        //        // Filter by mana value
-        //        filteredCards = FilterByManaValue(filteredCards, compareOperator, manaValueCompare);
-
-        //        // Filtering by card name, set name, and rules text
-        //        filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter);
-
-        //        // Filter by colors
-        //        filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedColors, useAnd, card => card.ManaCost, exclude);
-
-        //        // Filter by listbox selections
-        //        filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedTypes, CurrentInstance.typesAndOr.IsChecked ?? false, card => card.Types);
-        //        filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedSuperTypes, CurrentInstance.superTypesAndOr.IsChecked ?? false, card => card.SuperTypes);
-        //        filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedSubTypes, CurrentInstance.subTypesAndOr.IsChecked ?? false, card => card.SubTypes);
-        //        filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedKeywords, CurrentInstance.keywordsAndOr.IsChecked ?? false, card => card.Keywords);
-
-        //        var finalFilteredCards = filteredCards.ToList();
-        //        cardCountLabel.Content = $"Cards shown: {finalFilteredCards.Count}";
-        //        Dispatcher.Invoke(() => { mainCardWindowDatagrid.ItemsSource = finalFilteredCards; });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
-        //    }
-        //}
-        //// Helper methods for applyfilter
-        //private IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
-        //{
-        //    try
-        //    {
-        //        var filteredCards = cards;
-        //        if (!string.IsNullOrEmpty(cardFilter))
-        //        {
-        //            filteredCards = filteredCards.Where(card => card.Name != null && card.Name.IndexOf(cardFilter, StringComparison.OrdinalIgnoreCase) >= 0);
-        //        }
-        //        if (!string.IsNullOrEmpty(setFilter))
-        //        {
-        //            filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.IndexOf(setFilter, StringComparison.OrdinalIgnoreCase) >= 0);
-        //        }
-        //        if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != filterContext.RulesTextDefaultText)
-        //        {
-        //            filteredCards = filteredCards.Where(card => card.Text != null && card.Text.IndexOf(rulesTextFilter, StringComparison.OrdinalIgnoreCase) >= 0);
-        //        }
-        //        return filteredCards;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"Error while filtering cards: {ex.Message}");
-        //        return Enumerable.Empty<CardSet>();
-        //    }
-        //}
-        //private IEnumerable<CardSet> FilterByCriteria(IEnumerable<CardSet> cards, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector, bool exclude = false)
-        //{
-        //    if (cards == null)
-        //    {
-        //        return Enumerable.Empty<CardSet>();
-        //    }
-
-        //    if (selectedCriteria == null || selectedCriteria.Count == 0)
-        //    {
-        //        return cards;
-        //    }
-
-        //    try
-        //    {
-        //        return cards.Where(card =>
-        //        {
-        //            var propertyValue = propertySelector(card);
-        //            var criteria = propertyValue.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
-
-        //            bool match = useAnd ? selectedCriteria.All(c => criteria.Contains(c)) : selectedCriteria.Any(c => criteria.Contains(c));
-        //            return exclude ? !match : match;
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"Error while filtering cards: {ex.Message}");
-        //        return Enumerable.Empty<CardSet>();
-        //    }
-        //}
-        //private IEnumerable<CardSet> FilterByManaValue(IEnumerable<CardSet> cards, string compareOperator, double manaValueCompare)
-        //{
-        //    try
-        //    {
-        //        if (ManaValueComboBox.SelectedIndex != -1 && ManaValueOperatorComboBox.SelectedIndex != -1)
-        //        {
-        //            return cards.Where(card =>
-        //            {
-        //                return compareOperator switch
-        //                {
-        //                    "less than" => card.ManaValue < manaValueCompare,
-        //                    "greater than" => card.ManaValue > manaValueCompare,
-        //                    "less than/eq" => card.ManaValue <= manaValueCompare,
-        //                    "greater than/eq" => card.ManaValue >= manaValueCompare,
-        //                    "equal to" => card.ManaValue == manaValueCompare,
-        //                    _ => true,  // If no valid operator is selected, don't filter on ManaValue
-        //                };
-        //            });
-        //        }
-        //        else
-        //        {
-        //            // If conditions for filtering are not met, return all cards unfiltered.
-        //            return cards;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"Error while filtering cards: {ex.Message}");
-        //        return Enumerable.Empty<CardSet>();
-        //    }
-        //}
-        // Update the labels which show which filters have been applied
-        private void UpdateFilterLabel()
-        {
-            if (FilterRulesTextTextBox.Text != filterContext.RulesTextDefaultText)
-            {
-                cardRulesTextLabel.Content = $"Rulestext: \"{FilterRulesTextTextBox.Text}\"";
-            }
-
-            UpdateLabelContent(filterContext.SelectedTypes, cardTypeLabel, CurrentInstance.typesAndOr.IsChecked ?? false, "Card types");
-            UpdateLabelContent(filterContext.SelectedSuperTypes, cardSuperTypesLabel, CurrentInstance.superTypesAndOr.IsChecked ?? false, "Card supertypes");
-            UpdateLabelContent(filterContext.SelectedSubTypes, cardSubTypeLabel, CurrentInstance.subTypesAndOr.IsChecked ?? false, "Card subtypes");
-            UpdateLabelContent(filterContext.SelectedKeywords, cardKeywordsLabel, CurrentInstance.keywordsAndOr.IsChecked ?? false, "Keywords");
-        }
-        private void UpdateLabelContent(HashSet<string> selectedItems, Label targetLabel, bool useAnd, string prefix)
-        {
-            if (selectedItems.Count > 0)
-            {
-                string conjunction = useAnd ? " AND " : " OR ";
-                string content = $"{prefix}: {string.Join(conjunction, selectedItems)}";
-                targetLabel.Content = content;
-            }
-            else
-            {
-                targetLabel.Content = string.Empty;
             }
         }
         #endregion
@@ -989,7 +828,7 @@ namespace CardboardHoarder
         #region UI elements for updating card database
         private async void checkForUpdatesButton_Click(object sender, RoutedEventArgs e)
         {
-            await UpdateDB.CheckForUpdatesAsync(); // Assuming the method is named CheckForUpdatesAsync and is async
+            await UpdateDB.CheckForUpdatesAsync();
         }
         private async void updateDbButton_Click(object sender, RoutedEventArgs e)
         {

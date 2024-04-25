@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Windows.Controls;
 
 namespace CardboardHoarder
 {
@@ -10,7 +11,6 @@ namespace CardboardHoarder
         {
             this.filterContext = context;
         }
-
         public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards)
         {
             try
@@ -42,6 +42,7 @@ namespace CardboardHoarder
                 filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedKeywords, MainWindow.CurrentInstance.keywordsAndOr.IsChecked ?? false, card => card.Keywords);
 
                 var finalFilteredCards = filteredCards.ToList();
+                UpdateFilterLabel();
                 return finalFilteredCards;
             }
             catch (Exception ex)
@@ -50,7 +51,6 @@ namespace CardboardHoarder
                 return Enumerable.Empty<CardSet>();
             }
         }
-
         private IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
         {
             try
@@ -136,6 +136,30 @@ namespace CardboardHoarder
                 return Enumerable.Empty<CardSet>();
             }
         }
-    }
+        private void UpdateFilterLabel()
+        {
+            if (MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != filterContext.RulesTextDefaultText)
+            {
+                MainWindow.CurrentInstance.CardRulesTextLabel.Content = $"Rulestext: \"{MainWindow.CurrentInstance.FilterRulesTextTextBox.Text}\"";
+            }
 
+            UpdateLabelContent(filterContext.SelectedTypes, MainWindow.CurrentInstance.CardTypeLabel, MainWindow.CurrentInstance.typesAndOr.IsChecked ?? false, "Card types");
+            UpdateLabelContent(filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.CardSuperTypesLabel, MainWindow.CurrentInstance.superTypesAndOr.IsChecked ?? false, "Card supertypes");
+            UpdateLabelContent(filterContext.SelectedSubTypes, MainWindow.CurrentInstance.CardSubTypeLabel, MainWindow.CurrentInstance.subTypesAndOr.IsChecked ?? false, "Card subtypes");
+            UpdateLabelContent(filterContext.SelectedKeywords, MainWindow.CurrentInstance.CardKeywordsLabel, MainWindow.CurrentInstance.keywordsAndOr.IsChecked ?? false, "Keywords");
+        }
+        private void UpdateLabelContent(HashSet<string> selectedItems, Label targetLabel, bool useAnd, string prefix)
+        {
+            if (selectedItems.Count > 0)
+            {
+                string conjunction = useAnd ? " AND " : " OR ";
+                string content = $"{prefix}: {string.Join(conjunction, selectedItems)}";
+                targetLabel.Content = content;
+            }
+            else
+            {
+                targetLabel.Content = string.Empty;
+            }
+        }
+    }
 }
