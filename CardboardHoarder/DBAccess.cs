@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System.Data.SQLite;
 using System.Diagnostics;
-using System.IO;
 
 namespace CardboardHoarder
 {
@@ -12,9 +11,6 @@ namespace CardboardHoarder
 
         public static SQLiteConnection? connection; // instantiate SQLite connection to use for db access
         public static SQLiteConnection? temDbConnection; // instantiate SQLite connection to use for temp db access when updating        
-
-        private static string downloadsPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        public static string newDatabasePath = Path.Combine(downloadsPath, "Downloads", "AllPrintings.sqlite");
         public static string sqlitePath // Get the path to the db
         {
             get

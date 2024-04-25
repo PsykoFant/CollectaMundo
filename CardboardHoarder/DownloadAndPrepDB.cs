@@ -16,7 +16,7 @@ using System.Windows.Media.Imaging;
 public class DownloadAndPrepDB
 {
     public static event Action<string>? StatusMessageUpdated;
-    public static string databasePath = Path.Combine(DBAccess.sqlitePath, "AllPrintings.sqlite");
+    private static string databasePath = Path.Combine(DBAccess.sqlitePath, "AllPrintings.sqlite");
 
     /// <summary>
     /// Check if the card database exists in the location specified by appsettings.json. 
@@ -55,10 +55,7 @@ public class DownloadAndPrepDB
             Debug.WriteLine($"Error while checking database existence: {ex.Message}");
         }
     }
-    /// <summary>
-    /// Download card database from mtgjson in SQLite format
-    /// </summary>
-    public static async Task DownloadDatabaseIfNotExistsAsync(string databasePath)
+    public static async Task DownloadDatabaseIfNotExistsAsync(string databasePath) // Download card database from mtgjson in SQLite format    
     {
         try
         {

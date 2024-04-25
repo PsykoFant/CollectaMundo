@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 using System.Windows;
 
@@ -15,6 +16,9 @@ namespace CardboardHoarder
         /// Drop all non-custom data tables and copy the tables from the downloaded AllPrintings to the existing AllPrintings
         /// Then create any new set icons, mana symbols or mana cost images that might need to be created from any new cards added to AllPrintings
         /// </summary>
+
+        private static string downloadsPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        private static string newDatabasePath = Path.Combine(downloadsPath, "Downloads", "AllPrintings.sqlite");
 
         // For updating statuswindow
         public static event Action<string>? StatusMessageUpdated;
@@ -57,7 +61,7 @@ namespace CardboardHoarder
             MainWindow.CurrentInstance.infoLabel.Content = "Updating card database...";
 
             // Download new card database to currentuser/downloads
-            await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(DBAccess.newDatabasePath);
+            await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(newDatabasePath);
 
             await DBAccess.OpenConnectionAsync();
             // Copy tables from new card database
