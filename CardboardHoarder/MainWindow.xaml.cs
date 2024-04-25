@@ -128,8 +128,7 @@ namespace CardboardHoarder
                 }
             }
         }
-        // Make sure the embedded listbox has the right values
-        private void PopulateListBoxWithValues(ComboBox comboBox, string listBoxName)
+        private void PopulateListBoxWithValues(ComboBox comboBox, string listBoxName) // Make sure the embedded listbox has the right values
         {
             try
             {
@@ -162,8 +161,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error in PopulateListBoxWithValues: {ex.Message}");
             }
         }
-        // Get the data to populate the listbox with, including already selected items
-        private (IEnumerable<string> items, HashSet<string> selectedItems) GetDataSetAndSelection(string listBoxName)
+        private (IEnumerable<string> items, HashSet<string> selectedItems) GetDataSetAndSelection(string listBoxName) // Get the data to populate the listbox with, including already selected items
         {
             IEnumerable<string> itemsSource;
             HashSet<string> selectedItemsSet;
@@ -192,8 +190,7 @@ namespace CardboardHoarder
 
             return (itemsSource.Distinct().OrderBy(type => type).ToList(), selectedItemsSet);
         }
-        // Filter checkbox elements in the embedded listbox based text typed in the embedded testbox
-        private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e) // Filter checkbox elements in the embedded listbox based text typed in the embedded testbox
         {
             if (sender is TextBox textBox)
             {
@@ -243,8 +240,7 @@ namespace CardboardHoarder
                 }
             }
         }
-        // This method updates the listbox items based on text typed in FilterTextBox
-        private void UpdateListBoxItems(ListBox listBox, string filterText)
+        private void UpdateListBoxItems(ListBox listBox, string filterText) // This method updates the listbox items based on text typed in FilterTextBox
         {
             try
             {
@@ -277,8 +273,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"Error in UpdateListBoxItems: {ex.Message}");
             }
         }
-        // Generic method for getting embedded textbox and listbox elements based on the combobox
-        private (string defaultText, string textBoxName, string listBoxName) GetComboBoxConfig(string comboBoxName)
+        private (string defaultText, string textBoxName, string listBoxName) GetComboBoxConfig(string comboBoxName) // Generic method for getting embedded textbox and listbox elements based on the combobox
         {
             return comboBoxName switch
             {
@@ -289,8 +284,7 @@ namespace CardboardHoarder
                 _ => throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}")
             };
         }
-        // Trigger filtering and update label when an and/or checkbox is toggled
-        private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)
+        private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e) // Trigger filtering and update label when an and/or checkbox is toggled
         {
             ApplyFilterSelection(filterManager.ApplyFilter(cards));
         }
@@ -431,8 +425,7 @@ namespace CardboardHoarder
                 Debug.WriteLine($"An error occurred while unchecking the checkbox: {ex.Message}");
             }
         }
-        // Make sure combobox checkbox items are loaded 
-        private void CheckBox_Loaded(object sender, RoutedEventArgs e)
+        private void CheckBox_Loaded(object sender, RoutedEventArgs e) // Make sure combobox checkbox items are loaded
         {
             if (sender is CheckBox checkBox && checkBox.DataContext is string dataContext)
             {
@@ -456,8 +449,7 @@ namespace CardboardHoarder
                 }
             }
         }
-        // Because we use custom combobox, we need this method to find embedded elements
-        private static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
+        private static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject // Because we use custom combobox, we need this method to find embedded elements
         {
             try
             {
@@ -484,17 +476,14 @@ namespace CardboardHoarder
 
             return null;
         }
-        // Trigger filtering when a non-customized checkbox is loaded
-        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) // Trigger filtering when a non-customized checkbox is loaded
         {
             ApplyFilterSelection(filterManager.ApplyFilter(cards));
         }
-        // Apply filter for rulestext freetext search
-        private void filterRulesTextButton_Click(object sender, RoutedEventArgs e)
+        private void filterRulesTextButton_Click(object sender, RoutedEventArgs e) // Apply filter for rulestext freetext search
         {
             ApplyFilterSelection(filterManager.ApplyFilter(cards));
         }
-        // Apply filter selection
         private void ApplyFilterSelection(IEnumerable<CardSet> filteredCards)
         {
             mainCardWindowDatagrid.ItemsSource = filteredCards;
