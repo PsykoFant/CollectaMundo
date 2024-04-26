@@ -93,7 +93,7 @@ namespace CardboardHoarder
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
         }
-        private async Task PrepareSystem()
+        public async Task PrepareSystem()
         {
             await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
             GridSearchAndFilter.Visibility = Visibility.Visible;

@@ -26,6 +26,8 @@ namespace CardboardHoarder
         {
             try
             {
+                MainWindow.CurrentInstance.infoLabel.Content = "Checking for updates...";
+
                 // Read updated date from card db
                 await DBAccess.OpenConnectionAsync();
                 int numberOfSetsInDb = (await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "code")).Count;
@@ -50,39 +52,52 @@ namespace CardboardHoarder
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"An error occurred: {ex.Message}");
+                Debug.WriteLine($"An error occurred checking for updates: {ex.Message}");
+                MessageBox.Show($"An error occurred checking for updates: {ex.Message}", "Update Check Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
         }
         public static async Task UpdateCardDatabaseAsync()
         {
-            // Disbale buttons while updating
-            await MainWindow.ShowStatusWindowAsync(true);
-            MainWindow.CurrentInstance.infoLabel.Content = "Updating card database...";
+            try
+            {
+                // Disbale buttons while updating
+                await MainWindow.ShowStatusWindowAsync(true);
+                MainWindow.CurrentInstance.infoLabel.Content = "Updating card database...";
 
-            // Download new card database to currentuser/downloads
-            await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(newDatabasePath);
+                // Download new card database to currentuser/downloads
+                await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(newDatabasePath);
 
-            await DBAccess.OpenConnectionAsync();
-            // Copy tables from new card database
-            await CopyTablesAsync();
+                await DBAccess.OpenConnectionAsync();
+                // Copy tables from new card database
+                await CopyTablesAsync();
 
-            // Generate new custom data if needed
-            await DownloadAndPrepDB.GenerateManaSymbolsFromSvgAsync();
-            // Now run the last two functions in parallel
-            var generateManaCostImagesTask = DownloadAndPrepDB.GenerateManaCostImagesAsync();
-            var generateSetKeyruneFromSvgTask = DownloadAndPrepDB.GenerateSetKeyruneFromSvgAsync();
-            await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
+                // Generate new custom data if needed
+                await DownloadAndPrepDB.GenerateManaSymbolsFromSvgAsync();
+                // Now run the last two functions in parallel
+                var generateManaCostImagesTask = DownloadAndPrepDB.GenerateManaCostImagesAsync();
+                var generateSetKeyruneFromSvgTask = DownloadAndPrepDB.GenerateSetKeyruneFromSvgAsync();
+                await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
 
-            DBAccess.CloseConnection();
+                DBAccess.CloseConnection();
 
-            StatusMessageUpdated?.Invoke($"Card database has been updated!");
-            await Task.Delay(3000); // Leave the message for a few seconds
-            await MainWindow.ShowStatusWindowAsync(false);
+                StatusMessageUpdated?.Invoke($"Card database has been updated!");
+                await Task.Delay(2000); // Leave the message for a few seconds
 
-            // Reenable buttons and go to search and filter
-            MainWindow.CurrentInstance.ResetGrids();
-            MainWindow.CurrentInstance.GridSearchAndFilter.Visibility = Visibility.Visible;
+                StatusMessageUpdated?.Invoke($"Reloading card database...");
+                await MainWindow.CurrentInstance.PrepareSystem();
+
+                await MainWindow.ShowStatusWindowAsync(false);
+
+                // Reenable buttons and go to search and filter
+                MainWindow.CurrentInstance.ResetGrids();
+                MainWindow.CurrentInstance.GridSearchAndFilter.Visibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error updating card database: {ex.Message}");
+                MessageBox.Show($"An error occurred updating the card database: {ex.Message}", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         private static async Task CopyTablesAsync()
         {
@@ -118,7 +133,7 @@ namespace CardboardHoarder
                 }
 
                 // Attach the newly downloaded database to update from
-                string attachTempDb = $"ATTACH DATABASE 'c:/Users/Energinet/Downloads/AllPrintings.sqlite' AS tempDb;";
+                string attachTempDb = $"ATTACH DATABASE '{newDatabasePath}' AS tempDb;";
                 await new SQLiteCommand(attachTempDb, DBAccess.connection).ExecuteNonQueryAsync();
 
                 foreach (var item in tables)
@@ -144,7 +159,8 @@ namespace CardboardHoarder
             }
             catch (SQLiteException ex)
             {
-                Debug.WriteLine($"Error copying table: {ex.Message}");
+                Debug.WriteLine($"Error copying tables: {ex.Message}");
+                MessageBox.Show($"Error copying tables: {ex.Message}", "Filter Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         private static async Task<int> FetchSetsCountAsync()
@@ -164,10 +180,8 @@ namespace CardboardHoarder
             catch (HttpRequestException httpEx)
             {
                 Debug.WriteLine($"An error occurred during HTTP request: {httpEx.Message}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"An error occurred: {ex.Message}");
+                MessageBox.Show($"An error occurred during HTTP request: {httpEx.Message}", "HttpRequestException", MessageBoxButton.OK, MessageBoxImage.Error);
+
             }
             return 0;
         }

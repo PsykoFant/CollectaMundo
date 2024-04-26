@@ -402,8 +402,8 @@
         </Grid>
         <Button x:Name="checkForUpdatesButton" Content="Check for updates" HorizontalAlignment="Right" Margin="1011,13,0,0" VerticalAlignment="Top" Width="130" Click="checkForUpdatesButton_Click"/>
         <Label x:Name="infoLabel" Content="" HorizontalAlignment="Right" Margin="0,7,135,0" VerticalAlignment="Top" Width="182" Height="30"/>
-        <Button x:Name="updateDbButton" Content="Update card database" HorizontalAlignment="Left" Margin="743,10,0,0" VerticalAlignment="Top" Width="129" Click="updateDbButton_Click" Visibility="Hidden"/>
-        <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" Margin="516,4,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
+        <Button x:Name="updateDbButton" Content="Update card database" HorizontalAlignment="Right" Margin="0,13,322,0" VerticalAlignment="Top" Width="129" Click="updateDbButton_Click" Visibility="Hidden"/>
+        <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" Margin="0,2,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
 
 
     </Grid>
