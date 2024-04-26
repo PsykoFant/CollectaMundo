@@ -631,6 +631,8 @@ namespace CardboardHoarder
             Debug.WriteLine("Loading data asynchronously...");
             try
             {
+				cards.Clear();
+				
                 string query =
                     "SELECT COALESCE(c.faceName, c.name) AS Name, " +
                     "s.name AS SetName, " +
@@ -728,6 +730,9 @@ namespace CardboardHoarder
         {
             try
             {
+				// Clear 
+				filterContext.Clear();
+				
                 // Get the values to populate the comboboxes
                 var cardNames = cards.Select(card => card.Name).Distinct().ToList();
                 var setNames = cards.Select(card => card.SetName).Distinct().ToList();
@@ -742,6 +747,15 @@ namespace CardboardHoarder
                 var manaValueOptions = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000 };
                 var manaValueCompareOptions = new List<string> { "less than", "less than/eq", "greater than", "greater than/eq", "equal to" };
 
+                // Set up elements in supertype listbox
+                filterContext.AllSuperTypes = superTypes
+                    .Where(type => type != null)
+                    .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                    .Select(p => p.Trim())
+                    .Distinct()
+                    .OrderBy(type => type)
+                    .ToList();
+
                 // Set up elements in card type listbox
                 filterContext.AllTypes = types
                     .Where(type => type != null)
@@ -751,14 +765,6 @@ namespace CardboardHoarder
                     .OrderBy(type => type)
                     .ToList();
 
-                // Set up elements in supertype listbox
-                filterContext.AllSuperTypes = superTypes
-                    .Where(type => type != null)
-                    .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(p => p.Trim())
-                    .Distinct()
-                    .OrderBy(type => type)
-                    .ToList();
 
                 // Set up elements in subtype listbox
                 filterContext.AllSubTypes = subTypes
