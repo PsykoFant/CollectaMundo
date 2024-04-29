@@ -24,7 +24,6 @@ namespace CardboardHoarder
                 bool exclude = MainWindow.CurrentInstance.allOrNoneComboBox.SelectedIndex == 2;
                 string compareOperator = MainWindow.CurrentInstance.ManaValueOperatorComboBox.SelectedItem?.ToString() ?? string.Empty;
                 double.TryParse(MainWindow.CurrentInstance.ManaValueComboBox.SelectedItem?.ToString(), out double manaValueCompare);
-                Debug.WriteLine(setFilter);
 
                 // Filter by mana value
                 filteredCards = FilterByManaValue(filteredCards, compareOperator, manaValueCompare);

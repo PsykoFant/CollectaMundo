@@ -82,14 +82,15 @@ namespace CardboardHoarder
                 DBAccess.CloseConnection();
 
                 StatusMessageUpdated?.Invoke($"Card database has been updated!");
-                await Task.Delay(2000); // Leave the message for a few seconds
+                await Task.Delay(1000); // Leave the message for a few seconds
 
                 StatusMessageUpdated?.Invoke($"Reloading card database...");
+                await Task.Delay(1000); // Leave the message for a few seconds
                 await MainWindow.CurrentInstance.PrepareSystem();
 
                 await MainWindow.ShowStatusWindowAsync(false);
 
-                // Reenable buttons and go to search and filter
+                // Reenable buttons and go to search and filter                
                 MainWindow.CurrentInstance.ResetGrids();
                 MainWindow.CurrentInstance.GridSearchAndFilter.Visibility = Visibility.Visible;
             }
@@ -156,6 +157,8 @@ namespace CardboardHoarder
                     await detachCommand.ExecuteNonQueryAsync();
                     Debug.WriteLine($"Detached tempDb...");
                 }
+
+                await DownloadAndPrepDB.CreateIndices();
             }
             catch (SQLiteException ex)
             {

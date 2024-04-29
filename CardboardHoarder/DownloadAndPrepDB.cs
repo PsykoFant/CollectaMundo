@@ -148,27 +148,13 @@ public class DownloadAndPrepDB
                 }
             }
 
-            // Define indices to create
-            Dictionary<string, string> indices = new()
-        {
-            {"uniqueManaSymbols", "CREATE INDEX IF NOT EXISTS uniqueManaSymbols_uniqueManaSymbol ON uniqueManaSymbols(uniqueManaSymbol);"},
-            {"uniqueManaCostImages", "CREATE INDEX IF NOT EXISTS uniqueManaCostImages_uniqueManaCost ON uniqueManaCostImages(uniqueManaCost);"},
-            {"keyruneImages", "CREATE INDEX IF NOT EXISTS keyruneImages_setCode ON keyruneImages(setCode);"}
-        };
-
-            // Create the indices asynchronously
-            foreach (var item in indices)
-            {
-                using (var command = new SQLiteCommand(item.Value, DBAccess.connection))
-                {
-                    await command.ExecuteNonQueryAsync();
-                    Debug.WriteLine($"Created index for {item.Key}.");
-                }
-            }
+            // Create indices
+            await CreateIndices();
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Error during creation of tables and indices: {ex.Message}");
+            Debug.WriteLine($"Error during creation of tables: {ex.Message}");
+            MessageBox.Show($"Error during creation of tables: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
     public static async Task GenerateManaSymbolsFromSvgAsync()
@@ -656,6 +642,43 @@ public class DownloadAndPrepDB
         }
 
         return uniqueValues;
+    }
+    public static async Task CreateIndices()
+    {
+        // Define indices to create
+        Dictionary<string, string> indices = new()
+            {
+                {"uniqueManaSymbols", "CREATE INDEX IF NOT EXISTS uniqueManaSymbols_uniqueManaSymbol ON uniqueManaSymbols(uniqueManaSymbol);"},
+                {"uniqueManaCostImages", "CREATE INDEX IF NOT EXISTS uniqueManaCostImages_uniqueManaCost ON uniqueManaCostImages(uniqueManaCost);"},
+                {"keyruneImages", "CREATE INDEX IF NOT EXISTS keyruneImages_setCode ON keyruneImages(setCode);"},
+                {"cardForeignData", "CREATE INDEX IF NOT EXISTS cardForeignData_uuid ON cardForeignData(uuid);"},
+                {"cardIdentifiers", "CREATE INDEX IF NOT EXISTS cardIdentifiers_uuid ON cardIdentifiers(uuid);"},
+                {"cardLegalities", "CREATE INDEX IF NOT EXISTS cardLegalities_uuid ON cardLegalities(uuid);"},
+                {"cardPurchaseUrls", "CREATE INDEX IF NOT EXISTS cardPurchaseUrls_uuid ON cardPurchaseUrls(uuid);"},
+                {"cardRulings", "CREATE INDEX cardRulings_uuid ON cardRulings(uuid);"},
+                {"cards", "CREATE INDEX cards_uuid ON cards(uuid);"},
+                {"sets", "CREATE INDEX IF NOT EXISTS idx_code ON sets(code);"},
+                {"tokenIdentifiers", "CREATE INDEX tokenIdentifiers_uuid ON tokenIdentifiers(uuid);"},
+                {"tokens", "CREATE INDEX tokens_uuid ON tokens(uuid);"}
+            };
+
+        try
+        {
+            // Create the indices asynchronously
+            foreach (var item in indices)
+            {
+                using (var command = new SQLiteCommand(item.Value, DBAccess.connection))
+                {
+                    await command.ExecuteNonQueryAsync();
+                    Debug.WriteLine($"Created index for {item.Key}.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error during creation of indices: {ex.Message}");
+            MessageBox.Show($"Error during creation of indices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
     #endregion
 

@@ -490,7 +490,7 @@ namespace CardboardHoarder
             cardCountLabel.Content = $"Cards shown: {filteredCards.Count()}";
         }
         // Reset filter elements
-        private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
+        public void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
             // Reset filter TextBoxes for each ComboBox
             ResetFilterTextBox(SubTypesComboBox, "FilterSuperTypesTextBox", filterContext.SuperTypesDefaultText);
@@ -631,8 +631,8 @@ namespace CardboardHoarder
             Debug.WriteLine("Loading data asynchronously...");
             try
             {
-				cards.Clear();
-				
+                cards.Clear();
+
                 string query =
                     "SELECT COALESCE(c.faceName, c.name) AS Name, " +
                     "s.name AS SetName, " +
@@ -691,8 +691,8 @@ namespace CardboardHoarder
 
                 Dispatcher.Invoke(() =>
                 {
-                    cardCountLabel.Content = $"Cards shown: {cards.Count}";
                     mainCardWindowDatagrid.ItemsSource = cards;
+                    cardCountLabel.Content = $"Cards shown: {cards.Count}";
                     dataView = CollectionViewSource.GetDefaultView(cards);
                 });
             }
@@ -730,9 +730,13 @@ namespace CardboardHoarder
         {
             try
             {
-				// Clear 
-				filterContext.Clear();
-				
+                // Make sure lists are clear
+                filterContext.AllSuperTypes.Clear();
+                filterContext.AllTypes.Clear();
+                filterContext.AllSubTypes.Clear();
+                filterContext.AllColors.Clear();
+                filterContext.AllKeywords.Clear();
+
                 // Get the values to populate the comboboxes
                 var cardNames = cards.Select(card => card.Name).Distinct().ToList();
                 var setNames = cards.Select(card => card.SetName).Distinct().ToList();
@@ -764,7 +768,6 @@ namespace CardboardHoarder
                     .Distinct()
                     .OrderBy(type => type)
                     .ToList();
-
 
                 // Set up elements in subtype listbox
                 filterContext.AllSubTypes = subTypes
@@ -805,6 +808,7 @@ namespace CardboardHoarder
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
+                MessageBox.Show($"Error while filling comboboxes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             return Task.CompletedTask;
         }
