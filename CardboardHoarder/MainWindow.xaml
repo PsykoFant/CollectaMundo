@@ -56,7 +56,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Card Types" Visibility="Collapsed" Binding="{Binding Types}" />
+                    <DataGridTextColumn Header="Card Types" Binding="{Binding Types}" />
                     <DataGridTextColumn Header="Card Supertypes" Visibility="Collapsed" Binding="{Binding SuperTypes}" />
                     <DataGridTextColumn Header="Card Subtypes" Visibility="Collapsed" Binding="{Binding SubTypes}" />
                     <DataGridTextColumn Header="Card type" Binding="{Binding Type}" />

@@ -15,9 +15,9 @@ namespace CardboardHoarder
     {
         #region Set up varibales
         // Used for displaying images
-        private string _imageSourceUrl = string.Empty;
-        private string _imageSourceUrl2nd = string.Empty;
-        public string ImageSourceUrl
+        private string? _imageSourceUrl = string.Empty;
+        private string? _imageSourceUrl2nd = string.Empty;
+        public string? ImageSourceUrl
         {
             get => _imageSourceUrl;
             set
@@ -29,7 +29,7 @@ namespace CardboardHoarder
                 }
             }
         }
-        public string ImageSourceUrl2nd
+        public string? ImageSourceUrl2nd
         {
             get => _imageSourceUrl2nd;
             set
@@ -566,10 +566,10 @@ namespace CardboardHoarder
         {
             try
             {
-                if (mainCardWindowDatagrid.SelectedItem is CardSet selectedCard && !string.IsNullOrEmpty(selectedCard.Uuid))
+                if (mainCardWindowDatagrid.SelectedItem is CardSet selectedCard && !string.IsNullOrEmpty(selectedCard.Uuid) && !string.IsNullOrEmpty(selectedCard.Types))
                 {
                     await DBAccess.OpenConnectionAsync();
-                    string? scryfallId = await GetScryfallIdByUuidAsync(selectedCard.Uuid);
+                    string? scryfallId = await GetScryfallIdByUuidAsync(selectedCard.Uuid, selectedCard.Types);
                     DBAccess.CloseConnection();
 
                     if (!string.IsNullOrEmpty(scryfallId) && scryfallId.Length >= 2)
@@ -580,6 +580,9 @@ namespace CardboardHoarder
                         string cardImageUrl = $"https://cards.scryfall.io/normal/front/{dir1}/{dir2}/{scryfallId}.jpg";
                         string secondCardImageUrl = $"https://cards.scryfall.io/normal/back/{dir1}/{dir2}/{scryfallId}.jpg";
 
+                        Debug.WriteLine(scryfallId);
+                        Debug.WriteLine(cardImageUrl);
+
 
                         if (selectedCard.Side == "a" || selectedCard.Side == "b")
                         {
@@ -589,6 +592,7 @@ namespace CardboardHoarder
                         else
                         {
                             ImageSourceUrl = cardImageUrl;
+                            ImageSourceUrl2nd = null;
                         }
                     }
                 }
@@ -596,33 +600,37 @@ namespace CardboardHoarder
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error in selection changed: {ex.Message}");
+                MessageBox.Show($"Error in selection changed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         // Get the scryfallId for url to show the selected card image
-        public async Task<string?> GetScryfallIdByUuidAsync(string uuid)
+        public async Task<string?> GetScryfallIdByUuidAsync(string uuid, string types)
         {
-            string query = "SELECT scryfallId FROM cardIdentifiers WHERE uuid = @uuid";
-
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            try
             {
-                command.Parameters.AddWithValue("@uuid", uuid);
+                // Determine the correct table based on the type of the card.
+                string tableName = types.Contains("Token") ? "tokenIdentifiers" : "cardIdentifiers";
 
-                try
+                // Prepare the query using the determined table.
+                string query = $"SELECT scryfallId FROM {tableName} WHERE uuid = @uuid";
+                using (var command = new SQLiteCommand(query, DBAccess.connection))
                 {
+                    command.Parameters.AddWithValue("@uuid", uuid);
                     var result = await command.ExecuteScalarAsync();
-
                     if (result != null && result != DBNull.Value)
                     {
                         return result.ToString();
                     }
                 }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Error in GetScryfallIdByUuidAsync: {ex.Message}");
-                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in GetScryfallIdByUuidAsync: {ex.Message}");
+                MessageBox.Show($"Error in GetScryfallIdByUuidAsync: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             return null;
         }
+
         #endregion
 
         #region Load data and populate UI elements
@@ -633,26 +641,51 @@ namespace CardboardHoarder
             {
                 cards.Clear();
 
-                string query =
-                    "SELECT COALESCE(c.faceName, c.name) AS Name, " +
-                    "s.name AS SetName, " +
-                    "k.keyruneImage AS KeyRuneImage, " +
-                    "c.manaCost AS ManaCost, " +
-                    "u.manaCostImage AS ManaCostImage, " +
-                    "c.types AS Types, " +
-                    "c.supertypes AS SuperTypes, " +
-                    "c.subtypes AS SubTypes, " +
-                    "c.type AS Type, " +
-                    "c.keywords AS Keywords, " +
-                    "c.text AS RulesText, " +
-                    "c.manaValue AS ManaValue, " +
-                    "c.uuid AS Uuid, " +
-                    "c.finishes AS Finishes, " +
-                    "c.side AS Side " +
-                    "FROM cards c " +
-                    "JOIN sets s ON c.setCode = s.code " +
-                    "LEFT JOIN keyruneImages k ON c.setCode = k.setCode " +
-                    "LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost";
+                string query = @"
+                    SELECT 
+                        COALESCE(c.faceName, c.name) AS Name, 
+                        s.name AS SetName, 
+                        k.keyruneImage AS KeyRuneImage, 
+                        c.manaCost AS ManaCost, 
+                        u.manaCostImage AS ManaCostImage, 
+                        c.types AS Types, 
+                        c.supertypes AS SuperTypes, 
+                        c.subtypes AS SubTypes, 
+                        c.type AS Type, 
+                        c.keywords AS Keywords, 
+                        c.text AS RulesText, 
+                        c.manaValue AS ManaValue, 
+                        c.uuid AS Uuid, 
+                        c.finishes AS Finishes, 
+                        c.side AS Side 
+                    FROM cards c 
+                    JOIN sets s ON c.setCode = s.code 
+                    LEFT JOIN keyruneImages k ON c.setCode = k.setCode 
+                    LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+
+                    UNION ALL
+
+                    SELECT 
+                        COALESCE(t.faceName, t.name) AS Name, 
+                        s.name AS SetName, 
+                        k.keyruneImage AS KeyRuneImage, 
+                        t.manaCost AS ManaCost, 
+                        u.manaCostImage AS ManaCostImage, 
+                        t.types AS Types, 
+                        t.supertypes AS SuperTypes, 
+                        t.subtypes AS SubTypes, 
+                        t.type AS Type, 
+                        t.keywords AS Keywords, 
+                        t.text AS RulesText, 
+                        NULL AS ManaValue,  -- 'manaValue' does not exist in 'tokens'
+                        t.uuid AS Uuid, 
+                        t.finishes AS Finishes, 
+                        t.side AS Side 
+                    FROM tokens t 
+                    JOIN sets s ON t.setCode = s.code 
+                    LEFT JOIN keyruneImages k ON t.setCode = k.setCode 
+                    LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost";
+
 
 
                 using var command = new SQLiteCommand(query, DBAccess.connection);
@@ -699,6 +732,7 @@ namespace CardboardHoarder
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error while loading data: {ex.Message}");
+                MessageBox.Show($"Error while loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         // Convert byte array (for set icon) into an image to display in the datagrid
@@ -722,6 +756,7 @@ namespace CardboardHoarder
             catch (Exception ex)
             {
                 MessageBox.Show($"Error converting byte array to BitmapImage: {ex.Message}");
+                MessageBox.Show($"Error converting byte array to BitmapImage: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             return null;
