@@ -87,8 +87,8 @@ namespace CardboardHoarder
             filterManager = new FilterManager(filterContext);
 
             // Pick up filtering comboboxes changes
-            filterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
-            filterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
+            FilterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
+            FilterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             AllOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
@@ -499,14 +499,14 @@ namespace CardboardHoarder
             ResetFilterTextBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);
 
             // Clear non-custom comboboxes
-            filterCardNameComboBox.SelectedIndex = -1;
-            filterSetNameComboBox.SelectedIndex = -1;
+            FilterCardNameComboBox.SelectedIndex = -1;
+            FilterSetNameComboBox.SelectedIndex = -1;
             AllOrNoneComboBox.SelectedIndex = 0;
             ManaValueComboBox.SelectedIndex = -1;
             ManaValueOperatorComboBox.SelectedIndex = -1;
 
             // Clear selections in the colors listbox
-            ClearListBoxSelections(filterColorsListBox);
+            ClearListBoxSelections(FilterColorsListBox);
 
             // Clear the internal HashSets
             filterContext.SelectedTypes.Clear();
@@ -527,10 +527,10 @@ namespace CardboardHoarder
             CardKeywordsLabel.Content = string.Empty;
 
             // Uncheck CheckBoxes if necessary
-            typesAndOr.IsChecked = false;
-            superTypesAndOr.IsChecked = false;
-            subTypesAndOr.IsChecked = false;
-            keywordsAndOr.IsChecked = false;
+            TypesAndOrCheckBox.IsChecked = false;
+            SuperTypesAndOrCheckBox.IsChecked = false;
+            SubTypesAndOrCheckBox.IsChecked = false;
+            KeywordsAndOrCheckBox.IsChecked = false;
             ShowFoilCheckBox.IsChecked = false;
 
             // Update filter label and apply filters to refresh the DataGrid            
@@ -826,9 +826,9 @@ namespace CardboardHoarder
                 Dispatcher.Invoke(() =>
                 {
                     FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
-                    filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
-                    filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
-                    filterColorsListBox.ItemsSource = filterContext.AllColors;
+                    FilterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
+                    FilterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
+                    FilterColorsListBox.ItemsSource = filterContext.AllColors;
                     AllOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
                     AllOrNoneComboBox.SelectedIndex = 0;
                     ManaValueComboBox.ItemsSource = manaValueOptions;

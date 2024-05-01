@@ -69,14 +69,14 @@
             </DataGrid>
 
             <!--Card name and set comboboxes-->
-            <ComboBox x:Name="filterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,41,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
+            <ComboBox x:Name="FilterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,41,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
                 <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel />
                     </ItemsPanelTemplate>
                 </ComboBox.ItemsPanel>
             </ComboBox>
-            <ComboBox x:Name="filterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,74,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
+            <ComboBox x:Name="FilterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,74,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
                 <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel />
@@ -94,7 +94,7 @@
 
             <!--Supertype listbox and filtering-->
             <Label x:Name="CardSuperTypesLabel" Content="" HorizontalAlignment="Left" Margin="272,40,0,0" VerticalAlignment="Top" Width="500" Height="30"/>
-            <CheckBox x:Name="superTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,180,0,0" VerticalAlignment="Top"
+            <CheckBox x:Name="SuperTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,180,0,0" VerticalAlignment="Top"
                Checked="AndOrCheckBox_Toggled"
                Unchecked="AndOrCheckBox_Toggled"/>
             <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,195,0,0" VerticalAlignment="Top" Width="257" DropDownOpened="ComboBox_DropDownOpened">
@@ -156,7 +156,7 @@
 
             <!--Card type listbox and filtering-->
             <Label x:Name="CardTypeLabel" Content="" HorizontalAlignment="Left" Margin="272,70,0,0" VerticalAlignment="Top" Width="500" Height="30"/>
-            <CheckBox x:Name="typesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,221,0,0" VerticalAlignment="Top"
+            <CheckBox x:Name="TypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,221,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>
             <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,237,0,0" VerticalAlignment="Top" Width="257" DropDownOpened="ComboBox_DropDownOpened">
@@ -218,7 +218,7 @@
 
             <!--Subtype listbox and filtering-->
             <Label x:Name="CardSubTypeLabel" Content="" HorizontalAlignment="Left" Margin="272,100,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="500" Height="30"/>
-            <CheckBox x:Name="subTypesAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,265,0,0" VerticalAlignment="Top"
+            <CheckBox x:Name="SubTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,265,0,0" VerticalAlignment="Top"
                Checked="AndOrCheckBox_Toggled"
                Unchecked="AndOrCheckBox_Toggled"/>
             <ComboBox x:Name="SubTypesComboBox" HorizontalAlignment="Left" Margin="10,281,0,0" VerticalAlignment="Top" Width="257" DropDownOpened="ComboBox_DropDownOpened">
@@ -280,7 +280,7 @@
 
             <!--Keywords listbox and filtering-->
             <Label x:Name="CardKeywordsLabel" Content="" HorizontalAlignment="Left" Margin="272,130,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="500" Height="30"/>
-            <CheckBox x:Name="keywordsAndOr" Content="Must contain all" HorizontalAlignment="Left" Margin="10,307,0,0" VerticalAlignment="Top"
+            <CheckBox x:Name="KeywordsAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,307,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>
             <ComboBox x:Name="KeywordsComboBox" HorizontalAlignment="Left" Margin="10,323,0,0" VerticalAlignment="Top" Width="257" DropDownOpened="ComboBox_DropDownOpened">
@@ -342,7 +342,7 @@
 
             <!--Color filtering-->
             <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Left" Margin="10,350,0,0" VerticalAlignment="Top" Width="257"/>
-            <ListBox x:Name="filterColorsListBox" Margin="11,374,0,0" Width="130" HorizontalAlignment="Left"
+            <ListBox x:Name="FilterColorsListBox" Margin="11,374,0,0" Width="130" HorizontalAlignment="Left"
                 ItemsSource="{Binding}"
                 SelectionMode="Extended" Height="155" VerticalAlignment="Top" BorderBrush="White">
                 <ListBox.Resources>

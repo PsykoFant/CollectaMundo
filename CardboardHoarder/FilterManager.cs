@@ -18,8 +18,8 @@ namespace CardboardHoarder
             {
                 var filteredCards = cards.AsEnumerable();
 
-                string cardFilter = MainWindow.CurrentInstance.filterCardNameComboBox.SelectedItem?.ToString() ?? string.Empty;
-                string setFilter = MainWindow.CurrentInstance.filterSetNameComboBox.SelectedItem?.ToString() ?? string.Empty;
+                string cardFilter = MainWindow.CurrentInstance.FilterCardNameComboBox.SelectedItem?.ToString() ?? string.Empty;
+                string setFilter = MainWindow.CurrentInstance.FilterSetNameComboBox.SelectedItem?.ToString() ?? string.Empty;
                 string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text;
                 bool useAnd = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
                 bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
@@ -36,10 +36,10 @@ namespace CardboardHoarder
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedColors, useAnd, card => card.ManaCost, exclude);
 
                 // Filter by listbox selections
-                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedTypes, MainWindow.CurrentInstance.typesAndOr.IsChecked ?? false, card => card.Types);
-                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.superTypesAndOr.IsChecked ?? false, card => card.SuperTypes);
-                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSubTypes, MainWindow.CurrentInstance.subTypesAndOr.IsChecked ?? false, card => card.SubTypes);
-                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedKeywords, MainWindow.CurrentInstance.keywordsAndOr.IsChecked ?? false, card => card.Keywords);
+                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedTypes, MainWindow.CurrentInstance.TypesAndOrCheckBox.IsChecked ?? false, card => card.Types);
+                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.SuperTypesAndOrCheckBox.IsChecked ?? false, card => card.SuperTypes);
+                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, card => card.SubTypes);
+                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, card => card.Keywords);
 
                 // New filter for including/excluding cards based on foil or etched finishes
                 filteredCards = FilterByIncludeFoil(filteredCards);
@@ -142,10 +142,10 @@ namespace CardboardHoarder
                 MainWindow.CurrentInstance.CardRulesTextLabel.Content = $"Rulestext: \"{MainWindow.CurrentInstance.FilterRulesTextTextBox.Text}\"";
             }
 
-            UpdateLabelContent(filterContext.SelectedTypes, MainWindow.CurrentInstance.CardTypeLabel, MainWindow.CurrentInstance.typesAndOr.IsChecked ?? false, "Card types");
-            UpdateLabelContent(filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.CardSuperTypesLabel, MainWindow.CurrentInstance.superTypesAndOr.IsChecked ?? false, "Card supertypes");
-            UpdateLabelContent(filterContext.SelectedSubTypes, MainWindow.CurrentInstance.CardSubTypeLabel, MainWindow.CurrentInstance.subTypesAndOr.IsChecked ?? false, "Card subtypes");
-            UpdateLabelContent(filterContext.SelectedKeywords, MainWindow.CurrentInstance.CardKeywordsLabel, MainWindow.CurrentInstance.keywordsAndOr.IsChecked ?? false, "Keywords");
+            UpdateLabelContent(filterContext.SelectedTypes, MainWindow.CurrentInstance.CardTypeLabel, MainWindow.CurrentInstance.TypesAndOrCheckBox.IsChecked ?? false, "Card types");
+            UpdateLabelContent(filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.CardSuperTypesLabel, MainWindow.CurrentInstance.SuperTypesAndOrCheckBox.IsChecked ?? false, "Card supertypes");
+            UpdateLabelContent(filterContext.SelectedSubTypes, MainWindow.CurrentInstance.CardSubTypeLabel, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, "Card subtypes");
+            UpdateLabelContent(filterContext.SelectedKeywords, MainWindow.CurrentInstance.CardKeywordsLabel, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, "Keywords");
         }
         private void UpdateLabelContent(HashSet<string> selectedItems, Label targetLabel, bool useAnd, string prefix)
         {
