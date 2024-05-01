@@ -486,7 +486,7 @@ namespace CardboardHoarder
         }
         private void ApplyFilterSelection(IEnumerable<CardSet> filteredCards)
         {
-            mainCardWindowDatagrid.ItemsSource = filteredCards;
+            MainCardWindowDatagrid.ItemsSource = filteredCards;
             CardCountLabel.Content = $"Cards shown: {filteredCards.Count()}";
         }
         // Reset filter elements
@@ -531,6 +531,7 @@ namespace CardboardHoarder
             superTypesAndOr.IsChecked = false;
             subTypesAndOr.IsChecked = false;
             keywordsAndOr.IsChecked = false;
+            ShowFoilCheckBox.IsChecked = false;
 
             // Update filter label and apply filters to refresh the DataGrid            
             ApplyFilterSelection(filterManager.ApplyFilter(cards));
@@ -566,7 +567,7 @@ namespace CardboardHoarder
         {
             try
             {
-                if (mainCardWindowDatagrid.SelectedItem is CardSet selectedCard && !string.IsNullOrEmpty(selectedCard.Uuid) && !string.IsNullOrEmpty(selectedCard.Types))
+                if (MainCardWindowDatagrid.SelectedItem is CardSet selectedCard && !string.IsNullOrEmpty(selectedCard.Uuid) && !string.IsNullOrEmpty(selectedCard.Types))
                 {
                     await DBAccess.OpenConnectionAsync();
                     string? scryfallId = await GetScryfallIdByUuidAsync(selectedCard.Uuid, selectedCard.Types);
@@ -724,7 +725,7 @@ namespace CardboardHoarder
 
                 Dispatcher.Invoke(() =>
                 {
-                    mainCardWindowDatagrid.ItemsSource = cards;
+                    MainCardWindowDatagrid.ItemsSource = cards;
                     CardCountLabel.Content = $"Cards shown: {cards.Count}";
                     dataView = CollectionViewSource.GetDefaultView(cards);
                 });
@@ -873,7 +874,7 @@ namespace CardboardHoarder
         {
             Dispatcher.Invoke(() =>
             {
-                statusLabel.Content = message;
+                StatusLabel.Content = message;
             });
         }
         #endregion
@@ -891,7 +892,7 @@ namespace CardboardHoarder
         }
         public void ResetGrids()
         {
-            infoLabel.Content = "";
+            InfoLabel.Content = "";
             GridSearchAndFilter.Visibility = Visibility.Hidden;
             GridMyCollection.Visibility = Visibility.Hidden;
         }
@@ -908,8 +909,8 @@ namespace CardboardHoarder
                         CurrentInstance.MenuSearchAndFilterButton.IsEnabled = false;
                         CurrentInstance.MenuMyCollectionButton.IsEnabled = false;
                         CurrentInstance.MenuDecksButton.IsEnabled = false;
-                        CurrentInstance.updateDbButton.IsEnabled = false;
-                        CurrentInstance.checkForUpdatesButton.IsEnabled = false;
+                        CurrentInstance.UpdateDbButton.IsEnabled = false;
+                        CurrentInstance.CheckForUpdatesButton.IsEnabled = false;
 
                         CurrentInstance.GridStatus.Visibility = Visibility.Visible;
                     }
@@ -918,9 +919,9 @@ namespace CardboardHoarder
                         CurrentInstance.MenuSearchAndFilterButton.IsEnabled = true;
                         CurrentInstance.MenuMyCollectionButton.IsEnabled = true;
                         CurrentInstance.MenuDecksButton.IsEnabled = true;
-                        CurrentInstance.updateDbButton.IsEnabled = true;
-                        CurrentInstance.updateDbButton.Visibility = Visibility.Hidden;
-                        CurrentInstance.checkForUpdatesButton.IsEnabled = true;
+                        CurrentInstance.UpdateDbButton.IsEnabled = true;
+                        CurrentInstance.UpdateDbButton.Visibility = Visibility.Hidden;
+                        CurrentInstance.CheckForUpdatesButton.IsEnabled = true;
 
 
                         CurrentInstance.GridStatus.Visibility = Visibility.Hidden;

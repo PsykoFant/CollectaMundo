@@ -24,12 +24,12 @@
         <Button x:Name="MenuDecksButton" Content="Decks" HorizontalAlignment="Left" Margin="338,10,0,0" VerticalAlignment="Top" Width="159"/>
         <Grid x:Name="GridStatus" HorizontalAlignment="Center" Height="707" VerticalAlignment="Top" Margin="0,35,0,0" Width="1004" d:IsHidden="True">
             <ProgressBar x:Name="progressBar" HorizontalAlignment="Center" Height="11" Margin="0,652,0,0" VerticalAlignment="Top" Width="738" d:IsHidden="True"/>
-            <Label x:Name="statusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top" Width="738" d:IsHidden="True"/>
+            <Label x:Name="StatusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top" Width="738" d:IsHidden="True"/>
 
         </Grid>
         <Grid x:Name="GridSearchAndFilter" Margin="0,48,0,0" HorizontalAlignment="Left" Width="1337">
             <!--The main card view datagrid-->
-            <DataGrid x:Name="mainCardWindowDatagrid" Margin="272,391,0,0"
+            <DataGrid x:Name="MainCardWindowDatagrid" Margin="272,391,0,0"
                       AutoGenerateColumns="False"
                       SelectionChanged="MainCardWindowDatagrid_SelectionChanged"
                       ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" CanUserAddRows="False">
@@ -57,13 +57,13 @@
                     <DataGridTextColumn Header="Card Types" Binding="{Binding Types}" />
                     <DataGridTextColumn Header="Card Supertypes" Visibility="Collapsed" Binding="{Binding SuperTypes}" />
                     <DataGridTextColumn Header="Card Subtypes" Visibility="Collapsed" Binding="{Binding SubTypes}" />
-                    <DataGridTextColumn Header="Card type" Binding="{Binding Type}" />
+                    <DataGridTextColumn Header="Card type" Visibility="Collapsed" Binding="{Binding Type}" />
                     <DataGridTextColumn Header="Keywords" Visibility="Collapsed" Binding="{Binding Keywords}" />
                     <DataGridTextColumn Header="Rules Text" Visibility="Collapsed" Binding="{Binding Text}" />
                     <DataGridTextColumn Header="Mana Value" Visibility="Collapsed" Binding="{Binding ManaValue}" />
                     <DataGridTextColumn Header="Uuid" Visibility="Collapsed" Binding="{Binding Uuid}" />
                     <DataGridTextColumn Header="Finishes" Binding="{Binding Finishes}" />
-                    <DataGridTextColumn Header="Side" Binding="{Binding Side}" />
+                    <DataGridTextColumn Header="Side" Visibility="Collapsed" Binding="{Binding Side}" />
 
                 </DataGrid.Columns>
             </DataGrid>
@@ -399,12 +399,12 @@
 
         </Grid>
         <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="36" Margin="0,48,0,0" VerticalAlignment="Top" Width="138" d:IsHidden="True">
-            <Label x:Name="headlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" FontFamily="Bodoni MT"/>
+            <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" FontFamily="Bodoni MT"/>
         </Grid>
-        <Button x:Name="checkForUpdatesButton" Content="Check for updates" HorizontalAlignment="Right" Margin="1011,13,0,0" VerticalAlignment="Top" Width="130" Click="checkForUpdatesButton_Click"/>
-        <Label x:Name="infoLabel" Content="" HorizontalAlignment="Right" Margin="0,7,135,0" VerticalAlignment="Top" Width="182" Height="30"/>
-        <Button x:Name="updateDbButton" Content="Update card database" HorizontalAlignment="Right" Margin="0,13,322,0" VerticalAlignment="Top" Width="129" Click="updateDbButton_Click" Visibility="Hidden"/>
-        <Label x:Name="headlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" Margin="0,2,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
+        <Button x:Name="CheckForUpdatesButton" Content="Check for updates" HorizontalAlignment="Right" Margin="1011,13,0,0" VerticalAlignment="Top" Width="130" Click="checkForUpdatesButton_Click"/>
+        <Label x:Name="InfoLabel" Content="" HorizontalAlignment="Right" Margin="0,7,135,0" VerticalAlignment="Top" Width="182" Height="30"/>
+        <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Right" Margin="0,13,322,0" VerticalAlignment="Top" Width="129" Click="updateDbButton_Click" Visibility="Hidden"/>
+        <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" Margin="0,2,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
 
 
     </Grid>

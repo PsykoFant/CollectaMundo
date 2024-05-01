@@ -28,7 +28,7 @@ public class DownloadAndPrepDB
         {
             if (!File.Exists(databasePath))
             {
-                MainWindow.CurrentInstance.infoLabel.Content = "No card database found...";
+                MainWindow.CurrentInstance.InfoLabel.Content = "No card database found...";
 
                 // Disbale buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
