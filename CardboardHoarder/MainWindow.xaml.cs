@@ -106,6 +106,19 @@ namespace CardboardHoarder
             DBAccess.CloseConnection();
         }
 
+        private void AddToCollection_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            var card = button.DataContext as CardSet;  // Assuming your items are bound as CardSet objects
+
+            if (card != null)
+            {
+                // Adding the card data to the ListView
+                CardsToAddListView.Items.Add(new { CardName = card.Name, SetName = card.SetName, Uuid = card.Uuid });
+            }
+        }
+
+
         #region Filter elements handling        
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {

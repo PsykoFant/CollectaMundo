@@ -26,7 +26,7 @@ namespace CardboardHoarder
         {
             try
             {
-                MainWindow.CurrentInstance.infoLabel.Content = "Checking for updates...";
+                MainWindow.CurrentInstance.InfoLabel.Content = "Checking for updates...";
 
                 // Read updated date from card db
                 await DBAccess.OpenConnectionAsync();
@@ -41,13 +41,13 @@ namespace CardboardHoarder
                 if (numberOfSetsOnServer > numberOfSetsInDb)
                 {
                     Debug.WriteLine("There is a newer database");
-                    MainWindow.CurrentInstance.infoLabel.Content = "There is a newer database";
-                    MainWindow.CurrentInstance.updateDbButton.Visibility = Visibility.Visible;
+                    MainWindow.CurrentInstance.InfoLabel.Content = "There is a newer database";
+                    MainWindow.CurrentInstance.UpdateDbButton.Visibility = Visibility.Visible;
                 }
                 else
                 {
                     Debug.WriteLine("You are already up to date");
-                    MainWindow.CurrentInstance.infoLabel.Content = "You are already up to date";
+                    MainWindow.CurrentInstance.InfoLabel.Content = "You are already up to date";
                 }
             }
             catch (Exception ex)
@@ -63,7 +63,7 @@ namespace CardboardHoarder
             {
                 // Disbale buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
-                MainWindow.CurrentInstance.infoLabel.Content = "Updating card database...";
+                MainWindow.CurrentInstance.InfoLabel.Content = "Updating card database...";
 
                 // Download new card database to currentuser/downloads
                 await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(newDatabasePath);

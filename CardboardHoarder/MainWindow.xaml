@@ -64,6 +64,13 @@
                     <DataGridTextColumn Header="Uuid" Visibility="Collapsed" Binding="{Binding Uuid}" />
                     <DataGridTextColumn Header="Finishes" Binding="{Binding Finishes}" />
                     <DataGridTextColumn Header="Side" Visibility="Collapsed" Binding="{Binding Side}" />
+                    <DataGridTemplateColumn Header="Action">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Add to collection" Click="AddToCollection_Click"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
 
                 </DataGrid.Columns>
             </DataGrid>
@@ -396,6 +403,16 @@
             <CheckBox x:Name="ShowFoilCheckBox" Content="Show foil cards" HorizontalAlignment="Left" Margin="10,569,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled"/>
+            <ListView x:Name="CardsToAddListView" Margin="272,265,0,0" Height="120" VerticalAlignment="Top" HorizontalAlignment="Left" Width="500">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Card Name" DisplayMemberBinding="{Binding CardName}" Width="200"/>
+                        <GridViewColumn Header="Set" DisplayMemberBinding="{Binding SetName}" Width="150"/>
+                        <GridViewColumn Header="UUID" DisplayMemberBinding="{Binding Uuid}" Width="300"/>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+
 
         </Grid>
         <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="36" Margin="0,48,0,0" VerticalAlignment="Top" Width="138" d:IsHidden="True">
