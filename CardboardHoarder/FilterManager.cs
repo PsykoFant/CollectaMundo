@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace CardboardHoarder
@@ -20,8 +21,8 @@ namespace CardboardHoarder
                 string cardFilter = MainWindow.CurrentInstance.filterCardNameComboBox.SelectedItem?.ToString() ?? string.Empty;
                 string setFilter = MainWindow.CurrentInstance.filterSetNameComboBox.SelectedItem?.ToString() ?? string.Empty;
                 string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text;
-                bool useAnd = MainWindow.CurrentInstance.allOrNoneComboBox.SelectedIndex == 1;
-                bool exclude = MainWindow.CurrentInstance.allOrNoneComboBox.SelectedIndex == 2;
+                bool useAnd = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
+                bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
                 string compareOperator = MainWindow.CurrentInstance.ManaValueOperatorComboBox.SelectedItem?.ToString() ?? string.Empty;
                 double.TryParse(MainWindow.CurrentInstance.ManaValueComboBox.SelectedItem?.ToString(), out double manaValueCompare);
 
@@ -32,13 +33,16 @@ namespace CardboardHoarder
                 filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter);
 
                 // Filter by colors
-                filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedColors, useAnd, card => card.ManaCost, exclude);
+                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedColors, useAnd, card => card.ManaCost, exclude);
 
                 // Filter by listbox selections
-                filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedTypes, MainWindow.CurrentInstance.typesAndOr.IsChecked ?? false, card => card.Types);
-                filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.superTypesAndOr.IsChecked ?? false, card => card.SuperTypes);
-                filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedSubTypes, MainWindow.CurrentInstance.subTypesAndOr.IsChecked ?? false, card => card.SubTypes);
-                filteredCards = FilterByCriteria(filteredCards, filterContext.SelectedKeywords, MainWindow.CurrentInstance.keywordsAndOr.IsChecked ?? false, card => card.Keywords);
+                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedTypes, MainWindow.CurrentInstance.typesAndOr.IsChecked ?? false, card => card.Types);
+                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.superTypesAndOr.IsChecked ?? false, card => card.SuperTypes);
+                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSubTypes, MainWindow.CurrentInstance.subTypesAndOr.IsChecked ?? false, card => card.SubTypes);
+                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedKeywords, MainWindow.CurrentInstance.keywordsAndOr.IsChecked ?? false, card => card.Keywords);
+
+                // New filter for including/excluding cards based on foil or etched finishes
+                filteredCards = FilterByIncludeFoil(filteredCards);
 
                 var finalFilteredCards = filteredCards.ToList();
                 UpdateFilterLabel();
@@ -47,35 +51,28 @@ namespace CardboardHoarder
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
+                MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return Enumerable.Empty<CardSet>();
             }
         }
         private IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
         {
-            try
+            var filteredCards = cards;
+            if (!string.IsNullOrEmpty(cardFilter))
             {
-                var filteredCards = cards;
-                if (!string.IsNullOrEmpty(cardFilter))
-                {
-                    filteredCards = filteredCards.Where(card => card.Name != null && card.Name.IndexOf(cardFilter, StringComparison.OrdinalIgnoreCase) >= 0);
-                }
-                if (!string.IsNullOrEmpty(setFilter))
-                {
-                    filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.IndexOf(setFilter, StringComparison.OrdinalIgnoreCase) >= 0);
-                }
-                if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != filterContext.RulesTextDefaultText)
-                {
-                    filteredCards = filteredCards.Where(card => card.Text != null && card.Text.IndexOf(rulesTextFilter, StringComparison.OrdinalIgnoreCase) >= 0);
-                }
-                return filteredCards;
+                filteredCards = filteredCards.Where(card => card.Name != null && card.Name.IndexOf(cardFilter, StringComparison.OrdinalIgnoreCase) >= 0);
             }
-            catch (Exception ex)
+            if (!string.IsNullOrEmpty(setFilter))
             {
-                Debug.WriteLine($"Error while filtering cards: {ex.Message}");
-                return Enumerable.Empty<CardSet>();
+                filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.IndexOf(setFilter, StringComparison.OrdinalIgnoreCase) >= 0);
             }
+            if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != filterContext.RulesTextDefaultText)
+            {
+                filteredCards = filteredCards.Where(card => card.Text != null && card.Text.IndexOf(rulesTextFilter, StringComparison.OrdinalIgnoreCase) >= 0);
+            }
+            return filteredCards;
         }
-        private IEnumerable<CardSet> FilterByCriteria(IEnumerable<CardSet> cards, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector, bool exclude = false)
+        private IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet> cards, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector, bool exclude = false)
         {
             if (cards == null)
             {
@@ -87,53 +84,56 @@ namespace CardboardHoarder
                 return cards;
             }
 
-            try
+            return cards.Where(card =>
             {
-                return cards.Where(card =>
-                {
-                    var propertyValue = propertySelector(card);
-                    var criteria = propertyValue.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
+                var propertyValue = propertySelector(card);
+                var criteria = propertyValue.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
 
-                    bool match = useAnd ? selectedCriteria.All(c => criteria.Contains(c)) : selectedCriteria.Any(c => criteria.Contains(c));
-                    return exclude ? !match : match;
-                });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while filtering cards: {ex.Message}");
-                return Enumerable.Empty<CardSet>();
-            }
+                bool match = useAnd ? selectedCriteria.All(c => criteria.Contains(c)) : selectedCriteria.Any(c => criteria.Contains(c));
+                return exclude ? !match : match;
+            });
         }
         private IEnumerable<CardSet> FilterByManaValue(IEnumerable<CardSet> cards, string compareOperator, double manaValueCompare)
         {
-            try
+            if (MainWindow.CurrentInstance.ManaValueComboBox.SelectedIndex != -1 && MainWindow.CurrentInstance.ManaValueOperatorComboBox.SelectedIndex != -1)
             {
-                if (MainWindow.CurrentInstance.ManaValueComboBox.SelectedIndex != -1 && MainWindow.CurrentInstance.ManaValueOperatorComboBox.SelectedIndex != -1)
+                return cards.Where(card =>
                 {
-                    return cards.Where(card =>
+                    return compareOperator switch
                     {
-                        return compareOperator switch
-                        {
-                            "less than" => card.ManaValue < manaValueCompare,
-                            "greater than" => card.ManaValue > manaValueCompare,
-                            "less than/eq" => card.ManaValue <= manaValueCompare,
-                            "greater than/eq" => card.ManaValue >= manaValueCompare,
-                            "equal to" => card.ManaValue == manaValueCompare,
-                            _ => true,  // If no valid operator is selected, don't filter on ManaValue
-                        };
-                    });
-                }
-                else
-                {
-                    // If conditions for filtering are not met, return all cards unfiltered.
-                    return cards;
-                }
+                        "less than" => card.ManaValue < manaValueCompare,
+                        "greater than" => card.ManaValue > manaValueCompare,
+                        "less than/eq" => card.ManaValue <= manaValueCompare,
+                        "greater than/eq" => card.ManaValue >= manaValueCompare,
+                        "equal to" => card.ManaValue == manaValueCompare,
+                        _ => true,  // If no valid operator is selected, don't filter on ManaValue
+                    };
+                });
             }
-            catch (Exception ex)
+            else
             {
-                Debug.WriteLine($"Error while filtering cards: {ex.Message}");
-                return Enumerable.Empty<CardSet>();
+                // If conditions for filtering are not met, return all cards unfiltered.
+                return cards;
             }
+        }
+        private IEnumerable<CardSet> FilterByIncludeFoil(IEnumerable<CardSet> cards)
+        {
+            bool includeFoil = MainWindow.CurrentInstance.ShowFoilCheckBox.IsChecked ?? false;
+            return cards.Where(card =>
+            {
+                // Check if 'Finishes' column contains only 'foil' or 'etched'
+                var finishes = card.Finishes?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                 .Select(f => f.Trim()).ToList() ?? new List<string>();
+
+                // If 'includeFoil' is false, filter out cards where 'Finishes' contains only 'foil' or 'etched'
+                if (!includeFoil)
+                {
+                    return finishes.Any(finish => finish != "foil" && finish != "etched");
+                }
+
+                // If 'includeFoil' is true, include all cards
+                return true;
+            });
         }
         private void UpdateFilterLabel()
         {

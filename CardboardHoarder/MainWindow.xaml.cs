@@ -89,7 +89,7 @@ namespace CardboardHoarder
             // Pick up filtering comboboxes changes
             filterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             filterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
-            allOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
+            AllOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
         }
@@ -487,7 +487,7 @@ namespace CardboardHoarder
         private void ApplyFilterSelection(IEnumerable<CardSet> filteredCards)
         {
             mainCardWindowDatagrid.ItemsSource = filteredCards;
-            cardCountLabel.Content = $"Cards shown: {filteredCards.Count()}";
+            CardCountLabel.Content = $"Cards shown: {filteredCards.Count()}";
         }
         // Reset filter elements
         public void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
@@ -501,7 +501,7 @@ namespace CardboardHoarder
             // Clear non-custom comboboxes
             filterCardNameComboBox.SelectedIndex = -1;
             filterSetNameComboBox.SelectedIndex = -1;
-            allOrNoneComboBox.SelectedIndex = 0;
+            AllOrNoneComboBox.SelectedIndex = 0;
             ManaValueComboBox.SelectedIndex = -1;
             ManaValueOperatorComboBox.SelectedIndex = -1;
 
@@ -725,7 +725,7 @@ namespace CardboardHoarder
                 Dispatcher.Invoke(() =>
                 {
                     mainCardWindowDatagrid.ItemsSource = cards;
-                    cardCountLabel.Content = $"Cards shown: {cards.Count}";
+                    CardCountLabel.Content = $"Cards shown: {cards.Count}";
                     dataView = CollectionViewSource.GetDefaultView(cards);
                 });
             }
@@ -828,8 +828,8 @@ namespace CardboardHoarder
                     filterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                     filterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                     filterColorsListBox.ItemsSource = filterContext.AllColors;
-                    allOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
-                    allOrNoneComboBox.SelectedIndex = 0;
+                    AllOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
+                    AllOrNoneComboBox.SelectedIndex = 0;
                     ManaValueComboBox.ItemsSource = manaValueOptions;
                     ManaValueComboBox.SelectedIndex = -1;
                     ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;

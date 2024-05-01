@@ -28,8 +28,6 @@
 
         </Grid>
         <Grid x:Name="GridSearchAndFilter" Margin="0,48,0,0" HorizontalAlignment="Left" Width="1337">
-            <Image x:Name="iconTester" HorizontalAlignment="Left" Height="44" Margin="843,42,0,0" VerticalAlignment="Top" Width="59"/>
-
             <!--The main card view datagrid-->
             <DataGrid x:Name="mainCardWindowDatagrid" Margin="272,391,0,0"
                       AutoGenerateColumns="False"
@@ -92,7 +90,7 @@
                 GotFocus="TextBox_GotFocus" 
                 LostFocus="TextBox_LostFocus" 
                 VerticalAlignment="Top" Width="256" Height="45"/>
-            <Button x:Name="filterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="11,151,0,0" VerticalAlignment="Top" Click="filterRulesTextButton_Click"/>
+            <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="11,151,0,0" VerticalAlignment="Top" Click="filterRulesTextButton_Click"/>
 
             <!--Supertype listbox and filtering-->
             <Label x:Name="CardSuperTypesLabel" Content="" HorizontalAlignment="Left" Margin="272,40,0,0" VerticalAlignment="Top" Width="500" Height="30"/>
@@ -104,17 +102,17 @@
                     <ControlTemplate TargetType="{x:Type ComboBox}">
                         <Grid>
                             <TextBox x:Name="FilterSuperTypesTextBox"
-        VerticalAlignment="Top"
-        BorderThickness="1"
-        Background="Transparent"
-        TextChanged="FilterTextBox_TextChanged"
-        GotFocus="TextBox_GotFocus"
-        LostFocus="TextBox_LostFocus"
-        Foreground="{TemplateBinding Foreground}"
-        FontFamily="{TemplateBinding FontFamily}"
-        FontSize="{TemplateBinding FontSize}"
-        Padding="3,3,0,0"
-        Margin="0,0,0,0"/>
+                                VerticalAlignment="Top"
+                                BorderThickness="1"
+                                Background="Transparent"
+                                TextChanged="FilterTextBox_TextChanged"
+                                GotFocus="TextBox_GotFocus"
+                                LostFocus="TextBox_LostFocus"
+                                Foreground="{TemplateBinding Foreground}"
+                                FontFamily="{TemplateBinding FontFamily}"
+                                FontSize="{TemplateBinding FontSize}"
+                                Padding="3,3,0,0"
+                                Margin="0,0,0,0"/>
 
                             <ToggleButton x:Name="ToggleButtonSuperTypes" Content="Supertypes" Focusable="false"
         ClickMode="Press"
@@ -343,7 +341,7 @@
             </ComboBox>
 
             <!--Color filtering-->
-            <ComboBox x:Name="allOrNoneComboBox" HorizontalAlignment="Left" Margin="10,350,0,0" VerticalAlignment="Top" Width="257"/>
+            <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Left" Margin="10,350,0,0" VerticalAlignment="Top" Width="257"/>
             <ListBox x:Name="filterColorsListBox" Margin="11,374,0,0" Width="130" HorizontalAlignment="Left"
                 ItemsSource="{Binding}"
                 SelectionMode="Extended" Height="155" VerticalAlignment="Top" BorderBrush="White">
@@ -369,12 +367,12 @@
             </ListBox>
 
             <!--Mana value filtering-->
-            <Label x:Name="manaValueLabel" Content="Mana value is " HorizontalAlignment="Left" Margin="10,535,0,0" VerticalAlignment="Top"/>
+            <Label x:Name="ManaValueLabel" Content="Mana value is " HorizontalAlignment="Left" Margin="10,535,0,0" VerticalAlignment="Top"/>
             <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="192,539,0,0" VerticalAlignment="Top" Width="75"/>
             <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="95,539,0,0" VerticalAlignment="Top" Width="92"/>
 
             <!--Misc filtering-->
-            <Label x:Name="cardCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="116" Height="30"/>
+            <Label x:Name="CardCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="116" Height="30"/>
             <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="180,10,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
 
             <!--Card images-->
@@ -395,6 +393,9 @@
                Margin="0,10,0,0"
                VerticalAlignment="Top"
                Width="268"/>
+            <CheckBox x:Name="ShowFoilCheckBox" Content="Show foil cards" HorizontalAlignment="Left" Margin="10,569,0,0" VerticalAlignment="Top"
+                Checked="AndOrCheckBox_Toggled"
+                Unchecked="AndOrCheckBox_Toggled"/>
 
         </Grid>
         <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="36" Margin="0,48,0,0" VerticalAlignment="Top" Width="138" d:IsHidden="True">
