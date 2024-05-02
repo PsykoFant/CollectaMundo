@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.Data.SQLite;
@@ -52,6 +53,8 @@ namespace CardboardHoarder
         private FilterContext filterContext = new FilterContext();
         private FilterManager filterManager;
 
+        ObservableCollection<CardSet.CardItem> cardItems = new ObservableCollection<CardSet.CardItem>();
+
         #endregion
         public static MainWindow CurrentInstance
         {
@@ -92,6 +95,8 @@ namespace CardboardHoarder
             AllOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
+
+            CardsToAddListView.ItemsSource = cardItems;
         }
         public async Task PrepareSystem()
         {
@@ -108,15 +113,22 @@ namespace CardboardHoarder
 
         private void AddToCollection_Click(object sender, RoutedEventArgs e)
         {
-            var button = sender as Button;
-            var card = button.DataContext as CardSet;  // Assuming your items are bound as CardSet objects
+            // Retrieve selectedCard from your data context or sender, e.g.:
+            var selectedCard = ((Button)sender).DataContext as CardSet;  // Cast appropriately
 
-            if (card != null)
+            // Assuming selectedCard is not null
+            var newItem = new CardSet.CardItem
             {
-                // Adding the card data to the ListView
-                CardsToAddListView.Items.Add(new { CardName = card.Name, SetName = card.SetName, Uuid = card.Uuid });
-            }
+                Name = selectedCard.Name,
+                SetName = selectedCard.SetName,
+                Uuid = selectedCard.Uuid,
+                Count = 1,  // Default count
+                Condition = "Near Mint" // Default condition
+            };
+
+            cardItems.Add(newItem);  // Add to your existing ObservableCollection
         }
+
 
 
         #region Filter elements handling        
