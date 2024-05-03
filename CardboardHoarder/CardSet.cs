@@ -61,8 +61,10 @@ namespace CardboardHoarder
         public ImageSource? ManaCostImage { get; set; }
         public class CardItem : CardSet
         {
-            public int Count { get; set; } = 1; // Default value for Count
-            public string Condition { get; set; } = "Near Mint"; // Condition property for binding
+            public int Count { get; set; }
+            public string? Condition { get; set; }
+            public List<string> AvailableFinishes { get; set; } = new List<string>();
+            public string? SelectedFinish { get; set; }
         }
     }
 

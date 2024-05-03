@@ -113,21 +113,29 @@ namespace CardboardHoarder
 
         private void AddToCollection_Click(object sender, RoutedEventArgs e)
         {
-            // Retrieve selectedCard from your data context or sender, e.g.:
-            var selectedCard = ((Button)sender).DataContext as CardSet;  // Cast appropriately
-
-            // Assuming selectedCard is not null
-            var newItem = new CardSet.CardItem
+            var button = sender as Button;
+            if (button?.DataContext is CardSet selectedCard)
             {
-                Name = selectedCard.Name,
-                SetName = selectedCard.SetName,
-                Uuid = selectedCard.Uuid,
-                Count = 1,  // Default count
-                Condition = "Near Mint" // Default condition
-            };
+                // Assuming selectedCard is not null
+                var finishes = selectedCard.Finishes?.Split(',')
+                                 .Select(f => f.Trim()) // Trim spaces
+                                 .ToList() ?? new List<string>();
 
-            cardItems.Add(newItem);  // Add to your existing ObservableCollection
+                var newItem = new CardSet.CardItem
+                {
+                    Name = selectedCard.Name,
+                    SetName = selectedCard.SetName,
+                    Uuid = selectedCard.Uuid,
+                    Count = 1,  // Default count
+                    Condition = "Near Mint", // Default condition
+                    AvailableFinishes = finishes,
+                    SelectedFinish = finishes.FirstOrDefault() // Default to the first finish or handle defaults appropriately
+                };
+
+                cardItems.Add(newItem);  // Add to your existing ObservableCollection
+            }
         }
+
 
 
 
