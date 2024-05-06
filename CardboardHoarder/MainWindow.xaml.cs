@@ -139,7 +139,7 @@ namespace CardboardHoarder
 
                         if (selectedCard.Side != "a")
                         {
-
+                            mainCardUuid = await FetchUuidForCardAsync(selectedCard.Name, selectedCard.SetCode);
                         }
                     }
 
@@ -151,7 +151,7 @@ namespace CardboardHoarder
                     {
                         Name = fullName ?? selectedCard.Name,  // Use the other face name if available
                         SetName = selectedCard.SetName,
-                        Uuid = selectedCard.Uuid,
+                        Uuid = selectedCard.Uuid ?? mainCardUuid,
                         Count = 1,
                         Condition = "Near Mint",
                         AvailableFinishes = finishes,
@@ -182,17 +182,30 @@ namespace CardboardHoarder
                 return result?.ToString();
             }
         }
-        private async Task<string?> FetchUuidForCardAsync(string uuid)
+        private async Task<string?> FetchUuidForCardAsync(string name, string setCode)
         {
-            string query = "psudocode";
+            // Define the SQL query to find the uuid of the card with specific name, setCode, and side 'a'
+            string query = @"
+                SELECT uuid 
+                FROM cards 
+                WHERE name = @name AND setCode = @setCode AND side = 'a';
+    ";
+
             using (var command = new SQLiteCommand(query, DBAccess.connection))
             {
-                command.Parameters.AddWithValue("@uuid", uuid);
+                // Set the parameters used in the SQL query
+                command.Parameters.AddWithValue("@name", name);
+                command.Parameters.AddWithValue("@setCode", setCode);
+
+                // Execute the query and retrieve the result
                 var result = await command.ExecuteScalarAsync();
                 Debug.WriteLine(result);
+
+                // Convert the result to string if it's not null, otherwise return null
                 return result?.ToString();
             }
         }
+
         private async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
         {
             if (string.IsNullOrEmpty(uuid))
