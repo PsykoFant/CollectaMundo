@@ -110,31 +110,84 @@ namespace CardboardHoarder
 
             DBAccess.CloseConnection();
         }
-
-        private void AddToCollection_Click(object sender, RoutedEventArgs e)
+        private async void AddToCollection_Click(object sender, RoutedEventArgs e)
         {
             var button = sender as Button;
             if (button?.DataContext is CardSet selectedCard)
             {
-                // Assuming selectedCard is not null
-                var finishes = selectedCard.Finishes?.Split(',')
-                                 .Select(f => f.Trim()) // Trim spaces
-                                 .ToList() ?? new List<string>();
-
-                var newItem = new CardSet.CardItem
+                if (selectedCard.Uuid == null)
                 {
-                    Name = selectedCard.Name,
-                    SetName = selectedCard.SetName,
-                    Uuid = selectedCard.Uuid,
-                    Count = 1,  // Default count
-                    Condition = "Near Mint", // Default condition
-                    AvailableFinishes = finishes,
-                    SelectedFinish = finishes.FirstOrDefault() // Default to the first finish or handle defaults appropriately
-                };
+                    MessageBox.Show("Card UUID is null, cannot fetch languages.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return; // Exit if UUID is null to prevent errors
+                }
 
-                cardItems.Add(newItem);  // Add to your existing ObservableCollection
+                try
+                {
+                    var finishes = selectedCard.Finishes?.Split(',')
+                                     .Select(f => f.Trim())
+                                     .ToList() ?? new List<string>();
+
+                    // Open the connection asynchronously and fetch languages
+                    await DBAccess.OpenConnectionAsync();
+                    var languages = await FetchLanguagesForCardAsync(selectedCard.Uuid);
+                    DBAccess.CloseConnection();
+
+                    languages.Insert(0, "English"); // Ensure "English" is always an option and default
+
+                    var newItem = new CardSet.CardItem
+                    {
+                        Name = selectedCard.Name,
+                        SetName = selectedCard.SetName,
+                        Uuid = selectedCard.Uuid,
+                        Count = 1,
+                        Condition = "Near Mint",
+                        AvailableFinishes = finishes,
+                        SelectedFinish = finishes.FirstOrDefault(),
+                        Languages = languages,
+                        SelectedLanguage = "English"
+                    };
+
+                    cardItems.Add(newItem);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to add card to collection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Debug.WriteLine($"AddToCollection_Click error: {ex.Message}");
+                }
             }
         }
+
+        // Asynchronously fetch languages from the database
+        private async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
+        {
+            if (string.IsNullOrEmpty(uuid))
+            {
+                return new List<string> { "English" }; // Return default list if UUID is null or empty
+            }
+
+            List<string> languages = new List<string>();
+            string query = "SELECT language FROM cardForeignData WHERE uuid = @uuid";
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@uuid", uuid);
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (reader.Read())
+                    {
+                        string? language = reader["language"] as string; // Safely cast to string, which may be null
+                        if (!string.IsNullOrEmpty(language))
+                        {
+                            languages.Add(language); // Only add non-null and non-empty strings
+                        }
+                    }
+                }
+            }
+            return languages;
+        }
+
+
+
+
 
 
 

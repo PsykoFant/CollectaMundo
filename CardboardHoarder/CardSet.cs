@@ -33,7 +33,7 @@ namespace CardboardHoarder
         public bool? IsStorySpotlight { get; set; }
         public bool? IsTextless { get; set; }
         public string? Keywords { get; set; }
-        public string? Language { get; set; }
+        public List<string>? Languages { get; set; }
         public string? Layout { get; set; }
         public string? Life { get; set; }
         public string? Loyalty { get; set; }
@@ -65,6 +65,7 @@ namespace CardboardHoarder
             public string? Condition { get; set; }
             public List<string> AvailableFinishes { get; set; } = new List<string>();
             public string? SelectedFinish { get; set; }
+            public string SelectedLanguage { get; set; } = "English"; // Default selected language
         }
     }
 
