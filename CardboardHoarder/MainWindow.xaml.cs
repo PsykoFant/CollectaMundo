@@ -130,13 +130,26 @@ namespace CardboardHoarder
                     // Open the connection asynchronously and fetch languages
                     await DBAccess.OpenConnectionAsync();
                     var languages = await FetchLanguagesForCardAsync(selectedCard.Uuid);
+
+                    string? fullName = null;
+                    string? mainCardUuid = null;
+                    if (selectedCard.Side != null)
+                    {
+                        fullName = await FetchNameForCardAsync(selectedCard.Uuid);
+
+                        if (selectedCard.Side != "a")
+                        {
+
+                        }
+                    }
+
                     DBAccess.CloseConnection();
 
                     languages.Insert(0, "English"); // Ensure "English" is always an option and default
 
                     var newItem = new CardSet.CardItem
                     {
-                        Name = selectedCard.Name,
+                        Name = fullName ?? selectedCard.Name,  // Use the other face name if available
                         SetName = selectedCard.SetName,
                         Uuid = selectedCard.Uuid,
                         Count = 1,
@@ -157,7 +170,29 @@ namespace CardboardHoarder
             }
         }
 
-        // Asynchronously fetch languages from the database
+
+        private async Task<string?> FetchNameForCardAsync(string uuid)
+        {
+            string query = "SELECT name FROM cards WHERE uuid = @uuid";
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@uuid", uuid);
+                var result = await command.ExecuteScalarAsync();
+                Debug.WriteLine(result);
+                return result?.ToString();
+            }
+        }
+        private async Task<string?> FetchUuidForCardAsync(string uuid)
+        {
+            string query = "psudocode";
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@uuid", uuid);
+                var result = await command.ExecuteScalarAsync();
+                Debug.WriteLine(result);
+                return result?.ToString();
+            }
+        }
         private async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
         {
             if (string.IsNullOrEmpty(uuid))
