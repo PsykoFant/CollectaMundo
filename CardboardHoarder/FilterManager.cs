@@ -139,25 +139,25 @@ namespace CardboardHoarder
         {
             if (MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != filterContext.RulesTextDefaultText)
             {
-                MainWindow.CurrentInstance.CardRulesTextLabel.Content = $"Rulestext: \"{MainWindow.CurrentInstance.FilterRulesTextTextBox.Text}\"";
+                MainWindow.CurrentInstance.CardRulesTextTextBlock.Text = $"Rulestext: \"{MainWindow.CurrentInstance.FilterRulesTextTextBox.Text}\"";
             }
 
-            UpdateLabelContent(filterContext.SelectedTypes, MainWindow.CurrentInstance.CardTypeLabel, MainWindow.CurrentInstance.TypesAndOrCheckBox.IsChecked ?? false, "Card types");
-            UpdateLabelContent(filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.CardSuperTypesLabel, MainWindow.CurrentInstance.SuperTypesAndOrCheckBox.IsChecked ?? false, "Card supertypes");
-            UpdateLabelContent(filterContext.SelectedSubTypes, MainWindow.CurrentInstance.CardSubTypeLabel, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, "Card subtypes");
-            UpdateLabelContent(filterContext.SelectedKeywords, MainWindow.CurrentInstance.CardKeywordsLabel, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, "Keywords");
+            UpdateLabelContent(filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.CardSuperTypesTextBlock, MainWindow.CurrentInstance.SuperTypesAndOrCheckBox.IsChecked ?? false, "Card supertypes");
+            UpdateLabelContent(filterContext.SelectedTypes, MainWindow.CurrentInstance.CardTypesTextBlock, MainWindow.CurrentInstance.TypesAndOrCheckBox.IsChecked ?? false, "Card types");
+            UpdateLabelContent(filterContext.SelectedSubTypes, MainWindow.CurrentInstance.CardSubTypesTextBlock, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, "Card subtypes");
+            UpdateLabelContent(filterContext.SelectedKeywords, MainWindow.CurrentInstance.CardKeyWordsTextBlock, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, "Keywords");
         }
-        private void UpdateLabelContent(HashSet<string> selectedItems, Label targetLabel, bool useAnd, string prefix)
+        private void UpdateLabelContent(HashSet<string> selectedItems, TextBlock targetTextBlock, bool useAnd, string prefix)
         {
             if (selectedItems.Count > 0)
             {
                 string conjunction = useAnd ? " AND " : " OR ";
                 string content = $"{prefix}: {string.Join(conjunction, selectedItems)}";
-                targetLabel.Content = content;
+                targetTextBlock.Text = content;
             }
             else
             {
-                targetLabel.Content = string.Empty;
+                targetTextBlock.Text = string.Empty;
             }
         }
     }

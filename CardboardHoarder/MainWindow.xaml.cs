@@ -597,11 +597,11 @@ namespace CardboardHoarder
             FilterRulesTextTextBox.Foreground = new SolidColorBrush(Colors.Gray);
 
             // Clear search item labels
-            CardRulesTextLabel.Content = string.Empty;
-            CardTypeLabel.Content = string.Empty;
-            CardSuperTypesLabel.Content = string.Empty;
-            CardSubTypeLabel.Content = string.Empty;
-            CardKeywordsLabel.Content = string.Empty;
+            CardRulesTextTextBlock.Text = string.Empty;
+            CardSuperTypesTextBlock.Text = string.Empty;
+            CardTypesTextBlock.Text = string.Empty;
+            CardSubTypesTextBlock.Text = string.Empty;
+            CardKeyWordsTextBlock.Text = string.Empty;
 
             // Uncheck CheckBoxes if necessary
             TypesAndOrCheckBox.IsChecked = false;
@@ -1031,5 +1031,6 @@ namespace CardboardHoarder
                 });
             }
         }
+
     }
 }
