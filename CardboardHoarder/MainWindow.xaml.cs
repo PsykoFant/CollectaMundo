@@ -130,28 +130,15 @@ namespace CardboardHoarder
                     // Open the connection asynchronously and fetch languages
                     await DBAccess.OpenConnectionAsync();
                     var languages = await FetchLanguagesForCardAsync(selectedCard.Uuid);
-
-                    string? fullName = null;
-                    string? mainCardUuid = null;
-                    if (selectedCard.Side != null)
-                    {
-                        fullName = await FetchNameForCardAsync(selectedCard.Uuid);
-
-                        if (selectedCard.Side != "a")
-                        {
-                            mainCardUuid = await FetchUuidForCardAsync(selectedCard.Name, selectedCard.SetCode);
-                        }
-                    }
-
                     DBAccess.CloseConnection();
 
                     languages.Insert(0, "English"); // Ensure "English" is always an option and default
 
                     var newItem = new CardSet.CardItem
                     {
-                        Name = fullName ?? selectedCard.Name,  // Use the other face name if available
+                        Name = selectedCard.Name,
                         SetName = selectedCard.SetName,
-                        Uuid = selectedCard.Uuid ?? mainCardUuid,
+                        Uuid = selectedCard.Uuid,
                         Count = 1,
                         Condition = "Near Mint",
                         AvailableFinishes = finishes,
@@ -169,43 +156,6 @@ namespace CardboardHoarder
                 }
             }
         }
-
-
-        private async Task<string?> FetchNameForCardAsync(string uuid)
-        {
-            string query = "SELECT name FROM cards WHERE uuid = @uuid";
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@uuid", uuid);
-                var result = await command.ExecuteScalarAsync();
-                Debug.WriteLine(result);
-                return result?.ToString();
-            }
-        }
-        private async Task<string?> FetchUuidForCardAsync(string name, string setCode)
-        {
-            // Define the SQL query to find the uuid of the card with specific name, setCode, and side 'a'
-            string query = @"
-                SELECT uuid 
-                FROM cards 
-                WHERE name = @name AND setCode = @setCode AND side = 'a';
-    ";
-
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
-            {
-                // Set the parameters used in the SQL query
-                command.Parameters.AddWithValue("@name", name);
-                command.Parameters.AddWithValue("@setCode", setCode);
-
-                // Execute the query and retrieve the result
-                var result = await command.ExecuteScalarAsync();
-                Debug.WriteLine(result);
-
-                // Convert the result to string if it's not null, otherwise return null
-                return result?.ToString();
-            }
-        }
-
         private async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
         {
             if (string.IsNullOrEmpty(uuid))
@@ -232,13 +182,6 @@ namespace CardboardHoarder
             }
             return languages;
         }
-
-
-
-
-
-
-
 
         #region Filter elements handling        
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
@@ -778,7 +721,7 @@ namespace CardboardHoarder
 
                 string query = @"
                     SELECT 
-                        COALESCE(c.faceName, c.name) AS Name, 
+                        c.name AS Name, 
                         s.name AS SetName, 
                         k.keyruneImage AS KeyRuneImage, 
                         c.manaCost AS ManaCost, 
@@ -787,21 +730,30 @@ namespace CardboardHoarder
                         c.supertypes AS SuperTypes, 
                         c.subtypes AS SubTypes, 
                         c.type AS Type, 
-                        c.keywords AS Keywords, 
+                        COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
                         c.text AS RulesText, 
                         c.manaValue AS ManaValue, 
                         c.uuid AS Uuid, 
                         c.finishes AS Finishes, 
                         c.side AS Side 
-                    FROM cards c 
-                    JOIN sets s ON c.setCode = s.code 
-                    LEFT JOIN keyruneImages k ON c.setCode = k.setCode 
+                    FROM cards c
+                    JOIN sets s ON c.setCode = s.code
+                    LEFT JOIN keyruneImages k ON c.setCode = k.setCode
                     LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                    LEFT JOIN (
+                        SELECT 
+                            cc.SetCode, 
+                            cc.Name, 
+                            GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                        FROM cards cc
+                        GROUP BY cc.SetCode, cc.Name
+                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+                    WHERE c.side IS NULL OR c.side = 'a'
 
                     UNION ALL
 
                     SELECT 
-                        COALESCE(t.faceName, t.name) AS Name, 
+                        t.name AS Name, 
                         s.name AS SetName, 
                         k.keyruneImage AS KeyRuneImage, 
                         t.manaCost AS ManaCost, 
@@ -819,9 +771,8 @@ namespace CardboardHoarder
                     FROM tokens t 
                     JOIN sets s ON t.setCode = s.code 
                     LEFT JOIN keyruneImages k ON t.setCode = k.setCode 
-                    LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost";
-
-
+                    LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+                        WHERE t.side IS NULL OR t.side = 'a'";
 
                 using var command = new SQLiteCommand(query, DBAccess.connection);
                 using var reader = await command.ExecuteReaderAsync();
@@ -930,11 +881,28 @@ namespace CardboardHoarder
                     .OrderBy(type => type)
                     .ToList();
 
-                // Set up elements in card type listbox
+                // List of unwanted types. Old cards, weird types from un-sets etc. 
+                var typesToRemove = new HashSet<string>
+                {
+                    "Eaturecray",
+                    "Summon",
+                    "Scariest",
+                    "You'll",
+                    "Ever",
+                    "See",
+                    "Jaguar",
+                    "Dragon",
+                    "Knights",
+                    "Legend",
+                    "instant"
+                };
+
+                // Set up elements in type listbox, removing unwanted types
                 filterContext.AllTypes = types
                     .Where(type => type != null)
                     .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                     .Select(p => p.Trim())
+                    .Where(p => !typesToRemove.Contains(p))  // Filter out unwanted types
                     .Distinct()
                     .OrderBy(type => type)
                     .ToList();
