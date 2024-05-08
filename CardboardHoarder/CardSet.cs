@@ -63,7 +63,7 @@ namespace CardboardHoarder
         public class CardItem : CardSet, INotifyPropertyChanged
         {
             private int _count;
-            public event PropertyChangedEventHandler PropertyChanged;
+            public event PropertyChangedEventHandler? PropertyChanged;
             protected virtual void OnPropertyChanged(string propertyName)
             {
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -80,10 +80,32 @@ namespace CardboardHoarder
                     }
                 }
             }
-            public string? Condition { get; set; }
+            private string _selectedCondition = "Near Mint"; // Set default value.
+            public List<string> Conditions { get; } = new List<string>
+                {
+                    "Mint",
+                    "Near Mint",
+                    "Excellent",
+                    "Good",
+                    "Light Played",
+                    "Played",
+                    "Poor"
+                };
+            public string SelectedCondition
+            {
+                get => _selectedCondition;
+                set
+                {
+                    if (_selectedCondition != value)
+                    {
+                        _selectedCondition = value;
+                        OnPropertyChanged(nameof(SelectedCondition));
+                    }
+                }
+            }
             public List<string> AvailableFinishes { get; set; } = new List<string>();
             public string? SelectedFinish { get; set; }
-            public string SelectedLanguage { get; set; } = "English"; // Default selected language
+            public string? SelectedLanguage { get; set; }
         }
     }
 

@@ -58,9 +58,9 @@ namespace CardboardHoarder
         // The filter object from the FilterContext class
         private FilterContext filterContext = new FilterContext();
         private FilterManager filterManager;
-
         // The object that holds cards selected for adding to collection
         ObservableCollection<CardSet.CardItem> cardItems = new ObservableCollection<CardSet.CardItem>();
+        private AddToCollectionManager addToCollectionManager;
 
         #endregion
         public static MainWindow CurrentInstance
@@ -103,7 +103,9 @@ namespace CardboardHoarder
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
 
+            // Used for adding cards to the list view
             CardsToAddListView.ItemsSource = cardItems;
+            addToCollectionManager = new AddToCollectionManager(cardItems);
         }
         public async Task PrepareSystem()
         {
@@ -117,109 +119,6 @@ namespace CardboardHoarder
 
             DBAccess.CloseConnection();
         }
-        private async void AddToCollection_Click(object sender, RoutedEventArgs e)
-        {
-            var button = sender as Button;
-            if (button?.DataContext is CardSet selectedCard)
-            {
-                if (selectedCard.Uuid == null)
-                {
-                    MessageBox.Show("Card UUID is null, cannot fetch languages.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return; // Exit if UUID is null to prevent errors
-                }
-
-                try
-                {
-                    var finishes = selectedCard.Finishes?.Split(',')
-                                     .Select(f => f.Trim())
-                                     .ToList() ?? new List<string>();
-
-                    // Open the connection asynchronously and fetch languages
-                    await DBAccess.OpenConnectionAsync();
-                    var languages = await FetchLanguagesForCardAsync(selectedCard.Uuid);
-                    DBAccess.CloseConnection();
-
-                    languages.Insert(0, "English"); // Ensure "English" is always an option and default
-
-                    var newItem = new CardSet.CardItem
-                    {
-                        Name = selectedCard.Name,
-                        SetName = selectedCard.SetName,
-                        Uuid = selectedCard.Uuid,
-                        Count = 1,
-                        Condition = "Near Mint",
-                        AvailableFinishes = finishes,
-                        SelectedFinish = finishes.FirstOrDefault(),
-                        Languages = languages,
-                        SelectedLanguage = "English"
-                    };
-
-                    cardItems.Add(newItem);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Failed to add card to collection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Debug.WriteLine($"AddToCollection_Click error: {ex.Message}");
-                }
-            }
-        }
-        private async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
-        {
-            if (string.IsNullOrEmpty(uuid))
-            {
-                return new List<string> { "English" }; // Return default list if UUID is null or empty
-            }
-
-            List<string> languages = new List<string>();
-            string query = "SELECT language FROM cardForeignData WHERE uuid = @uuid";
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@uuid", uuid);
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    while (reader.Read())
-                    {
-                        string? language = reader["language"] as string; // Safely cast to string, which may be null
-                        if (!string.IsNullOrEmpty(language))
-                        {
-                            languages.Add(language); // Only add non-null and non-empty strings
-                        }
-                    }
-                }
-            }
-            return languages;
-        }
-        private void IncrementCount_Click(object sender, RoutedEventArgs e)
-        {
-            Debug.WriteLine("+ button was clicked");
-            // Retrieve the DataContext (bound item) of the button that was clicked
-            var button = sender as Button;
-            if (button?.DataContext is CardSet.CardItem cardItem)
-            {
-                // Increment the count
-                cardItem.Count++;
-            }
-        }
-        private void DecrementCount_Click(object sender, RoutedEventArgs e)
-        {
-            Debug.WriteLine("- button was clicked");
-
-            // Retrieve the DataContext (bound item) of the button that was clicked
-            var button = sender as Button;
-            if (button?.DataContext is CardSet.CardItem cardItem)
-            {
-                // Decrease the count
-                cardItem.Count--;
-
-                // Check if the count has dropped to zero or below
-                if (cardItem.Count <= 0)
-                {
-                    // Find and remove the card item from the ObservableCollection
-                    cardItems.Remove(cardItem);
-                }
-            }
-        }
-
 
 
         #region Filter elements handling        
@@ -758,6 +657,20 @@ namespace CardboardHoarder
             return null;
         }
 
+        #endregion
+        #region Pick up events for add to collection 
+        private void IncrementCountHandler(object sender, RoutedEventArgs e)
+        {
+            addToCollectionManager.IncrementCount_Click(sender, e);
+        }
+        private void DecrementCountHandler(object sender, RoutedEventArgs e)
+        {
+            addToCollectionManager.DecrementCount_Click(sender, e);
+        }
+        private void AddToCollectionHandler(object sender, RoutedEventArgs e)
+        {
+            addToCollectionManager.AddToCollection_Click(sender, e);
+        }
         #endregion
 
         #region Load data and populate UI elements

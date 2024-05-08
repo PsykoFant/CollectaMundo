@@ -69,7 +69,7 @@
                     <DataGridTemplateColumn Header="Action">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="Add to collection" Click="AddToCollection_Click"/>
+                                <Button Content="Add to collection" Click="AddToCollectionHandler"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -86,7 +86,7 @@
                     </ItemsPanelTemplate>
                 </ComboBox.ItemsPanel>
             </ComboBox>
-            <Label x:Name="SetNameLabel" Content="Set Name" HorizontalAlignment="Left" Margin="10,134,0,0" VerticalAlignment="Top"/>
+            <Label x:Name="SetNameLabel" Content="Set Name" HorizontalAlignment="Left" Margin="10,84,0,0" VerticalAlignment="Top"/>
             <ComboBox x:Name="FilterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,107,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
                 <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -426,14 +426,8 @@
                         <GridViewColumn Header="Condition">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <ComboBox SelectedItem="{Binding Condition, UpdateSourceTrigger=PropertyChanged}">
-                                        <sys:String>Mint</sys:String>
-                                        <sys:String>Near Mint</sys:String>
-                                        <sys:String>Excellent</sys:String>
-                                        <sys:String>Good</sys:String>
-                                        <sys:String>Light Played</sys:String>
-                                        <sys:String>Played</sys:String>
-                                        <sys:String>Poor</sys:String>
+                                    <ComboBox ItemsSource="{Binding Conditions}"
+                                              SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}">
                                     </ComboBox>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
@@ -459,14 +453,14 @@
                         <GridViewColumn Header="+1">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Content="+" Click="IncrementCount_Click"/>
+                                    <Button Content="+" Click="IncrementCountHandler"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                         <GridViewColumn Header="-1">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Content="-" Click="DecrementCount_Click"/>
+                                    <Button Content="-" Click="DecrementCountHandler"/>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
