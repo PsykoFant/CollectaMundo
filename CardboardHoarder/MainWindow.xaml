@@ -28,8 +28,10 @@
 
         </Grid>
         <Grid x:Name="GridSearchAndFilter" Margin="0,48,0,0" HorizontalAlignment="Left">
+            <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Left" Margin="834,0,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
+
             <!--The main card view datagrid-->
-            <DataGrid x:Name="MainCardWindowDatagrid" Margin="272,262,-1355,0"
+            <DataGrid x:Name="MainCardWindowDatagrid" Margin="272,262,300,0"
                       AutoGenerateColumns="False"
                       SelectionChanged="MainCardWindowDatagrid_SelectionChanged"
                       ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" CanUserAddRows="False">
@@ -76,6 +78,7 @@
             </DataGrid>
 
             <!--Card name and set comboboxes-->
+            <Label x:Name="CardNameLabel" Content="Card Name" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top"/>
             <ComboBox x:Name="FilterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,63,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
                 <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -83,6 +86,7 @@
                     </ItemsPanelTemplate>
                 </ComboBox.ItemsPanel>
             </ComboBox>
+            <Label x:Name="SetNameLabel" Content="Set Name" HorizontalAlignment="Left" Margin="10,134,0,0" VerticalAlignment="Top"/>
             <ComboBox x:Name="FilterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,107,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
                 <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -221,7 +225,6 @@
             </ComboBox>
 
             <!--Subtype listbox and filtering-->
-            <!--<Label x:Name="CardSubTypeLabel" Content="" HorizontalAlignment="Left" Margin="10,415,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.59,1.684" Width="254" Height="30"/>-->
             <CheckBox x:Name="SubTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,379,0,0" VerticalAlignment="Top"
                Checked="AndOrCheckBox_Toggled"
                Unchecked="AndOrCheckBox_Toggled"/>
@@ -376,29 +379,38 @@
             <!--Misc filtering-->
             <Label x:Name="CardCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="116" Height="30"/>
             <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="180,10,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
-
-            <!--Card images-->
-            <Image x:Name="CardImage" Source="{Binding ImageSourceUrl, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}" Height="374" Margin="0,3,-1631,0" VerticalAlignment="Top" Width="268" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Right">
-                <Image.RenderTransform>
-                    <TransformGroup>
-                        <ScaleTransform/>
-                        <SkewTransform/>
-                        <RotateTransform Angle="0"/>
-                        <TranslateTransform/>
-                    </TransformGroup>
-                </Image.RenderTransform>
-            </Image>
-            <Image x:Name="CardImageSecondary"
-               Source="{Binding ImageSourceUrl2nd, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}"
-               HorizontalAlignment="Right"
-               Height="374"
-               Margin="0,404,-1631,0"
-               VerticalAlignment="Top"                  
-               Width="268" OpacityMask="Black"/>
             <CheckBox x:Name="ShowFoilCheckBox" Content="Show foil cards" HorizontalAlignment="Left" Margin="10,739,0,0" VerticalAlignment="Top"
                 Checked="AndOrCheckBox_Toggled"
                 Unchecked="AndOrCheckBox_Toggled" Height="16" Width="104"/>
-            <ListView x:Name="CardsToAddListView" Margin="272,41,-1355,0" VerticalAlignment="Top" Height="211">
+
+            <!--Card images-->
+            <Label x:Name="CardFrontLabel" Content="Card Front" HorizontalAlignment="Left" Margin="1620,50,0,0" VerticalAlignment="Top" Height="30" Visibility="Collapsed"/>
+            <Image x:Name="CardImage" 
+                   Source="{Binding ImageSourceUrl, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}"
+                   HorizontalAlignment="Right"
+                   VerticalAlignment="Top"
+                   Width="268"
+                   Height="374"
+                   Margin="1620,80,0,0"/>
+
+            <Label x:Name="CardBacktLabel" Content="Card Back" HorizontalAlignment="Left" Margin="1620,470,0,0" VerticalAlignment="Top" Height="30" Visibility="Collapsed"/>
+            <Image x:Name="CardImageSecondary"
+                   Source="{Binding ImageSourceUrl2nd, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}"
+                   HorizontalAlignment="Right"
+                   VerticalAlignment="Top"
+                   Width="268"
+                   Height="374"
+                   Margin="1620,500,0,0"/>
+
+            <!--filter selections text blocks-->
+            <TextBlock x:Name="CardSuperTypesTextBlock" HorizontalAlignment="Left" Margin="11,272,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
+            <TextBlock x:Name="CardTypesTextBlock" HorizontalAlignment="Left" Margin="10,343,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
+            <TextBlock x:Name="CardSubTypesTextBlock" HorizontalAlignment="Left" Margin="10,414,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
+            <TextBlock x:Name="CardKeyWordsTextBlock" HorizontalAlignment="Left" Margin="10,485,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
+            <TextBlock x:Name="CardRulesTextTextBlock" HorizontalAlignment="Left" Margin="10,197,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
+
+            <!--Cards to add listview-->
+            <ListView x:Name="CardsToAddListView" Margin="272,41,300,0" VerticalAlignment="Top" Height="211">
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="Card Name" DisplayMemberBinding="{Binding Name}"/>
@@ -407,7 +419,7 @@
                         <GridViewColumn Header="Count">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBox Text="{Binding Count, UpdateSourceTrigger=PropertyChanged}" Width="50" />
+                                    <TextBox Text="{Binding Count, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="50" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -444,16 +456,23 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
+                        <GridViewColumn Header="+1">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="+" Click="IncrementCount_Click"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn Header="-1">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="-" Click="DecrementCount_Click"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
                     </GridView>
                 </ListView.View>
             </ListView>
-            <Label x:Name="CardNameLabel" Content="Card Name" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top"/>
-            <TextBlock x:Name="CardSuperTypesTextBlock" HorizontalAlignment="Left" Margin="11,272,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
-            <TextBlock x:Name="CardTypesTextBlock" HorizontalAlignment="Left" Margin="10,343,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
-            <TextBlock x:Name="CardSubTypesTextBlock" HorizontalAlignment="Left" Margin="10,414,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
-            <TextBlock x:Name="CardKeyWordsTextBlock" HorizontalAlignment="Left" Margin="10,485,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
-            <TextBlock x:Name="CardRulesTextTextBlock" HorizontalAlignment="Left" Margin="10,197,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
-
 
 
 
@@ -464,8 +483,9 @@
         <Button x:Name="CheckForUpdatesButton" Content="Check for updates" HorizontalAlignment="Right" Margin="1011,13,0,0" VerticalAlignment="Top" Width="130" Click="checkForUpdatesButton_Click"/>
         <Label x:Name="InfoLabel" Content="" HorizontalAlignment="Right" Margin="0,7,135,0" VerticalAlignment="Top" Width="182" Height="30"/>
         <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Right" Margin="0,13,322,0" VerticalAlignment="Top" Width="129" Click="updateDbButton_Click" Visibility="Hidden"/>
-        <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" Margin="0,2,0,0" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
-        <Label x:Name="SetNameLabel" Content="Set Name" HorizontalAlignment="Left" Margin="10,134,0,0" VerticalAlignment="Top"/>
+
+
+
 
 
     </Grid>

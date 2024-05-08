@@ -1,4 +1,5 @@
-﻿using System.Windows.Media;
+﻿using System.ComponentModel;
+using System.Windows.Media;
 
 namespace CardboardHoarder
 {
@@ -59,9 +60,26 @@ namespace CardboardHoarder
         public string? Uuid { get; set; }
         public ImageSource? SetIcon { get; set; }
         public ImageSource? ManaCostImage { get; set; }
-        public class CardItem : CardSet
+        public class CardItem : CardSet, INotifyPropertyChanged
         {
-            public int Count { get; set; }
+            private int _count;
+            public event PropertyChangedEventHandler PropertyChanged;
+            protected virtual void OnPropertyChanged(string propertyName)
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
+            public int Count
+            {
+                get => _count;
+                set
+                {
+                    if (_count != value)
+                    {
+                        _count = value;
+                        OnPropertyChanged(nameof(Count));
+                    }
+                }
+            }
             public string? Condition { get; set; }
             public List<string> AvailableFinishes { get; set; } = new List<string>();
             public string? SelectedFinish { get; set; }

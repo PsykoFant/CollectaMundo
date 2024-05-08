@@ -48,11 +48,18 @@ namespace CardboardHoarder
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         private static MainWindow? _currentInstance;
+
+        // The collection shown in the main card datagrid
         private ICollectionView? dataView;
+
+        // The CardSet object which holds all the cards read from db
         private List<CardSet> cards = new List<CardSet>();
+
+        // The filter object from the FilterContext class
         private FilterContext filterContext = new FilterContext();
         private FilterManager filterManager;
 
+        // The object that holds cards selected for adding to collection
         ObservableCollection<CardSet.CardItem> cardItems = new ObservableCollection<CardSet.CardItem>();
 
         #endregion
@@ -182,6 +189,38 @@ namespace CardboardHoarder
             }
             return languages;
         }
+        private void IncrementCount_Click(object sender, RoutedEventArgs e)
+        {
+            Debug.WriteLine("+ button was clicked");
+            // Retrieve the DataContext (bound item) of the button that was clicked
+            var button = sender as Button;
+            if (button?.DataContext is CardSet.CardItem cardItem)
+            {
+                // Increment the count
+                cardItem.Count++;
+            }
+        }
+        private void DecrementCount_Click(object sender, RoutedEventArgs e)
+        {
+            Debug.WriteLine("- button was clicked");
+
+            // Retrieve the DataContext (bound item) of the button that was clicked
+            var button = sender as Button;
+            if (button?.DataContext is CardSet.CardItem cardItem)
+            {
+                // Decrease the count
+                cardItem.Count--;
+
+                // Check if the count has dropped to zero or below
+                if (cardItem.Count <= 0)
+                {
+                    // Find and remove the card item from the ObservableCollection
+                    cardItems.Remove(cardItem);
+                }
+            }
+        }
+
+
 
         #region Filter elements handling        
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
@@ -610,6 +649,12 @@ namespace CardboardHoarder
             KeywordsAndOrCheckBox.IsChecked = false;
             ShowFoilCheckBox.IsChecked = false;
 
+            // Reset card images
+            CardFrontLabel.Visibility = Visibility.Collapsed;
+            CardBacktLabel.Visibility = Visibility.Collapsed;
+            ImageSourceUrl = null;
+            ImageSourceUrl2nd = null;
+
             // Update filter label and apply filters to refresh the DataGrid            
             ApplyFilterSelection(filterManager.ApplyFilter(cards));
         }
@@ -662,14 +707,18 @@ namespace CardboardHoarder
                         Debug.WriteLine(cardImageUrl);
 
 
-                        if (selectedCard.Side == "a" || selectedCard.Side == "b")
+                        if (selectedCard.Side == "a")
                         {
+                            CardFrontLabel.Visibility = Visibility.Visible;
                             ImageSourceUrl = cardImageUrl;
+                            CardBacktLabel.Visibility = Visibility.Visible;
                             ImageSourceUrl2nd = secondCardImageUrl;
                         }
                         else
                         {
+                            CardFrontLabel.Visibility = Visibility.Visible;
                             ImageSourceUrl = cardImageUrl;
+                            CardBacktLabel.Visibility = Visibility.Collapsed;
                             ImageSourceUrl2nd = null;
                         }
                     }
