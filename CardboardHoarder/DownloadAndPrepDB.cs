@@ -135,7 +135,8 @@ public class DownloadAndPrepDB
         {
             {"uniqueManaSymbols", "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);"},
             {"uniqueManaCostImages", "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);"},
-            {"keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB);"}
+            {"keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB);"},
+            {"myCollection", "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid TEXT, count INTEGER, condition TEXT);"}
         };
 
             // Create the tables asynchronously
@@ -643,24 +644,27 @@ public class DownloadAndPrepDB
 
         return uniqueValues;
     }
-    public static async Task CreateIndices()
+    private static async Task CreateIndices()
     {
         // Define indices to create
         Dictionary<string, string> indices = new()
-            {
-                {"uniqueManaSymbols", "CREATE INDEX IF NOT EXISTS uniqueManaSymbols_uniqueManaSymbol ON uniqueManaSymbols(uniqueManaSymbol);"},
-                {"uniqueManaCostImages", "CREATE INDEX IF NOT EXISTS uniqueManaCostImages_uniqueManaCost ON uniqueManaCostImages(uniqueManaCost);"},
-                {"keyruneImages", "CREATE INDEX IF NOT EXISTS keyruneImages_setCode ON keyruneImages(setCode);"},
-                {"cardForeignData", "CREATE INDEX IF NOT EXISTS cardForeignData_uuid ON cardForeignData(uuid);"},
-                {"cardIdentifiers", "CREATE INDEX IF NOT EXISTS cardIdentifiers_uuid ON cardIdentifiers(uuid);"},
-                {"cardLegalities", "CREATE INDEX IF NOT EXISTS cardLegalities_uuid ON cardLegalities(uuid);"},
-                {"cardPurchaseUrls", "CREATE INDEX IF NOT EXISTS cardPurchaseUrls_uuid ON cardPurchaseUrls(uuid);"},
-                {"cardRulings", "CREATE INDEX cardRulings_uuid ON cardRulings(uuid);"},
-                {"cards", "CREATE INDEX cards_uuid ON cards(uuid);"},
-                {"sets", "CREATE INDEX IF NOT EXISTS idx_code ON sets(code);"},
-                {"tokenIdentifiers", "CREATE INDEX tokenIdentifiers_uuid ON tokenIdentifiers(uuid);"},
-                {"tokens", "CREATE INDEX tokens_uuid ON tokens(uuid);"}
-            };
+        {
+            {"uniqueManaSymbols", "CREATE INDEX IF NOT EXISTS uniqueManaSymbols_uniqueManaSymbol ON uniqueManaSymbols(uniqueManaSymbol);"},
+            {"uniqueManaCostImages", "CREATE INDEX IF NOT EXISTS uniqueManaCostImages_uniqueManaCost ON uniqueManaCostImages(uniqueManaCost);"},
+            {"keyruneImages", "CREATE INDEX IF NOT EXISTS keyruneImages_setCode ON keyruneImages(setCode);"},
+            {"cardForeignData", "CREATE INDEX IF NOT EXISTS cardForeignData_uuid ON cardForeignData(uuid);"},
+            {"cardIdentifiers", "CREATE INDEX IF NOT EXISTS cardIdentifiers_uuid ON cardIdentifiers(uuid);"},
+            {"cardLegalities", "CREATE INDEX IF NOT EXISTS cardLegalities_uuid ON cardLegalities(uuid);"},
+            {"cardPurchaseUrls", "CREATE INDEX IF NOT EXISTS cardPurchaseUrls_uuid ON cardPurchaseUrls(uuid);"},
+            {"cardRulings", "CREATE INDEX IF NOT EXISTS cardRulings_uuid ON cardRulings(uuid);"},
+            {"cards", "CREATE INDEX IF NOT EXISTS cards_uuid ON cards(uuid);"},
+            {"cards_name", "CREATE INDEX IF NOT EXISTS idx_cards_name ON cards(name);"},
+            {"cards_setCode", "CREATE INDEX IF NOT EXISTS idx_cards_setCode ON cards(setCode);"},
+            {"sets", "CREATE INDEX IF NOT EXISTS idx_code ON sets(code);"},
+            {"tokenIdentifiers", "CREATE INDEX IF NOT EXISTS tokenIdentifiers_uuid ON tokenIdentifiers(uuid);"},
+            {"tokens", "CREATE INDEX IF NOT EXISTS tokens_uuid ON tokens(uuid);"},
+            {"myCollection", "CREATE INDEX IF NOT EXISTS myCollection_uuid ON myCollection(uuid);"}
+        };
 
         try
         {
@@ -680,6 +684,7 @@ public class DownloadAndPrepDB
             MessageBox.Show($"Error during creation of indices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
+
     #endregion
 
 

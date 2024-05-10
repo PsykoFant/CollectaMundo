@@ -86,7 +86,7 @@ namespace CardboardHoarder
 
                 StatusMessageUpdated?.Invoke($"Reloading card database...");
                 await Task.Delay(1000); // Leave the message for a few seconds
-                await MainWindow.CurrentInstance.PrepareSystem();
+                await MainWindow.CurrentInstance.LoadDataIntoUiElements();
 
                 await MainWindow.ShowStatusWindowAsync(false);
 
@@ -157,8 +157,6 @@ namespace CardboardHoarder
                     await detachCommand.ExecuteNonQueryAsync();
                     Debug.WriteLine($"Detached tempDb...");
                 }
-
-                await DownloadAndPrepDB.CreateIndices();
             }
             catch (SQLiteException ex)
             {

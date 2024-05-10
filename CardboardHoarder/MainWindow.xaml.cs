@@ -92,7 +92,7 @@ namespace CardboardHoarder
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
 
             // Set up system
-            Loaded += async (sender, args) => { await PrepareSystem(); };
+            Loaded += async (sender, args) => { await LoadDataIntoUiElements(); };
 
             filterManager = new FilterManager(filterContext);
 
@@ -107,7 +107,7 @@ namespace CardboardHoarder
             CardsToAddListView.ItemsSource = cardItems;
             addToCollectionManager = new AddToCollectionManager(cardItems);
         }
-        public async Task PrepareSystem()
+        public async Task LoadDataIntoUiElements()
         {
             await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
             GridSearchAndFilter.Visibility = Visibility.Visible;
@@ -976,6 +976,7 @@ namespace CardboardHoarder
                         CurrentInstance.UpdateDbButton.IsEnabled = false;
                         CurrentInstance.CheckForUpdatesButton.IsEnabled = false;
 
+                        CurrentInstance.GridContentSection.Visibility = Visibility.Hidden;
                         CurrentInstance.GridStatus.Visibility = Visibility.Visible;
                     }
                     else
@@ -987,8 +988,9 @@ namespace CardboardHoarder
                         CurrentInstance.UpdateDbButton.Visibility = Visibility.Hidden;
                         CurrentInstance.CheckForUpdatesButton.IsEnabled = true;
 
-
                         CurrentInstance.GridStatus.Visibility = Visibility.Hidden;
+                        CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
+
                     }
                 });
             }
