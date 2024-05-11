@@ -658,6 +658,7 @@ namespace CardboardHoarder
         }
 
         #endregion
+
         #region Pick up events for add to collection 
         private void IncrementCountHandler(object sender, RoutedEventArgs e)
         {
@@ -681,7 +682,7 @@ namespace CardboardHoarder
             {
                 cards.Clear();
 
-                string query = @"
+                string query = @"                    
                     SELECT 
                         c.name AS Name, 
                         s.name AS SetName, 

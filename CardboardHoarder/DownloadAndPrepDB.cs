@@ -136,7 +136,7 @@ public class DownloadAndPrepDB
             {"uniqueManaSymbols", "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);"},
             {"uniqueManaCostImages", "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);"},
             {"keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB);"},
-            {"myCollection", "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid TEXT, count INTEGER, condition TEXT);"}
+            {"myCollection", "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid TEXT, count INTEGER, condition TEXT, languate TEXT, finish TEXT);"}
         };
 
             // Create the tables asynchronously
@@ -657,10 +657,13 @@ public class DownloadAndPrepDB
             {"cardLegalities", "CREATE INDEX IF NOT EXISTS cardLegalities_uuid ON cardLegalities(uuid);"},
             {"cardPurchaseUrls", "CREATE INDEX IF NOT EXISTS cardPurchaseUrls_uuid ON cardPurchaseUrls(uuid);"},
             {"cardRulings", "CREATE INDEX IF NOT EXISTS cardRulings_uuid ON cardRulings(uuid);"},
-            {"cards", "CREATE INDEX IF NOT EXISTS cards_uuid ON cards(uuid);"},
-            {"cards_name", "CREATE INDEX IF NOT EXISTS idx_cards_name ON cards(name);"},
-            {"cards_setCode", "CREATE INDEX IF NOT EXISTS idx_cards_setCode ON cards(setCode);"},
-            {"sets", "CREATE INDEX IF NOT EXISTS idx_code ON sets(code);"},
+            {"cards_uuid", "CREATE INDEX IF NOT EXISTS cards_uuid ON cards(uuid);"},
+            {"cards_name", "CREATE INDEX IF NOT EXISTS cards_name ON cards(name);"},
+            {"cards_setcode", "CREATE INDEX IF NOT EXISTS cards_setCode ON cards(setCode);"},
+            {"cards_side", "CREATE INDEX IF NOT EXISTS cards_side ON cards(side);"},
+            {"cards_keywords", "CREATE INDEX IF NOT EXISTS cards_keywords ON cards(keywords);"},
+            {"cards_name_setCode", "CREATE INDEX IF NOT EXISTS cards_name_setCode ON cards(Name, SetCode);"},
+            {"sets", "CREATE INDEX IF NOT EXISTS sets_code ON sets(code);"},
             {"tokenIdentifiers", "CREATE INDEX IF NOT EXISTS tokenIdentifiers_uuid ON tokenIdentifiers(uuid);"},
             {"tokens", "CREATE INDEX IF NOT EXISTS tokens_uuid ON tokens(uuid);"},
             {"myCollection", "CREATE INDEX IF NOT EXISTS myCollection_uuid ON myCollection(uuid);"}
