@@ -8,7 +8,7 @@ namespace CardboardHoarder
 {
     public class AddToCollectionManager
     {
-        private ObservableCollection<CardSet.CardItem> cardItems;
+        public ObservableCollection<CardSet.CardItem> cardItems;
         public AddToCollectionManager(ObservableCollection<CardSet.CardItem> cardItems)
         {
             this.cardItems = cardItems;

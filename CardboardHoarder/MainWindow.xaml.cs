@@ -672,6 +672,41 @@ namespace CardboardHoarder
         {
             addToCollectionManager.AddToCollection_Click(sender, e);
         }
+
+        private async void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
+        {
+            // Connection opening before the loop
+            await DBAccess.connection.OpenAsync();
+            try
+            {
+                foreach (var currentCardItem in addToCollectionManager.cardItems)
+                {
+                    string sql = "INSERT INTO myCollection (uuid, count, condition, language, finish) VALUES (@uuid, @count, @condition, @language, @finish)";
+                    using (var command = new SQLiteCommand(sql, DBAccess.connection))
+                    {
+                        command.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);  // Assuming CardItem inherits Uuid from CardSet.
+                        command.Parameters.AddWithValue("@count", currentCardItem.Count);
+                        command.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
+                        command.Parameters.AddWithValue("@language", currentCardItem.SelectedLanguage ?? "English");  // Default to English if null.
+                        command.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish ?? "Standard");  // Default to Standard if null.
+
+                        await command.ExecuteNonQueryAsync();
+                    }
+                }
+                MessageBox.Show("All cards added to your collection successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to add cards to collection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Database operation failed: {ex.Message}");
+            }
+            finally
+            {
+                DBAccess.connection.Close();
+            }
+        }
+
+
         #endregion
 
         #region Load data and populate UI elements
@@ -1003,6 +1038,7 @@ namespace CardboardHoarder
                 });
             }
         }
+
 
     }
 }
