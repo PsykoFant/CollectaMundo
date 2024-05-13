@@ -680,6 +680,9 @@ namespace CardboardHoarder
             Debug.WriteLine("Loading data asynchronously...");
             try
             {
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+
                 cards.Clear();
 
                 string query = @"                    
@@ -777,6 +780,10 @@ namespace CardboardHoarder
                     CardCountLabel.Content = $"Cards shown: {cards.Count}";
                     dataView = CollectionViewSource.GetDefaultView(cards);
                 });
+
+                stopwatch.Stop();
+                Debug.WriteLine($"UpdateKeywords method execution time: {stopwatch.ElapsedMilliseconds} ms");
+
             }
             catch (Exception ex)
             {
