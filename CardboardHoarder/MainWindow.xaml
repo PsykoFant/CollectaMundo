@@ -417,7 +417,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
                 <!--Cards to add listview-->
-                <ListView x:Name="CardsToAddListView" Margin="0,40,0,0" VerticalAlignment="Top" Height="211" HorizontalAlignment="Center" Width="1300">
+                <ListView x:Name="CardsToAddListView" Margin="0,40,0,0" VerticalAlignment="Top" Height="211" HorizontalAlignment="Center" Width="1300" Visibility="Collapsed">
                     <ListView.View>
                         <GridView>
                             <GridViewColumn Header="Card Name" DisplayMemberBinding="{Binding Name}"/>
@@ -474,7 +474,7 @@
                         </GridView>
                     </ListView.View>
                 </ListView>
-                <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Left" Margin="1111,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonAddCardsToMyCollection_Click"/>
+                <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Left" Margin="1111,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonAddCardsToMyCollection_Click" Visibility="Collapsed"/>
             </Grid>
             <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="36" Margin="0,48,0,0" VerticalAlignment="Top" Width="138" d:IsHidden="True">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" FontFamily="Bodoni MT"/>

@@ -136,7 +136,8 @@ public class DownloadAndPrepDB
             {"uniqueManaSymbols", "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);"},
             {"uniqueManaCostImages", "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);"},
             {"keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB);"},
-            {"myCollection", "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid TEXT, count INTEGER, condition TEXT, languate TEXT, finish TEXT);"}
+            {"AggregatedCardKeywords", "CREATE TABLE IF NOT EXISTS AggregatedCardKeywords (uuid TEXT PRIMARY KEY, aggregatedKeywords TEXT);"},
+            {"myCollection", "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid TEXT, count INTEGER, condition TEXT, language TEXT, finish TEXT);"},
         };
 
             // Create the tables asynchronously
@@ -662,7 +663,6 @@ public class DownloadAndPrepDB
             {"cards_setcode", "CREATE INDEX IF NOT EXISTS cards_setCode ON cards(setCode);"},
             {"cards_side", "CREATE INDEX IF NOT EXISTS cards_side ON cards(side);"},
             {"cards_keywords", "CREATE INDEX IF NOT EXISTS cards_keywords ON cards(keywords);"},
-            {"cards_name_setCode", "CREATE INDEX IF NOT EXISTS cards_name_setCode ON cards(Name, SetCode);"},
             {"sets", "CREATE INDEX IF NOT EXISTS sets_code ON sets(code);"},
             {"tokenIdentifiers", "CREATE INDEX IF NOT EXISTS tokenIdentifiers_uuid ON tokenIdentifiers(uuid);"},
             {"tokens", "CREATE INDEX IF NOT EXISTS tokens_uuid ON tokens(uuid);"},

@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using static CardboardHoarder.CardSet;
 
 namespace CardboardHoarder
 {
@@ -670,41 +671,93 @@ namespace CardboardHoarder
         }
         private void AddToCollectionHandler(object sender, RoutedEventArgs e)
         {
+            CardsToAddListView.Visibility = Visibility.Visible;
+            ButtonAddCardsToMyCollection.Visibility = Visibility.Visible;
             addToCollectionManager.AddToCollection_Click(sender, e);
         }
 
         private async void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
-            // Connection opening before the loop
             await DBAccess.connection.OpenAsync();
             try
             {
                 foreach (var currentCardItem in addToCollectionManager.cardItems)
                 {
-                    string sql = "INSERT INTO myCollection (uuid, count, condition, language, finish) VALUES (@uuid, @count, @condition, @language, @finish)";
-                    using (var command = new SQLiteCommand(sql, DBAccess.connection))
+                    var existingCardId = await CheckForExistingCardAsync(currentCardItem);
+                    if (existingCardId.HasValue)
                     {
-                        command.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);  // Assuming CardItem inherits Uuid from CardSet.
-                        command.Parameters.AddWithValue("@count", currentCardItem.Count);
-                        command.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
-                        command.Parameters.AddWithValue("@language", currentCardItem.SelectedLanguage ?? "English");  // Default to English if null.
-                        command.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish ?? "Standard");  // Default to Standard if null.
+                        // Existing row found, update the count
+                        string updateSql = @"UPDATE myCollection SET count = count + @newCount WHERE id = @id";
+                        using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
+                        {
+                            updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.Count);
+                            updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
 
-                        await command.ExecuteNonQueryAsync();
+                            await updateCommand.ExecuteNonQueryAsync();
+                        }
+                    }
+                    else
+                    {
+                        // No existing row, insert a new one
+                        string insertSql = "INSERT INTO myCollection (uuid, count, condition, language, finish) VALUES (@uuid, @count, @condition, @language, @finish)";
+                        using (var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection))
+                        {
+                            insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
+                            insertCommand.Parameters.AddWithValue("@count", currentCardItem.Count);
+                            insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
+                            insertCommand.Parameters.AddWithValue("@language", currentCardItem.SelectedLanguage ?? "English");
+                            insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish ?? "Standard");
+
+                            await insertCommand.ExecuteNonQueryAsync();
+                        }
                     }
                 }
-                MessageBox.Show("All cards added to your collection successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Database updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to add cards to collection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                Debug.WriteLine($"Database operation failed: {ex.Message}");
+                MessageBox.Show($"Failed to update the database: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 DBAccess.connection.Close();
+                addToCollectionManager.cardItems.Clear();
+                CardsToAddListView.Visibility = Visibility.Collapsed;
+                ButtonAddCardsToMyCollection.Visibility = Visibility.Collapsed;
             }
         }
+
+        private async Task<int?> CheckForExistingCardAsync(CardItem cardItem)
+        {
+            string selectSql = @"SELECT id, count FROM myCollection WHERE uuid = @uuid AND condition = @condition AND language = @language AND finish = @finish";
+            try
+            {
+                using (var selectCommand = new SQLiteCommand(selectSql, DBAccess.connection))
+                {
+                    selectCommand.Parameters.AddWithValue("@uuid", cardItem.Uuid);
+                    selectCommand.Parameters.AddWithValue("@condition", cardItem.SelectedCondition);
+                    selectCommand.Parameters.AddWithValue("@language", cardItem.SelectedLanguage ?? "English");
+                    selectCommand.Parameters.AddWithValue("@finish", cardItem.SelectedFinish ?? "Standard");
+
+                    using (var reader = await selectCommand.ExecuteReaderAsync())
+                    {
+                        if (reader.Read())
+                        {
+                            return reader.GetInt32(0);  // Assuming 'id' is the first column in the SELECT query
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to check for existing card: {ex.Message}");
+                // Depending on your error handling strategy, you might want to rethrow, handle the error, or log it.
+            }
+            return null; // Return null if no existing entry is found or an exception occurs
+        }
+
+
+
 
 
         #endregion
