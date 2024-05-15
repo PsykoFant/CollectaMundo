@@ -51,10 +51,12 @@ namespace CardboardHoarder
         private static MainWindow? _currentInstance;
 
         // The collection shown in the main card datagrid
-        private ICollectionView? dataView;
+        private ICollectionView? allCardsICollection;
+        private ICollectionView? myCardsICollection;
 
         // The CardSet object which holds all the cards read from db
-        private List<CardSet> cards = new List<CardSet>();
+        private List<CardSet> allCards = new List<CardSet>();
+        private List<CardSet> myCards = new List<CardSet>();
 
         // The filter object from the FilterContext class
         private FilterContext filterContext = new FilterContext();
@@ -114,9 +116,10 @@ namespace CardboardHoarder
             GridSearchAndFilter.Visibility = Visibility.Visible;
 
             await DBAccess.OpenConnectionAsync();
-            var LoadDataAsyncTask = LoadDataAsync();
+            var LoadDataAsyncTask = LoadDataForAllCardsAsync();
             var FillComboBoxesAsyncTask = FillComboBoxesAsync();
             await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
+            await LoadDataForMyCollectionAsync();
 
             DBAccess.CloseConnection();
         }
@@ -302,7 +305,7 @@ namespace CardboardHoarder
         }
         private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e) // Trigger filtering and update label when an and/or checkbox is toggled
         {
-            ApplyFilterSelection(filterManager.ApplyFilter(cards));
+            ApplyFilterSelection(filterManager.ApplyFilter(allCards));
         }
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -392,7 +395,7 @@ namespace CardboardHoarder
                         if (targetCollection != null)
                         {
                             targetCollection.Add(label);
-                            ApplyFilterSelection(filterManager.ApplyFilter(cards));
+                            ApplyFilterSelection(filterManager.ApplyFilter(allCards));
                         }
                     }
                 }
@@ -431,7 +434,7 @@ namespace CardboardHoarder
                         if (targetCollection != null)
                         {
                             targetCollection.Remove(label);
-                            ApplyFilterSelection(filterManager.ApplyFilter(cards));
+                            ApplyFilterSelection(filterManager.ApplyFilter(allCards));
                         }
                     }
                 }
@@ -494,11 +497,11 @@ namespace CardboardHoarder
         }
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) // Trigger filtering when a non-customized checkbox is loaded
         {
-            ApplyFilterSelection(filterManager.ApplyFilter(cards));
+            ApplyFilterSelection(filterManager.ApplyFilter(allCards));
         }
         private void filterRulesTextButton_Click(object sender, RoutedEventArgs e) // Apply filter for rulestext freetext search
         {
-            ApplyFilterSelection(filterManager.ApplyFilter(cards));
+            ApplyFilterSelection(filterManager.ApplyFilter(allCards));
         }
         private void ApplyFilterSelection(IEnumerable<CardSet> filteredCards)
         {
@@ -556,7 +559,7 @@ namespace CardboardHoarder
             ImageSourceUrl2nd = null;
 
             // Update filter label and apply filters to refresh the DataGrid            
-            ApplyFilterSelection(filterManager.ApplyFilter(cards));
+            ApplyFilterSelection(filterManager.ApplyFilter(allCards));
         }
         private void ResetFilterTextBox(ComboBox comboBox, string textBoxName, string defaultText)
         {
@@ -675,9 +678,14 @@ namespace CardboardHoarder
             ButtonAddCardsToMyCollection.Visibility = Visibility.Visible;
             addToCollectionManager.AddToCollection_Click(sender, e);
         }
-
         private async void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
+            if (DBAccess.connection == null)
+            {
+                MessageBox.Show("Database connection is not initialized.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return; // Exit the method to prevent further execution.
+            }
+
             await DBAccess.connection.OpenAsync();
             try
             {
@@ -726,7 +734,6 @@ namespace CardboardHoarder
                 ButtonAddCardsToMyCollection.Visibility = Visibility.Collapsed;
             }
         }
-
         private async Task<int?> CheckForExistingCardAsync(CardItem cardItem)
         {
             string selectSql = @"SELECT id, count FROM myCollection WHERE uuid = @uuid AND condition = @condition AND language = @language AND finish = @finish";
@@ -756,14 +763,10 @@ namespace CardboardHoarder
             return null; // Return null if no existing entry is found or an exception occurs
         }
 
-
-
-
-
         #endregion
 
         #region Load data and populate UI elements
-        private async Task LoadDataAsync()
+        private async Task LoadDataForAllCardsAsync()
         {
             Debug.WriteLine("Loading data asynchronously...");
             try
@@ -771,7 +774,7 @@ namespace CardboardHoarder
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                cards.Clear();
+                allCards.Clear();
 
                 string query = @"                    
                     SELECT 
@@ -842,7 +845,7 @@ namespace CardboardHoarder
                     var manaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
                     var manaCostProcessed = string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
 
-                    cards.Add(new CardSet
+                    allCards.Add(new CardSet
                     {
                         Name = reader["Name"]?.ToString() ?? string.Empty,
                         SetName = reader["SetName"]?.ToString() ?? string.Empty,
@@ -864,9 +867,9 @@ namespace CardboardHoarder
 
                 Dispatcher.Invoke(() =>
                 {
-                    MainCardWindowDatagrid.ItemsSource = cards;
-                    CardCountLabel.Content = $"Cards shown: {cards.Count}";
-                    dataView = CollectionViewSource.GetDefaultView(cards);
+                    MainCardWindowDatagrid.ItemsSource = allCards;
+                    CardCountLabel.Content = $"Cards shown: {allCards.Count}";
+                    allCardsICollection = CollectionViewSource.GetDefaultView(allCards);
                 });
 
                 stopwatch.Stop();
@@ -879,6 +882,75 @@ namespace CardboardHoarder
                 MessageBox.Show($"Error while loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private async Task LoadDataForMyCollectionAsync()
+        {
+            Debug.WriteLine("Loading data asynchronously...");
+            try
+            {
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+
+                myCards.Clear();
+
+                string query = @"
+                    SELECT myCollection.uuid, cards.Name AS Name
+                    FROM myCollection
+                    JOIN cards ON myCollection.uuid = cards.uuid;";
+
+                using var command = new SQLiteCommand(query, DBAccess.connection);
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var keyruneImage = reader["KeyRuneImage"] as byte[];
+                    BitmapImage? setIconImageSource = keyruneImage != null ? ConvertByteArrayToBitmapImage(keyruneImage) : null;
+
+                    var manaCostImage = reader["ManaCostImage"] as byte[];
+                    BitmapImage? manaCostImageSource = manaCostImage != null ? ConvertByteArrayToBitmapImage(manaCostImage) : null;
+
+                    var manaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
+                    var manaCostProcessed = string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
+
+                    myCards.Add(new CardSet
+                    {
+                        Name = reader["Name"]?.ToString() ?? string.Empty,
+                        SetName = reader["SetName"]?.ToString() ?? string.Empty,
+                        SetIcon = setIconImageSource,
+                        ManaCost = manaCostProcessed,
+                        ManaCostImage = manaCostImageSource,
+                        Types = reader["Types"]?.ToString() ?? string.Empty,
+                        SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty,
+                        SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty,
+                        Type = reader["Type"]?.ToString() ?? string.Empty,
+                        Keywords = reader["Keywords"]?.ToString() ?? string.Empty,
+                        Text = reader["RulesText"]?.ToString() ?? string.Empty,
+                        ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0,
+                        Uuid = reader["Uuid"]?.ToString() ?? string.Empty,
+                        Finishes = reader["Finishes"]?.ToString() ?? string.Empty,
+                        Side = reader["Side"]?.ToString() ?? string.Empty,
+                    });
+                }
+
+                Dispatcher.Invoke(() =>
+                {
+                    MyCollectionDatagrid.ItemsSource = myCards;
+                    CardCountLabel.Content = $"Cards shown: {allCards.Count}";
+                    myCardsICollection = CollectionViewSource.GetDefaultView(myCards);
+                });
+
+                stopwatch.Stop();
+                Debug.WriteLine($"UpdateKeywords method execution time: {stopwatch.ElapsedMilliseconds} ms");
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while loading data: {ex.Message}");
+                MessageBox.Show($"Error while loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+
         // Convert byte array (for set icon) into an image to display in the datagrid
         private static BitmapImage? ConvertByteArrayToBitmapImage(byte[] imageData)
         {
@@ -917,12 +989,12 @@ namespace CardboardHoarder
                 filterContext.AllKeywords.Clear();
 
                 // Get the values to populate the comboboxes
-                var cardNames = cards.Select(card => card.Name).Distinct().ToList();
-                var setNames = cards.Select(card => card.SetName).Distinct().ToList();
-                var types = cards.Select(card => card.Types).Distinct().ToList();
-                var superTypes = cards.Select(card => card.SuperTypes).Distinct().ToList();
-                var subTypes = cards.Select(card => card.SubTypes).Distinct().ToList();
-                var keywords = cards.Select(card => card.Keywords).Distinct().ToList();
+                var cardNames = allCards.Select(card => card.Name).Distinct().ToList();
+                var setNames = allCards.Select(card => card.SetName).Distinct().ToList();
+                var types = allCards.Select(card => card.Types).Distinct().ToList();
+                var superTypes = allCards.Select(card => card.SuperTypes).Distinct().ToList();
+                var subTypes = allCards.Select(card => card.SubTypes).Distinct().ToList();
+                var keywords = allCards.Select(card => card.Keywords).Distinct().ToList();
 
                 filterContext.AllColors.AddRange(new[] { "W", "U", "B", "R", "G", "C", "X" });
 

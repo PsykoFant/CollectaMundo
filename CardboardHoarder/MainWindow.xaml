@@ -368,7 +368,7 @@
                    Height="374" Margin="0,434,0,0"/>
 
             </Grid>
-            <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Width="1320">
+            <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Width="1320" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT" Height="40"/>
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="MainCardWindowDatagrid" Margin="0,260,0,0"
@@ -476,8 +476,54 @@
                 </ListView>
                 <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Left" Margin="1111,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonAddCardsToMyCollection_Click" Visibility="Collapsed"/>
             </Grid>
-            <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="36" Margin="0,48,0,0" VerticalAlignment="Top" Width="138" d:IsHidden="True">
-                <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="22" FontFamily="Bodoni MT"/>
+            <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="896" VerticalAlignment="Top" Width="1320">
+                <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
+                <!--The main card view datagrid-->
+                <DataGrid x:Name="MyCollectionDatagrid" Margin="0,260,0,0"
+                          AutoGenerateColumns="False"
+                          SelectionChanged="MainCardWindowDatagrid_SelectionChanged"
+                          ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" CanUserAddRows="False" HorizontalAlignment="Center" Width="1300">
+                    <DataGrid.CellStyle>
+                        <Style/>
+                    </DataGrid.CellStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" />
+                        <DataGridTextColumn Header="SetName" Binding="{Binding SetName}" />
+                        <DataGridTemplateColumn Header="Icon">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Image Source="{Binding SetIcon}" Width="20" Height="20" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Mana Cost text" Visibility="Collapsed" Binding="{Binding ManaCost}" />
+                        <DataGridTemplateColumn Header="Mana Cost">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Card Types" Binding="{Binding Types}" />
+                        <DataGridTextColumn Header="Card Supertypes" Visibility="Collapsed" Binding="{Binding SuperTypes}" />
+                        <DataGridTextColumn Header="Card Subtypes" Visibility="Collapsed" Binding="{Binding SubTypes}" />
+                        <DataGridTextColumn Header="Card type" Visibility="Collapsed" Binding="{Binding Type}" />
+                        <DataGridTextColumn Header="Keywords" Visibility="Collapsed" Binding="{Binding Keywords}" />
+                        <DataGridTextColumn Header="Rules Text" Visibility="Collapsed" Binding="{Binding Text}" />
+                        <DataGridTextColumn Header="Mana Value" Visibility="Collapsed" Binding="{Binding ManaValue}" />
+                        <DataGridTextColumn Header="Uuid" Visibility="Collapsed" Binding="{Binding Uuid}" />
+                        <DataGridTextColumn Header="Finishes" Binding="{Binding Finishes}" />
+                        <DataGridTextColumn Header="Side" Visibility="Collapsed" Binding="{Binding Side}" />
+                        <DataGridTemplateColumn Header="Action">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="Add to collection" Click="AddToCollectionHandler"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                    </DataGrid.Columns>
+                </DataGrid>
             </Grid>
         </Grid>
     </Grid>
