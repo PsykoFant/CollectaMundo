@@ -116,9 +116,9 @@ namespace CardboardHoarder
             GridSearchAndFilter.Visibility = Visibility.Visible;
 
             await DBAccess.OpenConnectionAsync();
-            var LoadDataAsyncTask = LoadDataForAllCardsAsync();
+            //var LoadDataAsyncTask = LoadDataForAllCardsAsync();
             var FillComboBoxesAsyncTask = FillComboBoxesAsync();
-            await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
+            //await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
             await LoadDataForMyCollectionAsync();
 
             DBAccess.CloseConnection();
@@ -885,7 +885,7 @@ namespace CardboardHoarder
 
         private async Task LoadDataForMyCollectionAsync()
         {
-            Debug.WriteLine("Loading data asynchronously...");
+            Debug.WriteLine("Loading data for my collection asynchronously...");
             try
             {
                 Stopwatch stopwatch = new Stopwatch();
@@ -894,9 +894,73 @@ namespace CardboardHoarder
                 myCards.Clear();
 
                 string query = @"
-                    SELECT myCollection.uuid, cards.Name AS Name
-                    FROM myCollection
-                    JOIN cards ON myCollection.uuid = cards.uuid;";
+                    SELECT
+                        c.name AS Name,
+                        s.name AS SetName,
+                        k.keyruneImage AS KeyRuneImage, 
+                        c.manaCost AS ManaCost, 
+                        u.manaCostImage AS ManaCostImage, 
+                        c.types AS Types,
+                        c.supertypes AS SuperTypes,
+                        c.subtypes AS SubTypes,
+                        c.type AS Type,
+                        COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+                        c.text AS RulesText,
+                        c.manaValue AS ManaValue,
+                        c.uuid AS Uuid,
+                        m.finish AS Finishes,
+                        m.language AS Language,
+                        c.side AS Side
+                    FROM
+                        myCollection m
+                    JOIN
+                        cards c ON m.uuid = c.uuid
+                    JOIN 
+                        sets s ON c.setCode = s.code
+                    LEFT JOIN 
+                        keyruneImages k ON c.setCode = k.setCode
+                    LEFT JOIN 
+                        uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                    LEFT JOIN (
+                        SELECT 
+                            cc.SetCode, 
+                            cc.Name, 
+                            GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                        FROM cards cc
+                        GROUP BY cc.SetCode, cc.Name
+                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+
+                    UNION ALL
+
+                    SELECT 
+                        t.name AS Name, 
+                        s.name AS SetName, 
+                        k.keyruneImage AS KeyRuneImage, 
+                        t.manaCost AS ManaCost, 
+                        u.manaCostImage AS ManaCostImage, 
+                        t.types AS Types, 
+                        t.supertypes AS SuperTypes, 
+                        t.subtypes AS SubTypes, 
+                        t.type AS Type, 
+                        t.keywords AS Keywords, 
+                        t.text AS RulesText, 
+                        NULL AS ManaValue,  -- 'manaValue' does not exist in 'tokens'
+                        t.uuid AS Uuid, 
+                        t.finishes AS Finishes, 
+                        t.side AS Side 
+                    FROM myCollection m
+                    JOIN
+                        tokens t ON m.uuid = m.uuid
+                    JOIN sets s ON 
+                        t.setCode = s.code 
+                    LEFT JOIN 
+                        keyruneImages k ON t.setCode = k.setCode 
+                    LEFT JOIN 
+                        uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost                      
+                    WHERE
+                        m.uuid = t.uuid
+                    ;";
+
 
                 using var command = new SQLiteCommand(query, DBAccess.connection);
                 using var reader = await command.ExecuteReaderAsync();
@@ -928,6 +992,7 @@ namespace CardboardHoarder
                         ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0,
                         Uuid = reader["Uuid"]?.ToString() ?? string.Empty,
                         Finishes = reader["Finishes"]?.ToString() ?? string.Empty,
+                        CardItem.SelectedLanguage = reader["Language"]?.ToString() ?? string.Empty,
                         Side = reader["Side"]?.ToString() ?? string.Empty,
                     });
                 }
@@ -940,13 +1005,13 @@ namespace CardboardHoarder
                 });
 
                 stopwatch.Stop();
-                Debug.WriteLine($"UpdateKeywords method execution time: {stopwatch.ElapsedMilliseconds} ms");
+                Debug.WriteLine($"Load data from myCollection method execution time: {stopwatch.ElapsedMilliseconds} ms");
 
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error while loading data: {ex.Message}");
-                MessageBox.Show($"Error while loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error while loading data from myCollection: {ex.Message}");
+                MessageBox.Show($"Error while loading data from myCollection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
