@@ -909,7 +909,7 @@ namespace CardboardHoarder
                         c.manaValue AS ManaValue,
                         c.uuid AS Uuid,
                         m.finish AS Finishes,
-                        m.language AS Language,
+                        m.language AS SelectedLanguage,
                         c.side AS Side
                     FROM
                         myCollection m
@@ -929,36 +929,6 @@ namespace CardboardHoarder
                         FROM cards cc
                         GROUP BY cc.SetCode, cc.Name
                     ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
-
-                    UNION ALL
-
-                    SELECT 
-                        t.name AS Name, 
-                        s.name AS SetName, 
-                        k.keyruneImage AS KeyRuneImage, 
-                        t.manaCost AS ManaCost, 
-                        u.manaCostImage AS ManaCostImage, 
-                        t.types AS Types, 
-                        t.supertypes AS SuperTypes, 
-                        t.subtypes AS SubTypes, 
-                        t.type AS Type, 
-                        t.keywords AS Keywords, 
-                        t.text AS RulesText, 
-                        NULL AS ManaValue,  -- 'manaValue' does not exist in 'tokens'
-                        t.uuid AS Uuid, 
-                        t.finishes AS Finishes, 
-                        t.side AS Side 
-                    FROM myCollection m
-                    JOIN
-                        tokens t ON m.uuid = m.uuid
-                    JOIN sets s ON 
-                        t.setCode = s.code 
-                    LEFT JOIN 
-                        keyruneImages k ON t.setCode = k.setCode 
-                    LEFT JOIN 
-                        uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost                      
-                    WHERE
-                        m.uuid = t.uuid
                     ;";
 
 
@@ -976,7 +946,7 @@ namespace CardboardHoarder
                     var manaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
                     var manaCostProcessed = string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
 
-                    myCards.Add(new CardSet
+                    myCards.Add(new CardItem
                     {
                         Name = reader["Name"]?.ToString() ?? string.Empty,
                         SetName = reader["SetName"]?.ToString() ?? string.Empty,
@@ -992,7 +962,7 @@ namespace CardboardHoarder
                         ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0,
                         Uuid = reader["Uuid"]?.ToString() ?? string.Empty,
                         Finishes = reader["Finishes"]?.ToString() ?? string.Empty,
-                        CardItem.SelectedLanguage = reader["Language"]?.ToString() ?? string.Empty,
+                        SelectedLanguage = reader["Language"]?.ToString() ?? string.Empty,
                         Side = reader["Side"]?.ToString() ?? string.Empty,
                     });
                 }

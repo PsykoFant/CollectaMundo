@@ -513,7 +513,7 @@
                         <DataGridTextColumn Header="Mana Value" Visibility="Collapsed" Binding="{Binding ManaValue}" />
                         <DataGridTextColumn Header="Uuid" Visibility="Collapsed" Binding="{Binding Uuid}" />
                         <DataGridTextColumn Header="Finishes" Binding="{Binding Finishes}" />
-                        <DataGridTextColumn Header="Language" Binding="{Binding Finishes}" />
+                        <DataGridTextColumn Header="Language" Binding="{Binding Language}" />
                         <DataGridTextColumn Header="Side" Visibility="Collapsed" Binding="{Binding Side}" />
                     </DataGrid.Columns>
                 </DataGrid>
