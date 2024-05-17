@@ -917,7 +917,7 @@ namespace CardboardHoarder
                         myCollection m
                     JOIN
                         cards c ON m.uuid = c.uuid
-                    JOIN 
+                    LEFT JOIN 
                         sets s ON c.setCode = s.code
                     LEFT JOIN 
                         keyruneImages k ON c.setCode = k.setCode
@@ -930,8 +930,41 @@ namespace CardboardHoarder
                             GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
                         FROM cards cc
                         GROUP BY cc.SetCode, cc.Name
-                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name;
+                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+                    WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
+                UNION ALL
+                    SELECT
+                        t.name AS Name,
+                        s.name AS SetName,
+                        k.keyruneImage AS KeyRuneImage,
+                        t.manaCost AS ManaCost,
+                        u.manaCostImage AS ManaCostImage,
+                        t.types AS Types,
+                        t.supertypes AS SuperTypes,
+                        t.subtypes AS SubTypes,
+                        t.type AS Type,
+                        t.keywords AS Keywords,
+                        t.text AS RulesText,
+                        NULL AS ManaValue,  -- Tokens do not have manaValue
+                        t.uuid AS Uuid,
+                        m.count AS Count,
+                        m.condition AS Condition,
+                        m.language AS Language,
+                        m.finish AS Finishes,
+                        t.side AS Side
+                    FROM
+                        myCollection m
+                    JOIN
+                        tokens t ON m.uuid = t.uuid
+                    LEFT JOIN 
+                        sets s ON t.setCode = s.code
+                    LEFT JOIN 
+                        keyruneImages k ON t.setCode = k.setCode
+                    LEFT JOIN 
+                        uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+                    WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid);
                 ";
+
 
                 using var command = new SQLiteCommand(query, DBAccess.connection);
                 using var reader = await command.ExecuteReaderAsync();
