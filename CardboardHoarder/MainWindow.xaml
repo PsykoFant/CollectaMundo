@@ -512,8 +512,10 @@
                         <DataGridTextColumn Header="Rules Text" Visibility="Collapsed" Binding="{Binding Text}" />
                         <DataGridTextColumn Header="Mana Value" Visibility="Collapsed" Binding="{Binding ManaValue}" />
                         <DataGridTextColumn Header="Uuid" Visibility="Collapsed" Binding="{Binding Uuid}" />
-                        <DataGridTextColumn Header="Finishes" Binding="{Binding Finishes}" />
-                        <DataGridTextColumn Header="Language" Binding="{Binding Language}" />
+                        <DataGridTextColumn Header="Finish" Binding="{Binding SelectedFinish}" />
+                        <DataGridTextColumn Header="Language" Binding="{Binding SelectedLanguage}" />
+                        <DataGridTextColumn Header="Condition" Binding="{Binding SelectedCondition}" />
+                        <DataGridTextColumn Header="Count" Binding="{Binding Count}" />
                         <DataGridTextColumn Header="Side" Visibility="Collapsed" Binding="{Binding Side}" />
                     </DataGrid.Columns>
                 </DataGrid>

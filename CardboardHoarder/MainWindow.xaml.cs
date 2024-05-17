@@ -897,9 +897,9 @@ namespace CardboardHoarder
                     SELECT
                         c.name AS Name,
                         s.name AS SetName,
-                        k.keyruneImage AS KeyRuneImage, 
-                        c.manaCost AS ManaCost, 
-                        u.manaCostImage AS ManaCostImage, 
+                        k.keyruneImage AS KeyRuneImage,
+                        c.manaCost AS ManaCost,
+                        u.manaCostImage AS ManaCostImage,
                         c.types AS Types,
                         c.supertypes AS SuperTypes,
                         c.subtypes AS SubTypes,
@@ -908,8 +908,10 @@ namespace CardboardHoarder
                         c.text AS RulesText,
                         c.manaValue AS ManaValue,
                         c.uuid AS Uuid,
+                        m.count AS Count,
+                        m.condition AS Condition,
+                        m.language AS Language,
                         m.finish AS Finishes,
-                        m.language AS SelectedLanguage,
                         c.side AS Side
                     FROM
                         myCollection m
@@ -928,9 +930,8 @@ namespace CardboardHoarder
                             GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
                         FROM cards cc
                         GROUP BY cc.SetCode, cc.Name
-                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
-                    ;";
-
+                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name;
+                ";
 
                 using var command = new SQLiteCommand(query, DBAccess.connection);
                 using var reader = await command.ExecuteReaderAsync();
@@ -961,11 +962,14 @@ namespace CardboardHoarder
                         Text = reader["RulesText"]?.ToString() ?? string.Empty,
                         ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0,
                         Uuid = reader["Uuid"]?.ToString() ?? string.Empty,
-                        Finishes = reader["Finishes"]?.ToString() ?? string.Empty,
-                        SelectedLanguage = reader["Language"]?.ToString() ?? string.Empty,
                         Side = reader["Side"]?.ToString() ?? string.Empty,
+                        Count = Convert.ToInt32(reader["Count"]),
+                        SelectedCondition = reader["Condition"]?.ToString() ?? string.Empty,
+                        SelectedLanguage = reader["Language"]?.ToString() ?? string.Empty,
+                        SelectedFinish = reader["Finishes"]?.ToString() ?? string.Empty
                     });
                 }
+
 
                 Dispatcher.Invoke(() =>
                 {
