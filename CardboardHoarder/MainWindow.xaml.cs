@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
+using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
@@ -61,6 +62,7 @@ namespace CardboardHoarder
         // The filter object from the FilterContext class
         private FilterContext filterContext = new FilterContext();
         private FilterManager filterManager;
+
         // The object that holds cards selected for adding to collection
         ObservableCollection<CardSet.CardItem> cardItems = new ObservableCollection<CardSet.CardItem>();
         private AddToCollectionManager addToCollectionManager;
@@ -119,7 +121,137 @@ namespace CardboardHoarder
             //var LoadDataAsyncTask = LoadDataForAllCardsAsync();
             var FillComboBoxesAsyncTask = FillComboBoxesAsync();
             //await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
-            await LoadDataForMyCollectionAsync();
+
+            string myCollectionQuery = @"
+                    SELECT
+                        c.name AS Name,
+                        s.name AS SetName,
+                        k.keyruneImage AS KeyRuneImage,
+                        c.manaCost AS ManaCost,
+                        u.manaCostImage AS ManaCostImage,
+                        c.types AS Types,
+                        c.supertypes AS SuperTypes,
+                        c.subtypes AS SubTypes,
+                        c.type AS Type,
+                        COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+                        c.text AS RulesText,
+                        c.manaValue AS ManaValue,
+                        c.uuid AS Uuid,
+                        m.count AS Count,
+                        m.condition AS Condition,
+                        m.language AS Language,
+                        m.finish AS Finishes,
+                        c.side AS Side
+                    FROM
+                        myCollection m
+                    JOIN
+                        cards c ON m.uuid = c.uuid
+                    LEFT JOIN 
+                        sets s ON c.setCode = s.code
+                    LEFT JOIN 
+                        keyruneImages k ON c.setCode = k.setCode
+                    LEFT JOIN 
+                        uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                    LEFT JOIN (
+                        SELECT 
+                            cc.SetCode, 
+                            cc.Name, 
+                            GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                        FROM cards cc
+                        GROUP BY cc.SetCode, cc.Name
+                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+                    WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
+                UNION ALL
+                    SELECT
+                        t.name AS Name,
+                        s.name AS SetName,
+                        k.keyruneImage AS KeyRuneImage,
+                        t.manaCost AS ManaCost,
+                        u.manaCostImage AS ManaCostImage,
+                        t.types AS Types,
+                        t.supertypes AS SuperTypes,
+                        t.subtypes AS SubTypes,
+                        t.type AS Type,
+                        t.keywords AS Keywords,
+                        t.text AS RulesText,
+                        NULL AS ManaValue,  -- Tokens do not have manaValue
+                        t.uuid AS Uuid,
+                        m.count AS Count,
+                        m.condition AS Condition,
+                        m.language AS Language,
+                        m.finish AS Finishes,
+                        t.side AS Side
+                    FROM
+                        myCollection m
+                    JOIN
+                        tokens t ON m.uuid = t.uuid
+                    LEFT JOIN 
+                        sets s ON t.setCode = s.code
+                    LEFT JOIN 
+                        keyruneImages k ON t.setCode = k.setCode
+                    LEFT JOIN 
+                        uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+                    WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid);
+                ";
+
+            string allCardsQuery = @"                    
+                    SELECT 
+                        c.name AS Name, 
+                        s.name AS SetName, 
+                        k.keyruneImage AS KeyRuneImage, 
+                        c.manaCost AS ManaCost, 
+                        u.manaCostImage AS ManaCostImage, 
+                        c.types AS Types, 
+                        c.supertypes AS SuperTypes, 
+                        c.subtypes AS SubTypes, 
+                        c.type AS Type, 
+                        COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+                        c.text AS RulesText, 
+                        c.manaValue AS ManaValue, 
+                        c.uuid AS Uuid, 
+                        c.finishes AS Finishes, 
+                        c.side AS Side 
+                    FROM cards c
+                    JOIN sets s ON c.setCode = s.code
+                    LEFT JOIN keyruneImages k ON c.setCode = k.setCode
+                    LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                    LEFT JOIN (
+                        SELECT 
+                            cc.SetCode, 
+                            cc.Name, 
+                            GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                        FROM cards cc
+                        GROUP BY cc.SetCode, cc.Name
+                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+                    WHERE c.side IS NULL OR c.side = 'a'
+
+                    UNION ALL
+
+                    SELECT 
+                        t.name AS Name, 
+                        s.name AS SetName, 
+                        k.keyruneImage AS KeyRuneImage, 
+                        t.manaCost AS ManaCost, 
+                        u.manaCostImage AS ManaCostImage, 
+                        t.types AS Types, 
+                        t.supertypes AS SuperTypes, 
+                        t.subtypes AS SubTypes, 
+                        t.type AS Type, 
+                        t.keywords AS Keywords, 
+                        t.text AS RulesText, 
+                        NULL AS ManaValue,  -- 'manaValue' does not exist in 'tokens'
+                        t.uuid AS Uuid, 
+                        t.finishes AS Finishes, 
+                        t.side AS Side 
+                    FROM tokens t 
+                    JOIN sets s ON t.setCode = s.code 
+                    LEFT JOIN keyruneImages k ON t.setCode = k.setCode 
+                    LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+                        WHERE t.side IS NULL OR t.side = 'a'";
+
+
+            await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
+            await LoadDataAsync(allCards, allCardsQuery, MainCardWindowDatagrid, false);
 
             DBAccess.CloseConnection();
         }
@@ -883,144 +1015,94 @@ namespace CardboardHoarder
             }
         }
 
-        private async Task LoadDataForMyCollectionAsync()
+        private async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
         {
-            Debug.WriteLine("Loading data for my collection asynchronously...");
+            Debug.WriteLine("Loading data asynchronously...");
             try
             {
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                myCards.Clear();
-
-                string query = @"
-                    SELECT
-                        c.name AS Name,
-                        s.name AS SetName,
-                        k.keyruneImage AS KeyRuneImage,
-                        c.manaCost AS ManaCost,
-                        u.manaCostImage AS ManaCostImage,
-                        c.types AS Types,
-                        c.supertypes AS SuperTypes,
-                        c.subtypes AS SubTypes,
-                        c.type AS Type,
-                        COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
-                        c.text AS RulesText,
-                        c.manaValue AS ManaValue,
-                        c.uuid AS Uuid,
-                        m.count AS Count,
-                        m.condition AS Condition,
-                        m.language AS Language,
-                        m.finish AS Finishes,
-                        c.side AS Side
-                    FROM
-                        myCollection m
-                    JOIN
-                        cards c ON m.uuid = c.uuid
-                    LEFT JOIN 
-                        sets s ON c.setCode = s.code
-                    LEFT JOIN 
-                        keyruneImages k ON c.setCode = k.setCode
-                    LEFT JOIN 
-                        uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                    LEFT JOIN (
-                        SELECT 
-                            cc.SetCode, 
-                            cc.Name, 
-                            GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                        FROM cards cc
-                        GROUP BY cc.SetCode, cc.Name
-                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
-                    WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
-                UNION ALL
-                    SELECT
-                        t.name AS Name,
-                        s.name AS SetName,
-                        k.keyruneImage AS KeyRuneImage,
-                        t.manaCost AS ManaCost,
-                        u.manaCostImage AS ManaCostImage,
-                        t.types AS Types,
-                        t.supertypes AS SuperTypes,
-                        t.subtypes AS SubTypes,
-                        t.type AS Type,
-                        t.keywords AS Keywords,
-                        t.text AS RulesText,
-                        NULL AS ManaValue,  -- Tokens do not have manaValue
-                        t.uuid AS Uuid,
-                        m.count AS Count,
-                        m.condition AS Condition,
-                        m.language AS Language,
-                        m.finish AS Finishes,
-                        t.side AS Side
-                    FROM
-                        myCollection m
-                    JOIN
-                        tokens t ON m.uuid = t.uuid
-                    LEFT JOIN 
-                        sets s ON t.setCode = s.code
-                    LEFT JOIN 
-                        keyruneImages k ON t.setCode = k.setCode
-                    LEFT JOIN 
-                        uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-                    WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid);
-                ";
-
+                cardList.Clear();
 
                 using var command = new SQLiteCommand(query, DBAccess.connection);
                 using var reader = await command.ExecuteReaderAsync();
 
                 while (await reader.ReadAsync())
                 {
-                    var keyruneImage = reader["KeyRuneImage"] as byte[];
-                    BitmapImage? setIconImageSource = keyruneImage != null ? ConvertByteArrayToBitmapImage(keyruneImage) : null;
-
-                    var manaCostImage = reader["ManaCostImage"] as byte[];
-                    BitmapImage? manaCostImageSource = manaCostImage != null ? ConvertByteArrayToBitmapImage(manaCostImage) : null;
-
-                    var manaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
-                    var manaCostProcessed = string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
-
-                    myCards.Add(new CardItem
-                    {
-                        Name = reader["Name"]?.ToString() ?? string.Empty,
-                        SetName = reader["SetName"]?.ToString() ?? string.Empty,
-                        SetIcon = setIconImageSource,
-                        ManaCost = manaCostProcessed,
-                        ManaCostImage = manaCostImageSource,
-                        Types = reader["Types"]?.ToString() ?? string.Empty,
-                        SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty,
-                        SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty,
-                        Type = reader["Type"]?.ToString() ?? string.Empty,
-                        Keywords = reader["Keywords"]?.ToString() ?? string.Empty,
-                        Text = reader["RulesText"]?.ToString() ?? string.Empty,
-                        ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0,
-                        Uuid = reader["Uuid"]?.ToString() ?? string.Empty,
-                        Side = reader["Side"]?.ToString() ?? string.Empty,
-                        Count = Convert.ToInt32(reader["Count"]),
-                        SelectedCondition = reader["Condition"]?.ToString() ?? string.Empty,
-                        SelectedLanguage = reader["Language"]?.ToString() ?? string.Empty,
-                        SelectedFinish = reader["Finishes"]?.ToString() ?? string.Empty
-                    });
+                    var card = CreateCardFromReader(reader, isCardItem);  // Use DbDataReader
+                    cardList.Add(card);
                 }
-
 
                 Dispatcher.Invoke(() =>
                 {
-                    MyCollectionDatagrid.ItemsSource = myCards;
-                    CardCountLabel.Content = $"Cards shown: {allCards.Count}";
-                    myCardsICollection = CollectionViewSource.GetDefaultView(myCards);
+                    dataGrid.ItemsSource = cardList;
+                    CardCountLabel.Content = $"Cards shown: {cardList.Count}";
+                    ICollectionView collectionView = CollectionViewSource.GetDefaultView(cardList);
+                    collectionView.Refresh();
                 });
 
                 stopwatch.Stop();
-                Debug.WriteLine($"Load data from myCollection method execution time: {stopwatch.ElapsedMilliseconds} ms");
-
+                Debug.WriteLine($"Data loading method execution time: {stopwatch.ElapsedMilliseconds} ms");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error while loading data from myCollection: {ex.Message}");
-                MessageBox.Show($"Error while loading data from myCollection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error while loading data: {ex.Message}");
+                MessageBox.Show($"Error while loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
+        {
+            // Common property initialization
+            var card = isCardItem ? (CardSet)new CardItem() : new CardSet();
+
+            card.Name = reader["Name"]?.ToString() ?? string.Empty;
+            card.SetName = reader["SetName"]?.ToString() ?? string.Empty;
+            card.SetIcon = ConvertImage(reader["KeyRuneImage"] as byte[]);
+            card.ManaCost = ProcessManaCost(reader["ManaCost"]?.ToString() ?? string.Empty);
+            card.ManaCostImage = ConvertImage(reader["ManaCostImage"] as byte[]);
+            card.Types = reader["Types"]?.ToString() ?? string.Empty;
+            card.SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty;
+            card.SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty;
+            card.Type = reader["Type"]?.ToString() ?? string.Empty;
+            card.Keywords = reader["Keywords"]?.ToString() ?? string.Empty;
+            card.Text = reader["RulesText"]?.ToString() ?? string.Empty;
+            card.ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0;
+            card.Uuid = reader["Uuid"]?.ToString() ?? string.Empty;
+            card.Side = reader["Side"]?.ToString() ?? string.Empty;
+            card.Finishes = reader["Finishes"]?.ToString() ?? string.Empty;
+
+            if (isCardItem)
+            {
+                var cardItem = card as CardItem;
+                cardItem.Count = Convert.ToInt32(reader["Count"]);
+                cardItem.SelectedCondition = reader["Condition"]?.ToString() ?? "Near Mint";
+                cardItem.SelectedLanguage = reader["Language"]?.ToString() ?? "English";
+                cardItem.SelectedFinish = reader["Finishes"]?.ToString() ?? string.Empty;
+            }
+
+            return card;
+        }
+
+        private BitmapImage? ConvertImage(byte[]? imageData)
+        {
+            if (imageData != null)
+            {
+                return ConvertByteArrayToBitmapImage(imageData);
+            }
+            return null;
+        }
+
+        private string ProcessManaCost(string manaCostRaw)
+        {
+            return string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
+        }
+
+
+
+
+
 
 
         // Convert byte array (for set icon) into an image to display in the datagrid
