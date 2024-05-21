@@ -51,74 +51,8 @@ namespace CardboardHoarder
         }
         private static MainWindow? _currentInstance;
 
-        // The CardSet object which holds all the cards read from db
-        private List<CardSet> allCards = new List<CardSet>();
-        private List<CardSet> myCards = new List<CardSet>();
-
-        // The collection shown in the main card datagrid
-        //private ICollectionView? allCardsICollection;
-        private ICollectionView? myCardsICollection;
-
-        // The filter object from the FilterContext class
-        private FilterContext filterContext = new FilterContext();
-        private FilterManager filterManager;
-
-        // The object that holds cards selected for adding to collection
-        ObservableCollection<CardSet.CardItem> cardItems = new ObservableCollection<CardSet.CardItem>();
-        private AddToCollectionManager addToCollectionManager;
-
-        #endregion
-        public static MainWindow CurrentInstance
-        {
-            get
-            {
-                if (_currentInstance == null)
-                {
-                    throw new InvalidOperationException("CurrentInstance is not initialized.");
-                }
-
-                return _currentInstance;
-            }
-            private set => _currentInstance = value;
-        }
-        public MainWindow()
-        {
-            InitializeComponent();
-            _currentInstance = this;
-
-            // Hide app sections not selected
-            GridSearchAndFilter.Visibility = Visibility.Hidden;
-            GridMyCollection.Visibility = Visibility.Hidden;
-            GridStatus.Visibility = Visibility.Hidden;
-
-            // Update the statusbox with messages from methods in DownloadAndPrepareDB
-            DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
-            // Update the statusbox with messages from methods in UpdateDB
-            UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
-
-            // Set up system
-            Loaded += async (sender, args) => { await LoadDataIntoUiElements(); };
-
-            filterManager = new FilterManager(filterContext);
-
-            // Pick up filtering comboboxes changes
-            FilterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
-            FilterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
-            AllOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
-            ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
-            ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
-
-            // Used for adding cards to the list view
-            CardsToAddListView.ItemsSource = cardItems;
-            addToCollectionManager = new AddToCollectionManager(cardItems);
-        }
-        public async Task LoadDataIntoUiElements()
-        {
-            await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
-            GridSearchAndFilter.Visibility = Visibility.Visible;
-
-            await DBAccess.OpenConnectionAsync();
-            string myCollectionQuery = @"
+        // Query strings to load cards into datagrids
+        private string myCollectionQuery = @"
                     SELECT
                         c.name AS Name,
                         s.name AS SetName,
@@ -189,7 +123,7 @@ namespace CardboardHoarder
                         uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
                     WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid);
                 ";
-            string allCardsQuery = @"                    
+        private string allCardsQuery = @"                    
                     SELECT 
                         c.name AS Name, 
                         s.name AS SetName, 
@@ -244,11 +178,76 @@ namespace CardboardHoarder
                     LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
                         WHERE t.side IS NULL OR t.side = 'a'";
 
-            await LoadDataAsync(allCards, allCardsQuery, MainCardWindowDatagrid, false);
+        // The CardSet object which holds all the cards read from db
+        private List<CardSet> allCards = new List<CardSet>();
+        private List<CardSet> myCards = new List<CardSet>();
 
-            var LoadMyCardsAsyncTask = LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
-            var FillComboBoxesAsyncTask = FillComboBoxesAsync();
-            await Task.WhenAll(LoadMyCardsAsyncTask, FillComboBoxesAsyncTask);
+        // The collection shown in the main card datagrid
+        //private ICollectionView? allCardsICollection;
+        private ICollectionView? myCardsICollection;
+
+        // The filter object from the FilterContext class
+        private FilterContext filterContext = new FilterContext();
+        private FilterManager filterManager;
+
+        // The object that holds cards selected for adding to collection
+        ObservableCollection<CardSet.CardItem> cardItems = new ObservableCollection<CardSet.CardItem>();
+        private AddToCollectionManager addToCollectionManager;
+
+        #endregion
+        public static MainWindow CurrentInstance
+        {
+            get
+            {
+                if (_currentInstance == null)
+                {
+                    throw new InvalidOperationException("CurrentInstance is not initialized.");
+                }
+
+                return _currentInstance;
+            }
+            private set => _currentInstance = value;
+        }
+        public MainWindow()
+        {
+            InitializeComponent();
+            _currentInstance = this;
+
+            // Hide app sections not selected
+            GridSearchAndFilter.Visibility = Visibility.Hidden;
+            GridMyCollection.Visibility = Visibility.Hidden;
+            GridStatus.Visibility = Visibility.Hidden;
+
+            // Update the statusbox with messages from methods in DownloadAndPrepareDB
+            DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
+            // Update the statusbox with messages from methods in UpdateDB
+            UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
+
+            // Set up system
+            Loaded += async (sender, args) => { await LoadDataIntoUiElements(); };
+
+            filterManager = new FilterManager(filterContext);
+
+            // Pick up filtering comboboxes changes
+            FilterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
+            FilterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
+            AllOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
+            ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
+            ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
+
+            // Used for adding cards to the list view
+            CardsToAddListView.ItemsSource = cardItems;
+            addToCollectionManager = new AddToCollectionManager(cardItems);
+        }
+        public async Task LoadDataIntoUiElements()
+        {
+            await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
+            GridSearchAndFilter.Visibility = Visibility.Visible;
+
+            await DBAccess.OpenConnectionAsync();
+
+            await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
+            await FillComboBoxesAsync();
 
             DBAccess.CloseConnection();
         }
@@ -634,7 +633,7 @@ namespace CardboardHoarder
         }
         private void ApplyFilterSelection(IEnumerable<CardSet> filteredCards)
         {
-            MainCardWindowDatagrid.ItemsSource = filteredCards;
+            AllCardsDataGrid.ItemsSource = filteredCards;
             CardCountLabel.Content = $"Cards shown: {filteredCards.Count()}";
         }
         // Reset filter elements
@@ -683,7 +682,7 @@ namespace CardboardHoarder
 
             // Reset card images
             CardFrontLabel.Visibility = Visibility.Collapsed;
-            CardBacktLabel.Visibility = Visibility.Collapsed;
+            CardBackLabel.Visibility = Visibility.Collapsed;
             ImageSourceUrl = null;
             ImageSourceUrl2nd = null;
 
@@ -717,11 +716,12 @@ namespace CardboardHoarder
 
         #region Show selected card image
         // Show the card image for the highlighted datagrid row
-        private async void MainCardWindowDatagrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void OnDataGridSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            try
+            if (sender is DataGrid dataGrid && dataGrid.SelectedItem is CardSet selectedCard
+                && !string.IsNullOrEmpty(selectedCard.Uuid) && !string.IsNullOrEmpty(selectedCard.Types))
             {
-                if (MainCardWindowDatagrid.SelectedItem is CardSet selectedCard && !string.IsNullOrEmpty(selectedCard.Uuid) && !string.IsNullOrEmpty(selectedCard.Types))
+                try
                 {
                     await DBAccess.OpenConnectionAsync();
                     string? scryfallId = await GetScryfallIdByUuidAsync(selectedCard.Uuid, selectedCard.Types);
@@ -738,30 +738,31 @@ namespace CardboardHoarder
                         Debug.WriteLine(scryfallId);
                         Debug.WriteLine(cardImageUrl);
 
-
+                        // Assuming CardFrontLabel and CardBackLabel are accessible globally or within the same context
                         if (selectedCard.Side == "a")
                         {
                             CardFrontLabel.Visibility = Visibility.Visible;
-                            ImageSourceUrl = cardImageUrl;
-                            CardBacktLabel.Visibility = Visibility.Visible;
-                            ImageSourceUrl2nd = secondCardImageUrl;
+                            ImageSourceUrl = cardImageUrl;  // Update ImageSourceUrl accordingly
+                            CardBackLabel.Visibility = Visibility.Visible;
+                            ImageSourceUrl2nd = secondCardImageUrl;  // Update ImageSourceUrl2nd accordingly
                         }
                         else
                         {
                             CardFrontLabel.Visibility = Visibility.Visible;
                             ImageSourceUrl = cardImageUrl;
-                            CardBacktLabel.Visibility = Visibility.Collapsed;
+                            CardBackLabel.Visibility = Visibility.Collapsed;
                             ImageSourceUrl2nd = null;
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in selection changed: {ex.Message}");
-                MessageBox.Show($"Error in selection changed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error in selection changed: {ex.Message}");
+                    MessageBox.Show($"Error in selection changed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
+
         // Get the scryfallId for url to show the selected card image
         public async Task<string?> GetScryfallIdByUuidAsync(string uuid, string types)
         {
@@ -852,9 +853,6 @@ namespace CardboardHoarder
                             insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish ?? "Standard");
 
                             await insertCommand.ExecuteNonQueryAsync();
-
-                            // Add the new item to the list directly
-                            myCards.Add(currentCardItem);
                         }
                     }
                 }
@@ -882,9 +880,6 @@ namespace CardboardHoarder
                 });
             }
         }
-
-
-
         private async Task<int?> CheckForExistingCardAsync(CardItem cardItem)
         {
             string selectSql = @"SELECT id, count FROM myCollection WHERE uuid = @uuid AND condition = @condition AND language = @language AND finish = @finish";
@@ -1165,9 +1160,12 @@ namespace CardboardHoarder
             GridSearchAndFilter.Visibility = Visibility.Visible;
             CardCountLabel.Content = $"Cards shown: {allCards.Count}";
         }
-        private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
+        private async void MenuMyCollection_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
+            await DBAccess.OpenConnectionAsync();
+            await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
+            DBAccess.CloseConnection();
             GridMyCollection.Visibility = Visibility.Visible;
             CardCountLabel.Content = $"Cards shown: {myCards.Count}";
         }

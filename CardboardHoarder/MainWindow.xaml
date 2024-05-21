@@ -361,7 +361,7 @@
                    Height="374"
                    Margin="0,30,0,0"/>
 
-                <Label x:Name="CardBacktLabel" Content="Card Back" HorizontalAlignment="Left" Margin="0,404,0,0" VerticalAlignment="Top" Height="30" Width="100" Visibility="Collapsed"/>
+                <Label x:Name="CardBackLabel" Content="Card Back" HorizontalAlignment="Left" Margin="0,404,0,0" VerticalAlignment="Top" Height="30" Width="100" Visibility="Collapsed"/>
                 <Image x:Name="CardImageSecondary"
                    Source="{Binding ImageSourceUrl2nd, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}"
                    HorizontalAlignment="Left"
@@ -373,9 +373,9 @@
             <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Width="1320" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT" Height="40"/>
                 <!--The main card view datagrid-->
-                <DataGrid x:Name="MainCardWindowDatagrid" Margin="0,260,0,0"
+                <DataGrid x:Name="AllCardsDataGrid" Margin="0,260,0,0"
                       AutoGenerateColumns="False"
-                      SelectionChanged="MainCardWindowDatagrid_SelectionChanged"
+                      SelectionChanged="OnDataGridSelectionChanged"
                       ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" CanUserAddRows="False" HorizontalAlignment="Center" Width="1300">
                     <DataGrid.CellStyle>
                         <Style/>
@@ -483,7 +483,7 @@
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="MyCollectionDatagrid" Margin="0,260,0,0"
                           AutoGenerateColumns="False"
-                          SelectionChanged="MainCardWindowDatagrid_SelectionChanged"
+                          SelectionChanged="OnDataGridSelectionChanged"
                           ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" CanUserAddRows="False" HorizontalAlignment="Center" Width="1300">
                     <DataGrid.CellStyle>
                         <Style/>
