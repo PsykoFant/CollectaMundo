@@ -55,6 +55,10 @@ namespace CardboardHoarder
         private List<CardSet> allCards = new List<CardSet>();
         private List<CardSet> myCards = new List<CardSet>();
 
+        // The collection shown in the main card datagrid
+        //private ICollectionView? allCardsICollection;
+        private ICollectionView? myCardsICollection;
+
         // The filter object from the FilterContext class
         private FilterContext filterContext = new FilterContext();
         private FilterManager filterManager;
@@ -819,7 +823,7 @@ namespace CardboardHoarder
                     var existingCardId = await CheckForExistingCardAsync(currentCardItem);
                     if (existingCardId.HasValue)
                     {
-                        // Existing row found, update the count
+                        // Update the count in the database
                         string updateSql = @"UPDATE myCollection SET count = count + @newCount WHERE id = @id";
                         using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
                         {
@@ -827,6 +831,12 @@ namespace CardboardHoarder
                             updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
 
                             await updateCommand.ExecuteNonQueryAsync();
+                            // Update the item in the list
+                            var cardToUpdate = myCards.FirstOrDefault(c => c.Uuid == currentCardItem.Uuid);
+                            if (cardToUpdate != null && cardToUpdate is CardItem card)
+                            {
+                                card.Count += currentCardItem.Count;
+                            }
                         }
                     }
                     else
@@ -842,6 +852,9 @@ namespace CardboardHoarder
                             insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish ?? "Standard");
 
                             await insertCommand.ExecuteNonQueryAsync();
+
+                            // Add the new item to the list directly
+                            myCards.Add(currentCardItem);
                         }
                     }
                 }
@@ -857,8 +870,21 @@ namespace CardboardHoarder
                 addToCollectionManager.cardItems.Clear();
                 CardsToAddListView.Visibility = Visibility.Collapsed;
                 ButtonAddCardsToMyCollection.Visibility = Visibility.Collapsed;
+
+                // Refresh the DataGrid immediately after the update
+                Dispatcher.Invoke(() =>
+                {
+                    MyCollectionDatagrid.ItemsSource = null;
+                    MyCollectionDatagrid.ItemsSource = myCards;
+                    myCardsICollection = CollectionViewSource.GetDefaultView(myCards);
+                    myCardsICollection.Refresh();
+                    CardCountLabel.Content = $"Cards shown: {myCards.Count}";
+                });
             }
         }
+
+
+
         private async Task<int?> CheckForExistingCardAsync(CardItem cardItem)
         {
             string selectSql = @"SELECT id, count FROM myCollection WHERE uuid = @uuid AND condition = @condition AND language = @language AND finish = @finish";
@@ -927,7 +953,6 @@ namespace CardboardHoarder
                 MessageBox.Show($"Error while loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
         private CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
         {
             // Common property initialization
@@ -972,7 +997,6 @@ namespace CardboardHoarder
         {
             return string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
         }
-
 
         // Convert byte array (for set icon) into an image to display in the datagrid
         private static BitmapImage? ConvertByteArrayToBitmapImage(byte[] imageData)
