@@ -51,10 +51,6 @@ namespace CardboardHoarder
         }
         private static MainWindow? _currentInstance;
 
-        // The collection shown in the main card datagrid
-        private ICollectionView? allCardsICollection;
-        private ICollectionView? myCardsICollection;
-
         // The CardSet object which holds all the cards read from db
         private List<CardSet> allCards = new List<CardSet>();
         private List<CardSet> myCards = new List<CardSet>();
@@ -118,10 +114,6 @@ namespace CardboardHoarder
             GridSearchAndFilter.Visibility = Visibility.Visible;
 
             await DBAccess.OpenConnectionAsync();
-            //var LoadDataAsyncTask = LoadDataForAllCardsAsync();
-            var FillComboBoxesAsyncTask = FillComboBoxesAsync();
-            //await Task.WhenAll(LoadDataAsyncTask, FillComboBoxesAsyncTask);
-
             string myCollectionQuery = @"
                     SELECT
                         c.name AS Name,
@@ -193,7 +185,6 @@ namespace CardboardHoarder
                         uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
                     WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid);
                 ";
-
             string allCardsQuery = @"                    
                     SELECT 
                         c.name AS Name, 
@@ -249,9 +240,11 @@ namespace CardboardHoarder
                     LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
                         WHERE t.side IS NULL OR t.side = 'a'";
 
-
-            await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
             await LoadDataAsync(allCards, allCardsQuery, MainCardWindowDatagrid, false);
+
+            var LoadMyCardsAsyncTask = LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
+            var FillComboBoxesAsyncTask = FillComboBoxesAsync();
+            await Task.WhenAll(LoadMyCardsAsyncTask, FillComboBoxesAsyncTask);
 
             DBAccess.CloseConnection();
         }
@@ -898,123 +891,6 @@ namespace CardboardHoarder
         #endregion
 
         #region Load data and populate UI elements
-        private async Task LoadDataForAllCardsAsync()
-        {
-            Debug.WriteLine("Loading data asynchronously...");
-            try
-            {
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-
-                allCards.Clear();
-
-                string query = @"                    
-                    SELECT 
-                        c.name AS Name, 
-                        s.name AS SetName, 
-                        k.keyruneImage AS KeyRuneImage, 
-                        c.manaCost AS ManaCost, 
-                        u.manaCostImage AS ManaCostImage, 
-                        c.types AS Types, 
-                        c.supertypes AS SuperTypes, 
-                        c.subtypes AS SubTypes, 
-                        c.type AS Type, 
-                        COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
-                        c.text AS RulesText, 
-                        c.manaValue AS ManaValue, 
-                        c.uuid AS Uuid, 
-                        c.finishes AS Finishes, 
-                        c.side AS Side 
-                    FROM cards c
-                    JOIN sets s ON c.setCode = s.code
-                    LEFT JOIN keyruneImages k ON c.setCode = k.setCode
-                    LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                    LEFT JOIN (
-                        SELECT 
-                            cc.SetCode, 
-                            cc.Name, 
-                            GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                        FROM cards cc
-                        GROUP BY cc.SetCode, cc.Name
-                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
-                    WHERE c.side IS NULL OR c.side = 'a'
-
-                    UNION ALL
-
-                    SELECT 
-                        t.name AS Name, 
-                        s.name AS SetName, 
-                        k.keyruneImage AS KeyRuneImage, 
-                        t.manaCost AS ManaCost, 
-                        u.manaCostImage AS ManaCostImage, 
-                        t.types AS Types, 
-                        t.supertypes AS SuperTypes, 
-                        t.subtypes AS SubTypes, 
-                        t.type AS Type, 
-                        t.keywords AS Keywords, 
-                        t.text AS RulesText, 
-                        NULL AS ManaValue,  -- 'manaValue' does not exist in 'tokens'
-                        t.uuid AS Uuid, 
-                        t.finishes AS Finishes, 
-                        t.side AS Side 
-                    FROM tokens t 
-                    JOIN sets s ON t.setCode = s.code 
-                    LEFT JOIN keyruneImages k ON t.setCode = k.setCode 
-                    LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-                        WHERE t.side IS NULL OR t.side = 'a'";
-
-                using var command = new SQLiteCommand(query, DBAccess.connection);
-                using var reader = await command.ExecuteReaderAsync();
-
-                while (await reader.ReadAsync())
-                {
-                    var keyruneImage = reader["KeyRuneImage"] as byte[];
-                    BitmapImage? setIconImageSource = keyruneImage != null ? ConvertByteArrayToBitmapImage(keyruneImage) : null;
-
-                    var manaCostImage = reader["ManaCostImage"] as byte[];
-                    BitmapImage? manaCostImageSource = manaCostImage != null ? ConvertByteArrayToBitmapImage(manaCostImage) : null;
-
-                    var manaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
-                    var manaCostProcessed = string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
-
-                    allCards.Add(new CardSet
-                    {
-                        Name = reader["Name"]?.ToString() ?? string.Empty,
-                        SetName = reader["SetName"]?.ToString() ?? string.Empty,
-                        SetIcon = setIconImageSource,
-                        ManaCost = manaCostProcessed,
-                        ManaCostImage = manaCostImageSource,
-                        Types = reader["Types"]?.ToString() ?? string.Empty,
-                        SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty,
-                        SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty,
-                        Type = reader["Type"]?.ToString() ?? string.Empty,
-                        Keywords = reader["Keywords"]?.ToString() ?? string.Empty,
-                        Text = reader["RulesText"]?.ToString() ?? string.Empty,
-                        ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0,
-                        Uuid = reader["Uuid"]?.ToString() ?? string.Empty,
-                        Finishes = reader["Finishes"]?.ToString() ?? string.Empty,
-                        Side = reader["Side"]?.ToString() ?? string.Empty,
-                    });
-                }
-
-                Dispatcher.Invoke(() =>
-                {
-                    MainCardWindowDatagrid.ItemsSource = allCards;
-                    CardCountLabel.Content = $"Cards shown: {allCards.Count}";
-                    allCardsICollection = CollectionViewSource.GetDefaultView(allCards);
-                });
-
-                stopwatch.Stop();
-                Debug.WriteLine($"UpdateKeywords method execution time: {stopwatch.ElapsedMilliseconds} ms");
-
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while loading data: {ex.Message}");
-                MessageBox.Show($"Error while loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
         private async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
         {
             Debug.WriteLine("Loading data asynchronously...");
@@ -1077,14 +953,13 @@ namespace CardboardHoarder
             {
                 var cardItem = card as CardItem;
                 cardItem.Count = Convert.ToInt32(reader["Count"]);
-                cardItem.SelectedCondition = reader["Condition"]?.ToString() ?? "Near Mint";
-                cardItem.SelectedLanguage = reader["Language"]?.ToString() ?? "English";
+                cardItem.SelectedCondition = reader["Condition"]?.ToString() ?? string.Empty;
+                cardItem.SelectedLanguage = reader["Language"]?.ToString() ?? string.Empty;
                 cardItem.SelectedFinish = reader["Finishes"]?.ToString() ?? string.Empty;
             }
 
             return card;
         }
-
         private BitmapImage? ConvertImage(byte[]? imageData)
         {
             if (imageData != null)
@@ -1093,16 +968,10 @@ namespace CardboardHoarder
             }
             return null;
         }
-
         private string ProcessManaCost(string manaCostRaw)
         {
             return string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
         }
-
-
-
-
-
 
 
         // Convert byte array (for set icon) into an image to display in the datagrid
@@ -1270,11 +1139,13 @@ namespace CardboardHoarder
         {
             ResetGrids();
             GridSearchAndFilter.Visibility = Visibility.Visible;
+            CardCountLabel.Content = $"Cards shown: {allCards.Count}";
         }
         private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
             GridMyCollection.Visibility = Visibility.Visible;
+            CardCountLabel.Content = $"Cards shown: {myCards.Count}";
         }
         public void ResetGrids()
         {

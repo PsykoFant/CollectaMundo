@@ -34,6 +34,9 @@
         </Grid>
         <Grid x:Name="GridContentSection" Margin="0,40,0,0">
             <Grid x:Name="GridFiltering" Width="300" HorizontalAlignment="Left">
+
+                <Label x:Name="CardCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="116" Height="30"/>
+
                 <!--Card name and set comboboxes-->
                 <Label x:Name="CardNameLabel" Content="Card Name" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top"/>
                 <ComboBox x:Name="FilterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,63,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
@@ -334,7 +337,6 @@
                 <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="95,711,0,0" VerticalAlignment="Top" Width="92" Height="20"/>
 
                 <!--Misc filtering-->
-                <Label x:Name="CardCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="116" Height="30"/>
                 <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="180,10,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
                 <CheckBox x:Name="ShowFoilCheckBox" Content="Show foil cards" HorizontalAlignment="Left" Margin="10,739,0,0" VerticalAlignment="Top"
                           Checked="AndOrCheckBox_Toggled"
