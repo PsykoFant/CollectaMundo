@@ -236,7 +236,7 @@ namespace CardboardHoarder
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
 
             addToCollectionManager = new AddToCollectionManager();
-            CardsToAddListView.ItemsSource = addToCollectionManager.cardItemsInAddToCollectionManager;
+            CardsToAddListView.ItemsSource = addToCollectionManager.cardItemsToAdd;
         }
         public async Task LoadDataIntoUiElements()
         {
@@ -246,6 +246,7 @@ namespace CardboardHoarder
             await DBAccess.OpenConnectionAsync();
 
             await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
+            await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
             await FillComboBoxesAsync();
 
             DBAccess.CloseConnection();
@@ -818,7 +819,7 @@ namespace CardboardHoarder
             await DBAccess.connection.OpenAsync();
             try
             {
-                foreach (var currentCardItem in addToCollectionManager.cardItemsInAddToCollectionManager)
+                foreach (var currentCardItem in addToCollectionManager.cardItemsToAdd)
                 {
                     var existingCardId = await CheckForExistingCardAsync(currentCardItem);
                     if (existingCardId.HasValue)
@@ -859,24 +860,20 @@ namespace CardboardHoarder
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"Failed to update the database: {ex.Message}");
                 MessageBox.Show($"Failed to update the database: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
+                // Reload my collection
+                MyCollectionDatagrid.ItemsSource = null;
+                await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
                 DBAccess.connection.Close();
-                addToCollectionManager.cardItemsInAddToCollectionManager.Clear();
+
+                addToCollectionManager.cardItemsToAdd.Clear();
                 CardsToAddListView.Visibility = Visibility.Collapsed;
                 ButtonAddCardsToMyCollection.Visibility = Visibility.Collapsed;
 
-                // Refresh the DataGrid immediately after the update
-                Dispatcher.Invoke(() =>
-                {
-                    MyCollectionDatagrid.ItemsSource = null;
-                    MyCollectionDatagrid.ItemsSource = myCards;
-                    myCardsICollection = CollectionViewSource.GetDefaultView(myCards);
-                    myCardsICollection.Refresh();
-                    CardCountLabel.Content = $"Cards shown: {myCards.Count}";
-                });
             }
         }
         private async Task<int?> CheckForExistingCardAsync(CardItem cardItem)
@@ -888,14 +885,14 @@ namespace CardboardHoarder
                 {
                     selectCommand.Parameters.AddWithValue("@uuid", cardItem.Uuid);
                     selectCommand.Parameters.AddWithValue("@condition", cardItem.SelectedCondition);
-                    selectCommand.Parameters.AddWithValue("@language", cardItem.SelectedLanguage ?? "English");
-                    selectCommand.Parameters.AddWithValue("@finish", cardItem.SelectedFinish ?? "Standard");
+                    selectCommand.Parameters.AddWithValue("@language", cardItem.SelectedLanguage);
+                    selectCommand.Parameters.AddWithValue("@finish", cardItem.SelectedFinish);
 
                     using (var reader = await selectCommand.ExecuteReaderAsync())
                     {
                         if (reader.Read())
                         {
-                            return reader.GetInt32(0);  // Assuming 'id' is the first column in the SELECT query
+                            return reader.GetInt32(0);  // 'id' is the first column in the SELECT query
                         }
                     }
                 }
@@ -903,7 +900,9 @@ namespace CardboardHoarder
             catch (Exception ex)
             {
                 Debug.WriteLine($"Failed to check for existing card: {ex.Message}");
-                // Depending on your error handling strategy, you might want to rethrow, handle the error, or log it.
+                MessageBox.Show($"Failed to check for existing card: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+
+
             }
             return null; // Return null if no existing entry is found or an exception occurs
         }
@@ -1162,9 +1161,6 @@ namespace CardboardHoarder
         private async void MenuMyCollection_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
-            await DBAccess.OpenConnectionAsync();
-            await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
-            DBAccess.CloseConnection();
             GridMyCollection.Visibility = Visibility.Visible;
             CardCountLabel.Content = $"Cards shown: {myCards.Count}";
         }

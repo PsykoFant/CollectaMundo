@@ -8,11 +8,11 @@ namespace CardboardHoarder
 {
     public class AddToCollectionManager
     {
-        public ObservableCollection<CardSet.CardItem> cardItemsInAddToCollectionManager { get; private set; }
+        public ObservableCollection<CardSet.CardItem> cardItemsToAdd { get; private set; }
 
         public AddToCollectionManager(ObservableCollection<CardSet.CardItem> cardItems = null)
         {
-            cardItemsInAddToCollectionManager = cardItems ?? new ObservableCollection<CardSet.CardItem>();
+            cardItemsToAdd = cardItems ?? new ObservableCollection<CardSet.CardItem>();
         }
 
         public void IncrementCount_Click(object sender, RoutedEventArgs e)
@@ -38,7 +38,7 @@ namespace CardboardHoarder
                 if (cardItem.Count <= 0)
                 {
                     // Find and remove the card item from the ObservableCollection
-                    cardItemsInAddToCollectionManager.Remove(cardItem);
+                    cardItemsToAdd.Remove(cardItem);
                 }
             }
         }
@@ -78,7 +78,7 @@ namespace CardboardHoarder
                         SelectedLanguage = "English"
                     };
 
-                    cardItemsInAddToCollectionManager.Add(newItem);
+                    cardItemsToAdd.Add(newItem);
                 }
                 catch (Exception ex)
                 {
