@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
@@ -186,9 +185,8 @@ namespace CardboardHoarder
         private FilterContext filterContext = new FilterContext();
         private FilterManager filterManager;
 
-        // The object that holds cards selected for adding to collection
-        ObservableCollection<CardSet.CardItem> cardItemsMainWindow = new ObservableCollection<CardSet.CardItem>();
-        private AddToCollectionManager addToCollectionManager;
+        // Object of AddToCollectionManager class to access that functionality
+        private AddToCollectionManager addToCollectionManager = new AddToCollectionManager();
 
         #endregion
         public static MainWindow CurrentInstance
@@ -230,9 +228,6 @@ namespace CardboardHoarder
             AllOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
-
-            addToCollectionManager = new AddToCollectionManager();
-            CardsToAddListView.ItemsSource = addToCollectionManager.cardItemsToAdd;
         }
         public async Task LoadDataIntoUiElements()
         {
@@ -246,6 +241,8 @@ namespace CardboardHoarder
             await FillComboBoxesAsync();
 
             DBAccess.CloseConnection();
+
+            CardsToAddListView.ItemsSource = addToCollectionManager.cardItemsToAdd;
         }
 
 
