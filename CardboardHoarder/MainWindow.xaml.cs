@@ -191,7 +191,7 @@ namespace CardboardHoarder
         private FilterManager filterManager;
 
         // The object that holds cards selected for adding to collection
-        ObservableCollection<CardSet.CardItem> cardItems = new ObservableCollection<CardSet.CardItem>();
+        ObservableCollection<CardSet.CardItem> cardItemsMainWindow = new ObservableCollection<CardSet.CardItem>();
         private AddToCollectionManager addToCollectionManager;
 
         #endregion
@@ -235,9 +235,8 @@ namespace CardboardHoarder
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
 
-            // Used for adding cards to the list view
-            CardsToAddListView.ItemsSource = cardItems;
-            addToCollectionManager = new AddToCollectionManager(cardItems);
+            addToCollectionManager = new AddToCollectionManager();
+            CardsToAddListView.ItemsSource = addToCollectionManager.cardItemsInAddToCollectionManager;
         }
         public async Task LoadDataIntoUiElements()
         {
@@ -819,7 +818,7 @@ namespace CardboardHoarder
             await DBAccess.connection.OpenAsync();
             try
             {
-                foreach (var currentCardItem in addToCollectionManager.cardItems)
+                foreach (var currentCardItem in addToCollectionManager.cardItemsInAddToCollectionManager)
                 {
                     var existingCardId = await CheckForExistingCardAsync(currentCardItem);
                     if (existingCardId.HasValue)
@@ -865,7 +864,7 @@ namespace CardboardHoarder
             finally
             {
                 DBAccess.connection.Close();
-                addToCollectionManager.cardItems.Clear();
+                addToCollectionManager.cardItemsInAddToCollectionManager.Clear();
                 CardsToAddListView.Visibility = Visibility.Collapsed;
                 ButtonAddCardsToMyCollection.Visibility = Visibility.Collapsed;
 
