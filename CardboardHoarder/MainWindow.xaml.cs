@@ -52,7 +52,7 @@ namespace CardboardHoarder
         private static MainWindow? _currentInstance;
 
         // Query strings to load cards into datagrids
-        private string myCollectionQuery = @"
+        public string myCollectionQuery = @"
                     SELECT
                         c.name AS Name,
                         s.name AS SetName,
@@ -180,11 +180,7 @@ namespace CardboardHoarder
 
         // The CardSet object which holds all the cards read from db
         private List<CardSet> allCards = new List<CardSet>();
-        private List<CardSet> myCards = new List<CardSet>();
-
-        // The collection shown in the main card datagrid
-        //private ICollectionView? allCardsICollection;
-        private ICollectionView? myCardsICollection;
+        public List<CardSet> myCards = new List<CardSet>();
 
         // The filter object from the FilterContext class
         private FilterContext filterContext = new FilterContext();
@@ -808,109 +804,16 @@ namespace CardboardHoarder
             ButtonAddCardsToMyCollection.Visibility = Visibility.Visible;
             addToCollectionManager.AddToCollection_Click(sender, e);
         }
-        private async void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
+        private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
-            if (DBAccess.connection == null)
-            {
-                MessageBox.Show("Database connection is not initialized.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return; // Exit the method to prevent further execution.
-            }
-
-            await DBAccess.connection.OpenAsync();
-            try
-            {
-                foreach (var currentCardItem in addToCollectionManager.cardItemsToAdd)
-                {
-                    var existingCardId = await CheckForExistingCardAsync(currentCardItem);
-                    if (existingCardId.HasValue)
-                    {
-                        // Update the count in the database
-                        string updateSql = @"UPDATE myCollection SET count = count + @newCount WHERE id = @id";
-                        using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
-                        {
-                            updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.Count);
-                            updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
-
-                            await updateCommand.ExecuteNonQueryAsync();
-                            // Update the item in the list
-                            var cardToUpdate = myCards.FirstOrDefault(c => c.Uuid == currentCardItem.Uuid);
-                            if (cardToUpdate != null && cardToUpdate is CardItem card)
-                            {
-                                card.Count += currentCardItem.Count;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // No existing row, insert a new one
-                        string insertSql = "INSERT INTO myCollection (uuid, count, condition, language, finish) VALUES (@uuid, @count, @condition, @language, @finish)";
-                        using (var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection))
-                        {
-                            insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
-                            insertCommand.Parameters.AddWithValue("@count", currentCardItem.Count);
-                            insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
-                            insertCommand.Parameters.AddWithValue("@language", currentCardItem.SelectedLanguage ?? "English");
-                            insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish ?? "Standard");
-
-                            await insertCommand.ExecuteNonQueryAsync();
-                        }
-                    }
-                }
-                MessageBox.Show("Database updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to update the database: {ex.Message}");
-                MessageBox.Show($"Failed to update the database: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                // Reload my collection
-                MyCollectionDatagrid.ItemsSource = null;
-                await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
-                DBAccess.connection.Close();
-
-                addToCollectionManager.cardItemsToAdd.Clear();
-                CardsToAddListView.Visibility = Visibility.Collapsed;
-                ButtonAddCardsToMyCollection.Visibility = Visibility.Collapsed;
-
-            }
+            addToCollectionManager.SubmitToCollection(sender, e);
         }
-        private async Task<int?> CheckForExistingCardAsync(CardItem cardItem)
-        {
-            string selectSql = @"SELECT id, count FROM myCollection WHERE uuid = @uuid AND condition = @condition AND language = @language AND finish = @finish";
-            try
-            {
-                using (var selectCommand = new SQLiteCommand(selectSql, DBAccess.connection))
-                {
-                    selectCommand.Parameters.AddWithValue("@uuid", cardItem.Uuid);
-                    selectCommand.Parameters.AddWithValue("@condition", cardItem.SelectedCondition);
-                    selectCommand.Parameters.AddWithValue("@language", cardItem.SelectedLanguage);
-                    selectCommand.Parameters.AddWithValue("@finish", cardItem.SelectedFinish);
 
-                    using (var reader = await selectCommand.ExecuteReaderAsync())
-                    {
-                        if (reader.Read())
-                        {
-                            return reader.GetInt32(0);  // 'id' is the first column in the SELECT query
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to check for existing card: {ex.Message}");
-                MessageBox.Show($"Failed to check for existing card: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-
-
-            }
-            return null; // Return null if no existing entry is found or an exception occurs
-        }
 
         #endregion
 
         #region Load data and populate UI elements
-        private async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
+        public async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
         {
             Debug.WriteLine("Loading data asynchronously...");
             try
@@ -1158,7 +1061,7 @@ namespace CardboardHoarder
             GridSearchAndFilter.Visibility = Visibility.Visible;
             CardCountLabel.Content = $"Cards shown: {allCards.Count}";
         }
-        private async void MenuMyCollection_Click(object sender, RoutedEventArgs e)
+        private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
             GridMyCollection.Visibility = Visibility.Visible;
