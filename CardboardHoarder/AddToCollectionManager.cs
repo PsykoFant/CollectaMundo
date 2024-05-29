@@ -101,7 +101,6 @@ namespace CardboardHoarder
                 }
             }
         }
-
         private async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
         {
             if (string.IsNullOrEmpty(uuid))
