@@ -62,6 +62,8 @@ namespace CardboardHoarder
         public ImageSource? ManaCostImage { get; set; }
         public class CardItem : CardSet, INotifyPropertyChanged
         {
+            public int? CardId { get; set; }
+
             private int _count;
             public event PropertyChangedEventHandler? PropertyChanged;
             protected virtual void OnPropertyChanged(string propertyName)
@@ -80,7 +82,7 @@ namespace CardboardHoarder
                     }
                 }
             }
-            private string _selectedCondition = "Near Mint"; // Set default value.
+            private string? _selectedCondition;
             public List<string> Conditions { get; } = new List<string>
                 {
                     "Mint",

@@ -511,6 +511,7 @@
                         <DataGridTextColumn Header="Language" Binding="{Binding SelectedLanguage}" />
                         <DataGridTextColumn Header="Condition" Binding="{Binding SelectedCondition}" />
                         <DataGridTextColumn Header="Count" Binding="{Binding Count}" />
+                        <DataGridTextColumn Header="Id" Binding="{Binding CardId}" />
                         <DataGridTemplateColumn Header="Action">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>

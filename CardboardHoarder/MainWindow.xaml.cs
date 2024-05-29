@@ -52,7 +52,7 @@ namespace CardboardHoarder
 
         // Query strings to load cards into datagrids
         public string myCollectionQuery = @"
-                    SELECT
+                    SELECT                        
                         c.name AS Name,
                         s.name AS SetName,
                         k.keyruneImage AS KeyRuneImage,
@@ -66,6 +66,7 @@ namespace CardboardHoarder
                         c.text AS RulesText,
                         c.manaValue AS ManaValue,
                         c.uuid AS Uuid,
+                        m.id AS CardId,
                         m.count AS Count,
                         m.condition AS Condition,
                         m.language AS Language,
@@ -105,6 +106,7 @@ namespace CardboardHoarder
                         t.text AS RulesText,
                         NULL AS ManaValue,  -- Tokens do not have manaValue
                         t.uuid AS Uuid,
+                        m.id AS CardId,
                         m.count AS Count,
                         m.condition AS Condition,
                         m.language AS Language,
@@ -848,9 +850,9 @@ namespace CardboardHoarder
         }
         private CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
         {
-            // Common property initialization
             var card = isCardItem ? (CardSet)new CardItem() : new CardSet();
 
+            // Initialize common properties
             card.Name = reader["Name"]?.ToString() ?? string.Empty;
             card.SetName = reader["SetName"]?.ToString() ?? string.Empty;
             card.SetIcon = ConvertImage(reader["KeyRuneImage"] as byte[]);
@@ -870,14 +872,19 @@ namespace CardboardHoarder
             if (isCardItem)
             {
                 var cardItem = card as CardItem;
+                // Check for DBNull before converting.
+                cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
                 cardItem.Count = Convert.ToInt32(reader["Count"]);
-                cardItem.SelectedCondition = reader["Condition"]?.ToString() ?? string.Empty;
-                cardItem.SelectedLanguage = reader["Language"]?.ToString() ?? string.Empty;
+                cardItem.SelectedCondition = reader["Condition"]?.ToString() ?? "Near Mint";
+                cardItem.SelectedLanguage = reader["Language"]?.ToString() ?? "English";
                 cardItem.SelectedFinish = reader["Finishes"]?.ToString() ?? string.Empty;
+
+                Debug.WriteLine(cardItem.CardId);
             }
 
             return card;
         }
+
         private BitmapImage? ConvertImage(byte[]? imageData)
         {
             if (imageData != null)
