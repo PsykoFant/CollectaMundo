@@ -245,6 +245,7 @@ namespace CardboardHoarder
             DBAccess.CloseConnection();
 
             CardsToAddListView.ItemsSource = addToCollectionManager.cardItemsToAdd;
+            CardsToEditListView.ItemsSource = addToCollectionManager.cardItemsToEdit;
         }
 
 
@@ -801,8 +802,16 @@ namespace CardboardHoarder
         {
             CardsToAddListView.Visibility = Visibility.Visible;
             ButtonAddCardsToMyCollection.Visibility = Visibility.Visible;
-            addToCollectionManager.AddToCollection_Click(sender, e);
+            addToCollectionManager.AddToCollection_Click(sender, e, addToCollectionManager.cardItemsToAdd);
         }
+
+        private void EditCollectionHandler(object sender, RoutedEventArgs e)
+        {
+            CardsToEditListView.Visibility = Visibility.Visible;
+            //ButtonEditCardsToMyCollection.Visibility = Visibility.Visible;
+            addToCollectionManager.AddToCollection_Click(sender, e, addToCollectionManager.cardItemsToEdit);
+        }
+
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
             addToCollectionManager.SubmitToCollection(sender, e);

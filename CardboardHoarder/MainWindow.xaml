@@ -499,15 +499,7 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="Card Types" Binding="{Binding Types}" />
-                        <DataGridTextColumn Header="Card Supertypes" Visibility="Collapsed" Binding="{Binding SuperTypes}" />
-                        <DataGridTextColumn Header="Card Subtypes" Visibility="Collapsed" Binding="{Binding SubTypes}" />
-                        <DataGridTextColumn Header="Card type" Visibility="Collapsed" Binding="{Binding Type}" />
-                        <!--<DataGridTextColumn Header="Keywords" Visibility="Collapsed" Binding="{Binding Keywords}" />-->
-                        <DataGridTextColumn Header="Rules Text" Visibility="Collapsed" Binding="{Binding Text}" />
-                        <DataGridTextColumn Header="Mana Value" Visibility="Collapsed" Binding="{Binding ManaValue}" />
-                        <DataGridTextColumn Header="Uuid" Visibility="Collapsed" Binding="{Binding Uuid}" />
                         <DataGridTextColumn Header="Finish" Binding="{Binding SelectedFinish}" />
-						<DataGridTextColumn Header="Side" Visibility="Collapsed" Binding="{Binding Side}" />
                         <DataGridTextColumn Header="Language" Binding="{Binding SelectedLanguage}" />
                         <DataGridTextColumn Header="Condition" Binding="{Binding SelectedCondition}" />
                         <DataGridTextColumn Header="Count" Binding="{Binding Count}" />
@@ -515,7 +507,7 @@
                         <DataGridTemplateColumn Header="Action">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Content="Edit" Click="AddToCollectionHandler"/>
+                                    <Button Content="Edit" Click="EditCollectionHandler"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -523,7 +515,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
                 <!--Cards to edit-->
-                <ListView x:Name="CardsToEditListView" Margin="0,40,0,0" VerticalAlignment="Top" Height="211" HorizontalAlignment="Center" Width="1300">
+                <ListView x:Name="CardsToEditListView" Margin="0,40,0,0" VerticalAlignment="Top" Height="211" HorizontalAlignment="Center" Width="1300" Visibility="Collapsed">
                     <ListView.View>
                         <GridView>
                             <GridViewColumn Header="Card Name" DisplayMemberBinding="{Binding Name}"/>

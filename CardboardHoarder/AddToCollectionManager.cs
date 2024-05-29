@@ -10,10 +10,12 @@ namespace CardboardHoarder
     public class AddToCollectionManager
     {
         public ObservableCollection<CardSet.CardItem> cardItemsToAdd { get; private set; }
+        public ObservableCollection<CardSet.CardItem> cardItemsToEdit { get; private set; }
 
         public AddToCollectionManager(ObservableCollection<CardSet.CardItem> cardItems = null)
         {
             cardItemsToAdd = cardItems ?? new ObservableCollection<CardSet.CardItem>();
+            cardItemsToEdit = cardItems ?? new ObservableCollection<CardSet.CardItem>();
         }
 
         public void IncrementCount_Click(object sender, RoutedEventArgs e)
@@ -43,7 +45,7 @@ namespace CardboardHoarder
                 }
             }
         }
-        public async void AddToCollection_Click(object sender, RoutedEventArgs e)
+        public async void AddToCollection_Click(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
         {
             var button = sender as Button;
             if (button?.DataContext is CardSet selectedCard)
@@ -79,7 +81,7 @@ namespace CardboardHoarder
                         SelectedLanguage = "English"
                     };
 
-                    cardItemsToAdd.Add(newItem);
+                    targetCollection.Add(newItem);
                 }
                 catch (Exception ex)
                 {
@@ -88,6 +90,7 @@ namespace CardboardHoarder
                 }
             }
         }
+
         private async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
         {
             if (string.IsNullOrEmpty(uuid))
@@ -114,7 +117,6 @@ namespace CardboardHoarder
             }
             return languages;
         }
-
         public async void SubmitToCollection(object sender, RoutedEventArgs e)
         {
             if (DBAccess.connection == null)
