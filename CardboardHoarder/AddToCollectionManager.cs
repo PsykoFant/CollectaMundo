@@ -12,10 +12,10 @@ namespace CardboardHoarder
         public ObservableCollection<CardSet.CardItem> cardItemsToAdd { get; private set; }
         public ObservableCollection<CardSet.CardItem> cardItemsToEdit { get; private set; }
 
-        public AddToCollectionManager(ObservableCollection<CardSet.CardItem> cardItems = null)
+        public AddToCollectionManager()
         {
-            cardItemsToAdd = cardItems ?? new ObservableCollection<CardSet.CardItem>();
-            cardItemsToEdit = cardItems ?? new ObservableCollection<CardSet.CardItem>();
+            cardItemsToAdd = new ObservableCollection<CardSet.CardItem>();
+            cardItemsToEdit = new ObservableCollection<CardSet.CardItem>();
         }
 
         public void IncrementCount_Click(object sender, RoutedEventArgs e)

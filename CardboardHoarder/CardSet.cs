@@ -93,7 +93,7 @@ namespace CardboardHoarder
                     "Played",
                     "Poor"
                 };
-            public string SelectedCondition
+            public string? SelectedCondition
             {
                 get => _selectedCondition;
                 set

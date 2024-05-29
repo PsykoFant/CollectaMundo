@@ -878,18 +878,15 @@ namespace CardboardHoarder
             card.Side = reader["Side"]?.ToString() ?? string.Empty;
             card.Finishes = reader["Finishes"]?.ToString() ?? string.Empty;
 
-            if (isCardItem)
+            if (card is CardItem cardItem)
             {
-                var cardItem = card as CardItem;
-                // Check for DBNull before converting.
                 cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
                 cardItem.Count = Convert.ToInt32(reader["Count"]);
                 cardItem.SelectedCondition = reader["Condition"]?.ToString() ?? "Near Mint";
                 cardItem.SelectedLanguage = reader["Language"]?.ToString() ?? "English";
                 cardItem.SelectedFinish = reader["Finishes"]?.ToString() ?? string.Empty;
-
-                Debug.WriteLine(cardItem.CardId);
             }
+
 
             return card;
         }
