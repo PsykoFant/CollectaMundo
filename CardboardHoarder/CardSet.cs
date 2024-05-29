@@ -64,12 +64,12 @@ namespace CardboardHoarder
         {
             public int? CardId { get; set; }
 
-            private int _count;
             public event PropertyChangedEventHandler? PropertyChanged;
             protected virtual void OnPropertyChanged(string propertyName)
             {
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             }
+            private int _count;
             public int Count
             {
                 get => _count;

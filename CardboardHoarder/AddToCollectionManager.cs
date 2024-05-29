@@ -59,15 +59,16 @@ namespace CardboardHoarder
                 try
                 {
                     var finishes = selectedCard.Finishes?.Split(',')
-                                     .Select(f => f.Trim())
-                                     .ToList() ?? new List<string>();
+                                         .Select(f => f.Trim())
+                                         .ToList() ?? new List<string>();
 
                     // Open the connection asynchronously and fetch languages
                     await DBAccess.OpenConnectionAsync();
                     var languages = await FetchLanguagesForCardAsync(selectedCard.Uuid);
                     DBAccess.CloseConnection();
 
-                    languages.Insert(0, "English"); // Ensure "English" is always an option and default
+                    // Decide the default language: set it to English if available, otherwise use the first available language
+                    string defaultLanguage = languages.Contains("English") ? "English" : languages.FirstOrDefault() ?? "English";
 
                     var newItem = new CardSet.CardItem
                     {
@@ -78,8 +79,18 @@ namespace CardboardHoarder
                         AvailableFinishes = finishes,
                         SelectedFinish = finishes.FirstOrDefault(),
                         Languages = languages,
-                        SelectedLanguage = "English"
+                        SelectedLanguage = defaultLanguage,
+                        SelectedCondition = "Near Mint",
                     };
+
+                    // Adjust properties if the selected card is to edit an existing card item.
+                    if (selectedCard is CardItem cardItem)
+                    {
+                        newItem.Count = cardItem.Count;
+                        newItem.SelectedFinish = cardItem.SelectedFinish;
+                        newItem.SelectedLanguage = cardItem.SelectedLanguage ?? defaultLanguage;
+                        newItem.SelectedCondition = cardItem.SelectedCondition;
+                    }
 
                     targetCollection.Add(newItem);
                 }
@@ -117,6 +128,29 @@ namespace CardboardHoarder
             }
             return languages;
         }
+        private async Task<List<string>> FetchFinishesForCardAsync(string uuid)
+        {
+            var finishes = new List<string>();
+            // Example SQL Command (adjust based on actual database schema and tables)
+            string query = @"SELECT finishes FROM cards WHERE uuid = @uuid UNION SELECT finishes FROM tokens WHERE uuid = @uuid";
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@uuid", uuid);
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (reader.Read())
+                    {
+                        var finish = reader["Finishes"].ToString();
+                        if (!string.IsNullOrEmpty(finish))
+                        {
+                            finishes.AddRange(finish.Split(',').Select(f => f.Trim()));
+                        }
+                    }
+                }
+            }
+            return finishes.Distinct().ToList();
+        }
+
         public async void SubmitToCollection(object sender, RoutedEventArgs e)
         {
             if (DBAccess.connection == null)
