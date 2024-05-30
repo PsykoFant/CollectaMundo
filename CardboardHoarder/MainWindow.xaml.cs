@@ -253,7 +253,6 @@ namespace CardboardHoarder
             CardsToEditListView.ItemsSource = addToCollectionManager.cardItemsToEdit;
         }
 
-
         #region Filter elements handling        
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
@@ -794,60 +793,62 @@ namespace CardboardHoarder
 
         #endregion
 
-        #region Pick up events for add to collection 
+        #region Pick up events for add to or edit collection 
         private void IncrementCountHandler(object sender, RoutedEventArgs e)
         {
             addToCollectionManager.IncrementCount_Click(sender, e);
         }
         private void DecrementCountHandler(object sender, RoutedEventArgs e)
         {
-            Button button = sender as Button;
-            if (button != null && button.DataContext is CardSet.CardItem cardItem)
+            if (sender is Button button)  // This checks if sender is a Button and assigns it to button if true
             {
-                // Determine which ListView initiated the event and pass the appropriate collection
-                ObservableCollection<CardSet.CardItem> targetCollection =
-                    (CardsToEditListView.Items.Contains(cardItem)) ? addToCollectionManager.cardItemsToEdit : addToCollectionManager.cardItemsToAdd;
-
-                addToCollectionManager.DecrementCount_Click(sender, e, targetCollection);
-
-                // After the operation, check if the collection is empty
-                if (targetCollection.Count == 0)
+                if (button.DataContext is CardSet.CardItem cardItem)
                 {
-                    // Hide the corresponding ListView based on which collection is empty
-                    if (targetCollection == addToCollectionManager.cardItemsToEdit)
+                    // Determine which ListView initiated the event and pass the appropriate collection
+                    ObservableCollection<CardSet.CardItem> targetCollection =
+                        (CardsToEditListView.Items.Contains(cardItem)) ? addToCollectionManager.cardItemsToEdit : addToCollectionManager.cardItemsToAdd;
+
+                    addToCollectionManager.DecrementCount_Click(sender, e, targetCollection);
+
+                    // After the operation, check if the collection is empty
+                    if (targetCollection.Count == 0)
                     {
-                        CardsToEditListView.Visibility = Visibility.Collapsed;
-                        ButtonEditCardsInMyCollection.Visibility = Visibility.Collapsed;
-                    }
-                    else
-                    {
-                        ButtonAddCardsToMyCollection.Visibility = Visibility.Collapsed;
-                        CardsToAddListView.Visibility = Visibility.Collapsed;
+                        // Hide the corresponding ListView based on which collection is empty
+                        if (targetCollection == addToCollectionManager.cardItemsToEdit)
+                        {
+                            CardsToEditListView.Visibility = Visibility.Collapsed;
+                            ButtonEditCardsInMyCollection.Visibility = Visibility.Collapsed;
+                        }
+                        else
+                        {
+                            CardsToAddListView.Visibility = Visibility.Collapsed;
+                            ButtonAddCardsToMyCollection.Visibility = Visibility.Collapsed;
+                        }
                     }
                 }
             }
+            else
+            {
+                // Optionally handle the case where sender is not a Button
+                Debug.WriteLine("Sender is not a Button. This handler should not be used for non-button elements.");
+            }
         }
-
-
         private void AddToCollectionHandler(object sender, RoutedEventArgs e)
         {
             CardsToAddListView.Visibility = Visibility.Visible;
             ButtonAddCardsToMyCollection.Visibility = Visibility.Visible;
             addToCollectionManager.AddToCollection_Click(sender, e, addToCollectionManager.cardItemsToAdd);
         }
-
         private void EditCollectionHandler(object sender, RoutedEventArgs e)
         {
             CardsToEditListView.Visibility = Visibility.Visible;
             ButtonEditCardsInMyCollection.Visibility = Visibility.Visible;
             addToCollectionManager.AddToCollection_Click(sender, e, addToCollectionManager.cardItemsToEdit);
         }
-
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
             addToCollectionManager.SubmitToCollection(sender, e);
         }
-
 
         #endregion
 
@@ -915,14 +916,12 @@ namespace CardboardHoarder
                 cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
                 cardItem.Count = Convert.ToInt32(reader["Count"]);
                 cardItem.SelectedCondition = reader["Condition"]?.ToString() ?? "Near Mint";
-                //cardItem.SelectedLanguage = reader["Language"]?.ToString() ?? "English";
                 cardItem.SelectedFinish = reader["Finishes"]?.ToString() ?? string.Empty;
             }
 
 
             return card;
         }
-
         private BitmapImage? ConvertImage(byte[]? imageData)
         {
             if (imageData != null)
