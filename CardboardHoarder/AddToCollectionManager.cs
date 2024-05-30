@@ -28,9 +28,8 @@ namespace CardboardHoarder
                 cardItem.Count++;
             }
         }
-        public void DecrementCount_Click(object sender, RoutedEventArgs e)
+        public void DecrementCount_Click(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
         {
-            // Retrieve the DataContext (bound item) of the button that was clicked
             var button = sender as Button;
             if (button?.DataContext is CardSet.CardItem cardItem)
             {
@@ -40,8 +39,8 @@ namespace CardboardHoarder
                 // Check if the count has dropped to zero or below
                 if (cardItem.Count <= 0)
                 {
-                    // Find and remove the card item from the ObservableCollection
-                    cardItemsToAdd.Remove(cardItem);
+                    // Remove the card item from the specified ObservableCollection
+                    targetCollection.Remove(cardItem);
                 }
             }
         }
@@ -67,9 +66,6 @@ namespace CardboardHoarder
                     var languages = await FetchLanguagesForCardAsync(selectedCard.Uuid);
                     DBAccess.CloseConnection();
 
-                    // Decide the default language: set it to English if available, otherwise use the first available language
-                    string defaultLanguage = languages.Contains("English") ? "English" : languages.FirstOrDefault() ?? "English";
-
                     var newItem = new CardSet.CardItem
                     {
                         Name = selectedCard.Name,
@@ -78,8 +74,8 @@ namespace CardboardHoarder
                         Count = 1,
                         AvailableFinishes = finishes,
                         SelectedFinish = finishes.FirstOrDefault(),
-                        Languages = languages,
-                        SelectedLanguage = defaultLanguage,
+                        Language = selectedCard.Language,
+                        OtherLanguages = languages,
                         SelectedCondition = "Near Mint",
                     };
 
@@ -88,7 +84,6 @@ namespace CardboardHoarder
                     {
                         newItem.Count = cardItem.Count;
                         newItem.SelectedFinish = cardItem.SelectedFinish;
-                        newItem.SelectedLanguage = cardItem.SelectedLanguage ?? defaultLanguage;
                         newItem.SelectedCondition = cardItem.SelectedCondition;
                     }
 
@@ -109,7 +104,11 @@ namespace CardboardHoarder
             }
 
             List<string> languages = new List<string>();
-            string query = "SELECT language FROM cardForeignData WHERE uuid = @uuid";
+            // Updated query to select language from both 'cardForeignData' and 'cards' tables
+            string query = @"
+                SELECT language FROM cardForeignData WHERE uuid = @uuid
+                UNION
+                SELECT language FROM cards WHERE uuid = @uuid";
             using (var command = new SQLiteCommand(query, DBAccess.connection))
             {
                 command.Parameters.AddWithValue("@uuid", uuid);
@@ -127,6 +126,7 @@ namespace CardboardHoarder
             }
             return languages;
         }
+
         private async Task<List<string>> FetchFinishesForCardAsync(string uuid)
         {
             var finishes = new List<string>();
@@ -191,7 +191,7 @@ namespace CardboardHoarder
                             insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
                             insertCommand.Parameters.AddWithValue("@count", currentCardItem.Count);
                             insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
-                            insertCommand.Parameters.AddWithValue("@language", currentCardItem.SelectedLanguage ?? "English");
+                            insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
                             insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish ?? "Standard");
 
                             await insertCommand.ExecuteNonQueryAsync();
@@ -227,7 +227,7 @@ namespace CardboardHoarder
                 {
                     selectCommand.Parameters.AddWithValue("@uuid", cardItem.Uuid);
                     selectCommand.Parameters.AddWithValue("@condition", cardItem.SelectedCondition);
-                    selectCommand.Parameters.AddWithValue("@language", cardItem.SelectedLanguage);
+                    selectCommand.Parameters.AddWithValue("@language", cardItem.Language);
                     selectCommand.Parameters.AddWithValue("@finish", cardItem.SelectedFinish);
 
                     using (var reader = await selectCommand.ExecuteReaderAsync())

@@ -445,8 +445,8 @@
                             <GridViewColumn Header="Language">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding Languages}"
-                                        SelectedItem="{Binding SelectedLanguage, UpdateSourceTrigger=PropertyChanged}">
+                                        <ComboBox ItemsSource="{Binding OtherLanguages}"
+                                        SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}">
                                         </ComboBox>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
@@ -500,7 +500,7 @@
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="Card Types" Binding="{Binding Types}" />
                         <DataGridTextColumn Header="Finish" Binding="{Binding SelectedFinish}" />
-                        <DataGridTextColumn Header="Language" Binding="{Binding SelectedLanguage}" />
+                        <DataGridTextColumn Header="Language" Binding="{Binding Language}" />
                         <DataGridTextColumn Header="Condition" Binding="{Binding SelectedCondition}" />
                         <DataGridTextColumn Header="Count" Binding="{Binding Count}" />
                         <DataGridTextColumn Header="Id" Binding="{Binding CardId}" />
@@ -549,8 +549,8 @@
                             <GridViewColumn Header="Language">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding Languages}"
-                                        SelectedItem="{Binding SelectedLanguage, UpdateSourceTrigger=PropertyChanged}">
+                                        <ComboBox ItemsSource="{Binding OtherLanguages}"
+                                        SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}">
                                         </ComboBox>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
@@ -572,6 +572,7 @@
                         </GridView>
                     </ListView.View>
                 </ListView>
+                <Button x:Name="ButtonEditCardsInMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Left" Margin="1111,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonAddCardsToMyCollection_Click" Visibility="Collapsed"/>
 
 
             </Grid>

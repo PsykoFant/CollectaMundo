@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
@@ -65,6 +66,7 @@ namespace CardboardHoarder
                         COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
                         c.text AS RulesText,
                         c.manaValue AS ManaValue,
+                        c.language AS Language,
                         c.uuid AS Uuid,
                         m.id AS CardId,
                         m.count AS Count,
@@ -105,6 +107,7 @@ namespace CardboardHoarder
                         t.keywords AS Keywords,
                         t.text AS RulesText,
                         NULL AS ManaValue,  -- Tokens do not have manaValue
+                        t.language AS Language,
                         t.uuid AS Uuid,
                         m.id AS CardId,
                         m.count AS Count,
@@ -138,6 +141,7 @@ namespace CardboardHoarder
                         COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
                         c.text AS RulesText, 
                         c.manaValue AS ManaValue, 
+                        c.language AS Language,
                         c.uuid AS Uuid, 
                         c.finishes AS Finishes, 
                         c.side AS Side 
@@ -170,6 +174,7 @@ namespace CardboardHoarder
                         t.keywords AS Keywords, 
                         t.text AS RulesText, 
                         NULL AS ManaValue,  -- 'manaValue' does not exist in 'tokens'
+                        t.language AS Language,
                         t.uuid AS Uuid, 
                         t.finishes AS Finishes, 
                         t.side AS Side 
@@ -796,8 +801,34 @@ namespace CardboardHoarder
         }
         private void DecrementCountHandler(object sender, RoutedEventArgs e)
         {
-            addToCollectionManager.DecrementCount_Click(sender, e);
+            Button button = sender as Button;
+            if (button != null && button.DataContext is CardSet.CardItem cardItem)
+            {
+                // Determine which ListView initiated the event and pass the appropriate collection
+                ObservableCollection<CardSet.CardItem> targetCollection =
+                    (CardsToEditListView.Items.Contains(cardItem)) ? addToCollectionManager.cardItemsToEdit : addToCollectionManager.cardItemsToAdd;
+
+                addToCollectionManager.DecrementCount_Click(sender, e, targetCollection);
+
+                // After the operation, check if the collection is empty
+                if (targetCollection.Count == 0)
+                {
+                    // Hide the corresponding ListView based on which collection is empty
+                    if (targetCollection == addToCollectionManager.cardItemsToEdit)
+                    {
+                        CardsToEditListView.Visibility = Visibility.Collapsed;
+                        ButtonEditCardsInMyCollection.Visibility = Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        ButtonAddCardsToMyCollection.Visibility = Visibility.Collapsed;
+                        CardsToAddListView.Visibility = Visibility.Collapsed;
+                    }
+                }
+            }
         }
+
+
         private void AddToCollectionHandler(object sender, RoutedEventArgs e)
         {
             CardsToAddListView.Visibility = Visibility.Visible;
@@ -808,7 +839,7 @@ namespace CardboardHoarder
         private void EditCollectionHandler(object sender, RoutedEventArgs e)
         {
             CardsToEditListView.Visibility = Visibility.Visible;
-            //ButtonEditCardsToMyCollection.Visibility = Visibility.Visible;
+            ButtonEditCardsInMyCollection.Visibility = Visibility.Visible;
             addToCollectionManager.AddToCollection_Click(sender, e, addToCollectionManager.cardItemsToEdit);
         }
 
@@ -874,6 +905,7 @@ namespace CardboardHoarder
             card.Keywords = reader["Keywords"]?.ToString() ?? string.Empty;
             card.Text = reader["RulesText"]?.ToString() ?? string.Empty;
             card.ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0;
+            card.Language = reader["Language"]?.ToString() ?? string.Empty;
             card.Uuid = reader["Uuid"]?.ToString() ?? string.Empty;
             card.Side = reader["Side"]?.ToString() ?? string.Empty;
             card.Finishes = reader["Finishes"]?.ToString() ?? string.Empty;
@@ -883,7 +915,7 @@ namespace CardboardHoarder
                 cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
                 cardItem.Count = Convert.ToInt32(reader["Count"]);
                 cardItem.SelectedCondition = reader["Condition"]?.ToString() ?? "Near Mint";
-                cardItem.SelectedLanguage = reader["Language"]?.ToString() ?? "English";
+                //cardItem.SelectedLanguage = reader["Language"]?.ToString() ?? "English";
                 cardItem.SelectedFinish = reader["Finishes"]?.ToString() ?? string.Empty;
             }
 
