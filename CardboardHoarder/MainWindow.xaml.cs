@@ -847,7 +847,12 @@ namespace CardboardHoarder
         }
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
-            addToCollectionManager.SubmitToCollection(sender, e);
+            addToCollectionManager.SubmitNewCardsToCollection(sender, e);
+        }
+        private void ButtonEditCardsInMyCollection_Click(object sender, RoutedEventArgs e)
+        {
+            Debug.WriteLine("Submit edit button was clicked");
+            addToCollectionManager.SubmitEditedCardsToCollection(sender, e);
         }
 
         #endregion

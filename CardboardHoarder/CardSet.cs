@@ -64,7 +64,6 @@ namespace CardboardHoarder
         public class CardItem : CardSet, INotifyPropertyChanged
         {
             public int? CardId { get; set; }
-
             public event PropertyChangedEventHandler? PropertyChanged;
             protected virtual void OnPropertyChanged(string propertyName)
             {
