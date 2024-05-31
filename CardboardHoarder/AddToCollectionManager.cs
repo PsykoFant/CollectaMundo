@@ -55,13 +55,16 @@ namespace CardboardHoarder
 
                 try
                 {
-                    var finishes = selectedCard.Finishes?.Split(',')
-                                         .Select(f => f.Trim())
-                                         .ToList() ?? new List<string>();
+                    //var finishes = selectedCard.Finishes?.Split(',')
+                    //                     .Select(f => f.Trim())
+                    //                     .ToList() ?? new List<string>();
+
+
 
                     // Open the connection asynchronously and fetch languages
                     await DBAccess.OpenConnectionAsync();
                     var languages = await FetchLanguagesForCardAsync(selectedCard.Uuid);
+                    var finishes = await FetchFinishesForCardAsync(selectedCard.Uuid);
                     DBAccess.CloseConnection();
 
                     var newItem = new CardSet.CardItem
@@ -128,7 +131,6 @@ namespace CardboardHoarder
         private async Task<List<string>> FetchFinishesForCardAsync(string uuid)
         {
             var finishes = new List<string>();
-            // Example SQL Command (adjust based on actual database schema and tables)
             string query = @"SELECT finishes FROM cards WHERE uuid = @uuid UNION SELECT finishes FROM tokens WHERE uuid = @uuid";
             using (var command = new SQLiteCommand(query, DBAccess.connection))
             {
@@ -232,22 +234,25 @@ namespace CardboardHoarder
                     if (existingCardId.HasValue)
                     {
                         Debug.WriteLine("Such a card already exists!");
-                        // Update the existing row in the myCollection table
-                        string updateSql = @"UPDATE myCollection SET count = @newCount WHERE id = @id";
-                        using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
+                        // Update the existing row in the myCollection table if it is not the same card
+                        if (existingCardId != currentCardItem.CardId)
                         {
-                            updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.Count);
-                            updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
+                            string updateSql = @"UPDATE myCollection SET count = count + @newCount WHERE id = @id";
+                            using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
+                            {
+                                updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.Count);
+                                updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
 
-                            await updateCommand.ExecuteNonQueryAsync();
-                        }
+                                await updateCommand.ExecuteNonQueryAsync();
+                            }
 
-                        // Additionally, remove the currentCardItem from the table as it's being edited and updated
-                        string deleteSql = "DELETE FROM myCollection WHERE id = @id";
-                        using (var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection))
-                        {
-                            deleteCommand.Parameters.AddWithValue("@id", currentCardItem.CardId);
-                            await deleteCommand.ExecuteNonQueryAsync();
+                            // Additionally, remove the currentCardItem from the table as it's being edited and updated
+                            string deleteSql = "DELETE FROM myCollection WHERE id = @id";
+                            using (var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection))
+                            {
+                                deleteCommand.Parameters.AddWithValue("@id", currentCardItem.CardId);
+                                await deleteCommand.ExecuteNonQueryAsync();
+                            }
                         }
                     }
                     else
@@ -286,7 +291,6 @@ namespace CardboardHoarder
                 MainWindow.CurrentInstance.ButtonEditCardsInMyCollection.Visibility = Visibility.Collapsed;
             }
         }
-
         private async Task<int?> CheckForExistingCardAsync(CardItem cardItem)
         {
             string selectSql = @"SELECT id, count FROM myCollection WHERE uuid = @uuid AND condition = @condition AND language = @language AND finish = @finish";

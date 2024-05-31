@@ -541,7 +541,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding AvailableFinishes}"
-                                        SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}">
+                                            SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}">
                                         </ComboBox>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
@@ -550,7 +550,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding OtherLanguages}"
-                                        SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}">
+                                            SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}">
                                         </ComboBox>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>

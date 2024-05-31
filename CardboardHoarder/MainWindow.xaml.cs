@@ -66,7 +66,6 @@ namespace CardboardHoarder
                         COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
                         c.text AS RulesText,
                         c.manaValue AS ManaValue,
-                        c.language AS Language,
                         c.uuid AS Uuid,
                         m.id AS CardId,
                         m.count AS Count,
@@ -107,7 +106,6 @@ namespace CardboardHoarder
                         t.keywords AS Keywords,
                         t.text AS RulesText,
                         NULL AS ManaValue,  -- Tokens do not have manaValue
-                        t.language AS Language,
                         t.uuid AS Uuid,
                         m.id AS CardId,
                         m.count AS Count,
@@ -851,7 +849,6 @@ namespace CardboardHoarder
         }
         private void ButtonEditCardsInMyCollection_Click(object sender, RoutedEventArgs e)
         {
-            Debug.WriteLine("Submit edit button was clicked");
             addToCollectionManager.SubmitEditedCardsToCollection(sender, e);
         }
 
