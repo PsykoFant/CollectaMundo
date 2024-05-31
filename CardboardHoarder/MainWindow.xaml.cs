@@ -818,7 +818,7 @@ namespace CardboardHoarder
                     {
                         addToCollectionManager.DecrementCount_Click(sender, e, targetCollection);
 
-                        // If there is nothing in cardItemsToAdd, hide listview and buttons
+                        // If there is nothing in cardItemsToAdd, hide listview and button
                         if (targetCollection.Count == 0)
                         {
                             CardsToAddListView.Visibility = Visibility.Collapsed;
