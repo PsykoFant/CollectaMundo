@@ -35,10 +35,14 @@ namespace CardboardHoarder
                 cardItem.Count--;
 
                 // Check if the count has dropped to zero or below
-                if (cardItem.Count <= 0)
+
+                if (targetCollection == cardItemsToAdd)
                 {
-                    // Remove the card item from the specified ObservableCollection
-                    targetCollection.Remove(cardItem);
+                    if (cardItem.Count <= 0)
+                    {
+                        // Remove the card item from the specified ObservableCollection
+                        targetCollection.Remove(cardItem);
+                    }
                 }
             }
         }
@@ -231,22 +235,33 @@ namespace CardboardHoarder
                 foreach (var currentCardItem in cardItemsToEdit)
                 {
                     var existingCardId = await CheckForExistingCardAsync(currentCardItem);
-                    if (existingCardId.HasValue)
+                    if (existingCardId.HasValue && existingCardId != currentCardItem.CardId)
                     {
-                        Debug.WriteLine("Such a card already exists!");
                         // Update the existing row in the myCollection table if it is not the same card
-                        if (existingCardId != currentCardItem.CardId)
+                        string updateSql = @"UPDATE myCollection SET count = count + @newCount WHERE id = @id";
+                        using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
                         {
-                            string updateSql = @"UPDATE myCollection SET count = count + @newCount WHERE id = @id";
-                            using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
-                            {
-                                updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.Count);
-                                updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
+                            updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.Count);
+                            updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
 
-                                await updateCommand.ExecuteNonQueryAsync();
-                            }
+                            await updateCommand.ExecuteNonQueryAsync();
+                        }
 
-                            // Additionally, remove the currentCardItem from the table as it's being edited and updated
+                        // Additionally, remove the currentCardItem from the table as it's being edited and updated
+                        string deleteSql = "DELETE FROM myCollection WHERE id = @id";
+                        using (var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection))
+                        {
+                            deleteCommand.Parameters.AddWithValue("@id", currentCardItem.CardId);
+                            await deleteCommand.ExecuteNonQueryAsync();
+                        }
+                    }
+                    else
+                    {
+                        // If the count is set to 0, delete the card from myCollection
+                        if (currentCardItem.Count == 0)
+                        {
+                            Debug.WriteLine($"Count set to 0, deleting card with id {currentCardItem.CardId}");
+
                             string deleteSql = "DELETE FROM myCollection WHERE id = @id";
                             using (var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection))
                             {
@@ -254,25 +269,24 @@ namespace CardboardHoarder
                                 await deleteCommand.ExecuteNonQueryAsync();
                             }
                         }
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"No card like this exists already - updating card with id {currentCardItem.CardId}");
-                        // If there's no matching existing card ID, update the card in myCollection
-                        string updateSql = @"UPDATE myCollection SET count = @count, condition = @condition, language = @language, finish = @finish WHERE id = @cardId";
-                        using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
+                        else
                         {
-                            updateCommand.Parameters.AddWithValue("@count", currentCardItem.Count);
-                            updateCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
-                            updateCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
-                            updateCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
-                            updateCommand.Parameters.AddWithValue("@cardId", currentCardItem.CardId);
+                            Debug.WriteLine($"No card like this exists already - updating card with id {currentCardItem.CardId}");
+                            // If there's no matching existing card ID, update the card in myCollection
+                            string updateSql = @"UPDATE myCollection SET count = @count, condition = @condition, language = @language, finish = @finish WHERE id = @cardId";
+                            using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
+                            {
+                                updateCommand.Parameters.AddWithValue("@count", currentCardItem.Count);
+                                updateCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
+                                updateCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
+                                updateCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
+                                updateCommand.Parameters.AddWithValue("@cardId", currentCardItem.CardId);
 
-                            await updateCommand.ExecuteNonQueryAsync();
+                                await updateCommand.ExecuteNonQueryAsync();
+                            }
                         }
                     }
                 }
-                MessageBox.Show("Hmmm!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {

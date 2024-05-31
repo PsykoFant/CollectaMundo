@@ -572,7 +572,7 @@
                         </GridView>
                     </ListView.View>
                 </ListView>
-                <Button x:Name="ButtonEditCardsInMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Left" Margin="1111,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonEditCardsInMyCollection_Click" Visibility="Collapsed"/>
+                <Button x:Name="ButtonEditCardsInMyCollection" Content="Update selected cards" HorizontalAlignment="Left" Margin="1111,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonEditCardsInMyCollection_Click" Visibility="Collapsed"/>
 
             </Grid>
         </Grid>

@@ -806,29 +806,26 @@ namespace CardboardHoarder
                     ObservableCollection<CardSet.CardItem> targetCollection =
                         (CardsToEditListView.Items.Contains(cardItem)) ? addToCollectionManager.cardItemsToEdit : addToCollectionManager.cardItemsToAdd;
 
-                    addToCollectionManager.DecrementCount_Click(sender, e, targetCollection);
-
-                    // After the operation, check if the collection is empty
-                    if (targetCollection.Count == 0)
+                    // Only decrement for cardItemsToEdit if count is above 0
+                    if (targetCollection == addToCollectionManager.cardItemsToEdit)
                     {
-                        // Hide the corresponding ListView based on which collection is empty
-                        if (targetCollection == addToCollectionManager.cardItemsToEdit)
+                        if (cardItem.Count > 0)
                         {
-                            CardsToEditListView.Visibility = Visibility.Collapsed;
-                            ButtonEditCardsInMyCollection.Visibility = Visibility.Collapsed;
+                            addToCollectionManager.DecrementCount_Click(sender, e, targetCollection);
                         }
-                        else
+                    }
+                    else
+                    {
+                        addToCollectionManager.DecrementCount_Click(sender, e, targetCollection);
+
+                        // If there is nothing in cardItemsToAdd, hide listview and buttons
+                        if (targetCollection.Count == 0)
                         {
                             CardsToAddListView.Visibility = Visibility.Collapsed;
                             ButtonAddCardsToMyCollection.Visibility = Visibility.Collapsed;
                         }
                     }
                 }
-            }
-            else
-            {
-                // Optionally handle the case where sender is not a Button
-                Debug.WriteLine("Sender is not a Button. This handler should not be used for non-button elements.");
             }
         }
         private void AddToCollectionHandler(object sender, RoutedEventArgs e)
