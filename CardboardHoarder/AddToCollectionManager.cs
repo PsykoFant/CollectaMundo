@@ -47,7 +47,7 @@ namespace CardboardHoarder
                 }
             }
         }
-        public async void AddToCollection_Click(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
+        public async void EditOrAddToCollection_Click(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
         {
             var button = sender as Button;
             if (button?.DataContext is CardSet selectedCard)
@@ -60,11 +60,6 @@ namespace CardboardHoarder
 
                 try
                 {
-                    //var finishes = selectedCard.Finishes?.Split(',')
-                    //                     .Select(f => f.Trim())
-                    //                     .ToList() ?? new List<string>();
-
-
 
                     // Open the connection asynchronously and fetch languages
                     await DBAccess.OpenConnectionAsync();
@@ -99,7 +94,7 @@ namespace CardboardHoarder
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Failed to add card to collection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Debug.WriteLine($"AddToCollection_Click error: {ex.Message}");
+                    Debug.WriteLine($"EditOrAddToCollection_Click error: {ex.Message}");
                 }
             }
         }

@@ -403,7 +403,7 @@
                         <DataGridTemplateColumn Header="Action">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Content="Add to collection" Click="AddToCollectionHandler"/>
+                                    <Button Content="Add to collection" Click="EditOrAddToCollectionHandler"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

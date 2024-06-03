@@ -828,17 +828,17 @@ namespace CardboardHoarder
                 }
             }
         }
-        private void AddToCollectionHandler(object sender, RoutedEventArgs e)
+        private void EditOrAddToCollectionHandler(object sender, RoutedEventArgs e)
         {
             CardsToAddListView.Visibility = Visibility.Visible;
             ButtonAddCardsToMyCollection.Visibility = Visibility.Visible;
-            addToCollectionManager.AddToCollection_Click(sender, e, addToCollectionManager.cardItemsToAdd);
+            addToCollectionManager.EditOrAddToCollection_Click(sender, e, addToCollectionManager.cardItemsToAdd);
         }
         private void EditCollectionHandler(object sender, RoutedEventArgs e)
         {
             CardsToEditListView.Visibility = Visibility.Visible;
             ButtonEditCardsInMyCollection.Visibility = Visibility.Visible;
-            addToCollectionManager.AddToCollection_Click(sender, e, addToCollectionManager.cardItemsToEdit);
+            addToCollectionManager.EditOrAddToCollection_Click(sender, e, addToCollectionManager.cardItemsToEdit);
         }
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
