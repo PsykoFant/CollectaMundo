@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using ServiceStack;
+using System.Collections.ObjectModel;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Windows;
@@ -114,7 +115,9 @@ namespace CardboardHoarder
             string query = @"
                 SELECT language FROM cardForeignData WHERE uuid = @uuid
                 UNION
-                SELECT language FROM cards WHERE uuid = @uuid";
+                SELECT language FROM cards WHERE uuid = @uuid
+                UNION
+                SELECT language FROM tokens WHERE uuid = @uuid";
             using (var command = new SQLiteCommand(query, DBAccess.connection))
             {
                 command.Parameters.AddWithValue("@uuid", uuid);
