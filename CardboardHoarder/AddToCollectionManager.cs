@@ -214,8 +214,7 @@ namespace CardboardHoarder
 
                 // Set the detailed string with linebreaks to the TextBlock
                 MainWindow.CurrentInstance.AddStatusTextBlock.Visibility = Visibility.Visible;
-                MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards to your collection:\n" + cardDetails;
-
+                MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards to your collection:\n\n" + cardDetails;
 
                 // Reload my collection
                 MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
@@ -302,6 +301,17 @@ namespace CardboardHoarder
             }
             finally
             {
+                // Provide update of the operation
+                var cardDetails = cardItemsToEdit.Select(card =>
+                    card.Count == 0
+                        ? $"{card.Name} - DELETED FROM COLLECTION"  // Display this message if card count is zero
+                        : $"- {card.Name} (Count: {card.Count}, Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish})")
+                    .Aggregate((current, next) => current + "\n" + next);
+
+                // Set the detailed string with linebreaks to the TextBlock
+                MainWindow.CurrentInstance.EditStatusTextBlock.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.EditStatusTextBlock.Text = "Edited the following cards in your collection:\n\n" + cardDetails;
+
                 // Reload my collection
                 MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
                 await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);

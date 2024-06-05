@@ -401,7 +401,7 @@
                         <DataGridTemplateColumn Header="Action">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Content="Add to collection" Click="EditOrAddToCollectionHandler"/>
+                                    <Button Content="Add to collection" Click="AddToCollectionHandler"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -573,7 +573,7 @@
                     </ListView.View>
                 </ListView>
                 <Button x:Name="ButtonEditCardsInMyCollection" Content="Update selected cards" HorizontalAlignment="Left" Margin="1111,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonEditCardsInMyCollection_Click" Visibility="Collapsed"/>
-
+                <TextBlock x:Name="EditStatusTextBlock" HorizontalAlignment="Center" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Width="1300" Visibility="Collapsed"/>
             </Grid>
         </Grid>
     </Grid>
