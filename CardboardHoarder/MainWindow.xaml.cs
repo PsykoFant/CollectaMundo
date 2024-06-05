@@ -217,13 +217,26 @@ namespace CardboardHoarder
             GridMyCollection.Visibility = Visibility.Hidden;
             GridStatus.Visibility = Visibility.Hidden;
 
+
             // Update the statusbox with messages from methods in DownloadAndPrepareDB
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             // Update the statusbox with messages from methods in UpdateDB
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
 
             // Set up system
-            Loaded += async (sender, args) => { await LoadDataIntoUiElements(); };
+            Loaded += async (sender, args) =>
+            {
+                //await ShowStatusWindowAsync(true);  // Show loading message
+
+                //// Force the UI to update
+                //Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+
+                await LoadDataIntoUiElements();
+
+                // Hide the loading message
+                //await ShowStatusWindowAsync(false);
+            };
+
 
             filterManager = new FilterManager(filterContext);
 
@@ -866,6 +879,16 @@ namespace CardboardHoarder
             Debug.WriteLine("Loading data asynchronously...");
             try
             {
+                // Clear add/update messages if any
+                CurrentInstance.AddStatusTextBlock.Text = string.Empty;
+                CurrentInstance.EditStatusTextBlock.Text = string.Empty;
+
+                await ShowStatusWindowAsync(true);  // Show loading message                
+                CurrentInstance.StatusLabel.Content = "Loading all the cards ... ";
+                CurrentInstance.progressBar.Visibility = Visibility.Collapsed;
+                // Force the UI to update
+                Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
@@ -894,6 +917,12 @@ namespace CardboardHoarder
             {
                 Debug.WriteLine($"Error while loading data: {ex.Message}");
                 MessageBox.Show($"Error while loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                CurrentInstance.StatusLabel.Content = string.Empty;
+                await ShowStatusWindowAsync(false);
+                CurrentInstance.progressBar.Visibility = Visibility.Visible;
             }
         }
         private CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
@@ -1149,6 +1178,9 @@ namespace CardboardHoarder
 
                         CurrentInstance.GridStatus.Visibility = Visibility.Hidden;
                         CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
+
+                        CurrentInstance.StatusLabel.Content = string.Empty;
+
 
                     }
                 });
