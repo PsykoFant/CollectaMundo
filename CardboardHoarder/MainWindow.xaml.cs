@@ -252,6 +252,13 @@ namespace CardboardHoarder
         }
 
         #region Filter elements handling        
+
+        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var filteredAllCards = filterManager.ApplyFilter(allCards);
+            var filteredMyCards = filterManager.ApplyFilter(myCards);
+            ApplyFilterSelection(filteredAllCards, filteredMyCards);
+        }
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
             if (sender is ComboBox comboBox)
@@ -431,7 +438,9 @@ namespace CardboardHoarder
         }
         private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e) // Trigger filtering and update label when an and/or checkbox is toggled
         {
-            ApplyFilterSelection(filterManager.ApplyFilter(allCards));
+            var filteredAllCards = filterManager.ApplyFilter(allCards);
+            var filteredMyCards = filterManager.ApplyFilter(myCards);
+            ApplyFilterSelection(filteredAllCards, filteredMyCards);
         }
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -521,7 +530,9 @@ namespace CardboardHoarder
                         if (targetCollection != null)
                         {
                             targetCollection.Add(label);
-                            ApplyFilterSelection(filterManager.ApplyFilter(allCards));
+                            var filteredAllCards = filterManager.ApplyFilter(allCards);
+                            var filteredMyCards = filterManager.ApplyFilter(myCards);
+                            ApplyFilterSelection(filteredAllCards, filteredMyCards);
                         }
                     }
                 }
@@ -560,7 +571,9 @@ namespace CardboardHoarder
                         if (targetCollection != null)
                         {
                             targetCollection.Remove(label);
-                            ApplyFilterSelection(filterManager.ApplyFilter(allCards));
+                            var filteredAllCards = filterManager.ApplyFilter(allCards);
+                            var filteredMyCards = filterManager.ApplyFilter(myCards);
+                            ApplyFilterSelection(filteredAllCards, filteredMyCards);
                         }
                     }
                 }
@@ -621,19 +634,18 @@ namespace CardboardHoarder
 
             return null;
         }
-        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) // Trigger filtering when a non-customized checkbox is loaded
-        {
-            ApplyFilterSelection(filterManager.ApplyFilter(allCards));
-        }
         private void filterRulesTextButton_Click(object sender, RoutedEventArgs e) // Apply filter for rulestext freetext search
         {
-            ApplyFilterSelection(filterManager.ApplyFilter(allCards));
+            var filteredAllCards = filterManager.ApplyFilter(allCards);
+            var filteredMyCards = filterManager.ApplyFilter(myCards);
+            ApplyFilterSelection(filteredAllCards, filteredMyCards);
         }
-        private void ApplyFilterSelection(IEnumerable<CardSet> filteredCards)
+        private void ApplyFilterSelection(IEnumerable<CardSet> filteredAllCards, IEnumerable<CardSet> filteredMyCards)
         {
-            AllCardsDataGrid.ItemsSource = filteredCards;
-            CardCountLabel.Content = $"Cards shown: {filteredCards.Count()}";
+            AllCardsDataGrid.ItemsSource = filteredAllCards;
+            MyCollectionDatagrid.ItemsSource = filteredMyCards;
         }
+
         // Reset filter elements
         public void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
@@ -685,7 +697,9 @@ namespace CardboardHoarder
             ImageSourceUrl2nd = null;
 
             // Update filter label and apply filters to refresh the DataGrid            
-            ApplyFilterSelection(filterManager.ApplyFilter(allCards));
+            var filteredAllCards = filterManager.ApplyFilter(allCards);
+            var filteredMyCards = filterManager.ApplyFilter(myCards);
+            ApplyFilterSelection(filteredAllCards, filteredMyCards);
         }
         private void ResetFilterTextBox(ComboBox comboBox, string textBoxName, string defaultText)
         {
@@ -874,7 +888,6 @@ namespace CardboardHoarder
                 Dispatcher.Invoke(() =>
                 {
                     dataGrid.ItemsSource = cardList;
-                    CardCountLabel.Content = $"Cards shown: {cardList.Count}";
                     ICollectionView collectionView = CollectionViewSource.GetDefaultView(cardList);
                     collectionView.Refresh();
                 });
@@ -1099,13 +1112,11 @@ namespace CardboardHoarder
         {
             ResetGrids();
             GridSearchAndFilter.Visibility = Visibility.Visible;
-            CardCountLabel.Content = $"Cards shown: {allCards.Count}";
         }
         private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
             GridMyCollection.Visibility = Visibility.Visible;
-            CardCountLabel.Content = $"Cards shown: {myCards.Count}";
         }
         public void ResetGrids()
         {

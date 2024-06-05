@@ -41,11 +41,13 @@ namespace CardboardHoarder
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, card => card.SubTypes);
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, card => card.Keywords);
 
-                // New filter for including/excluding cards based on foil or etched finishes
+                // Filter for including/excluding cards based on foil or etched finishes
                 filteredCards = FilterByIncludeFoil(filteredCards);
 
                 var finalFilteredCards = filteredCards.ToList();
                 UpdateFilterLabel();
+                MainWindow.CurrentInstance.AllCardsCountLabel.Content = $"Cards shown: {finalFilteredCards.Count}";
+                MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Cards shown: {finalFilteredCards.Count}";
                 return finalFilteredCards;
             }
             catch (Exception ex)
