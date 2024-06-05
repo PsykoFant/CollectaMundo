@@ -12,7 +12,7 @@ namespace CardboardHoarder
         {
             this.filterContext = context;
         }
-        public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards)
+        public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards, string listName)
         {
             try
             {
@@ -46,8 +46,16 @@ namespace CardboardHoarder
 
                 var finalFilteredCards = filteredCards.ToList();
                 UpdateFilterLabel();
-                MainWindow.CurrentInstance.AllCardsCountLabel.Content = $"Cards shown: {finalFilteredCards.Count}";
-                MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Cards shown: {finalFilteredCards.Count}";
+
+                if (listName == "allCards")
+                {
+                    MainWindow.CurrentInstance.AllCardsCountLabel.Content = $"Cards shown: {finalFilteredCards.Count}";
+                }
+                else
+                {
+                    MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Cards shown: {finalFilteredCards.Count}";
+                }
+
                 return finalFilteredCards;
             }
             catch (Exception ex)

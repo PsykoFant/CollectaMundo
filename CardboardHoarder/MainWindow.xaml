@@ -367,7 +367,7 @@
                    Height="374" Margin="0,434,0,0"/>
 
             </Grid>
-            <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Width="1320" d:IsHidden="True">
+            <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Width="1320">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT" Height="40"/>
                 <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
                 <!--The main card view datagrid-->
@@ -467,8 +467,9 @@
                     </ListView.View>
                 </ListView>
                 <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Left" Margin="1111,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonAddCardsToMyCollection_Click" Visibility="Collapsed"/>
+                <TextBlock x:Name="AddStatusTextBlock" HorizontalAlignment="Center" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Width="1300" Visibility="Collapsed"/>
             </Grid>
-            <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="896" VerticalAlignment="Top" Width="1320">
+            <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" Height="896" VerticalAlignment="Top" Width="1320" d:IsHidden="True">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
                 <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
                 <!--The my collection datagrid-->

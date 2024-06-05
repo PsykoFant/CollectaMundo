@@ -255,9 +255,7 @@ namespace CardboardHoarder
 
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var filteredAllCards = filterManager.ApplyFilter(allCards);
-            var filteredMyCards = filterManager.ApplyFilter(myCards);
-            ApplyFilterSelection(filteredAllCards, filteredMyCards);
+            ApplyFilterSelection();
         }
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
@@ -438,9 +436,7 @@ namespace CardboardHoarder
         }
         private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e) // Trigger filtering and update label when an and/or checkbox is toggled
         {
-            var filteredAllCards = filterManager.ApplyFilter(allCards);
-            var filteredMyCards = filterManager.ApplyFilter(myCards);
-            ApplyFilterSelection(filteredAllCards, filteredMyCards);
+            ApplyFilterSelection();
         }
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -530,9 +526,7 @@ namespace CardboardHoarder
                         if (targetCollection != null)
                         {
                             targetCollection.Add(label);
-                            var filteredAllCards = filterManager.ApplyFilter(allCards);
-                            var filteredMyCards = filterManager.ApplyFilter(myCards);
-                            ApplyFilterSelection(filteredAllCards, filteredMyCards);
+                            ApplyFilterSelection();
                         }
                     }
                 }
@@ -571,9 +565,7 @@ namespace CardboardHoarder
                         if (targetCollection != null)
                         {
                             targetCollection.Remove(label);
-                            var filteredAllCards = filterManager.ApplyFilter(allCards);
-                            var filteredMyCards = filterManager.ApplyFilter(myCards);
-                            ApplyFilterSelection(filteredAllCards, filteredMyCards);
+                            ApplyFilterSelection();
                         }
                     }
                 }
@@ -636,12 +628,13 @@ namespace CardboardHoarder
         }
         private void filterRulesTextButton_Click(object sender, RoutedEventArgs e) // Apply filter for rulestext freetext search
         {
-            var filteredAllCards = filterManager.ApplyFilter(allCards);
-            var filteredMyCards = filterManager.ApplyFilter(myCards);
-            ApplyFilterSelection(filteredAllCards, filteredMyCards);
+            ApplyFilterSelection();
         }
-        private void ApplyFilterSelection(IEnumerable<CardSet> filteredAllCards, IEnumerable<CardSet> filteredMyCards)
+        private void ApplyFilterSelection()
         {
+            var filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
+            var filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
+
             AllCardsDataGrid.ItemsSource = filteredAllCards;
             MyCollectionDatagrid.ItemsSource = filteredMyCards;
         }
@@ -697,9 +690,7 @@ namespace CardboardHoarder
             ImageSourceUrl2nd = null;
 
             // Update filter label and apply filters to refresh the DataGrid            
-            var filteredAllCards = filterManager.ApplyFilter(allCards);
-            var filteredMyCards = filterManager.ApplyFilter(myCards);
-            ApplyFilterSelection(filteredAllCards, filteredMyCards);
+            ApplyFilterSelection();
         }
         private void ResetFilterTextBox(ComboBox comboBox, string textBoxName, string defaultText)
         {
@@ -857,10 +848,12 @@ namespace CardboardHoarder
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
             addToCollectionManager.SubmitNewCardsToCollection(sender, e);
+            ApplyFilterSelection();
         }
         private void ButtonEditCardsInMyCollection_Click(object sender, RoutedEventArgs e)
         {
             addToCollectionManager.SubmitEditedCardsToCollection(sender, e);
+            ApplyFilterSelection();
         }
 
         #endregion

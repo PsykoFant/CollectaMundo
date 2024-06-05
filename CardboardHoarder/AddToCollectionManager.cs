@@ -199,7 +199,6 @@ namespace CardboardHoarder
                         }
                     }
                 }
-                MessageBox.Show("Database updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -208,6 +207,16 @@ namespace CardboardHoarder
             }
             finally
             {
+                // Provide update of the operation
+                var cardDetails = cardItemsToAdd.Select(card =>
+                    $"- {card.Name} (Count: {card.Count}, Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish})")
+                    .Aggregate((current, next) => current + "\n" + next);
+
+                // Set the detailed string with linebreaks to the TextBlock
+                MainWindow.CurrentInstance.AddStatusTextBlock.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards to your collection:\n" + cardDetails;
+
+
                 // Reload my collection
                 MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
                 await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
