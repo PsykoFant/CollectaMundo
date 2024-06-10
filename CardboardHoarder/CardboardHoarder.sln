@@ -5,16 +5,27 @@ VisualStudioVersion = 17.8.34525.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardboardHoarder", "CardboardHoarder.csproj", "{86FB2F77-52DD-4044-83D8-78695CCDF161}"
 EndProject
+Project("{840C416C-B8F3-42BC-B0DD-F6BB14C9F8CB}") = "CardBoardHoarderInstaller", "..\CardBoardHoarderInstaller\CardBoardHoarderInstaller.aiproj", "{70444647-A1F9-4DA1-A138-A74AAE61662E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		All|Any CPU = All|Any CPU
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{86FB2F77-52DD-4044-83D8-78695CCDF161}.All|Any CPU.ActiveCfg = Release|Any CPU
+		{86FB2F77-52DD-4044-83D8-78695CCDF161}.All|Any CPU.Build.0 = Release|Any CPU
 		{86FB2F77-52DD-4044-83D8-78695CCDF161}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{86FB2F77-52DD-4044-83D8-78695CCDF161}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{86FB2F77-52DD-4044-83D8-78695CCDF161}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{86FB2F77-52DD-4044-83D8-78695CCDF161}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70444647-A1F9-4DA1-A138-A74AAE61662E}.All|Any CPU.ActiveCfg = DefaultBuild
+		{70444647-A1F9-4DA1-A138-A74AAE61662E}.All|Any CPU.Build.0 = DefaultBuild
+		{70444647-A1F9-4DA1-A138-A74AAE61662E}.Debug|Any CPU.ActiveCfg = DefaultBuild
+		{70444647-A1F9-4DA1-A138-A74AAE61662E}.Debug|Any CPU.Build.0 = DefaultBuild
+		{70444647-A1F9-4DA1-A138-A74AAE61662E}.Release|Any CPU.ActiveCfg = DefaultBuild
+		{70444647-A1F9-4DA1-A138-A74AAE61662E}.Release|Any CPU.Build.0 = DefaultBuild
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
