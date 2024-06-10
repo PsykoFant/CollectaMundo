@@ -915,8 +915,8 @@ namespace CardboardHoarder
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error while loading data: {ex.Message}");
-                MessageBox.Show($"Error while loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error while loading cards: {ex.Message}");
+                MessageBox.Show($"Error while loading cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
