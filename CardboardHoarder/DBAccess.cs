@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.Windows;
 
 namespace CardboardHoarder
 {
@@ -58,6 +59,7 @@ namespace CardboardHoarder
             }
             catch (Exception ex)
             {
+                MessageBox.Show($"Opening connection failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Debug.WriteLine($"Opening connection failed {ex.Message}");
             }
         }
