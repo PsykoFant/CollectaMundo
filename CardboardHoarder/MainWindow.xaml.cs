@@ -884,7 +884,7 @@ namespace CardboardHoarder
                 CurrentInstance.EditStatusTextBlock.Text = string.Empty;
 
                 await ShowStatusWindowAsync(true);  // Show loading message                
-                CurrentInstance.StatusLabel.Content = "Loading all the cards ... ";
+                CurrentInstance.StatusLabel.Content = "Loading ALL the cards ... ";
                 CurrentInstance.progressBar.Visibility = Visibility.Collapsed;
                 // Force the UI to update
                 Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
