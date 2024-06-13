@@ -226,15 +226,7 @@ namespace CardboardHoarder
             // Set up system
             Loaded += async (sender, args) =>
             {
-                //await ShowStatusWindowAsync(true);  // Show loading message
-
-                //// Force the UI to update
-                //Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
-
                 await LoadDataIntoUiElements();
-
-                // Hide the loading message
-                //await ShowStatusWindowAsync(false);
             };
 
 

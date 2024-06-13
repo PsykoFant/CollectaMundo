@@ -92,7 +92,7 @@
     <ROW Component="System.Data.SqlClient.dll_1" ComponentId="{C7F0CBE5-0E49-4A87-AC4F-5B55A6E4AC41}" Directory_="netcoreapp2.1_1_Dir" Attributes="0" KeyPath="System.Data.SqlClient.dll_1"/>
     <ROW Component="System.Data.SqlClient.dll_2" ComponentId="{D0A8492F-B3FD-451E-AD70-3B0310225226}" Directory_="net8.0windows_Dir" Attributes="0" KeyPath="System.Data.SqlClient.dll_2"/>
     <ROW Component="System.Linq.Dynamic.Core.dll" ComponentId="{838586F1-D984-4BF5-B422-1C65F8F97BE2}" Directory_="net8.0windows_Dir" Attributes="0" KeyPath="System.Linq.Dynamic.Core.dll"/>
-    <ROW Component="appsettings.json" ComponentId="{F656EA98-65BA-442A-B950-2CEC822167D5}" Directory_="net8.0windows_Dir" Attributes="0" KeyPath="appsettings.json" Type="0"/>
+    <ROW Component="appsettings.json" ComponentId="{F656EA98-65BA-442A-B950-2CEC822167D5}" Directory_="net8.0windows_Dir" Attributes="0" KeyPath="CardboardHoarder.deps.json" Type="0"/>
     <ROW Component="libSkiaSharp.dll" ComponentId="{4AF629FE-A1DE-4762-9F94-34ADEC290069}" Directory_="native_3_Dir" Attributes="256" KeyPath="libSkiaSharp.dll"/>
     <ROW Component="libSkiaSharp.dll_1" ComponentId="{D8ECBC7D-88E1-4EDE-83E2-3059D3E31ED9}" Directory_="native_4_Dir" Attributes="256" KeyPath="libSkiaSharp.dll_1"/>
     <ROW Component="libSkiaSharp.dll_2" ComponentId="{3B438BF7-50DC-4CAD-97DE-F9FCB3EAE831}" Directory_="native_5_Dir" Attributes="0" KeyPath="libSkiaSharp.dll_2"/>
@@ -106,7 +106,6 @@
     <ATTRIBUTE name="CurrentFeature" value="MainFeature"/>
   </COMPONENT>
   <COMPONENT cid="caphyon.advinst.msicomp.MsiFilesComponent">
-    <ROW File="appsettings.json" Component_="appsettings.json" FileName="APPSET~1.JSO|appsettings.json" Attributes="0" SourcePath="..\CardboardHoarder\bin\Release\net8.0-windows\appsettings.json" SelfReg="false"/>
     <ROW File="CardboardHoarder.deps.json" Component_="appsettings.json" FileName="CARDBO~1.JSO|CardboardHoarder.deps.json" Attributes="0" SourcePath="..\CardboardHoarder\bin\Release\net8.0-windows\CardboardHoarder.deps.json" SelfReg="false"/>
     <ROW File="CardboardHoarder.dll" Component_="CardboardHoarder.dll" FileName="CARDBO~1.DLL|CardboardHoarder.dll" Attributes="0" SourcePath="..\CardboardHoarder\bin\Release\net8.0-windows\CardboardHoarder.dll" SelfReg="false"/>
     <ROW File="CardboardHoarder.exe" Component_="CardboardHoarder.exe" FileName="CARDBO~1.EXE|CardboardHoarder.exe" Attributes="0" SourcePath="..\CardboardHoarder\bin\Release\net8.0-windows\CardboardHoarder.exe" SelfReg="false" DigSign="true"/>
