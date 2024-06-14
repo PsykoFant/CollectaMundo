@@ -635,7 +635,7 @@ namespace CardboardHoarder
         {
             ApplyFilterSelection();
         }
-        private void ApplyFilterSelection()
+        public void ApplyFilterSelection()
         {
             var filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
             var filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
@@ -871,10 +871,6 @@ namespace CardboardHoarder
             Debug.WriteLine("Loading data asynchronously...");
             try
             {
-                // Clear add/update messages if any
-                CurrentInstance.AddStatusTextBlock.Text = string.Empty;
-                CurrentInstance.EditStatusTextBlock.Text = string.Empty;
-
                 await ShowStatusWindowAsync(true);  // Show loading message                
                 CurrentInstance.StatusLabel.Content = "Loading ALL the cards ... ";
                 CurrentInstance.progressBar.Visibility = Visibility.Collapsed;
@@ -1136,9 +1132,12 @@ namespace CardboardHoarder
         }
         public void ResetGrids()
         {
+            CurrentInstance.EditStatusTextBlock.Text = string.Empty;
+            CurrentInstance.AddStatusTextBlock.Text = string.Empty;
             InfoLabel.Content = "";
             GridSearchAndFilter.Visibility = Visibility.Hidden;
             GridMyCollection.Visibility = Visibility.Hidden;
+            ApplyFilterSelection();
         }
         #endregion
 

@@ -98,59 +98,6 @@ namespace CardboardHoarder
                 }
             }
         }
-        private async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
-        {
-            if (string.IsNullOrEmpty(uuid))
-            {
-                return new List<string> { "English" }; // Return default list if UUID is null or empty
-            }
-
-            List<string> languages = new List<string>();
-            // Updated query to select language from both 'cardForeignData' and 'cards' tables
-            string query = @"
-                SELECT language FROM cardForeignData WHERE uuid = @uuid
-                UNION
-                SELECT language FROM cards WHERE uuid = @uuid
-                UNION
-                SELECT language FROM tokens WHERE uuid = @uuid";
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@uuid", uuid);
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    while (reader.Read())
-                    {
-                        string? language = reader["language"] as string; // Safely cast to string, which may be null
-                        if (!string.IsNullOrEmpty(language))
-                        {
-                            languages.Add(language); // Only add non-null and non-empty strings
-                        }
-                    }
-                }
-            }
-            return languages;
-        }
-        private async Task<List<string>> FetchFinishesForCardAsync(string uuid)
-        {
-            var finishes = new List<string>();
-            string query = @"SELECT finishes FROM cards WHERE uuid = @uuid UNION SELECT finishes FROM tokens WHERE uuid = @uuid";
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@uuid", uuid);
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    while (reader.Read())
-                    {
-                        var finish = reader["Finishes"].ToString();
-                        if (!string.IsNullOrEmpty(finish))
-                        {
-                            finishes.AddRange(finish.Split(',').Select(f => f.Trim()));
-                        }
-                    }
-                }
-            }
-            return finishes.Distinct().ToList();
-        }
         public async void SubmitNewCardsToCollection(object sender, RoutedEventArgs e)
         {
             if (DBAccess.connection == null)
@@ -318,9 +265,65 @@ namespace CardboardHoarder
                 DBAccess.connection.Close();
 
                 cardItemsToEdit.Clear();
+
                 MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Collapsed;
                 MainWindow.CurrentInstance.ButtonEditCardsInMyCollection.Visibility = Visibility.Collapsed;
+
+                MainWindow.CurrentInstance.ApplyFilterSelection();
             }
+        }
+        private async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
+        {
+            if (string.IsNullOrEmpty(uuid))
+            {
+                return new List<string> { "English" }; // Return default list if UUID is null or empty
+            }
+
+            List<string> languages = new List<string>();
+            // Updated query to select language from both 'cardForeignData' and 'cards' tables
+            string query = @"
+                SELECT language FROM cardForeignData WHERE uuid = @uuid
+                UNION
+                SELECT language FROM cards WHERE uuid = @uuid
+                UNION
+                SELECT language FROM tokens WHERE uuid = @uuid";
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@uuid", uuid);
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (reader.Read())
+                    {
+                        string? language = reader["language"] as string; // Safely cast to string, which may be null
+                        if (!string.IsNullOrEmpty(language))
+                        {
+                            languages.Add(language); // Only add non-null and non-empty strings
+                        }
+                    }
+                }
+            }
+            return languages;
+        }
+        private async Task<List<string>> FetchFinishesForCardAsync(string uuid)
+        {
+            var finishes = new List<string>();
+            string query = @"SELECT finishes FROM cards WHERE uuid = @uuid UNION SELECT finishes FROM tokens WHERE uuid = @uuid";
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@uuid", uuid);
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (reader.Read())
+                    {
+                        var finish = reader["Finishes"].ToString();
+                        if (!string.IsNullOrEmpty(finish))
+                        {
+                            finishes.AddRange(finish.Split(',').Select(f => f.Trim()));
+                        }
+                    }
+                }
+            }
+            return finishes.Distinct().ToList();
         }
         private async Task<int?> CheckForExistingCardAsync(CardItem cardItem)
         {
