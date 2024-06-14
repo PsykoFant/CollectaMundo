@@ -25,6 +25,7 @@ project.lock.json
 # Unnecessary logs and caches
 *.log
 *.cache
+UpgradeLog.htm
 
 # IDE-specific artifacts
 *.suo
