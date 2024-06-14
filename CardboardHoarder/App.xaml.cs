@@ -2,7 +2,7 @@
 using System.Data;
 using System.Windows;
 
-namespace CardboardHoarder
+namespace CollectaMundo
 {
     /// <summary>
     /// Interaction logic for App.xaml

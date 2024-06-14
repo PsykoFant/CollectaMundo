@@ -1,4 +1,4 @@
-﻿namespace CardboardHoarder
+﻿namespace CollectaMundo
 {
     public class FilterContext
     {

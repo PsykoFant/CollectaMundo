@@ -10,7 +10,7 @@
     <ROW Property="Manufacturer" Value="CP"/>
     <ROW Property="ProductCode" Value="1033:{E19162AE-21D0-4D2A-A460-CE72623E1020} " Type="16"/>
     <ROW Property="ProductLanguage" Value="1033"/>
-    <ROW Property="ProductName" Value="CardboardHoarder"/>
+    <ROW Property="ProductName" Value="CollectaMundo"/>
     <ROW Property="ProductVersion" Value="1.0.0" Options="32"/>
     <ROW Property="SecureCustomProperties" Value="OLDPRODUCTS;AI_NEWERPRODUCTFOUND"/>
     <ROW Property="UpgradeCode" Value="{88042A4C-9195-437E-8AF6-5F7AAA159865}"/>

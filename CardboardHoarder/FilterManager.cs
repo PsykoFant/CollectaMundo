@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace CardboardHoarder
+namespace CollectaMundo
 {
     public class FilterManager
     {

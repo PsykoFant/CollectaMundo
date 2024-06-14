@@ -1,4 +1,4 @@
-using CardboardHoarder;
+using CollectaMundo;
 using Newtonsoft.Json.Linq;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;

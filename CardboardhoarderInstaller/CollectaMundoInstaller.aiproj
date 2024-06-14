@@ -11,14 +11,14 @@
     <WorkingDirectory>.</WorkingDirectory>
     <IsWindowsApplication>True</IsWindowsApplication>
     <AssemblyName>CardBoardHoarderInstaller</AssemblyName>
-    <Name>CardBoardHoarderInstaller</Name>
+    <Name>CollectaMundoInstaller</Name>
     <RootNamespace>CardBoardHoarderInstaller</RootNamespace>
     <LoadFromTemplate>
     </LoadFromTemplate>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'DefaultBuild' " />
   <ItemGroup>
-    <Compile Include="CardBoardHoarderInstaller.aip">
+    <Compile Include="CollectaMundoInstaller.aip">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

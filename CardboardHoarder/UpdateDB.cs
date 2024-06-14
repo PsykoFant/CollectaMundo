@@ -5,7 +5,7 @@ using System.IO;
 using System.Net.Http;
 using System.Windows;
 
-namespace CardboardHoarder
+namespace CollectaMundo
 {
     public class UpdateDB
     {

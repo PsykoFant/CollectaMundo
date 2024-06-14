@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 
-namespace CardboardHoarder
+namespace CollectaMundo
 {
     public class DBAccess
     {
@@ -95,7 +95,7 @@ namespace CardboardHoarder
                 {
                     // Construct the path dynamically
                     string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                    string sqlitePath = Path.Combine(appDataPath, "CardboardHoarder", "CardDatabase");
+                    string sqlitePath = Path.Combine(appDataPath, "CollectaMundo", "CardDatabase");
 
                     // Ensure the directory exists
                     Directory.CreateDirectory(sqlitePath);

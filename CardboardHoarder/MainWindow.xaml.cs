@@ -10,9 +10,9 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using static CardboardHoarder.CardSet;
+using static CollectaMundo.CardSet;
 
-namespace CardboardHoarder
+namespace CollectaMundo
 {
     public partial class MainWindow : Window, INotifyPropertyChanged
     {

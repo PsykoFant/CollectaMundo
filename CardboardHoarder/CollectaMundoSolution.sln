@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34525.116
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CardboardHoarder", "CardboardHoarder.csproj", "{86FB2F77-52DD-4044-83D8-78695CCDF161}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CollectaMundo", "CollectaMundo.csproj", "{86FB2F77-52DD-4044-83D8-78695CCDF161}"
 EndProject
-Project("{840C416C-B8F3-42BC-B0DD-F6BB14C9F8CB}") = "CardBoardHoarderInstaller", "..\CardboardhoarderInstaller\CardBoardHoarderInstaller.aiproj", "{70444647-A1F9-4DA1-A138-A74AAE61662E}"
+Project("{840C416C-B8F3-42BC-B0DD-F6BB14C9F8CB}") = "CollectaMundoInstaller", "..\CardboardhoarderInstaller\CollectaMundoInstaller.aiproj", "{70444647-A1F9-4DA1-A138-A74AAE61662E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

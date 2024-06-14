@@ -2,7 +2,7 @@
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
 
-namespace CardboardHoarder
+namespace CollectaMundo
 {
     public class StringToImageSourceConverter : IValueConverter
     {
