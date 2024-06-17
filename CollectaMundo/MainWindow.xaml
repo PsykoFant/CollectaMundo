@@ -28,11 +28,13 @@
             <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Right" Margin="0,13,322,0" VerticalAlignment="Top" Width="129" Click="updateDbButton_Click" Visibility="Hidden"/>
         </Grid>
         <Grid x:Name="GridStatus" Margin="0,40,0,0" VerticalAlignment="Top">
+            
             <ProgressBar x:Name="progressBar" HorizontalAlignment="Center" Height="11" Margin="0,652,0,0" VerticalAlignment="Top" Width="738"/>
             <Label x:Name="StatusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top" Width="738"/>
+            <Label x:Name="FirstTimeSetupLabel" Content="Performing first-time setup of card database - please wait ..." HorizontalAlignment="Left" Margin="591,582,0,0" VerticalAlignment="Top" FontSize="18"/>
 
         </Grid>
-        <Grid x:Name="GridContentSection" Margin="0,40,0,0">
+        <Grid x:Name="GridContentSection" Margin="0,40,0,0" d:IsHidden="True">
             <Grid x:Name="GridFiltering" Width="300" HorizontalAlignment="Left">
                 <!--Card name and set comboboxes-->
                 <Label x:Name="CardNameLabel" Content="Card Name" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top"/>
