@@ -147,7 +147,7 @@ namespace CollectaMundo
         }
         private void UpdateFilterLabel()
         {
-            if (MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != filterContext.RulesTextDefaultText)
+            if (MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != filterContext.RulesTextDefaultText && MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != string.Empty)
             {
                 MainWindow.CurrentInstance.CardRulesTextTextBlock.Text = $"Rulestext: \"{MainWindow.CurrentInstance.FilterRulesTextTextBox.Text}\"";
             }

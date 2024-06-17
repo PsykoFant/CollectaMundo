@@ -1171,8 +1171,6 @@ namespace CollectaMundo
                         CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
 
                         CurrentInstance.StatusLabel.Content = string.Empty;
-
-
                     }
                 });
             }

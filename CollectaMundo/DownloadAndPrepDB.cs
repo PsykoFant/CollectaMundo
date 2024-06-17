@@ -53,6 +53,7 @@ public class DownloadAndPrepDB
         catch (Exception ex)
         {
             Debug.WriteLine($"Error while checking database existence: {ex.Message}");
+            MessageBox.Show($"Error while checking database existence: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
     public static async Task DownloadDatabaseIfNotExistsAsync(string databasePath) // Download card database from mtgjson in SQLite format    
@@ -106,7 +107,8 @@ public class DownloadAndPrepDB
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Error during download: {ex.Message}");
+            MessageBox.Show($"Error during download of card database: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            Debug.WriteLine($"Error during download of card database: {ex.Message}");
             StatusMessageUpdated?.Invoke("Download failed.");
         }
         finally
@@ -221,6 +223,7 @@ public class DownloadAndPrepDB
         catch (Exception ex)
         {
             Debug.WriteLine($"Error during creation or insertion of uniqueManaSymbols: {ex.Message}");
+            MessageBox.Show($"Error during creation or insertion of uniqueManaSymbols: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
     public static async Task GenerateManaCostImagesAsync()
@@ -251,8 +254,8 @@ public class DownloadAndPrepDB
         catch (Exception ex)
         {
             Debug.WriteLine($"Error during generation of mana cost images: {ex.Message}");
+            MessageBox.Show($"Error during generation of mana cost images: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-
     }
     public static async Task GenerateSetKeyruneFromSvgAsync()
     {
@@ -316,6 +319,7 @@ public class DownloadAndPrepDB
             catch (Exception ex)
             {
                 Debug.WriteLine($"An error occurred while trying to get set information from Scryfall: {ex.Message}");
+                MessageBox.Show($"An error occurred while trying to get set information from Scryfall: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
 
@@ -384,6 +388,7 @@ public class DownloadAndPrepDB
         catch (Exception ex)
         {
             Debug.WriteLine($"An error occurred while processing mana cost input: {ex.Message}");
+            MessageBox.Show($"An error occurred while processing mana cost input: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         return await CombineImagesAsync(manaSymbolImage);
@@ -450,7 +455,8 @@ public class DownloadAndPrepDB
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"An error occurred while combining images: {ex.Message}");
+            Debug.WriteLine($"An error occurred while combining mana cost images: {ex.Message}");
+            MessageBox.Show($"An error occurred while combining mana cost images: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         // Return an empty array failure
@@ -501,6 +507,7 @@ public class DownloadAndPrepDB
         catch (Exception ex)
         {
             Debug.WriteLine($"Error converting SVG to byte array: {ex.Message}");
+            MessageBox.Show($"Error converting SVG to byte array: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             return Array.Empty<byte>();
         }
     }
@@ -543,7 +550,9 @@ public class DownloadAndPrepDB
         }
         catch (Exception ex)
         {
-            Console.WriteLine("An error occurred: " + ex.Message);
+            Debug.WriteLine("An error occurred while copying emty or missing rows: " + ex.Message);
+            MessageBox.Show($"An error occurred while copying emty or missing rows: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+
         }
     }
     private static async Task UpdateImageInTableAsync(string imageToUpdate, string tableName, string columnToUpdate, string columnToReference, byte[] imageData)
@@ -562,6 +571,7 @@ public class DownloadAndPrepDB
         catch (Exception ex)
         {
             Debug.WriteLine($"Error while updating image in table: {ex.Message}");
+            MessageBox.Show($"Error while updating image in table: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
     private static async Task InsertValueInTableAsync(string value, string tableName, string columnName)
@@ -588,7 +598,8 @@ public class DownloadAndPrepDB
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Error during insertion: {ex.Message}");
+            Debug.WriteLine($"Error during insertion of values into table: {ex.Message}");
+            MessageBox.Show($"Error during insertion of values into table: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
     private static async Task<List<string>> GetValuesWithNullAsync(string tableName, string returnColumnName, string searchColumnName)
@@ -612,6 +623,7 @@ public class DownloadAndPrepDB
         catch (Exception ex)
         {
             Debug.WriteLine($"Error retrieving values with null: {ex.Message}");
+            MessageBox.Show($"Error retrieving values with null: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         return valuesWithNull;
     }
@@ -641,6 +653,7 @@ public class DownloadAndPrepDB
         catch (Exception ex)
         {
             Debug.WriteLine($"An error occurred while fetching unique values: {ex.Message}");
+            MessageBox.Show($"An error occurred while fetching unique values: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         return uniqueValues;
@@ -689,6 +702,4 @@ public class DownloadAndPrepDB
     }
 
     #endregion
-
-
 }
