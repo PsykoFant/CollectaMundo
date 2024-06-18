@@ -855,12 +855,10 @@ namespace CollectaMundo
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
             addToCollectionManager.SubmitNewCardsToCollection(sender, e);
-            ApplyFilterSelection();
         }
         private void ButtonEditCardsInMyCollection_Click(object sender, RoutedEventArgs e)
         {
             addToCollectionManager.SubmitEditedCardsToCollection(sender, e);
-            ApplyFilterSelection();
         }
 
         #endregion

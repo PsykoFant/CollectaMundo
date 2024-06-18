@@ -317,6 +317,8 @@ namespace CollectaMundo
                 await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
                 DBAccess.connection.Close();
 
+                MainWindow.CurrentInstance.ApplyFilterSelection();
+
                 cardItemsToEdit.Clear();
                 MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Collapsed;
                 MainWindow.CurrentInstance.ButtonEditCardsInMyCollection.Visibility = Visibility.Collapsed;
