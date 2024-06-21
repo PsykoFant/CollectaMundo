@@ -60,6 +60,8 @@ public class DownloadAndPrepDB
     {
         try
         {
+            MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = "Performing first-time setup of card database -please wait...";
+
             if (MainWindow.CurrentInstance?.progressBar != null)
             {
                 Application.Current.Dispatcher.Invoke(() =>
@@ -117,6 +119,7 @@ public class DownloadAndPrepDB
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
+                    MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = string.Empty;
                     MainWindow.CurrentInstance.progressBar.Visibility = Visibility.Hidden;
                 });
             }
