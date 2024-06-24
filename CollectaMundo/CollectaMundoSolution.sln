@@ -5,6 +5,8 @@ VisualStudioVersion = 17.8.34525.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CollectaMundo", "CollectaMundo.csproj", "{86FB2F77-52DD-4044-83D8-78695CCDF161}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "CollectaMundoSetup", "..\CollectaMundoSetup\CollectaMundoSetup.vdproj", "{3860E430-0680-4404-B078-9534D9C474FF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Any CPU = All|Any CPU
@@ -21,6 +23,10 @@ Global
 		{86FB2F77-52DD-4044-83D8-78695CCDF161}.DefaultBuild|Any CPU.Build.0 = Debug|Any CPU
 		{86FB2F77-52DD-4044-83D8-78695CCDF161}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{86FB2F77-52DD-4044-83D8-78695CCDF161}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3860E430-0680-4404-B078-9534D9C474FF}.All|Any CPU.ActiveCfg = Debug
+		{3860E430-0680-4404-B078-9534D9C474FF}.Debug|Any CPU.ActiveCfg = Debug
+		{3860E430-0680-4404-B078-9534D9C474FF}.DefaultBuild|Any CPU.ActiveCfg = Debug
+		{3860E430-0680-4404-B078-9534D9C474FF}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
