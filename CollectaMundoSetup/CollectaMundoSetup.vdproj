@@ -99,15 +99,10 @@
             "ComponentsUrl" = "8:"
                 "Items"
                 {
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.AspNetCore.Runtime.8.0.6.x64"
                     {
-                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
-                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
-                    }
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.NetCore.CoreRuntime.8.0.x64"
-                    {
-                    "Name" = "8:.NET Runtime 8.0.5 (x64)"
-                    "ProductCode" = "8:Microsoft.NetCore.CoreRuntime.8.0.x64"
+                    "Name" = "8:ASP.NET Core Runtime 8.0.6 (x64)"
+                    "ProductCode" = "8:Microsoft.AspNetCore.Runtime.8.0.6.x64"
                     }
                     "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.NetCore.DesktopRuntime.8.0.x64"
                     {
@@ -224,13 +219,13 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:CollectaMundoSetup"
         "ProductCode" = "8:{F85B01EF-F970-41A9-89E6-75898133D38C}"
-        "PackageCode" = "8:{0CA89C49-8A29-4E7C-93EE-1B0750136695}"
+        "PackageCode" = "8:{4F887303-E659-4868-A39C-A1196A15F308}"
         "UpgradeCode" = "8:{62A235D8-21DC-4286-97D5-46F64D72BF3F}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
-        "InstallAllUsers" = "11:TRUE"
+        "InstallAllUsers" = "11:FALSE"
         "ProductVersion" = "8:1.0.0"
         "Manufacturer" = "8:Claus Petersen"
         "ARPHELPTELEPHONE" = "8:"
