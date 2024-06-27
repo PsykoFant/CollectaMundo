@@ -26,7 +26,7 @@ namespace CollectaMundo
         {
             try
             {
-                MainWindow.CurrentInstance.InfoLabel.Content = "Checking for updates...";
+                MainWindow.CurrentInstance.UtilsInfoLabel.Content = "Checking for updates...";
 
                 // Read updated date from card db
                 await DBAccess.OpenConnectionAsync();
@@ -41,13 +41,13 @@ namespace CollectaMundo
                 if (numberOfSetsOnServer > numberOfSetsInDb)
                 {
                     Debug.WriteLine("There is a newer database");
-                    MainWindow.CurrentInstance.InfoLabel.Content = "There is a newer database";
+                    MainWindow.CurrentInstance.UtilsInfoLabel.Content = "There is a newer database";
                     MainWindow.CurrentInstance.UpdateDbButton.Visibility = Visibility.Visible;
                 }
                 else
                 {
                     Debug.WriteLine("You are already up to date");
-                    MainWindow.CurrentInstance.InfoLabel.Content = "You are already up to date";
+                    MainWindow.CurrentInstance.UtilsInfoLabel.Content = "You are already up to date";
                 }
             }
             catch (Exception ex)
@@ -63,10 +63,9 @@ namespace CollectaMundo
             {
                 // Disbale buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
-                MainWindow.CurrentInstance.InfoLabel.Content = "Updating card database...";
 
                 // Download new card database to currentuser/downloads
-                await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(newDatabasePath);
+                await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(newDatabasePath, "Downloading fresh card database and updating...");
 
                 await DBAccess.OpenConnectionAsync();
                 // Copy tables from new card database
@@ -86,18 +85,22 @@ namespace CollectaMundo
 
                 StatusMessageUpdated?.Invoke($"Reloading card database...");
                 await Task.Delay(1000); // Leave the message for a few seconds
-                await MainWindow.CurrentInstance.LoadDataIntoUiElements();
-
-                await MainWindow.ShowStatusWindowAsync(false);
-
-                // Reenable buttons and go to search and filter                
-                MainWindow.CurrentInstance.ResetGrids();
-                MainWindow.CurrentInstance.GridSearchAndFilter.Visibility = Visibility.Visible;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error updating card database: {ex.Message}");
                 MessageBox.Show($"An error occurred updating the card database: {ex.Message}", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                await MainWindow.ShowStatusWindowAsync(false);
+
+                // Reenable buttons and go to search and filter                
+                MainWindow.CurrentInstance.ResetGrids();
+                MainWindow.CurrentInstance.UpdateDbButton.Visibility = Visibility.Collapsed;
+                MainWindow.CurrentInstance.GridUtilitiesSection.Visibility = Visibility.Visible;
+
+                await MainWindow.CurrentInstance.LoadDataIntoUiElements();
             }
         }
         private static async Task CopyTablesAsync()

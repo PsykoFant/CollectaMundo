@@ -1120,21 +1120,33 @@ namespace CollectaMundo
         #region Top menu navigation
         private void MenuSearchAndFilter_Click(object sender, RoutedEventArgs e)
         {
+            GridContentSection.Visibility = Visibility.Visible;
+            GridUtilitiesSection.Visibility = Visibility.Collapsed;
             ResetGrids();
             GridSearchAndFilter.Visibility = Visibility.Visible;
         }
         private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
+            GridContentSection.Visibility = Visibility.Visible;
+            GridUtilitiesSection.Visibility = Visibility.Collapsed;
             GridMyCollection.Visibility = Visibility.Visible;
         }
+        private void MenuUtilsButton_Click(object sender, RoutedEventArgs e)
+        {
+            ResetGrids();
+            GridContentSection.Visibility = Visibility.Collapsed;
+            GridUtilitiesSection.Visibility = Visibility.Visible;
+        }
+
         public void ResetGrids()
         {
-            CurrentInstance.EditStatusTextBlock.Text = string.Empty;
-            CurrentInstance.AddStatusTextBlock.Text = string.Empty;
-            InfoLabel.Content = "";
+            EditStatusTextBlock.Text = string.Empty;
+            AddStatusTextBlock.Text = string.Empty;
+            UtilsInfoLabel.Content = "";
             GridSearchAndFilter.Visibility = Visibility.Hidden;
             GridMyCollection.Visibility = Visibility.Hidden;
+            GridUtilitiesSection.Visibility = Visibility.Hidden;
             ApplyFilterSelection();
         }
         #endregion
@@ -1147,13 +1159,15 @@ namespace CollectaMundo
                 {
                     if (visible)
                     {
+                        // Disable top menu buttons
                         CurrentInstance.MenuSearchAndFilterButton.IsEnabled = false;
                         CurrentInstance.MenuMyCollectionButton.IsEnabled = false;
                         CurrentInstance.MenuDecksButton.IsEnabled = false;
-                        CurrentInstance.UpdateDbButton.IsEnabled = false;
-                        CurrentInstance.CheckForUpdatesButton.IsEnabled = false;
+                        CurrentInstance.MenuUtilsButton.IsEnabled = false;
 
+                        // Show status section and hide others
                         CurrentInstance.GridContentSection.Visibility = Visibility.Hidden;
+                        CurrentInstance.GridUtilitiesSection.Visibility = Visibility.Hidden;
                         CurrentInstance.GridStatus.Visibility = Visibility.Visible;
                     }
                     else
@@ -1161,14 +1175,11 @@ namespace CollectaMundo
                         CurrentInstance.MenuSearchAndFilterButton.IsEnabled = true;
                         CurrentInstance.MenuMyCollectionButton.IsEnabled = true;
                         CurrentInstance.MenuDecksButton.IsEnabled = true;
-                        CurrentInstance.UpdateDbButton.IsEnabled = true;
-                        CurrentInstance.UpdateDbButton.Visibility = Visibility.Hidden;
-                        CurrentInstance.CheckForUpdatesButton.IsEnabled = true;
+                        CurrentInstance.MenuUtilsButton.IsEnabled = true;
 
                         CurrentInstance.GridStatus.Visibility = Visibility.Hidden;
                         CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
 
-                        CurrentInstance.StatusLabel.Content = string.Empty;
                     }
                 });
             }

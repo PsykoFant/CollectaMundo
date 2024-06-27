@@ -28,13 +28,13 @@ public class DownloadAndPrepDB
         {
             if (!File.Exists(databasePath))
             {
-                MainWindow.CurrentInstance.InfoLabel.Content = "No card database found...";
+                MainWindow.CurrentInstance.UtilsInfoLabel.Content = "No card database found...";
 
                 // Disbale buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
 
                 // Call the download method with the progress handler
-                await DownloadDatabaseIfNotExistsAsync(databasePath);
+                await DownloadDatabaseIfNotExistsAsync(databasePath, "Performing first-time setup of card database - please wait...");
 
                 await DBAccess.OpenConnectionAsync();
 
@@ -56,11 +56,11 @@ public class DownloadAndPrepDB
             MessageBox.Show($"Error while checking database existence: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
-    public static async Task DownloadDatabaseIfNotExistsAsync(string databasePath) // Download card database from mtgjson in SQLite format    
+    public static async Task DownloadDatabaseIfNotExistsAsync(string databasePath, string statusMessage) // Download card database from mtgjson in SQLite format    
     {
         try
         {
-            MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = "Performing first-time setup of card database -please wait...";
+            MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = statusMessage;
 
             if (MainWindow.CurrentInstance?.progressBar != null)
             {
@@ -283,7 +283,7 @@ public class DownloadAndPrepDB
 
             try
             {
-                StatusMessageUpdated?.Invoke($"Downloading reference for set icons");
+                StatusMessageUpdated?.Invoke($"Downloading reference for new set icons");
                 // Asynchronously make a request to get all sets
                 HttpResponseMessage response = await client.GetAsync(url); // Use async/await instead of .Result
                 if (response.IsSuccessStatusCode)
@@ -313,10 +313,6 @@ public class DownloadAndPrepDB
                             }
                         }
                     }
-                }
-                else
-                {
-                    Debug.WriteLine("Failed to retrieve set information from Scryfall.");
                 }
             }
             catch (Exception ex)
