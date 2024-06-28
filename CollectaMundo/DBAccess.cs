@@ -70,7 +70,6 @@ namespace CollectaMundo
                 MessageBox.Show($"Opening connection failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
         public static void CloseConnection()
         {
             try

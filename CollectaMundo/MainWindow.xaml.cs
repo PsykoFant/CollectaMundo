@@ -1098,7 +1098,7 @@ namespace CollectaMundo
 
         #endregion
 
-        #region UI elements for updating card database
+        #region UI elements for utilities
         private async void checkForUpdatesButton_Click(object sender, RoutedEventArgs e)
         {
             await UpdateDB.CheckForUpdatesAsync();
@@ -1114,6 +1114,10 @@ namespace CollectaMundo
             {
                 StatusLabel.Content = message;
             });
+        }
+        private async void Button_Click(object sender, RoutedEventArgs e)
+        {
+            await BackupRestore.CreateCsvBackupAsync();
         }
         #endregion
 
