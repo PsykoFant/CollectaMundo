@@ -582,8 +582,8 @@
                 <Button x:Name="CheckForUpdatesButton" Content="Check for updates" HorizontalAlignment="Left" VerticalAlignment="Top" Width="130" Click="checkForUpdatesButton_Click" Margin="10,0,0,0"/>
                 <Label x:Name="UtilsInfoLabel" Content="" HorizontalAlignment="Left" Margin="10,25,0,0" VerticalAlignment="Top" Width="182" Height="30"/>
                 <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Width="129" Click="updateDbButton_Click" Visibility="Collapsed"/>
-                <Button x:Name="CreateBackupButton" Content="Create backup of my collection" HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top" Click="Button_Click"/>
-                <Button x:Name="ImportCollectionButton" Content="Import to my collection" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top"/>
+                <Button x:Name="CreateBackupButton" Content="Create backup of my collection" HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top" Click="CreateBackupButton_Click"/>
+                <Button x:Name="ImportCollectionButton" Content="Import to my collection" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Click="ImportCollectionButton_Click"/>
             </Grid>
             <Grid x:Name="GridUtilsScreen" HorizontalAlignment="Center" Width="1320">
 

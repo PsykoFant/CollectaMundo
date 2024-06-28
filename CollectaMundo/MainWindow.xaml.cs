@@ -1115,9 +1115,14 @@ namespace CollectaMundo
                 StatusLabel.Content = message;
             });
         }
-        private async void Button_Click(object sender, RoutedEventArgs e)
+        private async void CreateBackupButton_Click(object sender, RoutedEventArgs e)
         {
             await BackupRestore.CreateCsvBackupAsync();
+        }
+
+        private void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
+        {
+            BackupRestore.ImportCsv();
         }
         #endregion
 

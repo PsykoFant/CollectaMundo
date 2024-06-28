@@ -1,4 +1,5 @@
-﻿using System.Data.SQLite;
+﻿using Microsoft.Win32;
+using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -71,7 +72,54 @@ namespace CollectaMundo
             }
         }
 
+        public static void ImportCsv()
+        {
+            try
+            {
+                // Open file dialog to select CSV file
+                OpenFileDialog openFileDialog = new OpenFileDialog
+                {
+                    Filter = "CSV files (*.csv)|*.csv",
+                    Title = "Select a CSV file"
+                };
 
+                bool? result = openFileDialog.ShowDialog();
+                if (result == true)
+                {
+                    string filePath = openFileDialog.FileName;
+                    var collection = ParseCsvFile(filePath);
 
+                    // Log the object's content
+                    foreach (var item in collection)
+                    {
+                        Debug.WriteLine(item);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error importing CSV: {ex.Message}");
+                MessageBox.Show($"Error importing CSV: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private static List<string> ParseCsvFile(string filePath)
+        {
+            var collection = new List<string>();
+
+            using (var reader = new StreamReader(filePath, Encoding.UTF8))
+            {
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine();
+                    if (line != null)
+                    {
+                        collection.Add(line);
+                    }
+                }
+            }
+
+            return collection;
+        }
     }
 }
