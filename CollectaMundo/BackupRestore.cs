@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using System.Collections.ObjectModel;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
@@ -71,12 +72,10 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
-
-        public static void ImportCsv()
+        public static async Task<ObservableCollection<CardSet.CardItem>> ImportCsvAsync()
         {
             try
             {
-                // Open file dialog to select CSV file
                 OpenFileDialog openFileDialog = new OpenFileDialog
                 {
                     Filter = "CSV files (*.csv)|*.csv",
@@ -87,13 +86,15 @@ namespace CollectaMundo
                 if (result == true)
                 {
                     string filePath = openFileDialog.FileName;
-                    var collection = ParseCsvFile(filePath);
+                    var cardItems = await ParseCsvFileAsync(filePath);
 
                     // Log the object's content
-                    foreach (var item in collection)
+                    foreach (var item in cardItems)
                     {
-                        Debug.WriteLine(item);
+                        Debug.WriteLine($"Name: {item.Name}, Set: {item.SetCode}, Count: {item.Count}, Condition: {item.SelectedCondition}, Language: {item.Language}, Finish: {item.SelectedFinish}");
                     }
+
+                    return cardItems;
                 }
             }
             catch (Exception ex)
@@ -101,25 +102,71 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error importing CSV: {ex.Message}");
                 MessageBox.Show($"Error importing CSV: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
 
-        private static List<string> ParseCsvFile(string filePath)
+            return new ObservableCollection<CardSet.CardItem>();
+        }
+        private static async Task<ObservableCollection<CardSet.CardItem>> ParseCsvFileAsync(string filePath)
         {
-            var collection = new List<string>();
+            var cardItems = new ObservableCollection<CardSet.CardItem>();
+            List<string> headers = new List<string>();
+            char delimiter = ',';
 
             using (var reader = new StreamReader(filePath, Encoding.UTF8))
             {
+                // Read the header
+                var header = await reader.ReadLineAsync();
+                if (header == null) return cardItems;
+
+                // Detect delimiter
+                if (header.Contains(';'))
+                {
+                    delimiter = ';';
+                }
+
+                headers = header.Split(delimiter).ToList();
+
                 while (!reader.EndOfStream)
                 {
-                    var line = reader.ReadLine();
-                    if (line != null)
+                    var line = await reader.ReadLineAsync();
+                    if (line == null) continue;
+
+                    var values = line.Split(delimiter);
+                    var cardItem = new CardSet.CardItem { CsvHeaders = headers }; // Set headers here
+
+                    // Assuming the CSV columns are ordered as Name, Set, Count, Condition, Language, Finish
+                    for (int i = 0; i < headers.Count; i++)
                     {
-                        collection.Add(line);
+                        switch (headers[i].ToLower())
+                        {
+                            case "name":
+                                cardItem.Name = values[i];
+                                break;
+                            case "set":
+                                cardItem.SetCode = values[i];
+                                break;
+                            case "count":
+                                cardItem.Count = int.Parse(values[i]);
+                                break;
+                            case "condition":
+                                cardItem.SelectedCondition = values[i];
+                                break;
+                            case "language":
+                                cardItem.Language = values[i];
+                                break;
+                            case "finish":
+                                cardItem.SelectedFinish = values[i];
+                                break;
+                        }
                     }
+
+                    cardItems.Add(cardItem);
                 }
             }
 
-            return collection;
+            return cardItems;
         }
+
+
+
     }
 }

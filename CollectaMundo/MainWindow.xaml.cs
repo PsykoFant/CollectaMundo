@@ -246,7 +246,7 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
+            //await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
             await FillComboBoxesAsync();
 
@@ -843,14 +843,14 @@ namespace CollectaMundo
             AddStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToAddListView.Visibility = Visibility.Visible;
             ButtonAddCardsToMyCollection.Visibility = Visibility.Visible;
-            addToCollectionManager.EditOrAddToCollection_Click(sender, e, addToCollectionManager.cardItemsToAdd);
+            addToCollectionManager.EditOrAddCard_Click(sender, e, addToCollectionManager.cardItemsToAdd);
         }
         private void EditCollectionHandler(object sender, RoutedEventArgs e)
         {
             EditStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToEditListView.Visibility = Visibility.Visible;
             ButtonEditCardsInMyCollection.Visibility = Visibility.Visible;
-            addToCollectionManager.EditOrAddToCollection_Click(sender, e, addToCollectionManager.cardItemsToEdit);
+            addToCollectionManager.EditOrAddCard_Click(sender, e, addToCollectionManager.cardItemsToEdit);
         }
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
@@ -1120,10 +1120,32 @@ namespace CollectaMundo
             await BackupRestore.CreateCsvBackupAsync();
         }
 
-        private void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
+        private async void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
         {
-            BackupRestore.ImportCsv();
+            var cardItems = await BackupRestore.ImportCsvAsync();
+            PopulateColumnMappingListView(cardItems);
         }
+
+        private void PopulateColumnMappingListView(ObservableCollection<CardSet.CardItem> cardItems)
+        {
+            // Assuming cardItems contain CSV headers in a consistent format
+            var csvHeaders = cardItems.SelectMany(item => item.CsvHeaders).Distinct().ToList();
+
+            // Create a list of CardItem with mapping capabilities
+            var mappingItems = new List<CardSet.CardItem>
+            {
+                new CardSet.CardItem { Name = "Name", CsvHeaders = csvHeaders },
+                new CardSet.CardItem { Name = "Set", CsvHeaders = csvHeaders },
+                new CardSet.CardItem { Name = "Count", CsvHeaders = csvHeaders },
+                new CardSet.CardItem { Name = "Condition", CsvHeaders = csvHeaders },
+                new CardSet.CardItem { Name = "Language", CsvHeaders = csvHeaders },
+                new CardSet.CardItem { Name = "Finish", CsvHeaders = csvHeaders }
+            };
+
+            ColumnMappingListView.ItemsSource = mappingItems;
+        }
+
+
         #endregion
 
         #region Top menu navigation

@@ -47,7 +47,7 @@ namespace CollectaMundo
                 }
             }
         }
-        public async void EditOrAddToCollection_Click(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
+        public async void EditOrAddCard_Click(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
         {
             var button = sender as Button;
             if (button?.DataContext is CardSet selectedCard)
@@ -94,7 +94,7 @@ namespace CollectaMundo
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Failed to add card to collection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Debug.WriteLine($"EditOrAddToCollection_Click error: {ex.Message}");
+                    Debug.WriteLine($"EditOrAddCard_Click error: {ex.Message}");
                 }
             }
         }
