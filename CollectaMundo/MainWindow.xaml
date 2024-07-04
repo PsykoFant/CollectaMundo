@@ -586,29 +586,36 @@
                 <Button x:Name="ImportCollectionButton" Content="Import to my collection" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Click="ImportCollectionButton_Click"/>
             </Grid>
             <Grid x:Name="GridUtilsScreen" HorizontalAlignment="Center" Width="1320">
-                <ListView Name="ColumnMappingListView" Margin="10,50,10,10">
-                    <ListView.View>
-                        <GridView>
-                            <GridViewColumn Header="CardSet Field" Width="150">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Path=Name}" />
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="CSV Column" Width="150">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding CsvHeaders}" SelectedItem="{Binding Path=SelectedNameHeader}" />
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                        </GridView>
-                    </ListView.View>
-                </ListView>
+                <Grid x:Name="GridImportStep1" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                    <Label x:Name="ImportStep1Label" Content="Map imported collection headers" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                    <ListView Name="ColumnMappingListView" Margin="0,222,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Height="352">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="CardSet Field" Width="150">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Path=Name}" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="CSV Column" Width="150">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <ComboBox ItemsSource="{Binding CsvHeaders}" SelectedItem="{Binding Path=SelectedNameHeader}" />
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                    <Button x:Name="ImportStep1Button" Content="Next" HorizontalAlignment="Center" Margin="0,611,0,0" VerticalAlignment="Top" Click="ImportStep1Button_Click"/>
+                </Grid>
+                <Grid x:Name="GridImportStep2" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                    <Label x:Name="ImportStep2Label" Content="Map imported collection headers" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
 
+                    <Button x:Name="ImportStep2Button" Content="Next" HorizontalAlignment="Center" Margin="0,611,0,0" VerticalAlignment="Top"/>
+                </Grid>
             </Grid>
-
         </Grid>
     </Grid>
 </Window>

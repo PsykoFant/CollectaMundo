@@ -193,7 +193,7 @@ namespace CollectaMundo
                             insertCommand.Parameters.AddWithValue("@count", currentCardItem.Count);
                             insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
                             insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
-                            insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish ?? "Standard");
+                            insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish ?? "Standard"); // %%% Hvorfor "Standard"?
 
                             await insertCommand.ExecuteNonQueryAsync();
                         }

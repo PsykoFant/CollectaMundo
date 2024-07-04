@@ -8,6 +8,7 @@ using System.Windows;
 
 namespace CollectaMundo
 {
+
     public class BackupRestore
     {
         public static async Task CreateCsvBackupAsync()
@@ -72,7 +73,8 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
-        public static async Task<ObservableCollection<CardSet.CardItem>> ImportCsvAsync()
+        public static ObservableCollection<CardSet.CardItem> tempImport { get; private set; } = new ObservableCollection<CardSet.CardItem>();
+        public static async Task ImportCsvAsync()
         {
             try
             {
@@ -86,15 +88,13 @@ namespace CollectaMundo
                 if (result == true)
                 {
                     string filePath = openFileDialog.FileName;
-                    var cardItems = await ParseCsvFileAsync(filePath);
+                    tempImport = await ParseCsvFileAsync(filePath);
 
                     // Log the object's content
-                    foreach (var item in cardItems)
+                    foreach (var item in tempImport)
                     {
                         Debug.WriteLine($"Name: {item.Name}, Set: {item.SetCode}, Count: {item.Count}, Condition: {item.SelectedCondition}, Language: {item.Language}, Finish: {item.SelectedFinish}");
                     }
-
-                    return cardItems;
                 }
             }
             catch (Exception ex)
@@ -102,9 +102,8 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error importing CSV: {ex.Message}");
                 MessageBox.Show($"Error importing CSV: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            return new ObservableCollection<CardSet.CardItem>();
         }
+
         private static async Task<ObservableCollection<CardSet.CardItem>> ParseCsvFileAsync(string filePath)
         {
             var cardItems = new ObservableCollection<CardSet.CardItem>();
@@ -166,6 +165,62 @@ namespace CollectaMundo
             return cardItems;
         }
 
+        public static async Task SearchAndAddUuidAsync()
+        {
+            try
+            {
+                await DBAccess.OpenConnectionAsync();
+                if (DBAccess.connection == null)
+                {
+                    throw new InvalidOperationException("Database connection is not initialized.");
+                }
+
+                foreach (var item in tempImport)
+                {
+                    string name = item.Name;
+                    string set = item.SetCode;
+
+                    string query = "SELECT uuid FROM cards WHERE name = @name AND setCode = @set";
+                    using (var command = new SQLiteCommand(query, DBAccess.connection))
+                    {
+                        command.Parameters.AddWithValue("@name", name);
+                        command.Parameters.AddWithValue("@set", set);
+
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            List<string> uuids = new List<string>();
+                            while (await reader.ReadAsync())
+                            {
+                                uuids.Add(reader["uuid"].ToString());
+                            }
+
+                            if (uuids.Count == 0)
+                            {
+                                Debug.WriteLine($"Fail: Could not find any cards with name {name} and set {set}");
+                            }
+                            else if (uuids.Count == 1)
+                            {
+                                Debug.WriteLine($"Success: Found a unique uuid for card {name} in set {set}");
+                                item.Uuid = uuids[0];
+                            }
+                            else
+                            {
+                                Debug.WriteLine($"Fail: Found more than one card with name {name} and set {set}");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error searching for UUIDs: {ex.Message}");
+                MessageBox.Show($"Error searching for UUIDs: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
+        }
 
 
     }

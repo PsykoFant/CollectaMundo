@@ -1119,19 +1119,23 @@ namespace CollectaMundo
         {
             await BackupRestore.CreateCsvBackupAsync();
         }
-
         private async void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
         {
-            var cardItems = await BackupRestore.ImportCsvAsync();
-            PopulateColumnMappingListView(cardItems);
+            await BackupRestore.ImportCsvAsync();
+            PopulateColumnMappingListView();
+            GridImportStep1.Visibility = Visibility.Visible;
         }
-
-        private void PopulateColumnMappingListView(ObservableCollection<CardSet.CardItem> cardItems)
+        private async void ImportStep1Button_Click(object sender, RoutedEventArgs e)
         {
-            // Assuming cardItems contain CSV headers in a consistent format
-            var csvHeaders = cardItems.SelectMany(item => item.CsvHeaders).Distinct().ToList();
+            GridImportStep1.Visibility = Visibility.Collapsed;
+            await BackupRestore.SearchAndAddUuidAsync();
+            GridImportStep2.Visibility = Visibility.Visible;
 
-            // Create a list of CardItem with mapping capabilities
+        }
+        private void PopulateColumnMappingListView()
+        {
+            var csvHeaders = BackupRestore.tempImport.FirstOrDefault()?.CsvHeaders ?? new List<string>();
+
             var mappingItems = new List<CardSet.CardItem>
             {
                 new CardSet.CardItem { Name = "Name", CsvHeaders = csvHeaders },
@@ -1144,6 +1148,7 @@ namespace CollectaMundo
 
             ColumnMappingListView.ItemsSource = mappingItems;
         }
+
 
 
         #endregion
