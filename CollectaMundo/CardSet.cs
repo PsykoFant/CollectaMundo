@@ -61,13 +61,6 @@ namespace CollectaMundo
         public string? Uuid { get; set; }
         public ImageSource? SetIcon { get; set; }
         public ImageSource? ManaCostImage { get; set; }
-        public List<string> CsvHeaders { get; set; } = new List<string>();
-        public string? SelectedNameHeader { get; set; }
-        public string? SelectedSetHeader { get; set; }
-        public string? SelectedCountHeader { get; set; }
-        public string? SelectedConditionHeader { get; set; }
-        public string? SelectedLanguageHeader { get; set; }
-        public string? SelectedFinishHeader { get; set; }
         public class CardItem : CardSet, INotifyPropertyChanged
         {
             public int? CardId { get; set; }
@@ -116,5 +109,4 @@ namespace CollectaMundo
             public string? SelectedFinish { get; set; }
         }
     }
-
 }

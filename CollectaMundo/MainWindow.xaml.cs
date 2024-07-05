@@ -1128,28 +1128,28 @@ namespace CollectaMundo
         private async void ImportStep1Button_Click(object sender, RoutedEventArgs e)
         {
             GridImportStep1.Visibility = Visibility.Collapsed;
-            await BackupRestore.SearchAndAddUuidAsync();
-            GridImportStep2.Visibility = Visibility.Visible;
 
+            // Create a list of mappings based on the selected values in the ListView
+            var mappings = NameAndSetMappingListView.Items.Cast<ColumnMapping>().ToList();
+
+            await BackupRestore.SearchByCardNameOrSet(mappings);
+
+            GridImportStep2.Visibility = Visibility.Visible;
         }
+
         private void PopulateColumnMappingListView()
         {
-            var csvHeaders = BackupRestore.tempImport.FirstOrDefault()?.CsvHeaders ?? new List<string>();
+            var csvHeaders = BackupRestore.tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
 
-            var mappingItems = new List<CardSet.CardItem>
+            var mappingItems = new List<ColumnMapping>
             {
-                new CardSet.CardItem { Name = "Name", CsvHeaders = csvHeaders },
-                new CardSet.CardItem { Name = "Set", CsvHeaders = csvHeaders },
-                new CardSet.CardItem { Name = "Count", CsvHeaders = csvHeaders },
-                new CardSet.CardItem { Name = "Condition", CsvHeaders = csvHeaders },
-                new CardSet.CardItem { Name = "Language", CsvHeaders = csvHeaders },
-                new CardSet.CardItem { Name = "Finish", CsvHeaders = csvHeaders }
+                new ColumnMapping { CardSetField = "Name", CsvHeaders = csvHeaders },
+                new ColumnMapping { CardSetField = "Set Name", CsvHeaders = csvHeaders },
+                new ColumnMapping { CardSetField = "Set Code", CsvHeaders = csvHeaders },
             };
 
-            ColumnMappingListView.ItemsSource = mappingItems;
+            NameAndSetMappingListView.ItemsSource = mappingItems;
         }
-
-
 
         #endregion
 

@@ -9,6 +9,29 @@ using System.Windows;
 namespace CollectaMundo
 {
 
+    /*
+     * (0. Søg på uuid, code eller whatever)
+     * 1. Søg på navn og set, set code
+     *  - Hvis unikt match
+     *      - Tilføj uuid til tempImport
+     *      - Tilføj uuid til cardItemsToAdd
+     *  - Hvis multiple match
+     *      - Tilføj multiple = true på tempImport
+     *      - Tilføj array med fundne uuids på tempImport
+     * 2. Match multiples
+     *  - Listview med alle multiple = true på tempImport
+     *  - Anden kolonne Navn på fundne multiples, vælg i dropdown
+     *      - Tilføj uuid til tempImport
+     *      - Tilføj uuid til cardItemsToAdd
+     * 3. Map quantity
+     *  - Tilføj quantity til CardItemsToAdd fra tempImport hvor uuid matcher uuid fra tempImport 
+     * 4. Map condition
+     *  - Map conditions fra liste over tilgængelige conditions fra tempImport
+     *  - Tilføj conditions til CardItemsToAdd fra fra tempImport hvor uuid matcher uuid fra tempImport
+     * 6. Map foil
+     * 5. Map language
+    */
+
     public class BackupRestore
     {
         public static async Task CreateCsvBackupAsync()
@@ -73,7 +96,11 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
-        public static ObservableCollection<CardSet.CardItem> tempImport { get; private set; } = new ObservableCollection<CardSet.CardItem>();
+        public class TempCardItem
+        {
+            public Dictionary<string, string> Fields { get; set; } = new Dictionary<string, string>();
+        }
+        public static ObservableCollection<TempCardItem> tempImport { get; private set; } = new ObservableCollection<TempCardItem>();
         public static async Task ImportCsvAsync()
         {
             try
@@ -93,7 +120,10 @@ namespace CollectaMundo
                     // Log the object's content
                     foreach (var item in tempImport)
                     {
-                        Debug.WriteLine($"Name: {item.Name}, Set: {item.SetCode}, Count: {item.Count}, Condition: {item.SelectedCondition}, Language: {item.Language}, Finish: {item.SelectedFinish}");
+                        foreach (var field in item.Fields)
+                        {
+                            Debug.WriteLine($"{field.Key}: {field.Value}");
+                        }
                     }
                 }
             }
@@ -103,10 +133,9 @@ namespace CollectaMundo
                 MessageBox.Show($"Error importing CSV: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-        private static async Task<ObservableCollection<CardSet.CardItem>> ParseCsvFileAsync(string filePath)
+        private static async Task<ObservableCollection<TempCardItem>> ParseCsvFileAsync(string filePath)
         {
-            var cardItems = new ObservableCollection<CardSet.CardItem>();
+            var cardItems = new ObservableCollection<TempCardItem>();
             List<string> headers = new List<string>();
             char delimiter = ',';
 
@@ -130,32 +159,11 @@ namespace CollectaMundo
                     if (line == null) continue;
 
                     var values = line.Split(delimiter);
-                    var cardItem = new CardSet.CardItem { CsvHeaders = headers }; // Set headers here
+                    var cardItem = new TempCardItem();
 
-                    // Assuming the CSV columns are ordered as Name, Set, Count, Condition, Language, Finish
                     for (int i = 0; i < headers.Count; i++)
                     {
-                        switch (headers[i].ToLower())
-                        {
-                            case "name":
-                                cardItem.Name = values[i];
-                                break;
-                            case "set":
-                                cardItem.SetCode = values[i];
-                                break;
-                            case "count":
-                                cardItem.Count = int.Parse(values[i]);
-                                break;
-                            case "condition":
-                                cardItem.SelectedCondition = values[i];
-                                break;
-                            case "language":
-                                cardItem.Language = values[i];
-                                break;
-                            case "finish":
-                                cardItem.SelectedFinish = values[i];
-                                break;
-                        }
+                        cardItem.Fields[headers[i]] = values.Length > i ? values[i] : string.Empty;
                     }
 
                     cardItems.Add(cardItem);
@@ -164,8 +172,7 @@ namespace CollectaMundo
 
             return cardItems;
         }
-
-        public static async Task SearchAndAddUuidAsync()
+        public static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
         {
             try
             {
@@ -175,12 +182,63 @@ namespace CollectaMundo
                     throw new InvalidOperationException("Database connection is not initialized.");
                 }
 
+                var nameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Name")?.CsvHeader;
+                var setNameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Set Name")?.CsvHeader;
+                var setCodeMapping = mappings.FirstOrDefault(m => m.CardSetField == "Set Code")?.CsvHeader;
+
+                if (nameMapping == null)
+                {
+                    throw new InvalidOperationException("Name mapping not found.");
+                }
+
                 foreach (var item in tempImport)
                 {
-                    string name = item.Name;
-                    string set = item.SetCode;
+                    if (!item.Fields.TryGetValue(nameMapping, out string name))
+                    {
+                        Debug.WriteLine($"Fail: Could not find mapping for card name with header {nameMapping}");
+                        continue;
+                    }
 
-                    string query = "SELECT uuid FROM cards WHERE name = @name AND setCode = @set";
+                    string set = string.Empty;
+                    string query = string.Empty;
+
+                    if (setCodeMapping != null && item.Fields.TryGetValue(setCodeMapping, out set))
+                    {
+                        query = "SELECT uuid FROM cards WHERE name = @name AND setCode = @set";
+                    }
+                    else if (setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string setName))
+                    {
+                        // Lookup set code from set name
+                        string setCodeQuery = "SELECT code FROM sets WHERE name = @setName";
+                        string setCode;
+
+                        using (var setCodeCommand = new SQLiteCommand(setCodeQuery, DBAccess.connection))
+                        {
+                            setCodeCommand.Parameters.AddWithValue("@setName", setName);
+
+                            using (var setCodeReader = await setCodeCommand.ExecuteReaderAsync())
+                            {
+                                if (await setCodeReader.ReadAsync())
+                                {
+                                    setCode = setCodeReader["code"].ToString();
+                                }
+                                else
+                                {
+                                    Debug.WriteLine($"Fail: Could not find set code for set name {setName}");
+                                    continue;
+                                }
+                            }
+                        }
+
+                        set = setCode;
+                        query = "SELECT uuid FROM cards WHERE name = @name AND setCode = @set";
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"Fail: Could not find mapping for card set with headers {setCodeMapping ?? "N/A"} or {setNameMapping ?? "N/A"}");
+                        continue;
+                    }
+
                     using (var command = new SQLiteCommand(query, DBAccess.connection))
                     {
                         command.Parameters.AddWithValue("@name", name);
@@ -200,8 +258,8 @@ namespace CollectaMundo
                             }
                             else if (uuids.Count == 1)
                             {
-                                Debug.WriteLine($"Success: Found a unique uuid for card {name} in set {set}");
-                                item.Uuid = uuids[0];
+                                Debug.WriteLine($"Success: Found a unique uuid for card {name} in set {set}: {uuids[0]}");
+                                item.Fields["uuid"] = uuids[0];
                             }
                             else
                             {
@@ -221,7 +279,6 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
-
 
     }
 }
