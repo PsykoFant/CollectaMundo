@@ -199,72 +199,29 @@ namespace CollectaMundo
                         continue;
                     }
 
-                    string set = string.Empty;
-                    string query = string.Empty;
+                    bool matchFound = false;
 
-                    if (setCodeMapping != null && item.Fields.TryGetValue(setCodeMapping, out set))
+                    if (setCodeMapping != null && item.Fields.TryGetValue(setCodeMapping, out string setCode))
                     {
-                        query = "SELECT uuid FROM cards WHERE name = @name AND setCode = @set";
+                        matchFound = await SearchBySetCode(name, setCode, item);
+
+                        if (!matchFound && setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string setName))
+                        {
+                            matchFound = await SearchBySetName(name, setName, item);
+                        }
+
+                        if (!matchFound)
+                        {
+                            Debug.WriteLine($"Fail: Could not find a match by set code {setCode}");
+                        }
                     }
                     else if (setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string setName))
                     {
-                        // Lookup set code from set name
-                        string setCodeQuery = "SELECT code FROM sets WHERE name = @setName";
-                        string setCode;
+                        matchFound = await SearchBySetName(name, setName, item);
 
-                        using (var setCodeCommand = new SQLiteCommand(setCodeQuery, DBAccess.connection))
+                        if (!matchFound)
                         {
-                            setCodeCommand.Parameters.AddWithValue("@setName", setName);
-
-                            using (var setCodeReader = await setCodeCommand.ExecuteReaderAsync())
-                            {
-                                if (await setCodeReader.ReadAsync())
-                                {
-                                    setCode = setCodeReader["code"].ToString();
-                                }
-                                else
-                                {
-                                    Debug.WriteLine($"Fail: Could not find set code for set name {setName}");
-                                    continue;
-                                }
-                            }
-                        }
-
-                        set = setCode;
-                        query = "SELECT uuid FROM cards WHERE name = @name AND setCode = @set";
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"Fail: Could not find mapping for card set with headers {setCodeMapping ?? "N/A"} or {setNameMapping ?? "N/A"}");
-                        continue;
-                    }
-
-                    using (var command = new SQLiteCommand(query, DBAccess.connection))
-                    {
-                        command.Parameters.AddWithValue("@name", name);
-                        command.Parameters.AddWithValue("@set", set);
-
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            List<string> uuids = new List<string>();
-                            while (await reader.ReadAsync())
-                            {
-                                uuids.Add(reader["uuid"].ToString());
-                            }
-
-                            if (uuids.Count == 0)
-                            {
-                                Debug.WriteLine($"Fail: Could not find any cards with name {name} and set {set}");
-                            }
-                            else if (uuids.Count == 1)
-                            {
-                                Debug.WriteLine($"Success: Found a unique uuid for card {name} in set {set}: {uuids[0]}");
-                                item.Fields["uuid"] = uuids[0];
-                            }
-                            else
-                            {
-                                Debug.WriteLine($"Fail: Found more than one card with name {name} and set {set}");
-                            }
+                            Debug.WriteLine($"Fail: Could not find a match by set name {setName}");
                         }
                     }
                 }
@@ -279,6 +236,71 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
+        private static async Task<bool> SearchBySetCode(string name, string setCode, TempCardItem item)
+        {
+            string query = "SELECT uuid FROM cards WHERE name = @name AND setCode = @setCode";
+            List<string> uuids = new List<string>();
 
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@name", name);
+                command.Parameters.AddWithValue("@setCode", setCode);
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        uuids.Add(reader["uuid"].ToString());
+                    }
+                }
+            }
+
+            return ProcessUuidResults(uuids, name, setCode, item);
+        }
+        private static async Task<bool> SearchBySetName(string name, string setName, TempCardItem item)
+        {
+            string setCodeQuery = "SELECT code FROM sets WHERE name LIKE @setName";
+            string setCode = null;
+
+            using (var setCodeCommand = new SQLiteCommand(setCodeQuery, DBAccess.connection))
+            {
+                setCodeCommand.Parameters.AddWithValue("@setName", "%" + setName + "%");
+
+                using (var setCodeReader = await setCodeCommand.ExecuteReaderAsync())
+                {
+                    if (await setCodeReader.ReadAsync())
+                    {
+                        setCode = setCodeReader["code"].ToString();
+                    }
+                }
+            }
+
+            if (setCode == null)
+            {
+                Debug.WriteLine($"Fail: Could not find set code for set name {setName}");
+                return false;
+            }
+
+            return await SearchBySetCode(name, setCode, item);
+        }
+        private static bool ProcessUuidResults(List<string> uuids, string name, string set, TempCardItem item)
+        {
+            if (uuids.Count == 0)
+            {
+                Debug.WriteLine($"Fail: Could not find any cards with name {name} and set {set}");
+                return false;
+            }
+            else if (uuids.Count == 1)
+            {
+                Debug.WriteLine($"Success: Found a unique uuid for card {name} in set {set}: {uuids[0]}");
+                item.Fields["uuid"] = uuids[0];
+                return true;
+            }
+            else
+            {
+                Debug.WriteLine($"Fail: Found more than one card with name {name} and set {set}");
+                return false;
+            }
+        }
     }
 }
