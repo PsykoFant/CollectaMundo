@@ -1134,8 +1134,28 @@ namespace CollectaMundo
 
             await BackupRestore.SearchByCardNameOrSet(mappings);
 
+            // Debug output after search
+            Debug.WriteLine("UUIDs added to AddToCollectionManager:");
+
+            foreach (var cardItem in AddToCollectionManager.Instance.cardItemsToAdd)
+            {
+                Debug.WriteLine($"UUID: {cardItem.Uuid}");
+            }
+
+            Debug.WriteLine("Elements with multiple UUIDs in tempImport:");
+
+            foreach (var item in BackupRestore.tempImport)
+            {
+                if (item.Fields.TryGetValue("uuids", out string? uuids))
+                {
+                    Debug.WriteLine($"UUIDs: {uuids}");
+                }
+            }
+
             GridImportStep2.Visibility = Visibility.Visible;
         }
+
+
 
         private void PopulateColumnMappingListView()
         {

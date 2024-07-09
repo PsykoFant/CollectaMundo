@@ -10,6 +10,8 @@ namespace CollectaMundo
 {
     public class AddToCollectionManager
     {
+        private static AddToCollectionManager? _instance;
+        public static AddToCollectionManager Instance => _instance ?? (_instance = new AddToCollectionManager());
         public ObservableCollection<CardSet.CardItem> cardItemsToAdd { get; private set; }
         public ObservableCollection<CardSet.CardItem> cardItemsToEdit { get; private set; }
         public AddToCollectionManager()

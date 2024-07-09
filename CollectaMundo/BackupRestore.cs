@@ -6,32 +6,31 @@ using System.IO;
 using System.Text;
 using System.Windows;
 
+/*
+ * (0. Søg på uuid, code eller whatever)
+ * 1. Søg på navn og set, set code
+ *  - Hvis unikt match
+ *      - Tilføj uuid til tempImport
+ *      - Tilføj uuid til cardItemsToAdd
+ *  - Hvis multiple match
+ *      - Tilføj multiple = true på tempImport
+ *      - Tilføj array med fundne uuids på tempImport
+ * 2. Match multiples
+ *  - Listview med alle multiple = true på tempImport
+ *  - Anden kolonne Navn på fundne multiples, vælg i dropdown
+ *      - Tilføj uuid til tempImport
+ *      - Tilføj uuid til cardItemsToAdd
+ * 3. Map quantity
+ *  - Tilføj quantity til CardItemsToAdd fra tempImport hvor uuid matcher uuid fra tempImport 
+ * 4. Map condition
+ *  - Map conditions fra liste over tilgængelige conditions fra tempImport
+ *  - Tilføj conditions til CardItemsToAdd fra fra tempImport hvor uuid matcher uuid fra tempImport
+ * 6. Map foil
+ * 5. Map language
+*/
+
 namespace CollectaMundo
 {
-
-    /*
-     * (0. Søg på uuid, code eller whatever)
-     * 1. Søg på navn og set, set code
-     *  - Hvis unikt match
-     *      - Tilføj uuid til tempImport
-     *      - Tilføj uuid til cardItemsToAdd
-     *  - Hvis multiple match
-     *      - Tilføj multiple = true på tempImport
-     *      - Tilføj array med fundne uuids på tempImport
-     * 2. Match multiples
-     *  - Listview med alle multiple = true på tempImport
-     *  - Anden kolonne Navn på fundne multiples, vælg i dropdown
-     *      - Tilføj uuid til tempImport
-     *      - Tilføj uuid til cardItemsToAdd
-     * 3. Map quantity
-     *  - Tilføj quantity til CardItemsToAdd fra tempImport hvor uuid matcher uuid fra tempImport 
-     * 4. Map condition
-     *  - Map conditions fra liste over tilgængelige conditions fra tempImport
-     *  - Tilføj conditions til CardItemsToAdd fra fra tempImport hvor uuid matcher uuid fra tempImport
-     * 6. Map foil
-     * 5. Map language
-    */
-
     public class BackupRestore
     {
         public static async Task CreateCsvBackupAsync()
@@ -96,11 +95,14 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
+
         public class TempCardItem
         {
             public Dictionary<string, string> Fields { get; set; } = new Dictionary<string, string>();
         }
+
         public static ObservableCollection<TempCardItem> tempImport { get; private set; } = new ObservableCollection<TempCardItem>();
+
         public static async Task ImportCsvAsync()
         {
             try
@@ -133,6 +135,7 @@ namespace CollectaMundo
                 MessageBox.Show($"Error importing CSV: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         private static async Task<ObservableCollection<TempCardItem>> ParseCsvFileAsync(string filePath)
         {
             var cardItems = new ObservableCollection<TempCardItem>();
@@ -172,6 +175,7 @@ namespace CollectaMundo
 
             return cardItems;
         }
+
         public static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
         {
             try
@@ -193,7 +197,7 @@ namespace CollectaMundo
 
                 foreach (var item in tempImport)
                 {
-                    if (!item.Fields.TryGetValue(nameMapping, out string name))
+                    if (!item.Fields.TryGetValue(nameMapping, out string? name))
                     {
                         Debug.WriteLine($"Fail: Could not find mapping for card name with header {nameMapping}");
                         continue;
@@ -201,11 +205,11 @@ namespace CollectaMundo
 
                     bool matchFound = false;
 
-                    if (setCodeMapping != null && item.Fields.TryGetValue(setCodeMapping, out string setCode))
+                    if (setCodeMapping != null && item.Fields.TryGetValue(setCodeMapping, out string? setCode))
                     {
                         matchFound = await SearchBySetCode(name, setCode, item);
 
-                        if (!matchFound && setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string setName))
+                        if (!matchFound && setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string? setName))
                         {
                             matchFound = await SearchBySetName(name, setName, item);
                         }
@@ -215,13 +219,13 @@ namespace CollectaMundo
                             Debug.WriteLine($"Fail: Could not find a match by set code {setCode}");
                         }
                     }
-                    else if (setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string setName))
+                    else if (setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string? setName))
                     {
                         matchFound = await SearchBySetName(name, setName, item);
 
                         if (!matchFound)
                         {
-                            Debug.WriteLine($"Fail: Could not find a match by set name {setName}");
+                            Debug.WriteLine($"Fail: matchFound was false - Could not find a match by set name {setName}");
                         }
                     }
                 }
@@ -238,6 +242,7 @@ namespace CollectaMundo
         }
         private static async Task<bool> SearchBySetCode(string name, string setCode, TempCardItem item)
         {
+            Debug.WriteLine($"Trying to search by set code: {setCode}");
             string query = "SELECT uuid FROM cards WHERE name = @name AND setCode = @setCode";
             List<string> uuids = new List<string>();
 
@@ -250,7 +255,11 @@ namespace CollectaMundo
                 {
                     while (await reader.ReadAsync())
                     {
-                        uuids.Add(reader["uuid"].ToString());
+                        var uuid = reader["uuid"]?.ToString();
+                        if (!string.IsNullOrEmpty(uuid))
+                        {
+                            uuids.Add(uuid);
+                        }
                     }
                 }
             }
@@ -259,48 +268,84 @@ namespace CollectaMundo
         }
         private static async Task<bool> SearchBySetName(string name, string setName, TempCardItem item)
         {
-            string setCodeQuery = "SELECT code FROM sets WHERE name LIKE @setName";
-            string setCode = null;
+            Debug.WriteLine($"Trying to search by set name: {setName}");
+
+            // Query to find the set code from the sets table based on the set name
+            string setCodeQuery = "SELECT code FROM sets WHERE name = @setName";
+            string? setCode = null;
 
             using (var setCodeCommand = new SQLiteCommand(setCodeQuery, DBAccess.connection))
             {
-                setCodeCommand.Parameters.AddWithValue("@setName", "%" + setName + "%");
+                setCodeCommand.Parameters.AddWithValue("@setName", setName);
 
                 using (var setCodeReader = await setCodeCommand.ExecuteReaderAsync())
                 {
                     if (await setCodeReader.ReadAsync())
                     {
-                        setCode = setCodeReader["code"].ToString();
+                        setCode = setCodeReader["code"]?.ToString();
                     }
                 }
             }
 
             if (setCode == null)
             {
-                Debug.WriteLine($"Fail: Could not find set code for set name {setName}");
+                Debug.WriteLine($"Fail: SetCode was null for {setName}");
                 return false;
             }
 
-            return await SearchBySetCode(name, setCode, item);
+            // Use the found set code to search in the cards table
+            string query = "SELECT uuid FROM cards WHERE name = @name AND setCode = @setCode";
+            List<string> uuids = new List<string>();
+
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@name", name);
+                command.Parameters.AddWithValue("@setCode", setCode);
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var uuid = reader["uuid"]?.ToString();
+                        if (!string.IsNullOrEmpty(uuid))
+                        {
+                            uuids.Add(uuid);
+                        }
+                    }
+                }
+            }
+
+            return ProcessUuidResults(uuids, name, setCode, item);
         }
         private static bool ProcessUuidResults(List<string> uuids, string name, string set, TempCardItem item)
         {
             if (uuids.Count == 0)
             {
-                Debug.WriteLine($"Fail: Could not find any cards with name {name} and set {set}");
+                Debug.WriteLine($"Fail: Could not find any cards with name {name} and set {set}. Uuids: {uuids.Count}");
                 return false;
             }
             else if (uuids.Count == 1)
             {
                 Debug.WriteLine($"Success: Found a unique uuid for card {name} in set {set}: {uuids[0]}");
                 item.Fields["uuid"] = uuids[0];
+
+                // Add the card to cardItemsToAdd in AddToCollectionManager
+                AddToCollectionManager.Instance.cardItemsToAdd.Add(new CardSet.CardItem
+                {
+                    Uuid = uuids[0],
+                });
+
                 return true;
             }
             else
             {
-                Debug.WriteLine($"Fail: Found more than one card with name {name} and set {set}");
-                return false;
+                Debug.WriteLine($"Whoops: Found more than one card with name {name} and set {set}. Uuids: {uuids.Count}");
+                item.Fields["uuids"] = string.Join(",", uuids); // Storing the uuids as a comma-separated string
+
+                return true;
             }
         }
     }
 }
+
+
