@@ -95,14 +95,13 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
-
+        // Class to store data read from csv-file and hold uuids found by search
         public class TempCardItem
         {
             public Dictionary<string, string> Fields { get; set; } = new Dictionary<string, string>();
         }
 
         public static ObservableCollection<TempCardItem> tempImport { get; private set; } = new ObservableCollection<TempCardItem>();
-
         public static async Task ImportCsvAsync()
         {
             try
@@ -135,7 +134,6 @@ namespace CollectaMundo
                 MessageBox.Show($"Error importing CSV: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
         private static async Task<ObservableCollection<TempCardItem>> ParseCsvFileAsync(string filePath)
         {
             var cardItems = new ObservableCollection<TempCardItem>();
@@ -175,7 +173,6 @@ namespace CollectaMundo
 
             return cardItems;
         }
-
         public static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
         {
             try
@@ -340,6 +337,8 @@ namespace CollectaMundo
             else
             {
                 Debug.WriteLine($"Whoops: Found more than one card with name {name} and set {set}. Uuids: {uuids.Count}");
+                item.Fields["Name"] = name;
+                item.Fields["Set"] = set;
                 item.Fields["uuids"] = string.Join(",", uuids); // Storing the uuids as a comma-separated string
 
                 return true;

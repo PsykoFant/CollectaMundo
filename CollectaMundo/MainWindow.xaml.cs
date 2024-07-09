@@ -1141,22 +1141,19 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"UUID: {cardItem.Uuid}");
             }
-
             Debug.WriteLine("Elements with multiple UUIDs in tempImport:");
-
             foreach (var item in BackupRestore.tempImport)
             {
                 if (item.Fields.TryGetValue("uuids", out string? uuids))
                 {
-                    Debug.WriteLine($"UUIDs: {uuids}");
+                    string name = item.Fields.ContainsKey("Name") ? item.Fields["Name"] : "Unknown";
+                    string set = item.Fields.ContainsKey("Set") ? item.Fields["Set"] : "Unknown";
+                    Debug.WriteLine($"Name: {name}, Set: {set}, UUIDs: {uuids}");
                 }
             }
-
+            // end debug
             GridImportStep2.Visibility = Visibility.Visible;
         }
-
-
-
         private void PopulateColumnMappingListView()
         {
             var csvHeaders = BackupRestore.tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
