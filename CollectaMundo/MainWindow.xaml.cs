@@ -178,10 +178,11 @@ namespace CollectaMundo
                         t.finishes AS Finishes, 
                         t.side AS Side 
                     FROM tokens t 
-                    JOIN sets s ON t.setCode = s.code 
-                    LEFT JOIN keyruneImages k ON t.setCode = k.setCode 
+                    JOIN sets s ON t.setCode = s.tokenSetCode 
+                    LEFT JOIN keyruneImages k ON (SELECT code FROM sets WHERE tokenSetCode = t.setCode) = k.setCode
                     LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-                        WHERE t.side IS NULL OR t.side = 'a'";
+                    WHERE t.side IS NULL OR t.side = 'a'
+                    ";
 
         // The CardSet object which holds all the cards read from db
         private List<CardSet> allCards = new List<CardSet>();
@@ -247,7 +248,7 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
+            //await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
             await FillComboBoxesAsync();
 
