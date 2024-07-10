@@ -414,12 +414,6 @@ namespace CollectaMundo
                 return true;
             }
         }
-
-
-
-
-
-
         public static void PopulateColumnMappingListView()
         {
             var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();

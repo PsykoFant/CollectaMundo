@@ -10,7 +10,6 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using static CollectaMundo.BackupRestore;
 using static CollectaMundo.CardSet;
 
 namespace CollectaMundo
@@ -248,7 +247,7 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            //await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
+            await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
             await FillComboBoxesAsync();
 
@@ -725,7 +724,7 @@ namespace CollectaMundo
         #endregion
 
         #region Show selected card image
-        // Show the card image for the highlighted datagrid row
+        // Show the card image for the highlighted DataGrid row
         private async void ShowSelectedCardImage(object sender, SelectionChangedEventArgs e)
         {
             if (sender is DataGrid dataGrid && dataGrid.SelectedItem is CardSet selectedCard
@@ -735,35 +734,9 @@ namespace CollectaMundo
                 {
                     await DBAccess.OpenConnectionAsync();
                     string? scryfallId = await GetScryfallIdByUuidAsync(selectedCard.Uuid, selectedCard.Types);
+
+                    await ShowCardImage(scryfallId, selectedCard.Uuid);
                     DBAccess.CloseConnection();
-
-                    if (!string.IsNullOrEmpty(scryfallId) && scryfallId.Length >= 2)
-                    {
-                        char dir1 = scryfallId[0];
-                        char dir2 = scryfallId[1];
-
-                        string cardImageUrl = $"https://cards.scryfall.io/normal/front/{dir1}/{dir2}/{scryfallId}.jpg";
-                        string secondCardImageUrl = $"https://cards.scryfall.io/normal/back/{dir1}/{dir2}/{scryfallId}.jpg";
-
-                        Debug.WriteLine(scryfallId);
-                        Debug.WriteLine(cardImageUrl);
-
-                        // Assuming CardFrontLabel and CardBackLabel are accessible globally or within the same context
-                        if (selectedCard.Side == "a")
-                        {
-                            CardFrontLabel.Visibility = Visibility.Visible;
-                            ImageSourceUrl = cardImageUrl;  // Update ImageSourceUrl accordingly
-                            CardBackLabel.Visibility = Visibility.Visible;
-                            ImageSourceUrl2nd = secondCardImageUrl;  // Update ImageSourceUrl2nd accordingly
-                        }
-                        else
-                        {
-                            CardFrontLabel.Visibility = Visibility.Visible;
-                            ImageSourceUrl = cardImageUrl;
-                            CardBackLabel.Visibility = Visibility.Collapsed;
-                            ImageSourceUrl2nd = null;
-                        }
-                    }
                 }
                 catch (Exception ex)
                 {
@@ -773,55 +746,38 @@ namespace CollectaMundo
             }
         }
 
+        // Show the card image for the selected UUID from the dropdown
         private async void UuidSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (sender is ComboBox comboBox && comboBox.SelectedItem is string selectedUuid
-                && comboBox.DataContext is MultipleUuidsItem item)
+            if (sender is ComboBox comboBox && comboBox.SelectedItem is string selectedUuid)
             {
                 try
                 {
                     await DBAccess.OpenConnectionAsync();
                     string? scryfallId = await GetScryfallIdByUuidAsync(selectedUuid);
 
-                    if (!string.IsNullOrEmpty(scryfallId) && scryfallId.Length >= 2)
-                    {
-                        char dir1 = scryfallId[0];
-                        char dir2 = scryfallId[1];
-
-                        string cardImageUrl = $"https://cards.scryfall.io/normal/front/{dir1}/{dir2}/{scryfallId}.jpg";
-                        string secondCardImageUrl = $"https://cards.scryfall.io/normal/back/{dir1}/{dir2}/{scryfallId}.jpg";
-
-                        Debug.WriteLine(scryfallId);
-                        Debug.WriteLine(cardImageUrl);
-
-                        // Assuming CardFrontLabel and CardBackLabel are accessible globally or within the same context
-                        CardFrontLabel.Visibility = Visibility.Visible;
-                        ImageSourceUrl = cardImageUrl;
-
-                        if (await IsDoubleSidedCardAsync(selectedUuid))
-                        {
-                            CardBackLabel.Visibility = Visibility.Visible;
-                            ImageSourceUrl2nd = secondCardImageUrl;
-                        }
-                        else
-                        {
-                            CardBackLabel.Visibility = Visibility.Collapsed;
-                            ImageSourceUrl2nd = null;
-                        }
-                    }
+                    await ShowCardImage(scryfallId, selectedUuid);
+                    DBAccess.CloseConnection();
                 }
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"Error in selection changed: {ex.Message}");
                     MessageBox.Show($"Error in selection changed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-                finally { DBAccess.CloseConnection(); }
             }
         }
 
-        private async Task<string?> GetScryfallIdByUuidAsync(string uuid)
+        // Method to get the Scryfall ID by UUID and type
+        private async Task<string?> GetScryfallIdByUuidAsync(string uuid, string? types = null)
         {
             string query = "SELECT scryfallId FROM cardIdentifiers WHERE uuid = @uuid";
+
+            // If types is provided and contains "Token", switch to tokenIdentifiers
+            if (types != null && types.Contains("Token"))
+            {
+                query = "SELECT scryfallId FROM tokenIdentifiers WHERE uuid = @uuid";
+            }
+
             using (var command = new SQLiteCommand(query, DBAccess.connection))
             {
                 command.Parameters.AddWithValue("@uuid", uuid);
@@ -834,9 +790,61 @@ namespace CollectaMundo
                     }
                 }
             }
+
+            // If the first query did not return anything and types is null, try the second query for tokens
+            if (types == null)
+            {
+                string secondQuery = "SELECT scryfallId FROM tokenIdentifiers WHERE uuid = @uuid";
+
+                using (var secondCommand = new SQLiteCommand(secondQuery, DBAccess.connection))
+                {
+                    secondCommand.Parameters.AddWithValue("@uuid", uuid);
+
+                    using (var secondReader = await secondCommand.ExecuteReaderAsync())
+                    {
+                        if (await secondReader.ReadAsync())
+                        {
+                            return secondReader["scryfallId"].ToString();
+                        }
+                    }
+                }
+            }
+
             return null;
         }
 
+        // Method to show the card image
+        private async Task ShowCardImage(string? scryfallId, string uuid)
+        {
+            if (!string.IsNullOrEmpty(scryfallId) && scryfallId.Length >= 2)
+            {
+                char dir1 = scryfallId[0];
+                char dir2 = scryfallId[1];
+
+                string cardImageUrl = $"https://cards.scryfall.io/normal/front/{dir1}/{dir2}/{scryfallId}.jpg";
+                string secondCardImageUrl = $"https://cards.scryfall.io/normal/back/{dir1}/{dir2}/{scryfallId}.jpg";
+
+                Debug.WriteLine(scryfallId);
+                Debug.WriteLine(cardImageUrl);
+
+                // Assuming CardFrontLabel and CardBackLabel are accessible globally or within the same context
+                CardFrontLabel.Visibility = Visibility.Visible;
+                ImageSourceUrl = cardImageUrl;
+
+                if (await IsDoubleSidedCardAsync(uuid))
+                {
+                    CardBackLabel.Visibility = Visibility.Visible;
+                    ImageSourceUrl2nd = secondCardImageUrl;
+                }
+                else
+                {
+                    CardBackLabel.Visibility = Visibility.Collapsed;
+                    ImageSourceUrl2nd = null;
+                }
+            }
+        }
+
+        // Method to check if the card is double-sided
         private async Task<bool> IsDoubleSidedCardAsync(string uuid)
         {
             string query = "SELECT side FROM cards WHERE uuid = @uuid";
@@ -856,33 +864,6 @@ namespace CollectaMundo
         }
 
 
-        // Get the scryfallId for url to show the selected card image
-        public async Task<string?> GetScryfallIdByUuidAsync(string uuid, string types)
-        {
-            try
-            {
-                // Determine the correct table based on the type of the card.
-                string tableName = types.Contains("Token") ? "tokenIdentifiers" : "cardIdentifiers";
-
-                // Prepare the query using the determined table.
-                string query = $"SELECT scryfallId FROM {tableName} WHERE uuid = @uuid";
-                using (var command = new SQLiteCommand(query, DBAccess.connection))
-                {
-                    command.Parameters.AddWithValue("@uuid", uuid);
-                    var result = await command.ExecuteScalarAsync();
-                    if (result != null && result != DBNull.Value)
-                    {
-                        return result.ToString();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in GetScryfallIdByUuidAsync: {ex.Message}");
-                MessageBox.Show($"Error in GetScryfallIdByUuidAsync: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            return null;
-        }
 
         #endregion
 
