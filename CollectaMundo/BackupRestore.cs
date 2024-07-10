@@ -173,149 +173,197 @@ namespace CollectaMundo
 
             return cardItems;
         }
-        public static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
+public static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
+{
+    try
+    {
+        await DBAccess.OpenConnectionAsync();
+        if (DBAccess.connection == null)
         {
-            try
+            throw new InvalidOperationException("Database connection is not initialized.");
+        }
+
+        var nameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Name")?.CsvHeader;
+        var setNameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Set Name")?.CsvHeader;
+        var setCodeMapping = mappings.FirstOrDefault(m => m.CardSetField == "Set Code")?.CsvHeader;
+
+        if (nameMapping == null)
+        {
+            throw new InvalidOperationException("Name mapping not found.");
+        }
+
+        foreach (var item in tempImport)
+        {
+            if (!item.Fields.TryGetValue(nameMapping, out string name))
             {
-                await DBAccess.OpenConnectionAsync();
-                if (DBAccess.connection == null)
+                Debug.WriteLine($"Fail: Could not find mapping for card name with header {nameMapping}");
+                continue;
+            }
+
+            bool matchFound = false;
+
+            if (setCodeMapping != null && item.Fields.TryGetValue(setCodeMapping, out string setCode))
+            {
+                matchFound = await SearchBySetCode(name, setCode, item);
+
+                if (!matchFound && setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string setName))
                 {
-                    throw new InvalidOperationException("Database connection is not initialized.");
+                    matchFound = await SearchBySetName(name, setName, item);
                 }
 
-                var nameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Name")?.CsvHeader;
-                var setNameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Set Name")?.CsvHeader;
-                var setCodeMapping = mappings.FirstOrDefault(m => m.CardSetField == "Set Code")?.CsvHeader;
-
-                if (nameMapping == null)
+                if (!matchFound)
                 {
-                    throw new InvalidOperationException("Name mapping not found.");
-                }
-
-                foreach (var item in tempImport)
-                {
-                    if (!item.Fields.TryGetValue(nameMapping, out string? name))
-                    {
-                        Debug.WriteLine($"Fail: Could not find mapping for card name with header {nameMapping}");
-                        continue;
-                    }
-
-                    bool matchFound = false;
-
-                    if (setCodeMapping != null && item.Fields.TryGetValue(setCodeMapping, out string? setCode))
-                    {
-                        matchFound = await SearchBySetCode(name, setCode, item);
-
-                        if (!matchFound && setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string? setName))
-                        {
-                            matchFound = await SearchBySetName(name, setName, item);
-                        }
-
-                        if (!matchFound)
-                        {
-                            Debug.WriteLine($"Fail: Could not find a match by set code {setCode}");
-                        }
-                    }
-                    else if (setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string? setName))
-                    {
-                        matchFound = await SearchBySetName(name, setName, item);
-
-                        if (!matchFound)
-                        {
-                            Debug.WriteLine($"Fail: matchFound was false - Could not find a match by set name {setName}");
-                        }
-                    }
+                    Debug.WriteLine($"Fail: Could not find a match by set code {setCode}");
                 }
             }
-            catch (Exception ex)
+            else if (setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string setName))
             {
-                Debug.WriteLine($"Error searching for UUIDs: {ex.Message}");
-                MessageBox.Show($"Error searching for UUIDs: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                DBAccess.CloseConnection();
+                matchFound = await SearchBySetName(name, setName, item);
+
+                if (!matchFound)
+                {
+                    Debug.WriteLine($"Fail: matchFound was false - Could not find a match by set name {setName}");
+                }
             }
         }
-        private static async Task<bool> SearchBySetCode(string name, string setCode, TempCardItem item)
+    }
+    catch (Exception ex)
+    {
+        Debug.WriteLine($"Error searching for UUIDs: {ex.Message}");
+        MessageBox.Show($"Error searching for UUIDs: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+    finally
+    {
+        DBAccess.CloseConnection();
+    }
+}
+
+private static async Task<bool> SearchBySetCode(string name, string setCode, TempCardItem item)
+{
+    Debug.WriteLine($"Trying to search by set code: {setCode}");
+    var uuids = await SearchTableForUuidAsync("cards", name, setCode);
+
+    if (uuids.Count == 0)
+    {
+        uuids = await SearchTableForUuidAsync("tokens", name, setCode);
+        if (uuids.Count > 0)
         {
-            Debug.WriteLine($"Trying to search by set code: {setCode}");
-            string query = "SELECT uuid FROM cards WHERE name = @name AND setCode = @setCode";
-            List<string> uuids = new List<string>();
-
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@name", name);
-                command.Parameters.AddWithValue("@setCode", setCode);
-
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    while (await reader.ReadAsync())
-                    {
-                        var uuid = reader["uuid"]?.ToString();
-                        if (!string.IsNullOrEmpty(uuid))
-                        {
-                            uuids.Add(uuid);
-                        }
-                    }
-                }
-            }
-
-            return ProcessUuidResults(uuids, name, setCode, item);
+            item.Fields["table"] = "tokens";
         }
-        private static async Task<bool> SearchBySetName(string name, string setName, TempCardItem item)
+    }
+    else
+    {
+        item.Fields["table"] = "cards";
+    }
+
+    return ProcessUuidResults(uuids, name, setCode, item);
+}
+
+private static async Task<bool> SearchBySetName(string name, string setName, TempCardItem item)
+{
+    Debug.WriteLine($"Trying to search by set name: {setName}");
+
+    // Query to find the set code from the sets table based on the set name
+    string setCodeQuery = "SELECT code FROM sets WHERE name = @setName";
+    string setCode = null;
+
+    using (var setCodeCommand = new SQLiteCommand(setCodeQuery, DBAccess.connection))
+    {
+        setCodeCommand.Parameters.AddWithValue("@setName", setName);
+
+        using (var setCodeReader = await setCodeCommand.ExecuteReaderAsync())
         {
-            Debug.WriteLine($"Trying to search by set name: {setName}");
-
-            // Query to find the set code from the sets table based on the set name
-            string setCodeQuery = "SELECT code FROM sets WHERE name = @setName";
-            string? setCode = null;
-
-            using (var setCodeCommand = new SQLiteCommand(setCodeQuery, DBAccess.connection))
+            if (await setCodeReader.ReadAsync())
             {
-                setCodeCommand.Parameters.AddWithValue("@setName", setName);
-
-                using (var setCodeReader = await setCodeCommand.ExecuteReaderAsync())
-                {
-                    if (await setCodeReader.ReadAsync())
-                    {
-                        setCode = setCodeReader["code"]?.ToString();
-                    }
-                }
+                setCode = setCodeReader["code"]?.ToString();
             }
-
-            if (setCode == null)
-            {
-                Debug.WriteLine($"Fail: SetCode was null for {setName}");
-                return false;
-            }
-
-            // Use the found set code to search in the cards table
-            string query = "SELECT uuid FROM cards WHERE name = @name AND setCode = @setCode";
-            List<string> uuids = new List<string>();
-
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@name", name);
-                command.Parameters.AddWithValue("@setCode", setCode);
-
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    while (await reader.ReadAsync())
-                    {
-                        var uuid = reader["uuid"]?.ToString();
-                        if (!string.IsNullOrEmpty(uuid))
-                        {
-                            uuids.Add(uuid);
-                        }
-                    }
-                }
-            }
-
-            return ProcessUuidResults(uuids, name, setCode, item);
         }
-        private static bool ProcessUuidResults(List<string> uuids, string name, string set, TempCardItem item)
+    }
+
+    if (setCode == null)
+    {
+        Debug.WriteLine($"Fail: SetCode was null for {setName}");
+        return false;
+    }
+
+    // Use the found set code to search in the cards and tokens table
+    var uuids = await SearchTableForUuidAsync("cards", name, setCode);
+
+    if (uuids.Count == 0)
+    {
+        uuids = await SearchTableForUuidAsync("tokens", name, setCode);
+        if (uuids.Count > 0)
         {
+            item.Fields["table"] = "tokens";
+        }
+    }
+    else
+    {
+        item.Fields["table"] = "cards";
+    }
+
+    return ProcessUuidResults(uuids, name, setCode, item);
+}
+
+private static async Task<List<string>> SearchTableForUuidAsync(string tableName, string name, string setCode)
+{
+    string query = $"SELECT uuid FROM {tableName} WHERE name = @name AND setCode = @setCode";
+    List<string> uuids = new List<string>();
+
+    using (var command = new SQLiteCommand(query, DBAccess.connection))
+    {
+        command.Parameters.AddWithValue("@name", name);
+        command.Parameters.AddWithValue("@setCode", setCode);
+
+        using (var reader = await command.ExecuteReaderAsync())
+        {
+            while (await reader.ReadAsync())
+            {
+                var uuid = reader["uuid"]?.ToString();
+                if (!string.IsNullOrEmpty(uuid))
+                {
+                    uuids.Add(uuid);
+                }
+            }
+        }
+    }
+
+    return uuids;
+}
+
+private static bool ProcessUuidResults(List<string> uuids, string name, string set, TempCardItem item)
+{
+    if (uuids.Count == 0)
+    {
+        Debug.WriteLine($"Fail: Could not find any cards with name {name} and set {set}. Uuids: {uuids.Count}");
+        return false;
+    }
+    else if (uuids.Count == 1)
+    {
+        Debug.WriteLine($"Success: Found a unique uuid for card {name} in set {set}: {uuids[0]}");
+        item.Fields["uuid"] = uuids[0];
+
+        // Add the card to cardItemsToAdd in AddToCollectionManager
+        AddToCollectionManager.Instance.cardItemsToAdd.Add(new CardSet.CardItem
+        {
+            Uuid = uuids[0],
+            Name = name,
+            Set = set
+        });
+
+        return true;
+    }
+    else
+    {
+        Debug.WriteLine($"Whoops: Found more than one card with name {name} and set {set}. Uuids: {uuids.Count}");
+        item.Fields["Name"] = name;
+        item.Fields["Set"] = set;
+        item.Fields["uuids"] = string.Join(",", uuids); // Storing the uuids as a comma-separated string
+
+        return true;
+    }
+}
+
             if (uuids.Count == 0)
             {
                 Debug.WriteLine($"Fail: Could not find any cards with name {name} and set {set}. Uuids: {uuids.Count}");
