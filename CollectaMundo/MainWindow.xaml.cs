@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using static CollectaMundo.BackupRestore;
 using static CollectaMundo.CardSet;
 
 namespace CollectaMundo
@@ -246,7 +247,7 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            //await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
+            await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
             await FillComboBoxesAsync();
 
@@ -724,7 +725,7 @@ namespace CollectaMundo
 
         #region Show selected card image
         // Show the card image for the highlighted datagrid row
-        private async void OnDataGridSelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void ShowSelectedCardImage(object sender, SelectionChangedEventArgs e)
         {
             if (sender is DataGrid dataGrid && dataGrid.SelectedItem is CardSet selectedCard
                 && !string.IsNullOrEmpty(selectedCard.Uuid) && !string.IsNullOrEmpty(selectedCard.Types))
@@ -770,6 +771,89 @@ namespace CollectaMundo
                 }
             }
         }
+
+        private async void UuidSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is ComboBox comboBox && comboBox.SelectedItem is string selectedUuid
+                && comboBox.DataContext is MultipleUuidsItem item)
+            {
+                try
+                {
+                    await DBAccess.OpenConnectionAsync();
+                    string? scryfallId = await GetScryfallIdByUuidAsync(selectedUuid);
+
+                    if (!string.IsNullOrEmpty(scryfallId) && scryfallId.Length >= 2)
+                    {
+                        char dir1 = scryfallId[0];
+                        char dir2 = scryfallId[1];
+
+                        string cardImageUrl = $"https://cards.scryfall.io/normal/front/{dir1}/{dir2}/{scryfallId}.jpg";
+                        string secondCardImageUrl = $"https://cards.scryfall.io/normal/back/{dir1}/{dir2}/{scryfallId}.jpg";
+
+                        Debug.WriteLine(scryfallId);
+                        Debug.WriteLine(cardImageUrl);
+
+                        // Assuming CardFrontLabel and CardBackLabel are accessible globally or within the same context
+                        CardFrontLabel.Visibility = Visibility.Visible;
+                        ImageSourceUrl = cardImageUrl;
+
+                        if (await IsDoubleSidedCardAsync(selectedUuid))
+                        {
+                            CardBackLabel.Visibility = Visibility.Visible;
+                            ImageSourceUrl2nd = secondCardImageUrl;
+                        }
+                        else
+                        {
+                            CardBackLabel.Visibility = Visibility.Collapsed;
+                            ImageSourceUrl2nd = null;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error in selection changed: {ex.Message}");
+                    MessageBox.Show($"Error in selection changed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally { DBAccess.CloseConnection(); }
+            }
+        }
+
+        private async Task<string?> GetScryfallIdByUuidAsync(string uuid)
+        {
+            string query = "SELECT scryfallId FROM cardIdentifiers WHERE uuid = @uuid";
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@uuid", uuid);
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        return reader["scryfallId"].ToString();
+                    }
+                }
+            }
+            return null;
+        }
+
+        private async Task<bool> IsDoubleSidedCardAsync(string uuid)
+        {
+            string query = "SELECT side FROM cards WHERE uuid = @uuid";
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@uuid", uuid);
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        return reader["side"].ToString() == "a";
+                    }
+                }
+            }
+            return false;
+        }
+
 
         // Get the scryfallId for url to show the selected card image
         public async Task<string?> GetScryfallIdByUuidAsync(string uuid, string types)
@@ -1182,7 +1266,9 @@ namespace CollectaMundo
         private void MenuUtilsButton_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
-            GridContentSection.Visibility = Visibility.Collapsed;
+            //GridContentSection.Visibility = Visibility.Collapsed;
+            GridFiltering.Visibility = Visibility.Collapsed;
+            GridUtilsMenu.Visibility = Visibility.Visible;
             GridUtilitiesSection.Visibility = Visibility.Visible;
         }
 
