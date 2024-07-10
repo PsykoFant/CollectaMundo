@@ -344,6 +344,49 @@ namespace CollectaMundo
                 return true;
             }
         }
+
+
+
+
+
+        public static void PopulateColumnMappingListView()
+        {
+            var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
+
+            var mappingItems = new List<ColumnMapping>
+            {
+                new ColumnMapping { CardSetField = "Name", CsvHeaders = csvHeaders },
+                new ColumnMapping { CardSetField = "Set Name", CsvHeaders = csvHeaders },
+                new ColumnMapping { CardSetField = "Set Code", CsvHeaders = csvHeaders },
+            };
+
+            MainWindow.CurrentInstance.NameAndSetMappingListView.ItemsSource = mappingItems;
+        }
+
+        public class MultipleUuidsItem
+        {
+            public string? Name { get; set; }
+            public List<string>? Uuids { get; set; }
+            public string? SelectedUuid { get; set; }
+        }
+
+        public static void PopulateMultipleUuidsDataGrid()
+        {
+            var itemsWithMultipleUuids = tempImport
+                .Where(item => item.Fields.ContainsKey("uuids"))
+                .Select(item => new MultipleUuidsItem
+                {
+                    Name = item.Fields.ContainsKey("Name") ? item.Fields["Name"] : "Unknown",
+                    Uuids = item.Fields["uuids"].Split(',').ToList(),
+                    SelectedUuid = item.Fields["uuids"].Split(',').FirstOrDefault()
+                })
+                .ToList();
+
+            MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
+            MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+
     }
 }
 

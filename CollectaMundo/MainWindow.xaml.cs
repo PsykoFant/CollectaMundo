@@ -1122,7 +1122,7 @@ namespace CollectaMundo
         private async void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
         {
             await BackupRestore.ImportCsvAsync();
-            PopulateColumnMappingListView();
+            BackupRestore.PopulateColumnMappingListView();
             GridImportStep1.Visibility = Visibility.Visible;
         }
         private async void ImportStep1Button_Click(object sender, RoutedEventArgs e)
@@ -1152,21 +1152,15 @@ namespace CollectaMundo
                 }
             }
             // end debug
+
+            // Populate the DataGrid
+            BackupRestore.PopulateMultipleUuidsDataGrid();
+
             GridImportStep2.Visibility = Visibility.Visible;
         }
-        private void PopulateColumnMappingListView()
-        {
-            var csvHeaders = BackupRestore.tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
 
-            var mappingItems = new List<ColumnMapping>
-            {
-                new ColumnMapping { CardSetField = "Name", CsvHeaders = csvHeaders },
-                new ColumnMapping { CardSetField = "Set Name", CsvHeaders = csvHeaders },
-                new ColumnMapping { CardSetField = "Set Code", CsvHeaders = csvHeaders },
-            };
 
-            NameAndSetMappingListView.ItemsSource = mappingItems;
-        }
+
 
         #endregion
 
