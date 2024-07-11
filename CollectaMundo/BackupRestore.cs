@@ -196,7 +196,7 @@ namespace CollectaMundo
                 {
                     if (!item.Fields.TryGetValue(nameMapping, out string name))
                     {
-                        Debug.WriteLine($"Fail: Could not find mapping for card name with header {nameMapping}");
+                        Debug.WriteLine($"Fail: Could not find mapping for card setName with header {nameMapping}");
                         continue;
                     }
 
@@ -222,7 +222,7 @@ namespace CollectaMundo
 
                         if (!matchFound)
                         {
-                            Debug.WriteLine($"Fail: matchFound was false - Could not find a match by set name {setName}");
+                            Debug.WriteLine($"Fail: matchFound was false - Could not find a match by set setName {setName}");
                         }
                     }
                 }
@@ -240,59 +240,62 @@ namespace CollectaMundo
         private static async Task<bool> SearchBySetCode(string name, string setCode, TempCardItem item)
         {
             Debug.WriteLine($"Trying to search by set code: {setCode}");
-            var uuids = await SearchTableForUuidAsync("cards", name, setCode);
 
-            if (uuids.Count == 0)
+            // We are trying three combinations:
+            // a regular card with a regular set code
+            // a token with a regular set code
+            // a token with a token set code
+
+            // a regular card with a regular set code
+            var uuids1 = await SearchTableForUuidAsync(name, "cards", setCode);
+
+            if (uuids1.Count > 0)
             {
-                uuids = await SearchTableForUuidAsync("tokens", name, setCode);
-                if (uuids.Count > 0)
+                return ProcessUuidResults(uuids1, name, setCode, item);
+            }
+
+            // a token with a regular set code
+            var uuids2 = await SearchTableForUuidAsync(name, "tokens", setCode);
+            if (uuids2.Count > 0)
+            {
+                return ProcessUuidResults(uuids2, name, setCode, item);
+            }
+
+            // a token with a token set code
+            string tokenSetCodeQuery = "SELECT tokenSetCode FROM sets WHERE code = @setCode";
+            string? tokenSetCode = null;
+
+            using (var command = new SQLiteCommand(tokenSetCodeQuery, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@setCode", setCode);
+
+                using (var reader = await command.ExecuteReaderAsync())
                 {
-                    item.Fields["table"] = "tokens";
-                }
-                else
-                {
-                    // No matches found in tokens, search for tokenSetCode
-                    string tokenSetCodeQuery = "SELECT tokenSetCode FROM sets WHERE code = @setCode";
-                    string tokenSetCode = null;
-
-                    using (var tokenSetCodeCommand = new SQLiteCommand(tokenSetCodeQuery, DBAccess.connection))
+                    if (await reader.ReadAsync())
                     {
-                        tokenSetCodeCommand.Parameters.AddWithValue("@setCode", setCode);
-
-                        using (var setCodeReader = await tokenSetCodeCommand.ExecuteReaderAsync())
-                        {
-                            if (await setCodeReader.ReadAsync())
-                            {
-                                tokenSetCode = setCodeReader["tokenSetCode"]?.ToString();
-                            }
-                        }
-                    }
-
-                    if (!string.IsNullOrEmpty(tokenSetCode))
-                    {
-                        uuids = await SearchTableForUuidAsync("tokens", name, tokenSetCode);
-                        if (uuids.Count > 0)
-                        {
-                            item.Fields["table"] = "tokens";
-                            return ProcessUuidResults(uuids, name, tokenSetCode, item);
-                        }
+                        tokenSetCode = reader["tokenSetCode"]?.ToString();
                     }
                 }
             }
-            else
+            if (tokenSetCode != null)
             {
-                item.Fields["table"] = "cards";
+                var uuids3 = await SearchTableForUuidAsync(name, "tokens", tokenSetCode);
+                if (uuids3.Count > 0)
+                {
+                    return ProcessUuidResults(uuids3, name, tokenSetCode, item);
+                }
             }
 
-            return ProcessUuidResults(uuids, name, setCode, item);
+            // If nothing is found, bugger it, return false
+            return false;
         }
         private static async Task<bool> SearchBySetName(string name, string setName, TempCardItem item)
         {
-            Debug.WriteLine($"Trying to search by set name: {setName}");
+            Debug.WriteLine($"Trying to search by set setName: {setName}");
 
             // Query to find the set code from the sets table based on the set name
             string cardsSetCodeQuery = "SELECT code FROM sets WHERE name = @setName";
-            string cardsSetCode = null;
+            string? cardsSetCode = null;
 
             using (var cardsSetCodeCommand = new SQLiteCommand(cardsSetCodeQuery, DBAccess.connection))
             {
@@ -307,8 +310,9 @@ namespace CollectaMundo
                 }
             }
 
+            // Query to find the set tokensSetCode from the sets table based on the set name
             string tokenSetCodeQuery = "SELECT tokenSetCode FROM sets WHERE name = @setName";
-            string tokenSetCode = null;
+            string? tokenSetCode = null;
 
             using (var tokensSetCodeCommand = new SQLiteCommand(tokenSetCodeQuery, DBAccess.connection))
             {
@@ -334,39 +338,38 @@ namespace CollectaMundo
 
             if (cardsSetCode != null)
             {
-                uuids = await SearchTableForUuidAsync("cards", name, cardsSetCode);
+                // Try to find uuid by matching set name and cardsSetCode in table cards
+                uuids = await SearchTableForUuidAsync(name, "cards", cardsSetCode);
                 if (uuids.Count > 0)
                 {
-                    item.Fields["table"] = "cards";
                     return ProcessUuidResults(uuids, name, cardsSetCode, item);
                 }
-            }
-
-            if (tokenSetCode != null)
-            {
-                uuids = await SearchTableForUuidAsync("tokens", name, tokenSetCode);
-                if (uuids.Count > 0)
+                // If nothing is found is table cards, try the same in table tokens
+                else if (tokenSetCode != null)
                 {
-                    item.Fields["table"] = "tokens";
-                    return ProcessUuidResults(uuids, name, tokenSetCode, item);
+                    uuids = await SearchTableForUuidAsync(name, "tokens", tokenSetCode);
+                    if (uuids.Count > 0)
+                    {
+                        return ProcessUuidResults(uuids, name, tokenSetCode, item);
+                    }
                 }
             }
 
             Debug.WriteLine($"Fail: Could not find a match for {name} in set {setName}");
             return false;
         }
-        private static async Task<List<string>> SearchTableForUuidAsync(string tableName, string name, string setCode)
+        private static async Task<List<string>> SearchTableForUuidAsync(string cardName, string table, string setCode)
         {
-            string query = $"SELECT uuid FROM {tableName} WHERE name = @name AND setCode = @setCode";
+            // Construct the query string with the table name
+            string query = $"SELECT uuid FROM {table} WHERE name = @cardName AND setCode = @setCode";
 
-            Debug.WriteLine($"Trying to search {tableName} for name {name} and setCode {setCode}");
-
+            Debug.WriteLine($"Trying to search {table} for card name {cardName} and setCode {setCode}");
 
             List<string> uuids = new List<string>();
 
             using (var command = new SQLiteCommand(query, DBAccess.connection))
             {
-                command.Parameters.AddWithValue("@name", name);
+                command.Parameters.AddWithValue("@cardName", cardName);
                 command.Parameters.AddWithValue("@setCode", setCode);
 
                 using (var reader = await command.ExecuteReaderAsync())
@@ -384,11 +387,12 @@ namespace CollectaMundo
 
             return uuids;
         }
+
         private static bool ProcessUuidResults(List<string> uuids, string name, string set, TempCardItem item)
         {
             if (uuids.Count == 0)
             {
-                Debug.WriteLine($"Fail: Could not find any cards with name {name} and set {set}. Uuids: {uuids.Count}");
+                Debug.WriteLine($"Fail: Could not find any cards with setName {name} and set {set}. Uuids: {uuids.Count}");
                 return false;
             }
             else if (uuids.Count == 1)
@@ -406,7 +410,7 @@ namespace CollectaMundo
             }
             else
             {
-                Debug.WriteLine($"Whoops: Found more than one card with name {name} and set {set}. Uuids: {uuids.Count}");
+                Debug.WriteLine($"Whoops: Found more than one card with setName {name} and set {set}. Uuids: {uuids.Count}");
                 item.Fields["Name"] = name;
                 item.Fields["Set"] = set;
                 item.Fields["uuids"] = string.Join(",", uuids); // Storing the uuids as a comma-separated string
