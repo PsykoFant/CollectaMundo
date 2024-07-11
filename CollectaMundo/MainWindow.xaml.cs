@@ -770,8 +770,6 @@ namespace CollectaMundo
             }
         }
 
-
-
         // Method to get the Scryfall ID by UUID and type
         private async Task<string?> GetScryfallIdByUuidAsync(string uuid, string? types = null)
         {
@@ -1167,7 +1165,8 @@ namespace CollectaMundo
         private async void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
         {
             await BackupRestore.ImportCsvAsync();
-            BackupRestore.PopulateColumnMappingListView();
+            var cardSetFields = new List<string> { "Name", "Set Name", "Set Code" };
+            BackupRestore.PopulateColumnMappingListView(NameAndSetMappingListView, cardSetFields);
             GridImportStep1.Visibility = Visibility.Visible;
         }
         private async void ImportStep1Button_Click(object sender, RoutedEventArgs e)

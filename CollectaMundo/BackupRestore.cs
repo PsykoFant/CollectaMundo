@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 
 /*
  * (0. Søg på uuid, code eller whatever)
@@ -417,19 +418,19 @@ namespace CollectaMundo
                 return true;
             }
         }
-        public static void PopulateColumnMappingListView()
+        public static void PopulateColumnMappingListView(ListView listView, List<string> cardSetFields)
         {
             var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
 
-            var mappingItems = new List<ColumnMapping>
+            var mappingItems = cardSetFields.Select(field => new ColumnMapping
             {
-                new ColumnMapping { CardSetField = "Name", CsvHeaders = csvHeaders },
-                new ColumnMapping { CardSetField = "Set Name", CsvHeaders = csvHeaders },
-                new ColumnMapping { CardSetField = "Set Code", CsvHeaders = csvHeaders },
-            };
+                CardSetField = field,
+                CsvHeaders = csvHeaders
+            }).ToList();
 
-            MainWindow.CurrentInstance.NameAndSetMappingListView.ItemsSource = mappingItems;
+            listView.ItemsSource = mappingItems;
         }
+
         public class UuidVersion
         {
             public string? DisplayText { get; set; }
