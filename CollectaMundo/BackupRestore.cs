@@ -468,8 +468,6 @@ namespace CollectaMundo
         }
         public static void UpdateCardItemsAndTempImport(List<MultipleUuidsItem> multipleUuidsItems)
         {
-
-
             int initialCardItemsToAddCount = AddToCollectionManager.Instance.cardItemsToAdd.Count;
             int updatedItemsCount = 0;
 

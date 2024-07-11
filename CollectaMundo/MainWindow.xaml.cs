@@ -1188,29 +1188,38 @@ namespace CollectaMundo
         {
             GridImportStep2.Visibility = Visibility.Collapsed;
 
-            var multipleUuidsItems = MultipleUuidsDataGrid.ItemsSource as IEnumerable<MultipleUuidsItem>;
+            BackupRestore.DebugImportProcess(); // Debug before updating
 
-            if (multipleUuidsItems != null)
+            // Directly retrieve items from DataGrid
+            var multipleUuidsItems = new List<MultipleUuidsItem>();
+
+            foreach (var item in MultipleUuidsDataGrid.Items)
             {
-                // Convert to List explicitly to ensure we have a concrete collection to work with
-                var multipleUuidsList = multipleUuidsItems.ToList();
-
-                // Check if the SelectedUuid is properly updated
-                foreach (var item in multipleUuidsList)
+                if (item is MultipleUuidsItem multipleUuidsItem)
                 {
-                    Debug.WriteLine($"Before Update - Item: {item.Name}, SelectedUuid: {item.SelectedUuid}");
+                    // Find the corresponding DataGridRow and ComboBox
+                    DataGridRow row = (DataGridRow)MultipleUuidsDataGrid.ItemContainerGenerator.ContainerFromItem(multipleUuidsItem);
+                    if (row != null)
+                    {
+                        ComboBox comboBox = FindVisualChild<ComboBox>(row);
+                        if (comboBox != null && comboBox.SelectedItem is UuidVersion selectedVersion)
+                        {
+                            multipleUuidsItem.SelectedUuid = selectedVersion.Uuid;
+                        }
+                    }
+                    multipleUuidsItems.Add(multipleUuidsItem);
                 }
-
-                BackupRestore.UpdateCardItemsAndTempImport(multipleUuidsList);
             }
+
+            // Convert to List explicitly to ensure we have a concrete collection to work with
+            var multipleUuidsList = multipleUuidsItems.ToList();
+
+            BackupRestore.UpdateCardItemsAndTempImport(multipleUuidsList);
 
             BackupRestore.DebugImportProcess(); // Debug after updating
 
             GridImportStep3.Visibility = Visibility.Visible;
         }
-
-
-
 
         #endregion
 
