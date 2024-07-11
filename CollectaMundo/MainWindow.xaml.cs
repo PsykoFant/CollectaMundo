@@ -247,7 +247,7 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
+            //await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
             await FillComboBoxesAsync();
 
