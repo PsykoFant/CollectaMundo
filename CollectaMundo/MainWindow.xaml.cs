@@ -752,7 +752,7 @@ namespace CollectaMundo
         {
             if (sender is ComboBox comboBox && comboBox.SelectedItem is UuidVersion selectedVersion)
             {
-                string? selectedUuid = selectedVersion.Uuid;
+                string selectedUuid = selectedVersion.Uuid;
                 Debug.WriteLine($"Trying to show image with uuid: {selectedUuid}");
                 try
                 {
@@ -769,6 +769,7 @@ namespace CollectaMundo
                 }
             }
         }
+
 
 
         // Method to get the Scryfall ID by UUID and type
@@ -1178,29 +1179,34 @@ namespace CollectaMundo
 
             await BackupRestore.SearchByCardNameOrSet(mappings);
 
-            // Debug output after search
-            Debug.WriteLine("UUIDs added to AddToCollectionManager:");
-
-            foreach (var cardItem in AddToCollectionManager.Instance.cardItemsToAdd)
-            {
-                Debug.WriteLine($"UUID: {cardItem.Uuid}");
-            }
-            Debug.WriteLine("Elements with multiple UUIDs in tempImport:");
-            foreach (var item in BackupRestore.tempImport)
-            {
-                if (item.Fields.TryGetValue("uuids", out string? uuids))
-                {
-                    string name = item.Fields.ContainsKey("Name") ? item.Fields["Name"] : "Unknown";
-                    string set = item.Fields.ContainsKey("Set") ? item.Fields["Set"] : "Unknown";
-                    Debug.WriteLine($"Name: {name}, Set: {set}, UUIDs: {uuids}");
-                }
-            }
-            // end debug
-
             // Populate the DataGrid
             BackupRestore.PopulateMultipleUuidsDataGrid();
 
             GridImportStep2.Visibility = Visibility.Visible;
+        }
+        private void ImportStep2Button_Click(object sender, RoutedEventArgs e)
+        {
+            GridImportStep2.Visibility = Visibility.Collapsed;
+
+            var multipleUuidsItems = MultipleUuidsDataGrid.ItemsSource as IEnumerable<MultipleUuidsItem>;
+
+            if (multipleUuidsItems != null)
+            {
+                // Convert to List explicitly to ensure we have a concrete collection to work with
+                var multipleUuidsList = multipleUuidsItems.ToList();
+
+                // Check if the SelectedUuid is properly updated
+                foreach (var item in multipleUuidsList)
+                {
+                    Debug.WriteLine($"Before Update - Item: {item.Name}, SelectedUuid: {item.SelectedUuid}");
+                }
+
+                BackupRestore.UpdateCardItemsAndTempImport(multipleUuidsList);
+            }
+
+            BackupRestore.DebugImportProcess(); // Debug after updating
+
+            GridImportStep3.Visibility = Visibility.Visible;
         }
 
 

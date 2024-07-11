@@ -435,7 +435,6 @@ namespace CollectaMundo
             public string? DisplayText { get; set; }
             public string? Uuid { get; set; }
         }
-
         public class MultipleUuidsItem
         {
             public string? Name { get; set; }
@@ -457,10 +456,81 @@ namespace CollectaMundo
                 })
                 .ToList();
 
+            Debug.WriteLine($"Populated MultipleUuidsDataGrid with {itemsWithMultipleUuids.Count} items.");
+
+            foreach (var item in itemsWithMultipleUuids)
+            {
+                Debug.WriteLine($"Item: {item.Name}, UUIDs: {string.Join(", ", item.VersionedUuids.Select(v => v.Uuid))}");
+            }
+
             MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
             MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
         }
+        public static void UpdateCardItemsAndTempImport(List<MultipleUuidsItem> multipleUuidsItems)
+        {
+
+
+            int initialCardItemsToAddCount = AddToCollectionManager.Instance.cardItemsToAdd.Count;
+            int updatedItemsCount = 0;
+
+            foreach (var item in multipleUuidsItems)
+            {
+                Debug.WriteLine($"Processing item: {item.Name}, SelectedUuid: {item.SelectedUuid}");
+
+                if (!string.IsNullOrEmpty(item.SelectedUuid))
+                {
+                    // Add the selected UUID to cardItemsToAdd
+                    AddToCollectionManager.Instance.cardItemsToAdd.Add(new CardSet.CardItem
+                    {
+                        Uuid = item.SelectedUuid,
+                        Name = item.Name // Ensure the name is also added for verification
+                    });
+
+                    updatedItemsCount++;
+
+                    // Update tempImport to replace multiple UUIDs with the selected UUID
+                    var tempItem = tempImport.FirstOrDefault(t => t.Fields.ContainsKey("Name") && t.Fields["Name"] == item.Name);
+                    if (tempItem != null)
+                    {
+                        tempItem.Fields["uuid"] = item.SelectedUuid;
+                        tempItem.Fields.Remove("uuids");
+                        Debug.WriteLine($"Updated tempImport for item: {tempItem.Fields["Name"]} with uuid: {tempItem.Fields["uuid"]}");
+                    }
+                }
+            }
+
+            Debug.WriteLine($"Initial cardItemsToAdd count: {initialCardItemsToAddCount}");
+            Debug.WriteLine($"Updated cardItemsToAdd count: {AddToCollectionManager.Instance.cardItemsToAdd.Count}");
+            Debug.WriteLine($"Number of items updated: {updatedItemsCount}");
+        }
+
+
+
+
+        public static void DebugImportProcess()
+        {
+            // Total number of items in tempImport
+            int totalTempImportItems = tempImport.Count;
+
+            // Number of tempImport items with a single uuid
+            int singleUuidItems = tempImport.Count(item => item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids"));
+
+            // Number of tempImport items with multiple uuids
+            int multipleUuidItems = tempImport.Count(item => item.Fields.ContainsKey("uuids"));
+
+            // Total number of items in cardItemsToAdd
+            int totalCardItemsToAdd = AddToCollectionManager.Instance.cardItemsToAdd.Count;
+
+            // Debug write lines
+            Debug.WriteLine($"Total number of items in tempImport: {totalTempImportItems}");
+            Debug.WriteLine($"Number of tempImport items with single uuid: {singleUuidItems}");
+            Debug.WriteLine($"Number of tempImport items with multiple uuids: {multipleUuidItems}");
+            Debug.WriteLine($"Total number of items in cardItemsToAdd: {totalCardItemsToAdd}");
+        }
     }
+
+
 }
+
 
 

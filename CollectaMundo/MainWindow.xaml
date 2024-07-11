@@ -34,7 +34,7 @@
             <Label x:Name="FirstTimeSetupLabel" Content="" HorizontalAlignment="Left" Margin="591,582,0,0" VerticalAlignment="Top" FontSize="18"/>
 
         </Grid>
-        <Grid x:Name="GridContentSection" Margin="0,40,0,0" d:IsHidden="True">
+        <Grid x:Name="GridContentSection" Margin="0,40,0,0" >
             <Grid x:Name="GridFiltering" Width="300" HorizontalAlignment="Left">
                 <!--Card name and set comboboxes-->
                 <Label x:Name="CardNameLabel" Content="Card Name" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top"/>
@@ -376,7 +376,7 @@
                    Height="374" Margin="0,434,0,0"/>
 
             </Grid>
-            <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Width="1320">
+            <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Width="1320" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT" Height="40"/>
                 <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
                 <!--The main card view datagrid-->
@@ -609,7 +609,7 @@
                         <Button x:Name="ImportStep1Button" Content="Next" HorizontalAlignment="Center" Margin="0,319,0,0" VerticalAlignment="Top" Click="ImportStep1Button_Click"/>
                     </Grid>
                     <Grid x:Name="GridImportStep2" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
-                        <Label x:Name="ImportStep2Label" Content="Map imported collection headers" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                        <Label x:Name="ImportStep2Label" Content="Multiple versions found of one or more cards - please select a version" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
                         <DataGrid x:Name="MultipleUuidsDataGrid" 
                           AutoGenerateColumns="False" 
                           CanUserAddRows="False"
@@ -620,16 +620,21 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ComboBox ItemsSource="{Binding VersionedUuids}" 
-                                              DisplayMemberPath="DisplayText"
-                                              SelectedValuePath="Uuid"
-                                              SelectedValue="{Binding SelectedUuid, Mode=TwoWay}" 
-                                              SelectionChanged="UuidSelectionChanged"/>
+                                          DisplayMemberPath="DisplayText"
+                                          SelectedValuePath="Uuid"
+                                          SelectedValue="{Binding SelectedUuid, Mode=TwoWay}" 
+                                          SelectionChanged="UuidSelectionChanged"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
-                        <Button x:Name="ImportStep2Button" Content="Next" HorizontalAlignment="Left" Margin="962,427,0,0" VerticalAlignment="Top"/>
+
+                        <Button x:Name="ImportStep2Button" Content="Next" HorizontalAlignment="Left" Margin="962,427,0,0" VerticalAlignment="Top" Click="ImportStep2Button_Click"/>
+                    </Grid>
+                    <Grid x:Name="GridImportStep3" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                        <Label x:Name="ImportStep3Label" Content="Mapping of additional fields" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                        <Button x:Name="ImportStep3Button" Content="Next" HorizontalAlignment="Left" Margin="962,427,0,0" VerticalAlignment="Top"/>
                     </Grid>
                 </Grid>
             </Grid>
