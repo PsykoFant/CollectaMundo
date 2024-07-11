@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using static CollectaMundo.BackupRestore;
 using static CollectaMundo.CardSet;
 
 namespace CollectaMundo
@@ -749,8 +750,10 @@ namespace CollectaMundo
         // Show the card image for the selected UUID from the dropdown
         private async void UuidSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (sender is ComboBox comboBox && comboBox.SelectedItem is string selectedUuid)
+            if (sender is ComboBox comboBox && comboBox.SelectedItem is UuidVersion selectedVersion)
             {
+                string? selectedUuid = selectedVersion.Uuid;
+                Debug.WriteLine($"Trying to show image with uuid: {selectedUuid}");
                 try
                 {
                     await DBAccess.OpenConnectionAsync();
@@ -766,6 +769,7 @@ namespace CollectaMundo
                 }
             }
         }
+
 
         // Method to get the Scryfall ID by UUID and type
         private async Task<string?> GetScryfallIdByUuidAsync(string uuid, string? types = null)

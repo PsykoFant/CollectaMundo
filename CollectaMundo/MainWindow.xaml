@@ -616,10 +616,14 @@
                           HorizontalAlignment="Center" Margin="0,210,0,144" Height="453" Width="564">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Card Name" Binding="{Binding Name}" Width="*"/>
-                                <DataGridTemplateColumn Header="UUIDs" Width="*">
+                                <DataGridTemplateColumn Header="Versions" Width="*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <ComboBox ItemsSource="{Binding Uuids}" SelectedItem="{Binding SelectedUuid, Mode=TwoWay}" SelectionChanged="UuidSelectionChanged"/>
+                                            <ComboBox ItemsSource="{Binding VersionedUuids}" 
+                                              DisplayMemberPath="DisplayText"
+                                              SelectedValuePath="Uuid"
+                                              SelectedValue="{Binding SelectedUuid, Mode=TwoWay}" 
+                                              SelectionChanged="UuidSelectionChanged"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

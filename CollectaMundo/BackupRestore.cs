@@ -361,7 +361,7 @@ namespace CollectaMundo
         private static async Task<List<string>> SearchTableForUuidAsync(string cardName, string table, string setCode)
         {
             // Construct the query string with the table name
-            string query = $"SELECT uuid FROM {table} WHERE name = @cardName AND setCode = @setCode";
+            string query = $"SELECT uuid FROM {table} WHERE name = @cardName AND setCode = @setCode AND (side = 'a' OR side IS NULL)";
 
             Debug.WriteLine($"Trying to search {table} for card name {cardName} and setCode {setCode}");
 
@@ -387,7 +387,6 @@ namespace CollectaMundo
 
             return uuids;
         }
-
         private static bool ProcessUuidResults(List<string> uuids, string name, string set, TempCardItem item)
         {
             if (uuids.Count == 0)
@@ -431,10 +430,16 @@ namespace CollectaMundo
 
             MainWindow.CurrentInstance.NameAndSetMappingListView.ItemsSource = mappingItems;
         }
+        public class UuidVersion
+        {
+            public string? DisplayText { get; set; }
+            public string? Uuid { get; set; }
+        }
+
         public class MultipleUuidsItem
         {
             public string? Name { get; set; }
-            public List<string>? Uuids { get; set; }
+            public List<UuidVersion>? VersionedUuids { get; set; }
             public string? SelectedUuid { get; set; }
         }
         public static void PopulateMultipleUuidsDataGrid()
@@ -444,15 +449,17 @@ namespace CollectaMundo
                 .Select(item => new MultipleUuidsItem
                 {
                     Name = item.Fields.ContainsKey("Name") ? item.Fields["Name"] : "Unknown",
-                    Uuids = item.Fields["uuids"].Split(',').ToList(),
-                    SelectedUuid = item.Fields["uuids"].Split(',').FirstOrDefault()
+                    VersionedUuids = item.Fields["uuids"]
+                        .Split(',')
+                        .Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid })
+                        .ToList(),
+                    SelectedUuid = null // Set the initial selection to null
                 })
                 .ToList();
 
             MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
             MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
         }
-
     }
 }
 
