@@ -770,13 +770,7 @@ namespace CollectaMundo
         // Method to get the Scryfall ID by UUID and type
         private async Task<string?> GetScryfallIdByUuidAsync(string uuid, string? types = null)
         {
-            string query = "SELECT scryfallId FROM cardIdentifiers WHERE uuid = @uuid";
-
-            // If types is provided and contains "Token", switch to tokenIdentifiers
-            if (types != null && types.Contains("Token"))
-            {
-                query = "SELECT scryfallId FROM tokenIdentifiers WHERE uuid = @uuid";
-            }
+            string query = "SELECT scryfallId FROM cardIdentifiers WHERE uuid = @uuid UNION ALL SELECT scryfallId FROM tokenIdentifiers WHERE uuid = @uuid";
 
             using (var command = new SQLiteCommand(query, DBAccess.connection))
             {
@@ -790,26 +784,6 @@ namespace CollectaMundo
                     }
                 }
             }
-
-            // If the first query did not return anything and types is null, try the second query for tokens
-            if (types == null)
-            {
-                string secondQuery = "SELECT scryfallId FROM tokenIdentifiers WHERE uuid = @uuid";
-
-                using (var secondCommand = new SQLiteCommand(secondQuery, DBAccess.connection))
-                {
-                    secondCommand.Parameters.AddWithValue("@uuid", uuid);
-
-                    using (var secondReader = await secondCommand.ExecuteReaderAsync())
-                    {
-                        if (await secondReader.ReadAsync())
-                        {
-                            return secondReader["scryfallId"].ToString();
-                        }
-                    }
-                }
-            }
-
             return null;
         }
 
@@ -847,7 +821,7 @@ namespace CollectaMundo
         // Method to check if the card is double-sided
         private async Task<bool> IsDoubleSidedCardAsync(string uuid)
         {
-            string query = "SELECT side FROM cards WHERE uuid = @uuid";
+            string query = "SELECT side FROM cards WHERE uuid = @uuid UNION ALL SELECT side FROM tokens WHERE uuid = @uuid";
             using (var command = new SQLiteCommand(query, DBAccess.connection))
             {
                 command.Parameters.AddWithValue("@uuid", uuid);
