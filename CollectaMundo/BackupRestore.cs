@@ -139,15 +139,6 @@ namespace CollectaMundo
                 {
                     string filePath = openFileDialog.FileName;
                     tempImport = await ParseCsvFileAsync(filePath);
-
-                    // Log the object's content
-                    foreach (var item in tempImport)
-                    {
-                        foreach (var field in item.Fields)
-                        {
-                            Debug.WriteLine($"{field.Key}: {field.Value}");
-                        }
-                    }
                 }
             }
             catch (Exception ex)
@@ -517,7 +508,22 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
             MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
         }
-        public static void PopulateMappingListView(ListView listView, string csvHeader, List<string> cardSetFields)
+        public static async Task InitializeMappingListViewAsync(string csvHeader, bool fetchFromDatabase, ListView listView)
+        {
+            List<string> mappingValues;
+
+            if (fetchFromDatabase)
+            {
+                mappingValues = await GetUniqueFinishesAsync();
+            }
+            else
+            {
+                mappingValues = GetConditionsFromCardSet();
+            }
+
+            PopulateMappingListView(listView, csvHeader, mappingValues);
+        }
+        private static void PopulateMappingListView(ListView listView, string csvHeader, List<string> cardSetFields)
         {
             var csvValues = GetUniqueValuesFromCsv(csvHeader);
 
@@ -530,6 +536,39 @@ namespace CollectaMundo
                 }).ToList();
 
             listView.ItemsSource = mappingItems;
+        }
+
+        private static async Task<List<string>> GetUniqueFinishesAsync()
+        {
+            var uniqueValues = new HashSet<string>();
+
+            string query = $"SELECT finishes FROM cards";
+
+            await DBAccess.OpenConnectionAsync();
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            using (var reader = await command.ExecuteReaderAsync())
+            {
+                while (await reader.ReadAsync())
+                {
+                    var value = reader["finishes"]?.ToString();
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        var splitValues = value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (var splitValue in splitValues)
+                        {
+                            uniqueValues.Add(splitValue.Trim());
+                        }
+                    }
+                }
+            }
+            DBAccess.CloseConnection();
+
+            return uniqueValues.ToList();
+        }
+        private static List<string> GetConditionsFromCardSet()
+        {
+            var cardItem = new CardSet.CardItem();
+            return cardItem.Conditions;
         }
 
         public static List<string> GetUniqueValuesFromCsv(string? csvHeader)
@@ -565,8 +604,7 @@ namespace CollectaMundo
 
             // Create a dictionary for quick lookup of condition mappings
             var conditionMappingDict = conditionMappings
-                .Where(mapping => !string.IsNullOrEmpty(mapping.SelectedCardSetCondition))
-                .ToDictionary(mapping => mapping.CsvCondition, mapping => mapping.SelectedCardSetCondition);
+                .ToDictionary(mapping => mapping.CsvCondition, mapping => mapping.SelectedCardSetCondition ?? "Near Mint");
 
             // Update items in cardItemsToAdd based on tempImport and the mappings
             foreach (var tempItem in tempImport)
@@ -574,11 +612,16 @@ namespace CollectaMundo
                 if (tempItem.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid))
                 {
                     var cardItem = AddToCollectionManager.Instance.cardItemsToAdd.FirstOrDefault(c => c.Uuid == uuid);
-                    if (cardItem != null && tempItem.Fields.TryGetValue("Condition", out var condition))
+                    if (cardItem != null && tempItem.Fields.TryGetValue("Condition", out var condition)) // den her er false...
                     {
                         if (conditionMappingDict.TryGetValue(condition, out var mappedCondition))
                         {
                             cardItem.SelectedCondition = mappedCondition;
+                        }
+                        else
+                        {
+                            // If condition is not found in the dictionary, set to default
+                            cardItem.SelectedCondition = "Near Mint";
                         }
                     }
                 }
@@ -601,6 +644,15 @@ namespace CollectaMundo
                 }
             }
         }
+
+
+
+        public static bool IsFieldMapped(List<ColumnMapping> mappings, string cardSetField)
+        {
+            var fieldMapping = mappings?.FirstOrDefault(mapping => mapping.CardSetField == cardSetField);
+            return fieldMapping != null && !string.IsNullOrEmpty(fieldMapping.CsvHeader);
+        }
+
 
 
         public static void DebugAllItems()

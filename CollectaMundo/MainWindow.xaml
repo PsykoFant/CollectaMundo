@@ -584,7 +584,7 @@
             </Grid>
             <Grid x:Name="GridUtilitiesSection" Width="1320" HorizontalAlignment="Center" VerticalAlignment="Top">
                 <Grid x:Name="GridUtilsScreen" HorizontalAlignment="Center" Width="1320">
-                    <Grid x:Name="GridImportStep1" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                    <Grid x:Name="GridImportNameAndSetMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
                         <Label x:Name="ImportStep1Label" Content="Map imported collection headers" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
                         <ListView x:Name="NameAndSetMappingListView" Margin="0,186,0,0" Width="458" Height="128" HorizontalAlignment="Center" VerticalAlignment="Top">
                             <ListView.View>
@@ -606,9 +606,9 @@
                                 </GridView>
                             </ListView.View>
                         </ListView>
-                        <Button x:Name="ImportStep1Button" Content="Next" HorizontalAlignment="Center" Margin="0,319,0,0" VerticalAlignment="Top" Click="ImportStep1Button_Click"/>
+                        <Button x:Name="ButtonNameAndSetMappingNext" Content="Next" HorizontalAlignment="Center" Margin="0,319,0,0" VerticalAlignment="Top" Click="ButtonNameAndSetMappingNext_Click"/>
                     </Grid>
-                    <Grid x:Name="GridImportStep2" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                    <Grid x:Name="GridImportMultipleUuidsSelection" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
                         <Label x:Name="ImportStep2Label" Content="Multiple versions found of one or more cards - please select a version" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
                         <DataGrid x:Name="MultipleUuidsDataGrid" 
                           AutoGenerateColumns="False" 
@@ -630,9 +630,9 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <Button x:Name="ImportStep2Button" Content="Next" HorizontalAlignment="Left" Margin="962,427,0,0" VerticalAlignment="Top" Click="ImportStep2Button_Click"/>
+                        <Button x:Name="ButtonMultipleUuidsNext" Content="Next" HorizontalAlignment="Left" Margin="962,427,0,0" VerticalAlignment="Top" Click="ButtonMultipleUuidsNext_Click"/>
                     </Grid>
-                    <Grid x:Name="GridImportStep3" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                    <Grid x:Name="GridImportAdditionalFieldsMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
                         <Label x:Name="ImportStep3Label" Content="Mapping of additional fields" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
                         <ListView x:Name="AddionalFieldsMappingListView" Margin="0,186,0,0" Width="388" Height="120" HorizontalAlignment="Center" VerticalAlignment="Top">
                             <ListView.View>
@@ -654,10 +654,10 @@
                                 </GridView>
                             </ListView.View>
                         </ListView>
-                        <Button x:Name="ImportStep3Button" Content="Next" HorizontalAlignment="Left" Margin="926,246,0,0" VerticalAlignment="Top" RenderTransformOrigin="1.178,-5.496" Click="ImportStep3Button_Click"/>
+                        <Button x:Name="ButtonAdditionalFieldsNext" Content="Next" HorizontalAlignment="Left" Margin="926,246,0,0" VerticalAlignment="Top" RenderTransformOrigin="1.178,-5.496" Click="ButtonAdditionalFieldsNext_Click"/>
                     </Grid>
-                    <Grid x:Name="GridImportStep4" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
-                        <Label x:Name="ImportStep4Label" Content="Mapping of additional field values" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                    <Grid x:Name="GridImportCardConditionsMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                        <Label x:Name="ImportStep4Label" Content="Mapping of card conditions" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
                         <ListView x:Name="ConditionsMappingListView" Margin="0,186,0,0" Width="387" Height="170" HorizontalAlignment="Center" VerticalAlignment="Top">
                             <ListView.View>
                                 <GridView>
@@ -678,12 +678,31 @@
                                 </GridView>
                             </ListView.View>
                         </ListView>
-                        <Button x:Name="ImportStep4Button" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ImportStep4Button_Click"/>
+                        <Button x:Name="ButtonConditionMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ButtonConditionMappingNext_Click"/>
                     </Grid>
-                    <Grid x:Name="GridImportStep5" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
-                        <Label x:Name="ImportStep5Label" Content="Mapping of additional field values" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
-                        
-                        <Button x:Name="ImportStep5Button" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top"/>
+                    <Grid x:Name="GridImportFinishesMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                        <Label x:Name="ImportStep5Label" Content="Mapping of card finish" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                        <ListView x:Name="FinishesMappingListView" Margin="0,186,0,0" Width="387" Height="170" HorizontalAlignment="Center" VerticalAlignment="Top">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="CSV Condition" Width="150">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding CsvCondition}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Database Condition" Width="150">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ComboBox ItemsSource="{Binding CardSetConditions}" SelectedItem="{Binding SelectedCardSetCondition}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                        <Button x:Name="ButtonFinishesMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top"/>
                     </Grid>
                 </Grid>
             </Grid>

@@ -195,6 +195,11 @@ namespace CollectaMundo
         // Object of AddToCollectionManager class to access that functionality
         private AddToCollectionManager addToCollectionManager = new AddToCollectionManager();
 
+        private bool isConditionMapped;
+        private bool isFinishMapped;
+        private bool isQuantityMapped;
+        private List<ColumnMapping>? _mappings;
+
         #endregion
         public static MainWindow CurrentInstance
         {
@@ -1162,30 +1167,37 @@ namespace CollectaMundo
         {
             await BackupRestore.CreateCsvBackupAsync();
         }
+
+        // Import wizard buttons methods
         private async void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
         {
+            // Select the csv-file and create a tempImport object with the content
             await BackupRestore.ImportCsvAsync();
+
+
+            // Prepare the listview to map card name, set name and set code and go to the first import wizard screen
             var cardSetFields = new List<string> { "Name", "Set Name", "Set Code" };
             BackupRestore.PopulateColumnMappingListView(NameAndSetMappingListView, cardSetFields);
-            GridImportStep1.Visibility = Visibility.Visible;
+            GridImportNameAndSetMapping.Visibility = Visibility.Visible;
         }
-        private async void ImportStep1Button_Click(object sender, RoutedEventArgs e)
+        private async void ButtonNameAndSetMappingNext_Click(object sender, RoutedEventArgs e)
         {
-            GridImportStep1.Visibility = Visibility.Collapsed;
+            GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
 
-            // Create a list of mappings based on the selected values in the ListView
+            // Create a list of mappings based on the selected values in the ListView. Search for unique uuids based on selected csv-headings for card name, set and set code
             var mappings = NameAndSetMappingListView.Items.Cast<ColumnMapping>().ToList();
-
             await BackupRestore.SearchByCardNameOrSet(mappings);
 
-            // Populate the DataGrid
-            BackupRestore.PopulateMultipleUuidsDataGrid();
+            // Populate the DataGrid for multiple uuids mapping screen and make it visible
 
-            GridImportStep2.Visibility = Visibility.Visible;
+            // insert logic to handle if there are not any multiple uuids to go directly to additional fields mapping
+
+            BackupRestore.PopulateMultipleUuidsDataGrid();
+            GridImportMultipleUuidsSelection.Visibility = Visibility.Visible;
         }
-        private void ImportStep2Button_Click(object sender, RoutedEventArgs e)
+        private void ButtonMultipleUuidsNext_Click(object sender, RoutedEventArgs e)
         {
-            GridImportStep2.Visibility = Visibility.Collapsed;
+            GridImportMultipleUuidsSelection.Visibility = Visibility.Collapsed;
 
             BackupRestore.DebugImportProcess(); // Debug before updating
 
@@ -1213,47 +1225,87 @@ namespace CollectaMundo
             // Convert to List explicitly to ensure we have a concrete collection to work with
             var multipleUuidsList = multipleUuidsItems.ToList();
 
+            // Update tempImport and cardItemsToAdd with the uuids for the selected versions of the cards
             BackupRestore.UpdateCardItemsAndTempImport(multipleUuidsList);
 
             BackupRestore.DebugImportProcess(); // Debug after updating
 
-            var cardSetFields = new List<string> { "Condition", "Foil", "Quantity" };
+            // Prepare the listview to map additional fields and make the screen visible
+            var cardSetFields = new List<string> { "Condition", "SelectedFinish", "Quantity" };
             BackupRestore.PopulateColumnMappingListView(AddionalFieldsMappingListView, cardSetFields);
-
-
-            GridImportStep3.Visibility = Visibility.Visible;
+            GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
         }
-        private void ImportStep3Button_Click(object sender, RoutedEventArgs e)
+        private async void ButtonAdditionalFieldsNext_Click(object sender, RoutedEventArgs e)
         {
-            GridImportStep3.Visibility = Visibility.Collapsed;
+            GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
 
-            // Get the selected CSV header for "Condition"
-            var conditionMapping = (AddionalFieldsMappingListView.ItemsSource as List<ColumnMapping>)
-                ?.FirstOrDefault(mapping => mapping.CardSetField == "Condition");
+            _mappings = AddionalFieldsMappingListView.ItemsSource as List<ColumnMapping>;
 
-            if (conditionMapping != null && !string.IsNullOrEmpty(conditionMapping.CsvHeader))
+            // Check if "Card Condition", "Card Finish", and "Card Quantity" have a value selected
+            isConditionMapped = BackupRestore.IsFieldMapped(_mappings, "Condition");
+            isFinishMapped = BackupRestore.IsFieldMapped(_mappings, "SelectedFinish");
+            isQuantityMapped = BackupRestore.IsFieldMapped(_mappings, "Quantity");
+
+            if (isConditionMapped)
             {
-                var cardItem = new CardSet.CardItem();
-                BackupRestore.PopulateMappingListView(ConditionsMappingListView, conditionMapping.CsvHeader, cardItem.Conditions);
-                GridImportStep4.Visibility = Visibility.Visible;
+                var conditionMapping = _mappings?.FirstOrDefault(mapping => mapping.CardSetField == "Condition");
+                if (conditionMapping != null && !string.IsNullOrEmpty(conditionMapping.CsvHeader))
+                {
+                    await BackupRestore.InitializeMappingListViewAsync(conditionMapping.CsvHeader, false, ConditionsMappingListView);
+                    GridImportCardConditionsMapping.Visibility = Visibility.Visible;
+                }
             }
             else
             {
-                // No mapping chosen, assume "Near Mint" for all conditions
                 BackupRestore.UpdateCardItemsWithDefaultCondition();
-                GridImportStep5.Visibility = Visibility.Visible;
                 DebugAllItems();
+
+                if (isFinishMapped)
+                {
+                    var finishMapping = _mappings?.FirstOrDefault(mapping => mapping.CardSetField == "SelectedFinish");
+                    if (finishMapping != null && !string.IsNullOrEmpty(finishMapping.CsvHeader))
+                    {
+                        await BackupRestore.InitializeMappingListViewAsync(finishMapping.CsvHeader, true, FinishesMappingListView);
+                        GridImportFinishesMapping.Visibility = Visibility.Visible;
+                        return;
+                    }
+                }
+                else
+                {
+                    // map default finish
+                    Debug.WriteLine("Go to end screen");
+                }
             }
         }
-        private void ImportStep4Button_Click(object sender, RoutedEventArgs e)
+
+        private async void ButtonConditionMappingNext_Click(object sender, RoutedEventArgs e)
         {
-            GridImportStep4.Visibility = Visibility.Collapsed;
+            GridImportCardConditionsMapping.Visibility = Visibility.Collapsed;
 
             BackupRestore.UpdateCardItemsWithConditionMapping();
             BackupRestore.DebugAllItems(); // Optionally call the debug method to verify the updates
 
-            GridImportStep5.Visibility = Visibility.Visible;
+            if (isFinishMapped)
+            {
+                // Call a method to populate finishes mapping list view here if needed
+                var finishMapping = _mappings?.FirstOrDefault(mapping => mapping.CardSetField == "SelectedFinish");
+                if (finishMapping != null && !string.IsNullOrEmpty(finishMapping.CsvHeader))
+                {
+                    await BackupRestore.InitializeMappingListViewAsync(finishMapping.CsvHeader, true, FinishesMappingListView);
+                    GridImportFinishesMapping.Visibility = Visibility.Visible;
+                    return;
+                }
+            }
+            else
+            {
+                // Go to end screen
+                Debug.WriteLine("Go to end screen");
+            }
         }
+
+        // knap næste finish
+        // tilføj til cardItemsToAdd
+
 
 
         #endregion
