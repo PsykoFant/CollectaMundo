@@ -34,6 +34,32 @@ namespace CollectaMundo
 {
     public class BackupRestore
     {
+        #region Classes used for csv-import
+        public class TempCardItem
+        {
+            public Dictionary<string, string> Fields { get; set; } = new Dictionary<string, string>();
+        }
+        public class UuidVersion
+        {
+            public string? DisplayText { get; set; }
+            public string? Uuid { get; set; }
+        }
+        public class MultipleUuidsItem
+        {
+            public string? Name { get; set; }
+            public List<UuidVersion>? VersionedUuids { get; set; }
+            public string? SelectedUuid { get; set; }
+        }
+        public class ConditionMapping
+        {
+            public string? CsvCondition { get; set; }
+            public List<string>? CardSetConditions { get; set; }
+            public string? SelectedCardSetCondition { get; set; }
+        }
+
+        #endregion
+        public static ObservableCollection<TempCardItem> tempImport { get; private set; } = new ObservableCollection<TempCardItem>();
+        // Create backup of my collection
         public static async Task CreateCsvBackupAsync()
         {
             try
@@ -96,13 +122,8 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
-        // Class to store data read from csv-file and hold uuids found by search
-        public class TempCardItem
-        {
-            public Dictionary<string, string> Fields { get; set; } = new Dictionary<string, string>();
-        }
 
-        public static ObservableCollection<TempCardItem> tempImport { get; private set; } = new ObservableCollection<TempCardItem>();
+        // Open and parse csv-file
         public static async Task ImportCsvAsync()
         {
             try
@@ -174,6 +195,8 @@ namespace CollectaMundo
 
             return cardItems;
         }
+
+        // Mapping csv-elements to card uuids by searching on card name, set name and set code in csv-file
         public static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
         {
             try
@@ -195,7 +218,7 @@ namespace CollectaMundo
 
                 foreach (var item in tempImport)
                 {
-                    if (!item.Fields.TryGetValue(nameMapping, out string name))
+                    if (!item.Fields.TryGetValue(nameMapping, out string? name))
                     {
                         Debug.WriteLine($"Fail: Could not find mapping for card setName with header {nameMapping}");
                         continue;
@@ -203,11 +226,11 @@ namespace CollectaMundo
 
                     bool matchFound = false;
 
-                    if (setCodeMapping != null && item.Fields.TryGetValue(setCodeMapping, out string setCode))
+                    if (setCodeMapping != null && item.Fields.TryGetValue(setCodeMapping, out string? setCode))
                     {
                         matchFound = await SearchBySetCode(name, setCode, item);
 
-                        if (!matchFound && setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string setName))
+                        if (!matchFound && setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string? setName))
                         {
                             matchFound = await SearchBySetName(name, setName, item);
                         }
@@ -217,7 +240,7 @@ namespace CollectaMundo
                             Debug.WriteLine($"Fail: Could not find a match by set code {setCode}");
                         }
                     }
-                    else if (setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string setName))
+                    else if (setNameMapping != null && item.Fields.TryGetValue(setNameMapping, out string? setName))
                     {
                         matchFound = await SearchBySetName(name, setName, item);
 
@@ -418,55 +441,6 @@ namespace CollectaMundo
                 return true;
             }
         }
-        public static void PopulateColumnMappingListView(ListView listView, List<string> cardSetFields)
-        {
-            var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
-
-            var mappingItems = cardSetFields.Select(field => new ColumnMapping
-            {
-                CardSetField = field,
-                CsvHeaders = csvHeaders
-            }).ToList();
-
-            listView.ItemsSource = mappingItems;
-        }
-
-        public class UuidVersion
-        {
-            public string? DisplayText { get; set; }
-            public string? Uuid { get; set; }
-        }
-        public class MultipleUuidsItem
-        {
-            public string? Name { get; set; }
-            public List<UuidVersion>? VersionedUuids { get; set; }
-            public string? SelectedUuid { get; set; }
-        }
-        public static void PopulateMultipleUuidsDataGrid()
-        {
-            var itemsWithMultipleUuids = tempImport
-                .Where(item => item.Fields.ContainsKey("uuids"))
-                .Select(item => new MultipleUuidsItem
-                {
-                    Name = item.Fields.ContainsKey("Name") ? item.Fields["Name"] : "Unknown",
-                    VersionedUuids = item.Fields["uuids"]
-                        .Split(',')
-                        .Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid })
-                        .ToList(),
-                    SelectedUuid = null // Set the initial selection to null
-                })
-                .ToList();
-
-            Debug.WriteLine($"Populated MultipleUuidsDataGrid with {itemsWithMultipleUuids.Count} items.");
-
-            foreach (var item in itemsWithMultipleUuids)
-            {
-                Debug.WriteLine($"Item: {item.Name}, UUIDs: {string.Join(", ", item.VersionedUuids.Select(v => v.Uuid))}");
-            }
-
-            MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
-            MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
-        }
         public static void UpdateCardItemsAndTempImport(List<MultipleUuidsItem> multipleUuidsItems)
         {
             int initialCardItemsToAddCount = AddToCollectionManager.Instance.cardItemsToAdd.Count;
@@ -503,9 +477,150 @@ namespace CollectaMundo
             Debug.WriteLine($"Number of items updated: {updatedItemsCount}");
         }
 
+        // Handling importer UI elements
+        public static void PopulateColumnMappingListView(ListView listView, List<string> cardSetFields)
+        {
+            var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
+
+            var mappingItems = cardSetFields.Select(field => new ColumnMapping
+            {
+                CardSetField = field,
+                CsvHeaders = csvHeaders,
+                CsvHeader = GuessMapping(field, csvHeaders)
+            }).ToList();
+
+            listView.ItemsSource = mappingItems;
+        }
+        public static string? GuessMapping(string cardSetField, List<string> csvHeaders)
+        {
+            var lowerCardSetField = cardSetField.ToLower();
+            return csvHeaders.FirstOrDefault(header => header.ToLower().Contains(lowerCardSetField));
+        }
+        public static void PopulateMultipleUuidsDataGrid()
+        {
+            var itemsWithMultipleUuids = tempImport
+                .Where(item => item.Fields.ContainsKey("uuids"))
+                .Select(item => new MultipleUuidsItem
+                {
+                    Name = item.Fields.ContainsKey("Name") ? item.Fields["Name"] : "Unknown",
+                    VersionedUuids = item.Fields["uuids"]
+                        .Split(',')
+                        .Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid })
+                        .ToList(),
+                    SelectedUuid = null // Set the initial selection to null
+                })
+                .ToList();
+
+            Debug.WriteLine($"Populated MultipleUuidsDataGrid with {itemsWithMultipleUuids.Count} items.");
+
+            MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
+            MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
+        }
+        public static void PopulateConditionsMappingListView(string csvHeader)
+        {
+            var csvConditions = GetUniqueValuesFromCsv(csvHeader);
+
+            // Create an instance of CardItem to access the Conditions property
+            var cardItem = new CardSet.CardItem();
+            var mappingItems = csvConditions
+                .Select(csvCondition => new ConditionMapping
+                {
+                    CsvCondition = csvCondition,
+                    CardSetConditions = cardItem.Conditions,
+                    SelectedCardSetCondition = cardItem.Conditions.FirstOrDefault() // Default to the first condition or null
+                }).ToList();
+
+            MainWindow.CurrentInstance.ConditionsMappingListView.ItemsSource = mappingItems;
+        }
+        public static List<string> GetUniqueValuesFromCsv(string? csvHeader)
+        {
+            var uniqueValues = new HashSet<string>();
+
+            if (csvHeader == null)
+            {
+                return uniqueValues.ToList();
+            }
+
+            foreach (var item in tempImport)
+            {
+                if (item.Fields.TryGetValue(csvHeader, out var value) && !string.IsNullOrEmpty(value))
+                {
+                    uniqueValues.Add(value);
+                }
+            }
+
+            return uniqueValues.ToList();
+        }
+
+        public static void UpdateCardItemsWithConditionMapping()
+        {
+            // Get the mappings from ConditionsMappingListView
+            var conditionMappings = MainWindow.CurrentInstance.ConditionsMappingListView.ItemsSource as List<ConditionMapping>;
+
+            if (conditionMappings == null)
+            {
+                Debug.WriteLine("No condition mappings found.");
+                return;
+            }
+
+            // Create a dictionary for quick lookup of condition mappings
+            var conditionMappingDict = conditionMappings
+                .Where(mapping => !string.IsNullOrEmpty(mapping.SelectedCardSetCondition))
+                .ToDictionary(mapping => mapping.CsvCondition, mapping => mapping.SelectedCardSetCondition);
+
+            // Update items in cardItemsToAdd based on tempImport and the mappings
+            foreach (var tempItem in tempImport)
+            {
+                if (tempItem.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid))
+                {
+                    var cardItem = AddToCollectionManager.Instance.cardItemsToAdd.FirstOrDefault(c => c.Uuid == uuid);
+                    if (cardItem != null && tempItem.Fields.TryGetValue("Condition", out var condition))
+                    {
+                        if (conditionMappingDict.TryGetValue(condition, out var mappedCondition))
+                        {
+                            cardItem.SelectedCondition = mappedCondition;
+                        }
+                    }
+                }
+            }
+        }
+        public static void UpdateCardItemsWithDefaultCondition()
+        {
+            // Default condition
+            string defaultCondition = "Near Mint";
+
+            foreach (var tempItem in tempImport)
+            {
+                if (tempItem.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid))
+                {
+                    var cardItem = AddToCollectionManager.Instance.cardItemsToAdd.FirstOrDefault(c => c.Uuid == uuid);
+                    if (cardItem != null)
+                    {
+                        cardItem.SelectedCondition = defaultCondition;
+                    }
+                }
+            }
+        }
 
 
+        public static void DebugAllItems()
+        {
+            Debug.WriteLine("Debugging tempImport items:");
+            foreach (var tempItem in tempImport)
+            {
+                Debug.WriteLine("TempItem:");
+                foreach (var field in tempItem.Fields)
+                {
+                    Debug.WriteLine($"{field.Key}: {field.Value}");
+                }
+            }
 
+            Debug.WriteLine("Debugging cardItemsToAdd items:");
+            foreach (var cardItem in AddToCollectionManager.Instance.cardItemsToAdd)
+            {
+                Debug.WriteLine($"CardItem - Uuid: {cardItem.Uuid}, Condition: {cardItem.SelectedCondition}");
+            }
+        }
         public static void DebugImportProcess()
         {
             // Total number of items in tempImport

@@ -634,7 +634,56 @@
                     </Grid>
                     <Grid x:Name="GridImportStep3" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
                         <Label x:Name="ImportStep3Label" Content="Mapping of additional fields" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
-                        <Button x:Name="ImportStep3Button" Content="Next" HorizontalAlignment="Left" Margin="962,427,0,0" VerticalAlignment="Top"/>
+                        <ListView x:Name="AddionalFieldsMappingListView" Margin="0,186,0,0" Width="388" Height="120" HorizontalAlignment="Center" VerticalAlignment="Top">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Database field" Width="150">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding CardSetField}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Import file header" Width="150">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ComboBox ItemsSource="{Binding CsvHeaders}" SelectedItem="{Binding CsvHeader}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                        <Button x:Name="ImportStep3Button" Content="Next" HorizontalAlignment="Left" Margin="926,246,0,0" VerticalAlignment="Top" RenderTransformOrigin="1.178,-5.496" Click="ImportStep3Button_Click"/>
+                    </Grid>
+                    <Grid x:Name="GridImportStep4" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                        <Label x:Name="ImportStep4Label" Content="Mapping of additional field values" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                        <ListView x:Name="ConditionsMappingListView" Margin="0,186,0,0" Width="387" Height="170" HorizontalAlignment="Center" VerticalAlignment="Top">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="CSV Condition" Width="150">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding CsvCondition}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Database Condition" Width="150">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ComboBox ItemsSource="{Binding CardSetConditions}" SelectedItem="{Binding SelectedCardSetCondition}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                        <Button x:Name="ImportStep4Button" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ImportStep4Button_Click"/>
+                    </Grid>
+                    <Grid x:Name="GridImportStep5" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                        <Label x:Name="ImportStep5Label" Content="Mapping of additional field values" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                        
+                        <Button x:Name="ImportStep5Button" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top"/>
                     </Grid>
                 </Grid>
             </Grid>

@@ -752,7 +752,7 @@ namespace CollectaMundo
         {
             if (sender is ComboBox comboBox && comboBox.SelectedItem is UuidVersion selectedVersion)
             {
-                string selectedUuid = selectedVersion.Uuid;
+                string? selectedUuid = selectedVersion.Uuid;
                 Debug.WriteLine($"Trying to show image with uuid: {selectedUuid}");
                 try
                 {
@@ -1200,7 +1200,7 @@ namespace CollectaMundo
                     DataGridRow row = (DataGridRow)MultipleUuidsDataGrid.ItemContainerGenerator.ContainerFromItem(multipleUuidsItem);
                     if (row != null)
                     {
-                        ComboBox comboBox = FindVisualChild<ComboBox>(row);
+                        ComboBox? comboBox = FindVisualChild<ComboBox>(row);
                         if (comboBox != null && comboBox.SelectedItem is UuidVersion selectedVersion)
                         {
                             multipleUuidsItem.SelectedUuid = selectedVersion.Uuid;
@@ -1217,8 +1217,43 @@ namespace CollectaMundo
 
             BackupRestore.DebugImportProcess(); // Debug after updating
 
+            var cardSetFields = new List<string> { "Condition", "Foil", "Quantity" };
+            BackupRestore.PopulateColumnMappingListView(AddionalFieldsMappingListView, cardSetFields);
+
+
             GridImportStep3.Visibility = Visibility.Visible;
         }
+        private void ImportStep3Button_Click(object sender, RoutedEventArgs e)
+        {
+            GridImportStep3.Visibility = Visibility.Collapsed;
+
+            // Get the selected CSV header for "Condition"
+            var conditionMapping = (AddionalFieldsMappingListView.ItemsSource as List<ColumnMapping>)
+                ?.FirstOrDefault(mapping => mapping.CardSetField == "Condition");
+
+            if (conditionMapping != null && !string.IsNullOrEmpty(conditionMapping.CsvHeader))
+            {
+                BackupRestore.PopulateConditionsMappingListView(conditionMapping.CsvHeader);
+                GridImportStep4.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                // No mapping chosen, assume "Near Mint" for all conditions
+                BackupRestore.UpdateCardItemsWithDefaultCondition();
+                GridImportStep5.Visibility = Visibility.Visible;
+                DebugAllItems();
+            }
+        }
+        private void ImportStep4Button_Click(object sender, RoutedEventArgs e)
+        {
+            GridImportStep4.Visibility = Visibility.Collapsed;
+
+            BackupRestore.UpdateCardItemsWithConditionMapping();
+            BackupRestore.DebugAllItems(); // Optionally call the debug method to verify the updates
+
+            GridImportStep5.Visibility = Visibility.Visible;
+        }
+
 
         #endregion
 
