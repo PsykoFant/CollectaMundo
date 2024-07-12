@@ -1233,7 +1233,8 @@ namespace CollectaMundo
 
             if (conditionMapping != null && !string.IsNullOrEmpty(conditionMapping.CsvHeader))
             {
-                BackupRestore.PopulateConditionsMappingListView(conditionMapping.CsvHeader);
+                var cardItem = new CardSet.CardItem();
+                BackupRestore.PopulateMappingListView(ConditionsMappingListView, conditionMapping.CsvHeader, cardItem.Conditions);
                 GridImportStep4.Visibility = Visibility.Visible;
             }
             else

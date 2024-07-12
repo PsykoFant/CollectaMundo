@@ -491,11 +491,12 @@ namespace CollectaMundo
 
             listView.ItemsSource = mappingItems;
         }
-        public static string? GuessMapping(string cardSetField, List<string> csvHeaders)
+        public static string? GuessMapping(string searchValue, List<string> options)
         {
-            var lowerCardSetField = cardSetField.ToLower();
-            return csvHeaders.FirstOrDefault(header => header.ToLower().Contains(lowerCardSetField));
+            var lowerSearchValue = searchValue.ToLower();
+            return options.FirstOrDefault(option => option.ToLower().Contains(lowerSearchValue));
         }
+
         public static void PopulateMultipleUuidsDataGrid()
         {
             var itemsWithMultipleUuids = tempImport
@@ -516,22 +517,21 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
             MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
         }
-        public static void PopulateConditionsMappingListView(string csvHeader)
+        public static void PopulateMappingListView(ListView listView, string csvHeader, List<string> cardSetFields)
         {
-            var csvConditions = GetUniqueValuesFromCsv(csvHeader);
+            var csvValues = GetUniqueValuesFromCsv(csvHeader);
 
-            // Create an instance of CardItem to access the Conditions property
-            var cardItem = new CardSet.CardItem();
-            var mappingItems = csvConditions
-                .Select(csvCondition => new ConditionMapping
+            var mappingItems = csvValues
+                .Select(csvValue => new ConditionMapping
                 {
-                    CsvCondition = csvCondition,
-                    CardSetConditions = cardItem.Conditions,
-                    SelectedCardSetCondition = cardItem.Conditions.FirstOrDefault() // Default to the first condition or null
+                    CsvCondition = csvValue,
+                    CardSetConditions = cardSetFields,
+                    SelectedCardSetCondition = GuessMapping(csvValue, cardSetFields) // Leave as null if no match is found
                 }).ToList();
 
-            MainWindow.CurrentInstance.ConditionsMappingListView.ItemsSource = mappingItems;
+            listView.ItemsSource = mappingItems;
         }
+
         public static List<string> GetUniqueValuesFromCsv(string? csvHeader)
         {
             var uniqueValues = new HashSet<string>();
