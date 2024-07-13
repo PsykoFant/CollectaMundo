@@ -1237,8 +1237,7 @@ namespace CollectaMundo
         }
         private async void ButtonAdditionalFieldsNext_Click(object sender, RoutedEventArgs e)
         {
-            GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
-
+            // Instantiate mappings variable
             _mappings = AddionalFieldsMappingListView.ItemsSource as List<ColumnMapping>;
 
             // Check if "Card Condition", "Card Finish", and "Card Quantity" have a value selected
@@ -1246,73 +1245,60 @@ namespace CollectaMundo
             isFinishMapped = BackupRestore.IsFieldMapped(_mappings, "SelectedFinish");
             isQuantityMapped = BackupRestore.IsFieldMapped(_mappings, "Quantity");
 
+            GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
+
             if (isConditionMapped)
             {
                 var conditionMapping = _mappings?.FirstOrDefault(mapping => mapping.CardSetField == "Condition");
-                if (conditionMapping != null && !string.IsNullOrEmpty(conditionMapping.CsvHeader))
-                {
-                    await BackupRestore.InitializeMappingListViewAsync(conditionMapping.CsvHeader, false, ConditionsMappingListView);
-                    GridImportCardConditionsMapping.Visibility = Visibility.Visible;
-                }
+                await BackupRestore.InitializeMappingListViewAsync(conditionMapping.CsvHeader, false, ConditionsMappingListView);
+                GridImportCardConditionsMapping.Visibility = Visibility.Visible;
             }
             else
             {
-                BackupRestore.UpdateCardItemsWithDefaultCondition();
-                DebugAllItems();
+                BackupRestore.UpdateCardItemsWithDefaultField("SelectedCondition", "Near Mint");
 
                 if (isFinishMapped)
                 {
                     var finishMapping = _mappings?.FirstOrDefault(mapping => mapping.CardSetField == "SelectedFinish");
-                    if (finishMapping != null && !string.IsNullOrEmpty(finishMapping.CsvHeader))
-                    {
-                        await BackupRestore.InitializeMappingListViewAsync(finishMapping.CsvHeader, true, FinishesMappingListView);
-                        GridImportFinishesMapping.Visibility = Visibility.Visible;
-                        return;
-                    }
+                    await BackupRestore.InitializeMappingListViewAsync(finishMapping.CsvHeader, true, FinishesMappingListView);
+                    GridImportFinishesMapping.Visibility = Visibility.Visible;
                 }
                 else
                 {
-                    // map default finish
-                    Debug.WriteLine("Go to end screen");
+                    BackupRestore.UpdateCardItemsWithDefaultField("SelectedFinish", "nonfoil");
+                    GridImportConfirm.Visibility = Visibility.Visible;
+                    DebugAllItems();
                 }
             }
         }
-
         private async void ButtonConditionMappingNext_Click(object sender, RoutedEventArgs e)
         {
-            GridImportCardConditionsMapping.Visibility = Visibility.Collapsed;
-
-            BackupRestore.UpdateCardItemsWithConditionMapping();
+            BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.ConditionsMappingListView, "Condition", "Near Mint");
             BackupRestore.DebugAllItems(); // Optionally call the debug method to verify the updates
+            GridImportCardConditionsMapping.Visibility = Visibility.Collapsed;
 
             if (isFinishMapped)
             {
                 // Call a method to populate finishes mapping list view here if needed
                 var finishMapping = _mappings?.FirstOrDefault(mapping => mapping.CardSetField == "SelectedFinish");
-                if (finishMapping != null && !string.IsNullOrEmpty(finishMapping.CsvHeader))
-                {
-                    await BackupRestore.InitializeMappingListViewAsync(finishMapping.CsvHeader, true, FinishesMappingListView);
-                    GridImportFinishesMapping.Visibility = Visibility.Visible;
-                    return;
-                }
+                await BackupRestore.InitializeMappingListViewAsync(finishMapping.CsvHeader, true, FinishesMappingListView);
+                GridImportFinishesMapping.Visibility = Visibility.Visible;
             }
             else
             {
-                // Go to end screen
-                Debug.WriteLine("Go to end screen");
+                BackupRestore.UpdateCardItemsWithDefaultField("SelectedFinish", "nonfoil");
+                GridImportConfirm.Visibility = Visibility.Visible;
+                DebugAllItems();
             }
         }
-
         private void ButtonFinishesMappingNext_Click(object sender, RoutedEventArgs e)
         {
-            // 
+            BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.FinishesMappingListView, "SelectedFinish", "nonfoil");
+            BackupRestore.DebugAllItems(); // Optionally call the debug method to verify the updates
+            GridImportFinishesMapping.Visibility = Visibility.Collapsed;
+            GridImportConfirm.Visibility = Visibility.Visible;
+            DebugAllItems();
         }
-
-
-
-
-
-
         #endregion
 
         #region Top menu navigation

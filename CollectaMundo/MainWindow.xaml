@@ -704,6 +704,10 @@
                         </ListView>
                         <Button x:Name="ButtonFinishesMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ButtonFinishesMappingNext_Click"/>
                     </Grid>
+                    <Grid x:Name="GridImportConfirm" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                        <Label x:Name="ImportConfirmLabel" Content="Confirm" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>                        
+                        <Button x:Name="ButtonImportConfirm" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top"/>
+                    </Grid>
                 </Grid>
             </Grid>
         </Grid>
