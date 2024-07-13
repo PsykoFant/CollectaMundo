@@ -570,7 +570,6 @@ namespace CollectaMundo
             var cardItem = new CardSet.CardItem();
             return cardItem.Conditions;
         }
-
         public static List<string> GetUniqueValuesFromCsv(string? csvHeader)
         {
             var uniqueValues = new HashSet<string>();
@@ -590,7 +589,6 @@ namespace CollectaMundo
 
             return uniqueValues.ToList();
         }
-
         public static void UpdateCardItemsWithConditionMapping()
         {
             // Get the mappings from ConditionsMappingListView
@@ -661,11 +659,6 @@ namespace CollectaMundo
                 }
             }
         }
-
-
-
-
-
         public static void UpdateCardItemsWithDefaultCondition()
         {
             // Default condition

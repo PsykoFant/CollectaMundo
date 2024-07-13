@@ -702,7 +702,7 @@
                                 </GridView>
                             </ListView.View>
                         </ListView>
-                        <Button x:Name="ButtonFinishesMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top"/>
+                        <Button x:Name="ButtonFinishesMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ButtonFinishesMappingNext_Click"/>
                     </Grid>
                 </Grid>
             </Grid>

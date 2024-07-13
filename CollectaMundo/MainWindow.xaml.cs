@@ -1303,8 +1303,13 @@ namespace CollectaMundo
             }
         }
 
-        // knap næste finish
-        // tilføj til cardItemsToAdd
+        private void ButtonFinishesMappingNext_Click(object sender, RoutedEventArgs e)
+        {
+            // 
+        }
+
+
+
 
 
 
