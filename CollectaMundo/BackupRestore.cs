@@ -595,11 +595,27 @@ namespace CollectaMundo
         {
             // Get the mappings from ConditionsMappingListView
             var conditionMappings = MainWindow.CurrentInstance.ConditionsMappingListView.ItemsSource as List<ConditionMapping>;
+            var additionalMappings = MainWindow.CurrentInstance._mappings;
 
-            if (conditionMappings == null)
+            if (conditionMappings == null || additionalMappings == null)
             {
-                Debug.WriteLine("No condition mappings found.");
+                Debug.WriteLine("No condition mappings or additional mappings found.");
                 return;
+            }
+
+            // Get the CSV header for the Condition field
+            var conditionMapping = additionalMappings.FirstOrDefault(mapping => mapping.CardSetField == "Condition");
+            if (conditionMapping == null || string.IsNullOrEmpty(conditionMapping.CsvHeader))
+            {
+                Debug.WriteLine("Condition mapping not found in additional mappings.");
+                return;
+            }
+            string conditionCsvHeader = conditionMapping.CsvHeader;
+
+            // Debug output for conditionMappings
+            foreach (var mapping in conditionMappings)
+            {
+                Debug.WriteLine($"Mapping: CsvCondition = {mapping.CsvCondition}, SelectedCardSetCondition = {mapping.SelectedCardSetCondition}");
             }
 
             // Create a dictionary for quick lookup of condition mappings
@@ -612,21 +628,44 @@ namespace CollectaMundo
                 if (tempItem.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid))
                 {
                     var cardItem = AddToCollectionManager.Instance.cardItemsToAdd.FirstOrDefault(c => c.Uuid == uuid);
-                    if (cardItem != null && tempItem.Fields.TryGetValue("Condition", out var condition)) // den her er false...
+                    if (cardItem != null)
                     {
-                        if (conditionMappingDict.TryGetValue(condition, out var mappedCondition))
+                        if (tempItem.Fields.TryGetValue(conditionCsvHeader, out var condition))
                         {
-                            cardItem.SelectedCondition = mappedCondition;
+                            Debug.WriteLine($"Found condition: {condition} for card with UUID: {uuid}");
+                            if (conditionMappingDict.TryGetValue(condition, out var mappedCondition))
+                            {
+                                cardItem.SelectedCondition = mappedCondition;
+                                Debug.WriteLine($"Mapped condition: {mappedCondition} to card with UUID: {uuid}");
+                            }
+                            else
+                            {
+                                Debug.WriteLine($"Condition {condition} not found in mapping dictionary. Assigning default value 'Near Mint'.");
+                                cardItem.SelectedCondition = "Near Mint";
+                            }
                         }
                         else
                         {
-                            // If condition is not found in the dictionary, set to default
+                            Debug.WriteLine($"Condition not found in tempItem for card with UUID: {uuid}. Assigning default value 'Near Mint'.");
                             cardItem.SelectedCondition = "Near Mint";
                         }
                     }
+                    else
+                    {
+                        Debug.WriteLine($"Card item not found for UUID: {uuid}");
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine($"UUID not found or empty in tempItem");
                 }
             }
         }
+
+
+
+
+
         public static void UpdateCardItemsWithDefaultCondition()
         {
             // Default condition
@@ -657,15 +696,15 @@ namespace CollectaMundo
 
         public static void DebugAllItems()
         {
-            Debug.WriteLine("Debugging tempImport items:");
-            foreach (var tempItem in tempImport)
-            {
-                Debug.WriteLine("TempItem:");
-                foreach (var field in tempItem.Fields)
-                {
-                    Debug.WriteLine($"{field.Key}: {field.Value}");
-                }
-            }
+            //Debug.WriteLine("Debugging tempImport items:");
+            //foreach (var tempItem in tempImport)
+            //{
+            //    Debug.WriteLine("TempItem:");
+            //    foreach (var field in tempItem.Fields)
+            //    {
+            //        Debug.WriteLine($"{field.Key}: {field.Value}");
+            //    }
+            //}
 
             Debug.WriteLine("Debugging cardItemsToAdd items:");
             foreach (var cardItem in AddToCollectionManager.Instance.cardItemsToAdd)

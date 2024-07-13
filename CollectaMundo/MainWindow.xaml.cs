@@ -198,7 +198,7 @@ namespace CollectaMundo
         private bool isConditionMapped;
         private bool isFinishMapped;
         private bool isQuantityMapped;
-        private List<ColumnMapping>? _mappings;
+        public List<ColumnMapping>? _mappings;
 
         #endregion
         public static MainWindow CurrentInstance
