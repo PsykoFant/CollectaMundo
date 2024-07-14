@@ -704,6 +704,30 @@
                         </ListView>
                         <Button x:Name="ButtonFinishesMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ButtonFinishesMappingNext_Click"/>
                     </Grid>
+                    <Grid x:Name="GridImportLanguageMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                        <Label x:Name="ImportLanguageMappingLabel" Content="Mapping of language" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                        <ListView x:Name="LanguageMappingListView" Margin="0,186,0,0" Width="387" Height="170" HorizontalAlignment="Center" VerticalAlignment="Top">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="CSV Condition" Width="150">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding CsvCondition}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Database Condition" Width="150">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ComboBox ItemsSource="{Binding CardSetConditions}" SelectedItem="{Binding SelectedCardSetCondition}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                        <Button x:Name="ButtonLanguageMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ButtonLanguageMappingNext_Click"/>
+                    </Grid>
                     <Grid x:Name="GridImportConfirm" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
                         <Label x:Name="ImportConfirmLabel" Content="Confirm" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>                        
                         <Button x:Name="ButtonImportConfirm" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top"/>

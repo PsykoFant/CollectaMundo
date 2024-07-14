@@ -92,7 +92,10 @@ namespace CollectaMundo
                         for (int i = 0; i < reader.FieldCount; i++)
                         {
                             writer.Write(reader.GetName(i));
-                            if (i < reader.FieldCount - 1) writer.Write(";");
+                            if (i < reader.FieldCount - 1)
+                            {
+                                writer.Write(";");
+                            }
                         }
                         writer.WriteLine();
 
@@ -103,7 +106,10 @@ namespace CollectaMundo
                             {
                                 var value = reader[i]?.ToString()?.Replace(";", ",") ?? string.Empty; // Replace semicolons to prevent CSV issues
                                 writer.Write(value);
-                                if (i < reader.FieldCount - 1) writer.Write(";");
+                                if (i < reader.FieldCount - 1)
+                                {
+                                    writer.Write(";");
+                                }
                             }
                             writer.WriteLine();
                         }
@@ -157,7 +163,10 @@ namespace CollectaMundo
             {
                 // Read the header
                 var header = await reader.ReadLineAsync();
-                if (header == null) return cardItems;
+                if (header == null)
+                {
+                    return cardItems;
+                }
 
                 // Detect delimiter
                 if (header.Contains(';'))
@@ -170,7 +179,10 @@ namespace CollectaMundo
                 while (!reader.EndOfStream)
                 {
                     var line = await reader.ReadLineAsync();
-                    if (line == null) continue;
+                    if (line == null)
+                    {
+                        continue;
+                    }
 
                     var values = line.Split(delimiter);
                     var cardItem = new TempCardItem();
@@ -702,11 +714,6 @@ namespace CollectaMundo
                 }
             }
         }
-
-
-
-
-
         public static bool IsFieldMapped(List<ColumnMapping> mappings, string cardSetField)
         {
             var fieldMapping = mappings?.FirstOrDefault(mapping => mapping.CardSetField == cardSetField);
@@ -730,7 +737,7 @@ namespace CollectaMundo
             Debug.WriteLine("Debugging cardItemsToAdd items:");
             foreach (var cardItem in AddToCollectionManager.Instance.cardItemsToAdd)
             {
-                Debug.WriteLine($"CardItem - Uuid: {cardItem.Uuid}, Condition: {cardItem.SelectedCondition}, Finish: {cardItem.SelectedFinish}");
+                Debug.WriteLine($"CardItem - Uuid: {cardItem.Uuid}, Condition: {cardItem.SelectedCondition}, Finish: {cardItem.SelectedFinish}, Language: {cardItem.Language}");
             }
         }
         public static void DebugImportProcess()

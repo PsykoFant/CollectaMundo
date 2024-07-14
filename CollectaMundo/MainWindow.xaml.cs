@@ -198,6 +198,7 @@ namespace CollectaMundo
         private bool isConditionMapped;
         private bool isFinishMapped;
         private bool isQuantityMapped;
+        private bool isLanguageMapped;
         public List<ColumnMapping>? _mappings;
 
         #endregion
@@ -1228,10 +1229,8 @@ namespace CollectaMundo
             // Update tempImport and cardItemsToAdd with the uuids for the selected versions of the cards
             BackupRestore.UpdateCardItemsAndTempImport(multipleUuidsList);
 
-            BackupRestore.DebugImportProcess(); // Debug after updating
-
             // Prepare the listview to map additional fields and make the screen visible
-            var cardSetFields = new List<string> { "Condition", "SelectedFinish", "Quantity" };
+            var cardSetFields = new List<string> { "Condition", "SelectedFinish", "Quantity", "Language" };
             BackupRestore.PopulateColumnMappingListView(AddionalFieldsMappingListView, cardSetFields);
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
         }
@@ -1244,61 +1243,91 @@ namespace CollectaMundo
             isConditionMapped = BackupRestore.IsFieldMapped(_mappings, "Condition");
             isFinishMapped = BackupRestore.IsFieldMapped(_mappings, "SelectedFinish");
             isQuantityMapped = BackupRestore.IsFieldMapped(_mappings, "Quantity");
+            isLanguageMapped = BackupRestore.IsFieldMapped(_mappings, "Language");
 
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
 
             if (isConditionMapped)
             {
-                var conditionMapping = _mappings?.FirstOrDefault(mapping => mapping.CardSetField == "Condition");
-                await BackupRestore.InitializeMappingListViewAsync(conditionMapping.CsvHeader, false, ConditionsMappingListView);
-                GridImportCardConditionsMapping.Visibility = Visibility.Visible;
+                await GoToConditionsMapping();
             }
             else
             {
                 BackupRestore.UpdateCardItemsWithDefaultField("SelectedCondition", "Near Mint");
-
                 if (isFinishMapped)
                 {
-                    var finishMapping = _mappings?.FirstOrDefault(mapping => mapping.CardSetField == "SelectedFinish");
-                    await BackupRestore.InitializeMappingListViewAsync(finishMapping.CsvHeader, true, FinishesMappingListView);
-                    GridImportFinishesMapping.Visibility = Visibility.Visible;
+                    await GoToFinishMapping();
                 }
                 else
                 {
                     BackupRestore.UpdateCardItemsWithDefaultField("SelectedFinish", "nonfoil");
-                    GridImportConfirm.Visibility = Visibility.Visible;
-                    DebugAllItems();
+                    if (isLanguageMapped)
+                    {
+                        await GoToLanguageMapping();
+                    }
+                    else
+                    {
+                        BackupRestore.UpdateCardItemsWithDefaultField("Language", "English");
+                        GridImportConfirm.Visibility = Visibility.Visible;
+                        DebugAllItems();
+                    }
                 }
             }
         }
         private async void ButtonConditionMappingNext_Click(object sender, RoutedEventArgs e)
         {
             BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.ConditionsMappingListView, "Condition", "Near Mint");
-            BackupRestore.DebugAllItems(); // Optionally call the debug method to verify the updates
             GridImportCardConditionsMapping.Visibility = Visibility.Collapsed;
 
-            if (isFinishMapped)
-            {
-                // Call a method to populate finishes mapping list view here if needed
-                var finishMapping = _mappings?.FirstOrDefault(mapping => mapping.CardSetField == "SelectedFinish");
-                await BackupRestore.InitializeMappingListViewAsync(finishMapping.CsvHeader, true, FinishesMappingListView);
-                GridImportFinishesMapping.Visibility = Visibility.Visible;
-            }
+            if (isFinishMapped) { await GoToFinishMapping(); }
             else
             {
                 BackupRestore.UpdateCardItemsWithDefaultField("SelectedFinish", "nonfoil");
+                if (isLanguageMapped) { await GoToLanguageMapping(); }
+                else
+                {
+                    GridImportConfirm.Visibility = Visibility.Visible;
+                    DebugAllItems();
+                }
+            }
+        }
+        private async void ButtonFinishesMappingNext_Click(object sender, RoutedEventArgs e)
+        {
+            BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.FinishesMappingListView, "SelectedFinish", "nonfoil");
+            GridImportFinishesMapping.Visibility = Visibility.Collapsed;
+            if (isLanguageMapped) { await GoToLanguageMapping(); }
+            else
+            {
                 GridImportConfirm.Visibility = Visibility.Visible;
                 DebugAllItems();
             }
         }
-        private void ButtonFinishesMappingNext_Click(object sender, RoutedEventArgs e)
+        private void ButtonLanguageMappingNext_Click(object sender, RoutedEventArgs e)
         {
-            BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.FinishesMappingListView, "SelectedFinish", "nonfoil");
-            BackupRestore.DebugAllItems(); // Optionally call the debug method to verify the updates
+            BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.FinishesMappingListView, "Language", "English");
             GridImportFinishesMapping.Visibility = Visibility.Collapsed;
             GridImportConfirm.Visibility = Visibility.Visible;
             DebugAllItems();
         }
+        public async Task GoToConditionsMapping()
+        {
+            var conditionMapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(mapping => mapping.CardSetField == "Condition");
+            await BackupRestore.InitializeMappingListViewAsync(conditionMapping.CsvHeader, false, MainWindow.CurrentInstance.ConditionsMappingListView);
+            MainWindow.CurrentInstance.GridImportCardConditionsMapping.Visibility = Visibility.Visible;
+        }
+        public async Task GoToFinishMapping()
+        {
+            var finishMapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(mapping => mapping.CardSetField == "SelectedFinish");
+            await BackupRestore.InitializeMappingListViewAsync(finishMapping.CsvHeader, true, MainWindow.CurrentInstance.FinishesMappingListView);
+            MainWindow.CurrentInstance.GridImportFinishesMapping.Visibility = Visibility.Visible;
+        }
+        public async Task GoToLanguageMapping()
+        {
+            var languageMapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(mapping => mapping.CardSetField == "Language");
+            await BackupRestore.InitializeMappingListViewAsync(languageMapping.CsvHeader, true, MainWindow.CurrentInstance.LanguageMappingListView);
+            MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Visible;
+        }
+
         #endregion
 
         #region Top menu navigation
