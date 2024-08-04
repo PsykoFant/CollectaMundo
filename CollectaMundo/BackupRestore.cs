@@ -520,13 +520,13 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
             MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
         }
-        public static async Task InitializeMappingListViewAsync(string csvHeader, bool fetchFromDatabase, ListView listView)
+        public static async Task InitializeMappingListViewAsync(string csvHeader, bool fetchFromDatabase, string dbColumn, ListView listView)
         {
             List<string> mappingValues;
 
             if (fetchFromDatabase)
             {
-                mappingValues = await GetUniqueFinishesAsync();
+                mappingValues = await GetUniqueValuesFromDbColumn(dbColumn);
             }
             else
             {
@@ -549,12 +549,11 @@ namespace CollectaMundo
 
             listView.ItemsSource = mappingItems;
         }
-
-        private static async Task<List<string>> GetUniqueFinishesAsync()
+        private static async Task<List<string>> GetUniqueValuesFromDbColumn(string dbColumn)
         {
             var uniqueValues = new HashSet<string>();
 
-            string query = $"SELECT finishes FROM cards";
+            string query = $"SELECT DISTINCT {dbColumn} FROM cards";
 
             await DBAccess.OpenConnectionAsync();
             using (var command = new SQLiteCommand(query, DBAccess.connection))
@@ -562,7 +561,7 @@ namespace CollectaMundo
             {
                 while (await reader.ReadAsync())
                 {
-                    var value = reader["finishes"]?.ToString();
+                    var value = reader[dbColumn]?.ToString();
                     if (!string.IsNullOrEmpty(value))
                     {
                         var splitValues = value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
@@ -622,15 +621,15 @@ namespace CollectaMundo
             }
             string csvHeader = fieldMapping.CsvHeader;
 
+            // Create a dictionary for quick lookup of mappings
+            var mappingDict = mappings
+                .ToDictionary(mapping => mapping.CsvCondition, mapping => mapping.SelectedCardSetCondition ?? defaultValue);
+
             // Debug output for mappings
             foreach (var mapping in mappings)
             {
                 Debug.WriteLine($"Mapping: CsvValue = {mapping.CsvCondition}, SelectedCardSetField = {mapping.SelectedCardSetCondition}");
             }
-
-            // Create a dictionary for quick lookup of mappings
-            var mappingDict = mappings
-                .ToDictionary(mapping => mapping.CsvCondition, mapping => mapping.SelectedCardSetCondition ?? defaultValue);
 
             // Update items in cardItemsToAdd based on tempImport and the mappings
             foreach (var tempItem in tempImport)
@@ -653,6 +652,10 @@ namespace CollectaMundo
                                 {
                                     cardItem.SelectedFinish = mappedValue;
                                 }
+                                else if (cardSetField == "Language")
+                                {
+                                    cardItem.SelectedFinish = mappedValue;
+                                }
                                 Debug.WriteLine($"Mapped {cardSetField}: {mappedValue} to card with UUID: {uuid}");
                             }
                             else
@@ -666,6 +669,11 @@ namespace CollectaMundo
                                 {
                                     cardItem.SelectedFinish = defaultValue;
                                 }
+                                else if (cardSetField == "Language")
+                                {
+                                    cardItem.Language = defaultValue;
+                                }
+
                             }
                         }
                         else
@@ -678,6 +686,10 @@ namespace CollectaMundo
                             else if (cardSetField == "SelectedFinish")
                             {
                                 cardItem.SelectedFinish = defaultValue;
+                            }
+                            else if (cardSetField == "Language")
+                            {
+                                cardItem.Language = defaultValue;
                             }
                         }
                     }

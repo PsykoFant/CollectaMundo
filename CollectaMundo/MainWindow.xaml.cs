@@ -1305,26 +1305,26 @@ namespace CollectaMundo
         private void ButtonLanguageMappingNext_Click(object sender, RoutedEventArgs e)
         {
             BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.FinishesMappingListView, "Language", "English");
-            GridImportFinishesMapping.Visibility = Visibility.Collapsed;
+            GridImportLanguageMapping.Visibility = Visibility.Collapsed;
             GridImportConfirm.Visibility = Visibility.Visible;
             DebugAllItems();
         }
         public async Task GoToConditionsMapping()
         {
             var conditionMapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(mapping => mapping.CardSetField == "Condition");
-            await BackupRestore.InitializeMappingListViewAsync(conditionMapping.CsvHeader, false, MainWindow.CurrentInstance.ConditionsMappingListView);
+            await BackupRestore.InitializeMappingListViewAsync(conditionMapping.CsvHeader, false, "", MainWindow.CurrentInstance.ConditionsMappingListView);
             MainWindow.CurrentInstance.GridImportCardConditionsMapping.Visibility = Visibility.Visible;
         }
         public async Task GoToFinishMapping()
         {
             var finishMapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(mapping => mapping.CardSetField == "SelectedFinish");
-            await BackupRestore.InitializeMappingListViewAsync(finishMapping.CsvHeader, true, MainWindow.CurrentInstance.FinishesMappingListView);
+            await BackupRestore.InitializeMappingListViewAsync(finishMapping.CsvHeader, true, "finishes", MainWindow.CurrentInstance.FinishesMappingListView);
             MainWindow.CurrentInstance.GridImportFinishesMapping.Visibility = Visibility.Visible;
         }
         public async Task GoToLanguageMapping()
         {
             var languageMapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(mapping => mapping.CardSetField == "Language");
-            await BackupRestore.InitializeMappingListViewAsync(languageMapping.CsvHeader, true, MainWindow.CurrentInstance.LanguageMappingListView);
+            await BackupRestore.InitializeMappingListViewAsync(languageMapping.CsvHeader, true, "language", MainWindow.CurrentInstance.LanguageMappingListView);
             MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Visible;
         }
 
