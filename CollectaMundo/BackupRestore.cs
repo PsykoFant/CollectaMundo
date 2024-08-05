@@ -56,6 +56,12 @@ namespace CollectaMundo
             public List<string>? CardSetConditions { get; set; }
             public string? SelectedCardSetCondition { get; set; }
         }
+        public class LanguageMapping
+        {
+            public string? CsvLanguage { get; set; }
+            public List<string>? CardSetLanguages { get; set; }
+            public string? SelectedCardSetLanguage { get; set; }
+        }
 
         #endregion
         public static ObservableCollection<TempCardItem> tempImport { get; private set; } = new ObservableCollection<TempCardItem>();
@@ -604,6 +610,7 @@ namespace CollectaMundo
         {
             // Get the mappings from the specified ListView
             var mappings = mappingListView.ItemsSource as List<ConditionMapping>;
+            var languageMappings = mappingListView.ItemsSource as List<LanguageMapping>;
             var additionalMappings = MainWindow.CurrentInstance._mappings;
 
             if (mappings == null || additionalMappings == null)
@@ -624,6 +631,10 @@ namespace CollectaMundo
             // Create a dictionary for quick lookup of mappings
             var mappingDict = mappings
                 .ToDictionary(mapping => mapping.CsvCondition, mapping => mapping.SelectedCardSetCondition ?? defaultValue);
+
+            var languageMmappingDict = languageMappings
+                .ToDictionary(mapping => mapping.CsvLanguage, mapping => mapping.SelectedCardSetLanguage ?? defaultValue);
+
 
             // Debug output for mappings
             foreach (var mapping in mappings)
@@ -652,10 +663,6 @@ namespace CollectaMundo
                                 {
                                     cardItem.SelectedFinish = mappedValue;
                                 }
-                                else if (cardSetField == "Language")
-                                {
-                                    cardItem.SelectedFinish = mappedValue;
-                                }
                                 Debug.WriteLine($"Mapped {cardSetField}: {mappedValue} to card with UUID: {uuid}");
                             }
                             else
@@ -669,11 +676,6 @@ namespace CollectaMundo
                                 {
                                     cardItem.SelectedFinish = defaultValue;
                                 }
-                                else if (cardSetField == "Language")
-                                {
-                                    cardItem.Language = defaultValue;
-                                }
-
                             }
                         }
                         else
