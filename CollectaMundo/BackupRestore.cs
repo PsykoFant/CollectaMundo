@@ -50,15 +50,16 @@ namespace CollectaMundo
             public List<UuidVersion>? VersionedUuids { get; set; }
             public string? SelectedUuid { get; set; }
         }
-        public class ConditionMapping
+        public class ValueMapping
         {
-            public string? CsvCondition { get; set; }
-            public List<string>? CardSetConditions { get; set; }
-            public string? SelectedCardSetCondition { get; set; }
+            public string? CsvValue { get; set; }
+            public List<string>? CardSetValue { get; set; }
+            public string? SelectedCardSetValue { get; set; }
         }
 
         #endregion
         public static ObservableCollection<TempCardItem> tempImport { get; private set; } = new ObservableCollection<TempCardItem>();
+
         // Create backup of my collection
         public static async Task CreateCsvBackupAsync()
         {
@@ -129,7 +130,7 @@ namespace CollectaMundo
             }
         }
 
-        // Open and parse csv-file
+        #region Open and parse csv-file
         public static async Task ImportCsvAsync()
         {
             try
@@ -198,8 +199,9 @@ namespace CollectaMundo
 
             return cardItems;
         }
+        #endregion
 
-        // Mapping csv-elements to card uuids by searching on card name, set name and set code in csv-file
+        #region Mapping csv-elements to card uuids by searching on card name, set name and set code in csv-file
         public static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
         {
             try
@@ -444,6 +446,8 @@ namespace CollectaMundo
                 return true;
             }
         }
+
+        // Update both the tempImport object and CardItemsToAdd object with the cards where a uuid match was found
         public static void UpdateCardItemsAndTempImport(List<MultipleUuidsItem> multipleUuidsItems)
         {
             int initialCardItemsToAddCount = AddToCollectionManager.Instance.cardItemsToAdd.Count;
@@ -479,8 +483,11 @@ namespace CollectaMundo
             Debug.WriteLine($"Updated cardItemsToAdd count: {AddToCollectionManager.Instance.cardItemsToAdd.Count}");
             Debug.WriteLine($"Number of items updated: {updatedItemsCount}");
         }
+        #endregion
 
-        // Handling importer UI elements
+        #region Populating Importer UI elements for additional fields
+
+        // Populate a listview where column headings found in the csv-file can be mapped to fields on the cardItemsToAdd object (which uses the CardSet class)
         public static void PopulateColumnMappingListView(ListView listView, List<string> cardSetFields)
         {
             var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
@@ -494,12 +501,15 @@ namespace CollectaMundo
 
             listView.ItemsSource = mappingItems;
         }
+
+        // Try to guess which column name maps to cardItemsToAdd field by looking for matching column/field names
         public static string? GuessMapping(string searchValue, List<string> options)
         {
             var lowerSearchValue = searchValue.ToLower();
             return options.FirstOrDefault(option => option.ToLower().Contains(lowerSearchValue));
         }
 
+        // Populate the datagrid where a single version can be selected of a card with multiple identical set and card names
         public static void PopulateMultipleUuidsDataGrid()
         {
             var itemsWithMultipleUuids = tempImport
@@ -520,35 +530,29 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
             MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
         }
+
+
+        // Generalized method for populating a listview where values found in csv-file can be matched to appropriate db values
         public static async Task InitializeMappingListViewAsync(string csvHeader, bool fetchFromDatabase, string dbColumn, ListView listView)
         {
             List<string> mappingValues;
 
+            // Mapping values for finish and language should be values found in cards table
             if (fetchFromDatabase)
             {
                 mappingValues = await GetUniqueValuesFromDbColumn(dbColumn);
             }
+            // Mapping values for condition should be the ones specified in the Condition field in CardSet class. 
+            // They are not found in the db because the are MCM gradings
             else
             {
                 mappingValues = GetConditionsFromCardSet();
             }
 
-            PopulateMappingListView(listView, csvHeader, mappingValues);
+            PopulateColumnValuesMappingListView(listView, csvHeader, mappingValues);
         }
-        private static void PopulateMappingListView(ListView listView, string csvHeader, List<string> cardSetFields)
-        {
-            var csvValues = GetUniqueValuesFromCsv(csvHeader);
 
-            var mappingItems = csvValues
-                .Select(csvValue => new ConditionMapping
-                {
-                    CsvCondition = csvValue,
-                    CardSetConditions = cardSetFields,
-                    SelectedCardSetCondition = GuessMapping(csvValue, cardSetFields) // Leave as null if no match is found
-                }).ToList();
-
-            listView.ItemsSource = mappingItems;
-        }
+        // Helper method for InitializeMappingListViewAsync - unique values from cards table for the chosen CardSet field
         private static async Task<List<string>> GetUniqueValuesFromDbColumn(string dbColumn)
         {
             var uniqueValues = new HashSet<string>();
@@ -576,11 +580,31 @@ namespace CollectaMundo
 
             return uniqueValues.ToList();
         }
+
+        // Helper method for InitializeMappingListViewAsync - get Condition values
         private static List<string> GetConditionsFromCardSet()
         {
             var cardItem = new CardSet.CardItem();
             return cardItem.Conditions;
         }
+
+        // Helper method for InitializeMappingListViewAsync - populate the actual listview with both csv-values to map to and options in the dropdown to map with
+        private static void PopulateColumnValuesMappingListView(ListView listView, string csvHeader, List<string> cardSetFields)
+        {
+            var csvValues = GetUniqueValuesFromCsv(csvHeader);
+
+            var mappingItems = csvValues
+                .Select(csvValue => new ValueMapping
+                {
+                    CsvValue = csvValue,
+                    CardSetValue = cardSetFields,
+                    SelectedCardSetValue = GuessMapping(csvValue, cardSetFields) // Leave as null if no match is found
+                }).ToList();
+
+            listView.ItemsSource = mappingItems;
+        }
+
+        // Helper method for PopulateColumnValuesMappingListView - get unique values for a specific csv-column to set as items to map to appropriate db values
         public static List<string> GetUniqueValuesFromCsv(string? csvHeader)
         {
             var uniqueValues = new HashSet<string>();
@@ -600,10 +624,14 @@ namespace CollectaMundo
 
             return uniqueValues.ToList();
         }
+
+        #endregion
+
+        #region Update cardItemsToAdd with values according to the selected mappings for condition, finish and language
         public static void UpdateCardItemsWithMappedValues(ListView mappingListView, string cardSetField, string defaultValue)
         {
             // Get the mappings from the specified ListView
-            var mappings = mappingListView.ItemsSource as List<ConditionMapping>;
+            var mappings = mappingListView.ItemsSource as List<ValueMapping>;
             var additionalMappings = MainWindow.CurrentInstance._mappings;
 
             if (mappings == null || additionalMappings == null)
@@ -623,13 +651,7 @@ namespace CollectaMundo
 
             // Create a dictionary for quick lookup of mappings
             var mappingDict = mappings
-                .ToDictionary(mapping => mapping.CsvCondition, mapping => mapping.SelectedCardSetCondition ?? defaultValue);
-
-            // Debug output for mappings
-            //foreach (var mapping in mappings)
-            //{
-            //    Debug.WriteLine($"Mapping: CsvValue = {mapping.CsvCondition}, SelectedCardSetField = {mapping.SelectedCardSetCondition}");
-            //}
+                .ToDictionary(mapping => mapping.CsvValue, mapping => mapping.SelectedCardSetValue ?? defaultValue);
 
             // Update items in cardItemsToAdd based on tempImport and the mappings
             foreach (var tempItem in tempImport)
@@ -648,10 +670,11 @@ namespace CollectaMundo
                                 {
                                     cardItem.SelectedCondition = mappedValue;
                                 }
-                                else if (cardSetField == "SelectedFinish")
+                                else
                                 {
-                                    cardItem.SelectedFinish = mappedValue;
+                                    SetCardItemField(cardItem, cardSetField, mappedValue);
                                 }
+
                                 Debug.WriteLine($"Mapped {cardSetField}: {mappedValue} to card with UUID: {uuid}");
                             }
                             else
@@ -661,23 +684,26 @@ namespace CollectaMundo
                                 {
                                     cardItem.SelectedCondition = defaultValue;
                                 }
-                                else if (cardSetField == "SelectedFinish")
+                                else
                                 {
-                                    cardItem.SelectedFinish = defaultValue;
+                                    SetCardItemField(cardItem, cardSetField, defaultValue);
                                 }
+                                Debug.WriteLine($"{cardSetField} {fieldValue} not found in mapping dictionary. Assigning default value '{defaultValue}'.");
+
                             }
                         }
                         else
                         {
-                            Debug.WriteLine($"{cardSetField} not found in tempItem for card with UUID: {uuid}. Assigning default value '{defaultValue}'.");
                             if (cardSetField == "Condition")
                             {
                                 cardItem.SelectedCondition = defaultValue;
                             }
-                            else if (cardSetField == "SelectedFinish")
+                            else
                             {
-                                cardItem.SelectedFinish = defaultValue;
+                                SetCardItemField(cardItem, cardSetField, defaultValue);
                             }
+                            Debug.WriteLine($"{cardSetField} not found in tempItem for card with UUID: {uuid}. Assigning default value '{defaultValue}'.");
+
                         }
                     }
                     else
@@ -691,6 +717,23 @@ namespace CollectaMundo
                 }
             }
         }
+        // Helper method for UpdateCardItemsWithMappedValues - use reflection to set the property value, making the method UpdateCardItemsWithMappedValues able to handle both language and finish
+        private static void SetCardItemField(CardSet.CardItem cardItem, string fieldName, string value)
+        {
+            var property = typeof(CardSet.CardItem).GetProperty(fieldName);
+            if (property != null && property.CanWrite)
+            {
+                property.SetValue(cardItem, value);
+            }
+            else
+            {
+                Debug.WriteLine($"Property {fieldName} not found or not writable on CardSet.CardItem");
+            }
+        }
+        #endregion
+
+        #region Misc. helper methods
+        // Generalized method for settign default values if no csv-column header is chosen as mapping for a cardItemsToAdd (CardSet) field
         public static void UpdateCardItemsWithDefaultField(string cardSetField, string defaultValue)
         {
             foreach (var tempItem in tempImport)
@@ -713,11 +756,14 @@ namespace CollectaMundo
                 }
             }
         }
+
+        // Generalized method to determine if a field is mapped
         public static bool IsFieldMapped(List<ColumnMapping> mappings, string cardSetField)
         {
             var fieldMapping = mappings?.FirstOrDefault(mapping => mapping.CardSetField == cardSetField);
             return fieldMapping != null && !string.IsNullOrEmpty(fieldMapping.CsvHeader);
         }
+        #endregion
 
 
 

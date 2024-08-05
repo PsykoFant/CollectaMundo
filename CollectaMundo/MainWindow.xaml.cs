@@ -1304,7 +1304,7 @@ namespace CollectaMundo
         }
         private void ButtonLanguageMappingNext_Click(object sender, RoutedEventArgs e)
         {
-            BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.FinishesMappingListView, "Language", "English");
+            BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.LanguageMappingListView, "Language", "English");
             GridImportLanguageMapping.Visibility = Visibility.Collapsed;
             GridImportConfirm.Visibility = Visibility.Visible;
             DebugAllItems();
