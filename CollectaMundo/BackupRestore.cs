@@ -782,7 +782,7 @@ namespace CollectaMundo
             Debug.WriteLine("Debugging cardItemsToAdd items:");
             foreach (var cardItem in AddToCollectionManager.Instance.cardItemsToAdd)
             {
-                Debug.WriteLine($"CardItem - Uuid: {cardItem.Uuid}, Condition: {cardItem.SelectedCondition}, Finish: {cardItem.SelectedFinish}, Language: {cardItem.Language}");
+                Debug.WriteLine($"CardItem - Uuid: {cardItem.Uuid}, Quantity: {cardItem.Count}, Condition: {cardItem.SelectedCondition}, Finish: {cardItem.SelectedFinish}, Language: {cardItem.Language}");
             }
         }
         public static void DebugImportProcess()

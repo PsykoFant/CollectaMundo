@@ -12,5 +12,6 @@
         public string? SelectedConditionHeader { get; set; }
         public string? SelectedLanguageHeader { get; set; }
         public string? SelectedFinishHeader { get; set; }
+        public int? Quantity { get; set; }
     }
 }

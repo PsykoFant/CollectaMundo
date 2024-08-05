@@ -1247,6 +1247,9 @@ namespace CollectaMundo
 
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
 
+
+
+
             if (isConditionMapped)
             {
                 await GoToConditionsMapping();
@@ -1309,24 +1312,33 @@ namespace CollectaMundo
             GridImportConfirm.Visibility = Visibility.Visible;
             DebugAllItems();
         }
+
         public async Task GoToConditionsMapping()
         {
-            var conditionMapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(mapping => mapping.CardSetField == "Condition");
-            await BackupRestore.InitializeMappingListViewAsync(conditionMapping.CsvHeader, false, "", MainWindow.CurrentInstance.ConditionsMappingListView);
-            MainWindow.CurrentInstance.GridImportCardConditionsMapping.Visibility = Visibility.Visible;
+            await GoToMapping("Condition", MainWindow.CurrentInstance.ConditionsMappingListView, "", MainWindow.CurrentInstance.GridImportCardConditionsMapping);
         }
         public async Task GoToFinishMapping()
         {
-            var finishMapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(mapping => mapping.CardSetField == "SelectedFinish");
-            await BackupRestore.InitializeMappingListViewAsync(finishMapping.CsvHeader, true, "finishes", MainWindow.CurrentInstance.FinishesMappingListView);
-            MainWindow.CurrentInstance.GridImportFinishesMapping.Visibility = Visibility.Visible;
+            await GoToMapping("SelectedFinish", MainWindow.CurrentInstance.FinishesMappingListView, "finishes", MainWindow.CurrentInstance.GridImportFinishesMapping);
         }
         public async Task GoToLanguageMapping()
         {
-            var languageMapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(mapping => mapping.CardSetField == "Language");
-            await BackupRestore.InitializeMappingListViewAsync(languageMapping.CsvHeader, true, "language", MainWindow.CurrentInstance.LanguageMappingListView);
-            MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Visible;
+            await GoToMapping("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping);
         }
+        public async Task GoToMapping(string cardSetField, ListView listView, string tableField, Grid grid)
+        {
+            var mapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(m => m.CardSetField == cardSetField);
+            if (mapping != null)
+            {
+                await BackupRestore.InitializeMappingListViewAsync(mapping.CsvHeader, !string.IsNullOrEmpty(tableField), tableField, listView);
+                grid.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                Debug.WriteLine($"Mapping for {cardSetField} not found.");
+            }
+        }
+
 
         #endregion
 
