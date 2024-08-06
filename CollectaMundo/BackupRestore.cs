@@ -58,6 +58,8 @@ namespace CollectaMundo
         }
 
         #endregion
+
+        // The temp object which holds the values read from csv-file
         public static ObservableCollection<TempCardItem> tempImport { get; private set; } = new ObservableCollection<TempCardItem>();
 
         // Create backup of my collection
@@ -666,7 +668,7 @@ namespace CollectaMundo
                             Debug.WriteLine($"Found {cardSetField}: {fieldValue} for card with UUID: {uuid}");
                             if (mappingDict.TryGetValue(fieldValue, out var mappedValue))
                             {
-                                if (cardSetField == "Condition")
+                                if (cardSetField == "SelectedCondition")
                                 {
                                     cardItem.SelectedCondition = mappedValue;
                                 }
@@ -680,7 +682,7 @@ namespace CollectaMundo
                             else
                             {
                                 Debug.WriteLine($"{cardSetField} {fieldValue} not found in mapping dictionary. Assigning default value '{defaultValue}'.");
-                                if (cardSetField == "Condition")
+                                if (cardSetField == "SelectedCondition")
                                 {
                                     cardItem.SelectedCondition = defaultValue;
                                 }
@@ -694,7 +696,7 @@ namespace CollectaMundo
                         }
                         else
                         {
-                            if (cardSetField == "Condition")
+                            if (cardSetField == "SelectedCondition")
                             {
                                 cardItem.SelectedCondition = defaultValue;
                             }
@@ -730,11 +732,61 @@ namespace CollectaMundo
                 Debug.WriteLine($"Property {fieldName} not found or not writable on CardSet.CardItem");
             }
         }
+
+        public static void UpdateCardItemsWithQuantity()
+        {
+            // Get the mapping for "Quantity" from the additional mappings
+            var quantityMapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(mapping => mapping.CardSetField == "Count");
+            if (quantityMapping == null || string.IsNullOrEmpty(quantityMapping.CsvHeader))
+            {
+                Debug.WriteLine("Quantity mapping not found.");
+                return;
+            }
+            string csvHeader = quantityMapping.CsvHeader;
+
+            // Update items in cardItemsToAdd based on tempImport and the quantity values
+            foreach (var tempItem in tempImport)
+            {
+                if (tempItem.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid))
+                {
+                    var cardItem = AddToCollectionManager.Instance.cardItemsToAdd.FirstOrDefault(c => c.Uuid == uuid);
+                    if (cardItem != null)
+                    {
+                        if (tempItem.Fields.TryGetValue(csvHeader, out var fieldValue))
+                        {
+                            if (int.TryParse(fieldValue, out int quantity))
+                            {
+                                cardItem.Count = quantity;
+                                Debug.WriteLine($"Updated Count for card with UUID: {uuid} to {quantity}");
+                            }
+                            else
+                            {
+                                Debug.WriteLine($"Invalid quantity value for card with UUID: {uuid}: {fieldValue}");
+                            }
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"Quantity not found in tempItem for card with UUID: {uuid}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"Card item not found for UUID: {uuid}");
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine($"UUID not found or empty in tempItem");
+                }
+            }
+        }
+
+
         #endregion
 
         #region Misc. helper methods
         // Generalized method for settign default values if no csv-column header is chosen as mapping for a cardItemsToAdd (CardSet) field
-        public static void UpdateCardItemsWithDefaultField(string cardSetField, string defaultValue)
+        public static void UpdateCardItemsWithDefaultField(string cardSetField, object defaultValue)
         {
             foreach (var tempItem in tempImport)
             {
@@ -746,7 +798,17 @@ namespace CollectaMundo
                         var property = typeof(CardSet.CardItem).GetProperty(cardSetField);
                         if (property != null && property.CanWrite)
                         {
-                            property.SetValue(cardItem, defaultValue);
+                            try
+                            {
+                                // Convert defaultValue to the appropriate type if necessary
+                                var convertedValue = Convert.ChangeType(defaultValue, property.PropertyType);
+                                property.SetValue(cardItem, convertedValue);
+                                Debug.WriteLine($"Set {cardSetField} to default value {convertedValue} for card with UUID: {uuid}");
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"Error setting property {cardSetField} on CardSet.CardItem: {ex.Message}");
+                            }
                         }
                         else
                         {
@@ -756,6 +818,7 @@ namespace CollectaMundo
                 }
             }
         }
+
 
         // Generalized method to determine if a field is mapped
         public static bool IsFieldMapped(List<ColumnMapping> mappings, string cardSetField)

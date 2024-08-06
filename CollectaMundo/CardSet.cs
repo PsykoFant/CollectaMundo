@@ -82,6 +82,21 @@ namespace CollectaMundo
                     }
                 }
             }
+
+            private int _countTrade;
+            public int CountTrade
+            {
+                get => _countTrade;
+                set
+                {
+                    if (_countTrade != value)
+                    {
+                        _countTrade = value;
+                        OnPropertyChanged(nameof(CountTrade));
+                    }
+                }
+            }
+
             private string? _selectedCondition;
             public List<string> Conditions { get; } = new List<string>
                 {

@@ -1230,7 +1230,7 @@ namespace CollectaMundo
             BackupRestore.UpdateCardItemsAndTempImport(multipleUuidsList);
 
             // Prepare the listview to map additional fields and make the screen visible
-            var cardSetFields = new List<string> { "Condition", "SelectedFinish", "Quantity", "Language" };
+            var cardSetFields = new List<string> { "SelectedCondition", "SelectedFinish", "Count", "Language" };
             BackupRestore.PopulateColumnMappingListView(AddionalFieldsMappingListView, cardSetFields);
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
         }
@@ -1239,34 +1239,41 @@ namespace CollectaMundo
             // Instantiate mappings variable
             _mappings = AddionalFieldsMappingListView.ItemsSource as List<ColumnMapping>;
 
-            // Check if "Card Condition", "Card Finish", and "Card Quantity" have a value selected
-            isConditionMapped = BackupRestore.IsFieldMapped(_mappings, "Condition");
+            // Check if "SelectedCondition", "SelectedFinish", and "Card Quantity" have a value selected
+            isConditionMapped = BackupRestore.IsFieldMapped(_mappings, "SelectedCondition");
             isFinishMapped = BackupRestore.IsFieldMapped(_mappings, "SelectedFinish");
-            isQuantityMapped = BackupRestore.IsFieldMapped(_mappings, "Quantity");
+            isQuantityMapped = BackupRestore.IsFieldMapped(_mappings, "Count");
             isLanguageMapped = BackupRestore.IsFieldMapped(_mappings, "Language");
 
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
 
-
+            if (isQuantityMapped)
+            {
+                BackupRestore.UpdateCardItemsWithQuantity();
+            }
+            else
+            {
+                BackupRestore.UpdateCardItemsWithDefaultField("Count", 1);
+            }
 
 
             if (isConditionMapped)
             {
-                await GoToConditionsMapping();
+                await GoToMapping("SelectedCondition", MainWindow.CurrentInstance.ConditionsMappingListView, "", MainWindow.CurrentInstance.GridImportCardConditionsMapping);
             }
             else
             {
                 BackupRestore.UpdateCardItemsWithDefaultField("SelectedCondition", "Near Mint");
                 if (isFinishMapped)
                 {
-                    await GoToFinishMapping();
+                    await GoToMapping("SelectedFinish", MainWindow.CurrentInstance.FinishesMappingListView, "finishes", MainWindow.CurrentInstance.GridImportFinishesMapping);
                 }
                 else
                 {
                     BackupRestore.UpdateCardItemsWithDefaultField("SelectedFinish", "nonfoil");
                     if (isLanguageMapped)
                     {
-                        await GoToLanguageMapping();
+                        await GoToMapping("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping);
                     }
                     else
                     {
@@ -1279,14 +1286,14 @@ namespace CollectaMundo
         }
         private async void ButtonConditionMappingNext_Click(object sender, RoutedEventArgs e)
         {
-            BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.ConditionsMappingListView, "Condition", "Near Mint");
+            BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.ConditionsMappingListView, "SelectedCondition", "Near Mint");
             GridImportCardConditionsMapping.Visibility = Visibility.Collapsed;
 
-            if (isFinishMapped) { await GoToFinishMapping(); }
+            if (isFinishMapped) { await GoToMapping("SelectedFinish", MainWindow.CurrentInstance.FinishesMappingListView, "finishes", MainWindow.CurrentInstance.GridImportFinishesMapping); }
             else
             {
                 BackupRestore.UpdateCardItemsWithDefaultField("SelectedFinish", "nonfoil");
-                if (isLanguageMapped) { await GoToLanguageMapping(); }
+                if (isLanguageMapped) { await GoToMapping("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping); }
                 else
                 {
                     GridImportConfirm.Visibility = Visibility.Visible;
@@ -1298,7 +1305,7 @@ namespace CollectaMundo
         {
             BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.FinishesMappingListView, "SelectedFinish", "nonfoil");
             GridImportFinishesMapping.Visibility = Visibility.Collapsed;
-            if (isLanguageMapped) { await GoToLanguageMapping(); }
+            if (isLanguageMapped) { await GoToMapping("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping); }
             else
             {
                 GridImportConfirm.Visibility = Visibility.Visible;
@@ -1311,19 +1318,6 @@ namespace CollectaMundo
             GridImportLanguageMapping.Visibility = Visibility.Collapsed;
             GridImportConfirm.Visibility = Visibility.Visible;
             DebugAllItems();
-        }
-
-        public async Task GoToConditionsMapping()
-        {
-            await GoToMapping("Condition", MainWindow.CurrentInstance.ConditionsMappingListView, "", MainWindow.CurrentInstance.GridImportCardConditionsMapping);
-        }
-        public async Task GoToFinishMapping()
-        {
-            await GoToMapping("SelectedFinish", MainWindow.CurrentInstance.FinishesMappingListView, "finishes", MainWindow.CurrentInstance.GridImportFinishesMapping);
-        }
-        public async Task GoToLanguageMapping()
-        {
-            await GoToMapping("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping);
         }
         public async Task GoToMapping(string cardSetField, ListView listView, string tableField, Grid grid)
         {
