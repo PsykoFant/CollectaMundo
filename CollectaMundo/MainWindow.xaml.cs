@@ -69,7 +69,7 @@ namespace CollectaMundo
                         c.manaValue AS ManaValue,
                         c.uuid AS Uuid,
                         m.id AS CardId,
-                        m.count AS Count,
+                        m.count AS CardsOwned,
                         m.condition AS Condition,
                         m.language AS Language,
                         m.finish AS Finishes,
@@ -109,7 +109,7 @@ namespace CollectaMundo
                         NULL AS ManaValue,  -- Tokens do not have manaValue
                         t.uuid AS Uuid,
                         m.id AS CardId,
-                        m.count AS Count,
+                        m.count AS CardsOwned,
                         m.condition AS Condition,
                         m.language AS Language,
                         m.finish AS Finishes,
@@ -197,7 +197,8 @@ namespace CollectaMundo
 
         private bool isConditionMapped;
         private bool isFinishMapped;
-        private bool isQuantityMapped;
+        private bool isCardsOwnedMapped;
+        private bool isCardsForTradedMapped;
         private bool isLanguageMapped;
         public List<ColumnMapping>? _mappings;
 
@@ -868,7 +869,7 @@ namespace CollectaMundo
                     // Only decrement for cardItemsToEdit if count is above 0
                     if (targetCollection == addToCollectionManager.cardItemsToEdit)
                     {
-                        if (cardItem.Count > 0)
+                        if (cardItem.CardsOwned > 0)
                         {
                             addToCollectionManager.DecrementCount_Click(sender, e, targetCollection);
                         }
@@ -985,7 +986,7 @@ namespace CollectaMundo
             if (card is CardItem cardItem)
             {
                 cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
-                cardItem.Count = Convert.ToInt32(reader["Count"]);
+                cardItem.CardsOwned = Convert.ToInt32(reader["CardsOwned"]);
                 cardItem.SelectedCondition = reader["Condition"]?.ToString() ?? "Near Mint";
                 cardItem.SelectedFinish = reader["Finishes"]?.ToString() ?? string.Empty;
             }
@@ -1169,7 +1170,7 @@ namespace CollectaMundo
             await BackupRestore.CreateCsvBackupAsync();
         }
 
-        // Import wizard buttons methods
+        // Import wizard button methods
         private async void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
         {
             // Select the csv-file and create a tempImport object with the content
@@ -1230,7 +1231,7 @@ namespace CollectaMundo
             BackupRestore.UpdateCardItemsAndTempImport(multipleUuidsList);
 
             // Prepare the listview to map additional fields and make the screen visible
-            var cardSetFields = new List<string> { "SelectedCondition", "SelectedFinish", "Count", "Language" };
+            var cardSetFields = new List<string> { "SelectedCondition", "SelectedFinish", "CardsOwned", "CardsForTrade", "Language" };
             BackupRestore.PopulateColumnMappingListView(AddionalFieldsMappingListView, cardSetFields);
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
         }
@@ -1242,20 +1243,29 @@ namespace CollectaMundo
             // Check if "SelectedCondition", "SelectedFinish", and "Card Quantity" have a value selected
             isConditionMapped = BackupRestore.IsFieldMapped(_mappings, "SelectedCondition");
             isFinishMapped = BackupRestore.IsFieldMapped(_mappings, "SelectedFinish");
-            isQuantityMapped = BackupRestore.IsFieldMapped(_mappings, "Count");
+            isCardsOwnedMapped = BackupRestore.IsFieldMapped(_mappings, "CardsOwned");
+            isCardsForTradedMapped = BackupRestore.IsFieldMapped(_mappings, "CardsForTrade");
             isLanguageMapped = BackupRestore.IsFieldMapped(_mappings, "Language");
 
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
 
-            if (isQuantityMapped)
+            if (isCardsOwnedMapped)
             {
-                BackupRestore.UpdateCardItemsWithQuantity();
+                BackupRestore.UpdateCardItemsWithQuantity("CardsOwned");
             }
             else
             {
-                BackupRestore.UpdateCardItemsWithDefaultField("Count", 1);
+                BackupRestore.UpdateCardItemsWithDefaultField("CardsOwned", 1);
             }
 
+            if (isCardsForTradedMapped)
+            {
+                BackupRestore.UpdateCardItemsWithQuantity("CardsForTrade");
+            }
+            else
+            {
+                BackupRestore.UpdateCardItemsWithDefaultField("CardsForTrade", 0);
+            }
 
             if (isConditionMapped)
             {
@@ -1296,6 +1306,7 @@ namespace CollectaMundo
                 if (isLanguageMapped) { await GoToMapping("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping); }
                 else
                 {
+                    BackupRestore.UpdateCardItemsWithDefaultField("Language", "English");
                     GridImportConfirm.Visibility = Visibility.Visible;
                     DebugAllItems();
                 }
@@ -1308,6 +1319,7 @@ namespace CollectaMundo
             if (isLanguageMapped) { await GoToMapping("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping); }
             else
             {
+                BackupRestore.UpdateCardItemsWithDefaultField("Language", "English");
                 GridImportConfirm.Visibility = Visibility.Visible;
                 DebugAllItems();
             }
@@ -1332,6 +1344,15 @@ namespace CollectaMundo
                 Debug.WriteLine($"Mapping for {cardSetField} not found.");
             }
         }
+
+        private void ClearMappingButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button clearButton && clearButton.DataContext is ColumnMapping mapping)
+            {
+                mapping.CsvHeader = null;
+            }
+        }
+
 
 
         #endregion

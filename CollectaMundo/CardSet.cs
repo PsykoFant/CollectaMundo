@@ -69,30 +69,30 @@ namespace CollectaMundo
             {
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             }
-            private int _count;
-            public int Count
+            private int _cardsOwned;
+            public int CardsOwned
             {
-                get => _count;
+                get => _cardsOwned;
                 set
                 {
-                    if (_count != value)
+                    if (_cardsOwned != value)
                     {
-                        _count = value;
-                        OnPropertyChanged(nameof(Count));
+                        _cardsOwned = value;
+                        OnPropertyChanged(nameof(CardsOwned));
                     }
                 }
             }
 
-            private int _countTrade;
-            public int CountTrade
+            private int _cardsForTrade;
+            public int CardsForTrade
             {
-                get => _countTrade;
+                get => _cardsForTrade;
                 set
                 {
-                    if (_countTrade != value)
+                    if (_cardsForTrade != value)
                     {
-                        _countTrade = value;
-                        OnPropertyChanged(nameof(CountTrade));
+                        _cardsForTrade = value;
+                        OnPropertyChanged(nameof(CardsForTrade));
                     }
                 }
             }

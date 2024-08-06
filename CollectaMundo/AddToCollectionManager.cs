@@ -26,7 +26,7 @@ namespace CollectaMundo
             if (button?.DataContext is CardSet.CardItem cardItem)
             {
                 // Increment the count
-                cardItem.Count++;
+                cardItem.CardsOwned++;
             }
         }
         public void DecrementCount_Click(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
@@ -35,13 +35,13 @@ namespace CollectaMundo
             if (button?.DataContext is CardSet.CardItem cardItem)
             {
                 // Decrease the count
-                cardItem.Count--;
+                cardItem.CardsOwned--;
 
                 // Check if the count has dropped to zero or below
 
                 if (targetCollection == cardItemsToAdd)
                 {
-                    if (cardItem.Count <= 0)
+                    if (cardItem.CardsOwned <= 0)
                     {
                         // Remove the card item from the specified ObservableCollection
                         targetCollection.Remove(cardItem);
@@ -74,7 +74,7 @@ namespace CollectaMundo
                         Name = selectedCard.Name,
                         SetName = selectedCard.SetName,
                         Uuid = selectedCard.Uuid,
-                        Count = 1,
+                        CardsOwned = 1,
                         AvailableFinishes = finishes,
                         SelectedFinish = finishes.FirstOrDefault(),
                         Language = selectedCard.Language,
@@ -86,7 +86,7 @@ namespace CollectaMundo
                     if (selectedCard is CardItem cardItem)
                     {
                         newItem.CardId = cardItem.CardId;
-                        newItem.Count = cardItem.Count;
+                        newItem.CardsOwned = cardItem.CardsOwned;
                         newItem.SelectedFinish = cardItem.SelectedFinish;
                         newItem.SelectedCondition = cardItem.SelectedCondition;
                     }
@@ -173,7 +173,7 @@ namespace CollectaMundo
                         string updateSql = @"UPDATE myCollection SET count = count + @newCount WHERE id = @id";
                         using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
                         {
-                            updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.Count);
+                            updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.CardsOwned);
                             updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
 
                             await updateCommand.ExecuteNonQueryAsync();
@@ -181,7 +181,7 @@ namespace CollectaMundo
                             var cardToUpdate = MainWindow.CurrentInstance.myCards.FirstOrDefault(c => c.Uuid == currentCardItem.Uuid);
                             if (cardToUpdate != null && cardToUpdate is CardItem card)
                             {
-                                card.Count += currentCardItem.Count;
+                                card.CardsOwned += currentCardItem.CardsOwned;
                             }
                         }
                     }
@@ -192,7 +192,7 @@ namespace CollectaMundo
                         using (var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection))
                         {
                             insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
-                            insertCommand.Parameters.AddWithValue("@count", currentCardItem.Count);
+                            insertCommand.Parameters.AddWithValue("@count", currentCardItem.CardsOwned);
                             insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
                             insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
                             insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish ?? "nonfoil");
@@ -211,7 +211,7 @@ namespace CollectaMundo
             {
                 // Provide update of the operation
                 var cardDetails = cardItemsToAdd.Select(card =>
-                    $"- {card.Name} (Count: {card.Count}, Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish})")
+                    $"- {card.Name} (CardsOwned: {card.CardsOwned}, Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish})")
                     .Aggregate((current, next) => current + "\n" + next);
 
                 // Set the detailed string with linebreaks to the TextBlock
@@ -249,7 +249,7 @@ namespace CollectaMundo
                         string updateSql = @"UPDATE myCollection SET count = count + @newCount WHERE id = @id";
                         using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
                         {
-                            updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.Count);
+                            updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.CardsOwned);
                             updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
 
                             await updateCommand.ExecuteNonQueryAsync();
@@ -266,9 +266,9 @@ namespace CollectaMundo
                     else
                     {
                         // If the count is set to 0, delete the card from myCollection
-                        if (currentCardItem.Count == 0)
+                        if (currentCardItem.CardsOwned == 0)
                         {
-                            Debug.WriteLine($"Count set to 0, deleting card with id {currentCardItem.CardId}");
+                            Debug.WriteLine($"CardsOwned set to 0, deleting card with id {currentCardItem.CardId}");
 
                             string deleteSql = "DELETE FROM myCollection WHERE id = @id";
                             using (var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection))
@@ -284,7 +284,7 @@ namespace CollectaMundo
                             string updateSql = @"UPDATE myCollection SET count = @count, condition = @condition, language = @language, finish = @finish WHERE id = @cardId";
                             using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
                             {
-                                updateCommand.Parameters.AddWithValue("@count", currentCardItem.Count);
+                                updateCommand.Parameters.AddWithValue("@count", currentCardItem.CardsOwned);
                                 updateCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
                                 updateCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
                                 updateCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
@@ -305,9 +305,9 @@ namespace CollectaMundo
             {
                 // Provide update of the operation
                 var cardDetails = cardItemsToEdit.Select(card =>
-                    card.Count == 0
+                    card.CardsOwned == 0
                         ? $"{card.Name} - DELETED FROM COLLECTION"  // Display this message if card count is zero
-                        : $"- {card.Name} (Count: {card.Count}, Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish})")
+                        : $"- {card.Name} (CardsOwned: {card.CardsOwned}, Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish})")
                     .Aggregate((current, next) => current + "\n" + next);
 
                 // Set the detailed string with linebreaks to the TextBlock

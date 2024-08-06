@@ -7,29 +7,6 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 
-/*
- * (0. Søg på uuid, code eller whatever)
- * 1. Søg på navn og set, set code
- *  - Hvis unikt match
- *      - Tilføj uuid til tempImport
- *      - Tilføj uuid til cardItemsToAdd
- *  - Hvis multiple match
- *      - Tilføj multiple = true på tempImport
- *      - Tilføj array med fundne uuids på tempImport
- * 2. Match multiples
- *  - Listview med alle multiple = true på tempImport
- *  - Anden kolonne Navn på fundne multiples, vælg i dropdown
- *      - Tilføj uuid til tempImport
- *      - Tilføj uuid til cardItemsToAdd
- * 3. Map quantity
- *  - Tilføj quantity til CardItemsToAdd fra tempImport hvor uuid matcher uuid fra tempImport 
- * 4. Map condition
- *  - Map conditions fra liste over tilgængelige conditions fra tempImport
- *  - Tilføj conditions til CardItemsToAdd fra fra tempImport hvor uuid matcher uuid fra tempImport
- * 6. Map foil
- * 5. Map language
-*/
-
 namespace CollectaMundo
 {
     public class BackupRestore
@@ -657,19 +634,19 @@ namespace CollectaMundo
             // Update items in cardItemsToAdd based on tempImport and the mappings
             UpdateCardItems(cardSetField, csvHeader, defaultValue, mappingDict);
         }
-        public static void UpdateCardItemsWithQuantity()
+        public static void UpdateCardItemsWithQuantity(string cardSetField)
         {
-            // Get the mapping for "Count" from the additional mappings
-            var quantityMapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(mapping => mapping.CardSetField == "Count");
+            // Get the mapping for "CardsOwned" from the additional mappings
+            var quantityMapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(mapping => mapping.CardSetField == cardSetField);
             if (quantityMapping == null || string.IsNullOrEmpty(quantityMapping.CsvHeader))
             {
-                Debug.WriteLine("Count mapping not found.");
+                Debug.WriteLine($"{cardSetField} mapping not found.");
                 return;
             }
             string csvHeader = quantityMapping.CsvHeader;
 
             // Update items in cardItemsToAdd based on tempImport and the quantity values
-            UpdateCardItems("Count", csvHeader, 1, null);
+            UpdateCardItems(cardSetField, csvHeader, 1, null);
         }
         private static void UpdateCardItems(string cardSetField, string? csvHeader, object defaultValue, Dictionary<string, string>? mappingDict)
         {
@@ -684,16 +661,16 @@ namespace CollectaMundo
                         {
                             Debug.WriteLine($"Found {cardSetField}: {fieldValue} for card with UUID: {uuid}");
 
-                            if (cardSetField == "Count")
+                            if (cardSetField == "CardsOwned")
                             {
                                 if (int.TryParse(fieldValue, out int quantity))
                                 {
-                                    cardItem.Count = quantity;
-                                    Debug.WriteLine($"Updated Count for card with UUID: {uuid} to {quantity}");
+                                    cardItem.CardsOwned = quantity;
+                                    Debug.WriteLine($"Updated CardsOwned for card with UUID: {uuid} to {quantity}");
                                 }
                                 else
                                 {
-                                    cardItem.Count = Convert.ToInt32(defaultValue);
+                                    cardItem.CardsOwned = Convert.ToInt32(defaultValue);
                                     Debug.WriteLine($"Invalid quantity value for card with UUID: {uuid}: {fieldValue}. Assigning default value '{defaultValue}'.");
                                 }
                             }
@@ -783,7 +760,7 @@ namespace CollectaMundo
             Debug.WriteLine("Debugging cardItemsToAdd items:");
             foreach (var cardItem in AddToCollectionManager.Instance.cardItemsToAdd)
             {
-                Debug.WriteLine($"CardItem - Uuid: {cardItem.Uuid}, Quantity: {cardItem.Count}, Condition: {cardItem.SelectedCondition}, Finish: {cardItem.SelectedFinish}, Language: {cardItem.Language}");
+                Debug.WriteLine($"CardItem - Uuid: {cardItem.Uuid}, CardsOwned: {cardItem.CardsOwned}, CardsForTrade: {cardItem.CardsForTrade}, Condition: {cardItem.SelectedCondition}, Finish: {cardItem.SelectedFinish}, Language: {cardItem.Language}");
             }
         }
         public static void DebugImportProcess()
