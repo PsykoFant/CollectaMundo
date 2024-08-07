@@ -760,6 +760,12 @@ namespace CollectaMundo
             if (sender is ComboBox comboBox && comboBox.SelectedItem is UuidVersion selectedVersion)
             {
                 string? selectedUuid = selectedVersion.Uuid;
+                if (selectedUuid == null)
+                {
+                    Debug.WriteLine("Selected UUID is null.");
+                    return;
+                }
+
                 Debug.WriteLine($"Trying to show image with uuid: {selectedUuid}");
                 try
                 {
@@ -1240,6 +1246,12 @@ namespace CollectaMundo
             // Instantiate mappings variable
             _mappings = AddionalFieldsMappingListView.ItemsSource as List<ColumnMapping>;
 
+            if (_mappings == null)
+            {
+                MessageBox.Show("No mappings found. Please ensure you have selected the appropriate mappings.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
             // Check if "SelectedCondition", "SelectedFinish", and "Card Quantity" have a value selected
             isConditionMapped = BackupRestore.IsFieldMapped(_mappings, "SelectedCondition");
             isFinishMapped = BackupRestore.IsFieldMapped(_mappings, "SelectedFinish");
@@ -1334,7 +1346,7 @@ namespace CollectaMundo
         public async Task GoToMapping(string cardSetField, ListView listView, string tableField, Grid grid)
         {
             var mapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(m => m.CardSetField == cardSetField);
-            if (mapping != null)
+            if (mapping != null && !string.IsNullOrEmpty(mapping.CsvHeader))
             {
                 await BackupRestore.InitializeMappingListViewAsync(mapping.CsvHeader, !string.IsNullOrEmpty(tableField), tableField, listView);
                 grid.Visibility = Visibility.Visible;

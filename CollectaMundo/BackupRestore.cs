@@ -34,7 +34,7 @@ namespace CollectaMundo
 
             public string? CsvValue { get; set; }
             public List<string>? CardSetValue { get; set; }
-            public string SelectedCardSetValue
+            public string? SelectedCardSetValue
             {
                 get => _selectedCardSetValue;
                 set
@@ -44,14 +44,38 @@ namespace CollectaMundo
                 }
             }
 
-            public event PropertyChangedEventHandler PropertyChanged;
+            public event PropertyChangedEventHandler? PropertyChanged;
 
             protected void OnPropertyChanged(string propertyName)
             {
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             }
         }
+        public class ColumnMapping : INotifyPropertyChanged
+        {
+            public string? CardSetField { get; set; }
 
+            private string? csvHeader;
+            public string? CsvHeader
+            {
+                get => csvHeader;
+                set
+                {
+                    if (csvHeader != value)
+                    {
+                        csvHeader = value;
+                        OnPropertyChanged(nameof(CsvHeader));
+                    }
+                }
+            }
+            public List<string>? CsvHeaders { get; set; } = new List<string>();
+
+            public event PropertyChangedEventHandler? PropertyChanged;
+            protected void OnPropertyChanged(string propertyName)
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
+        }
 
         #endregion
 
@@ -488,16 +512,24 @@ namespace CollectaMundo
         // Populate a listview where column headings found in the csv-file can be mapped to fields on the cardItemsToAdd object (which uses the CardSet class)
         public static void PopulateColumnMappingListView(ListView listView, List<string> cardSetFields)
         {
-            var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
-
-            var mappingItems = cardSetFields.Select(field => new ColumnMapping
+            try
             {
-                CardSetField = field,
-                CsvHeaders = csvHeaders,
-                CsvHeader = GuessMapping(field, csvHeaders)
-            }).ToList();
+                var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
 
-            listView.ItemsSource = mappingItems;
+                var mappingItems = cardSetFields.Select(field => new ColumnMapping
+                {
+                    CardSetField = field,
+                    CsvHeaders = csvHeaders,
+                    CsvHeader = GuessMapping(field, csvHeaders)
+                }).ToList();
+
+                listView.ItemsSource = mappingItems;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error populating mapping list view: {ex.Message}");
+                MessageBox.Show($"Error populating mapping list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // Try to guess which column name maps to cardItemsToAdd field by looking for matching column/field names
@@ -510,44 +542,60 @@ namespace CollectaMundo
         // Populate the datagrid where a single version can be selected of a card with multiple identical set and card names
         public static void PopulateMultipleUuidsDataGrid()
         {
-            var itemsWithMultipleUuids = tempImport
-                .Where(item => item.Fields.ContainsKey("uuids"))
-                .Select(item => new MultipleUuidsItem
-                {
-                    Name = item.Fields.ContainsKey("Name") ? item.Fields["Name"] : "Unknown",
-                    VersionedUuids = item.Fields["uuids"]
-                        .Split(',')
-                        .Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid })
-                        .ToList(),
-                    SelectedUuid = null // Set the initial selection to null
-                })
-                .ToList();
+            try
+            {
+                var itemsWithMultipleUuids = tempImport
+                    .Where(item => item.Fields.ContainsKey("uuids"))
+                    .Select(item => new MultipleUuidsItem
+                    {
+                        Name = item.Fields.ContainsKey("Name") ? item.Fields["Name"] : "Unknown",
+                        VersionedUuids = item.Fields["uuids"]
+                            .Split(',')
+                            .Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid })
+                            .ToList(),
+                        SelectedUuid = null // Set the initial selection to null
+                    })
+                    .ToList();
 
-            Debug.WriteLine($"Populated MultipleUuidsDataGrid with {itemsWithMultipleUuids.Count} items.");
+                Debug.WriteLine($"Populated MultipleUuidsDataGrid with {itemsWithMultipleUuids.Count} items.");
 
-            MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
-            MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
+                MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
+                MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error populating multiple uuids datagrid: {ex.Message}");
+                MessageBox.Show($"Error populating multiple uuids datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
 
         // Generalized method for populating a listview where values found in csv-file can be matched to appropriate db values
         public static async Task InitializeMappingListViewAsync(string csvHeader, bool fetchFromDatabase, string dbColumn, ListView listView)
         {
-            List<string> mappingValues;
-
-            // Mapping values for finish and language should be values found in cards table
-            if (fetchFromDatabase)
+            try
             {
-                mappingValues = await GetUniqueValuesFromDbColumn(dbColumn);
-            }
-            // Mapping values for condition should be the ones specified in the Condition field in CardSet class. 
-            // They are not found in the db because the are MCM gradings
-            else
-            {
-                mappingValues = GetConditionsFromCardSet();
-            }
+                List<string> mappingValues;
 
-            PopulateColumnValuesMappingListView(listView, csvHeader, mappingValues);
+                // Mapping values for finish and language should be values found in cards table
+                if (fetchFromDatabase)
+                {
+                    mappingValues = await GetUniqueValuesFromDbColumn(dbColumn);
+                }
+                // Mapping values for condition should be the ones specified in the Condition field in CardSet class. 
+                // They are not found in the db because the are MCM gradings
+                else
+                {
+                    mappingValues = GetConditionsFromCardSet();
+                }
+
+                PopulateColumnValuesMappingListView(listView, csvHeader, mappingValues);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error initializing mapping list view: {ex.Message}");
+                MessageBox.Show($"Error initializing mapping list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // Helper method for InitializeMappingListViewAsync - unique values from cards table for the chosen CardSet field
@@ -628,44 +676,61 @@ namespace CollectaMundo
         #region Update cardItemsToAdd with values according to the selected mappings for condition, finish and language
         public static void UpdateCardItemsWithMappedValues(ListView mappingListView, string cardSetField, string defaultValue)
         {
-            // Get the mappings from the specified ListView
-            var mappings = mappingListView.ItemsSource as List<ValueMapping>;
-            var additionalMappings = MainWindow.CurrentInstance._mappings;
-
-            if (mappings == null || additionalMappings == null)
+            try
             {
-                Debug.WriteLine("No mappings found.");
-                return;
-            }
+                // Get the mappings from the specified ListView
+                var mappings = mappingListView.ItemsSource as List<ValueMapping>;
+                var additionalMappings = MainWindow.CurrentInstance._mappings;
 
-            // Get the CSV header for the specified CardSetField
-            var fieldMapping = additionalMappings.FirstOrDefault(mapping => mapping.CardSetField == cardSetField);
-            if (fieldMapping == null || string.IsNullOrEmpty(fieldMapping.CsvHeader))
+                if (mappings == null || additionalMappings == null)
+                {
+                    Debug.WriteLine("No mappings found.");
+                    return;
+                }
+
+                // Get the CSV header for the specified CardSetField
+                var fieldMapping = additionalMappings.FirstOrDefault(mapping => mapping.CardSetField == cardSetField);
+                if (fieldMapping == null || string.IsNullOrEmpty(fieldMapping.CsvHeader))
+                {
+                    Debug.WriteLine($"{cardSetField} mapping not found in additional mappings.");
+                    return;
+                }
+                string csvHeader = fieldMapping.CsvHeader;
+
+                // Create a dictionary for quick lookup of mappings, filtering out any null or empty CsvValues
+                var mappingDict = mappings
+                    .Where(mapping => !string.IsNullOrEmpty(mapping.CsvValue))
+                    .ToDictionary(mapping => mapping.CsvValue!, mapping => mapping.SelectedCardSetValue ?? defaultValue);
+
+                // Update items in cardItemsToAdd based on tempImport and the mappings
+                UpdateCardItems(cardSetField, csvHeader, defaultValue, mappingDict);
+            }
+            catch (Exception ex)
             {
-                Debug.WriteLine($"{cardSetField} mapping not found in additional mappings.");
-                return;
+                MessageBox.Show($"Error updating items with mapped values: {ex.Message}");
+                MessageBox.Show($"Error updating items with mapped values: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            string csvHeader = fieldMapping.CsvHeader;
-
-            // Create a dictionary for quick lookup of mappings
-            var mappingDict = mappings.ToDictionary(mapping => mapping.CsvValue, mapping => mapping.SelectedCardSetValue ?? defaultValue);
-
-            // Update items in cardItemsToAdd based on tempImport and the mappings
-            UpdateCardItems(cardSetField, csvHeader, defaultValue, mappingDict);
         }
         public static void UpdateCardItemsWithQuantity(string cardSetField)
         {
-            // Get the mapping for "CardsOwned" from the additional mappings
-            var quantityMapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(mapping => mapping.CardSetField == cardSetField);
-            if (quantityMapping == null || string.IsNullOrEmpty(quantityMapping.CsvHeader))
+            try
             {
-                Debug.WriteLine($"{cardSetField} mapping not found.");
-                return;
-            }
-            string csvHeader = quantityMapping.CsvHeader;
+                var quantityMapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(mapping => mapping.CardSetField == cardSetField);
+                if (quantityMapping == null || string.IsNullOrEmpty(quantityMapping.CsvHeader))
+                {
+                    Debug.WriteLine($"{cardSetField} mapping not found.");
+                    return;
+                }
+                string csvHeader = quantityMapping.CsvHeader;
 
-            // Update items in cardItemsToAdd based on tempImport and the quantity values
-            UpdateCardItems(cardSetField, csvHeader, 1, null);
+                // Update items in cardItemsToAdd based on tempImport and the quantity values
+                UpdateCardItems(cardSetField, csvHeader, 1, null);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error updating items with quantity: {ex.Message}");
+                MessageBox.Show($"Error updating items with quantity: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         private static void UpdateCardItems(string cardSetField, string? csvHeader, object defaultValue, Dictionary<string, string>? mappingDict)
         {
@@ -743,6 +808,11 @@ namespace CollectaMundo
                 Debug.WriteLine($"Property {fieldName} not found or not writable on CardSet.CardItem");
             }
         }
+        public static bool IsFieldMapped(List<ColumnMapping> mappings, string cardSetField)
+        {
+            var fieldMapping = mappings?.FirstOrDefault(mapping => mapping.CardSetField == cardSetField);
+            return fieldMapping != null && !string.IsNullOrEmpty(fieldMapping.CsvHeader);
+        }
 
         #endregion
 
@@ -753,13 +823,6 @@ namespace CollectaMundo
             UpdateCardItems(cardSetField, null, defaultValue, null);
         }
 
-
-        // Generalized method to determine if a field is mapped
-        public static bool IsFieldMapped(List<ColumnMapping> mappings, string cardSetField)
-        {
-            var fieldMapping = mappings?.FirstOrDefault(mapping => mapping.CardSetField == cardSetField);
-            return fieldMapping != null && !string.IsNullOrEmpty(fieldMapping.CsvHeader);
-        }
         #endregion
 
 
