@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
@@ -27,12 +28,30 @@ namespace CollectaMundo
             public List<UuidVersion>? VersionedUuids { get; set; }
             public string? SelectedUuid { get; set; }
         }
-        public class ValueMapping
+        public class ValueMapping : INotifyPropertyChanged
         {
+            private string? _selectedCardSetValue;
+
             public string? CsvValue { get; set; }
             public List<string>? CardSetValue { get; set; }
-            public string? SelectedCardSetValue { get; set; }
+            public string SelectedCardSetValue
+            {
+                get => _selectedCardSetValue;
+                set
+                {
+                    _selectedCardSetValue = value;
+                    OnPropertyChanged(nameof(SelectedCardSetValue));
+                }
+            }
+
+            public event PropertyChangedEventHandler PropertyChanged;
+
+            protected void OnPropertyChanged(string propertyName)
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
         }
+
 
         #endregion
 

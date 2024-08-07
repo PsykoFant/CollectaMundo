@@ -1347,11 +1347,20 @@ namespace CollectaMundo
 
         private void ClearMappingButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button clearButton && clearButton.DataContext is ColumnMapping mapping)
+            if (sender is Button button)
             {
-                mapping.CsvHeader = null;
+                if (button.DataContext is ColumnMapping columnMapping)
+                {
+                    columnMapping.CsvHeader = null;
+                }
+                else if (button.DataContext is ValueMapping valueMapping)
+                {
+                    valueMapping.SelectedCardSetValue = null;
+                }
             }
         }
+
+
 
 
 
