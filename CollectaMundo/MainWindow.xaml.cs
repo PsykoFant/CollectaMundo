@@ -1190,19 +1190,30 @@ namespace CollectaMundo
         }
         private async void ButtonNameAndSetMappingNext_Click(object sender, RoutedEventArgs e)
         {
+            var mappings = NameAndSetMappingListView.Items.Cast<ColumnMapping>().ToList();
+
+            var nameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Name")?.CsvHeader;
+            var setNameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Set Name")?.CsvHeader;
+            var setCodeMapping = mappings.FirstOrDefault(m => m.CardSetField == "Set Code")?.CsvHeader;
+
+            // Check if "Name" and either "Set Name" or "Set Code" are mapped
+            if (string.IsNullOrEmpty(nameMapping) || (string.IsNullOrEmpty(setNameMapping) && string.IsNullOrEmpty(setCodeMapping)))
+            {
+                MessageBox.Show("Both name and either set name or set code must be set", "Mapping Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
 
-            // Create a list of mappings based on the selected values in the ListView. Search for unique uuids based on selected csv-headings for card name, set and set code
-            var mappings = NameAndSetMappingListView.Items.Cast<ColumnMapping>().ToList();
+            // Search for unique uuids based on selected csv-headings for card name, set, and set code
             await BackupRestore.SearchByCardNameOrSet(mappings);
 
             // Populate the DataGrid for multiple uuids mapping screen and make it visible
-
-            // insert logic to handle if there are not any multiple uuids to go directly to additional fields mapping
-
             BackupRestore.PopulateMultipleUuidsDataGrid();
             GridImportMultipleUuidsSelection.Visibility = Visibility.Visible;
         }
+
+
         private void ButtonMultipleUuidsNext_Click(object sender, RoutedEventArgs e)
         {
             GridImportMultipleUuidsSelection.Visibility = Visibility.Collapsed;
