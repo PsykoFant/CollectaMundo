@@ -1212,16 +1212,11 @@ namespace CollectaMundo
             BackupRestore.PopulateMultipleUuidsDataGrid();
             GridImportMultipleUuidsSelection.Visibility = Visibility.Visible;
         }
-
-
         private void ButtonMultipleUuidsNext_Click(object sender, RoutedEventArgs e)
         {
-            GridImportMultipleUuidsSelection.Visibility = Visibility.Collapsed;
-
-            BackupRestore.DebugImportProcess(); // Debug before updating
-
             // Directly retrieve items from DataGrid
             var multipleUuidsItems = new List<MultipleUuidsItem>();
+            bool allSelected = true;
 
             foreach (var item in MultipleUuidsDataGrid.Items)
             {
@@ -1236,10 +1231,25 @@ namespace CollectaMundo
                         {
                             multipleUuidsItem.SelectedUuid = selectedVersion.Uuid;
                         }
+                        else
+                        {
+                            allSelected = false;
+                        }
                     }
                     multipleUuidsItems.Add(multipleUuidsItem);
                 }
             }
+
+            // Check if all dropdowns have a selected value
+            if (!allSelected)
+            {
+                MessageBox.Show("Please select a version for all cards before proceeding.", "Selection Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            GridImportMultipleUuidsSelection.Visibility = Visibility.Collapsed;
+
+            BackupRestore.DebugImportProcess(); // Debug before updating
 
             // Convert to List explicitly to ensure we have a concrete collection to work with
             var multipleUuidsList = multipleUuidsItems.ToList();
@@ -1367,7 +1377,6 @@ namespace CollectaMundo
                 Debug.WriteLine($"Mapping for {cardSetField} not found.");
             }
         }
-
         private void ClearMappingButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button)
@@ -1382,10 +1391,6 @@ namespace CollectaMundo
                 }
             }
         }
-
-
-
-
 
         #endregion
 

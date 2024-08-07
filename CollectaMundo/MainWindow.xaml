@@ -627,16 +627,15 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ComboBox ItemsSource="{Binding VersionedUuids}" 
-                                          DisplayMemberPath="DisplayText"
-                                          SelectedValuePath="Uuid"
-                                          SelectedValue="{Binding SelectedUuid, Mode=TwoWay}" 
-                                          SelectionChanged="UuidSelectionChanged"/>
+                                              DisplayMemberPath="DisplayText"
+                                              SelectedValuePath="Uuid"
+                                              SelectedValue="{Binding SelectedUuid, Mode=TwoWay}" 
+                                              SelectionChanged="UuidSelectionChanged"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
-
                         <Button x:Name="ButtonMultipleUuidsNext" Content="Next" HorizontalAlignment="Left" Margin="962,427,0,0" VerticalAlignment="Top" Click="ButtonMultipleUuidsNext_Click"/>
                     </Grid>
                     <Grid x:Name="GridImportAdditionalFieldsMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
