@@ -584,187 +584,220 @@
             </Grid>
             <Grid x:Name="GridUtilitiesSection" Width="1320" HorizontalAlignment="Center" VerticalAlignment="Top">
                 <Grid x:Name="GridUtilsScreen" HorizontalAlignment="Center" Width="1320">
-                    <Grid x:Name="GridImportNameAndSetMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
-                        <Label x:Name="ImportStep1Label" Content="Map imported collection headers" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
-                        <ListView x:Name="NameAndSetMappingListView" Margin="0,186,0,0" Width="575" Height="128" HorizontalAlignment="Center" VerticalAlignment="Top">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="CardSet Field" Width="150">
-                                        <GridViewColumn.CellTemplate>
+                    <Grid x:Name="GridImportWizard" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                        <Grid x:Name="GridImportIdColumnMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                            <Label x:Name="IdColumnLabel" Content="Map ID column" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                            <ListView x:Name="IdColumnMappingListView" Margin="0,186,0,0" Width="575" Height="128" HorizontalAlignment="Center" VerticalAlignment="Top">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Database" Width="150">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox ItemsSource="{Binding DatabaseFields}" SelectedItem="{Binding SelectedDatabaseField}" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="CSV Column" Width="150">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox ItemsSource="{Binding CsvHeaders}" SelectedItem="{Binding SelectedCsvHeader}" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="Actions" Width="80">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="Clear Mapping" Click="ClearMappingButton_Click"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                            <Button x:Name="ButtonIdColumnMappingNext" Content="Next" HorizontalAlignment="Left" Margin="966,240,0,0" VerticalAlignment="Top" Click="ButtonIdColumnMappingNext_Click"/>
+                        </Grid>
+                        <Grid x:Name="GridImportNameAndSetMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                            <Label x:Name="ImportStep1Label" Content="Map imported collection headers" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                            <ListView x:Name="NameAndSetMappingListView" Margin="0,186,0,0" Width="575" Height="128" HorizontalAlignment="Center" VerticalAlignment="Top">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="CardSet Field" Width="150">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding CardSetField}" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="CSV Column" Width="150">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox ItemsSource="{Binding CsvHeaders}" SelectedItem="{Binding CsvHeader}" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="Actions" Width="80">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="Clear Mapping" Click="ClearMappingButton_Click"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                            <Button x:Name="ButtonNameAndSetMappingNext" Content="Next" HorizontalAlignment="Left" Margin="966,240,0,0" VerticalAlignment="Top" Click="ButtonNameAndSetMappingNext_Click"/>
+                        </Grid>
+                        <Grid x:Name="GridImportMultipleUuidsSelection" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                            <Label x:Name="ImportStep2Label" Content="Multiple versions found of one or more cards - please select a version" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                            <DataGrid x:Name="MultipleUuidsDataGrid" 
+                              AutoGenerateColumns="False" 
+                              CanUserAddRows="False"
+                              HorizontalAlignment="Center" Margin="0,210,0,144" Height="453" Width="564">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Card Name" Binding="{Binding Name}" Width="*"/>
+                                    <DataGridTemplateColumn Header="Versions" Width="*">
+                                        <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding CardSetField}" />
+                                                <ComboBox ItemsSource="{Binding VersionedUuids}" 
+                                                  DisplayMemberPath="DisplayText"
+                                                  SelectedValuePath="Uuid"
+                                                  SelectedValue="{Binding SelectedUuid, Mode=TwoWay}" 
+                                                  SelectionChanged="UuidSelectionChanged"/>
                                             </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="CSV Column" Width="150">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <ComboBox ItemsSource="{Binding CsvHeaders}" SelectedItem="{Binding CsvHeader}" />
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="Actions" Width="80">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Button Content="Clear Mapping" Click="ClearMappingButton_Click"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
-                        <Button x:Name="ButtonNameAndSetMappingNext" Content="Next" HorizontalAlignment="Left" Margin="966,240,0,0" VerticalAlignment="Top" Click="ButtonNameAndSetMappingNext_Click"/>
-                    </Grid>
-                    <Grid x:Name="GridImportMultipleUuidsSelection" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
-                        <Label x:Name="ImportStep2Label" Content="Multiple versions found of one or more cards - please select a version" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
-                        <DataGrid x:Name="MultipleUuidsDataGrid" 
-                          AutoGenerateColumns="False" 
-                          CanUserAddRows="False"
-                          HorizontalAlignment="Center" Margin="0,210,0,144" Height="453" Width="564">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Card Name" Binding="{Binding Name}" Width="*"/>
-                                <DataGridTemplateColumn Header="Versions" Width="*">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <ComboBox ItemsSource="{Binding VersionedUuids}" 
-                                              DisplayMemberPath="DisplayText"
-                                              SelectedValuePath="Uuid"
-                                              SelectedValue="{Binding SelectedUuid, Mode=TwoWay}" 
-                                              SelectionChanged="UuidSelectionChanged"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <Button x:Name="ButtonMultipleUuidsNext" Content="Next" HorizontalAlignment="Left" Margin="962,427,0,0" VerticalAlignment="Top" Click="ButtonMultipleUuidsNext_Click"/>
-                    </Grid>
-                    <Grid x:Name="GridImportAdditionalFieldsMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
-                        <Label x:Name="ImportStep3Label" Content="Mapping of additional fields" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
-                        <ListView x:Name="AddionalFieldsMappingListView" Margin="0,186,0,0" Width="388" Height="300" HorizontalAlignment="Center" VerticalAlignment="Top">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="Database field" Width="150">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding CardSetField}" />
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="Import file header" Width="150">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <ComboBox ItemsSource="{Binding CsvHeaders}" SelectedItem="{Binding CsvHeader}" />
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="Actions" Width="80">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Button Content="Clear Mapping" Click="ClearMappingButton_Click"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
-                        <Button x:Name="ButtonAdditionalFieldsNext" Content="Next" HorizontalAlignment="Left" Margin="926,246,0,0" VerticalAlignment="Top" RenderTransformOrigin="1.178,-5.496" Click="ButtonAdditionalFieldsNext_Click"/>
-                    </Grid>
-                    <Grid x:Name="GridImportCardConditionsMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
-                        <Label x:Name="ImportStep4Label" Content="Mapping of card conditions" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
-                        <ListView x:Name="ConditionsMappingListView" Margin="0,186,0,0" Width="387" Height="170" HorizontalAlignment="Center" VerticalAlignment="Top">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="CSV Condition" Width="150">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding CsvValue}" />
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="Database Condition" Width="150">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <ComboBox ItemsSource="{Binding CardSetValue}" SelectedItem="{Binding SelectedCardSetValue}" />
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="Actions" Width="100">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Button Content="Clear Mapping" Click="ClearMappingButton_Click" />
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
-                        <Button x:Name="ButtonConditionMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ButtonConditionMappingNext_Click"/>
-                    </Grid>
-                    <Grid x:Name="GridImportFinishesMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
-                        <Label x:Name="ImportStep5Label" Content="Mapping of card finish" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
-                        <ListView x:Name="FinishesMappingListView" Margin="0,186,0,0" Width="387" Height="170" HorizontalAlignment="Center" VerticalAlignment="Top">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="CSV Condition" Width="150">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding CsvValue}" />
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="Database Condition" Width="150">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <ComboBox ItemsSource="{Binding CardSetValue}" SelectedItem="{Binding SelectedCardSetValue}" />
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="Actions" Width="80">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Button Content="Clear Mapping" Click="ClearMappingButton_Click"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
-                        <Button x:Name="ButtonFinishesMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ButtonFinishesMappingNext_Click"/>
-                    </Grid>
-                    <Grid x:Name="GridImportLanguageMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
-                        <Label x:Name="ImportLanguageMappingLabel" Content="Mapping of language" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
-                        <ListView x:Name="LanguageMappingListView" Margin="0,186,0,0" Width="387" Height="170" HorizontalAlignment="Center" VerticalAlignment="Top">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="CSV Condition" Width="150">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding CsvValue}" />
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="Database Condition" Width="150">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <ComboBox ItemsSource="{Binding CardSetValue}" SelectedItem="{Binding SelectedCardSetValue}" />
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn Header="Actions" Width="80">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Button Content="Clear Mapping" Click="ClearMappingButton_Click"/>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
-                        <Button x:Name="ButtonLanguageMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ButtonLanguageMappingNext_Click"/>
-                    </Grid>
-                    <Grid x:Name="GridImportConfirm" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
-                        <Label x:Name="ImportConfirmLabel" Content="Confirm" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
-                        <Button x:Name="ButtonImportConfirm" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top"/>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Button x:Name="ButtonMultipleUuidsNext" Content="Next" HorizontalAlignment="Left" Margin="962,427,0,0" VerticalAlignment="Top" Click="ButtonMultipleUuidsNext_Click"/>
+                        </Grid>
+                        <Grid x:Name="GridImportAdditionalFieldsMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                            <Label x:Name="ImportStep3Label" Content="Mapping of additional fields" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                            <ListView x:Name="AddionalFieldsMappingListView" Margin="0,186,0,0" Width="388" Height="300" HorizontalAlignment="Center" VerticalAlignment="Top">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Database field" Width="150">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding CardSetField}" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="Import file header" Width="150">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox ItemsSource="{Binding CsvHeaders}" SelectedItem="{Binding CsvHeader}" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="Actions" Width="80">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="Clear Mapping" Click="ClearMappingButton_Click"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                            <Button x:Name="ButtonAdditionalFieldsNext" Content="Next" HorizontalAlignment="Left" Margin="926,246,0,0" VerticalAlignment="Top" RenderTransformOrigin="1.178,-5.496" Click="ButtonAdditionalFieldsNext_Click"/>
+                        </Grid>
+                        <Grid x:Name="GridImportCardConditionsMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                            <Label x:Name="ImportStep4Label" Content="Mapping of card conditions" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                            <ListView x:Name="ConditionsMappingListView" Margin="0,186,0,0" Width="387" Height="170" HorizontalAlignment="Center" VerticalAlignment="Top">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="CSV Condition" Width="150">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding CsvValue}" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="Database Condition" Width="150">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox ItemsSource="{Binding CardSetValue}" SelectedItem="{Binding SelectedCardSetValue}" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="Actions" Width="100">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="Clear Mapping" Click="ClearMappingButton_Click" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                            <Button x:Name="ButtonConditionMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ButtonConditionMappingNext_Click"/>
+                        </Grid>
+                        <Grid x:Name="GridImportFinishesMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                            <Label x:Name="ImportStep5Label" Content="Mapping of card finish" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                            <ListView x:Name="FinishesMappingListView" Margin="0,186,0,0" Width="387" Height="170" HorizontalAlignment="Center" VerticalAlignment="Top">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="CSV Condition" Width="150">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding CsvValue}" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="Database Condition" Width="150">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox ItemsSource="{Binding CardSetValue}" SelectedItem="{Binding SelectedCardSetValue}" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="Actions" Width="80">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="Clear Mapping" Click="ClearMappingButton_Click"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                            <Button x:Name="ButtonFinishesMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ButtonFinishesMappingNext_Click"/>
+                        </Grid>
+                        <Grid x:Name="GridImportLanguageMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                            <Label x:Name="ImportLanguageMappingLabel" Content="Mapping of language" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                            <ListView x:Name="LanguageMappingListView" Margin="0,186,0,0" Width="387" Height="170" HorizontalAlignment="Center" VerticalAlignment="Top">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="CSV Condition" Width="150">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding CsvValue}" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="Database Condition" Width="150">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox ItemsSource="{Binding CardSetValue}" SelectedItem="{Binding SelectedCardSetValue}" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="Actions" Width="80">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="Clear Mapping" Click="ClearMappingButton_Click"/>
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                            <Button x:Name="ButtonLanguageMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ButtonLanguageMappingNext_Click"/>
+                        </Grid>
+                        <Grid x:Name="GridImportConfirm" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                            <Label x:Name="ImportConfirmLabel" Content="Confirm" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                            <Button x:Name="ButtonImportConfirm" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top"/>
+                        </Grid>
                     </Grid>
                 </Grid>
             </Grid>
