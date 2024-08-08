@@ -1175,8 +1175,9 @@ namespace CollectaMundo
         {
             await BackupRestore.CreateCsvBackupAsync();
         }
+        #region Import wizard
 
-        // Import wizard button methods
+        // Import wizard different steps button methods
         private async void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
         {
             // Select the csv-file and create a tempImport object with the content
@@ -1468,11 +1469,13 @@ namespace CollectaMundo
             GridImportConfirm.Visibility = Visibility.Visible;
             DebugAllItems();
         }
+
+        // Import wizards misc. buttons and helper methods
         private void GoToAdditionalFieldsMapping()
         {
             // Prepare the listview to map additional fields and make the screen visible
             var cardSetFields = new List<string> { "SelectedCondition", "SelectedFinish", "CardsOwned", "CardsForTrade", "Language" };
-            BackupRestore.PopulateColumnMappingListView(AddionalFieldsMappingListView, cardSetFields);
+            PopulateColumnMappingListView(AddionalFieldsMappingListView, cardSetFields);
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
         }
         public async Task GoToMappingGeneric(string cardSetField, ListView listView, string tableField, Grid grid)
@@ -1512,6 +1515,7 @@ namespace CollectaMundo
                 }
             }
         }
+        #endregion
 
         #endregion
 

@@ -245,6 +245,7 @@ namespace CollectaMundo
         }
         #endregion
 
+        #region Import Wizard - mapping imported cards by card ID
         public static void PopulateIdColumnMappingListView(ListView listView)
         {
             try
@@ -364,65 +365,9 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
-        public static bool AllItemsHaveUuid()
-        {
-            foreach (var tempItem in tempImport)
-            {
-                if (!tempItem.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-        public static bool AnyItemWithMultipleUuidsField()
-        {
-            bool hasUuids = tempImport.Any(item =>
-            {
-                if (item.Fields.TryGetValue("uuids", out var uuids))
-                {
-                    if (!string.IsNullOrEmpty(uuids))
-                    {
-                        Debug.WriteLine($"Item with uuids found: {uuids}");
-                        return true;
-                    }
-                }
-                return false;
-            });
+        #endregion 
 
-            Debug.WriteLine($"Any item with 'uuids' field: {hasUuids}");
-            return hasUuids;
-        }
-        public static bool AnyItemWithUuidField()
-        {
-            return tempImport.Any(item => item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid));
-        }
-        public static void AssertNoInvalidUuidFields()
-        {
-            bool invalidUuidAndUuids = tempImport.Any(item =>
-                item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid) &&
-                item.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrEmpty(uuids)
-            );
-
-            bool invalidUuidOrUuids = tempImport.Any(item =>
-                (item.Fields.TryGetValue("uuid", out var uuid) && string.IsNullOrEmpty(uuid)) ||
-                (item.Fields.TryGetValue("uuids", out var uuids) && string.IsNullOrEmpty(uuids))
-            );
-
-            if (invalidUuidAndUuids)
-            {
-                throw new InvalidOperationException("An item in tempImport has both 'uuid' and 'uuids' fields with values, which is not allowed.");
-            }
-
-            if (invalidUuidOrUuids)
-            {
-                throw new InvalidOperationException("An item in tempImport has 'uuid' or 'uuids' field with no value, which is not allowed.");
-            }
-        }
-
-
-
-        #region Mapping csv-elements to card uuids by searching on card name, set name and set code in csv-file
+        #region Import Wizard - Mapping imported cards by searching on card name, set name and set code
         /* The logic is as follows:
          * If set code is mapped search by set code
          * If no match is found by searching by set code, search by set name
@@ -497,58 +442,6 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
-        private static async Task<bool> SearchBySetCode(string name, string setCode, TempCardItem item)
-        {
-            Debug.WriteLine($"Trying to search by set code: {setCode}");
-
-            // We are trying three combinations:
-            // a regular card with a regular set code
-            // a token with a regular set code
-            // a token with a token set code
-
-            // a regular card with a regular set code
-            var uuids1 = await SearchTableForUuidAsync(name, "cards", setCode);
-
-            if (uuids1.Count > 0)
-            {
-                return ProcessUuidResults(uuids1, name, setCode, item);
-            }
-
-            // a token with a regular set code
-            var uuids2 = await SearchTableForUuidAsync(name, "tokens", setCode);
-            if (uuids2.Count > 0)
-            {
-                return ProcessUuidResults(uuids2, name, setCode, item);
-            }
-
-            // a token with a token set code
-            string tokenSetCodeQuery = "SELECT tokenSetCode FROM sets WHERE code = @setCode";
-            string? tokenSetCode = null;
-
-            using (var command = new SQLiteCommand(tokenSetCodeQuery, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@setCode", setCode);
-
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    if (await reader.ReadAsync())
-                    {
-                        tokenSetCode = reader["tokenSetCode"]?.ToString();
-                    }
-                }
-            }
-            if (tokenSetCode != null)
-            {
-                var uuids3 = await SearchTableForUuidAsync(name, "tokens", tokenSetCode);
-                if (uuids3.Count > 0)
-                {
-                    return ProcessUuidResults(uuids3, name, tokenSetCode, item);
-                }
-            }
-
-            // If nothing is found, bugger it, return false
-            return false;
-        }
         private static async Task<bool> SearchBySetName(string name, string setName, TempCardItem item)
         {
             Debug.WriteLine($"Trying to search by set setName: {setName}");
@@ -618,9 +511,60 @@ namespace CollectaMundo
             Debug.WriteLine($"Fail: Could not find a match for {name} in set {setName}");
             return false;
         }
-        #endregion
+        private static async Task<bool> SearchBySetCode(string name, string setCode, TempCardItem item)
+        {
+            Debug.WriteLine($"Trying to search by set code: {setCode}");
 
-        #region Selecting between cards where multiple uuids were found
+            // We are trying three combinations:
+            // a regular card with a regular set code
+            // a token with a regular set code
+            // a token with a token set code
+
+            // a regular card with a regular set code
+            var uuids1 = await SearchTableForUuidAsync(name, "cards", setCode);
+
+            if (uuids1.Count > 0)
+            {
+                return ProcessUuidResults(uuids1, name, setCode, item);
+            }
+
+            // a token with a regular set code
+            var uuids2 = await SearchTableForUuidAsync(name, "tokens", setCode);
+            if (uuids2.Count > 0)
+            {
+                return ProcessUuidResults(uuids2, name, setCode, item);
+            }
+
+            // a token with a token set code
+            string tokenSetCodeQuery = "SELECT tokenSetCode FROM sets WHERE code = @setCode";
+            string? tokenSetCode = null;
+
+            using (var command = new SQLiteCommand(tokenSetCodeQuery, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@setCode", setCode);
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        tokenSetCode = reader["tokenSetCode"]?.ToString();
+                    }
+                }
+            }
+            if (tokenSetCode != null)
+            {
+                var uuids3 = await SearchTableForUuidAsync(name, "tokens", tokenSetCode);
+                if (uuids3.Count > 0)
+                {
+                    return ProcessUuidResults(uuids3, name, tokenSetCode, item);
+                }
+            }
+
+            // If nothing is found, bugger it, return false
+            return false;
+        }
+
+        // Helper method to SearchBySetCode
         private static async Task<List<string>> SearchTableForUuidAsync(string cardName, string table, string setCode)
         {
             // Construct the query string with the table name
@@ -651,6 +595,96 @@ namespace CollectaMundo
             return uuids;
         }
 
+
+
+        // Utility methods to help determine where to go after card name and set name/set code mapping
+        public static bool AllItemsHaveUuid()
+        {
+            foreach (var tempItem in tempImport)
+            {
+                if (!tempItem.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        public static bool AnyItemWithMultipleUuidsField()
+        {
+            bool hasUuids = tempImport.Any(item =>
+            {
+                if (item.Fields.TryGetValue("uuids", out var uuids))
+                {
+                    if (!string.IsNullOrEmpty(uuids))
+                    {
+                        Debug.WriteLine($"Item with uuids found: {uuids}");
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+            Debug.WriteLine($"Any item with 'uuids' field: {hasUuids}");
+            return hasUuids;
+        }
+        public static bool AnyItemWithUuidField()
+        {
+            return tempImport.Any(item => item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid));
+        }
+        public static void AssertNoInvalidUuidFields()
+        {
+            bool invalidUuidAndUuids = tempImport.Any(item =>
+                item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid) &&
+                item.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrEmpty(uuids)
+            );
+
+            bool invalidUuidOrUuids = tempImport.Any(item =>
+                (item.Fields.TryGetValue("uuid", out var uuid) && string.IsNullOrEmpty(uuid)) ||
+                (item.Fields.TryGetValue("uuids", out var uuids) && string.IsNullOrEmpty(uuids))
+            );
+
+            if (invalidUuidAndUuids)
+            {
+                throw new InvalidOperationException("An item in tempImport has both 'uuid' and 'uuids' fields with values, which is not allowed.");
+            }
+
+            if (invalidUuidOrUuids)
+            {
+                throw new InvalidOperationException("An item in tempImport has 'uuid' or 'uuids' field with no value, which is not allowed.");
+            }
+        }
+        #endregion
+
+        #region Import Wizard - Selecting between cards where multiple uuids were found
+        // Populate the datagrid where a single version can be selected of a card with multiple identical set and card names
+        public static void PopulateMultipleUuidsDataGrid()
+        {
+            try
+            {
+                var itemsWithMultipleUuids = tempImport
+                    .Where(item => item.Fields.ContainsKey("uuids"))
+                    .Select(item => new MultipleUuidsItem
+                    {
+                        Name = item.Fields.ContainsKey("Name") ? item.Fields["Name"] : "Unknown",
+                        VersionedUuids = item.Fields["uuids"]
+                            .Split(',')
+                            .Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid })
+                            .ToList(),
+                        SelectedUuid = null // Set the initial selection to null
+                    })
+                    .ToList();
+
+                Debug.WriteLine($"Populated MultipleUuidsDataGrid with {itemsWithMultipleUuids.Count} items.");
+
+                MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
+                MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error populating multiple uuids datagrid: {ex.Message}");
+                MessageBox.Show($"Error populating multiple uuids datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
 
         // Update both the tempImport object and CardItemsToAdd object with the cards where a uuid match was found
         public static void ProcessMultipleUuidSelections(List<MultipleUuidsItem> multipleUuidsItems)
@@ -690,68 +724,7 @@ namespace CollectaMundo
         }
         #endregion
 
-        #region Populating Importer UI elements for additional fields
-
-        // Populate a listview where column headings found in the csv-file can be mapped to fields on the cardItemsToAdd object (which uses the CardSet class)
-        public static void PopulateColumnMappingListView(ListView listView, List<string> cardSetFields)
-        {
-            try
-            {
-                var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
-
-                var mappingItems = cardSetFields.Select(field => new ColumnMapping
-                {
-                    CardSetField = field,
-                    CsvHeaders = csvHeaders,
-                    CsvHeader = GuessMapping(field, csvHeaders)
-                }).ToList();
-
-                listView.ItemsSource = mappingItems;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error populating mapping list view: {ex.Message}");
-                MessageBox.Show($"Error populating mapping list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        // Try to guess which column name maps to cardItemsToAdd field by looking for matching column/field names
-        public static string? GuessMapping(string searchValue, List<string> options)
-        {
-            var lowerSearchValue = searchValue.ToLower();
-            return options.FirstOrDefault(option => option.ToLower().Contains(lowerSearchValue));
-        }
-
-        // Populate the datagrid where a single version can be selected of a card with multiple identical set and card names
-        public static void PopulateMultipleUuidsDataGrid()
-        {
-            try
-            {
-                var itemsWithMultipleUuids = tempImport
-                    .Where(item => item.Fields.ContainsKey("uuids"))
-                    .Select(item => new MultipleUuidsItem
-                    {
-                        Name = item.Fields.ContainsKey("Name") ? item.Fields["Name"] : "Unknown",
-                        VersionedUuids = item.Fields["uuids"]
-                            .Split(',')
-                            .Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid })
-                            .ToList(),
-                        SelectedUuid = null // Set the initial selection to null
-                    })
-                    .ToList();
-
-                Debug.WriteLine($"Populated MultipleUuidsDataGrid with {itemsWithMultipleUuids.Count} items.");
-
-                MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
-                MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error populating multiple uuids datagrid: {ex.Message}");
-                MessageBox.Show($"Error populating multiple uuids datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
+        #region Import Wizard - Populating Importer UI elements for additional fields
 
         // Generalized method for populating a listview where values found in csv-file can be matched to appropriate db values
         public static async Task InitializeMappingListViewAsync(string csvHeader, bool fetchFromDatabase, string dbColumn, ListView listView)
@@ -854,9 +827,16 @@ namespace CollectaMundo
             return uniqueValues.ToList();
         }
 
+        // Try to guess which column name maps to cardItemsToAdd field by looking for matching column/field names
+        public static string? GuessMapping(string searchValue, List<string> options)
+        {
+            var lowerSearchValue = searchValue.ToLower();
+            return options.FirstOrDefault(option => option.ToLower().Contains(lowerSearchValue));
+        }
+
         #endregion
 
-        #region Update cardItemsToAdd with values according to the selected mappings for condition, finish and language
+        #region Import Wizard - Update cardItemsToAdd with values according to the selected mappings additional fields
         public static void UpdateCardItemsWithMappedValues(ListView mappingListView, string cardSetField, string defaultValue)
         {
             try
@@ -1003,9 +983,30 @@ namespace CollectaMundo
 
         #endregion
 
-        #region Misc. helper methods
-        // Generalized method for settign default values if no csv-column header is chosen as mapping for a cardItemsToAdd (CardSet) field
+        #region Import Wizard - Misc. helper and shared methods
 
+        // Populate a listview where column headings found in the csv-file can be mapped to fields on the cardItemsToAdd object (which uses the CardSet class)
+        public static void PopulateColumnMappingListView(ListView listView, List<string> cardSetFields)
+        {
+            try
+            {
+                var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
+
+                var mappingItems = cardSetFields.Select(field => new ColumnMapping
+                {
+                    CardSetField = field,
+                    CsvHeaders = csvHeaders,
+                    CsvHeader = GuessMapping(field, csvHeaders)
+                }).ToList();
+
+                listView.ItemsSource = mappingItems;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error populating mapping list view: {ex.Message}");
+                MessageBox.Show($"Error populating mapping list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
         private static bool ProcessUuidResults(List<string> uuids, string name, string set, TempCardItem item)
         {
             if (uuids.Count == 1)
@@ -1042,8 +1043,6 @@ namespace CollectaMundo
 
 
         #endregion
-
-
 
         public static void DebugAllItems()
         {
