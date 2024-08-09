@@ -426,7 +426,7 @@
                             <GridViewColumn Header="Count">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBox Text="{Binding Count, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="50" />
+                                        <TextBox Text="{Binding CardsOwned, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="50" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -510,7 +510,7 @@
                         <DataGridTextColumn Header="Finish" Binding="{Binding SelectedFinish}" IsReadOnly="True" />
                         <DataGridTextColumn Header="Language" Binding="{Binding Language}" IsReadOnly="True" />
                         <DataGridTextColumn Header="Condition" Binding="{Binding SelectedCondition}" IsReadOnly="True" />
-                        <DataGridTextColumn Header="Count" Binding="{Binding Count}" IsReadOnly="True" />
+                        <DataGridTextColumn Header="Count" Binding="{Binding CardsOwned}" IsReadOnly="True" />
                         <DataGridTemplateColumn Header="Action">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>

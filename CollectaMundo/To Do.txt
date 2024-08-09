@@ -8,3 +8,13 @@ Bugs:
 
 
  - "Card back" skal ikke vises ved split/dfc/adventure cards
+
+
+Tid at processere uuid'er for Inventory_full med 
+nuværende metode: 
+ProcessIdColumnMappingsAsync completed in 227720 ms
+ProcessIdColumnMappingsAsync completed in 223557 ms
+
+Ny metode:
+ProcessIdColumnMappingsAsync completed in 228310 ms
+ProcessIdColumnMappingsAsync completed in 226284 ms

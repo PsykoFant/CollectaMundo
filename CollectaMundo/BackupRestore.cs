@@ -312,6 +312,9 @@ namespace CollectaMundo
         }
         public static async Task ProcessIdColumnMappingsAsync()
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             try
             {
                 // Get the mapping from IdColumnMappingListView
@@ -335,33 +338,73 @@ namespace CollectaMundo
 
                 await DBAccess.OpenConnectionAsync();
 
+                // Build a dictionary to hold CSV values and their corresponding UUIDs
+                var csvToUuidsMap = new Dictionary<string, List<string>>();
+
+                // Use a StringBuilder to build a batch SQL query
+                var batchQueryBuilder = new StringBuilder("SELECT uuid, ")
+                    .Append(databaseField)
+                    .Append(" FROM cardIdentifiers WHERE ")
+                    .Append(databaseField)
+                    .Append(" IN (");
+
+                bool hasValues = false;
                 foreach (var tempItem in tempImport)
                 {
                     if (tempItem.Fields.TryGetValue(csvHeader, out var csvValue) && !string.IsNullOrEmpty(csvValue))
                     {
-                        string query = $"SELECT uuid FROM cardIdentifiers WHERE {databaseField} = @csvValue";
-                        var uuids = new List<string>();
-
-                        using (var command = new SQLiteCommand(query, DBAccess.connection))
+                        if (!csvToUuidsMap.ContainsKey(csvValue))
                         {
-                            command.Parameters.AddWithValue("@csvValue", csvValue);
-
-                            using (var reader = await command.ExecuteReaderAsync())
-                            {
-                                while (await reader.ReadAsync())
-                                {
-                                    var uuid = reader["uuid"]?.ToString();
-                                    if (!string.IsNullOrEmpty(uuid))
-                                    {
-                                        uuids.Add(uuid);
-                                    }
-                                }
-                            }
+                            csvToUuidsMap[csvValue] = new List<string>();
+                            batchQueryBuilder.Append("@csvValue_")
+                                             .Append(csvToUuidsMap.Count - 1)
+                                             .Append(",");
+                            hasValues = true;
                         }
-
-                        ProcessUuidResults(uuids, string.Empty, string.Empty, tempItem);
                     }
                 }
+
+                if (!hasValues)
+                {
+                    Debug.WriteLine("No valid CSV values found.");
+                    return;
+                }
+
+                batchQueryBuilder.Length--; // Remove the trailing comma
+                batchQueryBuilder.Append(");");
+
+                using (var command = new SQLiteCommand(batchQueryBuilder.ToString(), DBAccess.connection))
+                {
+                    int index = 0;
+                    foreach (var csvValue in csvToUuidsMap.Keys)
+                    {
+                        command.Parameters.AddWithValue($"@csvValue_{index}", csvValue);
+                        index++;
+                    }
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var uuid = reader["uuid"]?.ToString();
+                            var csvValue = reader[databaseField]?.ToString();
+                            if (!string.IsNullOrEmpty(uuid) && !string.IsNullOrEmpty(csvValue))
+                            {
+                                csvToUuidsMap[csvValue].Add(uuid);
+                            }
+                        }
+                    }
+                }
+
+                // Process UUID results in parallel
+                await Task.WhenAll(tempImport.Select(tempItem =>
+                {
+                    if (tempItem.Fields.TryGetValue(csvHeader, out var csvValue) && csvToUuidsMap.TryGetValue(csvValue, out var uuids))
+                    {
+                        return Task.Run(() => ProcessUuidResults(uuids, string.Empty, string.Empty, tempItem));
+                    }
+                    return Task.CompletedTask;
+                }));
             }
             catch (Exception ex)
             {
@@ -371,10 +414,14 @@ namespace CollectaMundo
             finally
             {
                 DBAccess.CloseConnection();
+                stopwatch.Stop();
+                Debug.WriteLine($"ProcessIdColumnMappingsAsync completed in {stopwatch.ElapsedMilliseconds} ms");
             }
         }
 
-        #endregion 
+
+
+        #endregion
 
         #region Import Wizard - Mapping imported cards by searching on card name, set name and set code
         /* The logic is as follows:
@@ -640,28 +687,7 @@ namespace CollectaMundo
         {
             return tempImport.Any(item => item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid));
         }
-        public static void AssertNoInvalidUuidFields()
-        {
-            bool invalidUuidAndUuids = tempImport.Any(item =>
-                item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid) &&
-                item.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrEmpty(uuids)
-            );
 
-            bool invalidUuidOrUuids = tempImport.Any(item =>
-                (item.Fields.TryGetValue("uuid", out var uuid) && string.IsNullOrEmpty(uuid)) ||
-                (item.Fields.TryGetValue("uuids", out var uuids) && string.IsNullOrEmpty(uuids))
-            );
-
-            if (invalidUuidAndUuids)
-            {
-                throw new InvalidOperationException("An item in tempImport has both 'uuid' and 'uuids' fields with values, which is not allowed.");
-            }
-
-            if (invalidUuidOrUuids)
-            {
-                throw new InvalidOperationException("An item in tempImport has 'uuid' or 'uuids' field with no value, which is not allowed.");
-            }
-        }
         #endregion
 
         #region Import Wizard - Selecting between cards where multiple uuids were found
@@ -1008,13 +1034,11 @@ namespace CollectaMundo
         {
             if (uuids.Count == 1)
             {
-                item.Fields["uuid"] = uuids[0];
+                string singleUuid = uuids[0];
+                item.Fields["uuid"] = singleUuid;
 
-                // Add the card to cardItemsToAdd in AddToCollectionManager
-                AddToCollectionManager.Instance.cardItemsToAdd.Add(new CardSet.CardItem
-                {
-                    Uuid = uuids[0],
-                });
+                var newItem = new CardSet.CardItem { Uuid = singleUuid };
+                AddToCollectionManager.Instance.cardItemsToAdd.Add(newItem);
 
                 return true;
             }
@@ -1022,7 +1046,16 @@ namespace CollectaMundo
             {
                 item.Fields["Name"] = name;
                 item.Fields["Set"] = set;
-                item.Fields["uuids"] = string.Join(",", uuids); // Storing the uuids as a comma-separated string
+
+                // Optimized joining using StringBuilder
+                var sb = new StringBuilder();
+                for (int i = 0; i < uuids.Count; i++)
+                {
+                    if (i > 0)
+                        sb.Append(','); // Append a comma before each UUID except the first one
+                    sb.Append(uuids[i]);
+                }
+                item.Fields["uuids"] = sb.ToString();
 
                 return true;
             }
@@ -1031,7 +1064,28 @@ namespace CollectaMundo
                 return false;
             }
         }
+        public static void AssertNoInvalidUuidFields()
+        {
+            bool invalidUuidAndUuids = tempImport.Any(item =>
+                item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid) &&
+                item.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrEmpty(uuids)
+            );
 
+            bool invalidUuidOrUuids = tempImport.Any(item =>
+                (item.Fields.TryGetValue("uuid", out var uuid) && string.IsNullOrEmpty(uuid)) ||
+                (item.Fields.TryGetValue("uuids", out var uuids) && string.IsNullOrEmpty(uuids))
+            );
+
+            if (invalidUuidAndUuids)
+            {
+                throw new InvalidOperationException("An item in tempImport has both 'uuid' and 'uuids' fields with values, which is not allowed.");
+            }
+
+            if (invalidUuidOrUuids)
+            {
+                throw new InvalidOperationException("An item in tempImport has 'uuid' or 'uuids' field with no value, which is not allowed.");
+            }
+        }
         #endregion
 
         public static void DebugAllItems()

@@ -250,7 +250,7 @@ namespace CollectaMundo
         }
         public async Task LoadDataIntoUiElements()
         {
-            await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
+            //await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
             GridSearchAndFilter.Visibility = Visibility.Visible;
 
             await DBAccess.OpenConnectionAsync();
@@ -1191,19 +1191,24 @@ namespace CollectaMundo
         {
             await ProcessIdColumnMappingsAsync();
 
+            AssertNoInvalidUuidFields();
+
             if (AllItemsHaveUuid())
             {
+                Debug.WriteLine("All items have uuid");
                 GoToAdditionalFieldsMapping();
             }
             else
             {
+                Debug.WriteLine("Not all items have uuid");
                 // Prepare the listview to map card name, set name and set code and go to the first import wizard screen
                 var cardSetFields = new List<string> { "Name", "Set Name", "Set Code" };
                 PopulateColumnMappingListView(NameAndSetMappingListView, cardSetFields);
                 GridImportNameAndSetMapping.Visibility = Visibility.Visible;
             }
             GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
-            DebugAllItems();
+
+
             DebugImportProcess();
         }
         private async void ButtonNameAndSetMappingNext_Click(object sender, RoutedEventArgs e)
@@ -1399,7 +1404,7 @@ namespace CollectaMundo
 
             if (isConditionMapped)
             {
-                await GoToMappingGeneric("SelectedCondition", MainWindow.CurrentInstance.ConditionsMappingListView, "", MainWindow.CurrentInstance.GridImportCardConditionsMapping);
+                await GoToMappingGeneric("SelectedCondition", CurrentInstance.ConditionsMappingListView, "", MainWindow.CurrentInstance.GridImportCardConditionsMapping);
             }
             else
             {
@@ -1470,10 +1475,10 @@ namespace CollectaMundo
         }
         private static async Task GoToMappingGeneric(string cardSetField, ListView listView, string tableField, Grid grid)
         {
-            var mapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(m => m.CardSetField == cardSetField);
+            var mapping = CurrentInstance._mappings?.FirstOrDefault(m => m.CardSetField == cardSetField);
             if (mapping != null && !string.IsNullOrEmpty(mapping.CsvHeader))
             {
-                await BackupRestore.InitializeMappingListViewAsync(mapping.CsvHeader, !string.IsNullOrEmpty(tableField), tableField, listView);
+                await InitializeMappingListViewAsync(mapping.CsvHeader, !string.IsNullOrEmpty(tableField), tableField, listView);
                 grid.Visibility = Visibility.Visible;
             }
         }
