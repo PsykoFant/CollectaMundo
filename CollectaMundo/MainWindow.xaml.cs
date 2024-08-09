@@ -200,7 +200,7 @@ namespace CollectaMundo
         private bool isCardsOwnedMapped;
         private bool isCardsForTradedMapped;
         private bool isLanguageMapped;
-        public List<ColumnMapping>? _mappings;
+        public List<string>? _mappings;
 
         #endregion
         public static MainWindow CurrentInstance
@@ -1363,105 +1363,123 @@ namespace CollectaMundo
             DebugImportProcess();
 
             // Prepare the listview to map additional fields and make the screen visible
-            var cardSetFields = new List<string> { "SelectedCondition", "SelectedFinish", "CardsOwned", "CardsForTrade", "Language" };
+            var cardSetFields = new List<string> { "Condition", "Card Finish", "Cards Owned", "Cards For Trade/Selling", "Language" };
             PopulateColumnMappingListView(AddionalFieldsMappingListView, cardSetFields);
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
         }
         private async void ButtonAdditionalFieldsNext_Click(object sender, RoutedEventArgs e)
         {
-            // Instantiate mappings variable
-            _mappings = AddionalFieldsMappingListView.ItemsSource as List<ColumnMapping>;
+            // Adjust how _mappings is set up
+            var mappingsList = AddionalFieldsMappingListView.ItemsSource as List<ColumnMapping>;
 
-            if (_mappings == null)
+            if (mappingsList == null)
             {
                 MessageBox.Show("No mappings found. Please ensure you have selected the appropriate mappings.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            // Check if "SelectedCondition", "SelectedFinish", and "Card Quantity" have a value selected
-            isConditionMapped = IsFieldMapped(_mappings, "SelectedCondition");
-            isFinishMapped = IsFieldMapped(_mappings, "SelectedFinish");
-            isCardsOwnedMapped = IsFieldMapped(_mappings, "CardsOwned");
-            isCardsForTradedMapped = IsFieldMapped(_mappings, "CardsForTrade");
+            // Iterate through the mappings and update tempImport
+            foreach (var mapping in mappingsList)
+            {
+                if (!string.IsNullOrEmpty(mapping.CsvHeader) && !string.IsNullOrEmpty(mapping.CardSetField))
+                {
+                    RenameTempImportField(mapping.CsvHeader, mapping.CardSetField);
+                }
+            }
+
+            // Convert ColumnMapping list to List<string> containing only the CardSetField values
+            _mappings = mappingsList.Select(m => m.CardSetField).ToList();
+
+            // Check if "Condition", "Card Finish", "Cards Owned", "Cards For Trade/Selling", and "Language" have a value selected
+            isConditionMapped = IsFieldMapped(_mappings, "Condition");
+            isFinishMapped = IsFieldMapped(_mappings, "Card Finish");
+            isCardsOwnedMapped = IsFieldMapped(_mappings, "Cards Owned");
+            isCardsForTradedMapped = IsFieldMapped(_mappings, "Cards For Trade/Selling");
             isLanguageMapped = IsFieldMapped(_mappings, "Language");
 
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
 
             if (isCardsOwnedMapped)
             {
-                UpdateCardItemsWithQuantity("CardsOwned");
+                //UpdateCardItemsWithQuantity("Cards Owned");
             }
             else
             {
-                UpdateCardItemsWithDefaultField("CardsOwned", 1);
+                //UpdateTempImportWithDefaultField("Cards Owned", 1);
             }
 
             if (isCardsForTradedMapped)
             {
-                UpdateCardItemsWithQuantity("CardsForTrade");
+                //UpdateCardItemsWithQuantity("Cards For Trade/Selling");
             }
             else
             {
-                UpdateCardItemsWithDefaultField("CardsForTrade", 0);
+                //UpdateTempImportWithDefaultField("Cards For Trade/Selling", 0);
             }
 
             if (isConditionMapped)
             {
-                await GoToMappingGeneric("SelectedCondition", CurrentInstance.ConditionsMappingListView, "", MainWindow.CurrentInstance.GridImportCardConditionsMapping);
+                await GoToMappingGeneric("Condition", CurrentInstance.ConditionsMappingListView, "", CurrentInstance.GridImportCardConditionsMapping);
             }
             else
             {
-                UpdateCardItemsWithDefaultField("SelectedCondition", "Near Mint");
+                UpdateTempImportWithDefaultField("Condition", "Near Mint");
                 if (isFinishMapped)
                 {
-                    await GoToMappingGeneric("SelectedFinish", MainWindow.CurrentInstance.FinishesMappingListView, "finishes", MainWindow.CurrentInstance.GridImportFinishesMapping);
+                    await GoToMappingGeneric("Card Finish", MainWindow.CurrentInstance.FinishesMappingListView, "finishes", MainWindow.CurrentInstance.GridImportFinishesMapping);
                 }
                 else
                 {
-                    UpdateCardItemsWithDefaultField("SelectedFinish", "nonfoil");
+                    UpdateTempImportWithDefaultField("Card Finish", "nonfoil");
                     if (isLanguageMapped)
                     {
                         await GoToMappingGeneric("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping);
                     }
                     else
                     {
-                        UpdateCardItemsWithDefaultField("Language", "English");
+                        UpdateTempImportWithDefaultField("Language", "English");
                         GridImportConfirm.Visibility = Visibility.Visible;
                     }
                 }
             }
+            DebugAllItems();
         }
+
+
+
+
         private async void ButtonConditionMappingNext_Click(object sender, RoutedEventArgs e)
         {
-            BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.ConditionsMappingListView, "SelectedCondition", "Near Mint");
+            UpdateTempImportWithMappedValues(CurrentInstance.ConditionsMappingListView, "Condition", "Near Mint");
             GridImportCardConditionsMapping.Visibility = Visibility.Collapsed;
 
-            if (isFinishMapped) { await GoToMappingGeneric("SelectedFinish", MainWindow.CurrentInstance.FinishesMappingListView, "finishes", MainWindow.CurrentInstance.GridImportFinishesMapping); }
+            if (isFinishMapped) { await GoToMappingGeneric("Card Finish", MainWindow.CurrentInstance.FinishesMappingListView, "finishes", MainWindow.CurrentInstance.GridImportFinishesMapping); }
             else
             {
-                BackupRestore.UpdateCardItemsWithDefaultField("SelectedFinish", "nonfoil");
+                BackupRestore.UpdateTempImportWithDefaultField("Card Finish", "nonfoil");
                 if (isLanguageMapped) { await GoToMappingGeneric("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping); }
                 else
                 {
-                    BackupRestore.UpdateCardItemsWithDefaultField("Language", "English");
+                    BackupRestore.UpdateTempImportWithDefaultField("Language", "English");
                     GridImportConfirm.Visibility = Visibility.Visible;
                 }
             }
+            DebugAllItems();
         }
         private async void ButtonFinishesMappingNext_Click(object sender, RoutedEventArgs e)
         {
-            BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.FinishesMappingListView, "SelectedFinish", "nonfoil");
+            BackupRestore.UpdateTempImportWithMappedValues(MainWindow.CurrentInstance.FinishesMappingListView, "SelectedFinish", "nonfoil");
             GridImportFinishesMapping.Visibility = Visibility.Collapsed;
             if (isLanguageMapped) { await GoToMappingGeneric("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping); }
             else
             {
-                BackupRestore.UpdateCardItemsWithDefaultField("Language", "English");
+                BackupRestore.UpdateTempImportWithDefaultField("Language", "English");
                 GridImportConfirm.Visibility = Visibility.Visible;
             }
         }
         private void ButtonLanguageMappingNext_Click(object sender, RoutedEventArgs e)
         {
-            BackupRestore.UpdateCardItemsWithMappedValues(MainWindow.CurrentInstance.LanguageMappingListView, "Language", "English");
+            BackupRestore.UpdateTempImportWithMappedValues(MainWindow.CurrentInstance.LanguageMappingListView, "Language", "English");
             GridImportLanguageMapping.Visibility = Visibility.Collapsed;
             GridImportConfirm.Visibility = Visibility.Visible;
             DebugAllItems();
@@ -1472,19 +1490,26 @@ namespace CollectaMundo
         private void GoToAdditionalFieldsMapping()
         {
             // Prepare the listview to map additional fields and make the screen visible
-            var cardSetFields = new List<string> { "SelectedCondition", "SelectedFinish", "CardsOwned", "CardsForTrade", "Language" };
+            var cardSetFields = new List<string> { "Condition", "Card Finish", "Cards Owned", "Cards For Trade/Selling", "Language" };
             PopulateColumnMappingListView(AddionalFieldsMappingListView, cardSetFields);
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
         }
         private static async Task GoToMappingGeneric(string cardSetField, ListView listView, string tableField, Grid grid)
         {
-            var mapping = CurrentInstance._mappings?.FirstOrDefault(m => m.CardSetField == cardSetField);
-            if (mapping != null && !string.IsNullOrEmpty(mapping.CsvHeader))
+            // Find the corresponding CSV header for the given cardSetField in _mappings
+            var csvHeader = CurrentInstance._mappings?.FirstOrDefault(header => header == cardSetField);
+
+            if (!string.IsNullOrEmpty(csvHeader))
             {
-                await InitializeMappingListViewAsync(mapping.CsvHeader, !string.IsNullOrEmpty(tableField), tableField, listView);
+                await InitializeMappingListViewAsync(csvHeader, !string.IsNullOrEmpty(tableField), tableField, listView);
                 grid.Visibility = Visibility.Visible;
             }
+            else
+            {
+                Debug.WriteLine($"Mapping for {cardSetField} not found.");
+            }
         }
+
         private void ClearMappingButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button)

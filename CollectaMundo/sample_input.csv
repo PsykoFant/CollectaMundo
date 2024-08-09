@@ -1,5 +1,2 @@
-Quantity,Kort navn,Simple Name,Set,Card Number,Set Code,Printing,Condition,Language,Rarity,Product ID,SKU,Price,Price Each
-2,Abandoned Sarcophagus,Abandoned Sarcophagus,Hour of Devastation,158,HOU,Normal,Near Mint,English,Rare,136602,3413837,$0.36,$0.18
-3,Abbot of Keral Keep,Abbot of Keral Keep,Magic Origins,127,ORI,Normal,Near Mint,English,Rare,100277,2898977,$1.98,$0.66
-2,Flooded Strand,Flooded Strand,Modern Horizons 3,76,CHR,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
-2,"Garruk Relentless // Garruk, the Veil-Cursed","Garruk Relentless // Garruk, the Veil-Cursed",Innistrad,76,ISD,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
+Quantity,Card Name,Simple Name,Set,Card Number,Set Code,Printing,Kondition,Language,Rarity,Product ID,SKU,Price,Price Each
+2,Abandoned Sarcophagus,Abandoned Sarcophagus,Hour of Devastation,158,HOU,Normal,Kinda Good,English,Rare,136602,3413837,$0.36,$0.18
