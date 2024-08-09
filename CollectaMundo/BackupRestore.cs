@@ -289,7 +289,11 @@ namespace CollectaMundo
                     {
                         while (reader.Read())
                         {
-                            columns.Add(reader["name"].ToString());
+                            var columnName = reader["name"]?.ToString();
+                            if (!string.IsNullOrEmpty(columnName))
+                            {
+                                columns.Add(columnName);
+                            }
                         }
                     }
                 }
@@ -346,7 +350,11 @@ namespace CollectaMundo
                             {
                                 while (await reader.ReadAsync())
                                 {
-                                    uuids.Add(reader["uuid"].ToString());
+                                    var uuid = reader["uuid"]?.ToString();
+                                    if (!string.IsNullOrEmpty(uuid))
+                                    {
+                                        uuids.Add(uuid);
+                                    }
                                 }
                             }
                         }
@@ -365,6 +373,7 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
+
         #endregion 
 
         #region Import Wizard - Mapping imported cards by searching on card name, set name and set code
@@ -689,38 +698,24 @@ namespace CollectaMundo
         // Update both the tempImport object and CardItemsToAdd object with the cards where a uuid match was found
         public static void ProcessMultipleUuidSelections(List<MultipleUuidsItem> multipleUuidsItems)
         {
-            //int initialCardItemsToAddCount = AddToCollectionManager.Instance.cardItemsToAdd.Count;
-            //int updatedItemsCount = 0;
-
             foreach (var item in multipleUuidsItems)
             {
-                Debug.WriteLine($"Processing item: {item.Name}, SelectedUuid: {item.SelectedUuid}");
-
                 if (!string.IsNullOrEmpty(item.SelectedUuid))
                 {
                     // Add the selected UUID to cardItemsToAdd
                     AddToCollectionManager.Instance.cardItemsToAdd.Add(new CardSet.CardItem
                     {
                         Uuid = item.SelectedUuid,
-                        //Name = item.Name // Ensure the name is also added for verification
                     });
 
-                    //updatedItemsCount++;
-
-                    // Update tempImport to replace multiple UUIDs with the selected UUID
                     var tempItem = tempImport.FirstOrDefault(t => t.Fields.ContainsKey("Name") && t.Fields["Name"] == item.Name);
                     if (tempItem != null)
                     {
                         tempItem.Fields["uuid"] = item.SelectedUuid;
                         tempItem.Fields.Remove("uuids");
-                        //Debug.WriteLine($"Updated tempImport for item: {tempItem.Fields["Name"]} with uuid: {tempItem.Fields["uuid"]}");
                     }
                 }
             }
-
-            //Debug.WriteLine($"Initial cardItemsToAdd count: {initialCardItemsToAddCount}");
-            //Debug.WriteLine($"Updated cardItemsToAdd count: {AddToCollectionManager.Instance.cardItemsToAdd.Count}");
-            //Debug.WriteLine($"Number of items updated: {updatedItemsCount}");
         }
         #endregion
 
@@ -976,6 +971,8 @@ namespace CollectaMundo
             var fieldMapping = mappings?.FirstOrDefault(mapping => mapping.CardSetField == cardSetField);
             return fieldMapping != null && !string.IsNullOrEmpty(fieldMapping.CsvHeader);
         }
+
+        // Generalized method to set default value for additional fields
         public static void UpdateCardItemsWithDefaultField(string cardSetField, object defaultValue)
         {
             UpdateCardItems(cardSetField, null, defaultValue, null);
@@ -1011,7 +1008,6 @@ namespace CollectaMundo
         {
             if (uuids.Count == 1)
             {
-                Debug.WriteLine($"Success: Found a unique uuid for card {name} in set {set}: {uuids[0]}");
                 item.Fields["uuid"] = uuids[0];
 
                 // Add the card to cardItemsToAdd in AddToCollectionManager
@@ -1024,7 +1020,6 @@ namespace CollectaMundo
             }
             else if (uuids.Count > 1)
             {
-                Debug.WriteLine($"Whoops: Found more than one card with setName {name} and set {set}. Uuids: {uuids.Count}");
                 item.Fields["Name"] = name;
                 item.Fields["Set"] = set;
                 item.Fields["uuids"] = string.Join(",", uuids); // Storing the uuids as a comma-separated string
@@ -1033,14 +1028,9 @@ namespace CollectaMundo
             }
             else
             {
-                Debug.WriteLine($"Fail: Could not find any cards with setName {name} and set {set}. Uuids: {uuids.Count}");
                 return false;
             }
         }
-
-
-
-
 
         #endregion
 

@@ -1191,23 +1191,20 @@ namespace CollectaMundo
         {
             await ProcessIdColumnMappingsAsync();
 
-            DebugAllItems();
-
             if (AllItemsHaveUuid())
             {
-                Debug.WriteLine("All items in tempImport have uuids");
                 GoToAdditionalFieldsMapping();
             }
             else
             {
-                Debug.WriteLine("Not all items in tempImport have uuids");
                 // Prepare the listview to map card name, set name and set code and go to the first import wizard screen
                 var cardSetFields = new List<string> { "Name", "Set Name", "Set Code" };
                 PopulateColumnMappingListView(NameAndSetMappingListView, cardSetFields);
                 GridImportNameAndSetMapping.Visibility = Visibility.Visible;
             }
             GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
-
+            DebugAllItems();
+            DebugImportProcess();
         }
         private async void ButtonNameAndSetMappingNext_Click(object sender, RoutedEventArgs e)
         {
@@ -1278,7 +1275,6 @@ namespace CollectaMundo
                 // Do all items in tempImport have single uuid
                 if (AllItemsHaveUuid())
                 {
-                    Debug.WriteLine("All items in tempImport have single uuid");
                     GoToAdditionalFieldsMapping();
                 }
                 else
@@ -1286,7 +1282,6 @@ namespace CollectaMundo
                     // Were multiple uuids found for any items in tempImport?
                     if (AnyItemWithMultipleUuidsField())
                     {
-                        Debug.WriteLine("At least one item in tempImport has multiple uuids");
                         PopulateMultipleUuidsDataGrid();
                         GridImportMultipleUuidsSelection.Visibility = Visibility.Visible;
                     }
@@ -1295,7 +1290,6 @@ namespace CollectaMundo
                         // Ok then ... were single uuid found for ANY items in tempImport?
                         if (AnyItemWithUuidField())
                         {
-                            Debug.WriteLine("At least one item in tempImport have single uuid");
                             GoToAdditionalFieldsMapping();
                         }
                         // If not, the import has failed
@@ -1353,8 +1347,6 @@ namespace CollectaMundo
             }
 
             GridImportMultipleUuidsSelection.Visibility = Visibility.Collapsed;
-
-            DebugImportProcess(); // Debug before updating
 
             // Convert to List explicitly to ensure we have a concrete collection to work with
             var multipleUuidsList = multipleUuidsItems.ToList();
@@ -1427,7 +1419,6 @@ namespace CollectaMundo
                     {
                         UpdateCardItemsWithDefaultField("Language", "English");
                         GridImportConfirm.Visibility = Visibility.Visible;
-                        DebugAllItems();
                     }
                 }
             }
@@ -1446,7 +1437,6 @@ namespace CollectaMundo
                 {
                     BackupRestore.UpdateCardItemsWithDefaultField("Language", "English");
                     GridImportConfirm.Visibility = Visibility.Visible;
-                    DebugAllItems();
                 }
             }
         }
@@ -1459,7 +1449,6 @@ namespace CollectaMundo
             {
                 BackupRestore.UpdateCardItemsWithDefaultField("Language", "English");
                 GridImportConfirm.Visibility = Visibility.Visible;
-                DebugAllItems();
             }
         }
         private void ButtonLanguageMappingNext_Click(object sender, RoutedEventArgs e)
@@ -1468,6 +1457,7 @@ namespace CollectaMundo
             GridImportLanguageMapping.Visibility = Visibility.Collapsed;
             GridImportConfirm.Visibility = Visibility.Visible;
             DebugAllItems();
+            DebugImportProcess();
         }
 
         // Import wizards misc. buttons and helper methods
@@ -1478,17 +1468,13 @@ namespace CollectaMundo
             PopulateColumnMappingListView(AddionalFieldsMappingListView, cardSetFields);
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
         }
-        public async Task GoToMappingGeneric(string cardSetField, ListView listView, string tableField, Grid grid)
+        private static async Task GoToMappingGeneric(string cardSetField, ListView listView, string tableField, Grid grid)
         {
             var mapping = MainWindow.CurrentInstance._mappings?.FirstOrDefault(m => m.CardSetField == cardSetField);
             if (mapping != null && !string.IsNullOrEmpty(mapping.CsvHeader))
             {
                 await BackupRestore.InitializeMappingListViewAsync(mapping.CsvHeader, !string.IsNullOrEmpty(tableField), tableField, listView);
                 grid.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                Debug.WriteLine($"Mapping for {cardSetField} not found.");
             }
         }
         private void ClearMappingButton_Click(object sender, RoutedEventArgs e)
