@@ -1202,12 +1202,11 @@ namespace CollectaMundo
             {
                 Debug.WriteLine("Not all items have uuid");
                 // Prepare the listview to map card name, set name and set code and go to the first import wizard screen
-                var cardSetFields = new List<string> { "Name", "Set Name", "Set Code" };
+                var cardSetFields = new List<string> { "Card Name", "Set Name", "Set Code" };
                 PopulateColumnMappingListView(NameAndSetMappingListView, cardSetFields);
                 GridImportNameAndSetMapping.Visibility = Visibility.Visible;
             }
             GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
-
 
             DebugImportProcess();
         }
@@ -1256,9 +1255,10 @@ namespace CollectaMundo
 
             */
 
+            // Make a list of the mapped items
             var mappings = NameAndSetMappingListView.Items.Cast<ColumnMapping>().ToList();
 
-            var nameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Name")?.CsvHeader;
+            var nameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Card Name")?.CsvHeader;
             var setNameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Set Name")?.CsvHeader;
             var setCodeMapping = mappings.FirstOrDefault(m => m.CardSetField == "Set Code")?.CsvHeader;
 
@@ -1308,6 +1308,7 @@ namespace CollectaMundo
                     }
                 }
                 GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
+                DebugImportProcess();
             }
             catch (Exception ex)
             {
@@ -1358,6 +1359,8 @@ namespace CollectaMundo
 
             // Update tempImport and cardItemsToAdd with the uuids for the selected versions of the cards
             ProcessMultipleUuidSelections(multipleUuidsList);
+
+            DebugImportProcess();
 
             // Prepare the listview to map additional fields and make the screen visible
             var cardSetFields = new List<string> { "SelectedCondition", "SelectedFinish", "CardsOwned", "CardsForTrade", "Language" };

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using ServiceStack;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data.SQLite;
@@ -219,7 +220,7 @@ namespace CollectaMundo
                     delimiter = ';';
                 }
 
-                headers = header.Split(delimiter).ToList();
+                headers = ParseCsvLine(header, delimiter);
 
                 while (!reader.EndOfStream)
                 {
@@ -229,12 +230,12 @@ namespace CollectaMundo
                         continue;
                     }
 
-                    var values = line.Split(delimiter);
+                    var values = ParseCsvLine(line, delimiter);
                     var cardItem = new TempCardItem();
 
                     for (int i = 0; i < headers.Count; i++)
                     {
-                        cardItem.Fields[headers[i]] = values.Length > i ? values[i] : string.Empty;
+                        cardItem.Fields[headers[i]] = values.Count > i ? values[i] : string.Empty;
                     }
 
                     cardItems.Add(cardItem);
@@ -243,6 +244,62 @@ namespace CollectaMundo
 
             return cardItems;
         }
+
+        // Helper method to parse a CSV line, respecting quoted fields
+        private static List<string> ParseCsvLine(string line, char delimiter)
+        {
+            var values = new List<string>();
+            var currentField = new StringBuilder();
+            bool inQuotes = false;
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                char c = line[i];
+
+                if (inQuotes)
+                {
+                    if (c == '"')
+                    {
+                        // Check if this is a double quote (escaped quote)
+                        if (i + 1 < line.Length && line[i + 1] == '"')
+                        {
+                            currentField.Append('"');
+                            i++; // Skip the next quote
+                        }
+                        else
+                        {
+                            inQuotes = false; // End of quoted field
+                        }
+                    }
+                    else
+                    {
+                        currentField.Append(c);
+                    }
+                }
+                else
+                {
+                    if (c == '"')
+                    {
+                        inQuotes = true;
+                    }
+                    else if (c == delimiter)
+                    {
+                        values.Add(currentField.ToString().Trim());
+                        currentField.Clear();
+                    }
+                    else
+                    {
+                        currentField.Append(c);
+                    }
+                }
+            }
+
+            // Add the last field
+            values.Add(currentField.ToString().Trim());
+
+            return values;
+        }
+
         #endregion
 
         #region Import Wizard - mapping imported cards by card ID
@@ -342,9 +399,14 @@ namespace CollectaMundo
                 var csvToUuidsMap = new Dictionary<string, List<string>>();
 
                 // Use a StringBuilder to build a batch SQL query
-                var batchQueryBuilder = new StringBuilder("SELECT uuid, ")
+                var batchQueryBuilder = new StringBuilder(@"
+                    SELECT ci.uuid, ci.")
                     .Append(databaseField)
-                    .Append(" FROM cardIdentifiers WHERE ")
+                    .Append(@" 
+                        FROM cardIdentifiers ci
+                        INNER JOIN cards c ON ci.uuid = c.uuid
+                        WHERE (c.side IS NULL OR c.side = 'a') 
+                        AND ci.")
                     .Append(databaseField)
                     .Append(" IN (");
 
@@ -373,6 +435,8 @@ namespace CollectaMundo
                 batchQueryBuilder.Length--; // Remove the trailing comma
                 batchQueryBuilder.Append(");");
 
+                Debug.WriteLine($"batchQueryBuilder: {batchQueryBuilder}");
+
                 using (var command = new SQLiteCommand(batchQueryBuilder.ToString(), DBAccess.connection))
                 {
                     int index = 0;
@@ -388,12 +452,26 @@ namespace CollectaMundo
                         {
                             var uuid = reader["uuid"]?.ToString();
                             var csvValue = reader[databaseField]?.ToString();
+
                             if (!string.IsNullOrEmpty(uuid) && !string.IsNullOrEmpty(csvValue))
                             {
-                                csvToUuidsMap[csvValue].Add(uuid);
+                                if (csvToUuidsMap.ContainsKey(csvValue))
+                                {
+                                    csvToUuidsMap[csvValue].Add(uuid);
+                                }
+                                else
+                                {
+                                    Debug.WriteLine($"Unexpected csvValue '{csvValue}' found in query results.");
+                                }
                             }
                         }
                     }
+                }
+
+                Debug.WriteLine("csvToUuidsMap contents:");
+                foreach (var kvp in csvToUuidsMap)
+                {
+                    Debug.WriteLine($"CSV Value: {kvp.Key}, UUIDs: {string.Join(", ", kvp.Value)}");
                 }
 
                 // Process UUID results in parallel
@@ -401,10 +479,11 @@ namespace CollectaMundo
                 {
                     if (tempItem.Fields.TryGetValue(csvHeader, out var csvValue) && csvToUuidsMap.TryGetValue(csvValue, out var uuids))
                     {
-                        return Task.Run(() => ProcessUuidResults(uuids, string.Empty, string.Empty, tempItem));
+                        return Task.Run(() => ProcessUuidResults(uuids, tempItem));
                     }
                     return Task.CompletedTask;
                 }));
+
             }
             catch (Exception ex)
             {
@@ -418,6 +497,8 @@ namespace CollectaMundo
                 Debug.WriteLine($"ProcessIdColumnMappingsAsync completed in {stopwatch.ElapsedMilliseconds} ms");
             }
         }
+
+
 
 
 
@@ -439,7 +520,7 @@ namespace CollectaMundo
                     throw new InvalidOperationException("Database connection is not initialized.");
                 }
 
-                var nameCsvHeader = mappings.FirstOrDefault(m => m.CardSetField == "Name")?.CsvHeader;
+                var nameCsvHeader = mappings.FirstOrDefault(m => m.CardSetField == "Card Name")?.CsvHeader;
                 var setNameCsvHeader = mappings.FirstOrDefault(m => m.CardSetField == "Set Name")?.CsvHeader;
                 var setCodeCsvHeader = mappings.FirstOrDefault(m => m.CardSetField == "Set Code")?.CsvHeader;
 
@@ -487,6 +568,9 @@ namespace CollectaMundo
                         Debug.WriteLine($"Fail: Neither set code nor set name mappings found for card name {name}");
                     }
                 }
+
+                // Rename the CSV columns in tempImport
+                RenameCsvHeaders(mappings);
             }
             catch (Exception ex)
             {
@@ -496,6 +580,25 @@ namespace CollectaMundo
             finally
             {
                 DBAccess.CloseConnection();
+            }
+        }
+
+        // Helper methods to SearchByCardNameOrSet
+        private static void RenameCsvHeaders(List<ColumnMapping> mappings)
+        {
+            var nameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Card Name");
+            if (nameMapping != null && !string.IsNullOrEmpty(nameMapping.CsvHeader))
+            {
+                foreach (var item in tempImport)
+                {
+                    if (item.Fields.ContainsKey(nameMapping.CsvHeader))
+                    {
+                        item.Fields["CardName"] = item.Fields[nameMapping.CsvHeader];
+                        item.Fields.Remove(nameMapping.CsvHeader);
+                    }
+                }
+
+                Debug.WriteLine($"CSV Header '{nameMapping.CsvHeader}' renamed to 'CardName'");
             }
         }
         private static async Task<bool> SearchBySetName(string name, string setName, TempCardItem item)
@@ -551,7 +654,7 @@ namespace CollectaMundo
                 uuids = await SearchTableForUuidAsync(name, "cards", cardsSetCode);
                 if (uuids.Count > 0)
                 {
-                    return ProcessUuidResults(uuids, name, cardsSetCode, item);
+                    return ProcessUuidResults(uuids, item);
                 }
                 // If nothing is found is table cards, try the same in table tokens
                 else if (tokenSetCode != null)
@@ -559,7 +662,7 @@ namespace CollectaMundo
                     uuids = await SearchTableForUuidAsync(name, "tokens", tokenSetCode);
                     if (uuids.Count > 0)
                     {
-                        return ProcessUuidResults(uuids, name, tokenSetCode, item);
+                        return ProcessUuidResults(uuids, item);
                     }
                 }
             }
@@ -581,14 +684,14 @@ namespace CollectaMundo
 
             if (uuids1.Count > 0)
             {
-                return ProcessUuidResults(uuids1, name, setCode, item);
+                return ProcessUuidResults(uuids1, item);
             }
 
             // a token with a regular set code
             var uuids2 = await SearchTableForUuidAsync(name, "tokens", setCode);
             if (uuids2.Count > 0)
             {
-                return ProcessUuidResults(uuids2, name, setCode, item);
+                return ProcessUuidResults(uuids2, item);
             }
 
             // a token with a token set code
@@ -612,7 +715,7 @@ namespace CollectaMundo
                 var uuids3 = await SearchTableForUuidAsync(name, "tokens", tokenSetCode);
                 if (uuids3.Count > 0)
                 {
-                    return ProcessUuidResults(uuids3, name, tokenSetCode, item);
+                    return ProcessUuidResults(uuids3, item);
                 }
             }
 
@@ -700,7 +803,7 @@ namespace CollectaMundo
                     .Where(item => item.Fields.ContainsKey("uuids"))
                     .Select(item => new MultipleUuidsItem
                     {
-                        Name = item.Fields.ContainsKey("Name") ? item.Fields["Name"] : "Unknown",
+                        Name = item.Fields.ContainsKey("CardName") ? item.Fields["CardName"] : "Unknown",
                         VersionedUuids = item.Fields["uuids"]
                             .Split(',')
                             .Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid })
@@ -721,20 +824,16 @@ namespace CollectaMundo
             }
         }
 
-        // Update both the tempImport object and CardItemsToAdd object with the cards where a uuid match was found
+        // Update tempImport object with the cards where a uuid match was found
         public static void ProcessMultipleUuidSelections(List<MultipleUuidsItem> multipleUuidsItems)
         {
             foreach (var item in multipleUuidsItems)
             {
                 if (!string.IsNullOrEmpty(item.SelectedUuid))
                 {
-                    // Add the selected UUID to cardItemsToAdd
-                    AddToCollectionManager.Instance.cardItemsToAdd.Add(new CardSet.CardItem
-                    {
-                        Uuid = item.SelectedUuid,
-                    });
+                    var tempItem = tempImport.FirstOrDefault(t => t.Fields.ContainsKey("CardName") && t.Fields["CardName"] == item.Name);
 
-                    var tempItem = tempImport.FirstOrDefault(t => t.Fields.ContainsKey("Name") && t.Fields["Name"] == item.Name);
+                    // Remove the field uuids and add the field uuid with the selected version of the card
                     if (tempItem != null)
                     {
                         tempItem.Fields["uuid"] = item.SelectedUuid;
@@ -1030,37 +1129,35 @@ namespace CollectaMundo
                 MessageBox.Show($"Error populating mapping list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        private static bool ProcessUuidResults(List<string> uuids, string name, string set, TempCardItem item)
+        private static bool ProcessUuidResults(List<string> uuids, TempCardItem item)
         {
             if (uuids.Count == 1)
             {
                 string singleUuid = uuids[0];
                 item.Fields["uuid"] = singleUuid;
-
-                var newItem = new CardSet.CardItem { Uuid = singleUuid };
-                AddToCollectionManager.Instance.cardItemsToAdd.Add(newItem);
-
+                Debug.WriteLine("Found a single uuid");
                 return true;
             }
             else if (uuids.Count > 1)
             {
-                item.Fields["Name"] = name;
-                item.Fields["Set"] = set;
-
                 // Optimized joining using StringBuilder
                 var sb = new StringBuilder();
                 for (int i = 0; i < uuids.Count; i++)
                 {
                     if (i > 0)
+                    {
                         sb.Append(','); // Append a comma before each UUID except the first one
+                    }
+
                     sb.Append(uuids[i]);
                 }
                 item.Fields["uuids"] = sb.ToString();
-
+                Debug.WriteLine("Found multiple uuids");
                 return true;
             }
             else
             {
+                Debug.WriteLine("Found no uuids");
                 return false;
             }
         }
