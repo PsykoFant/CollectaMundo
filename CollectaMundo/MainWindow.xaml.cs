@@ -1369,7 +1369,7 @@ namespace CollectaMundo
         }
         private async void ButtonAdditionalFieldsNext_Click(object sender, RoutedEventArgs e)
         {
-            // Adjust how _mappings is set up
+            // Create list of the mapped items
             var mappingsList = AddionalFieldsMappingListView.ItemsSource as List<ColumnMapping>;
 
             if (mappingsList == null)
@@ -1387,15 +1387,15 @@ namespace CollectaMundo
                 }
             }
 
-            // Convert ColumnMapping list to List<string> containing only the CardSetField values
-            _mappings = mappingsList.Select(m => m.CardSetField).ToList();
+            // Store the CardSetField values in _mappings (List<string>)
+            _mappings = mappingsList.Select(m => m.CardSetField ?? string.Empty).ToList();
 
             // Check if "Condition", "Card Finish", "Cards Owned", "Cards For Trade/Selling", and "Language" have a value selected
-            isConditionMapped = IsFieldMapped(_mappings, "Condition");
-            isFinishMapped = IsFieldMapped(_mappings, "Card Finish");
-            isCardsOwnedMapped = IsFieldMapped(_mappings, "Cards Owned");
-            isCardsForTradedMapped = IsFieldMapped(_mappings, "Cards For Trade/Selling");
-            isLanguageMapped = IsFieldMapped(_mappings, "Language");
+            isConditionMapped = IsFieldMapped(mappingsList, "Condition");
+            isFinishMapped = IsFieldMapped(mappingsList, "Card Finish");
+            isCardsOwnedMapped = IsFieldMapped(mappingsList, "Cards Owned");
+            isCardsForTradedMapped = IsFieldMapped(mappingsList, "Cards For Trade/Selling");
+            isLanguageMapped = IsFieldMapped(mappingsList, "Language");
 
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
 
@@ -1423,7 +1423,11 @@ namespace CollectaMundo
             }
             else
             {
-                UpdateTempImportWithDefaultField("Condition", "Near Mint");
+                // Mark the field as unmapped
+                MarkFieldAsUnmapped("Condition");
+
+
+
                 if (isFinishMapped)
                 {
                     await GoToMappingGeneric("Card Finish", MainWindow.CurrentInstance.FinishesMappingListView, "finishes", MainWindow.CurrentInstance.GridImportFinishesMapping);
@@ -1442,15 +1446,19 @@ namespace CollectaMundo
                     }
                 }
             }
-            DebugAllItems();
+            DebugFieldMappings();
         }
-
-
-
-
         private async void ButtonConditionMappingNext_Click(object sender, RoutedEventArgs e)
         {
-            UpdateTempImportWithMappedValues(CurrentInstance.ConditionsMappingListView, "Condition", "Near Mint");
+            // Generate the mapping dictionary for "Condition"
+            var conditionMappings = CreateMappingDictionary(
+                CurrentInstance.ConditionsMappingListView,
+                "Condition",
+                "Near Mint");
+
+            // Store the conditionMappings dictionary
+            StoreMapping("Condition", conditionMappings, true);
+
             GridImportCardConditionsMapping.Visibility = Visibility.Collapsed;
 
             if (isFinishMapped) { await GoToMappingGeneric("Card Finish", MainWindow.CurrentInstance.FinishesMappingListView, "finishes", MainWindow.CurrentInstance.GridImportFinishesMapping); }
@@ -1464,7 +1472,7 @@ namespace CollectaMundo
                     GridImportConfirm.Visibility = Visibility.Visible;
                 }
             }
-            DebugAllItems();
+            DebugFieldMappings();
         }
         private async void ButtonFinishesMappingNext_Click(object sender, RoutedEventArgs e)
         {

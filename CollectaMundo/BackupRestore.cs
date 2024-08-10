@@ -957,6 +957,67 @@ namespace CollectaMundo
         #endregion
 
         #region Import Wizard - Update cardItemsToAdd with values according to the selected mappings additional fields
+
+        public static Dictionary<string, string> CreateMappingDictionary(ListView mappingListView, string cardSetField, string defaultValue)
+        {
+            try
+            {
+                // Initialize the dictionary that will hold the mappings for the specified field
+                var fieldMappingDict = new Dictionary<string, string>();
+
+                // Get the mappings from the specified ListView
+                var mappings = mappingListView.ItemsSource as List<ValueMapping>;
+
+                if (mappings == null)
+                {
+                    Debug.WriteLine("No mappings found.");
+                    return fieldMappingDict;
+                }
+
+                // Populate the dictionary with mappings from the ListView
+                foreach (var mapping in mappings)
+                {
+                    if (!string.IsNullOrEmpty(mapping.CsvValue))
+                    {
+                        var databaseValue = mapping.SelectedCardSetValue ?? defaultValue;
+                        fieldMappingDict[mapping.CsvValue] = databaseValue;
+                    }
+                }
+
+                return fieldMappingDict;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error creating mapping dictionary: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return new Dictionary<string, string>();
+            }
+        }
+
+        public static Dictionary<string, Dictionary<string, string>> FieldMappings { get; private set; } = new Dictionary<string, Dictionary<string, string>>();
+        public static void StoreMapping(string cardSetField, Dictionary<string, string> mappingDict, bool isMapped)
+        {
+            if (!isMapped)
+            {
+                // Mark as unmapped with a special entry
+                mappingDict["unmapped_field"] = "unmapped";
+            }
+
+            FieldMappings[cardSetField] = mappingDict;
+        }
+
+        public static void MarkFieldAsUnmapped(string cardSetField)
+        {
+            var mappingDict = new Dictionary<string, string>
+            {
+                ["unmapped_field"] = "unmapped"
+            };
+
+            StoreMapping(cardSetField, mappingDict, false);
+        }
+
+
+
+
         public static void UpdateTempImportWithMappedValues(ListView mappingListView, string cardSetField, string defaultValue)
         {
             try
@@ -1121,11 +1182,16 @@ namespace CollectaMundo
                 }
             }
         }
-        public static bool IsFieldMapped(List<string> mappings, string cardSetField)
+        public static bool IsFieldMapped(List<ColumnMapping> mappingsList, string cardSetField)
         {
-            // Check if the cardSetField is in the list of mappings
-            return mappings != null && mappings.Contains(cardSetField);
+            // Find the mapping for the specified cardSetField
+            var fieldMapping = mappingsList?.FirstOrDefault(mapping => mapping.CardSetField == cardSetField);
+
+            // Return true if the mapping exists and the CsvHeader is not null or empty
+            return fieldMapping != null && !string.IsNullOrEmpty(fieldMapping.CsvHeader);
         }
+
+
 
 
         // Generalized method to set default value for additional fields
@@ -1215,6 +1281,30 @@ namespace CollectaMundo
             }
         }
         #endregion
+
+        public static void DebugFieldMappings()
+        {
+            try
+            {
+                Debug.WriteLine("==== Field Mappings ====");
+
+                foreach (var fieldMapping in FieldMappings)
+                {
+                    Debug.WriteLine($"Field: {fieldMapping.Key}");
+                    foreach (var mapping in fieldMapping.Value)
+                    {
+                        Debug.WriteLine($"  CSV Value: {mapping.Key} -> Mapped Value: {mapping.Value}");
+                    }
+                }
+
+                Debug.WriteLine("========================");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in DebugFieldMappings: {ex.Message}");
+            }
+        }
+
 
         public static void DebugAllItems()
         {
