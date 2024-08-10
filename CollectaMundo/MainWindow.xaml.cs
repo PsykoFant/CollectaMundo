@@ -1301,7 +1301,6 @@ namespace CollectaMundo
                         else
                         {
                             tempImport.Clear();
-                            AddToCollectionManager.Instance.cardItemsToAdd.Clear();
                             GridImportWizard.Visibility = Visibility.Collapsed;
                             MessageBox.Show("Was not able to map any cards in the import file the main card database", "Import failed", MessageBoxButton.OK, MessageBoxImage.Warning);
                         }
@@ -1360,11 +1359,8 @@ namespace CollectaMundo
             // Update tempImport and cardItemsToAdd with the uuids for the selected versions of the cards
             ProcessMultipleUuidSelections(multipleUuidsList);
 
-            DebugImportProcess();
-
             // Prepare the listview to map additional fields and make the screen visible
-            var cardSetFields = new List<string> { "Condition", "Card Finish", "Cards Owned", "Cards For Trade/Selling", "Language" };
-            PopulateColumnMappingListView(AddionalFieldsMappingListView, cardSetFields);
+            PopulateColumnMappingListView(AddionalFieldsMappingListView, FieldsToMap);
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
         }
         private async void ButtonAdditionalFieldsNext_Click(object sender, RoutedEventArgs e)
@@ -1419,29 +1415,27 @@ namespace CollectaMundo
 
             if (isConditionMapped)
             {
-                await GoToMappingGeneric("Condition", CurrentInstance.ConditionsMappingListView, "", CurrentInstance.GridImportCardConditionsMapping);
+                await GoToMappingGeneric("Condition", ConditionsMappingListView, "", GridImportCardConditionsMapping);
             }
             else
             {
                 // Mark the field as unmapped
                 MarkFieldAsUnmapped("Condition");
 
-
-
                 if (isFinishMapped)
                 {
-                    await GoToMappingGeneric("Card Finish", MainWindow.CurrentInstance.FinishesMappingListView, "finishes", MainWindow.CurrentInstance.GridImportFinishesMapping);
+                    await GoToMappingGeneric("Card Finish", FinishesMappingListView, "finishes", GridImportFinishesMapping);
                 }
                 else
                 {
-                    UpdateTempImportWithDefaultField("Card Finish", "nonfoil");
+                    MarkFieldAsUnmapped("Card Finish");
                     if (isLanguageMapped)
                     {
-                        await GoToMappingGeneric("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping);
+                        await GoToMappingGeneric("Language", LanguageMappingListView, "language", GridImportLanguageMapping);
                     }
                     else
                     {
-                        UpdateTempImportWithDefaultField("Language", "English");
+                        MarkFieldAsUnmapped("Language");
                         GridImportConfirm.Visibility = Visibility.Visible;
                     }
                 }
@@ -1452,23 +1446,23 @@ namespace CollectaMundo
         {
             // Generate the mapping dictionary for "Condition"
             var conditionMappings = CreateMappingDictionary(
-                CurrentInstance.ConditionsMappingListView,
+                ConditionsMappingListView,
                 "Condition",
                 "Near Mint");
 
-            // Store the conditionMappings dictionary
+            // Store the finishesMappings dictionary
             StoreMapping("Condition", conditionMappings, true);
 
             GridImportCardConditionsMapping.Visibility = Visibility.Collapsed;
 
-            if (isFinishMapped) { await GoToMappingGeneric("Card Finish", MainWindow.CurrentInstance.FinishesMappingListView, "finishes", MainWindow.CurrentInstance.GridImportFinishesMapping); }
+            if (isFinishMapped) { await GoToMappingGeneric("Card Finish", FinishesMappingListView, "finishes", GridImportFinishesMapping); }
             else
             {
-                BackupRestore.UpdateTempImportWithDefaultField("Card Finish", "nonfoil");
-                if (isLanguageMapped) { await GoToMappingGeneric("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping); }
+                MarkFieldAsUnmapped("Card Finish");
+                if (isLanguageMapped) { await GoToMappingGeneric("Language", LanguageMappingListView, "language", GridImportLanguageMapping); }
                 else
                 {
-                    BackupRestore.UpdateTempImportWithDefaultField("Language", "English");
+                    MarkFieldAsUnmapped("Language");
                     GridImportConfirm.Visibility = Visibility.Visible;
                 }
             }
@@ -1476,30 +1470,46 @@ namespace CollectaMundo
         }
         private async void ButtonFinishesMappingNext_Click(object sender, RoutedEventArgs e)
         {
-            BackupRestore.UpdateTempImportWithMappedValues(MainWindow.CurrentInstance.FinishesMappingListView, "SelectedFinish", "nonfoil");
+            // Generate the mapping dictionary for "Card Finish"
+            var finishesMappings = CreateMappingDictionary(
+                FinishesMappingListView,
+                "Card Finish",
+                "nonfoil");
+
+            // Store the finishesMappings dictionary
+            StoreMapping("Card Finish", finishesMappings, true);
+
             GridImportFinishesMapping.Visibility = Visibility.Collapsed;
-            if (isLanguageMapped) { await GoToMappingGeneric("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping); }
+
+            if (isLanguageMapped) { await GoToMappingGeneric("Language", LanguageMappingListView, "language", GridImportLanguageMapping); }
             else
             {
-                BackupRestore.UpdateTempImportWithDefaultField("Language", "English");
+                MarkFieldAsUnmapped("Language");
                 GridImportConfirm.Visibility = Visibility.Visible;
             }
+            DebugFieldMappings();
         }
         private void ButtonLanguageMappingNext_Click(object sender, RoutedEventArgs e)
         {
-            BackupRestore.UpdateTempImportWithMappedValues(MainWindow.CurrentInstance.LanguageMappingListView, "Language", "English");
+            // Generate the mapping dictionary for "Language"
+            var languageMappings = CreateMappingDictionary(
+                LanguageMappingListView,
+                "Language",
+                "English");
+
+            // Store the language dictionary
+            StoreMapping("Language", languageMappings, true);
+
             GridImportLanguageMapping.Visibility = Visibility.Collapsed;
             GridImportConfirm.Visibility = Visibility.Visible;
-            DebugAllItems();
-            DebugImportProcess();
+
+            DebugFieldMappings();
         }
 
         // Import wizards misc. buttons and helper methods
         private void GoToAdditionalFieldsMapping()
         {
-            // Prepare the listview to map additional fields and make the screen visible
-            var cardSetFields = new List<string> { "Condition", "Card Finish", "Cards Owned", "Cards For Trade/Selling", "Language" };
-            PopulateColumnMappingListView(AddionalFieldsMappingListView, cardSetFields);
+            PopulateColumnMappingListView(AddionalFieldsMappingListView, FieldsToMap);
             GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
         }
         private static async Task GoToMappingGeneric(string cardSetField, ListView listView, string tableField, Grid grid)
