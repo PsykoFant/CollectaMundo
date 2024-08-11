@@ -737,14 +737,14 @@
                             <ListView x:Name="FinishesMappingListView" Margin="0,186,0,0" Width="387" Height="170" HorizontalAlignment="Center" VerticalAlignment="Top">
                                 <ListView.View>
                                     <GridView>
-                                        <GridViewColumn Header="CSV Condition" Width="150">
+                                        <GridViewColumn Header="CSV Finish" Width="150">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <TextBlock Text="{Binding CsvValue}" />
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="Database Condition" Width="150">
+                                        <GridViewColumn Header="Database Finish" Width="150">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <ComboBox ItemsSource="{Binding CardSetValue}" SelectedItem="{Binding SelectedCardSetValue}" />
