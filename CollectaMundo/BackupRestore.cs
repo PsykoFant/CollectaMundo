@@ -1068,11 +1068,16 @@ namespace CollectaMundo
             _mappings = mappingsList.Select(m => m.CardSetField ?? string.Empty).ToList();
 
             // Check if "Condition", "Card Finish", "Cards Owned", "Cards For Trade/Selling", and "Language" have a value selected
-            isConditionMapped = IsFieldMapped(mappingsList, "Condition");
-            isFinishMapped = IsFieldMapped(mappingsList, "Card Finish");
-            isCardsOwnedMapped = IsFieldMapped(mappingsList, "Cards Owned");
-            isCardsForTradedMapped = IsFieldMapped(mappingsList, "Cards For Trade/Selling");
-            isLanguageMapped = IsFieldMapped(mappingsList, "Language");
+
+            foreach (var mapping in _mappings)
+            {
+                isConditionMapped = IsFieldMapped(mappingsList, mapping);
+                isFinishMapped = IsFieldMapped(mappingsList, mapping);
+                isCardsOwnedMapped = IsFieldMapped(mappingsList, mapping);
+                isCardsForTradedMapped = IsFieldMapped(mappingsList, mapping);
+                isLanguageMapped = IsFieldMapped(mappingsList, mapping);
+            }
+
 
             MainWindow.CurrentInstance.GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
 
@@ -1246,39 +1251,6 @@ namespace CollectaMundo
 
             StoreMapping(cardSetField, mappingDict, false);
         }
-        private static void UpdateCardItems(string cardSetField, string? csvHeader, object defaultValue, Dictionary<string, string>? mappingDict)
-        {
-            foreach (var tempItem in tempImport)
-            {
-                if (tempItem.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid))
-                {
-                    if (!string.IsNullOrEmpty(csvHeader) && tempItem.Fields.TryGetValue(csvHeader, out var fieldValue))
-                    {
-                        Debug.WriteLine($"Found {cardSetField}: {fieldValue} for item with UUID: {uuid}");
-
-                        if (mappingDict != null && mappingDict.TryGetValue(fieldValue, out var mappedValue))
-                        {
-                            tempItem.Fields[cardSetField] = mappedValue;
-                            Debug.WriteLine($"Mapped {cardSetField}: {mappedValue} for item with UUID: {uuid}");
-                        }
-                        else
-                        {
-                            tempItem.Fields[cardSetField] = defaultValue.ToString();
-                            Debug.WriteLine($"{cardSetField} {fieldValue} not found in mapping dictionary. Assigning default value '{defaultValue}'.");
-                        }
-                    }
-                    else
-                    {
-                        tempItem.Fields[cardSetField] = defaultValue.ToString();
-                        Debug.WriteLine($"{cardSetField} not found in tempItem for UUID: {uuid}. Assigning default value '{defaultValue}'.");
-                    }
-                }
-                else
-                {
-                    Debug.WriteLine($"UUID not found or empty in tempItem");
-                }
-            }
-        }
         private static void RenameTempImportField(string oldFieldName, string newFieldName)
         {
             foreach (var item in tempImport)
@@ -1308,36 +1280,74 @@ namespace CollectaMundo
         #endregion
 
         #region Import Wizard - Misc. helper and shared methods
-
-
-        // Generalized method for populating a listview where values found in csv-file can be matched to appropriate db values
-        private static async Task InitializeMappingListViewAsync(string csvHeader, bool fetchFromDatabase, string dbColumn, ListView listView)
+        private static async Task<bool> InitializeAdditionalFieldsMappingListViewAsync(string csvHeader, bool fetchFromDatabase, string dbColumn, ListView listView)
         {
             try
             {
                 List<string> mappingValues;
 
-                // Mapping values for finish and language should be values found in cards table
+                // Mapping values for finish and language should be values found in the cards table
                 if (fetchFromDatabase)
                 {
                     mappingValues = await GetUniqueValuesFromDbColumn(dbColumn);
                 }
-                // Mapping values for condition should be the ones specified in the Condition field in CardSet class. 
-                // They are not found in the db because the are MCM gradings
+                // Mapping values for condition should be the ones specified in the Condition field in the CardSet class.
                 else
                 {
                     mappingValues = GetConditionsFromCardSet();
                 }
 
-                PopulateColumnValuesMappingListView(listView, csvHeader, mappingValues);
+                // Get unique values from the CSV header
+                var csvValues = GetUniqueValuesFromCsv(csvHeader);
+
+                // Check if csvValues is empty and write a debug message if it is. Set it to umapped if it is
+                if (csvValues == null || !csvValues.Any())
+                {
+                    Debug.WriteLine($"No unique values found for CSV header: {csvHeader}, setting it to unmapped");
+
+                    if (listView == MainWindow.CurrentInstance.ConditionsMappingListView)
+                    {
+                        MarkFieldAsUnmapped("Condition");
+                        if (isFinishMapped) { await GoToMappingGeneric("Card Finish", MainWindow.CurrentInstance.FinishesMappingListView, "finishes", MainWindow.CurrentInstance.GridImportFinishesMapping); }
+                        else if (isLanguageMapped) { await GoToMappingGeneric("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping); }
+                        else { MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Visible; }
+                    }
+                    else if (listView == MainWindow.CurrentInstance.FinishesMappingListView)
+                    {
+                        MarkFieldAsUnmapped("Card Finish");
+                        if (isLanguageMapped) { await GoToMappingGeneric("Language", MainWindow.CurrentInstance.LanguageMappingListView, "language", MainWindow.CurrentInstance.GridImportLanguageMapping); }
+                        else { MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Visible; }
+                    }
+                    else
+                    {
+                        MarkFieldAsUnmapped("Language");
+                        MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Visible;
+                    }
+                    return false;
+                }
+                // Create the mapping items for the list view
+                var mappingItems = csvValues
+                    .Select(csvValue => new ValueMapping
+                    {
+                        CsvValue = csvValue,
+                        CardSetValue = mappingValues,
+                        SelectedCardSetValue = GuessMapping(csvValue, mappingValues) // Leave as null if no match is found
+                    })
+                    .ToList();
+
+                // Populate the list view with the mapping items
+                listView.ItemsSource = mappingItems;
+                return true;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error initializing mapping list view: {ex.Message}");
                 MessageBox.Show($"Error initializing mapping list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
             }
         }
-        // Helper method for InitializeMappingListViewAsync - unique values from cards table for the chosen CardSet field
+
+        // Helper method for InitializeAdditionalFieldsMappingListViewAsync - unique values from cards table for the chosen CardSet field
         private static async Task<List<string>> GetUniqueValuesFromDbColumn(string dbColumn)
         {
             var uniqueValues = new HashSet<string>();
@@ -1366,28 +1376,13 @@ namespace CollectaMundo
             return uniqueValues.ToList();
         }
 
-        // Helper method for InitializeMappingListViewAsync - get Condition values
+        // Helper method for InitializeAdditionalFieldsMappingListViewAsync - get Condition values
         private static List<string> GetConditionsFromCardSet()
         {
             var cardItem = new CardSet.CardItem();
             return cardItem.Conditions;
         }
 
-        // Helper method for InitializeMappingListViewAsync - populate the actual listview with both csv-values to map to and options in the dropdown to map with
-        private static void PopulateColumnValuesMappingListView(ListView listView, string csvHeader, List<string> cardSetFields)
-        {
-            var csvValues = GetUniqueValuesFromCsv(csvHeader);
-
-            var mappingItems = csvValues
-                .Select(csvValue => new ValueMapping
-                {
-                    CsvValue = csvValue,
-                    CardSetValue = cardSetFields,
-                    SelectedCardSetValue = GuessMapping(csvValue, cardSetFields) // Leave as null if no match is found
-                }).ToList();
-
-            listView.ItemsSource = mappingItems;
-        }
 
         // Helper method for PopulateColumnValuesMappingListView - get unique values for a specific csv-column to set as items to map to appropriate db values
         private static List<string> GetUniqueValuesFromCsv(string? csvHeader)
@@ -1513,8 +1508,11 @@ namespace CollectaMundo
 
             if (!string.IsNullOrEmpty(csvHeader))
             {
-                await InitializeMappingListViewAsync(csvHeader, !string.IsNullOrEmpty(tableField), tableField, listView);
-                grid.Visibility = Visibility.Visible;
+                if (await InitializeAdditionalFieldsMappingListViewAsync(csvHeader, !string.IsNullOrEmpty(tableField), tableField, listView))
+                {
+                    grid.Visibility = Visibility.Visible;
+                }
+
             }
             else
             {
