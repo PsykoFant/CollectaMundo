@@ -118,7 +118,6 @@ namespace CollectaMundo
 
         #endregion
 
-
         // Create backup of my collection
         public static async Task CreateCsvBackupAsync()
         {
