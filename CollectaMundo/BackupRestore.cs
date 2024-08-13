@@ -105,7 +105,8 @@ namespace CollectaMundo
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             }
         }
-        public static List<string> AdditionalFieldsValueMapping { get; private set; } = new List<string>
+        public static ObservableCollection<TempCardItem> tempImport { get; private set; } = new ObservableCollection<TempCardItem>();
+        public static List<string> AdditionalFieldsList { get; private set; } = new List<string>
             {
                 "Condition",
                 "Card Finish",
@@ -113,8 +114,7 @@ namespace CollectaMundo
                 "Cards For Trade/Selling",
                 "Language"
             };
-        public static ObservableCollection<TempCardItem> tempImport { get; private set; } = new ObservableCollection<TempCardItem>();
-
+        public static Dictionary<string, Dictionary<string, string>> FieldMappings { get; private set; } = new Dictionary<string, Dictionary<string, string>>();
 
         #endregion
 
@@ -188,7 +188,7 @@ namespace CollectaMundo
             }
         }
 
-        #region Import Wizard - Open and parse csv-file
+        #region Import Wizard - Step 1 - Open and parse csv-file
         public static async Task ImportCollectionButton()
         {
             // Select the csv-file and create a tempImport object with the content
@@ -320,42 +320,7 @@ namespace CollectaMundo
             return values;
         }
 
-        #endregion
-
-        // get uuids
-
-        #region Import Wizard - mapping imported cards by card ID
-        public static async Task ButtonIdColumnMappingNext()
-        {
-            try
-            {
-                await ProcessIdColumnMappingsAsync();
-
-                AssertNoInvalidUuidFields();
-
-                if (AllItemsHaveUuid())
-                {
-                    Debug.WriteLine("All items have uuid");
-                    GoToAdditionalFieldsMapping();
-                }
-                else
-                {
-                    Debug.WriteLine("Not all items have uuid");
-                    // Prepare the listview to map card name, set name and set code and go to the first import wizard screen
-                    var cardSetFields = new List<string> { "Card Name", "Set Name", "Set Code" };
-                    PopulateColumnMappingListView(MainWindow.CurrentInstance.NameAndSetMappingListView, cardSetFields);
-                    MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Visible;
-                }
-                MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
-
-                DebugImportProcess();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error mapping by ID column: {ex.Message}");
-                MessageBox.Show($"Error mapping by ID column: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
+        // Prepare the next step
         private static void PopulateIdColumnMappingListView(ListView listView)
         {
             try
@@ -377,29 +342,6 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"Error populating ID column mapping list view: {ex.Message}");
                 MessageBox.Show($"Error populating ID column mapping list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        // Populate a listview where column headings found in the csv-file can be mapped to fields 
-        private static void PopulateColumnMappingListView(ListView listView, List<string> cardSetFields)
-        {
-            try
-            {
-                var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
-
-                var mappingItems = cardSetFields.Select(field => new ColumnMapping
-                {
-                    CardSetField = field,
-                    CsvHeaders = csvHeaders,
-                    CsvHeader = GuessMapping(field, csvHeaders)
-                }).ToList();
-
-                listView.ItemsSource = mappingItems;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error populating mapping list view: {ex.Message}");
-                MessageBox.Show($"Error populating mapping list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         private static List<string> GetCardIdentifierColumns()
@@ -442,6 +384,41 @@ namespace CollectaMundo
             }
 
             return columns;
+        }
+
+        #endregion
+
+        #region Import Wizard - Step 2a - Find UUIDs - Mapping by card ID
+        public static async Task ButtonIdColumnMappingNext()
+        {
+            try
+            {
+                await ProcessIdColumnMappingsAsync();
+
+                AssertNoInvalidUuidFields();
+
+                if (AllItemsHaveUuid())
+                {
+                    Debug.WriteLine("All items have uuid");
+                    GoToAdditionalFieldsMapping();
+                }
+                else
+                {
+                    Debug.WriteLine("Not all items have uuid");
+                    // Prepare the listview to map card name, set name and set code and go to the first import wizard screen
+                    var cardSetFields = new List<string> { "Card Name", "Set Name", "Set Code" };
+                    PopulateColumnMappingListView(MainWindow.CurrentInstance.NameAndSetMappingListView, cardSetFields);
+                    MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Visible;
+                }
+                MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
+
+                DebugImportProcess();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error mapping by ID column: {ex.Message}");
+                MessageBox.Show($"Error mapping by ID column: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         private static async Task ProcessIdColumnMappingsAsync()
         {
@@ -576,12 +553,7 @@ namespace CollectaMundo
 
         #endregion
 
-        #region Import Wizard - Mapping imported cards by searching on card name, set name and set code
-        /* The logic is as follows:
-         * If set code is mapped search by set code
-         * If no match is found by searching by set code, search by set name
-         * If set code is not mapped, search by set name
-        */
+        #region Import Wizard - Step 2b - Find UUIDs - Mapping by card name, set name and set code        
         public static async Task ButtonNameAndSetMappingNext()
         {
             /*
@@ -678,17 +650,20 @@ namespace CollectaMundo
                     }
                 }
                 MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
-                DebugImportProcess();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error processing mapping using card and set name and set code: {ex.Message}");
                 MessageBox.Show($"Error processing mapping using card and set name and set code: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
         }
         private static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
         {
+            /* The logic is as follows:
+            * If set code is mapped search by set code
+            * If no match is found by searching by set code, search by set name
+            * If set code is not mapped, search by set name
+           */
             try
             {
                 await DBAccess.OpenConnectionAsync();
@@ -746,8 +721,8 @@ namespace CollectaMundo
                     }
                 }
 
-                // Rename the CSV columns in tempImport
-                RenameCsvHeaders(mappings);
+                // Rename the CSV columns in tempImport based on the mappings
+                RenameFieldsInTempImport(mappings);
             }
             catch (Exception ex)
             {
@@ -757,25 +732,6 @@ namespace CollectaMundo
             finally
             {
                 DBAccess.CloseConnection();
-            }
-        }
-
-        // Helper methods to SearchByCardNameOrSet
-        private static void RenameCsvHeaders(List<ColumnMapping> mappings)
-        {
-            var nameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Card Name");
-            if (nameMapping != null && !string.IsNullOrEmpty(nameMapping.CsvHeader))
-            {
-                foreach (var item in tempImport)
-                {
-                    if (item.Fields.ContainsKey(nameMapping.CsvHeader))
-                    {
-                        item.Fields["CardName"] = item.Fields[nameMapping.CsvHeader];
-                        item.Fields.Remove(nameMapping.CsvHeader);
-                    }
-                }
-
-                Debug.WriteLine($"CSV Header '{nameMapping.CsvHeader}' renamed to 'CardName'");
             }
         }
         private static async Task<bool> SearchBySetName(string name, string setName, TempCardItem item)
@@ -931,7 +887,6 @@ namespace CollectaMundo
             return uuids;
         }
 
-
         // Utility methods to help determine where to go after card name and set name/set code mapping
         private static bool AllItemsHaveUuid()
         {
@@ -969,7 +924,7 @@ namespace CollectaMundo
 
         #endregion
 
-        #region Import Wizard - Selecting between cards where multiple uuids were found
+        #region Import Wizard - Step 2c - Find UUIDs - Choose between multiple uuids found
 
         // Populate the datagrid where a single version can be selected of a card with multiple identical set and card names       
         public static void ButtonMultipleUuidsNext()
@@ -1017,36 +972,8 @@ namespace CollectaMundo
             ProcessMultipleUuidSelections(multipleUuidsList);
 
             // Prepare the listview to map additional fields and make the screen visible
-            PopulateColumnMappingListView(MainWindow.CurrentInstance.AddionalFieldsMappingListView, AdditionalFieldsValueMapping);
+            PopulateColumnMappingListView(MainWindow.CurrentInstance.AddionalFieldsMappingListView, AdditionalFieldsList);
             MainWindow.CurrentInstance.GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
-        }
-        private static void PopulateMultipleUuidsDataGrid()
-        {
-            try
-            {
-                var itemsWithMultipleUuids = tempImport
-                    .Where(item => item.Fields.ContainsKey("uuids"))
-                    .Select(item => new MultipleUuidsItem
-                    {
-                        Name = item.Fields.ContainsKey("CardName") ? item.Fields["CardName"] : "Unknown",
-                        VersionedUuids = item.Fields["uuids"]
-                            .Split(',')
-                            .Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid })
-                            .ToList(),
-                        SelectedUuid = null // Set the initial selection to null
-                    })
-                    .ToList();
-
-                Debug.WriteLine($"Populated MultipleUuidsDataGrid with {itemsWithMultipleUuids.Count} items.");
-
-                MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
-                MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error populating multiple uuids datagrid: {ex.Message}");
-                MessageBox.Show($"Error populating multiple uuids datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
         }
 
         // Update tempImport object with the cards where a uuid match was found
@@ -1067,6 +994,69 @@ namespace CollectaMundo
                 }
             }
         }
+        private static void AssertNoInvalidUuidFields()
+        {
+            bool invalidUuidAndUuids = tempImport.Any(item =>
+                item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid) &&
+                item.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrEmpty(uuids)
+            );
+
+            bool invalidUuidOrUuids = tempImport.Any(item =>
+                (item.Fields.TryGetValue("uuid", out var uuid) && string.IsNullOrEmpty(uuid)) ||
+                (item.Fields.TryGetValue("uuids", out var uuids) && string.IsNullOrEmpty(uuids))
+            );
+
+            if (invalidUuidAndUuids)
+            {
+                throw new InvalidOperationException("An item in tempImport has both 'uuid' and 'uuids' fields with values, which is not allowed.");
+            }
+
+            if (invalidUuidOrUuids)
+            {
+                throw new InvalidOperationException("An item in tempImport has 'uuid' or 'uuids' field with no value, which is not allowed.");
+            }
+        }
+
+        // Prepare the next step
+        private static void GoToAdditionalFieldsMapping()
+        {
+            PopulateColumnMappingListView(MainWindow.CurrentInstance.AddionalFieldsMappingListView, AdditionalFieldsList);
+            MainWindow.CurrentInstance.GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
+        }
+        #endregion
+
+        #region Import Wizard - Step 2 - Find UUIDs - helper methods
+        // Prepare for multiple UUIDs selection if necessary      
+        private static void PopulateMultipleUuidsDataGrid()
+        {
+            try
+            {
+                var itemsWithMultipleUuids = tempImport
+                    .Where(item => item.Fields.ContainsKey("uuids"))
+                    .Select(item => new MultipleUuidsItem
+                    {
+                        Name = item.Fields.ContainsKey("Card Name") ? item.Fields["Card Name"] : "Unknown",
+                        VersionedUuids = item.Fields["uuids"]
+                            .Split(',')
+                            .Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid })
+                            .ToList(),
+                        SelectedUuid = null // Set the initial selection to null
+                    })
+                    .ToList();
+
+                Debug.WriteLine($"Populated MultipleUuidsDataGrid with {itemsWithMultipleUuids.Count} items.");
+
+                MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
+                MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error populating multiple uuids datagrid: {ex.Message}");
+                MessageBox.Show($"Error populating multiple uuids datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // Handle the UUIDs found anywhere in step 2
         private static bool ProcessUuidResults(List<string> uuids, TempCardItem item)
         {
             if (uuids.Count == 1)
@@ -1099,33 +1089,10 @@ namespace CollectaMundo
                 return false;
             }
         }
-        private static void AssertNoInvalidUuidFields()
-        {
-            bool invalidUuidAndUuids = tempImport.Any(item =>
-                item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid) &&
-                item.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrEmpty(uuids)
-            );
-
-            bool invalidUuidOrUuids = tempImport.Any(item =>
-                (item.Fields.TryGetValue("uuid", out var uuid) && string.IsNullOrEmpty(uuid)) ||
-                (item.Fields.TryGetValue("uuids", out var uuids) && string.IsNullOrEmpty(uuids))
-            );
-
-            if (invalidUuidAndUuids)
-            {
-                throw new InvalidOperationException("An item in tempImport has both 'uuid' and 'uuids' fields with values, which is not allowed.");
-            }
-
-            if (invalidUuidOrUuids)
-            {
-                throw new InvalidOperationException("An item in tempImport has 'uuid' or 'uuids' field with no value, which is not allowed.");
-            }
-        }
 
         #endregion
 
-        #region Import Wizard - Populating Importer UI elements for additional fields
-
+        #region Import Wizard - Step 3 - Map additional fields
         public static async Task ButtonAdditionalFieldsNext()
         {
             // Create list of the mapped items
@@ -1137,14 +1104,8 @@ namespace CollectaMundo
                 return;
             }
 
-            // Iterate through the mappings and update tempImport
-            foreach (var mapping in mappingsList)
-            {
-                if (!string.IsNullOrEmpty(mapping.CsvHeader) && !string.IsNullOrEmpty(mapping.CardSetField))
-                {
-                    RenameTempImportField(mapping.CsvHeader, mapping.CardSetField);
-                }
-            }
+            // Rename the fields in tempImport based on the mappings
+            RenameFieldsInTempImport(mappingsList);
 
             // Store the CardSetField values in _mappings (List<string>)
             _mappings = mappingsList.Select(m => m.CardSetField ?? string.Empty).ToList();
@@ -1163,22 +1124,16 @@ namespace CollectaMundo
 
             MainWindow.CurrentInstance.GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
 
-            if (isCardsOwnedMapped)
+
+            if (!isCardsOwnedMapped)
             {
-                //UpdateCardItemsWithQuantity("Cards Owned");
-            }
-            else
-            {
-                //UpdateTempImportWithDefaultField("Cards Owned", 1);
+                MarkFieldAsUnmapped("Cards Owned");
             }
 
-            if (isCardsForTradedMapped)
+
+            if (!isCardsForTradedMapped)
             {
-                //UpdateCardItemsWithQuantity("Cards For Trade/Selling");
-            }
-            else
-            {
-                //UpdateTempImportWithDefaultField("Cards For Trade/Selling", 0);
+                MarkFieldAsUnmapped("Cards For Trade/Selling");
             }
 
             if (isConditionMapped)
@@ -1187,7 +1142,6 @@ namespace CollectaMundo
             }
             else
             {
-                // Mark the field as unmapped
                 MarkFieldAsUnmapped("Condition");
 
                 if (isFinishMapped)
@@ -1209,13 +1163,7 @@ namespace CollectaMundo
                 }
             }
             DebugFieldMappings();
-
-
         }
-
-        #endregion
-
-        #region Import Wizard - Create a mapping directory with mappings for additional fields
         public static async Task ButtonConditionMappingNext()
         {
             // Generate the mapping dictionary for "Condition"
@@ -1279,77 +1227,9 @@ namespace CollectaMundo
 
             DebugFieldMappings();
         }
-        public static Dictionary<string, string> CreateMappingDictionary(ListView mappingListView, string cardSetField, string defaultValue)
-        {
-            try
-            {
-                // Initialize the dictionary that will hold the mappings for the specified field
-                var fieldMappingDict = new Dictionary<string, string>();
 
-                // Get the mappings from the specified ListView
-                var mappings = mappingListView.ItemsSource as List<ValueMapping>;
-
-                if (mappings == null)
-                {
-                    Debug.WriteLine("No mappings found.");
-                    return fieldMappingDict;
-                }
-
-                // Populate the dictionary with mappings from the ListView
-                foreach (var mapping in mappings)
-                {
-                    if (!string.IsNullOrEmpty(mapping.CsvValue))
-                    {
-                        var databaseValue = mapping.SelectedCardSetValue ?? defaultValue;
-                        fieldMappingDict[mapping.CsvValue] = databaseValue;
-                    }
-                }
-
-                return fieldMappingDict;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error creating mapping dictionary: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return new Dictionary<string, string>();
-            }
-        }
-        public static Dictionary<string, Dictionary<string, string>> FieldMappings { get; private set; } = new Dictionary<string, Dictionary<string, string>>();
-        private static void StoreMapping(string cardSetField, Dictionary<string, string> mappingDict, bool isMapped)
-        {
-            if (!isMapped)
-            {
-                // Mark as unmapped with a special entry
-                mappingDict["unmapped_field"] = "unmapped";
-            }
-
-            FieldMappings[cardSetField] = mappingDict;
-        }
-        private static void MarkFieldAsUnmapped(string cardSetField)
-        {
-            var mappingDict = new Dictionary<string, string>
-            {
-                ["unmapped_field"] = "unmapped"
-            };
-
-            StoreMapping(cardSetField, mappingDict, false);
-        }
-        private static void RenameTempImportField(string oldFieldName, string newFieldName)
-        {
-            foreach (var item in tempImport)
-            {
-                if (item.Fields.ContainsKey(oldFieldName))
-                {
-                    // Get the value associated with the old field name
-                    var value = item.Fields[oldFieldName];
-
-                    // Remove the old field name
-                    item.Fields.Remove(oldFieldName);
-
-                    // Add the new field name with the value
-                    item.Fields[newFieldName] = value;
-                }
-            }
-        }
+        #region Import Wizard - Step 3 - Map additional fields - helper methods
+        // Determine which additional field mapping screen to go to
         private static bool IsFieldMapped(List<ColumnMapping> mappingsList, string cardSetField)
         {
             // Find the mapping for the specified cardSetField
@@ -1359,9 +1239,27 @@ namespace CollectaMundo
             return fieldMapping != null && !string.IsNullOrEmpty(fieldMapping.CsvHeader);
         }
 
-        #endregion
+        // Go to the next additional field mapping
+        private static async Task GoToAdditionalFieldMappingGeneric(string cardSetField, ListView listView, string tableField, Grid grid)
+        {
+            // Find the corresponding CSV header for the given cardSetField in _mappings
+            var csvHeader = _mappings?.FirstOrDefault(header => header == cardSetField);
 
-        #region Import Wizard - Misc. helper and shared methods
+            if (!string.IsNullOrEmpty(csvHeader))
+            {
+                if (await PopulateAdditionalFieldsMappingListViewAsync(csvHeader, !string.IsNullOrEmpty(tableField), tableField, listView))
+                {
+                    grid.Visibility = Visibility.Visible;
+                }
+
+            }
+            else
+            {
+                Debug.WriteLine($"Mapping for {cardSetField} not found.");
+            }
+        }
+
+        // Populating additional fields mapping UI elements
         private static async Task<bool> PopulateAdditionalFieldsMappingListViewAsync(string csvHeader, bool fetchFromDatabase, string dbColumn, ListView listView)
         {
             try
@@ -1430,8 +1328,6 @@ namespace CollectaMundo
                 return false;
             }
         }
-
-        // Helper method for PopulateAdditionalFieldsMappingListViewAsync - unique values from cards table for the chosen CardSet field
         private static async Task<List<string>> GetUniqueValuesFromDbColumn(string dbColumn)
         {
             var uniqueValues = new HashSet<string>();
@@ -1459,8 +1355,6 @@ namespace CollectaMundo
 
             return uniqueValues.ToList();
         }
-
-        // Helper method for PopulateColumnValuesMappingListView - get unique values for a specific csv-column to set as items to map to appropriate db values
         private static List<string> GetUniqueValuesFromCsv(string? csvHeader)
         {
             var uniqueValues = new HashSet<string>();
@@ -1481,49 +1375,154 @@ namespace CollectaMundo
             return uniqueValues.ToList();
         }
 
+        #endregion
+
+        // Create and manage the dictionary to manage additional fields mapping
+        public static Dictionary<string, string> CreateMappingDictionary(ListView mappingListView, string cardSetField, string defaultValue)
+        {
+            try
+            {
+                // Initialize the dictionary that will hold the mappings for the specified field
+                var fieldMappingDict = new Dictionary<string, string>();
+
+                // Get the mappings from the specified ListView
+                var mappings = mappingListView.ItemsSource as List<ValueMapping>;
+
+                if (mappings == null)
+                {
+                    Debug.WriteLine("No mappings found.");
+                    return fieldMappingDict;
+                }
+
+                // Populate the dictionary with mappings from the ListView
+                foreach (var mapping in mappings)
+                {
+                    if (!string.IsNullOrEmpty(mapping.CsvValue))
+                    {
+                        var databaseValue = mapping.SelectedCardSetValue ?? defaultValue;
+                        fieldMappingDict[mapping.CsvValue] = databaseValue;
+                    }
+                }
+
+                return fieldMappingDict;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error creating mapping dictionary: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return new Dictionary<string, string>();
+            }
+        }
+        private static void StoreMapping(string cardSetField, Dictionary<string, string> mappingDict, bool isMapped)
+        {
+            if (!isMapped)
+            {
+                // Mark as unmapped with a special entry
+                mappingDict["unmapped_field"] = "unmapped";
+            }
+
+            FieldMappings[cardSetField] = mappingDict;
+        }
+        private static void MarkFieldAsUnmapped(string cardSetField)
+        {
+            var mappingDict = new Dictionary<string, string>
+            {
+                ["unmapped_field"] = "unmapped"
+            };
+
+            StoreMapping(cardSetField, mappingDict, false);
+        }
+
+        #endregion
+
+        #region Import Wizard - Misc. shared methods
+
         // Try to guess which column name maps to cardItemsToAdd field by looking for matching column/field names
         private static string? GuessMapping(string searchValue, List<string> options)
         {
             var lowerSearchValue = searchValue.ToLower();
+
+            // Dictionary of educated guesses for each search value
+            var educatedGuesses = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "Card Name", new List<string> { "Name", "Card", "CardName" } },
+        { "Set Name", new List<string> { "Set", "Edition", "Edition Name" } },
+        { "Set Code", new List<string> { "Code", "Edition Code" } },
+        { "Card Finish", new List<string> { "Finish", "Foil", "Printing" } },
+        { "Condition", new List<string> { "Card Condition" } },
+        { "Cards Owned", new List<string> { "#", "Quantity", "Count" } },
+        { "Cards For Trade/Selling", new List<string> { "Trade", "Sell" } },
+        { "Language", new List<string> { "Card Language" } }
+    };
+
+            // Check if there are specific guesses for the search value
+            if (educatedGuesses.TryGetValue(searchValue, out var guesses))
+            {
+                // Try to match any of the educated guesses with the options
+                foreach (var guess in guesses)
+                {
+                    var matchedOption = options.FirstOrDefault(option => option.Equals(guess, StringComparison.OrdinalIgnoreCase));
+                    if (matchedOption != null)
+                    {
+                        return matchedOption;
+                    }
+                }
+            }
+
+            // Fallback to general matching by checking if any option contains the search value
             return options.FirstOrDefault(option => option.ToLower().Contains(lowerSearchValue));
         }
 
-
-
-
-
-
-
-
-        #endregion
-
-
-        private static void GoToAdditionalFieldsMapping()
+        // Rename fields on tempImport object
+        private static void RenameFieldsInTempImport(List<ColumnMapping> mappings)
         {
-            PopulateColumnMappingListView(MainWindow.CurrentInstance.AddionalFieldsMappingListView, AdditionalFieldsValueMapping);
-            MainWindow.CurrentInstance.GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
-        }
-        private static async Task GoToAdditionalFieldMappingGeneric(string cardSetField, ListView listView, string tableField, Grid grid)
-        {
-            // Find the corresponding CSV header for the given cardSetField in _mappings
-            var csvHeader = _mappings?.FirstOrDefault(header => header == cardSetField);
-
-            if (!string.IsNullOrEmpty(csvHeader))
+            foreach (var mapping in mappings)
             {
-                if (await PopulateAdditionalFieldsMappingListViewAsync(csvHeader, !string.IsNullOrEmpty(tableField), tableField, listView))
+                if (!string.IsNullOrEmpty(mapping.CsvHeader) && !string.IsNullOrEmpty(mapping.CardSetField))
                 {
-                    grid.Visibility = Visibility.Visible;
-                }
+                    // Rename fields in tempImport based on the mapping
+                    foreach (var item in tempImport)
+                    {
+                        if (item.Fields.ContainsKey(mapping.CsvHeader))
+                        {
+                            // Get the value associated with the old field name
+                            var value = item.Fields[mapping.CsvHeader];
 
-            }
-            else
-            {
-                Debug.WriteLine($"Mapping for {cardSetField} not found.");
+                            // Remove the old field name
+                            item.Fields.Remove(mapping.CsvHeader);
+
+                            // Add the new field name with the value
+                            item.Fields[mapping.CardSetField] = value;
+                        }
+                    }
+                    Debug.WriteLine($"CSV Header '{mapping.CsvHeader}' renamed to '{mapping.CardSetField}'");
+                }
             }
         }
 
+        // Generic method to populate a mapping listview from anywhere in the wizard
+        private static void PopulateColumnMappingListView(ListView listView, List<string> cardSetFields)
+        {
+            try
+            {
+                var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
 
+                var mappingItems = cardSetFields.Select(field => new ColumnMapping
+                {
+                    CardSetField = field,
+                    CsvHeaders = csvHeaders,
+                    CsvHeader = GuessMapping(field, csvHeaders)
+                }).ToList();
 
+                listView.ItemsSource = mappingItems;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error populating mapping list view: {ex.Message}");
+                MessageBox.Show($"Error populating mapping list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // Debug methods
         public static void DebugFieldMappings()
         {
             try
@@ -1577,19 +1576,11 @@ namespace CollectaMundo
             // Number of tempImport items with multiple uuids
             int multipleUuidItems = tempImport.Count(item => item.Fields.ContainsKey("uuids"));
 
-            // Total number of items in cardItemsToAdd
-            int totalCardItemsToAdd = AddToCollectionManager.Instance.cardItemsToAdd.Count;
-
             // Debug write lines
             Debug.WriteLine($"Total number of items in tempImport: {totalTempImportItems}");
             Debug.WriteLine($"Number of tempImport items with single uuid: {singleUuidItems}");
             Debug.WriteLine($"Number of tempImport items with multiple uuids: {multipleUuidItems}");
-            Debug.WriteLine($"Total number of items in cardItemsToAdd: {totalCardItemsToAdd}");
         }
+        #endregion
     }
-
-
 }
-
-
-
