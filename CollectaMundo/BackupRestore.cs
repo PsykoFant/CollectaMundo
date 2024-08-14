@@ -1520,8 +1520,8 @@ namespace CollectaMundo
         { "Set Code", new List<string> { "Code", "Edition Code" } },
         { "Card Finish", new List<string> { "Finish", "Foil", "Printing" } },
         { "Condition", new List<string> { "Card Condition" } },
-        { "Cards Owned", new List<string> { "#", "Quantity", "Count" } },
-        { "Cards For Trade/Selling", new List<string> { "Trade", "Sell" } },
+        { "Cards Owned", new List<string> { "#", "Quantity", "Count", "Card Count" } },
+        { "Cards For Trade/Selling", new List<string> { "Trade", "Sell", "Tradelist", "Tradelist Count" } },
         { "Language", new List<string> { "Card Language" } }
     };
 
