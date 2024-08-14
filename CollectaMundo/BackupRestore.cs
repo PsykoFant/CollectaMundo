@@ -391,6 +391,9 @@ namespace CollectaMundo
         #region Import Wizard - Step 2a - Find UUIDs - Mapping by card ID
         public static async Task ButtonIdColumnMappingNext()
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             try
             {
                 await ProcessIdColumnMappingsAsync();
@@ -413,18 +416,22 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
 
                 //DebugAllItems();
-                DebugImportProcess();
+                //DebugImportProcess();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error field by ID column: {ex.Message}");
                 MessageBox.Show($"Error field by ID column: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally
+            {
+                stopwatch.Stop();
+                Debug.WriteLine($"ButtonIdColumnMappingNext completed in {stopwatch.ElapsedMilliseconds} ms");
+            }
         }
         private static async Task ProcessIdColumnMappingsAsync()
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
+
 
             try
             {
@@ -541,11 +548,11 @@ namespace CollectaMundo
                     }
                 }
 
-                Debug.WriteLine("csvToUuidsMap contents:");
-                foreach (var kvp in csvToUuidsMap)
-                {
-                    Debug.WriteLine($"CSV Value: {kvp.Key}, UUIDs: {string.Join(", ", kvp.Value)}");
-                }
+                //Debug.WriteLine("csvToUuidsMap contents:");
+                //foreach (var kvp in csvToUuidsMap)
+                //{
+                //    Debug.WriteLine($"CSV Value: {kvp.Key}, UUIDs: {string.Join(", ", kvp.Value)}");
+                //}
 
                 // Process UUID results in parallel
                 await Task.WhenAll(tempImport.Select(tempItem =>
@@ -565,17 +572,17 @@ namespace CollectaMundo
             finally
             {
                 DBAccess.CloseConnection();
-                stopwatch.Stop();
-                Debug.WriteLine($"ProcessIdColumnMappingsAsync completed in {stopwatch.ElapsedMilliseconds} ms");
             }
         }
-
 
         #endregion
 
         #region Import Wizard - Step 2b - Find UUIDs - Mapping by card name, set name and set code        
         public static async Task ButtonNameAndSetMappingNext()
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             /*
             --Assumptions--
             An item in tempImport object can have a single uuid field with value
@@ -633,7 +640,6 @@ namespace CollectaMundo
             }
             try
             {
-
                 // Search for unique uuids based on selected csv-headings for card name, set, and set code
                 await SearchByCardNameOrSet(mappings);
 
@@ -672,13 +678,19 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
 
                 //DebugAllItems();
-                DebugImportProcess();
+                //DebugImportProcess();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error processing field using card and set name and set code: {ex.Message}");
                 MessageBox.Show($"Error processing field using card and set name and set code: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally
+            {
+                stopwatch.Stop();
+                Debug.WriteLine($"ButtonNameAndSetMappingNext completed in {stopwatch.ElapsedMilliseconds} ms");
+            }
+
         }
         private static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
         {
@@ -746,7 +758,7 @@ namespace CollectaMundo
 
                 // Rename the CSV columns in tempImport based on the mappings
                 RenameFieldsInTempImport(mappings);
-                DebugItemsWithoutUuid();
+                //DebugItemsWithoutUuid();
             }
             catch (Exception ex)
             {
@@ -804,7 +816,7 @@ namespace CollectaMundo
 
             if (cardsSetCode == null && tokenSetCode == null)
             {
-                Debug.WriteLine($"Fail: SetCode was null for {setName}");
+                //Debug.WriteLine($"Fail: SetCode was null for {setName}");
                 return false;
             }
 
@@ -1283,7 +1295,7 @@ namespace CollectaMundo
             DisplayItemsWithoutUuidInTextBlock();
             MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Visible;
 
-            DebugFieldMappings();
+            //DebugFieldMappings();
             DebugItemsWithoutUuid();
         }
 
@@ -1581,7 +1593,6 @@ namespace CollectaMundo
             }
         }
 
-
         private static void DisplayItemsWithoutUuidInTextBlock()
         {
             // Clear the TextBlock content first
@@ -1592,23 +1603,16 @@ namespace CollectaMundo
                 // Check if the item does not have a "uuid" field or if the "uuid" field is empty
                 if (!item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
                 {
-                    // Create a string to hold the details of the item
-                    StringBuilder itemDetails = new StringBuilder();
+                    // Try to get the "Card Name", "Set Name", and "Set Code" values
+                    item.Fields.TryGetValue("Card Name", out var cardName);
+                    item.Fields.TryGetValue("Set Name", out var setName);
+                    item.Fields.TryGetValue("Set Code", out var setCode);
 
-                    foreach (var field in item.Fields)
-                    {
-                        itemDetails.AppendLine($"{field.Key}: {field.Value}");
-                    }
-
-                    // Add a newline after each item
-                    itemDetails.AppendLine();
-
-                    // Append the item details to the TextBlock
-                    MainWindow.CurrentInstance.ItemsUnableToImportTextBlock.Text += itemDetails.ToString();
+                    // Append the details to the TextBlock, separating them by commas
+                    MainWindow.CurrentInstance.ItemsUnableToImportTextBlock.Text += $"{cardName}, {setName}, {setCode}\n";
                 }
             }
         }
-
         private static void DebugItemsWithoutUuid()
         {
             foreach (var item in tempImport)
