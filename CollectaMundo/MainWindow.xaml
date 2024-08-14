@@ -794,9 +794,10 @@
                             </ListView>
                             <Button x:Name="ButtonLanguageMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ButtonLanguageMappingNext_Click"/>
                         </Grid>
-                        <Grid x:Name="GridImportConfirm" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                        <Grid x:Name="GridImportConfirm" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed"   >
                             <Label x:Name="ImportConfirmLabel" Content="Confirm" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
-                            <Button x:Name="ButtonImportConfirm" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top"/>
+                            <Button x:Name="ButtonImportConfirm" Content="Next" HorizontalAlignment="Left" Margin="1010,275,0,0" VerticalAlignment="Top"/>
+                            <TextBlock x:Name="ItemsUnableToImportTextBlock" HorizontalAlignment="Center" Margin="0,285,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="270" Width="508"/>
                         </Grid>
                     </Grid>
                 </Grid>

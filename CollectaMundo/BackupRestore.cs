@@ -709,7 +709,7 @@ namespace CollectaMundo
                 {
                     if (!item.Fields.TryGetValue(nameCsvHeader, out string? name))
                     {
-                        Debug.WriteLine($"Fail: Could not find field for card name with header {nameCsvHeader}");
+                        //Debug.WriteLine($"Fail: Could not find field for card name with header {nameCsvHeader}");
                         continue;
                     }
 
@@ -724,28 +724,29 @@ namespace CollectaMundo
                             matchFound = await SearchBySetName(name, setName, item);
                         }
 
-                        if (!matchFound)
-                        {
-                            Debug.WriteLine($"Fail: Could not find a match by set code {setCode} for card name {name}");
-                        }
+                        //if (!matchFound)
+                        //{
+                        //    Debug.WriteLine($"Fail: Could not find a match by set code {setCode} for card name {name}");
+                        //}
                     }
                     else if (setNameCsvHeader != null && item.Fields.TryGetValue(setNameCsvHeader, out string? setName))
                     {
                         matchFound = await SearchBySetName(name, setName, item);
 
-                        if (!matchFound)
-                        {
-                            Debug.WriteLine($"Fail: Could not find a match by set name {setName} for card name {name}");
-                        }
+                        //if (!matchFound)
+                        //{
+                        //    Debug.WriteLine($"Fail: Could not find a match by set name {setName} for card name {name}");
+                        //}
                     }
-                    else
-                    {
-                        Debug.WriteLine($"Fail: Neither set code nor set name mappings found for card name {name}");
-                    }
+                    //else
+                    //{
+                    //    Debug.WriteLine($"Fail: Neither set code nor set name mappings found for card name {name}");
+                    //}
                 }
 
                 // Rename the CSV columns in tempImport based on the mappings
                 RenameFieldsInTempImport(mappings);
+                DebugItemsWithoutUuid();
             }
             catch (Exception ex)
             {
@@ -765,7 +766,7 @@ namespace CollectaMundo
                 setName = setName.Substring(8);
             }
 
-            Debug.WriteLine($"Trying to search by set name: {setName}");
+            //Debug.WriteLine($"Trying to search by set name: {setName}");
 
             // Query to find the set code from the sets table based on the set name
             string cardsSetCodeQuery = "SELECT code FROM sets WHERE name = @setName";
@@ -829,7 +830,7 @@ namespace CollectaMundo
                     name = name.Split(new[] { " // " }, StringSplitOptions.None)[0];
                 }
 
-                // Remove "Extras: " from the beginning of setName if it exists
+                // Remove "Art Card: " from the beginning of setName if it exists
                 if (name.StartsWith("Art Card: ", StringComparison.OrdinalIgnoreCase))
                 {
                     name = name.Substring(10);
@@ -842,13 +843,12 @@ namespace CollectaMundo
                 }
             }
 
-            Debug.WriteLine($"Fail: Could not find a match for {name} in set {setName}");
+            //Debug.WriteLine($"Fail: Could not find a match for {name} in set {setName}");
             return false;
         }
-
         private static async Task<bool> SearchBySetCode(string name, string setCode, TempCardItem item)
         {
-            Debug.WriteLine($"Trying to search by set code: {setCode}");
+            //Debug.WriteLine($"Trying to search by set code: {setCode}");
 
             // We are trying three combinations:
             // a regular card with a regular set code
@@ -910,7 +910,7 @@ namespace CollectaMundo
                 SELECT uuid FROM {table} 
                 WHERE faceName = @cardName AND setCode = @setCode AND (side = 'a' OR side IS NULL)";
 
-            Debug.WriteLine($"Trying to search {table} for card name {cardName} and setCode {setCode}");
+            //Debug.WriteLine($"Trying to search {table} for card name {cardName} and setCode {setCode}");
 
             List<string> uuids = new List<string>();
 
@@ -1280,9 +1280,11 @@ namespace CollectaMundo
             StoreMapping("Language", languageMappings, true);
 
             MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Collapsed;
+            DisplayItemsWithoutUuidInTextBlock();
             MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Visible;
 
             DebugFieldMappings();
+            DebugItemsWithoutUuid();
         }
 
         #endregion
@@ -1578,6 +1580,55 @@ namespace CollectaMundo
                 MessageBox.Show($"Error populating field list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+
+        private static void DisplayItemsWithoutUuidInTextBlock()
+        {
+            // Clear the TextBlock content first
+            MainWindow.CurrentInstance.ItemsUnableToImportTextBlock.Text = "Unable to find matching cards in the database for the following items:\n\n";
+
+            foreach (var item in tempImport)
+            {
+                // Check if the item does not have a "uuid" field or if the "uuid" field is empty
+                if (!item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
+                {
+                    // Create a string to hold the details of the item
+                    StringBuilder itemDetails = new StringBuilder();
+
+                    foreach (var field in item.Fields)
+                    {
+                        itemDetails.AppendLine($"{field.Key}: {field.Value}");
+                    }
+
+                    // Add a newline after each item
+                    itemDetails.AppendLine();
+
+                    // Append the item details to the TextBlock
+                    MainWindow.CurrentInstance.ItemsUnableToImportTextBlock.Text += itemDetails.ToString();
+                }
+            }
+        }
+
+        private static void DebugItemsWithoutUuid()
+        {
+            foreach (var item in tempImport)
+            {
+                // Check if the item does not have a "uuid" field or if the "uuid" field is empty
+                if (!item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
+                {
+                    // Output the details of the item to the debug console
+                    Debug.WriteLine("Item without UUID:");
+
+                    foreach (var field in item.Fields)
+                    {
+                        Debug.WriteLine($"{field.Key}: {field.Value}");
+                    }
+
+                    Debug.WriteLine("------------------------------");
+                }
+            }
+        }
+
 
         // Debug methods
         public static void DebugFieldMappings()
