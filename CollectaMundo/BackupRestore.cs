@@ -340,8 +340,8 @@ namespace CollectaMundo
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error populating ID column mapping list view: {ex.Message}");
-                MessageBox.Show($"Error populating ID column mapping list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error populating ID column field list view: {ex.Message}");
+                MessageBox.Show($"Error populating ID column field list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         private static List<string> GetCardIdentifierColumns()
@@ -412,12 +412,13 @@ namespace CollectaMundo
                 }
                 MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
 
+                //DebugAllItems();
                 DebugImportProcess();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error mapping by ID column: {ex.Message}");
-                MessageBox.Show($"Error mapping by ID column: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error field by ID column: {ex.Message}");
+                MessageBox.Show($"Error field by ID column: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         private static async Task ProcessIdColumnMappingsAsync()
@@ -427,7 +428,7 @@ namespace CollectaMundo
 
             try
             {
-                // Get the mapping from IdColumnMappingListView
+                // Get the field from IdColumnMappingListView
                 var idColumnMapping = MainWindow.CurrentInstance.IdColumnMappingListView.ItemsSource as List<ColumnMapping>;
                 if (idColumnMapping == null || !idColumnMapping.Any())
                 {
@@ -453,7 +454,7 @@ namespace CollectaMundo
 
                 // Use a StringBuilder to build a batch SQL query
                 var batchQueryBuilder = new StringBuilder(@"
-                    SELECT ci.uuid, ci.")
+                         SELECT ci.uuid, ci.")
                     .Append(databaseField)
                     .Append(@" 
                         FROM cardIdentifiers ci
@@ -461,9 +462,23 @@ namespace CollectaMundo
                         WHERE (c.side IS NULL OR c.side = 'a') 
                         AND ci.")
                     .Append(databaseField)
-                    .Append(" IN (");
+                    .Append(@" IN (");
+
+                // Prepare a similar batch query for tokens
+                var tokenQueryBuilder = new StringBuilder(@"
+                        UNION ALL
+                        SELECT ti.uuid, ti.")
+                    .Append(databaseField)
+                    .Append(@"
+                        FROM tokenIdentifiers ti
+                        INNER JOIN tokens t ON ti.uuid = t.uuid
+                        WHERE (t.side IS NULL OR t.side = 'a') 
+                        AND ti.")
+                    .Append(databaseField)
+                    .Append(@" IN (");
 
                 bool hasValues = false;
+                int index = 0;
                 foreach (var tempItem in tempImport)
                 {
                     if (tempItem.Fields.TryGetValue(csvHeader, out var csvValue) && !string.IsNullOrEmpty(csvValue))
@@ -471,9 +486,9 @@ namespace CollectaMundo
                         if (!csvToUuidsMap.ContainsKey(csvValue))
                         {
                             csvToUuidsMap[csvValue] = new List<string>();
-                            batchQueryBuilder.Append("@csvValue_")
-                                             .Append(csvToUuidsMap.Count - 1)
-                                             .Append(",");
+                            batchQueryBuilder.Append($"@csvValue_{index},");
+                            tokenQueryBuilder.Append($"@csvValue_{index},");
+                            index++;
                             hasValues = true;
                         }
                     }
@@ -485,14 +500,19 @@ namespace CollectaMundo
                     return;
                 }
 
-                batchQueryBuilder.Length--; // Remove the trailing comma
-                batchQueryBuilder.Append(");");
+                // Remove the trailing comma and close the "IN" clause
+                batchQueryBuilder.Length--;
+                batchQueryBuilder.Append(")");
 
-                Debug.WriteLine($"batchQueryBuilder: {batchQueryBuilder}");
+                tokenQueryBuilder.Length--;
+                tokenQueryBuilder.Append(")");
+
+                // Combine both parts into one query
+                batchQueryBuilder.Append(tokenQueryBuilder);
 
                 using (var command = new SQLiteCommand(batchQueryBuilder.ToString(), DBAccess.connection))
                 {
-                    int index = 0;
+                    index = 0;
                     foreach (var csvValue in csvToUuidsMap.Keys)
                     {
                         command.Parameters.AddWithValue($"@csvValue_{index}", csvValue);
@@ -536,12 +556,11 @@ namespace CollectaMundo
                     }
                     return Task.CompletedTask;
                 }));
-
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error processing id column mapping: {ex.Message}");
-                MessageBox.Show($"Error processing id column mapping: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error processing id column field: {ex.Message}");
+                MessageBox.Show($"Error processing id column field: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
@@ -550,6 +569,7 @@ namespace CollectaMundo
                 Debug.WriteLine($"ProcessIdColumnMappingsAsync completed in {stopwatch.ElapsedMilliseconds} ms");
             }
         }
+
 
         #endregion
 
@@ -573,21 +593,21 @@ namespace CollectaMundo
             --Actions-- 
             Depending on different combinations, three possible actions should happen:
 
-            1. Go to Multiple uuids mapping screen (if at least one item has multiple uuids)
-            2. Go to Additional fields mapping screen (if at least one item has single uuid OR all items have single uuid AND no items have multiple uuids)
+            1. Go to Multiple uuids field screen (if at least one item has multiple uuids)
+            2. Go to Additional fields field screen (if at least one item has single uuid OR all items have single uuid AND no items have multiple uuids)
             0. Error screen (if no items have single uuid AND no item has multiple uuids)
 
             --Possible scenarios--
             No items have have single uuid, no items have multiple uuids --> 0. Error screen
-            No items have single uuid, at least one item has multiple uuids --> 1. Go to Multiple uuids mapping screen
-            All items have single uuid --> 2. Go to Additional fields mapping screen
-            At least one item has single uuid, no items have multiple uuids --> 2. Go to Additional fields mapping screen
-            At least one item has single uuids, at least one item has multiple uuids --> 1. Go to Multiple uuids mapping screen
+            No items have single uuid, at least one item has multiple uuids --> 1. Go to Multiple uuids field screen
+            All items have single uuid --> 2. Go to Additional fields field screen
+            At least one item has single uuid, no items have multiple uuids --> 2. Go to Additional fields field screen
+            At least one item has single uuids, at least one item has multiple uuids --> 1. Go to Multiple uuids field screen
 
             --Control Flow Pseudocode--
             Assert for invalid scenarios
             All items have single uuid?
-                True: 2. Go to Additional fields mapping screen
+                True: 2. Go to Additional fields field screen
                 False:
                     At least one item has multiple uuids?
                         True: 1. Go to Multiple uuids screen select
@@ -650,11 +670,14 @@ namespace CollectaMundo
                     }
                 }
                 MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
+
+                //DebugAllItems();
+                DebugImportProcess();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error processing mapping using card and set name and set code: {ex.Message}");
-                MessageBox.Show($"Error processing mapping using card and set name and set code: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error processing field using card and set name and set code: {ex.Message}");
+                MessageBox.Show($"Error processing field using card and set name and set code: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         private static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
@@ -678,7 +701,7 @@ namespace CollectaMundo
 
                 if (nameCsvHeader == null)
                 {
-                    throw new InvalidOperationException("Name mapping not found.");
+                    throw new InvalidOperationException("Name field not found.");
                 }
 
                 // Loop through all items in tempImport that do not already have a uuid value
@@ -686,7 +709,7 @@ namespace CollectaMundo
                 {
                     if (!item.Fields.TryGetValue(nameCsvHeader, out string? name))
                     {
-                        Debug.WriteLine($"Fail: Could not find mapping for card name with header {nameCsvHeader}");
+                        Debug.WriteLine($"Fail: Could not find field for card name with header {nameCsvHeader}");
                         continue;
                     }
 
@@ -736,7 +759,13 @@ namespace CollectaMundo
         }
         private static async Task<bool> SearchBySetName(string name, string setName, TempCardItem item)
         {
-            Debug.WriteLine($"Trying to search by set setName: {setName}");
+            // Remove "Extras: " from the beginning of setName if it exists
+            if (setName.StartsWith("Extras: ", StringComparison.OrdinalIgnoreCase))
+            {
+                setName = setName.Substring(8);
+            }
+
+            Debug.WriteLine($"Trying to search by set name: {setName}");
 
             // Query to find the set code from the sets table based on the set name
             string cardsSetCodeQuery = "SELECT code FROM sets WHERE name = @setName";
@@ -755,7 +784,7 @@ namespace CollectaMundo
                 }
             }
 
-            // Query to find the set tokensSetCode from the sets table based on the set name
+            // Query to find the token set code from the sets table based on the set name
             string tokenSetCodeQuery = "SELECT tokenSetCode FROM sets WHERE name = @setName";
             string? tokenSetCode = null;
 
@@ -789,20 +818,34 @@ namespace CollectaMundo
                 {
                     return ProcessUuidResults(uuids, item);
                 }
-                // If nothing is found is table cards, try the same in table tokens
-                else if (tokenSetCode != null)
+            }
+
+            // If nothing is found in table cards, try the same in table tokens
+            if (tokenSetCode != null)
+            {
+                // Modify the name if it contains " // "
+                if (name.Contains(" // "))
                 {
-                    uuids = await SearchTableForUuidAsync(name, "tokens", tokenSetCode);
-                    if (uuids.Count > 0)
-                    {
-                        return ProcessUuidResults(uuids, item);
-                    }
+                    name = name.Split(new[] { " // " }, StringSplitOptions.None)[0];
+                }
+
+                // Remove "Extras: " from the beginning of setName if it exists
+                if (name.StartsWith("Art Card: ", StringComparison.OrdinalIgnoreCase))
+                {
+                    name = name.Substring(10);
+                }
+
+                uuids = await SearchTableForUuidAsync(name, "tokens", tokenSetCode);
+                if (uuids.Count > 0)
+                {
+                    return ProcessUuidResults(uuids, item);
                 }
             }
 
             Debug.WriteLine($"Fail: Could not find a match for {name} in set {setName}");
             return false;
         }
+
         private static async Task<bool> SearchBySetCode(string name, string setCode, TempCardItem item)
         {
             Debug.WriteLine($"Trying to search by set code: {setCode}");
@@ -860,7 +903,12 @@ namespace CollectaMundo
         private static async Task<List<string>> SearchTableForUuidAsync(string cardName, string table, string setCode)
         {
             // Construct the query string with the table name
-            string query = $"SELECT uuid FROM {table} WHERE name = @cardName AND setCode = @setCode AND (side = 'a' OR side IS NULL)";
+            string query = $@"
+                SELECT uuid FROM {table} 
+                WHERE name = @cardName AND setCode = @setCode AND (side = 'a' OR side IS NULL)
+                UNION ALL
+                SELECT uuid FROM {table} 
+                WHERE faceName = @cardName AND setCode = @setCode AND (side = 'a' OR side IS NULL)";
 
             Debug.WriteLine($"Trying to search {table} for card name {cardName} and setCode {setCode}");
 
@@ -887,7 +935,7 @@ namespace CollectaMundo
             return uuids;
         }
 
-        // Utility methods to help determine where to go after card name and set name/set code mapping
+        // Utility methods to help determine where to go after card name and set name/set code field
         private static bool AllItemsHaveUuid()
         {
             foreach (var tempItem in tempImport)
@@ -1063,7 +1111,6 @@ namespace CollectaMundo
             {
                 string singleUuid = uuids[0];
                 item.Fields["uuid"] = singleUuid;
-                Debug.WriteLine("Found a single uuid");
                 return true;
             }
             else if (uuids.Count > 1)
@@ -1080,12 +1127,10 @@ namespace CollectaMundo
                     sb.Append(uuids[i]);
                 }
                 item.Fields["uuids"] = sb.ToString();
-                Debug.WriteLine("Found multiple uuids");
                 return true;
             }
             else
             {
-                Debug.WriteLine("Found no uuids");
                 return false;
             }
         }
@@ -1110,17 +1155,30 @@ namespace CollectaMundo
             // Store the CardSetField values in _mappings (List<string>)
             _mappings = mappingsList.Select(m => m.CardSetField ?? string.Empty).ToList();
 
-            // Check if "Condition", "Card Finish", "Cards Owned", "Cards For Trade/Selling", and "Language" have a value selected
-
-            foreach (var mapping in _mappings)
+            // Check if the additional fields have a value selected
+            foreach (var field in AdditionalFieldsList)
             {
-                isConditionMapped = IsFieldMapped(mappingsList, mapping);
-                isFinishMapped = IsFieldMapped(mappingsList, mapping);
-                isCardsOwnedMapped = IsFieldMapped(mappingsList, mapping);
-                isCardsForTradedMapped = IsFieldMapped(mappingsList, mapping);
-                isLanguageMapped = IsFieldMapped(mappingsList, mapping);
+                switch (field)
+                {
+                    case "Condition":
+                        isConditionMapped = IsFieldMapped(mappingsList, field);
+                        break;
+                    case "Card Finish":
+                        isFinishMapped = IsFieldMapped(mappingsList, field);
+                        break;
+                    case "Cards Owned":
+                        isCardsOwnedMapped = IsFieldMapped(mappingsList, field);
+                        break;
+                    case "Cards For Trade/Selling":
+                        isCardsForTradedMapped = IsFieldMapped(mappingsList, field);
+                        break;
+                    case "Language":
+                        isLanguageMapped = IsFieldMapped(mappingsList, field);
+                        break;
+                    default:
+                        break;
+                }
             }
-
 
             MainWindow.CurrentInstance.GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
 
@@ -1129,7 +1187,6 @@ namespace CollectaMundo
             {
                 MarkFieldAsUnmapped("Cards Owned");
             }
-
 
             if (!isCardsForTradedMapped)
             {
@@ -1166,7 +1223,7 @@ namespace CollectaMundo
         }
         public static async Task ButtonConditionMappingNext()
         {
-            // Generate the mapping dictionary for "Condition"
+            // Generate the field dictionary for "Condition"
             var conditionMappings = CreateMappingDictionary(
                 MainWindow.CurrentInstance.ConditionsMappingListView,
                 "Condition",
@@ -1192,7 +1249,7 @@ namespace CollectaMundo
         }
         public static async Task ButtonFinishesMappingNext()
         {
-            // Generate the mapping dictionary for "Card Finish"
+            // Generate the field dictionary for "Card Finish"
             var finishesMappings = CreateMappingDictionary(
                 MainWindow.CurrentInstance.FinishesMappingListView,
                 "Card Finish",
@@ -1213,7 +1270,7 @@ namespace CollectaMundo
         }
         public static void ButtonLanguageMappingNext()
         {
-            // Generate the mapping dictionary for "Language"
+            // Generate the field dictionary for "Language"
             var languageMappings = CreateMappingDictionary(
                 MainWindow.CurrentInstance.LanguageMappingListView,
                 "Language",
@@ -1228,18 +1285,20 @@ namespace CollectaMundo
             DebugFieldMappings();
         }
 
+        #endregion
+
         #region Import Wizard - Step 3 - Map additional fields - helper methods
-        // Determine which additional field mapping screen to go to
+        // Determine which additional field field screen to go to
         private static bool IsFieldMapped(List<ColumnMapping> mappingsList, string cardSetField)
         {
-            // Find the mapping for the specified cardSetField
+            // Find the field for the specified cardSetField
             var fieldMapping = mappingsList?.FirstOrDefault(mapping => mapping.CardSetField == cardSetField);
 
-            // Return true if the mapping exists and the CsvHeader is not null or empty
+            // Return true if the field exists and the CsvHeader is not null or empty
             return fieldMapping != null && !string.IsNullOrEmpty(fieldMapping.CsvHeader);
         }
 
-        // Go to the next additional field mapping
+        // Go to the next additional field field
         private static async Task GoToAdditionalFieldMappingGeneric(string cardSetField, ListView listView, string tableField, Grid grid)
         {
             // Find the corresponding CSV header for the given cardSetField in _mappings
@@ -1259,7 +1318,7 @@ namespace CollectaMundo
             }
         }
 
-        // Populating additional fields mapping UI elements
+        // Populating additional fields field UI elements
         private static async Task<bool> PopulateAdditionalFieldsMappingListViewAsync(string csvHeader, bool fetchFromDatabase, string dbColumn, ListView listView)
         {
             try
@@ -1307,7 +1366,7 @@ namespace CollectaMundo
                     }
                     return false;
                 }
-                // Create the mapping items for the list view
+                // Create the field items for the list view
                 var mappingItems = csvValues
                     .Select(csvValue => new ValueMapping
                     {
@@ -1317,14 +1376,14 @@ namespace CollectaMundo
                     })
                     .ToList();
 
-                // Populate the list view with the mapping items
+                // Populate the list view with the field items
                 listView.ItemsSource = mappingItems;
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error initializing mapping list view: {ex.Message}");
-                MessageBox.Show($"Error initializing mapping list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error initializing field list view: {ex.Message}");
+                MessageBox.Show($"Error initializing field list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
         }
@@ -1375,9 +1434,7 @@ namespace CollectaMundo
             return uniqueValues.ToList();
         }
 
-        #endregion
-
-        // Create and manage the dictionary to manage additional fields mapping
+        // Create and manage the dictionary to manage additional fields field
         public static Dictionary<string, string> CreateMappingDictionary(ListView mappingListView, string cardSetField, string defaultValue)
         {
             try
@@ -1408,7 +1465,7 @@ namespace CollectaMundo
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error creating mapping dictionary: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error creating field dictionary: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return new Dictionary<string, string>();
             }
         }
@@ -1479,7 +1536,7 @@ namespace CollectaMundo
             {
                 if (!string.IsNullOrEmpty(mapping.CsvHeader) && !string.IsNullOrEmpty(mapping.CardSetField))
                 {
-                    // Rename fields in tempImport based on the mapping
+                    // Rename fields in tempImport based on the field
                     foreach (var item in tempImport)
                     {
                         if (item.Fields.ContainsKey(mapping.CsvHeader))
@@ -1499,7 +1556,7 @@ namespace CollectaMundo
             }
         }
 
-        // Generic method to populate a mapping listview from anywhere in the wizard
+        // Generic method to populate a field listview from anywhere in the wizard
         private static void PopulateColumnMappingListView(ListView listView, List<string> cardSetFields)
         {
             try
@@ -1517,8 +1574,8 @@ namespace CollectaMundo
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error populating mapping list view: {ex.Message}");
-                MessageBox.Show($"Error populating mapping list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error populating field list view: {ex.Message}");
+                MessageBox.Show($"Error populating field list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1558,12 +1615,6 @@ namespace CollectaMundo
                 }
                 Debug.WriteLine("\n");
             }
-            //Debug.WriteLine("\n");
-            //Debug.WriteLine("Debugging cardItemsToAdd items:");
-            //foreach (var cardItem in AddToCollectionManager.Instance.cardItemsToAdd)
-            //{
-            //    Debug.WriteLine($"CardItem - Uuid: {cardItem.Uuid}, CardsOwned: {cardItem.CardsOwned}, CardsForTrade: {cardItem.CardsForTrade}, Condition: {cardItem.SelectedCondition}, Finish: {cardItem.SelectedFinish}, Language: {cardItem.Language}");
-            //}
         }
         private static void DebugImportProcess()
         {
