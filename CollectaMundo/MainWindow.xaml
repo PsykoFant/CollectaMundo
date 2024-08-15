@@ -584,7 +584,7 @@
             </Grid>
             <Grid x:Name="GridUtilitiesSection" Width="1320" HorizontalAlignment="Center" VerticalAlignment="Top">
                 <Grid x:Name="GridUtilsScreen" HorizontalAlignment="Center" Width="1320">
-                    <Grid x:Name="GridImportWizard" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                    <Grid x:Name="GridImportWizard" HorizontalAlignment="Center" Width="1320" Visibility="Visible">
                         <Grid x:Name="GridImportIdColumnMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
                             <Label x:Name="IdColumnLabel" Content="Map ID column" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
                             <ListView x:Name="IdColumnMappingListView" Margin="0,186,0,0" Width="575" Height="128" HorizontalAlignment="Center" VerticalAlignment="Top">
@@ -794,10 +794,11 @@
                             </ListView>
                             <Button x:Name="ButtonLanguageMappingNext" Content="Next" HorizontalAlignment="Left" Margin="953,271,0,0" VerticalAlignment="Top" Click="ButtonLanguageMappingNext_Click"/>
                         </Grid>
-                        <Grid x:Name="GridImportConfirm" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed"   >
-                            <Label x:Name="ImportConfirmLabel" Content="Confirm" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
+                        <Grid x:Name="GridImportConfirm" HorizontalAlignment="Center" Width="1320" Visibility="Visible"   >
+                            <Label x:Name="ImportConfirmLabel" Content="Confirm" HorizontalAlignment="Center" Margin="0,71,0,0" VerticalAlignment="Top"/>
                             <Button x:Name="ButtonImportConfirm" Content="Next" HorizontalAlignment="Left" Margin="1010,275,0,0" VerticalAlignment="Top"/>
-                            <TextBlock x:Name="ItemsUnableToImportTextBlock" HorizontalAlignment="Center" Margin="0,285,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="270" Width="508"/>
+                            <TextBlock x:Name="ImportSummaryTextBlock" HorizontalAlignment="Center" Margin="0,102,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="453" Visibility="Visible" Width="508"/>
+                            <Button x:Name="SaveListOfUnimportedItems" Content="Save unimported items to text file" HorizontalAlignment="Left" Margin="959,384,0,0" VerticalAlignment="Top" RenderTransformOrigin="-0.053,-0.951" Visibility="Collapsed" Click="SaveListOfUnimportedItems_Click"/>
                         </Grid>
                     </Grid>
                 </Grid>

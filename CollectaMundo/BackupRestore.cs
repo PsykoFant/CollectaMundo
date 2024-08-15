@@ -1227,11 +1227,10 @@ namespace CollectaMundo
                     else
                     {
                         MarkFieldAsUnmapped("Language");
-                        MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Visible;
+                        GoToFinalStep();
                     }
                 }
             }
-            DebugFieldMappings();
         }
         public static async Task ButtonConditionMappingNext()
         {
@@ -1254,10 +1253,9 @@ namespace CollectaMundo
                 else
                 {
                     MarkFieldAsUnmapped("Language");
-                    MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Visible;
+                    GoToFinalStep();
                 }
             }
-            DebugFieldMappings();
         }
         public static async Task ButtonFinishesMappingNext()
         {
@@ -1276,9 +1274,8 @@ namespace CollectaMundo
             else
             {
                 MarkFieldAsUnmapped("Language");
-                MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Visible;
+                GoToFinalStep();
             }
-            DebugFieldMappings();
         }
         public static void ButtonLanguageMappingNext()
         {
@@ -1292,11 +1289,7 @@ namespace CollectaMundo
             StoreMapping("Language", languageMappings, true);
 
             MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Collapsed;
-            DisplayItemsWithoutUuidInTextBlock();
-            MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Visible;
-
-            //DebugFieldMappings();
-            DebugItemsWithoutUuid();
+            GoToFinalStep();
         }
 
         #endregion
@@ -1449,7 +1442,7 @@ namespace CollectaMundo
         }
 
         // Create and manage the dictionary to manage additional fields field
-        public static Dictionary<string, string> CreateMappingDictionary(ListView mappingListView, string cardSetField, string defaultValue)
+        private static Dictionary<string, string> CreateMappingDictionary(ListView mappingListView, string cardSetField, string defaultValue)
         {
             try
             {
@@ -1503,9 +1496,77 @@ namespace CollectaMundo
             StoreMapping(cardSetField, mappingDict, false);
         }
 
+        // Prepare the final step
+        private static void GoToFinalStep()
+        {
+            // Check if there are any items in tempImport without a uuid
+            bool hasItemsWithoutUuid = tempImport.Any(item =>
+                !item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid));
+
+            // If there are items without a uuid, show the relevant UI elements and display the items
+            if (hasItemsWithoutUuid)
+            {
+                MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Visible;
+                DisplayItemsWithoutUuidInTextBlock();
+            }
+
+            // Show the final confirmation grid
+            MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Visible;
+        }
+
+
+        // 
+
         #endregion
 
-        #region Import Wizard - Misc. shared methods
+        #region Import Wizrd - Confirm and import
+        public static void SaveUnimportedItemsToFile()
+        {
+            // Create a SaveFileDialog to prompt the user to choose a save location
+            var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+            {
+                FileName = "UnimportedItems", // Default file name
+                DefaultExt = ".txt", // Default file extension
+                Filter = "Text documents (.txt)|*.txt" // Filter files by extension
+            };
+
+            // Show the dialog and get the chosen file path
+            bool? result = saveFileDialog.ShowDialog();
+
+            if (result == true)
+            {
+                // Get the selected file path
+                string filePath = saveFileDialog.FileName;
+
+                // Generate the content for the file
+                var lines = new List<string>
+        {
+            "Unable to find matching cards in the database for the following items:\n"
+        };
+
+                foreach (var item in tempImport)
+                {
+                    // Check if the item does not have a "uuid" field or if the "uuid" field is empty
+                    if (!item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
+                    {
+                        // Try to get the "Card Name", "Set Name", and "Set Code" values
+                        item.Fields.TryGetValue("Card Name", out var cardName);
+                        item.Fields.TryGetValue("Set Name", out var setName);
+                        item.Fields.TryGetValue("Set Code", out var setCode);
+
+                        // Add the line with card details
+                        lines.Add($"{cardName}, {setName}, {setCode}");
+                    }
+                }
+
+                // Write all lines to the file
+                File.WriteAllLines(filePath, lines);
+            }
+        }
+
+        #endregion
+
+        #region Import Wizard - Misc. helper and shared methods
 
         // Try to guess which column name maps to cardItemsToAdd field by looking for matching column/field names
         private static string? GuessMapping(string searchValue, List<string> options)
@@ -1592,11 +1653,10 @@ namespace CollectaMundo
                 MessageBox.Show($"Error populating field list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
         private static void DisplayItemsWithoutUuidInTextBlock()
         {
             // Clear the TextBlock content first
-            MainWindow.CurrentInstance.ItemsUnableToImportTextBlock.Text = "Unable to find matching cards in the database for the following items:\n\n";
+            MainWindow.CurrentInstance.ImportSummaryTextBlock.Text = "Unable to find matching cards in the database for the following items:\n\n";
 
             foreach (var item in tempImport)
             {
@@ -1609,30 +1669,10 @@ namespace CollectaMundo
                     item.Fields.TryGetValue("Set Code", out var setCode);
 
                     // Append the details to the TextBlock, separating them by commas
-                    MainWindow.CurrentInstance.ItemsUnableToImportTextBlock.Text += $"{cardName}, {setName}, {setCode}\n";
+                    MainWindow.CurrentInstance.ImportSummaryTextBlock.Text += $"{cardName}, {setName}, {setCode}\n";
                 }
             }
         }
-        private static void DebugItemsWithoutUuid()
-        {
-            foreach (var item in tempImport)
-            {
-                // Check if the item does not have a "uuid" field or if the "uuid" field is empty
-                if (!item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
-                {
-                    // Output the details of the item to the debug console
-                    Debug.WriteLine("Item without UUID:");
-
-                    foreach (var field in item.Fields)
-                    {
-                        Debug.WriteLine($"{field.Key}: {field.Value}");
-                    }
-
-                    Debug.WriteLine("------------------------------");
-                }
-            }
-        }
-
 
         // Debug methods
         public static void DebugFieldMappings()
@@ -1686,6 +1726,25 @@ namespace CollectaMundo
             Debug.WriteLine($"Total number of items in tempImport: {totalTempImportItems}");
             Debug.WriteLine($"Number of tempImport items with single uuid: {singleUuidItems}");
             Debug.WriteLine($"Number of tempImport items with multiple uuids: {multipleUuidItems}");
+        }
+        private static void DebugItemsWithoutUuid()
+        {
+            foreach (var item in tempImport)
+            {
+                // Check if the item does not have a "uuid" field or if the "uuid" field is empty
+                if (!item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
+                {
+                    // Output the details of the item to the debug console
+                    Debug.WriteLine("Item without UUID:");
+
+                    foreach (var field in item.Fields)
+                    {
+                        Debug.WriteLine($"{field.Key}: {field.Value}");
+                    }
+
+                    Debug.WriteLine("------------------------------");
+                }
+            }
         }
         #endregion
     }

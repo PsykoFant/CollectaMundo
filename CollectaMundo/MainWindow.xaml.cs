@@ -1167,6 +1167,7 @@ namespace CollectaMundo
         {
             await CreateCsvBackupAsync();
         }
+
         #region Import wizard
 
         // Import wizard different steps button methods
@@ -1510,10 +1511,8 @@ namespace CollectaMundo
             //DebugFieldMappings();
         }
 
+
         // Import wizards misc. buttons and helper methods
-
-
-
         private void ClearMappingButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button)
@@ -1537,6 +1536,10 @@ namespace CollectaMundo
                     valueMapping.SelectedCardSetValue = null;
                 }
             }
+        }
+        private void SaveListOfUnimportedItems_Click(object sender, RoutedEventArgs e)
+        {
+            SaveUnimportedItemsToFile();
         }
         #endregion
 
