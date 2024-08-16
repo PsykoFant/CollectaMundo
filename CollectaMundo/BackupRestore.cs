@@ -1649,12 +1649,20 @@ namespace CollectaMundo
             // Clear the existing content of the container
             MainWindow.CurrentInstance.ImportSummaryContainer.Children.Clear();
 
-            // Initialize counts
+            // Add the summary text in a two-column table format
+            var summaryGrid = new Grid
+            {
+                Margin = new Thickness(0, 10, 0, 10)
+            };
+
+            // Define two columns
+            summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
             int countReadyToImport = 0;
             int countUnableToImport = 0;
             int totalCardsToAdd = 0;
 
-            // Calculate counts
             foreach (var item in tempImport)
             {
                 if (item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid))
@@ -1671,108 +1679,69 @@ namespace CollectaMundo
                 }
             }
 
-            // Generate summary section
-            var summaryStackPanel = CreateSummarySection(countReadyToImport, totalCardsToAdd, countUnableToImport);
+            // Add summary information to the grid
+            AddTextToGrid(summaryGrid, "Number of individual cards to be imported:", 0, 0, FontWeights.Bold);
+            AddTextToGrid(summaryGrid, countReadyToImport.ToString(), 0, 1);
 
-            // Add the summary to the container
-            MainWindow.CurrentInstance.ImportSummaryContainer.Children.Add(summaryStackPanel);
+            AddTextToGrid(summaryGrid, "Sum of new cards to be added to my collection:", 1, 0, FontWeights.Bold);
+            AddTextToGrid(summaryGrid, totalCardsToAdd.ToString(), 1, 1);
 
-            // Generate table for unimported items if necessary
+            AddTextToGrid(summaryGrid, "Number of individual cards unable to import:", 2, 0, FontWeights.Bold);
+            AddTextToGrid(summaryGrid, countUnableToImport.ToString(), 2, 1);
+
+            // Add rows to the summaryGrid to ensure the items are displayed on separate lines
+            summaryGrid.RowDefinitions.Add(new RowDefinition());
+            summaryGrid.RowDefinitions.Add(new RowDefinition());
+            summaryGrid.RowDefinitions.Add(new RowDefinition());
+
+            // Add the summary grid to the container
+            MainWindow.CurrentInstance.ImportSummaryContainer.Children.Add(summaryGrid);
+
+            // If there are items without uuids, create a Grid to display them in a table format
             if (countUnableToImport > 0)
             {
-                var unimportedItemsTable = CreateUnimportedItemsTable();
-                MainWindow.CurrentInstance.ImportSummaryContainer.Children.Add(unimportedItemsTable);
+                MainWindow.CurrentInstance.ImportSummaryTextBlock.Inlines.Add(new System.Windows.Documents.Run("\nUnable to find matching cards in the database for the following items:\n\n"));
+
+                var tableGrid = new Grid
+                {
+                    Margin = new Thickness(0, 10, 0, 0)
+                };
+
+                // Define three columns
+                tableGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                tableGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                tableGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                // Add header row
+                tableGrid.RowDefinitions.Add(new RowDefinition());
+                AddTextToGrid(tableGrid, "Card Name", 0, 0, FontWeights.Bold);
+                AddTextToGrid(tableGrid, "Set Name", 0, 1, FontWeights.Bold);
+                AddTextToGrid(tableGrid, "Set Code", 0, 2, FontWeights.Bold);
+
+                int row = 1;
+
+                foreach (var item in tempImport)
+                {
+                    if (!item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
+                    {
+                        item.Fields.TryGetValue("Card Name", out var cardName);
+                        item.Fields.TryGetValue("Set Name", out var setName);
+                        item.Fields.TryGetValue("Set Code", out var setCode);
+
+                        // Add data rows
+                        tableGrid.RowDefinitions.Add(new RowDefinition());
+                        AddTextToGrid(tableGrid, cardName, row, 0);
+                        AddTextToGrid(tableGrid, setName, row, 1);
+                        AddTextToGrid(tableGrid, setCode, row, 2);
+
+                        row++;
+                    }
+                }
+
+                // Add the Grid to the container
+                MainWindow.CurrentInstance.ImportSummaryContainer.Children.Add(tableGrid);
                 MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Visible;
             }
-        }
-
-        private static StackPanel CreateSummarySection(int countReadyToImport, int totalCardsToAdd, int countUnableToImport)
-        {
-            var summaryStackPanel = new StackPanel { Orientation = Orientation.Vertical, Margin = new Thickness(10) };
-
-            // Add the header
-            var headerTextBlock = new TextBlock
-            {
-                Text = "Summary of import mappings:",
-                FontWeight = FontWeights.Bold,
-                Margin = new Thickness(0, 10, 0, 0)
-            };
-            summaryStackPanel.Children.Add(headerTextBlock);
-
-            // Add summary details in two columns using a Grid
-            var summaryGrid = new Grid();
-            for (int i = 0; i < 3; i++)
-            {
-                summaryGrid.RowDefinitions.Add(new RowDefinition());
-            }
-
-            summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            AddSummaryRow(summaryGrid, "Number of individual cards ready to import:", countReadyToImport.ToString(), 0);
-            AddSummaryRow(summaryGrid, "Total number of cards that will be added to my collection:", totalCardsToAdd.ToString(), 1);
-            AddSummaryRow(summaryGrid, "Number of individual cards unable to import:", countUnableToImport.ToString(), 2);
-
-            summaryStackPanel.Children.Add(summaryGrid);
-
-            return summaryStackPanel;
-        }
-
-        private static Grid CreateUnimportedItemsTable()
-        {
-            var tableGrid = new Grid
-            {
-                Margin = new Thickness(0, 10, 0, 0)
-            };
-
-            // Define three columns
-            tableGrid.ColumnDefinitions.Add(new ColumnDefinition());
-            tableGrid.ColumnDefinitions.Add(new ColumnDefinition());
-            tableGrid.ColumnDefinitions.Add(new ColumnDefinition());
-
-            // Add header row
-            tableGrid.RowDefinitions.Add(new RowDefinition());
-            AddTextToGrid(tableGrid, "Card Name", 0, 0, FontWeights.Bold);
-            AddTextToGrid(tableGrid, "Set Name", 0, 1, FontWeights.Bold);
-            AddTextToGrid(tableGrid, "Set Code", 0, 2, FontWeights.Bold);
-
-            int tableRow = 1;
-
-            foreach (var item in tempImport)
-            {
-                if (!item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
-                {
-                    item.Fields.TryGetValue("Card Name", out var cardName);
-                    item.Fields.TryGetValue("Set Name", out var setName);
-                    item.Fields.TryGetValue("Set Code", out var setCode);
-
-                    // Add data rows
-                    tableGrid.RowDefinitions.Add(new RowDefinition());
-                    AddTextToGrid(tableGrid, cardName, tableRow, 0);
-                    AddTextToGrid(tableGrid, setName, tableRow, 1);
-                    AddTextToGrid(tableGrid, setCode, tableRow, 2);
-
-                    tableRow++;
-                }
-            }
-
-            return tableGrid;
-        }
-
-        // Helper method to add a row with a label and a value in two columns
-        private static void AddSummaryRow(Grid grid, string label, string value, int row)
-        {
-            var labelTextBlock = new TextBlock { Text = label, Margin = new Thickness(5) };
-            var valueTextBlock = new TextBlock { Text = value, Margin = new Thickness(5) };
-
-            Grid.SetRow(labelTextBlock, row);
-            Grid.SetColumn(labelTextBlock, 0);
-
-            Grid.SetRow(valueTextBlock, row);
-            Grid.SetColumn(valueTextBlock, 1);
-
-            grid.Children.Add(labelTextBlock);
-            grid.Children.Add(valueTextBlock);
         }
 
         // Helper method to add text to the grid
@@ -1787,6 +1756,9 @@ namespace CollectaMundo
             Grid.SetColumn(textBlock, column);
             grid.Children.Add(textBlock);
         }
+
+
+
 
 
         // Debug methods
