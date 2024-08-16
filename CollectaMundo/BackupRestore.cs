@@ -414,9 +414,6 @@ namespace CollectaMundo
                     MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Visible;
                 }
                 MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
-
-                //DebugAllItems();
-                //DebugImportProcess();
             }
             catch (Exception ex)
             {
@@ -547,14 +544,6 @@ namespace CollectaMundo
                         }
                     }
                 }
-
-                //Debug.WriteLine("csvToUuidsMap contents:");
-                //foreach (var kvp in csvToUuidsMap)
-                //{
-                //    Debug.WriteLine($"CSV Value: {kvp.Key}, UUIDs: {string.Join(", ", kvp.Value)}");
-                //}
-
-                // Process UUID results in parallel
                 await Task.WhenAll(tempImport.Select(tempItem =>
                 {
                     if (tempItem.Fields.TryGetValue(csvHeader, out var csvValue) && csvToUuidsMap.TryGetValue(csvValue, out var uuids))
@@ -901,7 +890,6 @@ namespace CollectaMundo
                 SELECT uuid FROM {table} 
                 WHERE faceName = @cardName AND setCode = @setCode AND (side = 'a' OR side IS NULL)";
 
-            //Debug.WriteLine($"Trying to search {table} for card name {cardName} and setCode {setCode}");
 
             List<string> uuids = new List<string>();
 
