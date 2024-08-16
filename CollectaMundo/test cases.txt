@@ -85,6 +85,8 @@ No valid ID
 
 
 
+1,1,0,0,"Art Card: Edgar, Charmed Groom",Extras: Innistrad: Crimson Vow Art Series,ex_137,59,Near Mint,English,,,,,,,,61572,,"",$0.00,Token,,Common,$0.00,https://s.deckbox.org/system/images/mtg/cards/2024206.jpg,2022-06-16 06:46:41 UTC,,
+2,1,0,0,Ajani Vengeant,Prerelease Events,ptc,38,Near Mint,English,,,,,,,,22842,,"",$0.00,Legendary Planeswalker - Ajani,{2}{R}{W},Special,$0.00,https://s.deckbox.org/system/images/mtg/cards/1000093.jpg,2023-12-21 12:37:43 UTC,,
 1,1,0,0,Art Card: Chillerpillar,Extras: Modern Horizons Art Series,ex_102,1,Near Mint,English,,,,,,,,44886,,"",$0.00,Token - Art,"",Common,$0.00,https://s.deckbox.org/system/images/mtg/cards/2004619.jpg,2022-06-14 13:35:21 UTC,,
 1,0,0,0,Fire // Ice,Commander,CMD,198,,,,,,,,,,18445,,"",$0.00,Instant // Instant,{1}{R} // {1}{U},Uncommon,$0.46,https://s.deckbox.org/system/images/mtg/cards/247159.jpg,2014-11-24 21:29:25 UTC,47370,230e65b2-a908-4418-8ef9-ecc475ff0b27
 1,0,0,0,"Garruk Relentless // Garruk, the Veil-Cursed",Innistrad,ISD,181,,,,,,,,,,18970,,"",$0.00,Legendary Planeswalker - Garruk // Legendary Planeswalker - Garruk,{3}{G},MythicRare,$1.09,https://s.deckbox.org/system/images/mtg/cards/245250.jpg,2014-11-25 23:01:13 UTC,52203,b4160322-ff40-41a4-887a-73cd6b85ae45

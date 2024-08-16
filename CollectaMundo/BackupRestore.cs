@@ -1499,16 +1499,7 @@ namespace CollectaMundo
         // Prepare the final step
         private static void GoToFinalStep()
         {
-            // Check if there are any items in tempImport without a uuid
-            bool hasItemsWithoutUuid = tempImport.Any(item =>
-                !item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid));
-
-            // If there are items without a uuid, show the relevant UI elements and display the items
-            if (hasItemsWithoutUuid)
-            {
-                MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Visible;
-                DisplayItemsWithoutUuidInTextBlock();
-            }
+            GenerateSummaryInTextBlock();
 
             // Show the final confirmation grid
             MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Visible;
@@ -1653,26 +1644,150 @@ namespace CollectaMundo
                 MessageBox.Show($"Error populating field list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        private static void DisplayItemsWithoutUuidInTextBlock()
+        private static void GenerateSummaryInTextBlock()
         {
-            // Clear the TextBlock content first
-            MainWindow.CurrentInstance.ImportSummaryTextBlock.Text = "Unable to find matching cards in the database for the following items:\n\n";
+            // Clear the existing content of the container
+            MainWindow.CurrentInstance.ImportSummaryContainer.Children.Clear();
+
+            // Initialize counts
+            int countReadyToImport = 0;
+            int countUnableToImport = 0;
+            int totalCardsToAdd = 0;
+
+            // Calculate counts
+            foreach (var item in tempImport)
+            {
+                if (item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid))
+                {
+                    countReadyToImport++;
+                    if (item.Fields.TryGetValue("Cards Owned", out var cardsOwnedValue) && int.TryParse(cardsOwnedValue, out var cardsOwned))
+                    {
+                        totalCardsToAdd += cardsOwned;
+                    }
+                }
+                else
+                {
+                    countUnableToImport++;
+                }
+            }
+
+            // Generate summary section
+            var summaryStackPanel = CreateSummarySection(countReadyToImport, totalCardsToAdd, countUnableToImport);
+
+            // Add the summary to the container
+            MainWindow.CurrentInstance.ImportSummaryContainer.Children.Add(summaryStackPanel);
+
+            // Generate table for unimported items if necessary
+            if (countUnableToImport > 0)
+            {
+                var unimportedItemsTable = CreateUnimportedItemsTable();
+                MainWindow.CurrentInstance.ImportSummaryContainer.Children.Add(unimportedItemsTable);
+                MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Visible;
+            }
+        }
+
+        private static StackPanel CreateSummarySection(int countReadyToImport, int totalCardsToAdd, int countUnableToImport)
+        {
+            var summaryStackPanel = new StackPanel { Orientation = Orientation.Vertical, Margin = new Thickness(10) };
+
+            // Add the header
+            var headerTextBlock = new TextBlock
+            {
+                Text = "Summary of import mappings:",
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+            summaryStackPanel.Children.Add(headerTextBlock);
+
+            // Add summary details in two columns using a Grid
+            var summaryGrid = new Grid();
+            for (int i = 0; i < 3; i++)
+            {
+                summaryGrid.RowDefinitions.Add(new RowDefinition());
+            }
+
+            summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            summaryGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            AddSummaryRow(summaryGrid, "Number of individual cards ready to import:", countReadyToImport.ToString(), 0);
+            AddSummaryRow(summaryGrid, "Total number of cards that will be added to my collection:", totalCardsToAdd.ToString(), 1);
+            AddSummaryRow(summaryGrid, "Number of individual cards unable to import:", countUnableToImport.ToString(), 2);
+
+            summaryStackPanel.Children.Add(summaryGrid);
+
+            return summaryStackPanel;
+        }
+
+        private static Grid CreateUnimportedItemsTable()
+        {
+            var tableGrid = new Grid
+            {
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            // Define three columns
+            tableGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            tableGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            tableGrid.ColumnDefinitions.Add(new ColumnDefinition());
+
+            // Add header row
+            tableGrid.RowDefinitions.Add(new RowDefinition());
+            AddTextToGrid(tableGrid, "Card Name", 0, 0, FontWeights.Bold);
+            AddTextToGrid(tableGrid, "Set Name", 0, 1, FontWeights.Bold);
+            AddTextToGrid(tableGrid, "Set Code", 0, 2, FontWeights.Bold);
+
+            int tableRow = 1;
 
             foreach (var item in tempImport)
             {
-                // Check if the item does not have a "uuid" field or if the "uuid" field is empty
                 if (!item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
                 {
-                    // Try to get the "Card Name", "Set Name", and "Set Code" values
                     item.Fields.TryGetValue("Card Name", out var cardName);
                     item.Fields.TryGetValue("Set Name", out var setName);
                     item.Fields.TryGetValue("Set Code", out var setCode);
 
-                    // Append the details to the TextBlock, separating them by commas
-                    MainWindow.CurrentInstance.ImportSummaryTextBlock.Text += $"{cardName}, {setName}, {setCode}\n";
+                    // Add data rows
+                    tableGrid.RowDefinitions.Add(new RowDefinition());
+                    AddTextToGrid(tableGrid, cardName, tableRow, 0);
+                    AddTextToGrid(tableGrid, setName, tableRow, 1);
+                    AddTextToGrid(tableGrid, setCode, tableRow, 2);
+
+                    tableRow++;
                 }
             }
+
+            return tableGrid;
         }
+
+        // Helper method to add a row with a label and a value in two columns
+        private static void AddSummaryRow(Grid grid, string label, string value, int row)
+        {
+            var labelTextBlock = new TextBlock { Text = label, Margin = new Thickness(5) };
+            var valueTextBlock = new TextBlock { Text = value, Margin = new Thickness(5) };
+
+            Grid.SetRow(labelTextBlock, row);
+            Grid.SetColumn(labelTextBlock, 0);
+
+            Grid.SetRow(valueTextBlock, row);
+            Grid.SetColumn(valueTextBlock, 1);
+
+            grid.Children.Add(labelTextBlock);
+            grid.Children.Add(valueTextBlock);
+        }
+
+        // Helper method to add text to the grid
+        private static void AddTextToGrid(Grid grid, string text, int row, int column, FontWeight? fontWeight = null)
+        {
+            var textBlock = new TextBlock { Text = text, Margin = new Thickness(5) };
+            if (fontWeight.HasValue)
+            {
+                textBlock.FontWeight = fontWeight.Value;
+            }
+            Grid.SetRow(textBlock, row);
+            Grid.SetColumn(textBlock, column);
+            grid.Children.Add(textBlock);
+        }
+
 
         // Debug methods
         public static void DebugFieldMappings()
