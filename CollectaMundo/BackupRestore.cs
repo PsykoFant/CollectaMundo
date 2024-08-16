@@ -580,8 +580,6 @@ namespace CollectaMundo
         #region Import Wizard - Step 2b - Find UUIDs - Mapping by card name, set name and set code        
         public static async Task ButtonNameAndSetMappingNext()
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
 
             /*
             --Assumptions--
@@ -676,24 +674,19 @@ namespace CollectaMundo
                     }
                 }
                 MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
-
-                //DebugAllItems();
-                //DebugImportProcess();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error processing field using card and set name and set code: {ex.Message}");
                 MessageBox.Show($"Error processing field using card and set name and set code: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally
-            {
-                stopwatch.Stop();
-                Debug.WriteLine($"ButtonNameAndSetMappingNext completed in {stopwatch.ElapsedMilliseconds} ms");
-            }
-
         }
         private static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
         {
+
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             /* The logic is as follows:
             * If set code is mapped search by set code
             * If no match is found by searching by set code, search by set name
@@ -721,7 +714,6 @@ namespace CollectaMundo
                 {
                     if (!item.Fields.TryGetValue(nameCsvHeader, out string? name))
                     {
-                        //Debug.WriteLine($"Fail: Could not find field for card name with header {nameCsvHeader}");
                         continue;
                     }
 
@@ -735,30 +727,15 @@ namespace CollectaMundo
                         {
                             matchFound = await SearchBySetName(name, setName, item);
                         }
-
-                        //if (!matchFound)
-                        //{
-                        //    Debug.WriteLine($"Fail: Could not find a match by set code {setCode} for card name {name}");
-                        //}
                     }
                     else if (setNameCsvHeader != null && item.Fields.TryGetValue(setNameCsvHeader, out string? setName))
                     {
                         matchFound = await SearchBySetName(name, setName, item);
-
-                        //if (!matchFound)
-                        //{
-                        //    Debug.WriteLine($"Fail: Could not find a match by set name {setName} for card name {name}");
-                        //}
                     }
-                    //else
-                    //{
-                    //    Debug.WriteLine($"Fail: Neither set code nor set name mappings found for card name {name}");
-                    //}
                 }
 
                 // Rename the CSV columns in tempImport based on the mappings
                 RenameFieldsInTempImport(mappings);
-                //DebugItemsWithoutUuid();
             }
             catch (Exception ex)
             {
@@ -768,6 +745,8 @@ namespace CollectaMundo
             finally
             {
                 DBAccess.CloseConnection();
+                stopwatch.Stop();
+                Debug.WriteLine($"SearchByCardNameOrSet completed in {stopwatch.ElapsedMilliseconds} ms");
             }
         }
         private static async Task<bool> SearchBySetName(string name, string setName, TempCardItem item)
@@ -1086,36 +1065,6 @@ namespace CollectaMundo
         #endregion
 
         #region Import Wizard - Step 2 - Find UUIDs - helper methods
-        // Prepare for multiple UUIDs selection if necessary      
-        private static void PopulateMultipleUuidsDataGrid()
-        {
-            try
-            {
-                var itemsWithMultipleUuids = tempImport
-                    .Where(item => item.Fields.ContainsKey("uuids"))
-                    .Select(item => new MultipleUuidsItem
-                    {
-                        Name = item.Fields.ContainsKey("Card Name") ? item.Fields["Card Name"] : "Unknown",
-                        VersionedUuids = item.Fields["uuids"]
-                            .Split(',')
-                            .Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid })
-                            .ToList(),
-                        SelectedUuid = null // Set the initial selection to null
-                    })
-                    .ToList();
-
-                Debug.WriteLine($"Populated MultipleUuidsDataGrid with {itemsWithMultipleUuids.Count} items.");
-
-                MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
-                MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error populating multiple uuids datagrid: {ex.Message}");
-                MessageBox.Show($"Error populating multiple uuids datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
         // Handle the UUIDs found anywhere in step 2
         private static bool ProcessUuidResults(List<string> uuids, TempCardItem item)
         {
@@ -1146,6 +1095,38 @@ namespace CollectaMundo
                 return false;
             }
         }
+
+        // Prepare for multiple UUIDs selection if necessary      
+        private static void PopulateMultipleUuidsDataGrid()
+        {
+            try
+            {
+                var itemsWithMultipleUuids = tempImport
+                    .Where(item => item.Fields.ContainsKey("uuids"))
+                    .Select(item => new MultipleUuidsItem
+                    {
+                        Name = item.Fields.ContainsKey("Card Name") ? item.Fields["Card Name"] : "Unknown",
+                        VersionedUuids = item.Fields["uuids"]
+                            .Split(',')
+                            .Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid })
+                            .ToList(),
+                        SelectedUuid = null // Set the initial selection to null
+                    })
+                    .ToList();
+
+                Debug.WriteLine($"Populated MultipleUuidsDataGrid with {itemsWithMultipleUuids.Count} items.");
+
+                MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
+                MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error populating multiple uuids datagrid: {ex.Message}");
+                MessageBox.Show($"Error populating multiple uuids datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+
 
         #endregion
 
