@@ -672,15 +672,9 @@ namespace CollectaMundo
         }
         private static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
         {
-
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            /* The logic is as follows:
-            * If set code is mapped search by set code
-            * If no match is found by searching by set code, search by set name
-            * If set code is not mapped, search by set name
-           */
             try
             {
                 await DBAccess.OpenConnectionAsync();
@@ -698,29 +692,17 @@ namespace CollectaMundo
                     throw new InvalidOperationException("Name field not found.");
                 }
 
-                // Loop through all items in tempImport that do not already have a uuid value
-                foreach (var item in tempImport.Where(i => !i.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid)))
+                bool isSetCodeMapped = !string.IsNullOrEmpty(setCodeCsvHeader);
+                bool isSetNameMapped = !string.IsNullOrEmpty(setNameCsvHeader);
+
+                if (isSetCodeMapped)
                 {
-                    if (!item.Fields.TryGetValue(nameCsvHeader, out string? name))
-                    {
-                        continue;
-                    }
+                    await SearchBySetCode(tempImport, nameCsvHeader, setCodeCsvHeader);
+                }
 
-                    bool matchFound = false;
-
-                    if (setCodeCsvHeader != null && item.Fields.TryGetValue(setCodeCsvHeader, out string? setCode))
-                    {
-                        matchFound = await SearchBySetCode(name, setCode, item);
-
-                        if (!matchFound && setNameCsvHeader != null && item.Fields.TryGetValue(setNameCsvHeader, out string? setName))
-                        {
-                            matchFound = await SearchBySetName(name, setName, item);
-                        }
-                    }
-                    else if (setNameCsvHeader != null && item.Fields.TryGetValue(setNameCsvHeader, out string? setName))
-                    {
-                        matchFound = await SearchBySetName(name, setName, item);
-                    }
+                if (isSetNameMapped)
+                {
+                    Debug.WriteLine("Searching by set name.");
                 }
 
                 // Rename the CSV columns in tempImport based on the mappings
@@ -738,6 +720,7 @@ namespace CollectaMundo
                 Debug.WriteLine($"SearchByCardNameOrSet completed in {stopwatch.ElapsedMilliseconds} ms");
             }
         }
+
         private static async Task<bool> SearchBySetName(string name, string setName, TempCardItem item)
         {
             // Remove "Extras: " from the beginning of setName if it exists
@@ -826,58 +809,132 @@ namespace CollectaMundo
             //Debug.WriteLine($"Fail: Could not find a match for {name} in set {setName}");
             return false;
         }
-        private static async Task<bool> SearchBySetCode(string name, string setCode, TempCardItem item)
+        private static async Task<bool> SearchBySetCode(ObservableCollection<TempCardItem> tempImport, string nameCsvHeader, string setCodeCsvHeader)
         {
-            //Debug.WriteLine($"Trying to search by set code: {setCode}");
+            bool overallMatchFound = false;
 
-            // We are trying three combinations:
-            // a regular card with a regular set code
-            // a token with a regular set code
-            // a token with a token set code
+            // Try three combinations:
+            // 1. A regular card with a regular set code
+            // 2. A token with a regular set code
+            // 3. A token with a token set code
 
-            // a regular card with a regular set code
-            var uuids1 = await SearchTableForUuidAsync(name, "cards", setCode);
+            var itemsToCheck = tempImport.Where(i =>
+                (!i.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid)) &&
+                (!i.Fields.TryGetValue("uuids", out var uuids) || string.IsNullOrEmpty(uuids))
+            ).ToList();
 
-            if (uuids1.Count > 0)
+            Debug.WriteLine($"Number of items to check: {itemsToCheck.Count}");
+
+
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            // Loop through all items in tempImport that do not already have a uuid or uuids value
+            foreach (var item in tempImport.Where(i => !i.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid)))
             {
-                return ProcessUuidResults(uuids1, item);
-            }
-
-            // a token with a regular set code
-            var uuids2 = await SearchTableForUuidAsync(name, "tokens", setCode);
-            if (uuids2.Count > 0)
-            {
-                return ProcessUuidResults(uuids2, item);
-            }
-
-            // a token with a token set code
-            string tokenSetCodeQuery = "SELECT tokenSetCode FROM sets WHERE code = @setCode";
-            string? tokenSetCode = null;
-
-            using (var command = new SQLiteCommand(tokenSetCodeQuery, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@setCode", setCode);
-
-                using (var reader = await command.ExecuteReaderAsync())
+                if (!item.Fields.TryGetValue(nameCsvHeader, out string? name) || !item.Fields.TryGetValue(setCodeCsvHeader, out string? setCode))
                 {
-                    if (await reader.ReadAsync())
-                    {
-                        tokenSetCode = reader["tokenSetCode"]?.ToString();
-                    }
+                    continue;
+                }
+
+                var uuids1 = await SearchTableForUuidAsync(name, "cards", setCode);
+                if (uuids1.Count > 0)
+                {
+                    ProcessUuidResults(uuids1, item);
+                    continue;
                 }
             }
-            if (tokenSetCode != null)
+
+            stopwatch.Stop();
+            Debug.WriteLine($"Searching a regular card with a regular set code completed in {stopwatch.ElapsedMilliseconds} ms");
+
+            Debug.WriteLine("\nAfter 1st loop:");
+            DebugImportProcess();
+
+            var itemsToCheck2 = tempImport.Where(i =>
+                    (!i.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid)) &&
+                    (!i.Fields.TryGetValue("uuids", out var uuids) || string.IsNullOrEmpty(uuids))
+                ).ToList();
+
+            Debug.WriteLine($"Number of items to check: {itemsToCheck2.Count}");
+
+            stopwatch.Restart();
+
+            // Loop through all items in tempImport that do not already have a uuid or uuids value
+            foreach (var item in tempImport.Where(i => (!i.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid)) &&
+                (!i.Fields.TryGetValue("uuids", out var uuids) || string.IsNullOrEmpty(uuids))))
             {
+                if (!item.Fields.TryGetValue(nameCsvHeader, out string? name) || !item.Fields.TryGetValue(setCodeCsvHeader, out string? setCode))
+                {
+                    continue;
+                }
+
+                // 1. Regular card with regular set code
+                var uuids2 = await SearchTableForUuidAsync(name, "tokens", setCode);
+                if (uuids2.Count > 0)
+                {
+                    ProcessUuidResults(uuids2, item);
+                    continue;
+                }
+            }
+
+            stopwatch.Stop();
+            Debug.WriteLine($"Searching a token with a regular set code completed in {stopwatch.ElapsedMilliseconds} ms");
+
+            Debug.WriteLine("\nAfter 2nd loop:");
+            DebugImportProcess();
+
+            var itemsToCheck3 = tempImport.Where(i =>
+                    (!i.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid)) &&
+                    (!i.Fields.TryGetValue("uuids", out var uuids) || string.IsNullOrEmpty(uuids))
+                ).ToList();
+
+            Debug.WriteLine($"Number of items to check: {itemsToCheck3.Count}");
+
+            stopwatch.Restart();
+
+            // Loop through all items in tempImport that do not already have a uuid or uuids value
+            foreach (var item in tempImport.Where(i => (!i.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid)) &&
+                (!i.Fields.TryGetValue("uuids", out var uuids) || string.IsNullOrEmpty(uuids))))
+            {
+                if (!item.Fields.TryGetValue(nameCsvHeader, out string? name) || !item.Fields.TryGetValue(setCodeCsvHeader, out string? setCode))
+                {
+                    continue;
+                }
+
+                string tokenSetCodeQuery = "SELECT tokenSetCode FROM sets WHERE code = @setCode";
+                string? tokenSetCode = null;
+
+                using (var command = new SQLiteCommand(tokenSetCodeQuery, DBAccess.connection))
+                {
+                    command.Parameters.AddWithValue("@setCode", setCode);
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            tokenSetCode = reader["tokenSetCode"]?.ToString();
+                        }
+                    }
+                }
+
                 var uuids3 = await SearchTableForUuidAsync(name, "tokens", tokenSetCode);
                 if (uuids3.Count > 0)
                 {
-                    return ProcessUuidResults(uuids3, item);
+                    ProcessUuidResults(uuids3, item);
+                    continue;
                 }
             }
 
-            // If nothing is found, bugger it, return false
-            return false;
+            stopwatch.Stop();
+            Debug.WriteLine($"Searching a token with a token set code completed in {stopwatch.ElapsedMilliseconds} ms");
+
+            Debug.WriteLine("\nAfter 3rd loop:");
+            DebugImportProcess();
+
+            return overallMatchFound;
         }
+
 
         // Helper method to SearchBySetCode
         private static async Task<List<string>> SearchTableForUuidAsync(string cardName, string table, string setCode)
@@ -1023,26 +1080,43 @@ namespace CollectaMundo
         }
         private static void AssertNoInvalidUuidFields()
         {
-            bool invalidUuidAndUuids = tempImport.Any(item =>
+            var invalidUuidAndUuidsItems = tempImport.Where(item =>
                 item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid) &&
                 item.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrEmpty(uuids)
-            );
+            ).ToList();
 
-            bool invalidUuidOrUuids = tempImport.Any(item =>
+            var invalidUuidOrUuidsItems = tempImport.Where(item =>
                 (item.Fields.TryGetValue("uuid", out var uuid) && string.IsNullOrEmpty(uuid)) ||
                 (item.Fields.TryGetValue("uuids", out var uuids) && string.IsNullOrEmpty(uuids))
-            );
+            ).ToList();
 
-            if (invalidUuidAndUuids)
+            if (invalidUuidAndUuidsItems.Any())
             {
-                throw new InvalidOperationException("An item in tempImport has both 'uuid' and 'uuids' fields with values, which is not allowed.");
+                foreach (var item in invalidUuidAndUuidsItems)
+                {
+                    Debug.WriteLine($"Invalid item with both 'uuid' and 'uuids' fields with values: {GetItemDetails(item)}");
+                }
+                throw new InvalidOperationException("One or more items in tempImport have both 'uuid' and 'uuids' fields with values, which is not allowed.");
             }
 
-            if (invalidUuidOrUuids)
+            if (invalidUuidOrUuidsItems.Any())
             {
-                throw new InvalidOperationException("An item in tempImport has 'uuid' or 'uuids' field with no value, which is not allowed.");
+                foreach (var item in invalidUuidOrUuidsItems)
+                {
+                    Debug.WriteLine($"Invalid item with 'uuid' or 'uuids' field with no value: {GetItemDetails(item)}");
+                }
+                throw new InvalidOperationException("One or more items in tempImport have 'uuid' or 'uuids' field with no value, which is not allowed.");
             }
         }
+        private static string GetItemDetails(TempCardItem item)
+        {
+            item.Fields.TryGetValue("Card Name", out var cardName);
+            item.Fields.TryGetValue("Set Name", out var setName);
+            item.Fields.TryGetValue("Set Code", out var setCode);
+
+            return $"Card Name: {cardName}, Set Name: {setName}, Set Code: {setCode}, UUID: {item.Fields.GetValueOrDefault("uuid")}, UUIDs: {item.Fields.GetValueOrDefault("uuids")}";
+        }
+
 
         // Prepare the next step
         private static void GoToAdditionalFieldsMapping()
