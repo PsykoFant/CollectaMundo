@@ -257,7 +257,9 @@ namespace CollectaMundo
 
                     for (int i = 0; i < headers.Count; i++)
                     {
-                        cardItem.Fields[headers[i]] = values.Count > i ? values[i] : string.Empty;
+                        // Clean the values before adding them to the cardItem.Fields
+                        string cleanedValue = RemoveUnwantedPrefixes(values.Count > i ? values[i] : string.Empty);
+                        cardItem.Fields[headers[i]] = cleanedValue;
                     }
 
                     cardItems.Add(cardItem);
@@ -319,6 +321,21 @@ namespace CollectaMundo
 
             return values;
         }
+        private static string RemoveUnwantedPrefixes(string input)
+        {
+            if (input.StartsWith("Extras: "))
+            {
+                input = input.Substring("Extras: ".Length).Trim();
+            }
+            else if (input.StartsWith("Art Card: "))
+            {
+                input = input.Substring("Art Card: ".Length).Trim();
+            }
+
+            return input;
+        }
+
+
 
         // Prepare the next step
         private static void PopulateIdColumnMappingListView(ListView listView)
@@ -670,9 +687,6 @@ namespace CollectaMundo
         }
         private static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             try
             {
                 await DBAccess.OpenConnectionAsync();
@@ -712,21 +726,13 @@ namespace CollectaMundo
             finally
             {
                 DBAccess.CloseConnection();
-                stopwatch.Stop();
-                Debug.WriteLine($"SearchByCardNameOrSet completed in {stopwatch.ElapsedMilliseconds} ms");
+
             }
         }
-
-
         private static async Task<bool> SearchBySetName(string name, string setName, TempCardItem item)
         {
-            // Remove "Extras: " from the beginning of setName if it exists
-            if (setName.StartsWith("Extras: ", StringComparison.OrdinalIgnoreCase))
-            {
-                setName = setName.Substring(8);
-            }
-
-            //Debug.WriteLine($"Trying to search by set name: {setName}");
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
 
             // Query to find the set code from the sets table based on the set name
             string cardsSetCodeQuery = "SELECT code FROM sets WHERE name = @setName";
@@ -764,7 +770,6 @@ namespace CollectaMundo
 
             if (cardsSetCode == null && tokenSetCode == null)
             {
-                //Debug.WriteLine($"Fail: SetCode was null for {setName}");
                 return false;
             }
 
@@ -790,12 +795,6 @@ namespace CollectaMundo
                     name = name.Split(new[] { " // " }, StringSplitOptions.None)[0];
                 }
 
-                // Remove "Art Card: " from the beginning of Name if it exists
-                if (name.StartsWith("Art Card: ", StringComparison.OrdinalIgnoreCase))
-                {
-                    name = name.Substring(10);
-                }
-
                 uuids = await SearchTableForUuidAsync(name, "tokens", tokenSetCode);
                 if (uuids.Count > 0)
                 {
@@ -803,12 +802,13 @@ namespace CollectaMundo
                 }
             }
 
-            //Debug.WriteLine($"Fail: Could not find a match for {name} in set {setName}");
+            stopwatch.Stop();
+            Debug.WriteLine($"Search by set name completed in {stopwatch.ElapsedMilliseconds} ms");
+
             return false;
         }
 
         /* To do:
-         * præprocsser navne cleanup før searchbysetname
          * tilføj søg tokensetcode
          * tilføj søg facename
          * opdater søg ved sæt navn
@@ -817,6 +817,9 @@ namespace CollectaMundo
 
         private static async Task SearchBySetCode()
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             try
             {
                 await DBAccess.OpenConnectionAsync();
@@ -826,12 +829,12 @@ namespace CollectaMundo
 
                 // Use a StringBuilder to build a batch SQL query for cards
                 var batchQueryBuilder = new StringBuilder(@"
-            SELECT uuid, name, setCode FROM cards WHERE (side = 'a' OR side IS NULL) AND setCode IN (");
+                    SELECT uuid, name, setCode FROM cards WHERE (side = 'a' OR side IS NULL) AND setCode IN (");
 
                 // Prepare a similar batch query for tokens
                 var tokenQueryBuilder = new StringBuilder(@"
-            UNION ALL
-            SELECT uuid, name, setCode FROM tokens WHERE (side = 'a' OR side IS NULL) AND setCode IN (");
+                    UNION ALL
+                    SELECT uuid, name, setCode FROM tokens WHERE (side = 'a' OR side IS NULL) AND setCode IN (");
 
                 bool hasValues = false;
                 int index = 0;
@@ -929,6 +932,9 @@ namespace CollectaMundo
             finally
             {
                 DBAccess.CloseConnection();
+
+                stopwatch.Stop();
+                Debug.WriteLine($"Search by set code completed in {stopwatch.ElapsedMilliseconds} ms");
             }
         }
 
