@@ -47,6 +47,13 @@ token ...
 -- Valid name, valid set name, valid set code, multiple uuids
 Quantity,CardName,Simple Name,Set,Card Number,Set Code,Printing,King Kong,Language,Rarity,Product ID,SKU,Price,Price Each
 
+
+-- token with a token set code:
+2,Baleful Beholder // Beholder,Baleful Beholder // Beholder,Adventures in the Forgotten Realms Art Series,76,AAFR,Normal,Moderately Played,German,Rare,71192,1132871,$0.20,$0.20
+
+-- token with a regular set code:
+3,Spirit,Spirit,Avacyn Restored,76,AVR,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
+
 .. invalid card ids
 3,Spirit,Spirit,Avacyn Restored,76,AVR,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
 2,Flooded Strand,Flooded Strand,Modern Horizons 3,76,CHR,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
@@ -65,17 +72,6 @@ Quantity,CardName,Simple Name,Set,Card Number,Set Code,Printing,King Kong,Langua
 
 
 
----- No items have have single uuid, no items have multiple uuids --> 0. Error screen
-check
-
----- No items have single uuid, at least one item has multiple uuids --> 1. Go to Multiple uuids mapping screen
-check
-
----- All items have single uuid --> 2. Go to Additional fields mapping screen
-
----- At least one item has single uuid, no items have multiple uuids --> 2. Go to Additional fields mapping screen
-
----- At least one item has single uuids, at least one item has multiple uuids --> 1. Go to Multiple uuids mapping screen
 
 
 No valid ID

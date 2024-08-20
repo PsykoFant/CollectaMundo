@@ -829,15 +829,21 @@ namespace CollectaMundo
 
                 // Use a StringBuilder to build a batch SQL query for cards
                 var batchQueryBuilder = new StringBuilder(@"
-                    SELECT uuid, name, setCode FROM cards WHERE (side = 'a' OR side IS NULL) AND setCode IN (");
+            SELECT uuid, name, setCode FROM cards WHERE (side = 'a' OR side IS NULL) AND setCode IN (");
 
                 // Prepare a similar batch query for tokens
                 var tokenQueryBuilder = new StringBuilder(@"
-                    UNION ALL
-                    SELECT uuid, name, setCode FROM tokens WHERE (side = 'a' OR side IS NULL) AND setCode IN (");
+            UNION ALL
+            SELECT uuid, name, setCode FROM tokens WHERE (side = 'a' OR side IS NULL) AND setCode IN (");
+
+                // Prepare a query builder for the new query to search using tokenSetCode
+                var tokenSetCodeQueryBuilder = new StringBuilder(@"
+            UNION ALL
+            SELECT uuid, name, setCode FROM tokens WHERE (side = 'a' OR side IS NULL) AND setCode IN (");
 
                 bool hasValues = false;
                 int index = 0;
+
                 foreach (var tempItem in tempImport)
                 {
                     // Retrieve necessary fields from tempItem
@@ -852,11 +858,20 @@ namespace CollectaMundo
                     if (shouldProcess)
                     {
                         string key = $"{name}_{setCode}";
+
                         if (!csvToUuidsMap.ContainsKey(key))
                         {
                             csvToUuidsMap[key] = new List<string>();
                             batchQueryBuilder.Append($"@setCode_{index},");
                             tokenQueryBuilder.Append($"@setCode_{index},");
+
+                            // Retrieve the corresponding tokenSetCode from the sets table
+                            string tokenSetCode = await GetTokenSetCode(setCode);
+                            if (!string.IsNullOrEmpty(tokenSetCode))
+                            {
+                                tokenSetCodeQueryBuilder.Append($"@tokenSetCode_{index},");
+                            }
+
                             index++;
                             hasValues = true;
                         }
@@ -876,8 +891,13 @@ namespace CollectaMundo
                 tokenQueryBuilder.Length--;
                 tokenQueryBuilder.Append(")");
 
-                // Combine both parts into one query
+                tokenSetCodeQueryBuilder.Length--;
+                tokenSetCodeQueryBuilder.Append(")");
+
+                // Combine all query parts into one query
                 batchQueryBuilder.Append(tokenQueryBuilder);
+                batchQueryBuilder.Append(tokenSetCodeQueryBuilder);
+
 
                 using (var command = new SQLiteCommand(batchQueryBuilder.ToString(), DBAccess.connection))
                 {
@@ -885,6 +905,14 @@ namespace CollectaMundo
                     foreach (var key in csvToUuidsMap.Keys)
                     {
                         command.Parameters.AddWithValue($"@setCode_{index}", key.Split('_')[1]);
+
+                        // Add the parameter for tokenSetCode if it exists
+                        string setCode = key.Split('_')[1];
+                        string tokenSetCode = await GetTokenSetCode(setCode);
+                        if (!string.IsNullOrEmpty(tokenSetCode))
+                        {
+                            command.Parameters.AddWithValue($"@tokenSetCode_{index}", tokenSetCode);
+                        }
                         index++;
                     }
 
@@ -921,8 +949,6 @@ namespace CollectaMundo
                     }
                     return Task.CompletedTask;
                 }));
-
-                DebugImportProcess();
             }
             catch (Exception ex)
             {
@@ -932,11 +958,34 @@ namespace CollectaMundo
             finally
             {
                 DBAccess.CloseConnection();
-
                 stopwatch.Stop();
                 Debug.WriteLine($"Search by set code completed in {stopwatch.ElapsedMilliseconds} ms");
+                DebugImportProcess();
             }
         }
+
+        private static async Task<string> GetTokenSetCode(string setCode)
+        {
+            string tokenSetCode = string.Empty;
+
+            string tokenSetCodeQuery = "SELECT tokenSetCode FROM sets WHERE code = @setCode";
+
+            using (var command = new SQLiteCommand(tokenSetCodeQuery, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@setCode", setCode);
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        tokenSetCode = reader["tokenSetCode"]?.ToString() ?? string.Empty;
+                    }
+                }
+            }
+
+            return tokenSetCode;
+        }
+
 
 
 
