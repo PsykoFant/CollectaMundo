@@ -815,26 +815,21 @@ namespace CollectaMundo
          */
         private static async Task SearchBySetCode()
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
+            // Step 1: Build the batch query with UNION ALL
+            var queryBuilder = new StringBuilder();
+            var parameters = new List<SQLiteParameter>();
+            int paramIndex = 0;
+            bool firstSelect = true; // To manage the first SELECT statement without preceding UNION ALL
 
-            try
+            foreach (var item in tempImport.Where(i => !i.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid)))
             {
-                // Step 1: Build the batch query with UNION ALL
-                var queryBuilder = new StringBuilder();
-                var parameters = new List<SQLiteParameter>();
-                int paramIndex = 0;
-                bool firstSelect = true; // To manage the first SELECT statement without preceding UNION ALL
-
-                foreach (var item in tempImport.Where(i => !i.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid)))
+                if (!item.Fields.TryGetValue("Card Name", out string? name) || !item.Fields.TryGetValue("Set Code", out string? setCode))
                 {
-                    if (!item.Fields.TryGetValue("Card Name", out string? name) || !item.Fields.TryGetValue("Set Code", out string? setCode))
-                    {
-                        continue; // Skip if the required fields are not found
-                    }
+                    continue; // Skip if the required fields are not found
+                }
 
-                    // Construct the query parts for cards and tokens
-                    var queries = new List<string>
+                // Construct the query parts for cards and tokens
+                var queries = new List<string>
         {
             $@"SELECT @paramIndex_{paramIndex} AS itemIndex, uuid 
             FROM cards 
@@ -853,117 +848,105 @@ namespace CollectaMundo
             WHERE faceName = @cardName_{paramIndex} AND setCode = @setCode_{paramIndex} AND (side = 'a' OR side IS NULL)"
         };
 
-                    // Add these query parts to the main query builder
-                    foreach (var queryPart in queries)
+                // Add these query parts to the main query builder
+                foreach (var queryPart in queries)
+                {
+                    if (firstSelect)
                     {
-                        if (firstSelect)
-                        {
-                            queryBuilder.Append(queryPart);
-                            firstSelect = false; // Set to false after the first query part
-                        }
-                        else
-                        {
-                            queryBuilder.AppendLine(" UNION ALL ");
-                            queryBuilder.Append(queryPart);
-                        }
+                        queryBuilder.Append(queryPart);
+                        firstSelect = false; // Set to false after the first query part
                     }
-
-                    // Add parameters
-                    parameters.Add(new SQLiteParameter($"@paramIndex_{paramIndex}", paramIndex));
-                    parameters.Add(new SQLiteParameter($"@cardName_{paramIndex}", name));
-                    parameters.Add(new SQLiteParameter($"@setCode_{paramIndex}", setCode));
-
-                    // Token with token set code
-                    string tokenSetCodeQuery = "SELECT tokenSetCode FROM sets WHERE code = @setCode";
-                    string? tokenSetCode = null;
-
-                    using (var command = new SQLiteCommand(tokenSetCodeQuery, DBAccess.connection))
+                    else
                     {
-                        command.Parameters.AddWithValue("@setCode", setCode);
-
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            if (await reader.ReadAsync())
-                            {
-                                tokenSetCode = reader["tokenSetCode"]?.ToString();
-                            }
-                        }
+                        queryBuilder.AppendLine(" UNION ALL ");
+                        queryBuilder.Append(queryPart);
                     }
-
-                    if (tokenSetCode != null)
-                    {
-                        var tokenQueries = new List<string>
-                            {
-                                $@"SELECT @paramIndex_{paramIndex} AS itemIndex, uuid 
-                                FROM tokens 
-                                WHERE name = @cardName_{paramIndex} AND setCode = @tokenSetCode_{paramIndex} AND (side = 'a' OR side IS NULL)",
-
-                                $@"SELECT @paramIndex_{paramIndex} AS itemIndex, uuid 
-                                FROM tokens 
-                                WHERE faceName = @cardName_{paramIndex} AND setCode = @tokenSetCode_{paramIndex} AND (side = 'a' OR side IS NULL)"
-                            };
-
-                        foreach (var queryPart in tokenQueries)
-                        {
-                            queryBuilder.AppendLine(" UNION ALL ");
-                            queryBuilder.Append(queryPart);
-                        }
-
-                        parameters.Add(new SQLiteParameter($"@tokenSetCode_{paramIndex}", tokenSetCode));
-                    }
-
-                    paramIndex++;
                 }
 
-                if (queryBuilder.Length == 0)
-                {
-                    Debug.WriteLine("No valid items to search for.");
-                    return;
-                }
+                // Add parameters
+                parameters.Add(new SQLiteParameter($"@paramIndex_{paramIndex}", paramIndex));
+                parameters.Add(new SQLiteParameter($"@cardName_{paramIndex}", name));
+                parameters.Add(new SQLiteParameter($"@setCode_{paramIndex}", setCode));
 
-                // Step 2: Execute the batch query
-                var results = new List<(int itemIndex, string uuid)>();
+                // Token with token set code
+                string tokenSetCodeQuery = "SELECT tokenSetCode FROM sets WHERE code = @setCode";
+                string? tokenSetCode = null;
 
-                using (var command = new SQLiteCommand(queryBuilder.ToString(), DBAccess.connection))
+                using (var command = new SQLiteCommand(tokenSetCodeQuery, DBAccess.connection))
                 {
-                    command.Parameters.AddRange(parameters.ToArray());
+                    command.Parameters.AddWithValue("@setCode", setCode);
 
                     using (var reader = await command.ExecuteReaderAsync())
                     {
-                        while (await reader.ReadAsync())
+                        if (await reader.ReadAsync())
                         {
-                            var itemIndex = Convert.ToInt32(reader["itemIndex"]);
-                            var uuid = reader["uuid"]?.ToString();
-
-                            if (!string.IsNullOrEmpty(uuid))
-                            {
-                                results.Add((itemIndex, uuid));
-                            }
+                            tokenSetCode = reader["tokenSetCode"]?.ToString();
                         }
                     }
                 }
 
-                // Step 3: Process the results
-                foreach (var result in results.GroupBy(r => r.itemIndex))
+                if (tokenSetCode != null)
                 {
-                    var uuids = result.Select(r => r.uuid).ToList();
-                    var item = tempImport[result.Key];
-                    ProcessUuidResults(uuids, item);
+                    var tokenQueries = new List<string>
+            {
+                $@"SELECT @paramIndex_{paramIndex} AS itemIndex, uuid 
+                FROM tokens 
+                WHERE name = @cardName_{paramIndex} AND setCode = @tokenSetCode_{paramIndex} AND (side = 'a' OR side IS NULL)",
+
+                $@"SELECT @paramIndex_{paramIndex} AS itemIndex, uuid 
+                FROM tokens 
+                WHERE faceName = @cardName_{paramIndex} AND setCode = @tokenSetCode_{paramIndex} AND (side = 'a' OR side IS NULL)"
+            };
+
+                    foreach (var queryPart in tokenQueries)
+                    {
+                        queryBuilder.AppendLine(" UNION ALL ");
+                        queryBuilder.Append(queryPart);
+                    }
+
+                    parameters.Add(new SQLiteParameter($"@tokenSetCode_{paramIndex}", tokenSetCode));
+                }
+
+                paramIndex++;
+            }
+
+            if (queryBuilder.Length == 0)
+            {
+                Debug.WriteLine("No valid items to search for.");
+                return;
+            }
+
+            // Step 2: Execute the batch query
+            var results = new List<(int itemIndex, string uuid)>();
+
+            using (var command = new SQLiteCommand(queryBuilder.ToString(), DBAccess.connection))
+            {
+                command.Parameters.AddRange(parameters.ToArray());
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var itemIndex = Convert.ToInt32(reader["itemIndex"]);
+                        var uuid = reader["uuid"]?.ToString();
+
+                        if (!string.IsNullOrEmpty(uuid))
+                        {
+                            results.Add((itemIndex, uuid));
+                        }
+                    }
                 }
             }
-            catch (Exception ex)
+
+            // Step 3: Process the results
+            foreach (var result in results.GroupBy(r => r.itemIndex))
             {
-                Debug.WriteLine($"Error searching by set code: {ex.Message}");
-                MessageBox.Show($"Error searching by set code: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                stopwatch.Stop();
-                Debug.WriteLine($"ButtonIdColumnMappingNext completed in {stopwatch.ElapsedMilliseconds} ms");
-                DebugImportProcess();
-                DebugAllItems();
+                var uuids = result.Select(r => r.uuid).ToList();
+                var item = tempImport[result.Key];
+                ProcessUuidResults(uuids, item);
             }
         }
+
         private static async Task<List<string>> SearchTableForUuidAsync(string cardName, string table, string setCode)
         {
             // Construct the query string with the table name
