@@ -813,7 +813,7 @@ namespace CollectaMundo
          * Optimer load metoder
          */
 
-        private static async Task<bool> SearchBySetCode()
+        private static async Task SearchBySetCode()
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -882,7 +882,6 @@ AND t.name IN (");
                 if (!hasValues)
                 {
                     Debug.WriteLine("No valid items to search.");
-                    return false;
                 }
 
                 // Remove the trailing comma and close the "IN" clauses
@@ -1107,14 +1106,11 @@ AND t.name IN (");
                         return Task.CompletedTask;
                     }));
                 }
-
-                return true;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error searching by set code: {ex.Message}");
                 MessageBox.Show($"Error searching by set code: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return false;
             }
             finally
             {
