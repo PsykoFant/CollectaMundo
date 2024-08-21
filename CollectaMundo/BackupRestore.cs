@@ -830,28 +830,28 @@ namespace CollectaMundo
 
                 // Scenario 1: Regular cards with regular set codes
                 batchQueryBuilder.Append(@"
-        SELECT c.uuid, c.name, c.setCode
-        FROM cards c
-        WHERE (c.side IS NULL OR c.side = 'a') 
-        AND c.name IN (");
+SELECT c.uuid, c.name, c.setCode
+FROM cards c
+WHERE (c.side IS NULL OR c.side = 'a') 
+AND c.name IN (");
 
                 // Scenario 2: Tokens with token set codes
                 var tokenQueryBuilder = new StringBuilder(@"
-        UNION ALL
-        SELECT t.uuid, t.name, t.setCode
-        FROM tokens t
-        WHERE (t.side IS NULL OR t.side = 'a') 
-        AND t.name IN (");
+UNION ALL
+SELECT t.uuid, t.name, t.setCode
+FROM tokens t
+WHERE (t.side IS NULL OR t.side = 'a') 
+AND t.name IN (");
 
                 // Scenario 3: Tokens with a regular set code but using tokenSetCode
                 var scenario3QueryBuilder = new StringBuilder(@"
-        UNION ALL
-        SELECT t.uuid, t.name, s.code AS setCode
-        FROM tokens t
-        JOIN sets s ON t.setCode = s.tokenSetCode
-        WHERE s.tokenSetCode <> s.code 
-        AND (t.side IS NULL OR t.side = 'a')             
-        AND t.name IN (");
+UNION ALL
+SELECT t.uuid, t.name, s.code AS setCode
+FROM tokens t
+JOIN sets s ON t.setCode = s.tokenSetCode
+WHERE s.tokenSetCode <> s.code 
+AND (t.side IS NULL OR t.side = 'a')             
+AND t.name IN (");
 
                 bool hasValues = false;
                 int index = 0;
@@ -980,13 +980,22 @@ namespace CollectaMundo
                     return Task.CompletedTask;
                 }));
 
-                // Now handle Scenario 4 in a separate batch
+                // Now handle Scenario 4 and Scenario 5 in a separate batch
                 csvToUuidsMap.Clear();
                 var scenario4QueryBuilder = new StringBuilder(@"
             SELECT t.uuid, t.faceName AS name, s.code AS setCode
             FROM tokens t
             JOIN sets s ON t.setCode = s.tokenSetCode            
             WHERE (t.side IS NULL OR t.side = 'a')             
+            AND t.faceName IN (");
+
+                var scenario5QueryBuilder = new StringBuilder(@"
+            UNION ALL
+            SELECT t.uuid, t.faceName AS name, s.code AS setCode
+            FROM tokens t
+            JOIN sets s ON t.setCode = s.tokenSetCode
+            WHERE s.tokenSetCode <> s.code 
+            AND (t.side IS NULL OR t.side = 'a')             
             AND t.faceName IN (");
 
                 hasValues = false;
@@ -1006,6 +1015,7 @@ namespace CollectaMundo
                         {
                             csvToUuidsMap[key] = new List<string>();
                             scenario4QueryBuilder.Append($"@faceName_{index},");
+                            scenario5QueryBuilder.Append($"@faceName_{index},");
                             hasValues = true;
                         }
 
@@ -1018,6 +1028,9 @@ namespace CollectaMundo
                     scenario4QueryBuilder.Length--;
                     scenario4QueryBuilder.Append(") AND s.code IN (");
 
+                    scenario5QueryBuilder.Length--;
+                    scenario5QueryBuilder.Append(") AND s.code IN (");
+
                     index = 0;
                     foreach (var tempItem in tempImport.Where(i => !i.Fields.ContainsKey("uuid")))
                     {
@@ -1025,12 +1038,19 @@ namespace CollectaMundo
                             !string.IsNullOrEmpty(setCode))
                         {
                             scenario4QueryBuilder.Append($"@setCode_{index},");
+                            scenario5QueryBuilder.Append($"@setCode_{index},");
                             index++;
                         }
                     }
 
                     scenario4QueryBuilder.Length--;
                     scenario4QueryBuilder.Append(")");
+
+                    scenario5QueryBuilder.Length--;
+                    scenario5QueryBuilder.Append(")");
+
+                    // Combine Scenario 4 and Scenario 5 queries
+                    scenario4QueryBuilder.Append(scenario5QueryBuilder);
 
                     using (var command = new SQLiteCommand(scenario4QueryBuilder.ToString(), DBAccess.connection))
                     {
@@ -1054,10 +1074,10 @@ namespace CollectaMundo
                             while (await reader.ReadAsync())
                             {
                                 var uuid = reader["uuid"]?.ToString();
-                                var cardName = reader["name"]?.ToString();
+                                var faceName = reader["name"]?.ToString();
                                 var setCode = reader["setCode"]?.ToString();
 
-                                var key = $"{cardName}_{setCode}";
+                                var key = $"{faceName}_{setCode}";
 
                                 if (!string.IsNullOrEmpty(uuid) && !string.IsNullOrEmpty(key))
                                 {
@@ -1070,7 +1090,7 @@ namespace CollectaMundo
                         }
                     }
 
-                    // Process UUID results for Scenario 4
+                    // Process UUID results for Scenario 4 and Scenario 5
                     await Task.WhenAll(tempImport.Select(tempItem =>
                     {
                         if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
@@ -1104,6 +1124,7 @@ namespace CollectaMundo
                 DebugImportProcess();
             }
         }
+
 
 
 
