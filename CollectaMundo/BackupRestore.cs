@@ -813,6 +813,7 @@ namespace CollectaMundo
          * tilføj søg facename
          * opdater søg ved sæt navn
          */
+
         private static async Task<bool> SearchBySetCode()
         {
             Stopwatch stopwatch = new Stopwatch();
@@ -820,292 +821,255 @@ namespace CollectaMundo
 
             try
             {
-                // Dictionaries to hold the results for each scenario
-                var uuidResults = new Dictionary<int, List<string>>();
+                await DBAccess.OpenConnectionAsync();
 
-                // Helper function to execute the batch queries
-                async Task ExecuteBatchQueryAsync(StringBuilder queryBuilder, List<SQLiteParameter> queryParameters)
+                // Scenario 1: Regular cards with regular set codes
+                var csvToUuidsMap = new Dictionary<string, List<string>>();
+                var batchQueryBuilder = new StringBuilder(@"
+            SELECT c.uuid, c.name, c.setCode
+            FROM cards c
+            WHERE (c.side IS NULL OR c.side = 'a') 
+            AND c.name IN (");
+
+                bool hasValues = false;
+                int index = 0;
+
+                foreach (var tempItem in tempImport)
                 {
-                    if (queryBuilder.Length > 0)
+                    if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
+                        !string.IsNullOrEmpty(cardName) &&
+                        tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
+                        !string.IsNullOrEmpty(setCode))
                     {
-                        using (var command = new SQLiteCommand(queryBuilder.ToString(), DBAccess.connection))
+                        var key = $"{cardName}_{setCode}";
+
+                        if (!csvToUuidsMap.ContainsKey(key))
                         {
-                            command.Parameters.AddRange(queryParameters.ToArray());
+                            csvToUuidsMap[key] = new List<string>();
+                            batchQueryBuilder.Append($"@cardName_{index},");
+                            hasValues = true;
+                        }
 
-                            using (var reader = await command.ExecuteReaderAsync())
+                        index++;
+                    }
+                }
+
+                if (!hasValues)
+                {
+                    Debug.WriteLine("No valid items to search.");
+                    return false;
+                }
+
+                // Remove the trailing comma and close the "IN" clause
+                batchQueryBuilder.Length--;
+                batchQueryBuilder.Append(")");
+
+                // Add the Set Code condition outside of the IN clause
+                batchQueryBuilder.Append(" AND c.setCode IN (");
+
+                index = 0;
+                foreach (var tempItem in tempImport)
+                {
+                    if (tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
+                        !string.IsNullOrEmpty(setCode))
+                    {
+                        batchQueryBuilder.Append($"@setCode_{index},");
+                        index++;
+                    }
+                }
+
+                // Remove the trailing comma and close the "IN" clause
+                batchQueryBuilder.Length--;
+                batchQueryBuilder.Append(")");
+
+                // Execute the Scenario 1 query
+                using (var command = new SQLiteCommand(batchQueryBuilder.ToString(), DBAccess.connection))
+                {
+                    index = 0;
+                    foreach (var tempItem in tempImport)
+                    {
+                        if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
+                            !string.IsNullOrEmpty(cardName) &&
+                            tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
+                            !string.IsNullOrEmpty(setCode))
+                        {
+                            command.Parameters.AddWithValue($"@cardName_{index}", cardName);
+                            command.Parameters.AddWithValue($"@setCode_{index}", setCode);
+                            index++;
+                        }
+                    }
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var uuid = reader["uuid"]?.ToString();
+                            var cardName = reader["name"]?.ToString();
+                            var setCode = reader["setCode"]?.ToString();
+
+                            var key = $"{cardName}_{setCode}";
+
+                            if (!string.IsNullOrEmpty(uuid) && !string.IsNullOrEmpty(key))
                             {
-                                while (await reader.ReadAsync())
+                                if (csvToUuidsMap.ContainsKey(key))
                                 {
-                                    var itemIndex = reader.GetInt32(0);
-                                    var uuid = reader.GetString(1);
-
-                                    if (!string.IsNullOrEmpty(uuid))
-                                    {
-                                        if (uuidResults.ContainsKey(itemIndex))
-                                        {
-                                            uuidResults[itemIndex].Add(uuid);
-                                        }
-                                        else
-                                        {
-                                            uuidResults[itemIndex] = new List<string> { uuid };
-                                        }
-                                    }
+                                    csvToUuidsMap[key].Add(uuid);
+                                }
+                                else
+                                {
+                                    //Debug.WriteLine($"Unexpected key '{key}' found in query results.");
                                 }
                             }
                         }
                     }
                 }
 
-                // Batch 1: Regular cards with regular set codes
-                var queryParametersBatch1 = new List<SQLiteParameter>();
-                var batchQueryBuilderBatch1 = new StringBuilder();
-
-                for (int i = 0; i < tempImport.Count; i++)
+                // Process UUID results in parallel
+                await Task.WhenAll(tempImport.Select(tempItem =>
                 {
-                    var tempItem = tempImport[i];
+                    if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
+                        tempItem.Fields.TryGetValue("Set Code", out var setCode))
+                    {
+                        var key = $"{cardName}_{setCode}";
+                        if (csvToUuidsMap.TryGetValue(key, out var uuids))
+                        {
+                            return Task.Run(() => ProcessUuidResults(uuids, tempItem));
+                        }
+                    }
+                    return Task.CompletedTask;
+                }));
 
+                // Scenario 2: Token with a regular set code
+                csvToUuidsMap.Clear(); // Clear the map for the second batch
+                batchQueryBuilder.Clear(); // Clear the query builder for the second batch
+
+                batchQueryBuilder.Append(@"
+            SELECT t.uuid, t.name, t.setCode
+            FROM tokens t
+            WHERE (t.side IS NULL OR t.side = 'a') 
+            AND t.name IN (");
+
+                hasValues = false;
+                index = 0;
+
+                foreach (var tempItem in tempImport)
+                {
                     if ((tempItem.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid)) ||
                         (tempItem.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrEmpty(uuids)))
                     {
                         continue; // Skip items that already have a uuid or uuids field
                     }
 
-                    if (!tempItem.Fields.TryGetValue("Card Name", out var cardName) || string.IsNullOrEmpty(cardName))
+                    if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
+                        !string.IsNullOrEmpty(cardName) &&
+                        tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
+                        !string.IsNullOrEmpty(setCode))
                     {
-                        continue;
+                        var key = $"{cardName}_{setCode}";
+
+                        if (!csvToUuidsMap.ContainsKey(key))
+                        {
+                            csvToUuidsMap[key] = new List<string>();
+                            batchQueryBuilder.Append($"@cardName_{index},");
+                            hasValues = true;
+                        }
+
+                        index++;
                     }
-
-                    if (!tempItem.Fields.TryGetValue("Set Code", out var setCode) || string.IsNullOrEmpty(setCode))
-                    {
-                        continue;
-                    }
-
-                    if (batchQueryBuilderBatch1.Length > 0)
-                    {
-                        batchQueryBuilderBatch1.Append(" UNION ALL ");
-                    }
-
-                    // Regular card with regular set code - searching in table `cards`
-                    batchQueryBuilderBatch1.Append($@"
-                SELECT {i} AS itemIndex, uuid 
-                FROM cards 
-                WHERE name = @cardName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
-
-                    // Add parameters for this item
-                    queryParametersBatch1.AddRange(new[]
-                    {
-                new SQLiteParameter($"@cardName_{i}", cardName),
-                new SQLiteParameter($"@setCode_{i}", setCode)
-            });
                 }
 
-                // Execute Batch 1
-                await ExecuteBatchQueryAsync(batchQueryBuilderBatch1, queryParametersBatch1);
-
-                // Batch 2: Tokens with regular set codes
-                var queryParametersBatch2 = new List<SQLiteParameter>();
-                var batchQueryBuilderBatch2 = new StringBuilder();
-
-                for (int i = 0; i < tempImport.Count; i++)
+                if (!hasValues)
                 {
-                    var tempItem = tempImport[i];
-
-                    if (uuidResults.ContainsKey(i))
-                    {
-                        continue; // Skip items that already have a uuid or uuids from Batch 1
-                    }
-
-                    if (!tempItem.Fields.TryGetValue("Card Name", out var cardName) || string.IsNullOrEmpty(cardName))
-                    {
-                        continue;
-                    }
-
-                    if (!tempItem.Fields.TryGetValue("Set Code", out var setCode) || string.IsNullOrEmpty(setCode))
-                    {
-                        continue;
-                    }
-
-                    if (batchQueryBuilderBatch2.Length > 0)
-                    {
-                        batchQueryBuilderBatch2.Append(" UNION ALL ");
-                    }
-
-                    // Token with a regular set code - searching in table `tokens`
-                    batchQueryBuilderBatch2.Append($@"
-                SELECT {i} AS itemIndex, uuid 
-                FROM tokens 
-                WHERE name = @cardName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
-
-                    // Add parameters for this item
-                    queryParametersBatch2.AddRange(new[]
-                    {
-                new SQLiteParameter($"@cardName_{i}", cardName),
-                new SQLiteParameter($"@setCode_{i}", setCode)
-            });
+                    Debug.WriteLine("No valid items to search for tokens.");
+                    return true;
                 }
 
-                // Execute Batch 2
-                await ExecuteBatchQueryAsync(batchQueryBuilderBatch2, queryParametersBatch2);
+                // Remove the trailing comma and close the "IN" clause
+                batchQueryBuilder.Length--;
+                batchQueryBuilder.Append(")");
 
-                // Batch 3: Tokens with a token set code (only if tokenSetCode is different from code)
-                var queryParametersBatch3 = new List<SQLiteParameter>();
-                var batchQueryBuilderBatch3 = new StringBuilder();
+                // Add the Set Code condition outside of the IN clause
+                batchQueryBuilder.Append(" AND t.setCode IN (");
 
-                for (int i = 0; i < tempImport.Count; i++)
+                index = 0;
+                foreach (var tempItem in tempImport)
                 {
-                    var tempItem = tempImport[i];
-
-                    if (uuidResults.ContainsKey(i))
+                    if (!tempItem.Fields.TryGetValue("uuid", out var uuid) &&
+                        !tempItem.Fields.TryGetValue("uuids", out var uuids) &&
+                        tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
+                        !string.IsNullOrEmpty(setCode))
                     {
-                        continue; // Skip items that already have a uuid or uuids from previous batches
+                        batchQueryBuilder.Append($"@setCode_{index},");
+                        index++;
                     }
-
-                    if (!tempItem.Fields.TryGetValue("Card Name", out var cardName) || string.IsNullOrEmpty(cardName))
-                    {
-                        continue;
-                    }
-
-                    if (!tempItem.Fields.TryGetValue("Set Code", out var setCode) || string.IsNullOrEmpty(setCode))
-                    {
-                        continue;
-                    }
-
-                    if (batchQueryBuilderBatch3.Length > 0)
-                    {
-                        batchQueryBuilderBatch3.Append(" UNION ALL ");
-                    }
-
-                    // Token with a token set code - find `tokenSetCode` and search in table `tokens`
-                    batchQueryBuilderBatch3.Append($@"
-                SELECT {i} AS itemIndex, uuid 
-                FROM tokens 
-                WHERE name = @cardName_{i} AND setCode = (
-                    SELECT tokenSetCode FROM sets WHERE code = @setCode_{i} AND tokenSetCode <> code
-                ) AND (side = 'a' OR side IS NULL)");
-
-                    // Add parameters for this item
-                    queryParametersBatch3.AddRange(new[]
-                    {
-                new SQLiteParameter($"@cardName_{i}", cardName),
-                new SQLiteParameter($"@setCode_{i}", setCode)
-            });
                 }
 
-                // Execute Batch 3
-                await ExecuteBatchQueryAsync(batchQueryBuilderBatch3, queryParametersBatch3);
+                // Remove the trailing comma and close the "IN" clause
+                batchQueryBuilder.Length--;
+                batchQueryBuilder.Append(")");
 
-                // Batch 4: Tokens with faceName and a token set code
-                var queryParametersBatch4 = new List<SQLiteParameter>();
-                var batchQueryBuilderBatch4 = new StringBuilder();
-
-                for (int i = 0; i < tempImport.Count; i++)
+                // Execute the Scenario 2 query
+                using (var command = new SQLiteCommand(batchQueryBuilder.ToString(), DBAccess.connection))
                 {
-                    var tempItem = tempImport[i];
-
-                    if (uuidResults.ContainsKey(i))
+                    index = 0;
+                    foreach (var tempItem in tempImport)
                     {
-                        continue; // Skip items that already have a uuid or uuids from previous batches
+                        if (!tempItem.Fields.TryGetValue("uuid", out var uuid) &&
+                            !tempItem.Fields.TryGetValue("uuids", out var uuids) &&
+                            tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
+                            !string.IsNullOrEmpty(cardName) &&
+                            tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
+                            !string.IsNullOrEmpty(setCode))
+                        {
+                            command.Parameters.AddWithValue($"@cardName_{index}", cardName);
+                            command.Parameters.AddWithValue($"@setCode_{index}", setCode);
+                            index++;
+                        }
                     }
 
-                    if (!tempItem.Fields.TryGetValue("Card Name", out var cardName) || string.IsNullOrEmpty(cardName))
+                    using (var reader = await command.ExecuteReaderAsync())
                     {
-                        continue;
+                        while (await reader.ReadAsync())
+                        {
+                            var uuid = reader["uuid"]?.ToString();
+                            var cardName = reader["name"]?.ToString();
+                            var setCode = reader["setCode"]?.ToString();
+
+                            var key = $"{cardName}_{setCode}";
+
+                            if (!string.IsNullOrEmpty(uuid) && !string.IsNullOrEmpty(key))
+                            {
+                                if (csvToUuidsMap.ContainsKey(key))
+                                {
+                                    csvToUuidsMap[key].Add(uuid);
+                                }
+                                else
+                                {
+                                    //Debug.WriteLine($"Unexpected key '{key}' found in query results.");
+                                }
+                            }
+                        }
                     }
-
-                    if (!tempItem.Fields.TryGetValue("Set Code", out var setCode) || string.IsNullOrEmpty(setCode))
-                    {
-                        continue;
-                    }
-
-                    if (batchQueryBuilderBatch4.Length > 0)
-                    {
-                        batchQueryBuilderBatch4.Append(" UNION ALL ");
-                    }
-
-                    // Handle faceName cases with split if needed
-                    string faceNameSearch = cardName.Contains(" // ") ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0] : cardName;
-
-                    // Token with a token set code, searching by `faceName`
-                    batchQueryBuilderBatch4.Append($@"
-                SELECT {i} AS itemIndex, uuid 
-                FROM tokens 
-                WHERE faceName = @faceName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
-
-                    // Add parameters for this item
-                    queryParametersBatch4.AddRange(new[]
-                    {
-                new SQLiteParameter($"@faceName_{i}", faceNameSearch),
-                new SQLiteParameter($"@setCode_{i}", setCode)
-            });
                 }
 
-                // Execute Batch 4
-                await ExecuteBatchQueryAsync(batchQueryBuilderBatch4, queryParametersBatch4);
-
-                // Batch 5: Tokens with faceName and a regular set code
-                var queryParametersBatch5 = new List<SQLiteParameter>();
-                var batchQueryBuilderBatch5 = new StringBuilder();
-
-                for (int i = 0; i < tempImport.Count; i++)
+                // Process UUID results in parallel for tokens
+                await Task.WhenAll(tempImport.Select(tempItem =>
                 {
-                    var tempItem = tempImport[i];
-
-                    if (uuidResults.ContainsKey(i))
+                    if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
+                        tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
+                        !tempItem.Fields.TryGetValue("uuid", out var uuid) &&
+                        !tempItem.Fields.TryGetValue("uuids", out var uuids))
                     {
-                        continue; // Skip items that already have a uuid or uuids from previous batches
+                        var key = $"{cardName}_{setCode}";
+                        if (csvToUuidsMap.TryGetValue(key, out var uuidsList))
+                        {
+                            return Task.Run(() => ProcessUuidResults(uuidsList, tempItem));
+                        }
                     }
+                    return Task.CompletedTask;
+                }));
 
-                    if (!tempItem.Fields.TryGetValue("Card Name", out var cardName) || string.IsNullOrEmpty(cardName))
-                    {
-                        continue;
-                    }
-
-                    if (!tempItem.Fields.TryGetValue("Set Code", out var setCode) || string.IsNullOrEmpty(setCode))
-                    {
-                        continue;
-                    }
-
-                    if (batchQueryBuilderBatch5.Length > 0)
-                    {
-                        batchQueryBuilderBatch5.Append(" UNION ALL ");
-                    }
-
-                    // Handle faceName cases with split if needed
-                    string faceNameSearch = cardName.Contains(" // ") ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0] : cardName;
-
-                    // Token with a regular set code, searching by `faceName` and finding `tokenSetCode`
-                    batchQueryBuilderBatch5.Append($@"
-                SELECT {i} AS itemIndex, uuid 
-                FROM tokens 
-                WHERE faceName = @faceName_{i} AND setCode = (
-                    SELECT tokenSetCode FROM sets WHERE code = @setCode_{i} AND tokenSetCode <> code
-                ) AND (side = 'a' OR side IS NULL)");
-
-                    // Add parameters for this item
-                    queryParametersBatch5.AddRange(new[]
-                    {
-                new SQLiteParameter($"@faceName_{i}", faceNameSearch),
-                new SQLiteParameter($"@setCode_{i}", setCode)
-            });
-                }
-
-                // Execute Batch 5
-                await ExecuteBatchQueryAsync(batchQueryBuilderBatch5, queryParametersBatch5);
-
-                // Process the results for each item in tempImport
-                foreach (var kvp in uuidResults)
-                {
-                    var itemIndex = kvp.Key;
-                    var uuids = kvp.Value;
-
-                    if (uuids.Count > 0)
-                    {
-                        // Process UUID results for this item
-                        ProcessUuidResults(uuids, tempImport[itemIndex]);
-                    }
-                }
-
-                return uuidResults.Any();
+                return true;
             }
             catch (Exception ex)
             {
@@ -1122,9 +1086,6 @@ namespace CollectaMundo
                 DebugImportProcess();
             }
         }
-
-
-
 
 
 
