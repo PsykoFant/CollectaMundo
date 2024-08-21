@@ -822,13 +822,36 @@ namespace CollectaMundo
             {
                 await DBAccess.OpenConnectionAsync();
 
-                // Scenario 1: Regular cards with regular set codes
+                // Dictionary to hold the results for all scenarios
                 var csvToUuidsMap = new Dictionary<string, List<string>>();
-                var batchQueryBuilder = new StringBuilder(@"
+
+                // Use a StringBuilder to build a batch SQL query for all scenarios
+                var batchQueryBuilder = new StringBuilder();
+
+                // Initialize query for Scenario 1 (regular cards with regular set codes)
+                batchQueryBuilder.Append(@"
             SELECT c.uuid, c.name, c.setCode
             FROM cards c
             WHERE (c.side IS NULL OR c.side = 'a') 
             AND c.name IN (");
+
+                // Initialize query for Scenario 2 (tokens with token set codes)
+                var tokenQueryBuilder = new StringBuilder(@"
+            UNION ALL
+            SELECT t.uuid, t.name, t.setCode
+            FROM tokens t
+            WHERE (t.side IS NULL OR t.side = 'a') 
+            AND t.name IN (");
+
+                // Initialize query for Scenario 3 (tokens with a regular set code but using tokenSetCode)
+                var scenario3QueryBuilder = new StringBuilder(@"
+            UNION ALL
+            SELECT t.uuid, t.name, s.code AS setCode
+            FROM tokens t
+            JOIN sets s ON t.setCode = s.tokenSetCode
+            WHERE s.tokenSetCode <> s.code 
+            AND (t.side IS NULL OR t.side = 'a')             
+            AND t.name IN (");
 
                 bool hasValues = false;
                 int index = 0;
@@ -846,6 +869,8 @@ namespace CollectaMundo
                         {
                             csvToUuidsMap[key] = new List<string>();
                             batchQueryBuilder.Append($"@cardName_{index},");
+                            tokenQueryBuilder.Append($"@cardName_{index},");
+                            scenario3QueryBuilder.Append($"@cardName_{index},");
                             hasValues = true;
                         }
 
@@ -859,12 +884,20 @@ namespace CollectaMundo
                     return false;
                 }
 
-                // Remove the trailing comma and close the "IN" clause
+                // Remove the trailing comma and close the "IN" clauses
                 batchQueryBuilder.Length--;
                 batchQueryBuilder.Append(")");
 
-                // Add the Set Code condition outside of the IN clause
+                tokenQueryBuilder.Length--;
+                tokenQueryBuilder.Append(")");
+
+                scenario3QueryBuilder.Length--;
+                scenario3QueryBuilder.Append(")");
+
+                // Add the Set Code condition outside of the IN clause for both queries
                 batchQueryBuilder.Append(" AND c.setCode IN (");
+                tokenQueryBuilder.Append(" AND t.setCode IN (");
+                scenario3QueryBuilder.Append(" AND s.code IN (");
 
                 index = 0;
                 foreach (var tempItem in tempImport)
@@ -873,15 +906,27 @@ namespace CollectaMundo
                         !string.IsNullOrEmpty(setCode))
                     {
                         batchQueryBuilder.Append($"@setCode_{index},");
+                        tokenQueryBuilder.Append($"@setCode_{index},");
+                        scenario3QueryBuilder.Append($"@setCode_{index},");
                         index++;
                     }
                 }
 
-                // Remove the trailing comma and close the "IN" clause
+                // Remove the trailing commas and close the "IN" clauses
                 batchQueryBuilder.Length--;
                 batchQueryBuilder.Append(")");
 
-                // Execute the Scenario 1 query
+                tokenQueryBuilder.Length--;
+                tokenQueryBuilder.Append(")");
+
+                scenario3QueryBuilder.Length--;
+                scenario3QueryBuilder.Append(")");
+
+                // Combine all queries into one using UNION ALL
+                batchQueryBuilder.Append(tokenQueryBuilder);
+                batchQueryBuilder.Append(scenario3QueryBuilder);
+
+                // Execute the combined query
                 using (var command = new SQLiteCommand(batchQueryBuilder.ToString(), DBAccess.connection))
                 {
                     index = 0;
@@ -916,7 +961,7 @@ namespace CollectaMundo
                                 }
                                 else
                                 {
-                                    Debug.WriteLine($"Unexpected key '{key}' found in query results.");
+                                    //Debug.WriteLine($"Unexpected key '{key}' found in query results.");
                                 }
                             }
                         }
@@ -933,137 +978,6 @@ namespace CollectaMundo
                         if (csvToUuidsMap.TryGetValue(key, out var uuids))
                         {
                             return Task.Run(() => ProcessUuidResults(uuids, tempItem));
-                        }
-                    }
-                    return Task.CompletedTask;
-                }));
-
-                // Scenario 2: Token with a regular set code - searching in table `tokens`
-                csvToUuidsMap.Clear(); // Clear the map for the second batch
-                batchQueryBuilder.Clear(); // Clear the query builder for the second batch
-
-                batchQueryBuilder.Append(@"
-            SELECT t.uuid, t.name, t.setCode
-            FROM tokens t
-            WHERE (t.side IS NULL OR t.side = 'a') 
-            AND t.name IN (");
-
-                hasValues = false;
-                index = 0;
-
-                foreach (var tempItem in tempImport)
-                {
-                    if ((tempItem.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid)) ||
-                        (tempItem.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrEmpty(uuids)))
-                    {
-                        continue; // Skip items that already have a uuid or uuids field
-                    }
-
-                    if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                        !string.IsNullOrEmpty(cardName) &&
-                        tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
-                        !string.IsNullOrEmpty(setCode))
-                    {
-                        var key = $"{cardName}_{setCode}";
-
-                        if (!csvToUuidsMap.ContainsKey(key))
-                        {
-                            csvToUuidsMap[key] = new List<string>();
-                            batchQueryBuilder.Append($"@cardName_{index},");
-                            hasValues = true;
-                        }
-
-                        index++;
-                    }
-                }
-                Debug.WriteLine("Batchquery: " + batchQueryBuilder.ToString());
-
-                if (!hasValues)
-                {
-                    Debug.WriteLine("No valid items to search for tokens.");
-                    return true;
-                }
-
-                // Remove the trailing comma and close the "IN" clause
-                batchQueryBuilder.Length--;
-                batchQueryBuilder.Append(")");
-
-                // Add the Set Code condition outside of the IN clause
-                batchQueryBuilder.Append(" AND t.setCode IN (");
-
-                index = 0;
-                foreach (var tempItem in tempImport)
-                {
-                    if (!tempItem.Fields.TryGetValue("uuid", out var uuid) &&
-                        !tempItem.Fields.TryGetValue("uuids", out var uuids) &&
-                        tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
-                        !string.IsNullOrEmpty(setCode))
-                    {
-                        batchQueryBuilder.Append($"@setCode_{index},");
-                        index++;
-                    }
-                }
-
-                // Remove the trailing comma and close the "IN" clause
-                batchQueryBuilder.Length--;
-                batchQueryBuilder.Append(")");
-
-                // Execute the Scenario 2 query
-                using (var command = new SQLiteCommand(batchQueryBuilder.ToString(), DBAccess.connection))
-                {
-                    index = 0;
-                    foreach (var tempItem in tempImport)
-                    {
-                        if (!tempItem.Fields.TryGetValue("uuid", out var uuid) &&
-                            !tempItem.Fields.TryGetValue("uuids", out var uuids) &&
-                            tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                            !string.IsNullOrEmpty(cardName) &&
-                            tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
-                            !string.IsNullOrEmpty(setCode))
-                        {
-                            command.Parameters.AddWithValue($"@cardName_{index}", cardName);
-                            command.Parameters.AddWithValue($"@setCode_{index}", setCode);
-                            index++;
-                        }
-                    }
-
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            var uuid = reader["uuid"]?.ToString();
-                            var cardName = reader["name"]?.ToString();
-                            var setCode = reader["setCode"]?.ToString();
-
-                            var key = $"{cardName}_{setCode}";
-
-                            if (!string.IsNullOrEmpty(uuid) && !string.IsNullOrEmpty(key))
-                            {
-                                if (csvToUuidsMap.ContainsKey(key))
-                                {
-                                    csvToUuidsMap[key].Add(uuid);
-                                }
-                                else
-                                {
-                                    Debug.WriteLine($"Unexpected key '{key}' found in query results.");
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Process UUID results in parallel for tokens
-                await Task.WhenAll(tempImport.Select(tempItem =>
-                {
-                    if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                        tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
-                        !tempItem.Fields.TryGetValue("uuid", out var uuid) &&
-                        !tempItem.Fields.TryGetValue("uuids", out var uuids))
-                    {
-                        var key = $"{cardName}_{setCode}";
-                        if (csvToUuidsMap.TryGetValue(key, out var uuidsList))
-                        {
-                            return Task.Run(() => ProcessUuidResults(uuidsList, tempItem));
                         }
                     }
                     return Task.CompletedTask;
@@ -1087,8 +1001,6 @@ namespace CollectaMundo
                 DebugImportProcess();
             }
         }
-
-
 
 
 
