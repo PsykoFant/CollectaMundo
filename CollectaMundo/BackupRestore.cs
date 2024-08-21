@@ -820,8 +820,6 @@ namespace CollectaMundo
 
             try
             {
-                await DBAccess.OpenConnectionAsync();
-
                 // Dictionary to hold the results for all scenarios
                 var csvToUuidsMap = new Dictionary<string, List<string>>();
 
@@ -830,28 +828,28 @@ namespace CollectaMundo
 
                 // Scenario 1: Regular cards with regular set codes
                 batchQueryBuilder.Append(@"
-SELECT c.uuid, c.name, c.setCode
-FROM cards c
-WHERE (c.side IS NULL OR c.side = 'a') 
-AND c.name IN (");
+                    SELECT c.uuid, c.name, c.setCode
+                    FROM cards c
+                    WHERE (c.side IS NULL OR c.side = 'a') 
+                    AND c.name IN (");
 
                 // Scenario 2: Tokens with token set codes
                 var tokenQueryBuilder = new StringBuilder(@"
-UNION ALL
-SELECT t.uuid, t.name, t.setCode
-FROM tokens t
-WHERE (t.side IS NULL OR t.side = 'a') 
-AND t.name IN (");
+                    UNION ALL
+                    SELECT t.uuid, t.name, t.setCode
+                    FROM tokens t
+                    WHERE (t.side IS NULL OR t.side = 'a') 
+                    AND t.name IN (");
 
                 // Scenario 3: Tokens with a regular set code but using tokenSetCode
                 var scenario3QueryBuilder = new StringBuilder(@"
-UNION ALL
-SELECT t.uuid, t.name, s.code AS setCode
-FROM tokens t
-JOIN sets s ON t.setCode = s.tokenSetCode
-WHERE s.tokenSetCode <> s.code 
-AND (t.side IS NULL OR t.side = 'a')             
-AND t.name IN (");
+                    UNION ALL
+                    SELECT t.uuid, t.name, s.code AS setCode
+                    FROM tokens t
+                    JOIN sets s ON t.setCode = s.tokenSetCode
+                    WHERE s.tokenSetCode <> s.code 
+                    AND (t.side IS NULL OR t.side = 'a')             
+                    AND t.name IN (");
 
                 bool hasValues = false;
                 int index = 0;
@@ -982,20 +980,20 @@ AND t.name IN (");
                 // Now handle Scenario 4 and Scenario 5 in a separate batch
                 csvToUuidsMap.Clear();
                 var scenario4QueryBuilder = new StringBuilder(@"
-            SELECT t.uuid, t.faceName AS name, s.code AS setCode
-            FROM tokens t
-            JOIN sets s ON t.setCode = s.tokenSetCode            
-            WHERE (t.side IS NULL OR t.side = 'a')             
-            AND t.faceName IN (");
+                    SELECT t.uuid, t.faceName AS name, s.code AS setCode
+                    FROM tokens t
+                    JOIN sets s ON t.setCode = s.tokenSetCode            
+                    WHERE (t.side IS NULL OR t.side = 'a')             
+                    AND t.faceName IN (");
 
                 var scenario5QueryBuilder = new StringBuilder(@"
-            UNION ALL
-            SELECT t.uuid, t.faceName AS name, s.code AS setCode
-            FROM tokens t
-            JOIN sets s ON t.setCode = s.tokenSetCode
-            WHERE s.tokenSetCode <> s.code 
-            AND (t.side IS NULL OR t.side = 'a')             
-            AND t.faceName IN (");
+                    UNION ALL
+                    SELECT t.uuid, t.faceName AS name, s.code AS setCode
+                    FROM tokens t
+                    JOIN sets s ON t.setCode = s.tokenSetCode
+                    WHERE s.tokenSetCode <> s.code 
+                    AND (t.side IS NULL OR t.side = 'a')             
+                    AND t.faceName IN (");
 
                 hasValues = false;
                 index = 0;
@@ -1114,12 +1112,12 @@ AND t.name IN (");
             }
             finally
             {
-                DBAccess.CloseConnection();
                 stopwatch.Stop();
                 Debug.WriteLine($"Searching by card name and set code completed in {stopwatch.ElapsedMilliseconds} ms");
 
                 AssertNoInvalidUuidFields();
                 DebugImportProcess();
+                DebugAllItems();
             }
         }
 
