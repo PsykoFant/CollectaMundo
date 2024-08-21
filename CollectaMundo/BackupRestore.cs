@@ -821,109 +821,44 @@ namespace CollectaMundo
             try
             {
                 // Dictionaries to hold the results for each scenario
-                var regularCardsUuids = new Dictionary<int, List<string>>();
-                var tokensUuids = new Dictionary<int, List<string>>();
+                var uuidResults = new Dictionary<int, List<string>>();
 
-                // Batch 1: Regular cards and tokens with regular set codes
-                var queryParametersBatch1 = new List<SQLiteParameter>();
-                var batchQueryBuilderBatch1 = new StringBuilder();
-
-                for (int i = 0; i < tempImport.Count; i++)
+                // Helper function to execute the batch queries
+                async Task ExecuteBatchQueryAsync(StringBuilder queryBuilder, List<SQLiteParameter> queryParameters)
                 {
-                    var tempItem = tempImport[i];
-
-                    if (!tempItem.Fields.TryGetValue("Card Name", out var cardName) || string.IsNullOrEmpty(cardName))
+                    if (queryBuilder.Length > 0)
                     {
-                        continue;
-                    }
-
-                    if (!tempItem.Fields.TryGetValue("Set Code", out var setCode) || string.IsNullOrEmpty(setCode))
-                    {
-                        continue;
-                    }
-
-                    if (batchQueryBuilderBatch1.Length > 0)
-                    {
-                        batchQueryBuilderBatch1.Append(" UNION ALL ");
-                    }
-
-                    // 1. Regular card with regular set code - searching in table `cards`
-                    batchQueryBuilderBatch1.Append($@"
-                        SELECT {i} AS itemIndex, uuid 
-                        FROM cards 
-                        WHERE name = @cardName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
-
-                    // 2. Token with a regular set code - searching in table `tokens`
-                    batchQueryBuilderBatch1.Append($@"
-                        UNION ALL
-                        SELECT {i} AS itemIndex, uuid 
-                        FROM tokens 
-                        WHERE name = @cardName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
-
-                    // 3. Token with a token set code - find `tokenSetCode` and search in table `tokens`,
-                    // only if `tokenSetCode` is different from `code`
-                    batchQueryBuilderBatch1.Append($@"
-                        UNION ALL
-                        SELECT {i} AS itemIndex, uuid 
-                        FROM tokens 
-                        WHERE name = @cardName_{i} AND setCode = (
-                            SELECT tokenSetCode FROM sets WHERE code = @setCode_{i} AND tokenSetCode <> code
-                        ) AND (side = 'a' OR side IS NULL)");
-
-                    // Add parameters for this item
-                    queryParametersBatch1.AddRange(new[]
-                    {
-                        new SQLiteParameter($"@cardName_{i}", cardName),
-                        new SQLiteParameter($"@setCode_{i}", setCode)
-                    });
-                }
-
-                if (batchQueryBuilderBatch1.Length > 0)
-                {
-                    // Execute batch 1 query
-                    using (var command = new SQLiteCommand(batchQueryBuilderBatch1.ToString(), DBAccess.connection))
-                    {
-                        command.Parameters.AddRange(queryParametersBatch1.ToArray());
-
-                        using (var reader = await command.ExecuteReaderAsync())
+                        using (var command = new SQLiteCommand(queryBuilder.ToString(), DBAccess.connection))
                         {
-                            while (await reader.ReadAsync())
-                            {
-                                var itemIndex = reader.GetInt32(0);
-                                var uuid = reader.GetString(1);
+                            command.Parameters.AddRange(queryParameters.ToArray());
 
-                                if (!string.IsNullOrEmpty(uuid))
+                            using (var reader = await command.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
                                 {
-                                    if (regularCardsUuids.ContainsKey(itemIndex))
+                                    var itemIndex = reader.GetInt32(0);
+                                    var uuid = reader.GetString(1);
+
+                                    if (!string.IsNullOrEmpty(uuid))
                                     {
-                                        regularCardsUuids[itemIndex].Add(uuid);
-                                    }
-                                    else
-                                    {
-                                        regularCardsUuids[itemIndex] = new List<string> { uuid };
+                                        if (uuidResults.ContainsKey(itemIndex))
+                                        {
+                                            uuidResults[itemIndex].Add(uuid);
+                                        }
+                                        else
+                                        {
+                                            uuidResults[itemIndex] = new List<string> { uuid };
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-
-                    // Process the results for each item in tempImport
-                    foreach (var kvp in regularCardsUuids)
-                    {
-                        var itemIndex = kvp.Key;
-                        var uuids = kvp.Value;
-
-                        if (uuids.Count > 0)
-                        {
-                            // Process UUID results for this item
-                            ProcessUuidResults(uuids, tempImport[itemIndex]);
-                        }
-                    }
                 }
 
-                // Batch 2: Tokens with faceName, only for items without 'uuid' or 'uuids'
-                var queryParametersBatch2 = new List<SQLiteParameter>();
-                var batchQueryBuilderBatch2 = new StringBuilder();
+                // Batch 1: Regular cards with regular set codes
+                var queryParametersBatch1 = new List<SQLiteParameter>();
+                var batchQueryBuilderBatch1 = new StringBuilder();
 
                 for (int i = 0; i < tempImport.Count; i++)
                 {
@@ -945,81 +880,232 @@ namespace CollectaMundo
                         continue;
                     }
 
+                    if (batchQueryBuilderBatch1.Length > 0)
+                    {
+                        batchQueryBuilderBatch1.Append(" UNION ALL ");
+                    }
+
+                    // Regular card with regular set code - searching in table `cards`
+                    batchQueryBuilderBatch1.Append($@"
+                SELECT {i} AS itemIndex, uuid 
+                FROM cards 
+                WHERE name = @cardName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
+
+                    // Add parameters for this item
+                    queryParametersBatch1.AddRange(new[]
+                    {
+                new SQLiteParameter($"@cardName_{i}", cardName),
+                new SQLiteParameter($"@setCode_{i}", setCode)
+            });
+                }
+
+                // Execute Batch 1
+                await ExecuteBatchQueryAsync(batchQueryBuilderBatch1, queryParametersBatch1);
+
+                // Batch 2: Tokens with regular set codes
+                var queryParametersBatch2 = new List<SQLiteParameter>();
+                var batchQueryBuilderBatch2 = new StringBuilder();
+
+                for (int i = 0; i < tempImport.Count; i++)
+                {
+                    var tempItem = tempImport[i];
+
+                    if (uuidResults.ContainsKey(i))
+                    {
+                        continue; // Skip items that already have a uuid or uuids from Batch 1
+                    }
+
+                    if (!tempItem.Fields.TryGetValue("Card Name", out var cardName) || string.IsNullOrEmpty(cardName))
+                    {
+                        continue;
+                    }
+
+                    if (!tempItem.Fields.TryGetValue("Set Code", out var setCode) || string.IsNullOrEmpty(setCode))
+                    {
+                        continue;
+                    }
+
                     if (batchQueryBuilderBatch2.Length > 0)
                     {
                         batchQueryBuilderBatch2.Append(" UNION ALL ");
                     }
 
-                    // Handle faceName cases with split if needed
-                    string faceNameSearch = cardName.Contains(" // ") ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0] : cardName;
-
-                    // 4. Token with a token set code, searching by `faceName`
+                    // Token with a regular set code - searching in table `tokens`
                     batchQueryBuilderBatch2.Append($@"
-                        SELECT {i} AS itemIndex, uuid 
-                        FROM tokens 
-                        WHERE faceName = @faceName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
-
-                    // 5. Token with a regular set code, searching by `faceName` and finding `tokenSetCode`
-                    batchQueryBuilderBatch2.Append($@"
-                        UNION ALL
-                        SELECT {i} AS itemIndex, uuid 
-                        FROM tokens 
-                        WHERE faceName = @faceName_{i} AND setCode = (
-                            SELECT tokenSetCode FROM sets WHERE code = @setCode_{i} AND tokenSetCode<> code
-                        ) AND (side = 'a' OR side IS NULL)");
+                SELECT {i} AS itemIndex, uuid 
+                FROM tokens 
+                WHERE name = @cardName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
 
                     // Add parameters for this item
                     queryParametersBatch2.AddRange(new[]
                     {
-                        new SQLiteParameter($"@faceName_{i}", faceNameSearch),
-                        new SQLiteParameter($"@setCode_{i}", setCode)
-                    });
+                new SQLiteParameter($"@cardName_{i}", cardName),
+                new SQLiteParameter($"@setCode_{i}", setCode)
+            });
                 }
 
-                if (batchQueryBuilderBatch2.Length > 0)
+                // Execute Batch 2
+                await ExecuteBatchQueryAsync(batchQueryBuilderBatch2, queryParametersBatch2);
+
+                // Batch 3: Tokens with a token set code (only if tokenSetCode is different from code)
+                var queryParametersBatch3 = new List<SQLiteParameter>();
+                var batchQueryBuilderBatch3 = new StringBuilder();
+
+                for (int i = 0; i < tempImport.Count; i++)
                 {
-                    // Execute batch 2 query
-                    using (var command = new SQLiteCommand(batchQueryBuilderBatch2.ToString(), DBAccess.connection))
+                    var tempItem = tempImport[i];
+
+                    if (uuidResults.ContainsKey(i))
                     {
-                        command.Parameters.AddRange(queryParametersBatch2.ToArray());
-
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            while (await reader.ReadAsync())
-                            {
-                                var itemIndex = reader.GetInt32(0);
-                                var uuid = reader.GetString(1);
-
-                                if (!string.IsNullOrEmpty(uuid))
-                                {
-                                    if (tokensUuids.ContainsKey(itemIndex))
-                                    {
-                                        tokensUuids[itemIndex].Add(uuid);
-                                    }
-                                    else
-                                    {
-                                        tokensUuids[itemIndex] = new List<string> { uuid };
-                                    }
-                                }
-                            }
-                        }
+                        continue; // Skip items that already have a uuid or uuids from previous batches
                     }
 
-                    // Process the results for each item in tempImport
-                    foreach (var kvp in tokensUuids)
+                    if (!tempItem.Fields.TryGetValue("Card Name", out var cardName) || string.IsNullOrEmpty(cardName))
                     {
-                        var itemIndex = kvp.Key;
-                        var uuids = kvp.Value;
+                        continue;
+                    }
 
-                        if (uuids.Count > 0)
-                        {
-                            // Process UUID results for this item
-                            ProcessUuidResults(uuids, tempImport[itemIndex]);
-                        }
+                    if (!tempItem.Fields.TryGetValue("Set Code", out var setCode) || string.IsNullOrEmpty(setCode))
+                    {
+                        continue;
+                    }
+
+                    if (batchQueryBuilderBatch3.Length > 0)
+                    {
+                        batchQueryBuilderBatch3.Append(" UNION ALL ");
+                    }
+
+                    // Token with a token set code - find `tokenSetCode` and search in table `tokens`
+                    batchQueryBuilderBatch3.Append($@"
+                SELECT {i} AS itemIndex, uuid 
+                FROM tokens 
+                WHERE name = @cardName_{i} AND setCode = (
+                    SELECT tokenSetCode FROM sets WHERE code = @setCode_{i} AND tokenSetCode <> code
+                ) AND (side = 'a' OR side IS NULL)");
+
+                    // Add parameters for this item
+                    queryParametersBatch3.AddRange(new[]
+                    {
+                new SQLiteParameter($"@cardName_{i}", cardName),
+                new SQLiteParameter($"@setCode_{i}", setCode)
+            });
+                }
+
+                // Execute Batch 3
+                await ExecuteBatchQueryAsync(batchQueryBuilderBatch3, queryParametersBatch3);
+
+                // Batch 4: Tokens with faceName and a token set code
+                var queryParametersBatch4 = new List<SQLiteParameter>();
+                var batchQueryBuilderBatch4 = new StringBuilder();
+
+                for (int i = 0; i < tempImport.Count; i++)
+                {
+                    var tempItem = tempImport[i];
+
+                    if (uuidResults.ContainsKey(i))
+                    {
+                        continue; // Skip items that already have a uuid or uuids from previous batches
+                    }
+
+                    if (!tempItem.Fields.TryGetValue("Card Name", out var cardName) || string.IsNullOrEmpty(cardName))
+                    {
+                        continue;
+                    }
+
+                    if (!tempItem.Fields.TryGetValue("Set Code", out var setCode) || string.IsNullOrEmpty(setCode))
+                    {
+                        continue;
+                    }
+
+                    if (batchQueryBuilderBatch4.Length > 0)
+                    {
+                        batchQueryBuilderBatch4.Append(" UNION ALL ");
+                    }
+
+                    // Handle faceName cases with split if needed
+                    string faceNameSearch = cardName.Contains(" // ") ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0] : cardName;
+
+                    // Token with a token set code, searching by `faceName`
+                    batchQueryBuilderBatch4.Append($@"
+                SELECT {i} AS itemIndex, uuid 
+                FROM tokens 
+                WHERE faceName = @faceName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
+
+                    // Add parameters for this item
+                    queryParametersBatch4.AddRange(new[]
+                    {
+                new SQLiteParameter($"@faceName_{i}", faceNameSearch),
+                new SQLiteParameter($"@setCode_{i}", setCode)
+            });
+                }
+
+                // Execute Batch 4
+                await ExecuteBatchQueryAsync(batchQueryBuilderBatch4, queryParametersBatch4);
+
+                // Batch 5: Tokens with faceName and a regular set code
+                var queryParametersBatch5 = new List<SQLiteParameter>();
+                var batchQueryBuilderBatch5 = new StringBuilder();
+
+                for (int i = 0; i < tempImport.Count; i++)
+                {
+                    var tempItem = tempImport[i];
+
+                    if (uuidResults.ContainsKey(i))
+                    {
+                        continue; // Skip items that already have a uuid or uuids from previous batches
+                    }
+
+                    if (!tempItem.Fields.TryGetValue("Card Name", out var cardName) || string.IsNullOrEmpty(cardName))
+                    {
+                        continue;
+                    }
+
+                    if (!tempItem.Fields.TryGetValue("Set Code", out var setCode) || string.IsNullOrEmpty(setCode))
+                    {
+                        continue;
+                    }
+
+                    if (batchQueryBuilderBatch5.Length > 0)
+                    {
+                        batchQueryBuilderBatch5.Append(" UNION ALL ");
+                    }
+
+                    // Handle faceName cases with split if needed
+                    string faceNameSearch = cardName.Contains(" // ") ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0] : cardName;
+
+                    // Token with a regular set code, searching by `faceName` and finding `tokenSetCode`
+                    batchQueryBuilderBatch5.Append($@"
+                SELECT {i} AS itemIndex, uuid 
+                FROM tokens 
+                WHERE faceName = @faceName_{i} AND setCode = (
+                    SELECT tokenSetCode FROM sets WHERE code = @setCode_{i} AND tokenSetCode <> code
+                ) AND (side = 'a' OR side IS NULL)");
+
+                    // Add parameters for this item
+                    queryParametersBatch5.AddRange(new[]
+                    {
+                new SQLiteParameter($"@faceName_{i}", faceNameSearch),
+                new SQLiteParameter($"@setCode_{i}", setCode)
+            });
+                }
+
+                // Execute Batch 5
+                await ExecuteBatchQueryAsync(batchQueryBuilderBatch5, queryParametersBatch5);
+
+                // Process the results for each item in tempImport
+                foreach (var kvp in uuidResults)
+                {
+                    var itemIndex = kvp.Key;
+                    var uuids = kvp.Value;
+
+                    if (uuids.Count > 0)
+                    {
+                        // Process UUID results for this item
+                        ProcessUuidResults(uuids, tempImport[itemIndex]);
                     }
                 }
 
-                return regularCardsUuids.Any() || tokensUuids.Any();
+                return uuidResults.Any();
             }
             catch (Exception ex)
             {
@@ -1036,6 +1122,11 @@ namespace CollectaMundo
                 DebugImportProcess();
             }
         }
+
+
+
+
+
 
 
 

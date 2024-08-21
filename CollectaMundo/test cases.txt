@@ -57,6 +57,9 @@ Quantity,CardName,Simple Name,Set,Card Number,Set Code,Printing,King Kong,Langua
 3,Spirit,Spirit,Avacyn Restored,76,AVR,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
 1,Fish // Kraken,Fish // Kraken,Masters 25,76,A25,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
 
+-- token where token set code and regular set code is the same
+3,"Art Card: Drivnod, Carnage Dominus","Art Card: Drivnod, Carnage Dominus",Phyrexia: All Will Be One Art Series,76,AONE,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
+
 -- Regular card with regular set code
 1,Agent of the Fates,Agent of the Fates,Theros,76,THS,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
 1,"Garruk Relentless // Garruk, the Veil-Cursed","Garruk Relentless // Garruk, the Veil-Cursed",Innistrad,76,ISD,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
