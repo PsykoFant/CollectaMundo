@@ -809,9 +809,8 @@ namespace CollectaMundo
         }
 
         /* To do:
-         * tilføj søg tokensetcode
-         * tilføj søg facename
          * opdater søg ved sæt navn
+         * Optimer load metoder
          */
 
         private static async Task<bool> SearchBySetCode()
@@ -917,7 +916,7 @@ namespace CollectaMundo
                                 }
                                 else
                                 {
-                                    //Debug.WriteLine($"Unexpected key '{key}' found in query results.");
+                                    Debug.WriteLine($"Unexpected key '{key}' found in query results.");
                                 }
                             }
                         }
@@ -939,7 +938,7 @@ namespace CollectaMundo
                     return Task.CompletedTask;
                 }));
 
-                // Scenario 2: Token with a regular set code
+                // Scenario 2: Token with a regular set code - searching in table `tokens`
                 csvToUuidsMap.Clear(); // Clear the map for the second batch
                 batchQueryBuilder.Clear(); // Clear the query builder for the second batch
 
@@ -977,6 +976,7 @@ namespace CollectaMundo
                         index++;
                     }
                 }
+                Debug.WriteLine("Batchquery: " + batchQueryBuilder.ToString());
 
                 if (!hasValues)
                 {
@@ -1045,7 +1045,7 @@ namespace CollectaMundo
                                 }
                                 else
                                 {
-                                    //Debug.WriteLine($"Unexpected key '{key}' found in query results.");
+                                    Debug.WriteLine($"Unexpected key '{key}' found in query results.");
                                 }
                             }
                         }
@@ -1079,6 +1079,7 @@ namespace CollectaMundo
             }
             finally
             {
+                DBAccess.CloseConnection();
                 stopwatch.Stop();
                 Debug.WriteLine($"Searching by card name and set code completed in {stopwatch.ElapsedMilliseconds} ms");
 
@@ -1086,6 +1087,10 @@ namespace CollectaMundo
                 DebugImportProcess();
             }
         }
+
+
+
+
 
 
 
