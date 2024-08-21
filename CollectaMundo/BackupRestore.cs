@@ -815,6 +815,9 @@ namespace CollectaMundo
          */
         private static async Task<bool> SearchBySetCode()
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             try
             {
                 // Dictionaries to hold the results for each scenario
@@ -846,33 +849,33 @@ namespace CollectaMundo
 
                     // 1. Regular card with regular set code - searching in table `cards`
                     batchQueryBuilderBatch1.Append($@"
-                SELECT {i} AS itemIndex, uuid 
-                FROM cards 
-                WHERE name = @cardName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
+                        SELECT {i} AS itemIndex, uuid 
+                        FROM cards 
+                        WHERE name = @cardName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
 
                     // 2. Token with a regular set code - searching in table `tokens`
                     batchQueryBuilderBatch1.Append($@"
-                UNION ALL
-                SELECT {i} AS itemIndex, uuid 
-                FROM tokens 
-                WHERE name = @cardName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
+                        UNION ALL
+                        SELECT {i} AS itemIndex, uuid 
+                        FROM tokens 
+                        WHERE name = @cardName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
 
                     // 3. Token with a token set code - find `tokenSetCode` and search in table `tokens`,
                     // only if `tokenSetCode` is different from `code`
                     batchQueryBuilderBatch1.Append($@"
-                UNION ALL
-                SELECT {i} AS itemIndex, uuid 
-                FROM tokens 
-                WHERE name = @cardName_{i} AND setCode = (
-                    SELECT tokenSetCode FROM sets WHERE code = @setCode_{i} AND tokenSetCode <> code
-                ) AND (side = 'a' OR side IS NULL)");
+                        UNION ALL
+                        SELECT {i} AS itemIndex, uuid 
+                        FROM tokens 
+                        WHERE name = @cardName_{i} AND setCode = (
+                            SELECT tokenSetCode FROM sets WHERE code = @setCode_{i} AND tokenSetCode <> code
+                        ) AND (side = 'a' OR side IS NULL)");
 
                     // Add parameters for this item
                     queryParametersBatch1.AddRange(new[]
                     {
-                new SQLiteParameter($"@cardName_{i}", cardName),
-                new SQLiteParameter($"@setCode_{i}", setCode)
-            });
+                        new SQLiteParameter($"@cardName_{i}", cardName),
+                        new SQLiteParameter($"@setCode_{i}", setCode)
+                    });
                 }
 
                 if (batchQueryBuilderBatch1.Length > 0)
@@ -952,25 +955,25 @@ namespace CollectaMundo
 
                     // 4. Token with a token set code, searching by `faceName`
                     batchQueryBuilderBatch2.Append($@"
-                SELECT {i} AS itemIndex, uuid 
-                FROM tokens 
-                WHERE faceName = @faceName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
+                        SELECT {i} AS itemIndex, uuid 
+                        FROM tokens 
+                        WHERE faceName = @faceName_{i} AND setCode = @setCode_{i} AND (side = 'a' OR side IS NULL)");
 
                     // 5. Token with a regular set code, searching by `faceName` and finding `tokenSetCode`
                     batchQueryBuilderBatch2.Append($@"
-                UNION ALL
-                SELECT {i} AS itemIndex, uuid 
-                FROM tokens 
-                WHERE faceName = @faceName_{i} AND setCode = (
-                    SELECT tokenSetCode FROM sets WHERE code = @setCode_{i}
-                ) AND (side = 'a' OR side IS NULL)");
+                        UNION ALL
+                        SELECT {i} AS itemIndex, uuid 
+                        FROM tokens 
+                        WHERE faceName = @faceName_{i} AND setCode = (
+                            SELECT tokenSetCode FROM sets WHERE code = @setCode_{i} AND tokenSetCode<> code
+                        ) AND (side = 'a' OR side IS NULL)");
 
                     // Add parameters for this item
                     queryParametersBatch2.AddRange(new[]
                     {
-                new SQLiteParameter($"@faceName_{i}", faceNameSearch),
-                new SQLiteParameter($"@setCode_{i}", setCode)
-            });
+                        new SQLiteParameter($"@faceName_{i}", faceNameSearch),
+                        new SQLiteParameter($"@setCode_{i}", setCode)
+                    });
                 }
 
                 if (batchQueryBuilderBatch2.Length > 0)
@@ -1026,6 +1029,9 @@ namespace CollectaMundo
             }
             finally
             {
+                stopwatch.Stop();
+                Debug.WriteLine($"Searching by card name and set code completed in {stopwatch.ElapsedMilliseconds} ms");
+
                 AssertNoInvalidUuidFields();
                 DebugImportProcess();
             }
