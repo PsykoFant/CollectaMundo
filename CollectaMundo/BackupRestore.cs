@@ -1001,7 +1001,9 @@ AND t.name IN (");
                 hasValues = false;
                 index = 0;
 
-                foreach (var tempItem in tempImport.Where(i => !i.Fields.ContainsKey("uuid")))
+                foreach (var tempItem in tempImport.Where(i =>
+                !i.Fields.ContainsKey("uuid") &&
+                !i.Fields.ContainsKey("uuids")))
                 {
                     if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
                         !string.IsNullOrEmpty(cardName) &&
