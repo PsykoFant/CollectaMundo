@@ -64,6 +64,12 @@ Quantity,CardName,Simple Name,Set,Card Number,Set Code,Printing,King Kong,Langua
 1,Agent of the Fates,Agent of the Fates,Theros,76,THS,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
 1,"Garruk Relentless // Garruk, the Veil-Cursed","Garruk Relentless // Garruk, the Veil-Cursed",Innistrad,76,ISD,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
 
+-- token with a token set code, use facename
+1,Monster // Virtuous,Monster // Virtuous,Theros,76,TWOC,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
+
+-- token with a regular set code, use facename
+3,Elemental // Elemental,Elemental // Elemental,Unstable,76,UST,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
+
 
 
 
