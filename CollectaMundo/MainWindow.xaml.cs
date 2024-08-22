@@ -1174,341 +1174,34 @@ namespace CollectaMundo
         private async void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
         {
             await ImportCollectionButton();
-
-            //// Select the csv-file and create a tempImport object with the content
-            //await ImportCsvAsync();
-
-            //PopulateIdColumnMappingListView(IdColumnMappingListView);
-            //GridImportWizard.Visibility = Visibility.Visible;
-            //GridImportIdColumnMapping.Visibility = Visibility.Visible;
         }
         private async void ButtonIdColumnMappingNext_Click(object sender, RoutedEventArgs e)
         {
             await ButtonIdColumnMappingNext();
-            //await ProcessIdColumnMappingsAsync();
-
-            //AssertNoInvalidUuidFields();
-
-            //if (AllItemsHaveUuid())
-            //{
-            //    Debug.WriteLine("All items have uuid");
-            //    GoToAdditionalFieldsMapping();
-            //}
-            //else
-            //{
-            //    Debug.WriteLine("Not all items have uuid");
-            //    // Prepare the listview to map card name, set name and set code and go to the first import wizard screen
-            //    var cardSetFields = new List<string> { "Card Name", "Set Name", "Set Code" };
-            //    PopulateColumnMappingListView(NameAndSetMappingListView, cardSetFields);
-            //    GridImportNameAndSetMapping.Visibility = Visibility.Visible;
-            //}
-            //GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
-
-            //DebugImportProcess();
         }
         private async void ButtonNameAndSetMappingNext_Click(object sender, RoutedEventArgs e)
         {
             await ButtonNameAndSetMappingNext();
-
-            ///*
-            //--Assumptions--
-            //An item in tempImport object can have a single uuid field with value
-            //An item in tempImport object can have a multiple uuids field with value
-
-            //Valid scenarios
-            // - A single item can have single uuid and no multiple uuids
-            // - A single item can have no uuid and multiple uuids
-            // - A single item can have no uuid and no multiple uuids
-
-            //Invalid scenario:
-            // - A single item has single uuid field or multiple uuids fields with no value
-            // - A single item has both single uuid and multiple uuids fields
-
-            //--Actions-- 
-            //Depending on different combinations, three possible actions should happen:
-
-            //1. Go to Multiple uuids mapping screen (if at least one item has multiple uuids)
-            //2. Go to Additional fields mapping screen (if at least one item has single uuid OR all items have single uuid AND no items have multiple uuids)
-            //0. Error screen (if no items have single uuid AND no item has multiple uuids)
-
-            //--Possible scenarios--
-            //No items have have single uuid, no items have multiple uuids --> 0. Error screen
-            //No items have single uuid, at least one item has multiple uuids --> 1. Go to Multiple uuids mapping screen
-            //All items have single uuid --> 2. Go to Additional fields mapping screen
-            //At least one item has single uuid, no items have multiple uuids --> 2. Go to Additional fields mapping screen
-            //At least one item has single uuids, at least one item has multiple uuids --> 1. Go to Multiple uuids mapping screen
-
-            //--Control Flow Pseudocode--
-            //Assert for invalid scenarios
-            //All items have single uuid?
-            // True: 2. Go to Additional fields mapping screen
-            // False:
-            //  At least one item has multiple uuids?
-            //   True: 1. Go to Multiple uuids screen select
-            //   False: 
-            //    At least one item has single uuid?
-            //     True: 2. Go to Additional Fields screen
-            //     False: 0. Error
-
-            //*/
-
-            //// Make a list of the mapped items
-            //var mappings = NameAndSetMappingListView.Items.Cast<ColumnMapping>().ToList();
-
-            //var nameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Card Name")?.CsvHeader;
-            //var setNameMapping = mappings.FirstOrDefault(m => m.CardSetField == "Set Name")?.CsvHeader;
-            //var setCodeMapping = mappings.FirstOrDefault(m => m.CardSetField == "Set Code")?.CsvHeader;
-
-            //// Check if "Name" and either "Set Name" or "Set Code" are mapped
-            //if (string.IsNullOrEmpty(nameMapping) || (string.IsNullOrEmpty(setNameMapping) && string.IsNullOrEmpty(setCodeMapping)))
-            //{
-            //    MessageBox.Show("Both name and either set name or set code must be set", "Mapping Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-            //    return;
-            //}
-            //try
-            //{
-
-            //    // Search for unique uuids based on selected csv-headings for card name, set, and set code
-            //    await SearchByCardNameOrSet(mappings);
-
-            //    // Assert for invalid scenarios
-            //    AssertNoInvalidUuidFields();
-
-            //    // Do all items in tempImport have single uuid
-            //    if (AllItemsHaveUuid())
-            //    {
-            //        GoToAdditionalFieldsMapping();
-            //    }
-            //    else
-            //    {
-            //        // Were multiple uuids found for any items in tempImport?
-            //        if (AnyItemWithMultipleUuidsField())
-            //        {
-            //            PopulateMultipleUuidsDataGrid();
-            //            GridImportMultipleUuidsSelection.Visibility = Visibility.Visible;
-            //        }
-            //        else
-            //        {
-            //            // Ok then ... were single uuid found for ANY items in tempImport?
-            //            if (AnyItemWithUuidField())
-            //            {
-            //                GoToAdditionalFieldsMapping();
-            //            }
-            //            // If not, the import has failed
-            //            else
-            //            {
-            //                tempImport.Clear();
-            //                GridImportWizard.Visibility = Visibility.Collapsed;
-            //                MessageBox.Show("Was not able to map any cards in the import file the main card database", "Import failed", MessageBoxButton.OK, MessageBoxImage.Warning);
-            //            }
-            //        }
-            //    }
-            //    GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
-            //    DebugImportProcess();
-            //}
-            //catch (Exception ex)
-            //{
-            //    Debug.WriteLine($"Error processing mapping using card and set name and set code: {ex.Message}");
-            //    MessageBox.Show($"Error processing mapping using card and set name and set code: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            //}
         }
         private void ButtonMultipleUuidsNext_Click(object sender, RoutedEventArgs e)
         {
             ButtonMultipleUuidsNext();
-
-            //// Directly retrieve items from DataGrid
-            //var multipleUuidsItems = new List<MultipleUuidsItem>();
-            //bool allSelected = true;
-
-            //// Check that all dropdowns has a value selected
-            //foreach (var item in MultipleUuidsDataGrid.Items)
-            //{
-            //    if (item is MultipleUuidsItem multipleUuidsItem)
-            //    {
-            //        // Find the corresponding DataGridRow and ComboBox
-            //        DataGridRow row = (DataGridRow)MultipleUuidsDataGrid.ItemContainerGenerator.ContainerFromItem(multipleUuidsItem);
-            //        if (row != null)
-            //        {
-            //            ComboBox? comboBox = FindVisualChild<ComboBox>(row);
-            //            if (comboBox != null && comboBox.SelectedItem is UuidVersion selectedVersion)
-            //            {
-            //                multipleUuidsItem.SelectedUuid = selectedVersion.Uuid;
-            //            }
-            //            else
-            //            {
-            //                allSelected = false;
-            //            }
-            //        }
-            //        multipleUuidsItems.Add(multipleUuidsItem);
-            //    }
-            //}
-
-            //// Check if all dropdowns have a selected value
-            //if (!allSelected)
-            //{
-            //    MessageBox.Show("Please select a version for all cards before proceeding.", "Selection Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-            //    return;
-            //}
-
-            //GridImportMultipleUuidsSelection.Visibility = Visibility.Collapsed;
-
-            //// Convert to List explicitly to ensure we have a concrete collection to work with
-            //var multipleUuidsList = multipleUuidsItems.ToList();
-
-            //// Update tempImport and cardItemsToAdd with the uuids for the selected versions of the cards
-            //ProcessMultipleUuidSelections(multipleUuidsList);
-
-            //// Prepare the listview to map additional fields and make the screen visible
-            //PopulateColumnMappingListView(AddionalFieldsMappingListView, FieldsToMap);
-            //GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
         }
         private async void ButtonAdditionalFieldsNext_Click(object sender, RoutedEventArgs e)
         {
             await ButtonAdditionalFieldsNext();
-
-            //// Create list of the mapped items
-            //var mappingsList = AddionalFieldsMappingListView.ItemsSource as List<ColumnMapping>;
-
-            //if (mappingsList == null)
-            //{
-            //    MessageBox.Show("No mappings found. Please ensure you have selected the appropriate mappings.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            //    return;
-            //}
-
-            //// Iterate through the mappings and update tempImport
-            //foreach (var mapping in mappingsList)
-            //{
-            //    if (!string.IsNullOrEmpty(mapping.CsvHeader) && !string.IsNullOrEmpty(mapping.CardSetField))
-            //    {
-            //        RenameTempImportField(mapping.CsvHeader, mapping.CardSetField);
-            //    }
-            //}
-
-            //// Store the CardSetField values in _mappings (List<string>)
-            //_mappings = mappingsList.Select(m => m.CardSetField ?? string.Empty).ToList();
-
-            //// Check if "Condition", "Card Finish", "Cards Owned", "Cards For Trade/Selling", and "Language" have a value selected
-            //isConditionMapped = IsFieldMapped(mappingsList, "Condition");
-            //isFinishMapped = IsFieldMapped(mappingsList, "Card Finish");
-            //isCardsOwnedMapped = IsFieldMapped(mappingsList, "Cards Owned");
-            //isCardsForTradedMapped = IsFieldMapped(mappingsList, "Cards For Trade/Selling");
-            //isLanguageMapped = IsFieldMapped(mappingsList, "Language");
-
-            //GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
-
-            //if (isCardsOwnedMapped)
-            //{
-            //    //UpdateCardItemsWithQuantity("Cards Owned");
-            //}
-            //else
-            //{
-            //    //UpdateTempImportWithDefaultField("Cards Owned", 1);
-            //}
-
-            //if (isCardsForTradedMapped)
-            //{
-            //    //UpdateCardItemsWithQuantity("Cards For Trade/Selling");
-            //}
-            //else
-            //{
-            //    //UpdateTempImportWithDefaultField("Cards For Trade/Selling", 0);
-            //}
-
-            //if (isConditionMapped)
-            //{
-            //    await GoToMappingGeneric("Condition", ConditionsMappingListView, "", GridImportCardConditionsMapping);
-            //}
-            //else
-            //{
-            //    // Mark the field as unmapped
-            //    MarkFieldAsUnmapped("Condition");
-
-            //    if (isFinishMapped)
-            //    {
-            //        await GoToMappingGeneric("Card Finish", FinishesMappingListView, "finishes", GridImportFinishesMapping);
-            //    }
-            //    else
-            //    {
-            //        MarkFieldAsUnmapped("Card Finish");
-            //        if (isLanguageMapped)
-            //        {
-            //            await GoToMappingGeneric("Language", LanguageMappingListView, "language", GridImportLanguageMapping);
-            //        }
-            //        else
-            //        {
-            //            MarkFieldAsUnmapped("Language");
-            //            GridImportConfirm.Visibility = Visibility.Visible;
-            //        }
-            //    }
-            //}
-            //DebugFieldMappings();
         }
         private async void ButtonConditionMappingNext_Click(object sender, RoutedEventArgs e)
         {
             await ButtonConditionMappingNext();
-
-            //// Generate the mapping dictionary for "Condition"
-            //var conditionMappings = CreateMappingDictionary(
-            //    ConditionsMappingListView,
-            //    "Condition",
-            //    "Near Mint");
-
-            //// Store the finishesMappings dictionary
-            //StoreMapping("Condition", conditionMappings, true);
-
-            //GridImportCardConditionsMapping.Visibility = Visibility.Collapsed;
-
-            //if (isFinishMapped) { await GoToMappingGeneric("Card Finish", FinishesMappingListView, "finishes", GridImportFinishesMapping); }
-            //else
-            //{
-            //    MarkFieldAsUnmapped("Card Finish");
-            //    if (isLanguageMapped) { await GoToMappingGeneric("Language", LanguageMappingListView, "language", GridImportLanguageMapping); }
-            //    else
-            //    {
-            //        MarkFieldAsUnmapped("Language");
-            //        GridImportConfirm.Visibility = Visibility.Visible;
-            //    }
-            //}
-            //DebugFieldMappings();
         }
         private async void ButtonFinishesMappingNext_Click(object sender, RoutedEventArgs e)
         {
             await ButtonFinishesMappingNext();
-            //// Generate the mapping dictionary for "Card Finish"
-            //var finishesMappings = CreateMappingDictionary(
-            //    FinishesMappingListView,
-            //    "Card Finish",
-            //    "nonfoil");
-
-            //// Store the finishesMappings dictionary
-            //StoreMapping("Card Finish", finishesMappings, true);
-
-            //GridImportFinishesMapping.Visibility = Visibility.Collapsed;
-
-            //if (isLanguageMapped) { await GoToMappingGeneric("Language", LanguageMappingListView, "language", GridImportLanguageMapping); }
-            //else
-            //{
-            //    MarkFieldAsUnmapped("Language");
-            //    GridImportConfirm.Visibility = Visibility.Visible;
-            //}
-            //DebugFieldMappings();
         }
         private void ButtonLanguageMappingNext_Click(object sender, RoutedEventArgs e)
         {
             ButtonLanguageMappingNext();
-            //// Generate the mapping dictionary for "Language"
-            //var languageMappings = CreateMappingDictionary(
-            //    LanguageMappingListView,
-            //    "Language",
-            //    "English");
-
-            //// Store the language dictionary
-            //StoreMapping("Language", languageMappings, true);
-
-            //GridImportLanguageMapping.Visibility = Visibility.Collapsed;
-            //GridImportConfirm.Visibility = Visibility.Visible;
-
-            //DebugFieldMappings();
         }
 
 
