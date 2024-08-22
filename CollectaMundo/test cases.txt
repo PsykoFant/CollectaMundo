@@ -114,18 +114,12 @@ No valid ID
 1,1,0,0,"Art Card: Drivnod, Carnage Dominus",Phyrexia: All Will Be One Art Series,AONE,20,Near Mint,English,,,,,,,,74903,,"",$0.00,Token,,Common,$0.00,https://s.deckbox.org/system/images/mtg/cards/2038316.jpg,2023-05-11 07:52:06 UTC,,3dd68d0e-f0ce-4d0b-8ab9-a06dc2c97f9b
 
 
-Mapping by card id:
-ButtonIdColumnMappingNext completed in 2286 ms
 
-Mapping by set code only
-ButtonNameAndSetMappingNext completed in 19607 ms
-
-Mapping by set name only
-ButtonNameAndSetMappingNext completed in 4317 ms
-
-Mapping by set code and set name
-ButtonNameAndSetMappingNext completed in 22209 ms
-
-
-
+Opret disse indexes:
+CREATE INDEX IF NOT EXISTS cards_name ON cards(name);
+CREATE INDEX IF NOT EXISTS cards_setCode ON cards(setCode);
+CREATE INDEX IF NOT EXISTS tokens_name ON tokens(name);
+CREATE INDEX IF NOT EXISTS tokens_setCode ON tokens(setCode);
+CREATE INDEX IF NOT EXISTS tokens_faceName ON tokens(faceName);
+CREATE INDEX IF NOT EXISTS sets_tokenSetCode ON sets(tokenSetCode);
 
