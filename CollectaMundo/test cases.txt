@@ -70,7 +70,8 @@ Quantity,CardName,Simple Name,Set,Card Number,Set Code,Printing,King Kong,Langua
 -- token with a regular set code, use facename
 3,Elemental // Elemental,Elemental // Elemental,Unstable,76,UST,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
 
-
+-- MH2 booster fun
+3,Aeromoeba,Aeromoeba,Modern Horizons 2,76,MH2,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
 
 
 

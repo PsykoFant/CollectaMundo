@@ -824,11 +824,11 @@ namespace CollectaMundo
             {
                 // Create a temporary table to hold the data from tempImport
                 using (var createTempTableCmd = new SQLiteCommand(@"
-            CREATE TEMPORARY TABLE IF NOT EXISTS temp_card_input (
-                cardName TEXT,
-                faceName TEXT,
-                setCode TEXT
-            );", DBAccess.connection))
+                    CREATE TEMPORARY TABLE IF NOT EXISTS temp_card_input (
+                        cardName TEXT,
+                        faceName TEXT,
+                        setCode TEXT
+                    );", DBAccess.connection))
                 {
                     await createTempTableCmd.ExecuteNonQueryAsync();
                 }
@@ -895,17 +895,17 @@ namespace CollectaMundo
 
                     // Build the query using the temporary table for the current batch
                     var queryBuilder = new StringBuilder(@"
-                SELECT v.uuid, v.name, v.setCode
-                FROM CardTokenView v
-                INNER JOIN temp_card_input t ON v.name = t.cardName AND v.setCode = t.setCode
-                UNION ALL
-                SELECT v.uuid, v.name, v.tokenSetCode AS setCode
-                FROM CardTokenView v
-                INNER JOIN temp_card_input t ON v.name = t.cardName AND v.tokenSetCode = t.setCode AND v.tokenSetCode <> v.setCode
-                UNION ALL
-                SELECT v.uuid, v.faceName AS name, v.tokenSetCode AS setCode
-                FROM CardTokenView v
-                INNER JOIN temp_card_input t ON v.faceName = t.faceName AND v.tokenSetCode = t.setCode;");
+                        SELECT v.uuid, v.name, v.setCode
+                        FROM CardTokenView v
+                        INNER JOIN temp_card_input t ON v.name = t.cardName AND v.setCode = t.setCode
+                        UNION ALL
+                        SELECT v.uuid, v.name, v.tokenSetCode AS setCode
+                        FROM CardTokenView v
+                        INNER JOIN temp_card_input t ON v.name = t.cardName AND v.tokenSetCode = t.setCode AND v.tokenSetCode <> v.setCode
+                        UNION ALL
+                        SELECT v.uuid, v.faceName AS name, v.tokenSetCode AS setCode
+                        FROM CardTokenView v
+                        INNER JOIN temp_card_input t ON v.faceName = t.faceName AND v.tokenSetCode = t.setCode;");
 
                     // Execute the combined query for the current batch
                     using (var command = new SQLiteCommand(queryBuilder.ToString(), DBAccess.connection))
@@ -973,11 +973,11 @@ namespace CollectaMundo
         {
             // Construct the query string with the table name
             string query = $@"
-        SELECT uuid FROM {table} 
-        WHERE name = @cardName AND setCode = @setCode AND (side = 'a' OR side IS NULL)
-        UNION ALL
-        SELECT uuid FROM {table} 
-        WHERE faceName = @cardName AND setCode = @setCode AND (side = 'a' OR side IS NULL)";
+                SELECT uuid FROM {table} 
+                WHERE name = @cardName AND setCode = @setCode AND (side = 'a' OR side IS NULL)
+                UNION ALL
+                SELECT uuid FROM {table} 
+                WHERE faceName = @cardName AND setCode = @setCode AND (side = 'a' OR side IS NULL)";
 
             List<string> uuids = new List<string>();
 
