@@ -823,33 +823,29 @@ namespace CollectaMundo
                 // Dictionary to hold the results for all scenarios
                 var csvToUuidsMap = new Dictionary<string, List<string>>();
 
-                // Use a StringBuilder to build a batch SQL query for Scenarios 1, 2, and 3
+                // Use a StringBuilder to build a batch SQL query for Scenarios 1 and 2
                 var batchQueryBuilder = new StringBuilder();
 
                 // Scenario 1: Regular cards with regular set codes
                 batchQueryBuilder.Append(@"
-                    SELECT c.uuid, c.name, c.setCode
-                    FROM cards c
-                    WHERE (c.side IS NULL OR c.side = 'a') 
-                    AND c.name IN (");
+    SELECT uuid, name, setCode
+    FROM CardTokenView
+    WHERE name IN (");
 
-                // Scenario 2: Tokens with token set codes
-                var tokenQueryBuilder = new StringBuilder(@"
-                    UNION ALL
-                    SELECT t.uuid, t.name, t.setCode
-                    FROM tokens t
-                    WHERE (t.side IS NULL OR t.side = 'a') 
-                    AND t.name IN (");
+                // Scenario 2: Tokens with token set codes or regular set codes, but tokenSetCode <> setCode
+                var scenario2QueryBuilder = new StringBuilder(@"
+    UNION ALL
+    SELECT uuid, name, tokenSetCode AS setCode
+    FROM CardTokenView
+    WHERE tokenSetCode <> setCode
+    AND name IN (");
 
-                // Scenario 3: Tokens with a regular set code but using tokenSetCode
+                // Scenario 3: Tokens with token set codes, use faceName (splitting the card name)
                 var scenario3QueryBuilder = new StringBuilder(@"
-                    UNION ALL
-                    SELECT t.uuid, t.name, s.code AS setCode
-                    FROM tokens t
-                    JOIN sets s ON t.setCode = s.tokenSetCode
-                    WHERE s.tokenSetCode <> s.code 
-                    AND (t.side IS NULL OR t.side = 'a')             
-                    AND t.name IN (");
+    UNION ALL
+    SELECT uuid, faceName AS name, tokenSetCode AS setCode
+    FROM CardTokenView
+    WHERE faceName IN (");
 
                 bool hasValues = false;
                 int index = 0;
@@ -864,12 +860,17 @@ namespace CollectaMundo
                     {
                         var key = $"{cardName}_{setCode}";
 
+                        // For scenario 3, split the Card Name on " // " and use the first part
+                        var faceNameSearch = cardName.Contains(" // ")
+                            ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0]
+                            : cardName;
+
                         if (!csvToUuidsMap.ContainsKey(key))
                         {
                             csvToUuidsMap[key] = new List<string>();
                             batchQueryBuilder.Append($"@cardName_{index},");
-                            tokenQueryBuilder.Append($"@cardName_{index},");
-                            scenario3QueryBuilder.Append($"@cardName_{index},");
+                            scenario2QueryBuilder.Append($"@cardName_{index},");
+                            scenario3QueryBuilder.Append($"@faceName_{index},"); // Use faceName for scenario 3
                             hasValues = true;
                         }
 
@@ -880,22 +881,18 @@ namespace CollectaMundo
                 if (!hasValues)
                 {
                     Debug.WriteLine("No valid items to search.");
+                    return;
                 }
 
-                // Remove the trailing comma and close the "IN" clauses
+                // Remove the trailing comma and close the "IN" clauses for all scenarios
                 batchQueryBuilder.Length--;
-                batchQueryBuilder.Append(")");
+                batchQueryBuilder.Append(") AND setCode IN (");
 
-                tokenQueryBuilder.Length--;
-                tokenQueryBuilder.Append(")");
+                scenario2QueryBuilder.Length--;
+                scenario2QueryBuilder.Append(") AND tokenSetCode IN (");
 
                 scenario3QueryBuilder.Length--;
-                scenario3QueryBuilder.Append(")");
-
-                // Add the Set Code condition outside of the IN clause for all scenarios
-                batchQueryBuilder.Append(" AND c.setCode IN (");
-                tokenQueryBuilder.Append(" AND t.setCode IN (");
-                scenario3QueryBuilder.Append(" AND s.code IN (");
+                scenario3QueryBuilder.Append(") AND tokenSetCode IN (");
 
                 index = 0;
                 foreach (var tempItem in tempImport)
@@ -904,7 +901,7 @@ namespace CollectaMundo
                         !string.IsNullOrEmpty(setCode))
                     {
                         batchQueryBuilder.Append($"@setCode_{index},");
-                        tokenQueryBuilder.Append($"@setCode_{index},");
+                        scenario2QueryBuilder.Append($"@setCode_{index},");
                         scenario3QueryBuilder.Append($"@setCode_{index},");
                         index++;
                     }
@@ -914,14 +911,14 @@ namespace CollectaMundo
                 batchQueryBuilder.Length--;
                 batchQueryBuilder.Append(")");
 
-                tokenQueryBuilder.Length--;
-                tokenQueryBuilder.Append(")");
+                scenario2QueryBuilder.Length--;
+                scenario2QueryBuilder.Append(")");
 
                 scenario3QueryBuilder.Length--;
                 scenario3QueryBuilder.Append(")");
 
                 // Combine the queries for Scenarios 1, 2, and 3 into one using UNION ALL
-                batchQueryBuilder.Append(tokenQueryBuilder);
+                batchQueryBuilder.Append(scenario2QueryBuilder);
                 batchQueryBuilder.Append(scenario3QueryBuilder);
 
                 // Execute the combined query for Scenarios 1, 2, and 3
@@ -935,8 +932,16 @@ namespace CollectaMundo
                             tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
                             !string.IsNullOrEmpty(setCode))
                         {
+                            // Add parameters for scenarios 1 and 2
                             command.Parameters.AddWithValue($"@cardName_{index}", cardName);
                             command.Parameters.AddWithValue($"@setCode_{index}", setCode);
+
+                            // Add parameter for scenario 3 using the split faceName
+                            var faceNameSearch = cardName.Contains(" // ")
+                                ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0]
+                                : cardName;
+                            command.Parameters.AddWithValue($"@faceName_{index}", faceNameSearch);
+
                             index++;
                         }
                     }
@@ -976,134 +981,6 @@ namespace CollectaMundo
                     }
                     return Task.CompletedTask;
                 }));
-
-                // Now handle Scenario 4 and Scenario 5 in a separate batch
-                csvToUuidsMap.Clear();
-                var scenario4QueryBuilder = new StringBuilder(@"
-                    SELECT t.uuid, t.faceName AS name, s.code AS setCode
-                    FROM tokens t
-                    JOIN sets s ON t.setCode = s.tokenSetCode            
-                    WHERE (t.side IS NULL OR t.side = 'a')             
-                    AND t.faceName IN (");
-
-                var scenario5QueryBuilder = new StringBuilder(@"
-                    UNION ALL
-                    SELECT t.uuid, t.faceName AS name, s.code AS setCode
-                    FROM tokens t
-                    JOIN sets s ON t.setCode = s.tokenSetCode
-                    WHERE s.tokenSetCode <> s.code 
-                    AND (t.side IS NULL OR t.side = 'a')             
-                    AND t.faceName IN (");
-
-                hasValues = false;
-                index = 0;
-
-                foreach (var tempItem in tempImport.Where(i =>
-                !i.Fields.ContainsKey("uuid") &&
-                !i.Fields.ContainsKey("uuids")))
-                {
-                    if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                        !string.IsNullOrEmpty(cardName) &&
-                        tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
-                        !string.IsNullOrEmpty(setCode))
-                    {
-                        var key = $"{cardName}_{setCode}";
-                        var faceNameSearch = cardName.Contains(" // ") ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0] : cardName;
-
-                        if (!csvToUuidsMap.ContainsKey(key))
-                        {
-                            csvToUuidsMap[key] = new List<string>();
-                            scenario4QueryBuilder.Append($"@faceName_{index},");
-                            scenario5QueryBuilder.Append($"@faceName_{index},");
-                            hasValues = true;
-                        }
-
-                        index++;
-                    }
-                }
-
-                if (hasValues)
-                {
-                    scenario4QueryBuilder.Length--;
-                    scenario4QueryBuilder.Append(") AND s.code IN (");
-
-                    scenario5QueryBuilder.Length--;
-                    scenario5QueryBuilder.Append(") AND s.code IN (");
-
-                    index = 0;
-                    foreach (var tempItem in tempImport.Where(i => !i.Fields.ContainsKey("uuid")))
-                    {
-                        if (tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
-                            !string.IsNullOrEmpty(setCode))
-                        {
-                            scenario4QueryBuilder.Append($"@setCode_{index},");
-                            scenario5QueryBuilder.Append($"@setCode_{index},");
-                            index++;
-                        }
-                    }
-
-                    scenario4QueryBuilder.Length--;
-                    scenario4QueryBuilder.Append(")");
-
-                    scenario5QueryBuilder.Length--;
-                    scenario5QueryBuilder.Append(")");
-
-                    // Combine Scenario 4 and Scenario 5 queries
-                    scenario4QueryBuilder.Append(scenario5QueryBuilder);
-
-                    using (var command = new SQLiteCommand(scenario4QueryBuilder.ToString(), DBAccess.connection))
-                    {
-                        index = 0;
-                        foreach (var tempItem in tempImport.Where(i => !i.Fields.ContainsKey("uuid")))
-                        {
-                            if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                                !string.IsNullOrEmpty(cardName) &&
-                                tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
-                                !string.IsNullOrEmpty(setCode))
-                            {
-                                var faceNameSearch = cardName.Contains(" // ") ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0] : cardName;
-                                command.Parameters.AddWithValue($"@faceName_{index}", faceNameSearch);
-                                command.Parameters.AddWithValue($"@setCode_{index}", setCode);
-                                index++;
-                            }
-                        }
-
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            while (await reader.ReadAsync())
-                            {
-                                var uuid = reader["uuid"]?.ToString();
-                                var faceName = reader["name"]?.ToString();
-                                var setCode = reader["setCode"]?.ToString();
-
-                                var key = $"{faceName}_{setCode}";
-
-                                if (!string.IsNullOrEmpty(uuid) && !string.IsNullOrEmpty(key))
-                                {
-                                    if (csvToUuidsMap.ContainsKey(key))
-                                    {
-                                        csvToUuidsMap[key].Add(uuid);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Process UUID results for Scenario 4 and Scenario 5
-                    await Task.WhenAll(tempImport.Select(tempItem =>
-                    {
-                        if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                            tempItem.Fields.TryGetValue("Set Code", out var setCode))
-                        {
-                            var key = $"{cardName}_{setCode}";
-                            if (csvToUuidsMap.TryGetValue(key, out var uuids))
-                            {
-                                return Task.Run(() => ProcessUuidResults(uuids, tempItem));
-                            }
-                        }
-                        return Task.CompletedTask;
-                    }));
-                }
             }
             catch (Exception ex)
             {
@@ -1117,9 +994,12 @@ namespace CollectaMundo
 
                 AssertNoInvalidUuidFields();
                 DebugImportProcess();
-                DebugAllItems();
             }
         }
+
+
+
+
 
 
 
@@ -2051,10 +1931,13 @@ namespace CollectaMundo
             // Number of tempImport items with multiple uuids
             int multipleUuidItems = tempImport.Count(item => item.Fields.ContainsKey("uuids"));
 
+            int noUuidItems = tempImport.Count(item => !item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids"));
+
             // Debug write lines
             Debug.WriteLine($"Total number of items in tempImport: {totalTempImportItems}");
             Debug.WriteLine($"Number of tempImport items with single uuid: {singleUuidItems}");
             Debug.WriteLine($"Number of tempImport items with multiple uuids: {multipleUuidItems}");
+            Debug.WriteLine($"Number of tempImport items with no uuid or uuids: {noUuidItems}");
         }
         private static void DebugItemsWithoutUuid()
         {
