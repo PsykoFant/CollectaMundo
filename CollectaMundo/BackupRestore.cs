@@ -408,9 +408,6 @@ namespace CollectaMundo
         #region Import Wizard - Step 2a - Find UUIDs - Mapping by card ID
         public static async Task ButtonIdColumnMappingNext()
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             try
             {
                 await ProcessIdColumnMappingsAsync();
@@ -437,14 +434,12 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error field by ID column: {ex.Message}");
                 MessageBox.Show($"Error field by ID column: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally
-            {
-                stopwatch.Stop();
-                Debug.WriteLine($"ButtonIdColumnMappingNext completed in {stopwatch.ElapsedMilliseconds} ms");
-            }
         }
         private static async Task ProcessIdColumnMappingsAsync()
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             try
             {
                 // Get the field from IdColumnMappingListView
@@ -576,6 +571,10 @@ namespace CollectaMundo
             finally
             {
                 DBAccess.CloseConnection();
+                stopwatch.Stop();
+                Debug.WriteLine($"ButtonIdColumnMappingNext completed in {stopwatch.ElapsedMilliseconds} ms");
+                Debug.WriteLine("Status of import after card id mapping:");
+                DebugImportProcess();
             }
         }
 
@@ -818,21 +817,10 @@ namespace CollectaMundo
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            const int batchSize = 4000; // Adjust this size to stay within SQLite's variable limit
+            const int batchSize = 800; // This limit seems to have the best performance
 
             try
             {
-                // Create a temporary table to hold the data from tempImport
-                using (var createTempTableCmd = new SQLiteCommand(@"
-                    CREATE TEMPORARY TABLE IF NOT EXISTS temp_card_input (
-                        cardName TEXT,
-                        faceName TEXT,
-                        setCode TEXT
-                    );", DBAccess.connection))
-                {
-                    await createTempTableCmd.ExecuteNonQueryAsync();
-                }
-
                 var csvToUuidsMap = new Dictionary<string, List<string>>();
 
                 // Process tempImport in batches
@@ -848,18 +836,96 @@ namespace CollectaMundo
                         continue; // Skip empty batches
                     }
 
-                    // Clear the temporary table for the current batch
-                    using (var clearTempTableCmd = new SQLiteCommand("DELETE FROM temp_card_input;", DBAccess.connection))
+                    // Build the query using the current batch
+                    var batchQueryBuilder = new StringBuilder();
+
+                    // Scenario 1: Regular cards with regular set codes
+                    batchQueryBuilder.Append(@"
+                        SELECT uuid, name, setCode
+                        FROM CardTokenView
+                        WHERE name IN (");
+
+                    // Scenario 2: Tokens with token set codes or regular set codes, but tokenSetCode <> setCode
+                    var scenario2QueryBuilder = new StringBuilder(@"
+                        UNION ALL
+                        SELECT uuid, name, tokenSetCode AS setCode
+                        FROM CardTokenView
+                        WHERE tokenSetCode <> setCode
+                        AND name IN (");
+
+                    // Scenario 3: Tokens with token set codes, use faceName (splitting the card name)
+                    var scenario3QueryBuilder = new StringBuilder(@"
+                        UNION ALL
+                        SELECT uuid, faceName AS name, tokenSetCode AS setCode
+                        FROM CardTokenView
+                        WHERE faceName IN (");
+
+                    int index = 0;
+                    foreach (var tempItem in currentBatch)
                     {
-                        await clearTempTableCmd.ExecuteNonQueryAsync();
+                        if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
+                            !string.IsNullOrEmpty(cardName) &&
+                            tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
+                            !string.IsNullOrEmpty(setCode))
+                        {
+                            var faceName = cardName.Contains(" // ")
+                                ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0]
+                                : cardName;
+
+                            batchQueryBuilder.Append($"@cardName_{index},");
+                            scenario2QueryBuilder.Append($"@cardName_{index},");
+                            scenario3QueryBuilder.Append($"@faceName_{index},");
+                            index++;
+                        }
                     }
 
-                    // Insert the current batch into the temporary table
-                    using (var insertTempDataCmd = new SQLiteCommand(DBAccess.connection))
+                    if (index == 0)
                     {
-                        var insertCommandBuilder = new StringBuilder("INSERT INTO temp_card_input (cardName, faceName, setCode) VALUES ");
+                        Debug.WriteLine("No valid items to search in this batch.");
+                        continue;
+                    }
 
-                        int index = 0;
+                    // Remove the trailing commas and close the "IN" clauses
+                    batchQueryBuilder.Length--;
+                    batchQueryBuilder.Append(") AND setCode IN (");
+
+                    scenario2QueryBuilder.Length--;
+                    scenario2QueryBuilder.Append(") AND tokenSetCode IN (");
+
+                    scenario3QueryBuilder.Length--;
+                    scenario3QueryBuilder.Append(") AND tokenSetCode IN (");
+
+                    index = 0;
+                    foreach (var tempItem in currentBatch)
+                    {
+                        if (tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
+                            !string.IsNullOrEmpty(setCode))
+                        {
+                            batchQueryBuilder.Append($"@setCode_{index},");
+                            scenario2QueryBuilder.Append($"@setCode_{index},");
+                            scenario3QueryBuilder.Append($"@setCode_{index},");
+                            index++;
+                        }
+                    }
+
+                    // Remove the trailing commas and close the "IN" clauses
+                    batchQueryBuilder.Length--;
+                    batchQueryBuilder.Append(")");
+
+                    scenario2QueryBuilder.Length--;
+                    scenario2QueryBuilder.Append(")");
+
+                    scenario3QueryBuilder.Length--;
+                    scenario3QueryBuilder.Append(")");
+
+                    // Combine the queries for Scenarios 1, 2, and 3 into one using UNION ALL
+                    batchQueryBuilder.Append(scenario2QueryBuilder);
+                    batchQueryBuilder.Append(scenario3QueryBuilder);
+
+                    // Execute the combined query for the current batch
+                    using (var command = new SQLiteCommand(batchQueryBuilder.ToString(), DBAccess.connection))
+                    {
+                        index = 0;
                         foreach (var tempItem in currentBatch)
                         {
                             if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
@@ -871,45 +937,14 @@ namespace CollectaMundo
                                     ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0]
                                     : cardName;
 
-                                insertCommandBuilder.Append($"(@cardName_{index}, @faceName_{index}, @setCode_{index}),");
-
-                                insertTempDataCmd.Parameters.AddWithValue($"@cardName_{index}", cardName);
-                                insertTempDataCmd.Parameters.AddWithValue($"@faceName_{index}", faceName);
-                                insertTempDataCmd.Parameters.AddWithValue($"@setCode_{index}", setCode);
+                                command.Parameters.AddWithValue($"@cardName_{index}", cardName);
+                                command.Parameters.AddWithValue($"@faceName_{index}", faceName);
+                                command.Parameters.AddWithValue($"@setCode_{index}", setCode);
 
                                 index++;
                             }
                         }
 
-                        if (index == 0)
-                        {
-                            Debug.WriteLine("No valid items to search in this batch.");
-                            continue;
-                        }
-
-                        insertCommandBuilder.Length--; // Remove the last comma
-                        insertTempDataCmd.CommandText = insertCommandBuilder.ToString();
-
-                        await insertTempDataCmd.ExecuteNonQueryAsync();
-                    }
-
-                    // Build the query using the temporary table for the current batch
-                    var queryBuilder = new StringBuilder(@"
-                        SELECT v.uuid, v.name, v.setCode
-                        FROM CardTokenView v
-                        INNER JOIN temp_card_input t ON v.name = t.cardName AND v.setCode = t.setCode
-                        UNION ALL
-                        SELECT v.uuid, v.name, v.tokenSetCode AS setCode
-                        FROM CardTokenView v
-                        INNER JOIN temp_card_input t ON v.name = t.cardName AND v.tokenSetCode = t.setCode AND v.tokenSetCode <> v.setCode
-                        UNION ALL
-                        SELECT v.uuid, v.faceName AS name, v.tokenSetCode AS setCode
-                        FROM CardTokenView v
-                        INNER JOIN temp_card_input t ON v.faceName = t.faceName AND v.tokenSetCode = t.setCode;");
-
-                    // Execute the combined query for the current batch
-                    using (var command = new SQLiteCommand(queryBuilder.ToString(), DBAccess.connection))
-                    {
                         using (var reader = await command.ExecuteReaderAsync())
                         {
                             while (await reader.ReadAsync())
@@ -955,20 +990,15 @@ namespace CollectaMundo
             }
             finally
             {
-                // Clean up the temporary table
-                using (var dropTempTableCmd = new SQLiteCommand("DROP TABLE IF EXISTS temp_card_input;", DBAccess.connection))
-                {
-                    await dropTempTableCmd.ExecuteNonQueryAsync();
-                }
                 stopwatch.Stop();
                 Debug.WriteLine($"Searching by card name and set code completed in {stopwatch.ElapsedMilliseconds} ms");
 
                 AssertNoInvalidUuidFields();
+
+                Debug.WriteLine("Status of import after search by name and set code:");
                 DebugImportProcess();
             }
         }
-
-
         private static async Task<List<string>> SearchTableForUuidAsync(string cardName, string table, string setCode)
         {
             // Construct the query string with the table name
