@@ -2,6 +2,7 @@
 using ServiceStack;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
@@ -842,41 +843,14 @@ namespace CollectaMundo
 
                         using (var reader = await command.ExecuteReaderAsync())
                         {
-                            while (await reader.ReadAsync())
-                            {
-                                var uuid = reader["uuid"]?.ToString();
-                                var cardName = reader["name"]?.ToString();
-                                var setName = reader["setName"]?.ToString();
-
-                                var key = $"{cardName}_{setName}";
-
-                                if (!string.IsNullOrEmpty(uuid) && !string.IsNullOrEmpty(key))
-                                {
-                                    if (!csvToUuidsMap.ContainsKey(key))
-                                    {
-                                        csvToUuidsMap[key] = new List<string>();
-                                    }
-                                    csvToUuidsMap[key].Add(uuid);
-                                }
-                            }
+                            await ProcessReaderResults(reader, "setName", csvToUuidsMap);
                         }
                     }
                 }
 
                 // Process UUID results after all batches are complete
-                await Task.WhenAll(tempImport.Select(tempItem =>
-                {
-                    if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                        tempItem.Fields.TryGetValue("Set Name", out var setName))
-                    {
-                        var key = $"{cardName}_{setName}";
-                        if (csvToUuidsMap.TryGetValue(key, out var uuids))
-                        {
-                            return Task.Run(() => ProcessUuidResults(uuids, tempItem));
-                        }
-                    }
-                    return Task.CompletedTask;
-                }));
+                await ProcessUuidResultsForField("Set Name", csvToUuidsMap);
+
             }
             catch (Exception ex)
             {
@@ -1027,41 +1001,14 @@ namespace CollectaMundo
 
                         using (var reader = await command.ExecuteReaderAsync())
                         {
-                            while (await reader.ReadAsync())
-                            {
-                                var uuid = reader["uuid"]?.ToString();
-                                var cardName = reader["name"]?.ToString();
-                                var setCode = reader["setCode"]?.ToString();
-
-                                var key = $"{cardName}_{setCode}";
-
-                                if (!string.IsNullOrEmpty(uuid) && !string.IsNullOrEmpty(key))
-                                {
-                                    if (!csvToUuidsMap.ContainsKey(key))
-                                    {
-                                        csvToUuidsMap[key] = new List<string>();
-                                    }
-                                    csvToUuidsMap[key].Add(uuid);
-                                }
-                            }
+                            await ProcessReaderResults(reader, "setCode", csvToUuidsMap);
                         }
                     }
                 }
 
                 // Process UUID results after all batches are complete
-                await Task.WhenAll(tempImport.Select(tempItem =>
-                {
-                    if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                        tempItem.Fields.TryGetValue("Set Code", out var setCode))
-                    {
-                        var key = $"{cardName}_{setCode}";
-                        if (csvToUuidsMap.TryGetValue(key, out var uuids))
-                        {
-                            return Task.Run(() => ProcessUuidResults(uuids, tempItem));
-                        }
-                    }
-                    return Task.CompletedTask;
-                }));
+                await ProcessUuidResultsForField("Set Code", csvToUuidsMap);
+
             }
             catch (Exception ex)
             {
@@ -1077,6 +1024,45 @@ namespace CollectaMundo
                 DebugImportProcess();
             }
         }
+        private static async Task ProcessReaderResults(DbDataReader reader, string setNameOrCode, Dictionary<string, List<string>> csvToUuidsMap)
+        {
+            while (await reader.ReadAsync())
+            {
+                var uuid = reader["uuid"]?.ToString();
+                var cardName = reader["name"]?.ToString();
+                var setNameOrCodeValue = reader[setNameOrCode]?.ToString(); // This will handle either setName or setCode
+
+                var key = $"{cardName}_{setNameOrCodeValue}";
+
+                if (!string.IsNullOrEmpty(uuid) && !string.IsNullOrEmpty(key))
+                {
+                    if (!csvToUuidsMap.ContainsKey(key))
+                    {
+                        csvToUuidsMap[key] = new List<string>();
+                    }
+                    csvToUuidsMap[key].Add(uuid);
+                }
+            }
+        }
+        private static async Task ProcessUuidResultsForField(string fieldName, Dictionary<string, List<string>> csvToUuidsMap)
+        {
+            await Task.WhenAll(tempImport.Select(tempItem =>
+            {
+                if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
+                    tempItem.Fields.TryGetValue(fieldName, out var setValue))
+                {
+                    var key = $"{cardName}_{setValue}";
+                    if (csvToUuidsMap.TryGetValue(key, out var uuids))
+                    {
+                        return Task.Run(() => ProcessUuidResults(uuids, tempItem));
+                    }
+                }
+                return Task.CompletedTask;
+            }));
+        }
+
+
+
 
         // Utility methods to help determine where to go after card name and set name/set code field
         private static bool AllItemsHaveUuid()
