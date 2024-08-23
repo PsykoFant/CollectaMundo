@@ -260,8 +260,8 @@ namespace CollectaMundo
         /* To do
          * Opdater vis kort (vis ikke card back, clear kort ved next step, vis promoshit osv.
          * Opdater database oprettelse og update
-         * Performance optimer load kort
          * Polish import wizard
+         * Performance optimer load kort         
          * Refaktorer installer oprettelse
          */
 
@@ -742,8 +742,12 @@ namespace CollectaMundo
                 try
                 {
                     await DBAccess.OpenConnectionAsync();
-                    string? scryfallId = await GetScryfallIdByUuidAsync(selectedCard.Uuid, selectedCard.Types);
 
+                    // Get and display the promo types
+                    string? promoTypes = await GetPromoTypesByUuidAsync(selectedCard.Uuid);
+                    MainWindow.CurrentInstance.PromoLabel.Content = promoTypes;
+
+                    string? scryfallId = await GetScryfallIdByUuidAsync(selectedCard.Uuid, selectedCard.Types);
                     await ShowCardImage(scryfallId, selectedCard.Uuid);
                     DBAccess.CloseConnection();
                 }
@@ -771,8 +775,12 @@ namespace CollectaMundo
                 try
                 {
                     await DBAccess.OpenConnectionAsync();
-                    string? scryfallId = await GetScryfallIdByUuidAsync(selectedUuid);
 
+                    // Get and display the promo types
+                    string? promoTypes = await GetPromoTypesByUuidAsync(selectedUuid);
+                    MainWindow.CurrentInstance.PromoLabel.Content = promoTypes;
+
+                    string? scryfallId = await GetScryfallIdByUuidAsync(selectedUuid);
                     await ShowCardImage(scryfallId, selectedUuid);
                     DBAccess.CloseConnection();
                 }
@@ -783,6 +791,7 @@ namespace CollectaMundo
                 }
             }
         }
+
 
         // Method to get the Scryfall ID by UUID and type
         private async Task<string?> GetScryfallIdByUuidAsync(string uuid, string? types = null)
@@ -803,6 +812,25 @@ namespace CollectaMundo
             }
             return null;
         }
+        private async Task<string?> GetPromoTypesByUuidAsync(string uuid)
+        {
+            string query = "SELECT promoTypes FROM cards WHERE uuid = @uuid UNION ALL SELECT promoTypes FROM tokens WHERE uuid = @uuid";
+
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            {
+                command.Parameters.AddWithValue("@uuid", uuid);
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        return reader["promoTypes"].ToString();
+                    }
+                }
+            }
+            return null;
+        }
+
 
         // Method to show the card image
         private async Task ShowCardImage(string? scryfallId, string uuid)

@@ -359,6 +359,7 @@
             <Grid x:Name="GridCardImages" HorizontalAlignment="Right" Width="300">
                 <!--Card images-->
                 <Label x:Name="CardFrontLabel" Content="Card Front" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="100" Visibility="Collapsed"/>
+                <Label x:Name="PromoLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="131" Visibility="Visible" Margin="105,0,0,0"/>
                 <Image x:Name="CardImage" 
                    Source="{Binding ImageSourceUrl, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}"
                    HorizontalAlignment="Left"
