@@ -257,8 +257,15 @@ namespace CollectaMundo
             CardsToEditListView.ItemsSource = addToCollectionManager.cardItemsToEdit;
         }
 
-        #region Filter elements handling        
+        /* To do
+         * Opdater vis kort (vis ikke card back, clear kort ved next step, vis promoshit osv.
+         * Opdater database oprettelse og update
+         * Performance optimer load kort
+         * Polish import wizard
+         * Refaktorer installer oprettelse
+         */
 
+        #region Filter elements handling        
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ApplyFilterSelection();
@@ -444,6 +451,7 @@ namespace CollectaMundo
         {
             ApplyFilterSelection();
         }
+
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
@@ -501,6 +509,7 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error in TextBox_LostFocus: {ex.Message}");
             }
         }
+
         // When a combobox checkbox item is checked or unchecked
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
@@ -1234,6 +1243,7 @@ namespace CollectaMundo
         {
             SaveUnimportedItemsToFile();
         }
+
         #endregion
 
         #endregion

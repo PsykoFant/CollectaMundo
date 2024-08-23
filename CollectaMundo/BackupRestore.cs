@@ -417,7 +417,6 @@ namespace CollectaMundo
 
                 if (AllItemsHaveUuid())
                 {
-                    Debug.WriteLine("All items have uuid");
                     GoToAdditionalFieldsMapping();
                 }
                 else
@@ -730,126 +729,64 @@ namespace CollectaMundo
         }
         private static async Task SearchBySetCode()
         {
-            Stopwatch stopwatch = new Stopwatch();
+            Stopwatch stopwatch = new();
             stopwatch.Start();
 
-            const int batchSize = 800; // This limit seems to have the best performance
+            const int batchSize = 800;
 
             try
             {
                 var csvToUuidsMap = new Dictionary<string, List<string>>();
 
-                // Process tempImport in batches
                 for (int batchStart = 0; batchStart < tempImport.Count; batchStart += batchSize)
                 {
                     var batchEnd = Math.Min(batchStart + batchSize, tempImport.Count);
                     var currentBatch = tempImport.Skip(batchStart).Take(batchEnd - batchStart)
-                        .Where(item => !item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids")) // Only process items without uuid/uuids
+                        .Where(item => !item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids"))
                         .ToList();
 
                     if (currentBatch.Count == 0)
                     {
-                        continue; // Skip empty batches
+                        continue;
                     }
 
-                    // Build the query using the current batch
                     var batchQueryBuilder = new StringBuilder();
-
-                    // Scenario 1: Regular cards with regular set codes
                     batchQueryBuilder.Append(@"
                         SELECT uuid, name, setCode
                         FROM CardTokenView
-                        WHERE name IN (");
+                        WHERE name ");
 
-                    // Scenario 2: Tokens with token set codes or regular set codes, but tokenSetCode <> setCode
                     var scenario2QueryBuilder = new StringBuilder(@"
                         UNION ALL
                         SELECT uuid, name, tokenSetCode AS setCode
                         FROM CardTokenView
                         WHERE tokenSetCode <> setCode
-                        AND name IN (");
+                        AND name ");
 
-                    // Scenario 3: Tokens with token set codes, use faceName (splitting the card name)
                     var scenario3QueryBuilder = new StringBuilder(@"
                         UNION ALL
                         SELECT uuid, faceName AS name, tokenSetCode AS setCode
                         FROM CardTokenView
-                        WHERE faceName IN (");
+                        WHERE faceName ");
 
-                    int index = 0;
-                    foreach (var tempItem in currentBatch)
-                    {
-                        if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                            !string.IsNullOrEmpty(cardName) &&
-                            tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
-                            !string.IsNullOrEmpty(setCode))
-                        {
-                            var faceName = cardName.Contains(" // ")
-                                ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0]
-                                : cardName;
+                    List<SQLiteParameter> nameParameters;
+                    var cardNameInClause = BuildInClause("cardName", currentBatch, out nameParameters, "Card Name");
+                    batchQueryBuilder.Append(cardNameInClause);
+                    scenario2QueryBuilder.Append(cardNameInClause);
+                    scenario3QueryBuilder.Append(cardNameInClause);
 
-                            batchQueryBuilder.Append($"@cardName_{index},");
-                            scenario2QueryBuilder.Append($"@cardName_{index},");
-                            scenario3QueryBuilder.Append($"@faceName_{index},");
-                            index++;
-                        }
-                    }
+                    List<SQLiteParameter> setCodeParameters;
+                    var setCodeInClause = BuildInClause("setCode", currentBatch, out setCodeParameters, "Set Code");
+                    batchQueryBuilder.Append(" AND setCode ").Append(setCodeInClause);
+                    scenario2QueryBuilder.Append(" AND tokenSetCode ").Append(setCodeInClause);
+                    scenario3QueryBuilder.Append(" AND tokenSetCode ").Append(setCodeInClause);
 
-                    if (index == 0)
-                    {
-                        Debug.WriteLine("No valid items to search in this batch.");
-                        continue;
-                    }
-
-                    // Remove the trailing commas and close the "IN" clauses
-                    batchQueryBuilder.Length--;
-                    batchQueryBuilder.Append(") AND setCode IN (");
-
-                    scenario2QueryBuilder.Length--;
-                    scenario2QueryBuilder.Append(") AND tokenSetCode IN (");
-
-                    scenario3QueryBuilder.Length--;
-                    scenario3QueryBuilder.Append(") AND tokenSetCode IN (");
-
-                    index = 0;
-                    foreach (var tempItem in currentBatch)
-                    {
-                        if (tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
-                            !string.IsNullOrEmpty(setCode))
-                        {
-                            batchQueryBuilder.Append($"@setCode_{index},");
-                            scenario2QueryBuilder.Append($"@setCode_{index},");
-                            scenario3QueryBuilder.Append($"@setCode_{index},");
-                            index++;
-                        }
-                    }
-
-                    // Remove the trailing commas and close the "IN" clauses
-                    batchQueryBuilder.Length--;
-                    batchQueryBuilder.Append(")");
-
-                    scenario2QueryBuilder.Length--;
-                    scenario2QueryBuilder.Append(")");
-
-                    scenario3QueryBuilder.Length--;
-                    scenario3QueryBuilder.Append(")");
-
-                    // Combine the queries for Scenarios 1, 2, and 3 into one using UNION ALL
                     batchQueryBuilder.Append(scenario2QueryBuilder);
                     batchQueryBuilder.Append(scenario3QueryBuilder);
 
-                    await ExecuteBatchQuery(
-    batchQueryBuilder.ToString(),
-    "cardName",
-    currentBatch,
-    "Set Code",
-    "setCode",
-    csvToUuidsMap);
-
-
+                    await ExecuteBatchQuery(batchQueryBuilder.ToString(), nameParameters.Concat(setCodeParameters).ToList(), csvToUuidsMap, "name", "setCode", "cardName");
                 }
 
-                // Process UUID results after all batches are complete
                 await ProcessUuidResultsForField("Set Code", csvToUuidsMap);
 
             }
@@ -869,107 +806,54 @@ namespace CollectaMundo
         }
         private static async Task SearchBySetName()
         {
-            Stopwatch stopwatch = new Stopwatch();
+            Stopwatch stopwatch = new();
             stopwatch.Start();
 
-            const int batchSize = 800; // This limit seems to have the best performance
+            const int batchSize = 800;
 
             try
             {
                 var csvToUuidsMap = new Dictionary<string, List<string>>();
 
-                // Process tempImport in batches
                 for (int batchStart = 0; batchStart < tempImport.Count; batchStart += batchSize)
                 {
                     var batchEnd = Math.Min(batchStart + batchSize, tempImport.Count);
                     var currentBatch = tempImport.Skip(batchStart).Take(batchEnd - batchStart)
-                        .Where(item => !item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids")) // Only process items without uuid/uuids
+                        .Where(item => !item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids"))
                         .ToList();
 
                     if (currentBatch.Count == 0)
                     {
-                        continue; // Skip empty batches
+                        continue;
                     }
 
-                    // Build the query using the current batch
                     var batchQueryBuilder = new StringBuilder();
-
-                    // Scenario 1: Matching Card Name and Set Name
                     batchQueryBuilder.Append(@"
                         SELECT uuid, name, setName
                         FROM CardTokenView
-                        WHERE name IN (");
+                        WHERE name ");
 
-                    // Scenario 2: Matching faceName (after split) and Set Name
                     var scenario2QueryBuilder = new StringBuilder(@"
                         UNION ALL
                         SELECT uuid, faceName AS name, setName
                         FROM CardTokenView
-                        WHERE faceName IN (");
+                        WHERE faceName ");
 
-                    int index = 0;
-                    foreach (var tempItem in currentBatch)
-                    {
-                        if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                            !string.IsNullOrEmpty(cardName) &&
-                            tempItem.Fields.TryGetValue("Set Name", out var setName) &&
-                            !string.IsNullOrEmpty(setName))
-                        {
-                            var faceName = cardName.Contains(" // ")
-                                ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0]
-                                : cardName;
+                    List<SQLiteParameter> nameParameters;
+                    var cardNameInClause = BuildInClause("cardName", currentBatch, out nameParameters, "Card Name");
+                    batchQueryBuilder.Append(cardNameInClause);
+                    scenario2QueryBuilder.Append(cardNameInClause);
 
-                            batchQueryBuilder.Append($"@cardName_{index},");
-                            scenario2QueryBuilder.Append($"@cardName_{index},");
-                            index++;
-                        }
-                    }
+                    List<SQLiteParameter> setNameParameters;
+                    var setNameInClause = BuildInClause("setName", currentBatch, out setNameParameters, "Set Name");
+                    batchQueryBuilder.Append(" AND setName ").Append(setNameInClause);
+                    scenario2QueryBuilder.Append(" AND setName ").Append(setNameInClause);
 
-                    if (index == 0)
-                    {
-                        Debug.WriteLine("No valid items to search in this batch.");
-                        continue;
-                    }
-
-                    // Remove the trailing commas and close the "IN" clauses
-                    batchQueryBuilder.Length--;
-                    batchQueryBuilder.Append(") AND setName IN (");
-
-                    index = 0;
-                    foreach (var tempItem in currentBatch)
-                    {
-                        if (tempItem.Fields.TryGetValue("Set Name", out var setName) &&
-                            !string.IsNullOrEmpty(setName))
-                        {
-                            batchQueryBuilder.Append($"@setName_{index},");
-                            scenario2QueryBuilder.Append($"@setName_{index},");
-                            index++;
-                        }
-                    }
-
-                    // Remove the trailing commas and close the "IN" clauses
-                    batchQueryBuilder.Length--;
-                    batchQueryBuilder.Append(")");
-
-                    scenario2QueryBuilder.Length--;
-                    scenario2QueryBuilder.Append(")");
-
-                    // Combine the queries for Scenarios 1, 2, and 3 into one using UNION ALL
                     batchQueryBuilder.Append(scenario2QueryBuilder);
 
-                    // Execute the combined query for the current batch
-                    await ExecuteBatchQuery(
-    batchQueryBuilder.ToString(),
-    "cardName",
-    currentBatch,
-    "Set Name",
-    "setName",
-    csvToUuidsMap);
-
-
+                    await ExecuteBatchQuery(batchQueryBuilder.ToString(), nameParameters.Concat(setNameParameters).ToList(), csvToUuidsMap, "name", "setName", "cardName");
                 }
 
-                // Process UUID results after all batches are complete
                 await ProcessUuidResultsForField("Set Name", csvToUuidsMap);
 
             }
@@ -988,45 +872,60 @@ namespace CollectaMundo
             }
         }
 
+        // Helper methods for SearchBySetCode and SearchBySetName
+        private static StringBuilder BuildInClause(string parameterPrefix, List<TempCardItem> currentBatch, out List<SQLiteParameter> parameters, string searchField)
+        {
+            var queryBuilder = new StringBuilder();
+            parameters = new List<SQLiteParameter>();
+            queryBuilder.Append("IN (");
 
-        private static async Task ExecuteBatchQuery(
-    string query,
-    string parameterPrefix,
-    List<TempCardItem> currentBatch,
-    string searchField,
-    string additionalField,
-    Dictionary<string, List<string>> csvToUuidsMap)
+            int index = 0;
+            foreach (var tempItem in currentBatch)
+            {
+                if (tempItem.Fields.TryGetValue(searchField, out var value) && !string.IsNullOrEmpty(value))
+                {
+                    queryBuilder.Append($"@{parameterPrefix}_{index},");
+                    parameters.Add(new SQLiteParameter($"@{parameterPrefix}_{index}", value));
+                    index++;
+                }
+            }
+
+            if (index > 0)
+            {
+                queryBuilder.Length--; // Remove the trailing comma
+            }
+            queryBuilder.Append(")");
+
+            return queryBuilder;
+        }
+        private static async Task ExecuteBatchQuery(string query, List<SQLiteParameter> parameters, Dictionary<string, List<string>> csvToUuidsMap, string searchField, string fieldName, string keyField)
         {
             using (var command = new SQLiteCommand(query, DBAccess.connection))
             {
-                int index = 0;
-                foreach (var tempItem in currentBatch)
-                {
-                    if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                        !string.IsNullOrEmpty(cardName) &&
-                        tempItem.Fields.TryGetValue(searchField, out var fieldValue) &&
-                        !string.IsNullOrEmpty(fieldValue))
-                    {
-                        var faceName = cardName.Contains(" // ")
-                            ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0]
-                            : cardName;
-
-                        command.Parameters.AddWithValue($"@cardName_{index}", cardName);
-                        command.Parameters.AddWithValue($"@faceName_{index}", faceName);
-                        command.Parameters.AddWithValue($"@{additionalField}_{index}", fieldValue);
-
-                        index++;
-                    }
-                }
+                command.Parameters.AddRange(parameters.ToArray());
 
                 using (var reader = await command.ExecuteReaderAsync())
                 {
-                    await ProcessReaderResults(reader, additionalField, csvToUuidsMap);
+                    while (await reader.ReadAsync())
+                    {
+                        var uuid = reader["uuid"]?.ToString();
+                        var cardName = reader[searchField]?.ToString();
+                        var setField = reader[fieldName]?.ToString();
+
+                        var key = $"{cardName}_{setField}";
+
+                        if (!string.IsNullOrEmpty(uuid) && !string.IsNullOrEmpty(key))
+                        {
+                            if (!csvToUuidsMap.ContainsKey(key))
+                            {
+                                csvToUuidsMap[key] = new List<string>();
+                            }
+                            csvToUuidsMap[key].Add(uuid);
+                        }
+                    }
                 }
             }
         }
-
-
         private static async Task ProcessReaderResults(DbDataReader reader, string setNameOrCode, Dictionary<string, List<string>> csvToUuidsMap)
         {
             while (await reader.ReadAsync())
@@ -1062,44 +961,6 @@ namespace CollectaMundo
                 }
                 return Task.CompletedTask;
             }));
-        }
-
-
-
-
-        // Utility methods to help determine where to go after card name and set name/set code field
-        private static bool AllItemsHaveUuid()
-        {
-            foreach (var tempItem in tempImport)
-            {
-                if (!tempItem.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-        private static bool AnyItemWithMultipleUuidsField()
-        {
-            bool hasUuids = tempImport.Any(item =>
-            {
-                if (item.Fields.TryGetValue("uuids", out var uuids))
-                {
-                    if (!string.IsNullOrEmpty(uuids))
-                    {
-                        Debug.WriteLine($"Item with uuids found: {uuids}");
-                        return true;
-                    }
-                }
-                return false;
-            });
-
-            Debug.WriteLine($"Any item with 'uuids' field: {hasUuids}");
-            return hasUuids;
-        }
-        private static bool AnyItemWithUuidField()
-        {
-            return tempImport.Any(item => item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid));
         }
 
         #endregion
@@ -1174,45 +1035,6 @@ namespace CollectaMundo
                 }
             }
         }
-        private static void AssertNoInvalidUuidFields()
-        {
-            var invalidUuidAndUuidsItems = tempImport.Where(item =>
-                item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid) &&
-                item.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrEmpty(uuids)
-            ).ToList();
-
-            var invalidUuidOrUuidsItems = tempImport.Where(item =>
-                (item.Fields.TryGetValue("uuid", out var uuid) && string.IsNullOrEmpty(uuid)) ||
-                (item.Fields.TryGetValue("uuids", out var uuids) && string.IsNullOrEmpty(uuids))
-            ).ToList();
-
-            if (invalidUuidAndUuidsItems.Any())
-            {
-                foreach (var item in invalidUuidAndUuidsItems)
-                {
-                    Debug.WriteLine($"Invalid item with both 'uuid' and 'uuids' fields with values: {GetItemDetails(item)}");
-                }
-                throw new InvalidOperationException("One or more items in tempImport have both 'uuid' and 'uuids' fields with values, which is not allowed.");
-            }
-
-            if (invalidUuidOrUuidsItems.Any())
-            {
-                foreach (var item in invalidUuidOrUuidsItems)
-                {
-                    Debug.WriteLine($"Invalid item with 'uuid' or 'uuids' field with no value: {GetItemDetails(item)}");
-                }
-                throw new InvalidOperationException("One or more items in tempImport have 'uuid' or 'uuids' field with no value, which is not allowed.");
-            }
-        }
-        private static string GetItemDetails(TempCardItem item)
-        {
-            item.Fields.TryGetValue("Card Name", out var cardName);
-            item.Fields.TryGetValue("Set Name", out var setName);
-            item.Fields.TryGetValue("Set Code", out var setCode);
-
-            return $"Card Name: {cardName}, Set Name: {setName}, Set Code: {setCode}, UUID: {item.Fields.GetValueOrDefault("uuid")}, UUIDs: {item.Fields.GetValueOrDefault("uuids")}";
-        }
-
 
         // Prepare the next step
         private static void GoToAdditionalFieldsMapping()
@@ -1283,8 +1105,81 @@ namespace CollectaMundo
                 MessageBox.Show($"Error populating multiple uuids datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        private static void AssertNoInvalidUuidFields()
+        {
+            var invalidUuidAndUuidsItems = tempImport.Where(item =>
+                item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid) &&
+                item.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrEmpty(uuids)
+            ).ToList();
 
+            var invalidUuidOrUuidsItems = tempImport.Where(item =>
+                (item.Fields.TryGetValue("uuid", out var uuid) && string.IsNullOrEmpty(uuid)) ||
+                (item.Fields.TryGetValue("uuids", out var uuids) && string.IsNullOrEmpty(uuids))
+            ).ToList();
 
+            if (invalidUuidAndUuidsItems.Any())
+            {
+                foreach (var item in invalidUuidAndUuidsItems)
+                {
+                    Debug.WriteLine($"Invalid item with both 'uuid' and 'uuids' fields with values: {GetItemDetails(item)}");
+                }
+                throw new InvalidOperationException("One or more items in tempImport have both 'uuid' and 'uuids' fields with values, which is not allowed.");
+            }
+
+            if (invalidUuidOrUuidsItems.Any())
+            {
+                foreach (var item in invalidUuidOrUuidsItems)
+                {
+                    Debug.WriteLine($"Invalid item with 'uuid' or 'uuids' field with no value: {GetItemDetails(item)}");
+                }
+                throw new InvalidOperationException("One or more items in tempImport have 'uuid' or 'uuids' field with no value, which is not allowed.");
+            }
+        }
+
+        // Helper method for getting debug info for AssertNoInvalidUuidFields()
+        private static string GetItemDetails(TempCardItem item)
+        {
+            item.Fields.TryGetValue("Card Name", out var cardName);
+            item.Fields.TryGetValue("Set Name", out var setName);
+            item.Fields.TryGetValue("Set Code", out var setCode);
+
+            return $"Card Name: {cardName}, Set Name: {setName}, Set Code: {setCode}, UUID: {item.Fields.GetValueOrDefault("uuid")}, UUIDs: {item.Fields.GetValueOrDefault("uuids")}";
+        }
+
+        // Utility methods to help determine whether to proceed to additionalfields mapping
+        private static bool AllItemsHaveUuid()
+        {
+            foreach (var tempItem in tempImport)
+            {
+                if (!tempItem.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        private static bool AnyItemWithMultipleUuidsField()
+        {
+            bool hasUuids = tempImport.Any(item =>
+            {
+                if (item.Fields.TryGetValue("uuids", out var uuids))
+                {
+                    if (!string.IsNullOrEmpty(uuids))
+                    {
+                        Debug.WriteLine($"Item with uuids found: {uuids}");
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+            Debug.WriteLine($"Any item with 'uuids' field: {hasUuids}");
+            return hasUuids;
+        }
+        private static bool AnyItemWithUuidField()
+        {
+            return tempImport.Any(item => item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid));
+        }
 
         #endregion
 
@@ -1374,12 +1269,8 @@ namespace CollectaMundo
         public static async Task ButtonConditionMappingNext()
         {
             // Generate the field dictionary for "Condition"
-            var conditionMappings = CreateMappingDictionary(
-                MainWindow.CurrentInstance.ConditionsMappingListView,
-                "Condition",
-                "Near Mint");
+            var conditionMappings = CreateMappingDictionary(MainWindow.CurrentInstance.ConditionsMappingListView, "Condition", "Near Mint");
 
-            // Store the finishesMappings dictionary
             StoreMapping("Condition", conditionMappings, true);
 
             MainWindow.CurrentInstance.GridImportCardConditionsMapping.Visibility = Visibility.Collapsed;
@@ -1399,12 +1290,8 @@ namespace CollectaMundo
         public static async Task ButtonFinishesMappingNext()
         {
             // Generate the field dictionary for "Card Finish"
-            var finishesMappings = CreateMappingDictionary(
-                MainWindow.CurrentInstance.FinishesMappingListView,
-                "Card Finish",
-                "nonfoil");
+            var finishesMappings = CreateMappingDictionary(MainWindow.CurrentInstance.FinishesMappingListView, "Card Finish", "nonfoil");
 
-            // Store the finishesMappings dictionary
             StoreMapping("Card Finish", finishesMappings, true);
 
             MainWindow.CurrentInstance.GridImportFinishesMapping.Visibility = Visibility.Collapsed;
@@ -1419,12 +1306,8 @@ namespace CollectaMundo
         public static void ButtonLanguageMappingNext()
         {
             // Generate the field dictionary for "Language"
-            var languageMappings = CreateMappingDictionary(
-                MainWindow.CurrentInstance.LanguageMappingListView,
-                "Language",
-                "English");
+            var languageMappings = CreateMappingDictionary(MainWindow.CurrentInstance.LanguageMappingListView, "Language", "English");
 
-            // Store the language dictionary
             StoreMapping("Language", languageMappings, true);
 
             MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Collapsed;
@@ -1558,7 +1441,7 @@ namespace CollectaMundo
             }
             DBAccess.CloseConnection();
 
-            return uniqueValues.ToList();
+            return [.. uniqueValues];
         }
         private static List<string> GetUniqueValuesFromCsv(string? csvHeader)
         {
@@ -1566,7 +1449,7 @@ namespace CollectaMundo
 
             if (csvHeader == null)
             {
-                return uniqueValues.ToList();
+                return [.. uniqueValues];
             }
 
             foreach (var item in tempImport)
@@ -1577,7 +1460,7 @@ namespace CollectaMundo
                 }
             }
 
-            return uniqueValues.ToList();
+            return [.. uniqueValues];
         }
 
         // Create and manage the dictionary to manage additional fields field
@@ -1612,26 +1495,20 @@ namespace CollectaMundo
             catch (Exception ex)
             {
                 MessageBox.Show($"Error creating field dictionary: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return new Dictionary<string, string>();
+                return [];
             }
         }
         private static void StoreMapping(string cardSetField, Dictionary<string, string> mappingDict, bool isMapped)
         {
             if (!isMapped)
             {
-                // Mark as unmapped with a special entry
                 mappingDict["unmapped_field"] = "unmapped";
             }
-
             FieldMappings[cardSetField] = mappingDict;
         }
         private static void MarkFieldAsUnmapped(string cardSetField)
         {
-            var mappingDict = new Dictionary<string, string>
-            {
-                ["unmapped_field"] = "unmapped"
-            };
-
+            var mappingDict = new Dictionary<string, string> { ["unmapped_field"] = "unmapped" };
             StoreMapping(cardSetField, mappingDict, false);
         }
 
@@ -1639,13 +1516,8 @@ namespace CollectaMundo
         private static void GoToFinalStep()
         {
             GenerateSummaryInTextBlock();
-
-            // Show the final confirmation grid
             MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Visible;
         }
-
-
-        // 
 
         #endregion
 
@@ -1669,10 +1541,7 @@ namespace CollectaMundo
                 string filePath = saveFileDialog.FileName;
 
                 // Generate the content for the file
-                var lines = new List<string>
-        {
-            "Unable to find matching cards in the database for the following items:\n"
-        };
+                var lines = new List<string> { "Unable to find matching cards in the database for the following items:\n" };
 
                 foreach (var item in tempImport)
                 {
@@ -1705,16 +1574,16 @@ namespace CollectaMundo
 
             // Dictionary of educated guesses for each search value
             var educatedGuesses = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
-    {
-        { "Card Name", new List<string> { "Name", "Card", "CardName" } },
-        { "Set Name", new List<string> { "Set", "Edition", "Edition Name" } },
-        { "Set Code", new List<string> { "Code", "Edition Code" } },
-        { "Card Finish", new List<string> { "Finish", "Foil", "Printing" } },
-        { "Condition", new List<string> { "Card Condition" } },
-        { "Cards Owned", new List<string> { "#", "Quantity", "Count", "Card Count" } },
-        { "Cards For Trade/Selling", new List<string> { "Trade", "Sell", "Tradelist", "Tradelist Count" } },
-        { "Language", new List<string> { "Card Language" } }
-    };
+                {
+                    { "Card Name", new List<string> { "Name", "Card", "CardName" } },
+                    { "Set Name", new List<string> { "Set", "Edition", "Edition Name" } },
+                    { "Set Code", new List<string> { "Code", "Edition Code" } },
+                    { "Card Finish", new List<string> { "Finish", "Foil", "Printing" } },
+                    { "Condition", new List<string> { "Card Condition" } },
+                    { "Cards Owned", new List<string> { "#", "Quantity", "Count", "Card Count" } },
+                    { "Cards For Trade/Selling", new List<string> { "Trade", "Sell", "Tradelist", "Tradelist Count" } },
+                    { "Language", new List<string> { "Card Language" } }
+                };
 
             // Check if there are specific guesses for the search value
             if (educatedGuesses.TryGetValue(searchValue, out var guesses))
@@ -1783,6 +1652,8 @@ namespace CollectaMundo
                 MessageBox.Show($"Error populating field list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        // Generate the summary on the final screen
         private static void GenerateSummaryInTextBlock()
         {
             // Clear the existing content of the container
@@ -1863,9 +1734,10 @@ namespace CollectaMundo
                 {
                     if (!item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
                     {
-                        item.Fields.TryGetValue("Card Name", out var cardName);
-                        item.Fields.TryGetValue("Set Name", out var setName);
-                        item.Fields.TryGetValue("Set Code", out var setCode);
+                        // Use null-coalescing operator to provide a default value if any of these are null
+                        string cardName = item.Fields.TryGetValue("Card Name", out var cn) ? cn : "Unknown";
+                        string setName = item.Fields.TryGetValue("Set Name", out var sn) ? sn : "Unknown";
+                        string setCode = item.Fields.TryGetValue("Set Code", out var sc) ? sc : "Unknown";
 
                         // Add data rows
                         tableGrid.RowDefinitions.Add(new RowDefinition());
@@ -1882,8 +1754,6 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Visible;
             }
         }
-
-        // Helper method to add text to the grid
         private static void AddTextToGrid(Grid grid, string text, int row, int column, FontWeight? fontWeight = null)
         {
             var textBlock = new TextBlock { Text = text, Margin = new Thickness(5) };
@@ -1895,10 +1765,6 @@ namespace CollectaMundo
             Grid.SetColumn(textBlock, column);
             grid.Children.Add(textBlock);
         }
-
-
-
-
 
         // Debug methods
         public static void DebugFieldMappings()
