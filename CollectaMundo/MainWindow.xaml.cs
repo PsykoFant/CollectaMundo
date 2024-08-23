@@ -699,8 +699,7 @@ namespace CollectaMundo
             ShowFoilCheckBox.IsChecked = false;
 
             // Reset card images
-            CardFrontLabel.Visibility = Visibility.Collapsed;
-            CardBackLabel.Visibility = Visibility.Collapsed;
+            PromoLabel.Visibility = Visibility.Collapsed;
             ImageSourceUrl = null;
             ImageSourceUrl2nd = null;
 
@@ -745,7 +744,7 @@ namespace CollectaMundo
 
                     // Get and display the promo types
                     string? promoTypes = await GetPromoTypesByUuidAsync(selectedCard.Uuid);
-                    MainWindow.CurrentInstance.PromoLabel.Content = promoTypes;
+                    MainWindow.CurrentInstance.PromoLabel.Content = promoTypes ?? string.Empty;
 
                     string? scryfallId = await GetScryfallIdByUuidAsync(selectedCard.Uuid, selectedCard.Types);
                     await ShowCardImage(scryfallId, selectedCard.Uuid);
@@ -758,6 +757,7 @@ namespace CollectaMundo
                 }
             }
         }
+
 
         // Show the card image for the selected UUID from the dropdown
         private async void UuidSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -778,7 +778,7 @@ namespace CollectaMundo
 
                     // Get and display the promo types
                     string? promoTypes = await GetPromoTypesByUuidAsync(selectedUuid);
-                    MainWindow.CurrentInstance.PromoLabel.Content = promoTypes;
+                    MainWindow.CurrentInstance.PromoLabel.Content = promoTypes ?? string.Empty;
 
                     string? scryfallId = await GetScryfallIdByUuidAsync(selectedUuid);
                     await ShowCardImage(scryfallId, selectedUuid);
@@ -791,6 +791,7 @@ namespace CollectaMundo
                 }
             }
         }
+
 
 
         // Method to get the Scryfall ID by UUID and type
@@ -824,12 +825,17 @@ namespace CollectaMundo
                 {
                     if (await reader.ReadAsync())
                     {
-                        return reader["promoTypes"].ToString();
+                        var promoTypes = reader["promoTypes"]?.ToString();
+                        if (!string.IsNullOrEmpty(promoTypes))
+                        {
+                            return "Promo type: " + promoTypes;
+                        }
                     }
                 }
             }
             return null;
         }
+
 
 
         // Method to show the card image
@@ -847,17 +853,14 @@ namespace CollectaMundo
                 Debug.WriteLine(cardImageUrl);
 
                 // Assuming CardFrontLabel and CardBackLabel are accessible globally or within the same context
-                CardFrontLabel.Visibility = Visibility.Visible;
                 ImageSourceUrl = cardImageUrl;
 
                 if (await IsDoubleSidedCardAsync(uuid))
                 {
-                    CardBackLabel.Visibility = Visibility.Visible;
                     ImageSourceUrl2nd = secondCardImageUrl;
                 }
                 else
                 {
-                    CardBackLabel.Visibility = Visibility.Collapsed;
                     ImageSourceUrl2nd = null;
                 }
             }
