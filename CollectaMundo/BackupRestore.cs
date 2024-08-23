@@ -728,144 +728,6 @@ namespace CollectaMundo
 
             }
         }
-        private static async Task SearchBySetName()
-        {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
-            const int batchSize = 800; // This limit seems to have the best performance
-
-            try
-            {
-                var csvToUuidsMap = new Dictionary<string, List<string>>();
-
-                // Process tempImport in batches
-                for (int batchStart = 0; batchStart < tempImport.Count; batchStart += batchSize)
-                {
-                    var batchEnd = Math.Min(batchStart + batchSize, tempImport.Count);
-                    var currentBatch = tempImport.Skip(batchStart).Take(batchEnd - batchStart)
-                        .Where(item => !item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids")) // Only process items without uuid/uuids
-                        .ToList();
-
-                    if (currentBatch.Count == 0)
-                    {
-                        continue; // Skip empty batches
-                    }
-
-                    // Build the query using the current batch
-                    var batchQueryBuilder = new StringBuilder();
-
-                    // Scenario 1: Matching Card Name and Set Name
-                    batchQueryBuilder.Append(@"
-                        SELECT uuid, name, setName
-                        FROM CardTokenView
-                        WHERE name IN (");
-
-                    // Scenario 2: Matching faceName (after split) and Set Name
-                    var scenario2QueryBuilder = new StringBuilder(@"
-                        UNION ALL
-                        SELECT uuid, faceName AS name, setName
-                        FROM CardTokenView
-                        WHERE faceName IN (");
-
-                    int index = 0;
-                    foreach (var tempItem in currentBatch)
-                    {
-                        if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                            !string.IsNullOrEmpty(cardName) &&
-                            tempItem.Fields.TryGetValue("Set Name", out var setName) &&
-                            !string.IsNullOrEmpty(setName))
-                        {
-                            var faceName = cardName.Contains(" // ")
-                                ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0]
-                                : cardName;
-
-                            batchQueryBuilder.Append($"@cardName_{index},");
-                            scenario2QueryBuilder.Append($"@cardName_{index},");
-                            index++;
-                        }
-                    }
-
-                    if (index == 0)
-                    {
-                        Debug.WriteLine("No valid items to search in this batch.");
-                        continue;
-                    }
-
-                    // Remove the trailing commas and close the "IN" clauses
-                    batchQueryBuilder.Length--;
-                    batchQueryBuilder.Append(") AND setName IN (");
-
-                    index = 0;
-                    foreach (var tempItem in currentBatch)
-                    {
-                        if (tempItem.Fields.TryGetValue("Set Name", out var setName) &&
-                            !string.IsNullOrEmpty(setName))
-                        {
-                            batchQueryBuilder.Append($"@setName_{index},");
-                            scenario2QueryBuilder.Append($"@setName_{index},");
-                            index++;
-                        }
-                    }
-
-                    // Remove the trailing commas and close the "IN" clauses
-                    batchQueryBuilder.Length--;
-                    batchQueryBuilder.Append(")");
-
-                    scenario2QueryBuilder.Length--;
-                    scenario2QueryBuilder.Append(")");
-
-                    // Combine the queries for Scenarios 1, 2, and 3 into one using UNION ALL
-                    batchQueryBuilder.Append(scenario2QueryBuilder);
-
-                    // Execute the combined query for the current batch
-                    using (var command = new SQLiteCommand(batchQueryBuilder.ToString(), DBAccess.connection))
-                    {
-                        index = 0;
-                        foreach (var tempItem in currentBatch)
-                        {
-                            if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                                !string.IsNullOrEmpty(cardName) &&
-                                tempItem.Fields.TryGetValue("Set Name", out var setName) &&
-                                !string.IsNullOrEmpty(setName))
-                            {
-                                var faceName = cardName.Contains(" // ")
-                                    ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0]
-                                    : cardName;
-
-                                command.Parameters.AddWithValue($"@cardName_{index}", cardName);
-                                command.Parameters.AddWithValue($"@faceName_{index}", faceName);
-                                command.Parameters.AddWithValue($"@setName_{index}", setName);
-
-                                index++;
-                            }
-                        }
-
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            await ProcessReaderResults(reader, "setName", csvToUuidsMap);
-                        }
-                    }
-                }
-
-                // Process UUID results after all batches are complete
-                await ProcessUuidResultsForField("Set Name", csvToUuidsMap);
-
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error searching by set name: {ex.Message}");
-                MessageBox.Show($"Error searching by set name: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                stopwatch.Stop();
-                Debug.WriteLine($"Searching by card name and set name completed in {stopwatch.ElapsedMilliseconds} ms");
-
-                Debug.WriteLine("Status of import after search by name and set name:");
-                DebugImportProcess();
-            }
-        }
         private static async Task SearchBySetCode()
         {
             Stopwatch stopwatch = new Stopwatch();
@@ -1024,6 +886,147 @@ namespace CollectaMundo
                 DebugImportProcess();
             }
         }
+        private static async Task SearchBySetName()
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            const int batchSize = 800; // This limit seems to have the best performance
+
+            try
+            {
+                var csvToUuidsMap = new Dictionary<string, List<string>>();
+
+                // Process tempImport in batches
+                for (int batchStart = 0; batchStart < tempImport.Count; batchStart += batchSize)
+                {
+                    var batchEnd = Math.Min(batchStart + batchSize, tempImport.Count);
+                    var currentBatch = tempImport.Skip(batchStart).Take(batchEnd - batchStart)
+                        .Where(item => !item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids")) // Only process items without uuid/uuids
+                        .ToList();
+
+                    if (currentBatch.Count == 0)
+                    {
+                        continue; // Skip empty batches
+                    }
+
+                    // Build the query using the current batch
+                    var batchQueryBuilder = new StringBuilder();
+
+                    // Scenario 1: Matching Card Name and Set Name
+                    batchQueryBuilder.Append(@"
+                        SELECT uuid, name, setName
+                        FROM CardTokenView
+                        WHERE name IN (");
+
+                    // Scenario 2: Matching faceName (after split) and Set Name
+                    var scenario2QueryBuilder = new StringBuilder(@"
+                        UNION ALL
+                        SELECT uuid, faceName AS name, setName
+                        FROM CardTokenView
+                        WHERE faceName IN (");
+
+                    int index = 0;
+                    foreach (var tempItem in currentBatch)
+                    {
+                        if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
+                            !string.IsNullOrEmpty(cardName) &&
+                            tempItem.Fields.TryGetValue("Set Name", out var setName) &&
+                            !string.IsNullOrEmpty(setName))
+                        {
+                            var faceName = cardName.Contains(" // ")
+                                ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0]
+                                : cardName;
+
+                            batchQueryBuilder.Append($"@cardName_{index},");
+                            scenario2QueryBuilder.Append($"@cardName_{index},");
+                            index++;
+                        }
+                    }
+
+                    if (index == 0)
+                    {
+                        Debug.WriteLine("No valid items to search in this batch.");
+                        continue;
+                    }
+
+                    // Remove the trailing commas and close the "IN" clauses
+                    batchQueryBuilder.Length--;
+                    batchQueryBuilder.Append(") AND setName IN (");
+
+                    index = 0;
+                    foreach (var tempItem in currentBatch)
+                    {
+                        if (tempItem.Fields.TryGetValue("Set Name", out var setName) &&
+                            !string.IsNullOrEmpty(setName))
+                        {
+                            batchQueryBuilder.Append($"@setName_{index},");
+                            scenario2QueryBuilder.Append($"@setName_{index},");
+                            index++;
+                        }
+                    }
+
+                    // Remove the trailing commas and close the "IN" clauses
+                    batchQueryBuilder.Length--;
+                    batchQueryBuilder.Append(")");
+
+                    scenario2QueryBuilder.Length--;
+                    scenario2QueryBuilder.Append(")");
+
+                    // Combine the queries for Scenarios 1, 2, and 3 into one using UNION ALL
+                    batchQueryBuilder.Append(scenario2QueryBuilder);
+
+                    // Execute the combined query for the current batch
+                    using (var command = new SQLiteCommand(batchQueryBuilder.ToString(), DBAccess.connection))
+                    {
+                        index = 0;
+                        foreach (var tempItem in currentBatch)
+                        {
+                            if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
+                                !string.IsNullOrEmpty(cardName) &&
+                                tempItem.Fields.TryGetValue("Set Name", out var setName) &&
+                                !string.IsNullOrEmpty(setName))
+                            {
+                                var faceName = cardName.Contains(" // ")
+                                    ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0]
+                                    : cardName;
+
+                                command.Parameters.AddWithValue($"@cardName_{index}", cardName);
+                                command.Parameters.AddWithValue($"@faceName_{index}", faceName);
+                                command.Parameters.AddWithValue($"@setName_{index}", setName);
+
+                                index++;
+                            }
+                        }
+
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            await ProcessReaderResults(reader, "setName", csvToUuidsMap);
+                        }
+                    }
+                }
+
+                // Process UUID results after all batches are complete
+                await ProcessUuidResultsForField("Set Name", csvToUuidsMap);
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error searching by set name: {ex.Message}");
+                MessageBox.Show($"Error searching by set name: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                stopwatch.Stop();
+                Debug.WriteLine($"Searching by card name and set name completed in {stopwatch.ElapsedMilliseconds} ms");
+
+                Debug.WriteLine("Status of import after search by name and set name:");
+                DebugImportProcess();
+            }
+        }
+
+
+
         private static async Task ProcessReaderResults(DbDataReader reader, string setNameOrCode, Dictionary<string, List<string>> csvToUuidsMap)
         {
             while (await reader.ReadAsync())
