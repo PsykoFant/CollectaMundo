@@ -838,34 +838,15 @@ namespace CollectaMundo
                     batchQueryBuilder.Append(scenario2QueryBuilder);
                     batchQueryBuilder.Append(scenario3QueryBuilder);
 
-                    // Execute the combined query for the current batch
-                    using (var command = new SQLiteCommand(batchQueryBuilder.ToString(), DBAccess.connection))
-                    {
-                        index = 0;
-                        foreach (var tempItem in currentBatch)
-                        {
-                            if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                                !string.IsNullOrEmpty(cardName) &&
-                                tempItem.Fields.TryGetValue("Set Code", out var setCode) &&
-                                !string.IsNullOrEmpty(setCode))
-                            {
-                                var faceName = cardName.Contains(" // ")
-                                    ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0]
-                                    : cardName;
+                    await ExecuteBatchQuery(
+    batchQueryBuilder.ToString(),
+    "cardName",
+    currentBatch,
+    "Set Code",
+    "setCode",
+    csvToUuidsMap);
 
-                                command.Parameters.AddWithValue($"@cardName_{index}", cardName);
-                                command.Parameters.AddWithValue($"@faceName_{index}", faceName);
-                                command.Parameters.AddWithValue($"@setCode_{index}", setCode);
 
-                                index++;
-                            }
-                        }
-
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            await ProcessReaderResults(reader, "setCode", csvToUuidsMap);
-                        }
-                    }
                 }
 
                 // Process UUID results after all batches are complete
@@ -977,33 +958,15 @@ namespace CollectaMundo
                     batchQueryBuilder.Append(scenario2QueryBuilder);
 
                     // Execute the combined query for the current batch
-                    using (var command = new SQLiteCommand(batchQueryBuilder.ToString(), DBAccess.connection))
-                    {
-                        index = 0;
-                        foreach (var tempItem in currentBatch)
-                        {
-                            if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
-                                !string.IsNullOrEmpty(cardName) &&
-                                tempItem.Fields.TryGetValue("Set Name", out var setName) &&
-                                !string.IsNullOrEmpty(setName))
-                            {
-                                var faceName = cardName.Contains(" // ")
-                                    ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0]
-                                    : cardName;
+                    await ExecuteBatchQuery(
+    batchQueryBuilder.ToString(),
+    "cardName",
+    currentBatch,
+    "Set Name",
+    "setName",
+    csvToUuidsMap);
 
-                                command.Parameters.AddWithValue($"@cardName_{index}", cardName);
-                                command.Parameters.AddWithValue($"@faceName_{index}", faceName);
-                                command.Parameters.AddWithValue($"@setName_{index}", setName);
 
-                                index++;
-                            }
-                        }
-
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            await ProcessReaderResults(reader, "setName", csvToUuidsMap);
-                        }
-                    }
                 }
 
                 // Process UUID results after all batches are complete
@@ -1025,6 +988,43 @@ namespace CollectaMundo
             }
         }
 
+
+        private static async Task ExecuteBatchQuery(
+    string query,
+    string parameterPrefix,
+    List<TempCardItem> currentBatch,
+    string searchField,
+    string additionalField,
+    Dictionary<string, List<string>> csvToUuidsMap)
+        {
+            using (var command = new SQLiteCommand(query, DBAccess.connection))
+            {
+                int index = 0;
+                foreach (var tempItem in currentBatch)
+                {
+                    if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
+                        !string.IsNullOrEmpty(cardName) &&
+                        tempItem.Fields.TryGetValue(searchField, out var fieldValue) &&
+                        !string.IsNullOrEmpty(fieldValue))
+                    {
+                        var faceName = cardName.Contains(" // ")
+                            ? cardName.Split(new[] { " // " }, StringSplitOptions.None)[0]
+                            : cardName;
+
+                        command.Parameters.AddWithValue($"@cardName_{index}", cardName);
+                        command.Parameters.AddWithValue($"@faceName_{index}", faceName);
+                        command.Parameters.AddWithValue($"@{additionalField}_{index}", fieldValue);
+
+                        index++;
+                    }
+                }
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    await ProcessReaderResults(reader, additionalField, csvToUuidsMap);
+                }
+            }
+        }
 
 
         private static async Task ProcessReaderResults(DbDataReader reader, string setNameOrCode, Dictionary<string, List<string>> csvToUuidsMap)
