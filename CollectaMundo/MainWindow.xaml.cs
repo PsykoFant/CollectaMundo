@@ -738,26 +738,9 @@ namespace CollectaMundo
             if (sender is DataGrid dataGrid && dataGrid.SelectedItem is CardSet selectedCard
                 && !string.IsNullOrEmpty(selectedCard.Uuid) && !string.IsNullOrEmpty(selectedCard.Types))
             {
-                try
-                {
-                    await DBAccess.OpenConnectionAsync();
-
-                    // Get and display the promo types
-                    string? promoTypes = await GetPromoTypesByUuidAsync(selectedCard.Uuid);
-                    MainWindow.CurrentInstance.PromoLabel.Content = promoTypes ?? string.Empty;
-
-                    string? scryfallId = await GetScryfallIdByUuidAsync(selectedCard.Uuid, selectedCard.Types);
-                    await ShowCardImage(scryfallId, selectedCard.Uuid);
-                    DBAccess.CloseConnection();
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Error in selection changed: {ex.Message}");
-                    MessageBox.Show($"Error in selection changed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                await ShowCardImage(selectedCard.Uuid, selectedCard.Types);
             }
         }
-
 
         // Show the card image for the selected UUID from the dropdown
         private async void UuidSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -765,33 +748,61 @@ namespace CollectaMundo
             if (sender is ComboBox comboBox && comboBox.SelectedItem is UuidVersion selectedVersion)
             {
                 string? selectedUuid = selectedVersion.Uuid;
-                if (selectedUuid == null)
-                {
-                    Debug.WriteLine("Selected UUID is null.");
-                    return;
-                }
+                if (selectedUuid == null) { return; }
 
                 Debug.WriteLine($"Trying to show image with uuid: {selectedUuid}");
-                try
-                {
-                    await DBAccess.OpenConnectionAsync();
-
-                    // Get and display the promo types
-                    string? promoTypes = await GetPromoTypesByUuidAsync(selectedUuid);
-                    MainWindow.CurrentInstance.PromoLabel.Content = promoTypes ?? string.Empty;
-
-                    string? scryfallId = await GetScryfallIdByUuidAsync(selectedUuid);
-                    await ShowCardImage(scryfallId, selectedUuid);
-                    DBAccess.CloseConnection();
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Error in selection changed: {ex.Message}");
-                    MessageBox.Show($"Error in selection changed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+                await ShowCardImage(selectedUuid);
             }
         }
 
+        // Method to show the card image and handle promo types
+        private async Task ShowCardImage(string uuid, string? types = null)
+        {
+            try
+            {
+                await DBAccess.OpenConnectionAsync();
+
+                // Get and display the promo types
+                string? promoTypes = await GetPromoTypesByUuidAsync(uuid);
+                MainWindow.CurrentInstance.PromoLabel.Content = promoTypes ?? string.Empty;
+
+                // Get the Scryfall ID
+                string? scryfallId = await GetScryfallIdByUuidAsync(uuid, types);
+
+                if (!string.IsNullOrEmpty(scryfallId) && scryfallId.Length >= 2)
+                {
+                    char dir1 = scryfallId[0];
+                    char dir2 = scryfallId[1];
+
+                    string cardImageUrl = $"https://cards.scryfall.io/normal/front/{dir1}/{dir2}/{scryfallId}.jpg";
+                    string secondCardImageUrl = $"https://cards.scryfall.io/normal/back/{dir1}/{dir2}/{scryfallId}.jpg";
+
+                    Debug.WriteLine(scryfallId);
+                    Debug.WriteLine(cardImageUrl);
+
+                    // Assuming CardFrontLabel and CardBackLabel are accessible globally or within the same context
+                    ImageSourceUrl = cardImageUrl;
+
+                    if (await IsDoubleSidedCardAsync(uuid))
+                    {
+                        ImageSourceUrl2nd = secondCardImageUrl;
+                    }
+                    else
+                    {
+                        ImageSourceUrl2nd = null;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error showing card image: {ex.Message}");
+                MessageBox.Show($"Error showing card image: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
+        }
 
 
         // Method to get the Scryfall ID by UUID and type
@@ -834,36 +845,6 @@ namespace CollectaMundo
                 }
             }
             return null;
-        }
-
-
-
-        // Method to show the card image
-        private async Task ShowCardImage(string? scryfallId, string uuid)
-        {
-            if (!string.IsNullOrEmpty(scryfallId) && scryfallId.Length >= 2)
-            {
-                char dir1 = scryfallId[0];
-                char dir2 = scryfallId[1];
-
-                string cardImageUrl = $"https://cards.scryfall.io/normal/front/{dir1}/{dir2}/{scryfallId}.jpg";
-                string secondCardImageUrl = $"https://cards.scryfall.io/normal/back/{dir1}/{dir2}/{scryfallId}.jpg";
-
-                Debug.WriteLine(scryfallId);
-                Debug.WriteLine(cardImageUrl);
-
-                // Assuming CardFrontLabel and CardBackLabel are accessible globally or within the same context
-                ImageSourceUrl = cardImageUrl;
-
-                if (await IsDoubleSidedCardAsync(uuid))
-                {
-                    ImageSourceUrl2nd = secondCardImageUrl;
-                }
-                else
-                {
-                    ImageSourceUrl2nd = null;
-                }
-            }
         }
 
         // Method to check if the card is double-sided
