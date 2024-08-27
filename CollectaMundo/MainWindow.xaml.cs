@@ -733,140 +733,22 @@ namespace CollectaMundo
 
         #region Show selected card image
         // Show the card image for the highlighted DataGrid row
-        private async void ShowSelectedCardImage(object sender, SelectionChangedEventArgs e)
+        private async void CardImageSelectionChangedHandler(object sender, SelectionChangedEventArgs e)
         {
-            if (sender is DataGrid dataGrid && dataGrid.SelectedItem is CardSet selectedCard
-                && !string.IsNullOrEmpty(selectedCard.Uuid) && !string.IsNullOrEmpty(selectedCard.Types))
+            if (sender is DataGrid dataGrid && dataGrid.SelectedItem is CardSet selectedCard)
             {
-                await ShowCardImage(selectedCard.Uuid, selectedCard.Types);
-            }
-        }
-
-        // Show the card image for the selected UUID from the dropdown
-        private async void UuidSelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (sender is ComboBox comboBox && comboBox.SelectedItem is UuidVersion selectedVersion)
-            {
-                string? selectedUuid = selectedVersion.Uuid;
-                if (selectedUuid == null) { return; }
-
-                Debug.WriteLine($"Trying to show image with uuid: {selectedUuid}");
-                await ShowCardImage(selectedUuid);
-            }
-        }
-
-        // Method to show the card image and handle promo types
-        private async Task ShowCardImage(string uuid, string? types = null)
-        {
-            try
-            {
-                await DBAccess.OpenConnectionAsync();
-
-                // Get and display the promo types
-                string? promoTypes = await GetPromoTypesByUuidAsync(uuid);
-                MainWindow.CurrentInstance.PromoLabel.Content = promoTypes ?? string.Empty;
-
-                // Get the Scryfall ID
-                string? scryfallId = await GetScryfallIdByUuidAsync(uuid, types);
-
-                if (!string.IsNullOrEmpty(scryfallId) && scryfallId.Length >= 2)
+                if (selectedCard.Uuid != null)
                 {
-                    char dir1 = scryfallId[0];
-                    char dir2 = scryfallId[1];
-
-                    string cardImageUrl = $"https://cards.scryfall.io/normal/front/{dir1}/{dir2}/{scryfallId}.jpg";
-                    string secondCardImageUrl = $"https://cards.scryfall.io/normal/back/{dir1}/{dir2}/{scryfallId}.jpg";
-
-                    Debug.WriteLine(scryfallId);
-                    Debug.WriteLine(cardImageUrl);
-
-                    // Assuming CardFrontLabel and CardBackLabel are accessible globally or within the same context
-                    ImageSourceUrl = cardImageUrl;
-
-                    if (await IsDoubleSidedCardAsync(uuid))
-                    {
-                        ImageSourceUrl2nd = secondCardImageUrl;
-                    }
-                    else
-                    {
-                        ImageSourceUrl2nd = null;
-                    }
+                    Debug.WriteLine($"Trying to show image with uuid: {selectedCard.Uuid}");
+                    await ShowCardImage.ShowImage(selectedCard.Uuid, selectedCard.Types);
                 }
             }
-            catch (Exception ex)
+            else if (sender is ComboBox comboBox && comboBox.SelectedItem is UuidVersion selectedVersion && !string.IsNullOrEmpty(selectedVersion.Uuid))
             {
-                Debug.WriteLine($"Error showing card image: {ex.Message}");
-                MessageBox.Show($"Error showing card image: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                DBAccess.CloseConnection();
+                Debug.WriteLine($"Trying to show image with uuid: {selectedVersion.Uuid}");
+                await ShowCardImage.ShowImage(selectedVersion.Uuid);
             }
         }
-
-
-        // Method to get the Scryfall ID by UUID and type
-        private async Task<string?> GetScryfallIdByUuidAsync(string uuid, string? types = null)
-        {
-            string query = "SELECT scryfallId FROM cardIdentifiers WHERE uuid = @uuid UNION ALL SELECT scryfallId FROM tokenIdentifiers WHERE uuid = @uuid";
-
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@uuid", uuid);
-
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    if (await reader.ReadAsync())
-                    {
-                        return reader["scryfallId"].ToString();
-                    }
-                }
-            }
-            return null;
-        }
-        private async Task<string?> GetPromoTypesByUuidAsync(string uuid)
-        {
-            string query = "SELECT promoTypes FROM cards WHERE uuid = @uuid UNION ALL SELECT promoTypes FROM tokens WHERE uuid = @uuid";
-
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@uuid", uuid);
-
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    if (await reader.ReadAsync())
-                    {
-                        var promoTypes = reader["promoTypes"]?.ToString();
-                        if (!string.IsNullOrEmpty(promoTypes))
-                        {
-                            return "Promo type: " + promoTypes;
-                        }
-                    }
-                }
-            }
-            return null;
-        }
-
-        // Method to check if the card is double-sided
-        private async Task<bool> IsDoubleSidedCardAsync(string uuid)
-        {
-            string query = "SELECT side FROM cards WHERE uuid = @uuid UNION ALL SELECT side FROM tokens WHERE uuid = @uuid";
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@uuid", uuid);
-
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    if (await reader.ReadAsync())
-                    {
-                        return reader["side"].ToString() == "a";
-                    }
-                }
-            }
-            return false;
-        }
-
-
 
         #endregion
 
