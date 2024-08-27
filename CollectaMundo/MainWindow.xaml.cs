@@ -258,10 +258,9 @@ namespace CollectaMundo
         }
 
         /* To do
-         * Opdater vis kort (vis ikke card back, clear kort ved next step, vis promoshit osv.
-         * Opdater database oprettelse og update
          * Polish import wizard
          * Performance optimer load kort         
+         * Opdater database oprettelse og update
          * Refaktorer installer oprettelse
          */
 
