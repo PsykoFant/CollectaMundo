@@ -357,24 +357,22 @@
                 <Button x:Name="ImportCollectionButton" Content="Import to my collection" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Click="ImportCollectionButton_Click"/>
             </Grid>
             <Grid x:Name="GridCardImages" HorizontalAlignment="Right" Width="300">
-                <!--Card images-->
-
-                <Label x:Name="PromoLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="290" Visibility="Visible"/>
+                <Label x:Name="ImagePromoLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="290"/>
+                <Label x:Name="ImageSetLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="290" Margin="0,35,0,0"/>
                 <Image x:Name="CardImage" 
                    Source="{Binding ImageSourceUrl, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Top"
                    Width="268"
                    Height="374"
-                   Margin="0,30,0,0"/>
+                   Margin="0,80,0,0"/>
 
                 <Image x:Name="CardImageSecondary"
                    Source="{Binding ImageSourceUrl2nd, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Top"
                    Width="268"
-                   Height="375" Margin="0,411,0,0"/>
-
+                   Height="375" Margin="0,461,0,0"/>
             </Grid>
             <Grid x:Name="GridSearchAndFilter" HorizontalAlignment="Center" Width="1320" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT" Height="40"/>

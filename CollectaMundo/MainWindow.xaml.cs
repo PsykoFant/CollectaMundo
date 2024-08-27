@@ -699,7 +699,8 @@ namespace CollectaMundo
             ShowFoilCheckBox.IsChecked = false;
 
             // Reset card images
-            PromoLabel.Visibility = Visibility.Collapsed;
+            ImagePromoLabel.Content = string.Empty;
+            ImageSetLabel.Content = string.Empty;
             ImageSourceUrl = null;
             ImageSourceUrl2nd = null;
 
