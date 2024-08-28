@@ -413,25 +413,41 @@ namespace CollectaMundo
         #region Import Wizard - Step 2a - Find UUIDs - Mapping by card ID
         public static async Task ButtonIdColumnMappingNext()
         {
+            MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.ButtonSkipIdColumnMapping.Visibility = Visibility.Collapsed;
+
             try
             {
-                await ProcessIdColumnMappingsAsync();
-
-                AssertNoInvalidUuidFields();
-
-                if (AllItemsHaveUuid())
+                // Run the long-running process on a background thread
+                await Task.Run(async () =>
                 {
-                    GoToAdditionalFieldsMapping();
-                }
-                else
-                {
-                    GoToNameAndSetMapping();
-                }
+                    await ProcessIdColumnMappingsAsync();
+                    AssertNoInvalidUuidFields();
+
+                    if (AllItemsHaveUuid())
+                    {
+                        // Switch back to the UI thread to update UI elements
+                        Application.Current.Dispatcher.Invoke(GoToAdditionalFieldsMapping);
+                    }
+                    else
+                    {
+                        Application.Current.Dispatcher.Invoke(GoToNameAndSetMapping);
+                    }
+                });
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error field by ID column: {ex.Message}");
                 MessageBox.Show($"Error field by ID column: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                // Ensure UI updates are made on the UI thread
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Collapsed;
+                    MainWindow.CurrentInstance.ButtonSkipIdColumnMapping.Visibility = Visibility.Visible;
+                });
             }
         }
         public static void ButtonSkipIdColumnMapping()
@@ -594,48 +610,7 @@ namespace CollectaMundo
         #region Import Wizard - Step 2b - Find UUIDs - Mapping by card name, set name and set code        
         public static async Task ButtonNameAndSetMappingNext()
         {
-
-            /*
-            --Assumptions--
-            An item in tempImport object can have a single uuid field with value
-            An item in tempImport object can have a multiple uuids field with value
-
-            Valid scenarios
-             - A single item can have single uuid and no multiple uuids
-             - A single item can have no uuid and multiple uuids
-             - A single item can have no uuid and no multiple uuids
-
-            Invalid scenario:
-             - A single item has single uuid field or multiple uuids fields with no value
-             - A single item has both single uuid and multiple uuids fields
-
-            --Actions-- 
-            Depending on different combinations, three possible actions should happen:
-
-            1. Go to Multiple uuids field screen (if at least one item has multiple uuids)
-            2. Go to Additional fields field screen (if at least one item has single uuid OR all items have single uuid AND no items have multiple uuids)
-            0. Error screen (if no items have single uuid AND no item has multiple uuids)
-
-            --Possible scenarios--
-            No items have have single uuid, no items have multiple uuids --> 0. Error screen
-            No items have single uuid, at least one item has multiple uuids --> 1. Go to Multiple uuids field screen
-            All items have single uuid --> 2. Go to Additional fields field screen
-            At least one item has single uuid, no items have multiple uuids --> 2. Go to Additional fields field screen
-            At least one item has single uuids, at least one item has multiple uuids --> 1. Go to Multiple uuids field screen
-
-            --Control Flow Pseudocode--
-            Assert for invalid scenarios
-            All items have single uuid?
-                True: 2. Go to Additional fields field screen
-                False:
-                    At least one item has multiple uuids?
-                        True: 1. Go to Multiple uuids screen select
-                        False: 
-                            At least one item has single uuid?
-                                True: 2. Go to Additional Fields screen
-                                False: 0. Error
-
-            */
+            MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Visible;
 
             // Make a list of the mapped items
             var mappings = MainWindow.CurrentInstance.NameAndSetMappingListView.Items.Cast<ColumnMapping>().ToList();
@@ -650,51 +625,67 @@ namespace CollectaMundo
                 MessageBox.Show("Both name and either set name or set code must be set", "Mapping Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
+
             try
             {
-                // Search for unique uuids based on selected csv-headings for card name, set, and set code
-                await SearchByCardNameOrSet(mappings);
-
-                // Assert for invalid scenarios
-                AssertNoInvalidUuidFields();
-
-                // Do all items in tempImport have single uuid
-                if (AllItemsHaveUuid())
+                // Run the long-running process on a background thread
+                await Task.Run(async () =>
                 {
-                    GoToAdditionalFieldsMapping();
-                }
-                else
-                {
-                    // Were multiple uuids found for any items in tempImport?
-                    if (AnyItemWithMultipleUuidsField())
+                    // Perform the search and validation operations
+                    await SearchByCardNameOrSet(mappings);
+
+                    // Assert for invalid scenarios
+                    AssertNoInvalidUuidFields();
+
+                    // Determine next step based on the UUID presence
+                    if (AllItemsHaveUuid())
                     {
-                        PopulateMultipleUuidsDataGrid();
-                        MainWindow.CurrentInstance.GridImportMultipleUuidsSelection.Visibility = Visibility.Visible;
+                        // Switch back to the UI thread to update UI elements
+                        Application.Current.Dispatcher.Invoke(GoToAdditionalFieldsMapping);
                     }
                     else
                     {
-                        // Ok then ... were single uuid found for ANY items in tempImport?
-                        if (AnyItemWithUuidField())
+                        if (AnyItemWithMultipleUuidsField())
                         {
-                            GoToAdditionalFieldsMapping();
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                PopulateMultipleUuidsDataGrid();
+                                MainWindow.CurrentInstance.GridImportMultipleUuidsSelection.Visibility = Visibility.Visible;
+                            });
                         }
-                        // If not, the import has failed
+                        else if (AnyItemWithUuidField())
+                        {
+                            Application.Current.Dispatcher.Invoke(GoToAdditionalFieldsMapping);
+                        }
                         else
                         {
-                            tempImport.Clear();
-                            MainWindow.CurrentInstance.GridImportWizard.Visibility = Visibility.Collapsed;
-                            MessageBox.Show("Was not able to map any cards in the import file the main card database", "Import failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                tempImport.Clear();
+                                MainWindow.CurrentInstance.GridImportWizard.Visibility = Visibility.Collapsed;
+                                MessageBox.Show("Was not able to map any cards in the import file to the main card database", "Import failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                            });
                         }
                     }
-                }
-                MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
+
+                    // Hide the current mapping grid
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
+                    });
+                });
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error processing field using card and set name and set code: {ex.Message}");
                 MessageBox.Show($"Error processing field using card and set name and set code: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally
+            {
+                MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Collapsed;
+            }
         }
+
         private static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
         {
             try
