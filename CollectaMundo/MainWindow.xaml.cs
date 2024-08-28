@@ -1050,11 +1050,11 @@ namespace CollectaMundo
         #endregion
 
         #region UI elements for utilities
-        private async void checkForUpdatesButton_Click(object sender, RoutedEventArgs e)
+        private async void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)
         {
             await UpdateDB.CheckForUpdatesAsync();
         }
-        private async void updateDbButton_Click(object sender, RoutedEventArgs e)
+        private async void UpdateDbButton_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
             await UpdateDB.UpdateCardDatabaseAsync();
@@ -1074,14 +1074,24 @@ namespace CollectaMundo
         #region Import wizard
 
         // Import wizard different steps button methods
-        private async void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
+        private void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
         {
-            await ImportCollectionButton();
+            GridImportWizard.Visibility = Visibility.Visible;
+            GridImportStartScreen.Visibility = Visibility.Visible;
+        }
+        private async void BeginImportButton_Click(object sender, RoutedEventArgs e)
+        {
+            await BeginImportButton();
         }
         private async void ButtonIdColumnMappingNext_Click(object sender, RoutedEventArgs e)
         {
             await ButtonIdColumnMappingNext();
         }
+        private void ButtonSkipIdColumnMapping_Click(object sender, RoutedEventArgs e)
+        {
+            ButtonSkipIdColumnMapping();
+        }
+
         private async void ButtonNameAndSetMappingNext_Click(object sender, RoutedEventArgs e)
         {
             await ButtonNameAndSetMappingNext();
@@ -1136,6 +1146,10 @@ namespace CollectaMundo
         private void SaveListOfUnimportedItems_Click(object sender, RoutedEventArgs e)
         {
             SaveUnimportedItemsToFile();
+        }
+        private void CancelImport_Click(object sender, RoutedEventArgs e)
+        {
+            CancelImport();
         }
 
         #endregion
@@ -1211,7 +1225,5 @@ namespace CollectaMundo
                 });
             }
         }
-
-
     }
 }

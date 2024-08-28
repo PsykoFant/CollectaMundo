@@ -16,15 +16,20 @@
         <!-- Add the image source converter here -->
         <local:StringToImageSourceConverter x:Key="StringToImageSourceConverter"/>
 
-        <Style x:Key="MtgFont">
+        <Style x:Key="BelerenBold">
             <Setter Property="TextElement.FontFamily"
                     Value="/Fonts/#Beleren Bold">
+            </Setter>
+        </Style>
+        <Style x:Key="MPlantin">
+            <Setter Property="TextElement.FontFamily"
+                    Value="/Fonts/#Mplantin">
             </Setter>
         </Style>
     </Window.Resources>
 
 
-    <Grid Width="1920">
+    <Grid Width="1920" Style="{StaticResource MPlantin}">
         <Grid x:Name="GridTopMenu" VerticalAlignment="Top" Height="40">
             <Button x:Name="MenuSearchAndFilterButton" Content="Search and Filter" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuSearchAndFilter_Click"/>
             <Button x:Name="MenuMyCollectionButton" Content="My Collection" HorizontalAlignment="Left" Margin="174,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuMyCollection_Click"/>
@@ -356,9 +361,9 @@
 
             </Grid>
             <Grid x:Name="GridUtilsMenu" Width="300" HorizontalAlignment="Left" Margin="0,0,0,678" Visibility="Collapsed">
-                <Button x:Name="CheckForUpdatesButton" Content="Check for updates" HorizontalAlignment="Left" VerticalAlignment="Top" Width="130" Click="checkForUpdatesButton_Click" Margin="10,0,0,0"/>
+                <Button x:Name="CheckForUpdatesButton" Content="Check for updates" HorizontalAlignment="Left" VerticalAlignment="Top" Width="130" Click="CheckForUpdatesButton_Click" Margin="10,0,0,0"/>
                 <Label x:Name="UtilsInfoLabel" Content="" HorizontalAlignment="Left" Margin="10,25,0,0" VerticalAlignment="Top" Width="182" Height="30"/>
-                <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Width="129" Click="updateDbButton_Click" Visibility="Collapsed"/>
+                <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Width="129" Click="UpdateDbButton_Click" Visibility="Collapsed"/>
                 <Button x:Name="CreateBackupButton" Content="Create backup of my collection" HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top" Click="CreateBackupButton_Click"/>
                 <Button x:Name="ImportCollectionButton" Content="Import to my collection" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Click="ImportCollectionButton_Click"/>
             </Grid>
@@ -588,45 +593,55 @@
             </Grid>
             <Grid x:Name="GridUtilitiesSection" Width="1320" HorizontalAlignment="Center" VerticalAlignment="Top">
                 <Grid x:Name="GridUtilsScreen" HorizontalAlignment="Center" Width="1320">
-                    <Grid x:Name="GridImportWizard" HorizontalAlignment="Center" Width="1320" Visibility="Visible">
-                        <Label x:Name="ImportStartLabel" Content="The Import Wizard" HorizontalAlignment="Center" Margin="0,45,0,0" VerticalAlignment="Top" FontSize="48" Style="{StaticResource MtgFont}"/>
-                        <Grid x:Name="GridImportStartScreen" HorizontalAlignment="Center" Width="1320" Visibility="Visible">                            
-                            <Image Margin="370,462,370,166" Source="/Images/rush_of_knowledge.jpg" Stretch="Fill" Opacity="0.7"/>
+                    <Grid x:Name="GridImportWizard" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
+                        <Label x:Name="ImportStartLabel" Content="The Import Wizard" HorizontalAlignment="Center" Margin="0,45,0,0" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
+                        <Button x:Name="ButtonCancelImport" Content="Cancel Import" HorizontalAlignment="Left" Margin="271,330,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="Collapsed" Click="CancelImport_Click"/>
+                        <Grid x:Name="GridImportStartScreen" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
                             <TextBlock HorizontalAlignment="Center" Margin="0,146,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="280" Width="776" FontSize="16">
                                 <Run Text="You have chosen to consult the Import Wizard. This will allow you to import card lists to your collection. "/>
                                 <LineBreak/>
                                 <LineBreak/>
                                 <Run Text="Some important notes:"/><LineBreak/>
-                                <Run Text=" • Card list has to be in a csv-file"/><LineBreak/>
-                                <Run Text=" • Cards imported with the wizard will be ADDED to existing cards in your collection"/><LineBreak/>
-                                <Run Text=" • Imported cards will be mapped to a specific version of the card"/><LineBreak/>
+                                <Run Text=" &#x2022; Card list has to be in a .csv format"/><LineBreak/>
+                                <Run Text=" &#x2022; Cards imported with the wizard will be ADDED to existing cards in your collection"/><LineBreak/>
+                                <Run Text=" &#x2022; Imported cards will be mapped to a specific version of the card"/><LineBreak/>
                                 <LineBreak/>
                                 <Run Text="Elborating on the last point: As an example, there are 4 different versions of the card &quot;Flooded Strand&quot; in the Modern Horizons 3. If your card list contains:"/><LineBreak/><LineBreak/>
-                                <Run Text=" • | Flooded Strand | Modern Horizons 3 |"/><LineBreak/><LineBreak/>
-                                <Run Text="we need to figure out which specific version of &quot;Flooded Strand&quot; should be added to your collection."/><LineBreak/>
+                                <Run Text=" &#x2022; | Flooded Strand | Modern Horizons 3 |"/><LineBreak/><LineBreak/>
+                                <Run Text="...we need to figure out which specific version of &quot;Flooded Strand&quot; should be added to your collection."/><LineBreak/>
                             </TextBlock>
-
+                            <Image Margin="0,449,0,0" Source="Images/rush_of_knowledge.jpg" HorizontalAlignment="Center" VerticalAlignment="Top" Height="274" Width="344" Opacity="0.7"/>
+                            <Button x:Name="BeginImportButton" Content="Let's go!" HorizontalAlignment="Center" Margin="0,734,0,0" VerticalAlignment="Top" Click="BeginImportButton_Click" Width="74" Style="{StaticResource BelerenBold}"/>
                         </Grid>
                         <Grid x:Name="GridImportIdColumnMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
-                            <Label x:Name="IdColumnLabel" Content="Map ID column" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>
-                            <ListView x:Name="IdColumnMappingListView" Margin="0,186,0,0" Width="575" Height="128" HorizontalAlignment="Center" VerticalAlignment="Top">
+                            <Label x:Name="IdColumnLabel" Content="Card ID Mapping" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,140,0,0" FontSize="24" Style="{StaticResource BelerenBold}"/>
+                            <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" Width="776" FontSize="16"
+                                ><Run Language="da-dk" Text="If your csv-file has any column with card Id, The Import Wizard will have the greatest chance of succesfully mapping your cards to be imported with cards in the main card database."/>
+                                <LineBreak/><LineBreak/>
+                                <Run Text="It will recognize a variety of card id formats, e.g. Scryfall Id, Card Market Id, TCG Player Id etc."/><LineBreak/>
+                                <Run Text=" &#x2022; In the left column, choose the card Id header in your import file"/><LineBreak/>
+                                <Run Text=" &#x2022; In the right column, choose the matching format available in the card database"/><LineBreak/>
+                                <Run Text=" &#x2022; If your import file does not contain a card id column, simply click &quot;Skip&quot;"/><LineBreak/>
+                                <LineBreak/>
+                            </TextBlock>
+                            <ListView x:Name="IdColumnMappingListView" Margin="0,330,0,0" Width="474" Height="77" HorizontalAlignment="Center" VerticalAlignment="Top">
                                 <ListView.View>
                                     <GridView>
-                                        <GridViewColumn Header="Database" Width="150">
-                                            <GridViewColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <ComboBox ItemsSource="{Binding DatabaseFields}" SelectedItem="{Binding SelectedDatabaseField}" />
-                                                </DataTemplate>
-                                            </GridViewColumn.CellTemplate>
-                                        </GridViewColumn>
-                                        <GridViewColumn Header="CSV Column" Width="150">
+                                        <GridViewColumn Header="Import file card Id header" Width="150">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <ComboBox ItemsSource="{Binding CsvHeaders}" SelectedItem="{Binding SelectedCsvHeader}" />
                                                 </DataTemplate>
                                             </GridViewColumn.CellTemplate>
                                         </GridViewColumn>
-                                        <GridViewColumn Header="Actions" Width="80">
+                                        <GridViewColumn Header="Matching database card Id format" Width="200">
+                                            <GridViewColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <ComboBox ItemsSource="{Binding DatabaseFields}" SelectedItem="{Binding SelectedDatabaseField}" />
+                                                </DataTemplate>
+                                            </GridViewColumn.CellTemplate>
+                                        </GridViewColumn>
+                                        <GridViewColumn Header="Reset mapping" Width="100">
                                             <GridViewColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Button Content="Clear Mapping" Click="ClearMappingButton_Click"/>
@@ -636,7 +651,8 @@
                                     </GridView>
                                 </ListView.View>
                             </ListView>
-                            <Button x:Name="ButtonIdColumnMappingNext" Content="Next" HorizontalAlignment="Left" Margin="966,240,0,0" VerticalAlignment="Top" Click="ButtonIdColumnMappingNext_Click"/>
+                            <Button x:Name="ButtonIdColumnMappingNext" Content="Next" HorizontalAlignment="Left" Margin="1020,330,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="ButtonIdColumnMappingNext_Click"/>
+                            <Button x:Name="ButtonSkipIdColumnMapping" Content="Skip card Id mapping" HorizontalAlignment="Left" Margin="1020,353,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="ButtonSkipIdColumnMapping_Click"/>
                         </Grid>
                         <Grid x:Name="GridImportNameAndSetMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
                             <Label x:Name="ImportStep1Label" Content="Map imported collection headers" HorizontalAlignment="Center" Margin="0,155,0,0" VerticalAlignment="Top"/>

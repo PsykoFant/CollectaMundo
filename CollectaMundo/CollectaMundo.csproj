@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <None Remove="Fonts\Beleren-Bold.ttf" />
+    <None Remove="Fonts\mplantin.ttf" />
+    <None Remove="Images\rush_of_knowledge.jpg" />
     <None Remove="UpgradeLog.htm" />
   </ItemGroup>
 
@@ -32,6 +34,12 @@
 
   <ItemGroup>
     <Resource Include="Fonts\Beleren-Bold.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Fonts\mplantin.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\rush_of_knowledge.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>

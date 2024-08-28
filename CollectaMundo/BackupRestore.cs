@@ -190,13 +190,19 @@ namespace CollectaMundo
         }
 
         #region Import Wizard - Step 1 - Open and parse csv-file
-        public static async Task ImportCollectionButton()
+        public static async Task BeginImportButton()
         {
+            MainWindow.CurrentInstance.MenuSearchAndFilterButton.IsEnabled = false;
+            MainWindow.CurrentInstance.MenuMyCollectionButton.IsEnabled = false;
+            MainWindow.CurrentInstance.MenuDecksButton.IsEnabled = false;
+            MainWindow.CurrentInstance.MenuUtilsButton.IsEnabled = false;
+            MainWindow.CurrentInstance.GridUtilsMenu.IsEnabled = false;
+
             // Select the csv-file and create a tempImport object with the content
             await ImportCsvAsync();
-
             PopulateIdColumnMappingListView(MainWindow.CurrentInstance.IdColumnMappingListView);
-            MainWindow.CurrentInstance.GridImportWizard.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.ButtonCancelImport.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.GridImportStartScreen.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Visible;
         }
         private static async Task ImportCsvAsync()
@@ -336,8 +342,6 @@ namespace CollectaMundo
             return input;
         }
 
-
-
         // Prepare the next step
         private static void PopulateIdColumnMappingListView(ListView listView)
         {
@@ -421,19 +425,26 @@ namespace CollectaMundo
                 }
                 else
                 {
-                    Debug.WriteLine("Not all items have uuid");
-                    // Prepare the listview to map card name, set name and set code and go to the first import wizard screen
-                    var cardSetFields = new List<string> { "Card Name", "Set Name", "Set Code" };
-                    PopulateColumnMappingListView(MainWindow.CurrentInstance.NameAndSetMappingListView, cardSetFields);
-                    MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Visible;
+                    GoToNameAndSetMapping();
                 }
-                MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error field by ID column: {ex.Message}");
                 MessageBox.Show($"Error field by ID column: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+        public static void ButtonSkipIdColumnMapping()
+        {
+            GoToNameAndSetMapping();
+        }
+        private static void GoToNameAndSetMapping()
+        {
+            var cardSetFields = new List<string> { "Card Name", "Set Name", "Set Code" };
+            PopulateColumnMappingListView(MainWindow.CurrentInstance.NameAndSetMappingListView, cardSetFields);
+
+            MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Visible;
         }
         private static async Task ProcessIdColumnMappingsAsync()
         {
@@ -1563,96 +1574,6 @@ namespace CollectaMundo
             }
         }
 
-        #endregion
-
-        #region Import Wizard - Misc. helper and shared methods
-
-        // Try to guess which column name maps to cardItemsToAdd field by looking for matching column/field names
-        private static string? GuessMapping(string searchValue, List<string> options)
-        {
-            var lowerSearchValue = searchValue.ToLower();
-
-            // Dictionary of educated guesses for each search value
-            var educatedGuesses = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
-                {
-                    { "Card Name", new List<string> { "Name", "Card", "CardName" } },
-                    { "Set Name", new List<string> { "Set", "Edition", "Edition Name" } },
-                    { "Set Code", new List<string> { "Code", "Edition Code" } },
-                    { "Card Finish", new List<string> { "Finish", "Foil", "Printing" } },
-                    { "Condition", new List<string> { "Card Condition" } },
-                    { "Cards Owned", new List<string> { "#", "Quantity", "Count", "Card Count" } },
-                    { "Cards For Trade/Selling", new List<string> { "Trade", "Sell", "Tradelist", "Tradelist Count" } },
-                    { "Language", new List<string> { "Card Language" } }
-                };
-
-            // Check if there are specific guesses for the search value
-            if (educatedGuesses.TryGetValue(searchValue, out var guesses))
-            {
-                // Try to match any of the educated guesses with the options
-                foreach (var guess in guesses)
-                {
-                    var matchedOption = options.FirstOrDefault(option => option.Equals(guess, StringComparison.OrdinalIgnoreCase));
-                    if (matchedOption != null)
-                    {
-                        return matchedOption;
-                    }
-                }
-            }
-
-            // Fallback to general matching by checking if any option contains the search value
-            return options.FirstOrDefault(option => option.ToLower().Contains(lowerSearchValue));
-        }
-
-        // Rename fields on tempImport object
-        private static void RenameFieldsInTempImport(List<ColumnMapping> mappings)
-        {
-            foreach (var mapping in mappings)
-            {
-                if (!string.IsNullOrEmpty(mapping.CsvHeader) && !string.IsNullOrEmpty(mapping.CardSetField))
-                {
-                    // Rename fields in tempImport based on the field
-                    foreach (var item in tempImport)
-                    {
-                        if (item.Fields.ContainsKey(mapping.CsvHeader))
-                        {
-                            // Get the value associated with the old field name
-                            var value = item.Fields[mapping.CsvHeader];
-
-                            // Remove the old field name
-                            item.Fields.Remove(mapping.CsvHeader);
-
-                            // Add the new field name with the value
-                            item.Fields[mapping.CardSetField] = value;
-                        }
-                    }
-                    Debug.WriteLine($"CSV Header '{mapping.CsvHeader}' renamed to '{mapping.CardSetField}'");
-                }
-            }
-        }
-
-        // Generic method to populate a field listview from anywhere in the wizard
-        private static void PopulateColumnMappingListView(ListView listView, List<string> cardSetFields)
-        {
-            try
-            {
-                var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
-
-                var mappingItems = cardSetFields.Select(field => new ColumnMapping
-                {
-                    CardSetField = field,
-                    CsvHeaders = csvHeaders,
-                    CsvHeader = GuessMapping(field, csvHeaders)
-                }).ToList();
-
-                listView.ItemsSource = mappingItems;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error populating field list view: {ex.Message}");
-                MessageBox.Show($"Error populating field list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
         // Generate the summary on the final screen
         private static void GenerateSummaryInTextBlock()
         {
@@ -1765,6 +1686,120 @@ namespace CollectaMundo
             Grid.SetColumn(textBlock, column);
             grid.Children.Add(textBlock);
         }
+
+        #endregion
+
+        #region Import Wizard - Misc. helper and shared methods
+
+        // Try to guess which column name maps to cardItemsToAdd field by looking for matching column/field names
+        private static string? GuessMapping(string searchValue, List<string> options)
+        {
+            var lowerSearchValue = searchValue.ToLower();
+
+            // Dictionary of educated guesses for each search value
+            var educatedGuesses = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Card Name", new List<string> { "Name", "Card", "CardName" } },
+                    { "Set Name", new List<string> { "Set", "Edition", "Edition Name" } },
+                    { "Set Code", new List<string> { "Code", "Edition Code" } },
+                    { "Card Finish", new List<string> { "Finish", "Foil", "Printing" } },
+                    { "Condition", new List<string> { "Card Condition" } },
+                    { "Cards Owned", new List<string> { "#", "Quantity", "Count", "Card Count" } },
+                    { "Cards For Trade/Selling", new List<string> { "Trade", "Sell", "Tradelist", "Tradelist Count" } },
+                    { "Language", new List<string> { "Card Language" } }
+                };
+
+            // Check if there are specific guesses for the search value
+            if (educatedGuesses.TryGetValue(searchValue, out var guesses))
+            {
+                // Try to match any of the educated guesses with the options
+                foreach (var guess in guesses)
+                {
+                    var matchedOption = options.FirstOrDefault(option => option.Equals(guess, StringComparison.OrdinalIgnoreCase));
+                    if (matchedOption != null)
+                    {
+                        return matchedOption;
+                    }
+                }
+            }
+
+            // Fallback to general matching by checking if any option contains the search value
+            return options.FirstOrDefault(option => option.ToLower().Contains(lowerSearchValue));
+        }
+
+        // Rename fields on tempImport object
+        private static void RenameFieldsInTempImport(List<ColumnMapping> mappings)
+        {
+            foreach (var mapping in mappings)
+            {
+                if (!string.IsNullOrEmpty(mapping.CsvHeader) && !string.IsNullOrEmpty(mapping.CardSetField))
+                {
+                    // Rename fields in tempImport based on the field
+                    foreach (var item in tempImport)
+                    {
+                        if (item.Fields.ContainsKey(mapping.CsvHeader))
+                        {
+                            // Get the value associated with the old field name
+                            var value = item.Fields[mapping.CsvHeader];
+
+                            // Remove the old field name
+                            item.Fields.Remove(mapping.CsvHeader);
+
+                            // Add the new field name with the value
+                            item.Fields[mapping.CardSetField] = value;
+                        }
+                    }
+                    Debug.WriteLine($"CSV Header '{mapping.CsvHeader}' renamed to '{mapping.CardSetField}'");
+                }
+            }
+        }
+
+        // Generic method to populate a field listview from anywhere in the wizard
+        private static void PopulateColumnMappingListView(ListView listView, List<string> cardSetFields)
+        {
+            try
+            {
+                var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
+
+                var mappingItems = cardSetFields.Select(field => new ColumnMapping
+                {
+                    CardSetField = field,
+                    CsvHeaders = csvHeaders,
+                    CsvHeader = GuessMapping(field, csvHeaders)
+                }).ToList();
+
+                listView.ItemsSource = mappingItems;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error populating field list view: {ex.Message}");
+                MessageBox.Show($"Error populating field list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        public static void CancelImport()
+        {
+            tempImport.Clear();
+
+            MainWindow.CurrentInstance.GridImportWizard.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportStartScreen.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.ButtonCancelImport.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportMultipleUuidsSelection.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportCardConditionsMapping.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportFinishesMapping.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Collapsed;
+
+            MainWindow.CurrentInstance.MenuSearchAndFilterButton.IsEnabled = true;
+            MainWindow.CurrentInstance.MenuMyCollectionButton.IsEnabled = true;
+            MainWindow.CurrentInstance.MenuDecksButton.IsEnabled = true;
+            MainWindow.CurrentInstance.MenuUtilsButton.IsEnabled = true;
+            MainWindow.CurrentInstance.GridUtilsMenu.IsEnabled = true;
+        }
+
 
         // Debug methods
         public static void DebugFieldMappings()
