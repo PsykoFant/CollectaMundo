@@ -1016,6 +1016,11 @@ namespace CollectaMundo
 
             // Prepare the listview to map additional fields and make the screen visible
             PopulateColumnMappingListView(MainWindow.CurrentInstance.AddionalFieldsMappingListView, AdditionalFieldsList);
+
+            MainWindow.CurrentInstance.ImagePromoLabel.Content = string.Empty;
+            MainWindow.CurrentInstance.ImageSetLabel.Content = string.Empty;
+            MainWindow.CurrentInstance.ImageSourceUrl = null;
+            MainWindow.CurrentInstance.ImageSourceUrl2nd = null;
             MainWindow.CurrentInstance.GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
         }
 
