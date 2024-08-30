@@ -868,7 +868,7 @@
                             <StackPanel x:Name="ImportSummaryContainer" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,184,0,0" Width="474">
                                 <TextBlock x:Name="ImportSummaryTextBlock" TextWrapping="Wrap" Height="Auto" Visibility="Visible"/>
                             </StackPanel>
-                            <Button x:Name="ButtonImportConfirm" Content="Looks good! Proceed with import..." HorizontalAlignment="Left" Margin="1020,330,0,0" VerticalAlignment="Top" Width="200" Height="20" Style="{StaticResource BelerenBold}"/>
+                            <Button x:Name="ButtonImportConfirm" Content="Looks good! Proceed with import..." HorizontalAlignment="Left" Margin="1020,330,0,0" VerticalAlignment="Top" Width="200" Height="20" Style="{StaticResource BelerenBold}" Click="ButtonImportConfirm_Click"/>
                             <Button x:Name="SaveListOfUnimportedItems" Content="Save unimported items to text file" HorizontalAlignment="Left" Margin="1020,360,0,0" VerticalAlignment="Top" Width="200" Height="20" Style="{StaticResource BelerenBold}" Visibility="Collapsed" Click="SaveListOfUnimportedItems_Click"/>
                         </Grid>                        
                     </Grid>

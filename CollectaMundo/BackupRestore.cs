@@ -414,6 +414,7 @@ namespace CollectaMundo
         public static async Task ButtonIdColumnMappingNext()
         {
             MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.CrunchingDataLabel.Content = "Crunching data - please wait...";
             MainWindow.CurrentInstance.ButtonSkipIdColumnMapping.Visibility = Visibility.Collapsed;
 
             try
@@ -464,9 +465,6 @@ namespace CollectaMundo
         }
         private static async Task ProcessIdColumnMappingsAsync()
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             try
             {
                 // Get the field from IdColumnMappingListView
@@ -598,10 +596,6 @@ namespace CollectaMundo
             finally
             {
                 DBAccess.CloseConnection();
-                stopwatch.Stop();
-                Debug.WriteLine($"ButtonIdColumnMappingNext completed in {stopwatch.ElapsedMilliseconds} ms");
-                Debug.WriteLine("Status of import after card id mapping:");
-                DebugImportProcess();
             }
         }
 
@@ -685,7 +679,6 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Collapsed;
             }
         }
-
         private static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
         {
             try
@@ -731,9 +724,6 @@ namespace CollectaMundo
         }
         private static async Task SearchBySetCode()
         {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
-
             const int batchSize = 800;
 
             try
@@ -799,9 +789,6 @@ namespace CollectaMundo
             }
             finally
             {
-                stopwatch.Stop();
-                Debug.WriteLine($"Searching by card name and set code completed in {stopwatch.ElapsedMilliseconds} ms");
-
                 Debug.WriteLine("Status of import after search by name and set code:");
                 DebugImportProcess();
             }
@@ -1031,7 +1018,7 @@ namespace CollectaMundo
             {
                 if (!string.IsNullOrEmpty(item.SelectedUuid))
                 {
-                    var tempItem = tempImport.FirstOrDefault(t => t.Fields.ContainsKey("CardName") && t.Fields["CardName"] == item.Name);
+                    var tempItem = tempImport.FirstOrDefault(t => t.Fields.ContainsKey("Card Name") && t.Fields["Card Name"] == item.Name);
 
                     // Remove the field uuids and add the field uuid with the selected version of the card
                     if (tempItem != null)
@@ -1314,10 +1301,10 @@ namespace CollectaMundo
         {
             // Generate the field dictionary for "Language"
             var languageMappings = CreateMappingDictionary(MainWindow.CurrentInstance.LanguageMappingListView, "Language", "English");
-
             StoreMapping("Language", languageMappings, true);
 
             MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Collapsed;
+            DebugFieldMappings();
             GoToFinalStep();
         }
 
@@ -1683,9 +1670,193 @@ namespace CollectaMundo
             grid.Children.Add(textBlock);
         }
 
+        // Add imported cards to database
+        public static async Task AddItemsToDatabaseAsync()
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            // Disable UI elements during import
+            MainWindow.CurrentInstance.ButtonCancelImport.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.ButtonImportConfirm.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.CrunchingDataLabel.Content = "Importing cards";
+
+            const int batchSize = 4000; // seems to be around here for a csv-file with 12000 rows
+
+            try
+            {
+                // Open the database connection
+                await DBAccess.OpenConnectionAsync();
+
+                // Process tempImport in batches
+                for (int batchStart = 0; batchStart < tempImport.Count; batchStart += batchSize)
+                {
+                    var batchEnd = Math.Min(batchStart + batchSize, tempImport.Count);
+                    var currentBatch = tempImport.Skip(batchStart).Take(batchEnd - batchStart).ToList();
+
+                    // Run batch processing in a background thread
+                    await Task.Run(async () =>
+                    {
+                        // Create a list to store all database commands for this batch
+                        var commands = new List<SQLiteCommand>();
+
+                        foreach (var tempItem in currentBatch)
+                        {
+                            // Extract relevant fields
+                            string uuid = tempItem.Fields.TryGetValue("uuid", out var uuidValue) ? uuidValue : string.Empty;
+                            string condition = tempItem.Fields.TryGetValue("Condition", out var conditionValue) ? conditionValue : "Near Mint";
+                            string finish = tempItem.Fields.TryGetValue("Card Finish", out var finishValue) ? finishValue : "nonfoil";
+                            string language = tempItem.Fields.TryGetValue("Language", out var languageValue) ? languageValue : "English";
+                            string cardsOwnedStr = tempItem.Fields.TryGetValue("Cards Owned", out var cardsOwnedValue) ? cardsOwnedValue : "1";
+                            string cardsForTradeStr = tempItem.Fields.TryGetValue("Cards For Trade/Selling", out var cardsForTradeValue) ? cardsForTradeValue : "0";
+
+                            // Convert 'Cards Owned' and 'Cards For Trade/Selling' to integers
+                            int cardsOwned = int.TryParse(cardsOwnedStr, out var owned) ? owned : 1;
+                            int cardsForTrade = int.TryParse(cardsForTradeStr, out var trade) ? trade : 0;
+
+                            // Map values using FieldMappings
+                            condition = MapFieldValue("Condition", condition, "Near Mint");
+                            finish = MapFieldValue("Card Finish", finish, "nonfoil");
+                            language = MapFieldValue("Language", language, "English");
+
+                            // Check if an entry exists in 'myCollection' with the same uuid, language, and finish
+                            string query = "SELECT count, trade FROM myCollection WHERE uuid = @uuid AND language = @language AND finish = @finish";
+                            using (var command = new SQLiteCommand(query, DBAccess.connection))
+                            {
+                                command.Parameters.AddWithValue("@uuid", uuid);
+                                command.Parameters.AddWithValue("@language", language);
+                                command.Parameters.AddWithValue("@finish", finish);
+
+                                using (var reader = await command.ExecuteReaderAsync())
+                                {
+                                    if (await reader.ReadAsync())
+                                    {
+                                        // Row exists, update 'count' and 'trade' columns
+                                        int currentCount = reader.GetInt32(0);
+                                        int currentTrade = reader.GetInt32(1);
+
+                                        // Update the values
+                                        currentCount += cardsOwned;
+                                        currentTrade += cardsForTrade;
+
+                                        // Update query
+                                        string updateQuery = "UPDATE myCollection SET count = @count, trade = @trade WHERE uuid = @uuid AND language = @language AND finish = @finish";
+                                        var updateCommand = new SQLiteCommand(updateQuery, DBAccess.connection);
+                                        updateCommand.Parameters.AddWithValue("@count", currentCount);
+                                        updateCommand.Parameters.AddWithValue("@trade", currentTrade);
+                                        updateCommand.Parameters.AddWithValue("@uuid", uuid);
+                                        updateCommand.Parameters.AddWithValue("@language", language);
+                                        updateCommand.Parameters.AddWithValue("@finish", finish);
+                                        commands.Add(updateCommand);
+                                    }
+                                    else
+                                    {
+                                        // Row does not exist, insert a new entry
+                                        string insertQuery = @"
+                                    INSERT INTO myCollection (uuid, count, trade, condition, finish, language)
+                                    VALUES (@uuid, @count, @trade, @condition, @finish, @language)";
+                                        var insertCommand = new SQLiteCommand(insertQuery, DBAccess.connection);
+                                        insertCommand.Parameters.AddWithValue("@uuid", uuid);
+                                        insertCommand.Parameters.AddWithValue("@count", cardsOwned);
+                                        insertCommand.Parameters.AddWithValue("@trade", cardsForTrade);
+                                        insertCommand.Parameters.AddWithValue("@condition", condition);
+                                        insertCommand.Parameters.AddWithValue("@finish", finish);
+                                        insertCommand.Parameters.AddWithValue("@language", language);
+                                        commands.Add(insertCommand);
+                                    }
+                                }
+                            }
+                        }
+
+                        // Execute all commands for the batch
+                        using (var transaction = DBAccess.connection.BeginTransaction())
+                        {
+                            foreach (var cmd in commands)
+                            {
+                                await cmd.ExecuteNonQueryAsync();
+                            }
+                            transaction.Commit();
+                        }
+
+                    });
+                }
+
+                stopwatch.Stop();
+                Debug.WriteLine($"Import to db completed in {stopwatch.ElapsedMilliseconds} ms");
+
+                // Cleanup
+                MainWindow.CurrentInstance.CrunchingDataLabel.Content = "Reloading my collection";
+                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
+
+                EndImport();
+                MainWindow.CurrentInstance.ButtonCancelImport.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.ButtonImportConfirm.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Visible;
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error adding items to the database: {ex.Message}");
+                MessageBox.Show($"Error adding items to the database: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                // Ensure the database connection is closed
+                DBAccess.CloseConnection();
+                Debug.WriteLine("Import complete");
+            }
+        }
+
+
+
+        // Helper method to map field values using FieldMappings
+        private static string MapFieldValue(string field, string csvValue, string defaultValue)
+        {
+            // Find the mapping dictionary for the specified field
+            var mapping = FieldMappings.FirstOrDefault(m => m.Key == field).Value;
+
+            if (mapping != null)
+            {
+                // Check for an exact match in the CSV values
+                if (mapping.TryGetValue(csvValue, out var mappedValue) && !string.IsNullOrEmpty(mappedValue) && mappedValue != "unmapped")
+                {
+                    return mappedValue;
+                }
+            }
+
+            // If no mapping or 'unmapped', return the default value
+            return defaultValue;
+        }
+
+
+
         #endregion
 
         #region Import Wizard - Misc. helper and shared methods
+        public static void EndImport()
+        {
+            tempImport.Clear();
+
+            MainWindow.CurrentInstance.GridImportWizard.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportStartScreen.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.ButtonCancelImport.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportMultipleUuidsSelection.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportCardConditionsMapping.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportFinishesMapping.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Collapsed;
+
+            MainWindow.CurrentInstance.MenuSearchAndFilterButton.IsEnabled = true;
+            MainWindow.CurrentInstance.MenuMyCollectionButton.IsEnabled = true;
+            MainWindow.CurrentInstance.MenuDecksButton.IsEnabled = true;
+            MainWindow.CurrentInstance.MenuUtilsButton.IsEnabled = true;
+            MainWindow.CurrentInstance.GridUtilsMenu.IsEnabled = true;
+        }
 
         // Try to guess which column name maps to cardItemsToAdd field by looking for matching column/field names
         private static string? GuessMapping(string searchValue, List<string> options)
@@ -1772,30 +1943,6 @@ namespace CollectaMundo
                 MessageBox.Show($"Error populating field list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-        public static void CancelImport()
-        {
-            tempImport.Clear();
-
-            MainWindow.CurrentInstance.GridImportWizard.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.GridImportStartScreen.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.ButtonCancelImport.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.GridImportMultipleUuidsSelection.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.GridImportCardConditionsMapping.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.GridImportFinishesMapping.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Collapsed;
-
-            MainWindow.CurrentInstance.MenuSearchAndFilterButton.IsEnabled = true;
-            MainWindow.CurrentInstance.MenuMyCollectionButton.IsEnabled = true;
-            MainWindow.CurrentInstance.MenuDecksButton.IsEnabled = true;
-            MainWindow.CurrentInstance.MenuUtilsButton.IsEnabled = true;
-            MainWindow.CurrentInstance.GridUtilsMenu.IsEnabled = true;
-        }
-
 
         // Debug methods
         public static void DebugFieldMappings()

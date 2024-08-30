@@ -258,7 +258,8 @@ namespace CollectaMundo
         }
 
         /* To do
-         * Polish import wizard
+         * sidste polish, importer
+         * trade i filter, edit, add osv. (e.g. disable next knappen under process)
          * Performance optimer load kort         
          * Opdater database oprettelse og update
          * Refaktorer installer oprettelse
@@ -1091,7 +1092,6 @@ namespace CollectaMundo
         {
             ButtonSkipIdColumnMapping();
         }
-
         private async void ButtonNameAndSetMappingNext_Click(object sender, RoutedEventArgs e)
         {
             await ButtonNameAndSetMappingNext();
@@ -1115,6 +1115,10 @@ namespace CollectaMundo
         private void ButtonLanguageMappingNext_Click(object sender, RoutedEventArgs e)
         {
             ButtonLanguageMappingNext();
+        }
+        private async void ButtonImportConfirm_Click(object sender, RoutedEventArgs e)
+        {
+            await AddItemsToDatabaseAsync();
         }
 
 
@@ -1149,7 +1153,7 @@ namespace CollectaMundo
         }
         private void CancelImport_Click(object sender, RoutedEventArgs e)
         {
-            CancelImport();
+            EndImport();
         }
 
         #endregion

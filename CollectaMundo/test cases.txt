@@ -101,28 +101,21 @@ No valid ID
 2,Aetherstorm Roc,Aetherstorm Roc,Kaladesh,3,KLD,Normal,Near Mint,English,Rare,122639,3200209,$0.20,$0.10
 
 
+1,Agent of the Fates,Agent of the Fates,Theros,76,THS,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
+1,"Garruk Relentless // Garruk, the Veil-Cursed","Garruk Relentless // Garruk, the Veil-Cursed",Innistrad,76,ISD,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
+2,"Baleful Beholder // Beholder","Baleful Beholder // Beholder",Adventures in the Forgotten Realms Art Series,76,AAFR,Normal,Moderately Played,German,Rare,71192,1132871,$0.20,$0.20
+1,Angel,Angel,Double Masters 2022,76,T2X2,Normal,Moderately Played,Italian,Rare,71192,1132871,$0.20,$0.20
+3,Spirit,Spirit,Avacyn Restored,76,AVR,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
+1,Fish // Kraken,Fish // Kraken,Masters 25,76,A25,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
+3,"Art Card: Drivnod, Carnage Dominus","Art Card: Drivnod, Carnage Dominus",Phyrexia: All Will Be One Art Series,76,AONE,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
+1,Monster // Virtuous,Monster // Virtuous,Theros,76,TWOC,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
+3,Elemental // Elemental,Elemental // Elemental,Unstable,76,UST,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
+3,Aeromoeba,Aeromoeba,Modern Horizons 2,76,MH2,Normal,Near Mint,English,Rare,71192,1132871,$0.20,$0.20
 
 
-1,1,0,0,"Art Card: Edgar, Charmed Groom",Extras: Innistrad: Crimson Vow Art Series,ex_137,59,Near Mint,English,,,,,,,,61572,,"",$0.00,Token,,Common,$0.00,https://s.deckbox.org/system/images/mtg/cards/2024206.jpg,2022-06-16 06:46:41 UTC,,
-2,1,0,0,Ajani Vengeant,Prerelease Events,ptc,38,Near Mint,English,,,,,,,,22842,,"",$0.00,Legendary Planeswalker - Ajani,{2}{R}{W},Special,$0.00,https://s.deckbox.org/system/images/mtg/cards/1000093.jpg,2023-12-21 12:37:43 UTC,,
-1,1,0,0,Art Card: Chillerpillar,Extras: Modern Horizons Art Series,ex_102,1,Near Mint,English,,,,,,,,44886,,"",$0.00,Token - Art,"",Common,$0.00,https://s.deckbox.org/system/images/mtg/cards/2004619.jpg,2022-06-14 13:35:21 UTC,,
-1,0,0,0,Fire // Ice,Commander,CMD,198,,,,,,,,,,18445,,"",$0.00,Instant // Instant,{1}{R} // {1}{U},Uncommon,$0.46,https://s.deckbox.org/system/images/mtg/cards/247159.jpg,2014-11-24 21:29:25 UTC,47370,230e65b2-a908-4418-8ef9-ecc475ff0b27
-1,0,0,0,"Garruk Relentless // Garruk, the Veil-Cursed",Innistrad,ISD,181,,,,,,,,,,18970,,"",$0.00,Legendary Planeswalker - Garruk // Legendary Planeswalker - Garruk,{3}{G},MythicRare,$1.09,https://s.deckbox.org/system/images/mtg/cards/245250.jpg,2014-11-25 23:01:13 UTC,52203,b4160322-ff40-41a4-887a-73cd6b85ae45
-1,0,0,0,Animating Faerie // Bring to Life,Throne of Eldraine,ELD,38,Near Mint,English,,,,,,,,46094,,"",$0.00,Creature - Faerie // Sorcery - Adventure,{2}{U} // {2}{U},Uncommon,$0.06,https://s.deckbox.org/system/images/mtg/cards/2005278.jpg,2022-06-15 07:23:57 UTC,198549,32158458-42eb-41bc-a15a-11af28463eb0
-1,0,0,0,Flooded Strand,Modern Horizons 3,mh3,198,,,,,,,,,,18445,,"",$0.00,Instant // Instant,{1}{R} // {1}{U},Uncommon,$0.46,https://s.deckbox.org/system/images/mtg/cards/247159.jpg,2014-11-24 21:29:25 UTC,47370,8f85e12c-196b-4459-b81f-0c9c854e9f57
-1,1,0,0,Food,Extras: Throne of Eldraine,ex_106,17,Near Mint,English,foil,,,,,,,46561,,"",$0.00,Token Artifact - Food,"",Common,$0.00,https://s.deckbox.org/system/images/mtg/cards/2005745.jpg,2022-06-15 09:57:15 UTC,,46582e55-c6f4-46e4-a78e-2c586ca4cf4d
-1,1,0,0,The Atropal // Tomb of Annihilation,Extras: Adventures in the Forgotten Realms,ex_130,34,Near Mint,English,,,,,,,,59752,#5 / #22,"",$0.00,Token,,Common,$0.00,https://s.deckbox.org/system/images/mtg/cards/2022086.jpg,2022-09-06 12:10:18 UTC,,
-1,1,0,0,"Art Card: Drivnod, Carnage Dominus",Phyrexia: All Will Be One Art Series,AONE,20,Near Mint,English,,,,,,,,74903,,"",$0.00,Token,,Common,$0.00,https://s.deckbox.org/system/images/mtg/cards/2038316.jpg,2023-05-11 07:52:06 UTC,,3dd68d0e-f0ce-4d0b-8ab9-a06dc2c97f9b
 
 
 
-Opret disse indexes:
-CREATE INDEX IF NOT EXISTS cards_name ON cards(name);
-CREATE INDEX IF NOT EXISTS cards_setCode ON cards(setCode);
-CREATE INDEX IF NOT EXISTS tokens_name ON tokens(name);
-CREATE INDEX IF NOT EXISTS tokens_setCode ON tokens(setCode);
-CREATE INDEX IF NOT EXISTS tokens_faceName ON tokens(faceName);
-CREATE INDEX IF NOT EXISTS sets_tokenSetCode ON sets(tokenSetCode);
 
 
 CREATE VIEW CardTokenView AS
