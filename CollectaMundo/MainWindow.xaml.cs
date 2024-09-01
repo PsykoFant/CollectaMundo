@@ -263,7 +263,6 @@ namespace CollectaMundo
          *      Tilføj kort fra alle korts filter - håndter trade
          *      plus og minus til trade...
          * Performance optimer load kort         
-         * Opdater database oprettelse og update
          * Refaktorer installer oprettelse
          */
 
