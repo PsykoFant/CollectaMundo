@@ -160,6 +160,9 @@ namespace CollectaMundo
                     await detachCommand.ExecuteNonQueryAsync();
                     Debug.WriteLine($"Detached tempDb...");
                 }
+
+                // Recreate indices after copying tables
+                await DownloadAndPrepDB.CreateIndices();
             }
             catch (SQLiteException ex)
             {

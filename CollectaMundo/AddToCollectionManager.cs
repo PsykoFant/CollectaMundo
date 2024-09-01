@@ -75,6 +75,7 @@ namespace CollectaMundo
                         SetName = selectedCard.SetName,
                         Uuid = selectedCard.Uuid,
                         CardsOwned = 1,
+                        CardsForTrade = 0,
                         AvailableFinishes = finishes,
                         SelectedFinish = finishes.FirstOrDefault(),
                         Language = selectedCard.Language,
@@ -87,6 +88,7 @@ namespace CollectaMundo
                     {
                         newItem.CardId = cardItem.CardId;
                         newItem.CardsOwned = cardItem.CardsOwned;
+                        newItem.CardsForTrade = cardItem.CardsForTrade;
                         newItem.SelectedFinish = cardItem.SelectedFinish;
                         newItem.SelectedCondition = cardItem.SelectedCondition;
                     }

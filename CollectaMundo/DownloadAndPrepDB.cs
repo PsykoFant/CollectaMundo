@@ -46,7 +46,6 @@ public class DownloadAndPrepDB
                 await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
 
                 DBAccess.CloseConnection();
-                MainWindow.CurrentInstance.ResetGrids();
                 await MainWindow.ShowStatusWindowAsync(false);
             }
         }
@@ -157,6 +156,9 @@ public class DownloadAndPrepDB
 
             // Create indices
             await CreateIndices();
+
+            // Create the view
+            await CreateViews();
         }
         catch (Exception ex)
         {
@@ -657,7 +659,7 @@ public class DownloadAndPrepDB
 
         return uniqueValues;
     }
-    private static async Task CreateIndices()
+    public static async Task CreateIndices()
     {
         // Define indices to create
         Dictionary<string, string> indices = new()
@@ -672,16 +674,16 @@ public class DownloadAndPrepDB
             {"cardRulings", "CREATE INDEX IF NOT EXISTS cardRulings_uuid ON cardRulings(uuid);"},
             {"cards_uuid", "CREATE INDEX IF NOT EXISTS cards_uuid ON cards(uuid);"},
             {"cards_name", "CREATE INDEX IF NOT EXISTS cards_name ON cards(name);"},
-            {"cards_setcode", "CREATE INDEX IF NOT EXISTS cards_setCode ON cards(setCode);"},
+            {"cards_setCode", "CREATE INDEX IF NOT EXISTS cards_setCode ON cards(setCode);"},
             {"cards_side", "CREATE INDEX IF NOT EXISTS cards_side ON cards(side);"},
             {"cards_keywords", "CREATE INDEX IF NOT EXISTS cards_keywords ON cards(keywords);"},
-            {"sets", "CREATE INDEX IF NOT EXISTS sets_code ON sets(code);"},
-            {"sets", "CREATE INDEX IF NOT EXISTS sets_tokenSetCode ON sets(tokenSetCode);"},
+            {"sets_code", "CREATE INDEX IF NOT EXISTS sets_code ON sets(code);"},
+            {"sets_tokenSetCode", "CREATE INDEX IF NOT EXISTS sets_tokenSetCode ON sets(tokenSetCode);"},
             {"tokenIdentifiers", "CREATE INDEX IF NOT EXISTS tokenIdentifiers_uuid ON tokenIdentifiers(uuid);"},
-            {"tokens", "CREATE INDEX IF NOT EXISTS tokens_uuid ON tokens(uuid);"},
-            {"tokens", "CREATE INDEX IF NOT EXISTS tokens_name ON tokens(name);"},
-            {"tokens", "CREATE INDEX IF NOT EXISTS tokens_setCode ON tokens(setCode);"},
-            {"tokens", "CREATE INDEX IF NOT EXISTS tokens_faceName ON tokens(faceName);"},
+            {"tokens_uuid", "CREATE INDEX IF NOT EXISTS tokens_uuid ON tokens(uuid);"},
+            {"tokens_name", "CREATE INDEX IF NOT EXISTS tokens_name ON tokens(name);"},
+            {"tokens_setCode", "CREATE INDEX IF NOT EXISTS tokens_setCode ON tokens(setCode);"},
+            {"tokens_faceName", "CREATE INDEX IF NOT EXISTS tokens_faceName ON tokens(faceName);"},
             {"myCollection", "CREATE INDEX IF NOT EXISTS myCollection_uuid ON myCollection(uuid);"}
         };
 
@@ -701,6 +703,53 @@ public class DownloadAndPrepDB
         {
             Debug.WriteLine($"Error during creation of indices: {ex.Message}");
             MessageBox.Show($"Error during creation of indices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+    private static async Task CreateViews()
+    {
+        try
+        {
+            string createViewQuery = @"
+            CREATE VIEW IF NOT EXISTS CardTokenView AS
+            SELECT 
+                c.uuid,
+                c.name,
+                s.name AS setName,
+                c.setCode,
+                NULL AS tokenSetCode,
+                NULL AS faceName
+            FROM 
+                cards c
+            JOIN 
+                sets s ON c.setCode = s.code
+            WHERE 
+                c.side IS NULL OR c.side = 'a'
+            UNION ALL
+            SELECT 
+                t.uuid,
+                t.name,
+                s.name AS setName,
+                s.code AS setCode,
+                s.tokenSetCode,
+                t.faceName
+            FROM 
+                tokens t
+            JOIN 
+                sets s ON t.setCode = s.tokenSetCode
+            WHERE 
+                t.side IS NULL OR t.side = 'a';
+        ";
+
+            using (var command = new SQLiteCommand(createViewQuery, DBAccess.connection))
+            {
+                await command.ExecuteNonQueryAsync();
+                Debug.WriteLine("Created view CardTokenView.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error during creation of view CardTokenView: {ex.Message}");
+            MessageBox.Show($"Error during creation of view CardTokenView: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 

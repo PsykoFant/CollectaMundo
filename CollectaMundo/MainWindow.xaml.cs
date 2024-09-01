@@ -70,6 +70,7 @@ namespace CollectaMundo
                         c.uuid AS Uuid,
                         m.id AS CardId,
                         m.count AS CardsOwned,
+                        m.trade AS CardsForTrade,
                         m.condition AS Condition,
                         m.language AS Language,
                         m.finish AS Finishes,
@@ -110,6 +111,7 @@ namespace CollectaMundo
                         t.uuid AS Uuid,
                         m.id AS CardId,
                         m.count AS CardsOwned,
+                        m.trade AS CardsForTrade,
                         m.condition AS Condition,
                         m.language AS Language,
                         m.finish AS Finishes,
@@ -213,11 +215,6 @@ namespace CollectaMundo
             InitializeComponent();
             _currentInstance = this;
 
-            // Start on the all cards page            
-            GridMyCollection.Visibility = Visibility.Collapsed;
-            GridUtilsMenu.Visibility = Visibility.Collapsed;
-            GridUtilitiesSection.Visibility = Visibility.Collapsed;
-
             // Update the statusbox with messages from methods in DownloadAndPrepareDB
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             // Update the statusbox with messages from methods in UpdateDB
@@ -245,7 +242,12 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            //await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
+            // Start on the all cards page            
+            ResetGrids();
+            GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
+            GridFiltering.Visibility = Visibility.Visible;
+
+            await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
             await FillComboBoxesAsync();
 
@@ -256,7 +258,10 @@ namespace CollectaMundo
         }
 
         /* To do
-         * trade i filter, edit, add osv. (e.g. disable next knappen under process)
+         * Bugs:
+         *      håndter sprog, hvis man forsøger at importere kort, der ikke er på det sprog
+         *      Tilføj kort fra alle korts filter - håndter trade
+         *      plus og minus til trade...
          * Performance optimer load kort         
          * Opdater database oprettelse og update
          * Refaktorer installer oprettelse
@@ -880,14 +885,15 @@ namespace CollectaMundo
             card.Language = reader["Language"]?.ToString() ?? string.Empty;
             card.Uuid = reader["Uuid"]?.ToString() ?? string.Empty;
             card.Side = reader["Side"]?.ToString() ?? string.Empty;
-            card.Finishes = reader["Finishes"]?.ToString() ?? string.Empty;
+            card.Finishes = reader["Finishes"]?.ToString();
 
             if (card is CardItem cardItem)
             {
                 cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
                 cardItem.CardsOwned = Convert.ToInt32(reader["CardsOwned"]);
-                cardItem.SelectedCondition = reader["Condition"]?.ToString() ?? "Near Mint";
-                cardItem.SelectedFinish = reader["Finishes"]?.ToString() ?? string.Empty;
+                cardItem.CardsForTrade = Convert.ToInt32(reader["CardsForTrade"]);
+                cardItem.SelectedCondition = reader["Condition"]?.ToString();
+                cardItem.SelectedFinish = reader["Finishes"]?.ToString();
             }
 
 
