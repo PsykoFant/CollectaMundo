@@ -413,6 +413,7 @@ namespace CollectaMundo
         #region Import Wizard - Step 2a - Find UUIDs - Mapping by card ID
         public static async Task ButtonIdColumnMappingNext()
         {
+            MainWindow.CurrentInstance.ButtonIdColumnMappingNext.IsEnabled = false;
             MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.CrunchingDataLabel.Content = "Crunching data - please wait...";
             MainWindow.CurrentInstance.ButtonSkipIdColumnMapping.Visibility = Visibility.Collapsed;
@@ -448,6 +449,7 @@ namespace CollectaMundo
                 {
                     MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Collapsed;
                     MainWindow.CurrentInstance.ButtonSkipIdColumnMapping.Visibility = Visibility.Visible;
+                    MainWindow.CurrentInstance.ButtonIdColumnMappingNext.IsEnabled = true;
                 });
             }
         }
@@ -605,6 +607,7 @@ namespace CollectaMundo
         public static async Task ButtonNameAndSetMappingNext()
         {
             MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.ButtonNameAndSetMappingNext.IsEnabled = false;
 
             // Make a list of the mapped items
             var mappings = MainWindow.CurrentInstance.NameAndSetMappingListView.Items.Cast<ColumnMapping>().ToList();
@@ -655,7 +658,7 @@ namespace CollectaMundo
                         {
                             Application.Current.Dispatcher.Invoke(() =>
                             {
-                                tempImport.Clear();
+                                EndImport();
                                 MainWindow.CurrentInstance.GridImportWizard.Visibility = Visibility.Collapsed;
                                 MessageBox.Show("Was not able to map any cards in the import file to the main card database", "Import failed", MessageBoxButton.OK, MessageBoxImage.Warning);
                             });
@@ -677,6 +680,7 @@ namespace CollectaMundo
             finally
             {
                 MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Collapsed;
+                MainWindow.CurrentInstance.ButtonNameAndSetMappingNext.IsEnabled = true;
             }
         }
         private static async Task SearchByCardNameOrSet(List<ColumnMapping> mappings)
@@ -1856,6 +1860,8 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.MenuDecksButton.IsEnabled = true;
             MainWindow.CurrentInstance.MenuUtilsButton.IsEnabled = true;
             MainWindow.CurrentInstance.GridUtilsMenu.IsEnabled = true;
+
+            MainWindow.CurrentInstance.CrunchingDataLabel.Content = string.Empty;
         }
 
         // Try to guess which column name maps to cardItemsToAdd field by looking for matching column/field names

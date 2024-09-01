@@ -213,11 +213,10 @@ namespace CollectaMundo
             InitializeComponent();
             _currentInstance = this;
 
-            // Hide app sections not selected
-            GridSearchAndFilter.Visibility = Visibility.Hidden;
-            GridMyCollection.Visibility = Visibility.Hidden;
-            GridStatus.Visibility = Visibility.Hidden;
-
+            // Start on the all cards page            
+            GridMyCollection.Visibility = Visibility.Collapsed;
+            GridUtilsMenu.Visibility = Visibility.Collapsed;
+            GridUtilitiesSection.Visibility = Visibility.Collapsed;
 
             // Update the statusbox with messages from methods in DownloadAndPrepareDB
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
@@ -242,8 +241,7 @@ namespace CollectaMundo
         }
         public async Task LoadDataIntoUiElements()
         {
-            //await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
-            GridSearchAndFilter.Visibility = Visibility.Visible;
+            await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
 
             await DBAccess.OpenConnectionAsync();
 
@@ -258,7 +256,6 @@ namespace CollectaMundo
         }
 
         /* To do
-         * sidste polish, importer
          * trade i filter, edit, add osv. (e.g. disable next knappen under process)
          * Performance optimer load kort         
          * Opdater database oprettelse og update
@@ -1163,23 +1160,19 @@ namespace CollectaMundo
         #region Top menu navigation
         private void MenuSearchAndFilter_Click(object sender, RoutedEventArgs e)
         {
-            GridContentSection.Visibility = Visibility.Visible;
-            GridUtilitiesSection.Visibility = Visibility.Collapsed;
             ResetGrids();
-            GridSearchAndFilter.Visibility = Visibility.Visible;
+            GridFiltering.Visibility = Visibility.Visible;
+            GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
         }
         private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
-            GridContentSection.Visibility = Visibility.Visible;
-            GridUtilitiesSection.Visibility = Visibility.Collapsed;
+            GridFiltering.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Visible;
         }
         private void MenuUtilsButton_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
-            //GridContentSection.Visibility = Visibility.Collapsed;
-            GridFiltering.Visibility = Visibility.Collapsed;
             GridUtilsMenu.Visibility = Visibility.Visible;
             GridUtilitiesSection.Visibility = Visibility.Visible;
         }
@@ -1189,9 +1182,12 @@ namespace CollectaMundo
             EditStatusTextBlock.Text = string.Empty;
             AddStatusTextBlock.Text = string.Empty;
             UtilsInfoLabel.Content = "";
-            GridSearchAndFilter.Visibility = Visibility.Hidden;
-            GridMyCollection.Visibility = Visibility.Hidden;
-            GridUtilitiesSection.Visibility = Visibility.Hidden;
+            GridSearchAndFilterAllCards.Visibility = Visibility.Collapsed;
+            GridMyCollection.Visibility = Visibility.Collapsed;
+            GridUtilitiesSection.Visibility = Visibility.Collapsed;
+
+            GridFiltering.Visibility = Visibility.Collapsed;
+            GridUtilsMenu.Visibility = Visibility.Collapsed;
             ApplyFilterSelection();
         }
         #endregion
