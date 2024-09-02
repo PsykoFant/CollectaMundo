@@ -1759,8 +1759,8 @@ namespace CollectaMundo
                                     {
                                         // Row does not exist, insert a new entry
                                         string insertQuery = @"
-                                    INSERT INTO myCollection (uuid, count, trade, condition, finish, language)
-                                    VALUES (@uuid, @count, @trade, @condition, @finish, @language)";
+                                            INSERT INTO myCollection (uuid, count, trade, condition, finish, language)
+                                            VALUES (@uuid, @count, @trade, @condition, @finish, @language)";
                                         var insertCommand = new SQLiteCommand(insertQuery, DBAccess.connection);
                                         insertCommand.Parameters.AddWithValue("@uuid", uuid);
                                         insertCommand.Parameters.AddWithValue("@count", cardsOwned);
