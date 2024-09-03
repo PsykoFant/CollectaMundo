@@ -353,8 +353,8 @@
                    Width="268"
                    Height="375" Margin="0,461,0,0"/>
             </Grid>
-            <Grid x:Name="GridSearchAndFilterAllCards" HorizontalAlignment="Center" Width="1320" d:IsHidden="True">
-                <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT" Height="40"/>
+            <Grid x:Name="GridSearchAndFilterAllCards" HorizontalAlignment="Center" Width="1320">
+                <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="22" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid" Margin="0,260,0,0"
@@ -395,70 +395,43 @@
                 </DataGrid>
                 <!--Cards to add listview-->
                 <ListView x:Name="CardsToAddListView" Margin="0,40,0,0" VerticalAlignment="Top" Height="211" HorizontalAlignment="Center" Width="1300" Visibility="Collapsed">
+                    <!-- Ensure ListViewItem stretches its content horizontally -->
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+
                     <ListView.View>
                         <GridView>
-                            <GridViewColumn Header="Card Name" DisplayMemberBinding="{Binding Name}"/>
-                            <GridViewColumn Header="Set" DisplayMemberBinding="{Binding SetName}"/>
-                            <GridViewColumn Header="UUID" DisplayMemberBinding="{Binding Uuid}" Width="0"/>
-                            <GridViewColumn Header="Count">
+                            <GridViewColumn Header="Count +1">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBox Text="{Binding CardsOwned, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="50" />
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="Condition">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding Conditions}"
-                                              SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="Finish">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding AvailableFinishes}"
-                                        SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="Language">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding OtherLanguages}"
-                                        SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="+1">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="+" Click="IncrementCountHandler"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="-1">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="-" Click="DecrementCountHandler"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Content="+" Click="IncrementCountHandler" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15"/>
+                                        </Grid>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
                         </GridView>
                     </ListView.View>
                 </ListView>
+
+
+
+
                 <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Left" Margin="1111,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonAddCardsToMyCollection_Click" Visibility="Collapsed"/>
                 <TextBlock x:Name="AddStatusTextBlock" HorizontalAlignment="Center" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Width="1300" Visibility="Collapsed"/>
             </Grid>
-            <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" VerticalAlignment="Top" Width="1320">
+            <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" VerticalAlignment="Top" Width="1320" d:IsHidden="True">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
                 <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
                 <!--The my collection datagrid-->
-                <DataGrid x:Name="MyCollectionDatagrid" Margin="0,260,0,0"
-                          AutoGenerateColumns="False"
-                          SelectionChanged="CardImageSelectionChangedHandler"
-                          ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" CanUserAddRows="False" HorizontalAlignment="Center" Width="1300">
+                <DataGrid x:Name="MyCollectionDatagrid" Margin="0,260,0,0" AutoGenerateColumns="False" SelectionChanged="CardImageSelectionChangedHandler" ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" CanUserAddRows="False" HorizontalAlignment="Center" Width="1300">
                     <DataGrid.CellStyle>
                         <Style/>
                     </DataGrid.CellStyle>
@@ -500,12 +473,11 @@
                     <ListView.View>
                         <GridView>
                             <GridViewColumn Header="Card Name" DisplayMemberBinding="{Binding Name}"/>
-                            <GridViewColumn Header="Set" DisplayMemberBinding="{Binding SetName}"/>
-                            <GridViewColumn Header="UUID" DisplayMemberBinding="{Binding Uuid}" Width="0"/>
-                            <GridViewColumn Header="Count">
+                            <GridViewColumn Header="Set" DisplayMemberBinding="{Binding SetName}"/>                            
+                            <GridViewColumn Header="For trade">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBox Text="{Binding CardsOwned, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="50" />
+                                        <TextBox Text="{Binding CardsForTrade, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="50" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -533,14 +505,21 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-                            <GridViewColumn Header="+1">
+                            <GridViewColumn Header="Count +1">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="+" Click="IncrementCountHandler"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-                            <GridViewColumn Header="-1">
+                            <GridViewColumn Header="Count">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBox Text="{Binding CardsOwned, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="50" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Count -1">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="-" Click="DecrementCountHandler"/>

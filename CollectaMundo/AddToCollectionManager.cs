@@ -102,7 +102,7 @@ namespace CollectaMundo
                 }
             }
         }
-        private async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
+        private static async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
         {
             if (string.IsNullOrEmpty(uuid))
             {
@@ -134,7 +134,7 @@ namespace CollectaMundo
             }
             return languages;
         }
-        private async Task<List<string>> FetchFinishesForCardAsync(string uuid)
+        private static async Task<List<string>> FetchFinishesForCardAsync(string uuid)
         {
             var finishes = new List<string>();
             string query = @"SELECT finishes FROM cards WHERE uuid = @uuid UNION SELECT finishes FROM tokens WHERE uuid = @uuid";
@@ -172,10 +172,11 @@ namespace CollectaMundo
                     if (existingCardId.HasValue)
                     {
                         // Update the count in the database
-                        string updateSql = @"UPDATE myCollection SET count = count + @newCount WHERE id = @id";
+                        string updateSql = @"UPDATE myCollection SET count = count + @newCount, trade = trade + @newTradeCount WHERE id = @id";
                         using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
                         {
                             updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.CardsOwned);
+                            updateCommand.Parameters.AddWithValue("@newTradeCount", currentCardItem.CardsForTrade);
                             updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
 
                             await updateCommand.ExecuteNonQueryAsync();
@@ -190,14 +191,15 @@ namespace CollectaMundo
                     else
                     {
                         // No existing row, insert a new one
-                        string insertSql = "INSERT INTO myCollection (uuid, count, condition, language, finish) VALUES (@uuid, @count, @condition, @language, @finish)";
+                        string insertSql = "INSERT INTO myCollection (uuid, count, trade, condition, language, finish) VALUES (@uuid, @count, @trade, @condition, @language, @finish)";
                         using (var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection))
                         {
                             insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
                             insertCommand.Parameters.AddWithValue("@count", currentCardItem.CardsOwned);
+                            insertCommand.Parameters.AddWithValue("@trade", currentCardItem.CardsForTrade);
                             insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
                             insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
-                            insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish ?? "nonfoil");
+                            insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
 
                             await insertCommand.ExecuteNonQueryAsync();
                         }
@@ -283,10 +285,11 @@ namespace CollectaMundo
                         {
                             Debug.WriteLine($"No card like this exists already - updating card with id {currentCardItem.CardId}");
                             // If there's no matching existing card ID, update the card in myCollection
-                            string updateSql = @"UPDATE myCollection SET count = @count, condition = @condition, language = @language, finish = @finish WHERE id = @cardId";
+                            string updateSql = @"UPDATE myCollection SET count = @count, trade = @trade, condition = @condition, language = @language, finish = @finish WHERE id = @cardId";
                             using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
                             {
                                 updateCommand.Parameters.AddWithValue("@count", currentCardItem.CardsOwned);
+                                updateCommand.Parameters.AddWithValue("@trade", currentCardItem.CardsForTrade);
                                 updateCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
                                 updateCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
                                 updateCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
@@ -358,7 +361,5 @@ namespace CollectaMundo
             }
             return null; // Return null if no existing entry is found or an exception occurs
         }
-
-
     }
 }
