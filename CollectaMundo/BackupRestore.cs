@@ -192,11 +192,8 @@ namespace CollectaMundo
         #region Import Wizard - Step 1 - Open and parse csv-file
         public static async Task BeginImportButton()
         {
-            MainWindow.CurrentInstance.MenuSearchAndFilterButton.IsEnabled = false;
-            MainWindow.CurrentInstance.MenuMyCollectionButton.IsEnabled = false;
-            MainWindow.CurrentInstance.MenuDecksButton.IsEnabled = false;
-            MainWindow.CurrentInstance.MenuUtilsButton.IsEnabled = false;
-            MainWindow.CurrentInstance.GridUtilsMenu.IsEnabled = false;
+            MainWindow.CurrentInstance.GridTopMenu.IsEnabled = false;
+            MainWindow.CurrentInstance.GridSideMenu.IsEnabled = false;
 
             // Select the csv-file and create a tempImport object with the content
             await ImportCsvAsync();
@@ -1687,7 +1684,7 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.CrunchingDataLabel.Content = "Importing cards";
 
-            const int batchSize = 4000; // seems to be around here for a csv-file with 12000 rows
+            const int batchSize = 4000; // Optimal batch size for performance
 
             try
             {
@@ -1725,6 +1722,34 @@ namespace CollectaMundo
                             finish = MapFieldValue("Card Finish", finish, "nonfoil");
                             language = MapFieldValue("Language", language, "English");
 
+                            // Check available languages for this UUID
+                            string checkLanguagesQuery = @"
+                                SELECT language FROM cardForeignData WHERE uuid = @uuid
+                                UNION
+                                SELECT language FROM cards WHERE uuid = @uuid
+                                UNION
+                                SELECT language FROM tokens WHERE uuid = @uuid";
+
+                            var availableLanguages = new HashSet<string>();
+
+                            using (var checkLanguagesCommand = new SQLiteCommand(checkLanguagesQuery, DBAccess.connection))
+                            {
+                                checkLanguagesCommand.Parameters.AddWithValue("@uuid", uuid);
+                                using (var reader = await checkLanguagesCommand.ExecuteReaderAsync())
+                                {
+                                    while (await reader.ReadAsync())
+                                    {
+                                        availableLanguages.Add(reader["language"].ToString());
+                                    }
+                                }
+                            }
+
+                            // Adjust language if not available
+                            if (!availableLanguages.Contains(language))
+                            {
+                                language = "English"; // Default to English if the desired language is not available
+                            }
+
                             // Check if an entry exists in 'myCollection' with the same uuid, language, and finish
                             string query = "SELECT count, trade FROM myCollection WHERE uuid = @uuid AND language = @language AND finish = @finish";
                             using (var command = new SQLiteCommand(query, DBAccess.connection))
@@ -1759,8 +1784,8 @@ namespace CollectaMundo
                                     {
                                         // Row does not exist, insert a new entry
                                         string insertQuery = @"
-                                            INSERT INTO myCollection (uuid, count, trade, condition, finish, language)
-                                            VALUES (@uuid, @count, @trade, @condition, @finish, @language)";
+                                    INSERT INTO myCollection (uuid, count, trade, condition, finish, language)
+                                    VALUES (@uuid, @count, @trade, @condition, @finish, @language)";
                                         var insertCommand = new SQLiteCommand(insertQuery, DBAccess.connection);
                                         insertCommand.Parameters.AddWithValue("@uuid", uuid);
                                         insertCommand.Parameters.AddWithValue("@count", cardsOwned);
@@ -1795,10 +1820,11 @@ namespace CollectaMundo
                 await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
 
                 EndImport();
-                MainWindow.CurrentInstance.ButtonCancelImport.Visibility = Visibility.Visible;
-                MainWindow.CurrentInstance.ButtonImportConfirm.Visibility = Visibility.Visible;
-                MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Visible;
 
+                // Go to My Collections
+                MainWindow.CurrentInstance.ResetGrids();
+                MainWindow.CurrentInstance.GridFiltering.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.GridMyCollection.Visibility = Visibility.Visible;
             }
             catch (Exception ex)
             {
@@ -1812,8 +1838,6 @@ namespace CollectaMundo
                 Debug.WriteLine("Import complete");
             }
         }
-
-
 
         // Helper method to map field values using FieldMappings
         private static string MapFieldValue(string field, string csvValue, string defaultValue)
@@ -1843,9 +1867,9 @@ namespace CollectaMundo
         {
             tempImport.Clear();
 
+            // Make sure all the import wizard screens are collapsed (we don't know when the import is cancelled)
             MainWindow.CurrentInstance.GridImportWizard.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.GridImportStartScreen.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.ButtonCancelImport.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.GridImportMultipleUuidsSelection.Visibility = Visibility.Collapsed;
@@ -1855,13 +1879,16 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Collapsed;
 
-            MainWindow.CurrentInstance.MenuSearchAndFilterButton.IsEnabled = true;
-            MainWindow.CurrentInstance.MenuMyCollectionButton.IsEnabled = true;
-            MainWindow.CurrentInstance.MenuDecksButton.IsEnabled = true;
-            MainWindow.CurrentInstance.MenuUtilsButton.IsEnabled = true;
-            MainWindow.CurrentInstance.GridUtilsMenu.IsEnabled = true;
+            // Reenable menu buttons
+            MainWindow.CurrentInstance.GridTopMenu.IsEnabled = true;
+            MainWindow.CurrentInstance.GridSideMenu.IsEnabled = true;
 
+            // Reset other Import UI elements
             MainWindow.CurrentInstance.CrunchingDataLabel.Content = string.Empty;
+            MainWindow.CurrentInstance.ButtonCancelImport.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.ButtonImportConfirm.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Collapsed;
         }
 
         // Try to guess which column name maps to cardItemsToAdd field by looking for matching column/field names

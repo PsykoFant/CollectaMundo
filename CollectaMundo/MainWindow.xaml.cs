@@ -1212,8 +1212,8 @@ namespace CollectaMundo
                         CurrentInstance.MenuUtilsButton.IsEnabled = false;
 
                         // Show status section and hide others
-                        CurrentInstance.GridContentSection.Visibility = Visibility.Hidden;
-                        CurrentInstance.GridUtilitiesSection.Visibility = Visibility.Hidden;
+                        CurrentInstance.GridContentSection.Visibility = Visibility.Collapsed;
+                        CurrentInstance.GridUtilitiesSection.Visibility = Visibility.Collapsed;
                         CurrentInstance.GridStatus.Visibility = Visibility.Visible;
                     }
                     else
@@ -1223,7 +1223,7 @@ namespace CollectaMundo
                         CurrentInstance.MenuDecksButton.IsEnabled = true;
                         CurrentInstance.MenuUtilsButton.IsEnabled = true;
 
-                        CurrentInstance.GridStatus.Visibility = Visibility.Hidden;
+                        CurrentInstance.GridStatus.Visibility = Visibility.Collapsed;
                         CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
 
                     }

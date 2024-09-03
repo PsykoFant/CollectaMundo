@@ -38,36 +38,37 @@
 
         </Grid>
         <Grid x:Name="GridContentSection" Margin="0,40,0,0" >
-            <Grid x:Name="GridFiltering" Width="300" HorizontalAlignment="Left">
-                <!--Card name and set comboboxes-->
-                <Label x:Name="CardNameLabel" Content="Card Name" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
-                <ComboBox x:Name="FilterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,63,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
-                    <ComboBox.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <VirtualizingStackPanel />
-                        </ItemsPanelTemplate>
-                    </ComboBox.ItemsPanel>
-                </ComboBox>
-                <Label x:Name="SetNameLabel" Content="Set Name" HorizontalAlignment="Left" Margin="10,84,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
-                <ComboBox x:Name="FilterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,107,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
-                    <ComboBox.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <VirtualizingStackPanel />
-                        </ItemsPanelTemplate>
-                    </ComboBox.ItemsPanel>
-                </ComboBox>
+            <Grid x:Name="GridSideMenu" Width="300" HorizontalAlignment="Left">                
+                <Grid x:Name="GridFiltering">
+                    <!--Card name and set comboboxes-->
+                    <Label x:Name="CardNameLabel" Content="Card Name" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
+                    <ComboBox x:Name="FilterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,63,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
+                        <ComboBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel />
+                            </ItemsPanelTemplate>
+                        </ComboBox.ItemsPanel>
+                    </ComboBox>
+                    <Label x:Name="SetNameLabel" Content="Set Name" HorizontalAlignment="Left" Margin="10,84,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
+                    <ComboBox x:Name="FilterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,107,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
+                        <ComboBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel />
+                            </ItemsPanelTemplate>
+                        </ComboBox.ItemsPanel>
+                    </ComboBox>
 
-                <!--Rulestext filtering-->
-                <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="11,132,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="256" Height="45"/>
-                <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="11,177,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="filterRulesTextButton_Click" Height="20.4"/>
+                    <!--Rulestext filtering-->
+                    <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="11,132,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="256" Height="45"/>
+                    <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="11,177,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="filterRulesTextButton_Click" Height="20.4"/>
 
-                <!--Supertype listbox and filtering-->
-                <CheckBox x:Name="SuperTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,237,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
-                <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,252,0,0" VerticalAlignment="Top" Width="256" DropDownOpened="ComboBox_DropDownOpened" Height="20">
-                    <ComboBox.Template>
-                        <ControlTemplate TargetType="{x:Type ComboBox}">
-                            <Grid>
-                                <TextBox x:Name="FilterSuperTypesTextBox"
+                    <!--Supertype listbox and filtering-->
+                    <CheckBox x:Name="SuperTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,237,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
+                    <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,252,0,0" VerticalAlignment="Top" Width="256" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                        <ComboBox.Template>
+                            <ControlTemplate TargetType="{x:Type ComboBox}">
+                                <Grid>
+                                    <TextBox x:Name="FilterSuperTypesTextBox"
                                          VerticalAlignment="Top"
                                          BorderThickness="1"
                                          Background="Transparent"
@@ -80,7 +81,7 @@
                                          Padding="3,3,0,0"
                                          Margin="0,0,0,0" 
                                          Height="20"/>
-                                <ToggleButton x:Name="ToggleButtonSuperTypes"
+                                    <ToggleButton x:Name="ToggleButtonSuperTypes"
                                               Content="Supertypes" 
                                               Focusable="false"
                                               ClickMode="Press"
@@ -90,41 +91,41 @@
                                               Width="69" 
                                               Height="20" 
                                               Style="{StaticResource BelerenBold}"/>
-                                <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
-                                    <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox x:Name="FilterSuperTypesListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
-                                            <ListBox.Resources>
-                                                <Style TargetType="{x:Type ListBoxItem}">
-                                                    <Setter Property="SnapsToDevicePixels" Value="true"/>
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded" Tag="SuperType">
-                                                                    <ContentPresenter/>
-                                                                </CheckBox>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                    <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked"/>
-                                                    <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked"/>
-                                                </Style>
-                                            </ListBox.Resources>
-                                        </ListBox>
-                                    </Border>
-                                </Popup>
-                            </Grid>
-                        </ControlTemplate>
-                    </ComboBox.Template>
-                    <System:String>&gt;</System:String>
-                </ComboBox>
+                                    <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
+                                        <Border Background="White" BorderThickness="1" BorderBrush="Black">
+                                            <ListBox x:Name="FilterSuperTypesListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
+                                                <ListBox.Resources>
+                                                    <Style TargetType="{x:Type ListBoxItem}">
+                                                        <Setter Property="SnapsToDevicePixels" Value="true"/>
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded" Tag="SuperType">
+                                                                        <ContentPresenter/>
+                                                                    </CheckBox>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                        <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked"/>
+                                                        <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked"/>
+                                                    </Style>
+                                                </ListBox.Resources>
+                                            </ListBox>
+                                        </Border>
+                                    </Popup>
+                                </Grid>
+                            </ControlTemplate>
+                        </ComboBox.Template>
+                        <sys:String>&gt;</sys:String>
+                    </ComboBox>
 
-                <!--Card type listbox and filtering-->
-                <CheckBox x:Name="TypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,308,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
-                <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,323,0,0" VerticalAlignment="Top" Width="256" DropDownOpened="ComboBox_DropDownOpened" Height="20">
-                    <ComboBox.Template>
-                        <ControlTemplate TargetType="{x:Type ComboBox}">
-                            <Grid>
-                                <TextBox x:Name="FilterTypesTextBox"
+                    <!--Card type listbox and filtering-->
+                    <CheckBox x:Name="TypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,308,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
+                    <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,323,0,0" VerticalAlignment="Top" Width="256" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                        <ComboBox.Template>
+                            <ControlTemplate TargetType="{x:Type ComboBox}">
+                                <Grid>
+                                    <TextBox x:Name="FilterTypesTextBox"
                                          VerticalAlignment="Top"
                                          BorderThickness="1"
                                          Background="Transparent"
@@ -137,7 +138,7 @@
                                          Padding="3,3,0,0"
                                          Margin="0,0,0,0" 
                                          Height="20"/>
-                                <ToggleButton Grid.Row="0" x:Name="ToggleButtonTypes" Content="Types" Focusable="false"
+                                    <ToggleButton Grid.Row="0" x:Name="ToggleButtonTypes" Content="Types" Focusable="false"
                                     ClickMode="Press"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
                                     VerticalAlignment="Top"
@@ -145,41 +146,41 @@
                                     Width="40" 
                                     Height="20"
                                     Style="{StaticResource BelerenBold}"/>
-                                <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
-                                    <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox x:Name="FilterTypesListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
-                                            <ListBox.Resources>
-                                                <Style TargetType="{x:Type ListBoxItem}">
-                                                    <Setter Property="SnapsToDevicePixels" Value="true"/>
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded" Tag="Type">
-                                                                    <ContentPresenter/>
-                                                                </CheckBox>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                    <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked"/>
-                                                    <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked"/>
-                                                </Style>
-                                            </ListBox.Resources>
-                                        </ListBox>
-                                    </Border>
-                                </Popup>
-                            </Grid>
-                        </ControlTemplate>
-                    </ComboBox.Template>
-                    <System:String>&gt;</System:String>
-                </ComboBox>
+                                    <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
+                                        <Border Background="White" BorderThickness="1" BorderBrush="Black">
+                                            <ListBox x:Name="FilterTypesListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
+                                                <ListBox.Resources>
+                                                    <Style TargetType="{x:Type ListBoxItem}">
+                                                        <Setter Property="SnapsToDevicePixels" Value="true"/>
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded" Tag="Type">
+                                                                        <ContentPresenter/>
+                                                                    </CheckBox>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                        <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked"/>
+                                                        <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked"/>
+                                                    </Style>
+                                                </ListBox.Resources>
+                                            </ListBox>
+                                        </Border>
+                                    </Popup>
+                                </Grid>
+                            </ControlTemplate>
+                        </ComboBox.Template>
+                        <sys:String>&gt;</sys:String>
+                    </ComboBox>
 
-                <!--Subtype listbox and filtering-->
-                <CheckBox x:Name="SubTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,379,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
-                <ComboBox x:Name="SubTypesComboBox" HorizontalAlignment="Left" Margin="10,394,0,0" VerticalAlignment="Top" Width="256" DropDownOpened="ComboBox_DropDownOpened" Height="20">
-                    <ComboBox.Template>
-                        <ControlTemplate TargetType="{x:Type ComboBox}">
-                            <Grid>
-                                <TextBox x:Name="FilterSubTypesTextBox"
+                    <!--Subtype listbox and filtering-->
+                    <CheckBox x:Name="SubTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,379,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
+                    <ComboBox x:Name="SubTypesComboBox" HorizontalAlignment="Left" Margin="10,394,0,0" VerticalAlignment="Top" Width="256" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                        <ComboBox.Template>
+                            <ControlTemplate TargetType="{x:Type ComboBox}">
+                                <Grid>
+                                    <TextBox x:Name="FilterSubTypesTextBox"
                                          VerticalAlignment="Top"
                                          BorderThickness="1"
                                          Background="Transparent"
@@ -192,7 +193,7 @@
                                          Padding="3,3,0,0"
                                          Margin="0,0,0,0" 
                                          Height="20"/>
-                                <ToggleButton x:Name="ToggleButtonSubTypes"
+                                    <ToggleButton x:Name="ToggleButtonSubTypes"
                                               Content="Subtypes"
                                               Focusable="false"
                                               ClickMode="Press"
@@ -202,41 +203,41 @@
                                               Width="58"
                                               Height="20"
                                               Style="{StaticResource BelerenBold}"/>
-                                <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
-                                    <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox x:Name="FilterSubTypesListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
-                                            <ListBox.Resources>
-                                                <Style TargetType="{x:Type ListBoxItem}">
-                                                    <Setter Property="SnapsToDevicePixels" Value="true"/>
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded" Tag="SubType">
-                                                                    <ContentPresenter/>
-                                                                </CheckBox>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                    <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked"/>
-                                                    <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked"/>
-                                                </Style>
-                                            </ListBox.Resources>
-                                        </ListBox>
-                                    </Border>
-                                </Popup>
-                            </Grid>
-                        </ControlTemplate>
-                    </ComboBox.Template>
-                    <System:String>&gt;</System:String>
-                </ComboBox>
+                                    <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
+                                        <Border Background="White" BorderThickness="1" BorderBrush="Black">
+                                            <ListBox x:Name="FilterSubTypesListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
+                                                <ListBox.Resources>
+                                                    <Style TargetType="{x:Type ListBoxItem}">
+                                                        <Setter Property="SnapsToDevicePixels" Value="true"/>
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded" Tag="SubType">
+                                                                        <ContentPresenter/>
+                                                                    </CheckBox>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                        <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked"/>
+                                                        <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked"/>
+                                                    </Style>
+                                                </ListBox.Resources>
+                                            </ListBox>
+                                        </Border>
+                                    </Popup>
+                                </Grid>
+                            </ControlTemplate>
+                        </ComboBox.Template>
+                        <sys:String>&gt;</sys:String>
+                    </ComboBox>
 
-                <!--Keywords listbox and filtering-->
-                <CheckBox x:Name="KeywordsAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,450,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
-                <ComboBox x:Name="KeywordsComboBox" HorizontalAlignment="Left" Margin="9,465,0,0" VerticalAlignment="Top" Width="256" DropDownOpened="ComboBox_DropDownOpened" Height="20">
-                    <ComboBox.Template>
-                        <ControlTemplate TargetType="{x:Type ComboBox}">
-                            <Grid>
-                                <TextBox x:Name="FilterKeywordsTextBox"
+                    <!--Keywords listbox and filtering-->
+                    <CheckBox x:Name="KeywordsAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,450,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
+                    <ComboBox x:Name="KeywordsComboBox" HorizontalAlignment="Left" Margin="9,465,0,0" VerticalAlignment="Top" Width="256" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                        <ComboBox.Template>
+                            <ControlTemplate TargetType="{x:Type ComboBox}">
+                                <Grid>
+                                    <TextBox x:Name="FilterKeywordsTextBox"
                                          VerticalAlignment="Top"
                                          BorderThickness="1"
                                          Background="Transparent"
@@ -249,7 +250,7 @@
                                          Padding="3,3,0,0"
                                          Margin="0,0,0,0"
                                          Height="20"/>
-                                <ToggleButton x:Name="ToggleButtonKeywords" Content="Keywords" Focusable="false"
+                                    <ToggleButton x:Name="ToggleButtonKeywords" Content="Keywords" Focusable="false"
                                               ClickMode="Press"
                                               IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
                                               VerticalAlignment="Center"
@@ -257,85 +258,84 @@
                                               Width="60" 
                                               Height="20"
                                               Style="{StaticResource BelerenBold}"/>
-                                <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
-                                    <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox x:Name="FilterKeywordsListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
-                                            <ListBox.Resources>
-                                                <Style TargetType="{x:Type ListBoxItem}">
-                                                    <Setter Property="SnapsToDevicePixels" Value="true"/>
-                                                    <Setter Property="Template">
-                                                        <Setter.Value>
-                                                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded" Tag="Keywords">
-                                                                    <ContentPresenter/>
-                                                                </CheckBox>
-                                                            </ControlTemplate>
-                                                        </Setter.Value>
-                                                    </Setter>
-                                                    <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked"/>
-                                                    <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked"/>
-                                                </Style>
-                                            </ListBox.Resources>
-                                        </ListBox>
-                                    </Border>
-                                </Popup>
-                            </Grid>
-                        </ControlTemplate>
-                    </ComboBox.Template>
-                    <System:String>&gt;</System:String>
-                </ComboBox>
+                                    <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
+                                        <Border Background="White" BorderThickness="1" BorderBrush="Black">
+                                            <ListBox x:Name="FilterKeywordsListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
+                                                <ListBox.Resources>
+                                                    <Style TargetType="{x:Type ListBoxItem}">
+                                                        <Setter Property="SnapsToDevicePixels" Value="true"/>
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                                    <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded" Tag="Keywords">
+                                                                        <ContentPresenter/>
+                                                                    </CheckBox>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                        <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked"/>
+                                                        <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked"/>
+                                                    </Style>
+                                                </ListBox.Resources>
+                                            </ListBox>
+                                        </Border>
+                                    </Popup>
+                                </Grid>
+                            </ControlTemplate>
+                        </ComboBox.Template>
+                        <sys:String>&gt;</sys:String>
+                    </ComboBox>
 
-                <!--Color filtering-->
-                <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Left" Margin="10,520,0,0" VerticalAlignment="Top" Width="256"/>
-                <ListBox x:Name="FilterColorsListBox" Margin="10,547,0,0" Width="130" HorizontalAlignment="Left"
-                ItemsSource="{Binding}"
-                SelectionMode="Extended" Height="155" VerticalAlignment="Top" BorderBrush="White">
-                    <ListBox.Resources>
-                        <Style TargetType="{x:Type ListBoxItem}">
-                            <Setter Property="SnapsToDevicePixels" Value="true" />
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                        <CheckBox Margin="5,2" 
+                    <!--Color filtering-->
+                    <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Left" Margin="10,520,0,0" VerticalAlignment="Top" Width="256"/>
+                    <ListBox x:Name="FilterColorsListBox" Margin="10,547,0,0" Width="130" HorizontalAlignment="Left" ItemsSource="{Binding}" SelectionMode="Extended" Height="155" VerticalAlignment="Top" BorderBrush="White">
+                        <ListBox.Resources>
+                            <Style TargetType="{x:Type ListBoxItem}">
+                                <Setter Property="SnapsToDevicePixels" Value="true" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                            <CheckBox Margin="5,2" 
                                     IsChecked="{TemplateBinding IsSelected}" 
                                     Loaded="CheckBox_Loaded"
                                     Tag="Colors">
-                                            <ContentPresenter />
-                                        </CheckBox>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                            <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked" />
-                            <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked" />
-                        </Style>
-                    </ListBox.Resources>
-                </ListBox>
+                                                <ContentPresenter />
+                                            </CheckBox>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked" />
+                                <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked" />
+                            </Style>
+                        </ListBox.Resources>
+                    </ListBox>
 
-                <!--Mana value filtering-->
-                <Label x:Name="ManaValueLabel" Content="Mana value is " HorizontalAlignment="Left" Margin="10,708,0,0" VerticalAlignment="Top"  Style="{StaticResource BelerenBold}"/>
-                <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="191,711,0,0" VerticalAlignment="Top" Width="75" Height="20"/>
-                <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="95,711,0,0" VerticalAlignment="Top" Width="92" Height="20"/>
+                    <!--Mana value filtering-->
+                    <Label x:Name="ManaValueLabel" Content="Mana value is " HorizontalAlignment="Left" Margin="10,708,0,0" VerticalAlignment="Top"  Style="{StaticResource BelerenBold}"/>
+                    <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="191,711,0,0" VerticalAlignment="Top" Width="75" Height="20"/>
+                    <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="95,711,0,0" VerticalAlignment="Top" Width="92" Height="20"/>
 
-                <!--Misc filtering-->
-                <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
-                <CheckBox x:Name="ShowFoilCheckBox" Content="Show foil cards" HorizontalAlignment="Left" Margin="10,739,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled" Height="16" Width="104"  Style="{StaticResource BelerenBold}"/>
+                    <!--Misc filtering-->
+                    <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
+                    <CheckBox x:Name="ShowFoilCheckBox" Content="Show foil cards" HorizontalAlignment="Left" Margin="10,739,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled" Height="16" Width="104"  Style="{StaticResource BelerenBold}"/>
 
-                <!--filter selections text blocks-->
-                <TextBlock x:Name="CardSuperTypesTextBlock" HorizontalAlignment="Left" Margin="11,272,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
-                <TextBlock x:Name="CardTypesTextBlock" HorizontalAlignment="Left" Margin="10,343,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
-                <TextBlock x:Name="CardSubTypesTextBlock" HorizontalAlignment="Left" Margin="10,414,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
-                <TextBlock x:Name="CardKeyWordsTextBlock" HorizontalAlignment="Left" Margin="10,485,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
-                <TextBlock x:Name="CardRulesTextTextBlock" HorizontalAlignment="Left" Margin="10,197,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
+                    <!--filter selections text blocks-->
+                    <TextBlock x:Name="CardSuperTypesTextBlock" HorizontalAlignment="Left" Margin="11,272,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
+                    <TextBlock x:Name="CardTypesTextBlock" HorizontalAlignment="Left" Margin="10,343,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
+                    <TextBlock x:Name="CardSubTypesTextBlock" HorizontalAlignment="Left" Margin="10,414,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
+                    <TextBlock x:Name="CardKeyWordsTextBlock" HorizontalAlignment="Left" Margin="10,485,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
+                    <TextBlock x:Name="CardRulesTextTextBlock" HorizontalAlignment="Left" Margin="10,197,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
 
+                </Grid>
+                <Grid x:Name="GridUtilsMenu" Visibility="Collapsed">
+                    <Button x:Name="CheckForUpdatesButton" Content="Check for updates" HorizontalAlignment="Left" VerticalAlignment="Top" Width="130" Click="CheckForUpdatesButton_Click" Margin="10,0,0,0"/>
+                    <Label x:Name="UtilsInfoLabel" Content="" HorizontalAlignment="Left" Margin="10,25,0,0" VerticalAlignment="Top" Width="182" Height="30"/>
+                    <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Width="129" Click="UpdateDbButton_Click" Visibility="Collapsed"/>
+                    <Button x:Name="CreateBackupButton" Content="Create backup of my collection" HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top" Click="CreateBackupButton_Click"/>
+                    <Button x:Name="ImportCollectionButton" Content="Import to my collection" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Click="ImportCollectionButton_Click"/>
+                </Grid>
             </Grid>
-            <Grid x:Name="GridUtilsMenu" Width="300" HorizontalAlignment="Left" Margin="0,0,0,678" Visibility="Collapsed">
-                <Button x:Name="CheckForUpdatesButton" Content="Check for updates" HorizontalAlignment="Left" VerticalAlignment="Top" Width="130" Click="CheckForUpdatesButton_Click" Margin="10,0,0,0"/>
-                <Label x:Name="UtilsInfoLabel" Content="" HorizontalAlignment="Left" Margin="10,25,0,0" VerticalAlignment="Top" Width="182" Height="30"/>
-                <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Width="129" Click="UpdateDbButton_Click" Visibility="Collapsed"/>
-                <Button x:Name="CreateBackupButton" Content="Create backup of my collection" HorizontalAlignment="Left" Margin="10,85,0,0" VerticalAlignment="Top" Click="CreateBackupButton_Click"/>
-                <Button x:Name="ImportCollectionButton" Content="Import to my collection" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Click="ImportCollectionButton_Click"/>
-            </Grid>
-            <Grid x:Name="GridCardImages" HorizontalAlignment="Right" Width="300">
+            <Grid x:Name="GridCardImages" HorizontalAlignment="Right" Width="300" d:IsHidden="True">
                 <Label x:Name="ImagePromoLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="290"/>
                 <Label x:Name="ImageSetLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="290" Margin="0,35,0,0"/>
                 <Image x:Name="CardImage" 
@@ -403,7 +403,7 @@
                             <GridViewColumn Header="Count">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBox Text="{Binding CardsOwned, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="50" />
+                                        <TextBox Text="{Binding CardsOwned, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="50" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -411,8 +411,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding Conditions}"
-                                              SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}">
-                                        </ComboBox>
+                                              SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -420,8 +419,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding AvailableFinishes}"
-                                        SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}">
-                                        </ComboBox>
+                                        SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -429,8 +427,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding OtherLanguages}"
-                                        SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}">
-                                        </ComboBox>
+                                        SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -454,7 +451,7 @@
                 <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Left" Margin="1111,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonAddCardsToMyCollection_Click" Visibility="Collapsed"/>
                 <TextBlock x:Name="AddStatusTextBlock" HorizontalAlignment="Center" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Width="1300" Visibility="Collapsed"/>
             </Grid>
-            <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" VerticalAlignment="Top" Width="1320" d:IsHidden="True">
+            <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" VerticalAlignment="Top" Width="1320">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="22" FontFamily="Bodoni MT"/>
                 <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
                 <!--The my collection datagrid-->
@@ -508,7 +505,7 @@
                             <GridViewColumn Header="Count">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBox Text="{Binding CardsOwned, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" Width="50" />
+                                        <TextBox Text="{Binding CardsOwned, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="50" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -516,8 +513,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding Conditions}"
-                                              SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}">
-                                        </ComboBox>
+                                              SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -525,8 +521,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding AvailableFinishes}"
-                                            SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}">
-                                        </ComboBox>
+                                            SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -534,8 +529,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding OtherLanguages}"
-                                            SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}">
-                                        </ComboBox>
+                                            SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -568,15 +562,16 @@
                         <Grid x:Name="GridImportStartScreen" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
                             <TextBlock HorizontalAlignment="Center" Margin="0,146,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="280" Width="776" FontSize="16">
                                 <Run Text="You have chosen to consult the Import Wizard. This will allow you to import card lists to your collection. "/>
-                                <LineBreak/>
-                                <LineBreak/>
+                                <LineBreak/><LineBreak/>
                                 <Run Text="Some important notes:"/><LineBreak/>
                                 <Run Text=" &#x2022; Card list has to be in a .csv format"/><LineBreak/>
                                 <Run Text=" &#x2022; Cards imported with the wizard will be ADDED to existing cards in your collection"/><LineBreak/>
-                                <Run Text=" &#x2022; Imported cards will be mapped to a specific version of the card"/><LineBreak/>
-                                <LineBreak/>
-                                <Run Text="Elborating on the last point: As an example, there are 4 different versions of the card &quot;Flooded Strand&quot; in the Modern Horizons 3. If your card list contains:"/><LineBreak/><LineBreak/>
-                                <Run Text=" &#x2022; | Flooded Strand | Modern Horizons 3 |"/><LineBreak/><LineBreak/>
+                                <Run Text=" &#x2022; Imported cards will be mapped to a specific version of the card"/>
+                                <LineBreak/><LineBreak/>
+                                <Run Text="Elborating on the last point: As an example, there are 4 different versions of the card &quot;Flooded Strand&quot; in the Modern Horizons 3. If your card list contains:"/>
+                                <LineBreak/><LineBreak/>
+                                <Run Text=" &#x2022; | Flooded Strand | Modern Horizons 3 |"/>
+                                <LineBreak/><LineBreak/>
                                 <Run Text="...we need to figure out which specific version of &quot;Flooded Strand&quot; should be added to your collection."/><LineBreak/>
                             </TextBlock>
                             <Image Margin="0,449,0,0" Source="Images/rush_of_knowledge.jpg" HorizontalAlignment="Center" VerticalAlignment="Top" Height="274" Width="344" Opacity="0.7"/>
@@ -584,14 +579,13 @@
                         </Grid>
                         <Grid x:Name="GridImportIdColumnMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
                             <Label Content="Card ID Mapping" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,140,0,0" FontSize="24" Style="{StaticResource BelerenBold}"/>
-                            <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" Width="776" FontSize="16"
-                                ><Run Text="If your csv-file has any column with card Id, The Import Wizard will have the greatest chance of succesfully mapping your cards to be imported with cards in the main card database."/>
+                            <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" Width="776" FontSize="16">
+                                <Run Text="If your csv-file has any column with card Id, The Import Wizard will have the greatest chance of succesfully mapping your cards to be imported with cards in the main card database."/>
                                 <LineBreak/><LineBreak/>
                                 <Run Text="It will recognize a variety of card id formats, e.g. Scryfall Id, Card Market Id, TCG Player Id etc."/><LineBreak/>
                                 <Run Text=" &#x2022; In the left column, choose the card Id header in your import file"/><LineBreak/>
                                 <Run Text=" &#x2022; In the right column, choose the matching format available in the card database"/><LineBreak/>
-                                <Run Text=" &#x2022; If your import file does not contain a card id column, simply click &quot;Skip&quot;"/><LineBreak/>
-                                <LineBreak/>
+                                <Run Text=" &#x2022; If your import file does not contain a card id column, simply click &quot;Skip&quot;"/>
                             </TextBlock>
                             <ListView x:Name="IdColumnMappingListView" Margin="0,330,0,0" Width="474" Height="77" HorizontalAlignment="Center" VerticalAlignment="Top">
                                 <ListView.View>
@@ -628,8 +622,7 @@
                             <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" Width="776" FontSize="16"
                                 ><Run Text="If you are, it means that The Import Wizard was not able to map all cards in import file uniquely to a card in the card database."/>
                                 <LineBreak/><LineBreak/>
-                                <Run Text="Fret not, bold mage! Now we will try to map the cards in the import file using the card name + set name and/or set code, assuming they exist in the import file."/>
-                                <LineBreak/>
+                                <Run Text="Fret not, bold mage! Now we will try to map the cards in the import file using the card name + set name and/or set code, assuming they exist in the import file."/><LineBreak/>
                                 <Run Text="You must choose a mapping for card name and at least one of either set name or set code. If you can map both, it will try to match using both."/>
                             </TextBlock>
                             <ListView x:Name="NameAndSetMappingListView" Margin="0,330,0,0" Width="474" Height="110" HorizontalAlignment="Center" VerticalAlignment="Top">
@@ -666,7 +659,7 @@
                             <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" Width="776" FontSize="16"
                                 ><Run Text="The Good News: We found some of your imported cards in the card database. The Bad News: We found more than one version of the cards matching by card name + set name and/or set code."/>
                                 <LineBreak/><LineBreak/>
-                                <Run Text="So The Import Wizard needs a bit more help. Choose in the right column the specific version of the card(s) you are trying to import. Check the image reference on the right for help."/><LineBreak/>                                
+                                <Run Text="So The Import Wizard needs a bit more help. Choose in the right column the specific version of the card(s) you are trying to import. Check the image reference on the right for help."/><LineBreak/>
                                 <Run Text="You must select a version for all cards for the import to continue."/>
                             </TextBlock>
                             <DataGrid x:Name="MultipleUuidsDataGrid" 
@@ -692,14 +685,14 @@
                         </Grid>
                         <Grid x:Name="GridImportAdditionalFieldsMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
                             <Label Content="Mapping additional fields" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,140,0,0" FontSize="24" Style="{StaticResource BelerenBold}"/>
-                            <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" Width="776" FontSize="16">                                    
+                            <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" Width="776" FontSize="16">
                                 <Run Text="Cards will be imported with the following default values if mapping is blank:"/>
                                 <LineBreak/><LineBreak/>
-                                <Run Text=" &#x2022;  Condition: &quot;Near Mint&quot;"/><LineBreak/>
-                                <Run Text=" &#x2022;  Card Finish: &quot;nonfoil&quot;"/><LineBreak/>
-                                <Run Text=" &#x2022;  Cards Owned: &quot;1&quot;"/><LineBreak/>
-                                <Run Text=" &#x2022;  Cards For Trade/Selling: &quot;0&quot;"/><LineBreak/>
-                                <Run Text=" &#x2022;  Language: &quot;English&quot;"/><LineBreak/>
+                                <Run Text=" &#x2022; Condition: &quot;Near Mint&quot;"/><LineBreak/>
+                                <Run Text=" &#x2022; Card Finish: &quot;nonfoil&quot;"/><LineBreak/>
+                                <Run Text=" &#x2022; Cards Owned: &quot;1&quot;"/><LineBreak/>
+                                <Run Text=" &#x2022; Cards For Trade/Selling: &quot;0&quot;"/><LineBreak/>
+                                <Run Text=" &#x2022; Language: &quot;English&quot;"/><LineBreak/>
                             </TextBlock>
                             <ListView x:Name="AddionalFieldsMappingListView" Margin="0,330,0,0" Width="474" Height="180" HorizontalAlignment="Center" VerticalAlignment="Top">
                                 <ListView.View>
@@ -732,10 +725,10 @@
                         </Grid>
                         <Grid x:Name="GridImportCardConditionsMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
                             <Label Content="Card conditions" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,140,0,0" FontSize="24" Style="{StaticResource BelerenBold}"/>
-                            <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" Width="776" FontSize="16">                                    
+                            <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" Width="776" FontSize="16">
                                 <Run Text="Left column are the conditions found in the import file. Please map them to available conditions in the database (latter based on MCM conditions)."/>
                                 <LineBreak/><LineBreak/>
-                                <Run Text="Blank Conditions will be imported as &quot;Near Mint&quot;"/><LineBreak/>
+                                <Run Text="Blank Conditions will be imported as &quot;Near Mint&quot;"/>
                             </TextBlock>
                             <ListView x:Name="ConditionsMappingListView" Margin="0,330,0,0" Width="474" HorizontalAlignment="Center" VerticalAlignment="Top">
                                 <ListView.View>
@@ -768,10 +761,10 @@
                         </Grid>
                         <Grid x:Name="GridImportFinishesMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
                             <Label Content="Card finishes" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,140,0,0" FontSize="24" Style="{StaticResource BelerenBold}"/>
-                            <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" Width="776" FontSize="16">                                    
+                            <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" Width="776" FontSize="16">
                                 <Run Text="Left column are the finishes found in the import file. Please map them to available finishes in the database."/>
                                 <LineBreak/><LineBreak/>
-                                <Run Text="Blank Conditions will be imported as &quot;nonfoil&quot;"/><LineBreak/>
+                                <Run Text="Blank Conditions will be imported as &quot;nonfoil&quot;"/>
                             </TextBlock>
                             <ListView x:Name="FinishesMappingListView" Margin="0,330,0,0" Width="474" HorizontalAlignment="Center" VerticalAlignment="Top">
                                 <ListView.View>
@@ -804,10 +797,10 @@
                         </Grid>
                         <Grid x:Name="GridImportLanguageMapping" HorizontalAlignment="Center" Width="1320" Visibility="Collapsed">
                             <Label Content="Card languages" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,140,0,0" FontSize="24" Style="{StaticResource BelerenBold}"/>
-                            <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" Width="776" FontSize="16">                                    
+                            <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" Width="776" FontSize="16">
                                 <Run Text="Left column are the languages found in the import file. Please map them to available languages in the database."/>
                                 <LineBreak/><LineBreak/>
-                                <Run Text="Blank Languages will be imported as &quot;English&quot;"/><LineBreak/>
+                                <Run Text="Blank Languages will be imported as &quot;English&quot;"/>
                             </TextBlock>
                             <ListView x:Name="LanguageMappingListView" Margin="0,330,0,0" Width="474" HorizontalAlignment="Center" VerticalAlignment="Top">
                                 <ListView.View>
