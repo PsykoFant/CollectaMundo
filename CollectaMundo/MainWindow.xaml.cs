@@ -798,6 +798,29 @@ namespace CollectaMundo
             ButtonAddCardsToMyCollection.Visibility = Visibility.Visible;
             addToCollectionManager.EditOrAddCard_Click(sender, e, addToCollectionManager.cardItemsToAdd);
         }
+
+        private void ListViewComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            AdjustColumnWidths();
+        }
+        public static void AdjustColumnWidths()
+        {
+            var gridView = MainWindow.CurrentInstance.CardsToAddListView.View as GridView;
+            if (gridView != null)
+            {
+                foreach (var column in gridView.Columns)
+                {
+                    // Measure the width of the column header
+                    if (double.IsNaN(column.Width))
+                    {
+                        column.Width = column.ActualWidth;
+                    }
+
+                    // Reset the width to Auto (NaN) to resize according to content
+                    column.Width = double.NaN;
+                }
+            }
+        }
         private void EditCollectionHandler(object sender, RoutedEventArgs e)
         {
             EditStatusTextBlock.Visibility = Visibility.Collapsed;

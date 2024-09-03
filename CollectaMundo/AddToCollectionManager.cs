@@ -95,30 +95,12 @@ namespace CollectaMundo
 
                     targetCollection.Add(newItem);
 
-                    AdjustColumnWidths();
+                    MainWindow.AdjustColumnWidths();
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Failed to add card to collection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     Debug.WriteLine($"EditOrAddCard_Click error: {ex.Message}");
-                }
-            }
-        }
-        private void AdjustColumnWidths()
-        {
-            var gridView = MainWindow.CurrentInstance.CardsToAddListView.View as GridView;
-            if (gridView != null)
-            {
-                foreach (var column in gridView.Columns)
-                {
-                    // Measure the width of the column header
-                    if (double.IsNaN(column.Width))
-                    {
-                        column.Width = column.ActualWidth;
-                    }
-
-                    // Reset the width to Auto (NaN) to resize according to content
-                    column.Width = double.NaN;
                 }
             }
         }

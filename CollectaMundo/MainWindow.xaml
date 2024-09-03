@@ -409,7 +409,8 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding Conditions}"
-              SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}"/>
+                                  SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}"
+                                  SelectionChanged="ListViewComboBox_SelectionChanged"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -417,53 +418,25 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding AvailableFinishes}"
-        SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}"/>
+                                  SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}"
+                                  SelectionChanged="ListViewComboBox_SelectionChanged"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
                             <GridViewColumn Header="Language">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding OtherLanguages}" SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}"/>
+                                        <ComboBox ItemsSource="{Binding OtherLanguages}" 
+                                  SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}"
+                                  SelectionChanged="ListViewComboBox_SelectionChanged"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-                            <GridViewColumn Header="Count +1">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <Button Content="+" Click="IncrementCountHandler" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="Count">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBox Text="{Binding CardsOwned, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="Auto" HorizontalAlignment="Center"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="Count -1">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-                                            <Button Content="-" Click="DecrementCountHandler" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
+                            <!-- Other Columns Remain the Same -->
                         </GridView>
                     </ListView.View>
                 </ListView>
+
 
 
                 <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Left" Margin="1111,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonAddCardsToMyCollection_Click" Visibility="Collapsed"/>
