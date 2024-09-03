@@ -94,6 +94,8 @@ namespace CollectaMundo
                     }
 
                     targetCollection.Add(newItem);
+
+                    AdjustColumnWidths();
                 }
                 catch (Exception ex)
                 {
@@ -102,6 +104,25 @@ namespace CollectaMundo
                 }
             }
         }
+        private void AdjustColumnWidths()
+        {
+            var gridView = MainWindow.CurrentInstance.CardsToAddListView.View as GridView;
+            if (gridView != null)
+            {
+                foreach (var column in gridView.Columns)
+                {
+                    // Measure the width of the column header
+                    if (double.IsNaN(column.Width))
+                    {
+                        column.Width = column.ActualWidth;
+                    }
+
+                    // Reset the width to Auto (NaN) to resize according to content
+                    column.Width = double.NaN;
+                }
+            }
+        }
+
         private static async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
         {
             if (string.IsNullOrEmpty(uuid))
