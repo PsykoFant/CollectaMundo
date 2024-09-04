@@ -482,7 +482,15 @@
                             <GridViewColumn Header="For Trade">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBox Text="{Binding CardsForTrade, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="Auto" HorizontalAlignment="Center"/>
+                                        <TextBox Width="Auto" HorizontalAlignment="Center" TextChanged="CardsForTradeTextBox_TextChanged">
+                                            <TextBox.Text>
+                                                <Binding Path="CardsForTrade" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True" NotifyOnValidationError="True">
+                                                    <Binding.ValidationRules>
+                                                        <local:IntegerValidationRule />
+                                                    </Binding.ValidationRules>
+                                                </Binding>
+                                            </TextBox.Text>
+                                        </TextBox>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>

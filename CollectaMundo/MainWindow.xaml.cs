@@ -796,6 +796,10 @@ namespace CollectaMundo
         {
             addToCollectionManager.CardsOwnedTextHandler(sender, e, addToCollectionManager.cardItemsToAdd);
         }
+        private void CardsForTradeTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            addToCollectionManager.CardsForTradeTextHandler(sender, e, addToCollectionManager.cardItemsToAdd);
+        }
 
         private void AddCardToCollection_Click(object sender, RoutedEventArgs e)
         {

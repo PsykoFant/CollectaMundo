@@ -110,6 +110,41 @@ namespace CollectaMundo
                 }
             }
         }
+        public void CardsForTradeTextHandler(object sender, TextChangedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
+        {
+            var textBox = sender as TextBox;
+            if (textBox?.DataContext is CardSet.CardItem cardItem)
+            {
+                // Use the TextBox's binding expression to check for validation errors
+                var bindingExpression = textBox.GetBindingExpression(TextBox.TextProperty);
+                if (bindingExpression.HasError)
+                {
+                    // Reset to the previous valid value if there's a validation error
+                    textBox.Text = cardItem.CardsForTrade.ToString();
+                }
+                else
+                {
+                    // Try parsing the new value
+                    if (int.TryParse(textBox.Text, out int newCount) && newCount >= 0)
+                    {
+                        // Update CardsOwned with the parsed value
+                        cardItem.CardsForTrade = newCount;
+
+                        // Adjust CardsForTrade if necessary
+                        if (cardItem.CardsOwned < cardItem.CardsForTrade)
+                        {
+                            cardItem.CardsForTrade = cardItem.CardsOwned;
+                        }
+
+                    }
+                    else
+                    {
+                        // If not valid, reset to the previous valid value
+                        textBox.Text = cardItem.CardsOwned.ToString();
+                    }
+                }
+            }
+        }
         public async void AddOrEditCardHandler(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
         {
             var button = sender as Button;
