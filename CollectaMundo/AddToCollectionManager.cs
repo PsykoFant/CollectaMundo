@@ -19,26 +19,47 @@ namespace CollectaMundo
             cardItemsToAdd = new ObservableCollection<CardSet.CardItem>();
             cardItemsToEdit = new ObservableCollection<CardSet.CardItem>();
         }
-        public void IncrementCount_Click(object sender, RoutedEventArgs e)
+        public void IncrementCountHandler(object sender, RoutedEventArgs e)
         {
             // Retrieve the DataContext (bound item) of the button that was clicked
             var button = sender as Button;
+
             if (button?.DataContext is CardSet.CardItem cardItem)
             {
-                // Increment the count
-                cardItem.CardsOwned++;
+                // Check the Tag property to determine which field to increment
+                if (button.Tag?.ToString() == "CardsOwned")
+                {
+                    cardItem.CardsOwned++;
+                }
+                else if (button.Tag?.ToString() == "CardsForTrade")
+                {
+                    if (cardItem.CardsForTrade < cardItem.CardsOwned)
+                    {
+                        cardItem.CardsForTrade++;
+                    }
+                }
             }
         }
-        public void DecrementCount_Click(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
+        public void DecrementCountHandler(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
         {
             var button = sender as Button;
             if (button?.DataContext is CardSet.CardItem cardItem)
             {
                 // Decrease the count
-                cardItem.CardsOwned--;
+                if (button.Tag?.ToString() == "CardsOwned")
+                {
+                    cardItem.CardsOwned--;
+                    if (cardItem.CardsOwned < cardItem.CardsForTrade)
+                    {
+                        cardItem.CardsForTrade--;
+                    }
+                }
+                else if (button.Tag?.ToString() == "CardsForTrade" && cardItem.CardsForTrade != 0)
+                {
+                    cardItem.CardsForTrade--;
+                }
 
                 // Check if the count has dropped to zero or below
-
                 if (targetCollection == cardItemsToAdd)
                 {
                     if (cardItem.CardsOwned <= 0)
@@ -49,7 +70,47 @@ namespace CollectaMundo
                 }
             }
         }
-        public async void EditOrAddCard_Click(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
+        public void CardsOwnedTextHandler(object sender, TextChangedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
+        {
+            var textBox = sender as TextBox;
+            if (textBox?.DataContext is CardSet.CardItem cardItem)
+            {
+                // Use the TextBox's binding expression to check for validation errors
+                var bindingExpression = textBox.GetBindingExpression(TextBox.TextProperty);
+                if (bindingExpression.HasError)
+                {
+                    // Reset to the previous valid value if there's a validation error
+                    textBox.Text = cardItem.CardsOwned.ToString();
+                }
+                else
+                {
+                    // Try parsing the new value
+                    if (int.TryParse(textBox.Text, out int newCount) && newCount >= 0)
+                    {
+                        // Update CardsOwned with the parsed value
+                        cardItem.CardsOwned = newCount;
+
+                        // Adjust CardsForTrade if necessary
+                        if (cardItem.CardsOwned < cardItem.CardsForTrade)
+                        {
+                            cardItem.CardsForTrade = cardItem.CardsOwned;
+                        }
+
+                        // If CardsOwned drops to zero or below, remove the item
+                        if (cardItem.CardsOwned <= 0 && targetCollection != null)
+                        {
+                            targetCollection.Remove(cardItem);
+                        }
+                    }
+                    else
+                    {
+                        // If not valid, reset to the previous valid value
+                        textBox.Text = cardItem.CardsOwned.ToString();
+                    }
+                }
+            }
+        }
+        public async void AddOrEditCardHandler(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
         {
             var button = sender as Button;
             if (button?.DataContext is CardSet selectedCard)
@@ -95,16 +156,33 @@ namespace CollectaMundo
 
                     targetCollection.Add(newItem);
 
-                    MainWindow.AdjustColumnWidths();
+                    AdjustColumnWidths();
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Failed to add card to collection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Debug.WriteLine($"EditOrAddCard_Click error: {ex.Message}");
+                    Debug.WriteLine($"AddOrEditCardHandler error: {ex.Message}");
                 }
             }
         }
+        public static void AdjustColumnWidths()
+        {
+            var gridView = MainWindow.CurrentInstance.CardsToAddListView.View as GridView;
+            if (gridView != null)
+            {
+                foreach (var column in gridView.Columns)
+                {
+                    // Measure the width of the column header
+                    if (double.IsNaN(column.Width))
+                    {
+                        column.Width = column.ActualWidth;
+                    }
 
+                    // Reset the width to Auto (NaN) to resize according to content
+                    column.Width = double.NaN;
+                }
+            }
+        }
         private static async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
         {
             if (string.IsNullOrEmpty(uuid))

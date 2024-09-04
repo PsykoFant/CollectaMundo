@@ -196,6 +196,7 @@ namespace CollectaMundo
 
         // Object of AddToCollectionManager class to access that functionality
         private AddToCollectionManager addToCollectionManager = new AddToCollectionManager();
+
         #endregion
         public static MainWindow CurrentInstance
         {
@@ -755,11 +756,11 @@ namespace CollectaMundo
         #endregion
 
         #region Pick up events for add to or edit collection 
-        private void IncrementCountHandler(object sender, RoutedEventArgs e)
+        private void IncrementCount_Click(object sender, RoutedEventArgs e)
         {
-            addToCollectionManager.IncrementCount_Click(sender, e);
+            addToCollectionManager.IncrementCountHandler(sender, e);
         }
-        private void DecrementCountHandler(object sender, RoutedEventArgs e)
+        private void DecrementCount_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button)  // This checks if sender is a Button and assigns it to button if true
             {
@@ -774,12 +775,12 @@ namespace CollectaMundo
                     {
                         if (cardItem.CardsOwned > 0)
                         {
-                            addToCollectionManager.DecrementCount_Click(sender, e, targetCollection);
+                            addToCollectionManager.DecrementCountHandler(sender, e, targetCollection);
                         }
                     }
                     else
                     {
-                        addToCollectionManager.DecrementCount_Click(sender, e, targetCollection);
+                        addToCollectionManager.DecrementCountHandler(sender, e, targetCollection);
 
                         // If there is nothing in cardItemsToAdd, hide listview and button
                         if (targetCollection.Count == 0)
@@ -791,42 +792,28 @@ namespace CollectaMundo
                 }
             }
         }
-        private void AddToCollectionHandler(object sender, RoutedEventArgs e)
+        private void CardsOwnedTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            addToCollectionManager.CardsOwnedTextHandler(sender, e, addToCollectionManager.cardItemsToAdd);
+        }
+
+        private void AddCardToCollection_Click(object sender, RoutedEventArgs e)
         {
             AddStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToAddListView.Visibility = Visibility.Visible;
             ButtonAddCardsToMyCollection.Visibility = Visibility.Visible;
-            addToCollectionManager.EditOrAddCard_Click(sender, e, addToCollectionManager.cardItemsToAdd);
+            addToCollectionManager.AddOrEditCardHandler(sender, e, addToCollectionManager.cardItemsToAdd);
         }
-
-        private void ListViewComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            AdjustColumnWidths();
-        }
-        public static void AdjustColumnWidths()
-        {
-            var gridView = MainWindow.CurrentInstance.CardsToAddListView.View as GridView;
-            if (gridView != null)
-            {
-                foreach (var column in gridView.Columns)
-                {
-                    // Measure the width of the column header
-                    if (double.IsNaN(column.Width))
-                    {
-                        column.Width = column.ActualWidth;
-                    }
-
-                    // Reset the width to Auto (NaN) to resize according to content
-                    column.Width = double.NaN;
-                }
-            }
-        }
-        private void EditCollectionHandler(object sender, RoutedEventArgs e)
+        private void EditCardInCollection_Click(object sender, RoutedEventArgs e)
         {
             EditStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToEditListView.Visibility = Visibility.Visible;
             ButtonEditCardsInMyCollection.Visibility = Visibility.Visible;
-            addToCollectionManager.EditOrAddCard_Click(sender, e, addToCollectionManager.cardItemsToEdit);
+            addToCollectionManager.AddOrEditCardHandler(sender, e, addToCollectionManager.cardItemsToEdit);
+        }
+        private void ListViewComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            AddToCollectionManager.AdjustColumnWidths();
         }
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
@@ -1191,12 +1178,14 @@ namespace CollectaMundo
             ResetGrids();
             GridFiltering.Visibility = Visibility.Visible;
             GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
+            AddToCollectionManager.AdjustColumnWidths();
         }
         private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
             GridFiltering.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Visible;
+            AddToCollectionManager.AdjustColumnWidths();
         }
         private void MenuUtilsButton_Click(object sender, RoutedEventArgs e)
         {
@@ -1204,7 +1193,6 @@ namespace CollectaMundo
             GridUtilsMenu.Visibility = Visibility.Visible;
             GridUtilitiesSection.Visibility = Visibility.Visible;
         }
-
         public void ResetGrids()
         {
             EditStatusTextBlock.Text = string.Empty;
