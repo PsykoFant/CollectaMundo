@@ -17,7 +17,7 @@ namespace CollectaMundo
 
         // Timer for delayed processing
         private System.Timers.Timer _typingTimer;
-        private const int TypingDelay = 500; // 500 milliseconds delay
+        private const int TypingDelay = 300; // 500 milliseconds delay
         private TextBox? _lastTextBox;
         private ObservableCollection<CardSet.CardItem>? _lastTargetCollection;
 
@@ -33,7 +33,7 @@ namespace CollectaMundo
         }
 
         // Handler for TextBox TextChanged event
-        public void CardsOwnedTextHandler(object sender, TextChangedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
+        public void CardsOwnedTextHandler(object sender, ObservableCollection<CardSet.CardItem> targetCollection)
         {
             _lastTextBox = sender as TextBox;
             _lastTargetCollection = targetCollection;
@@ -46,7 +46,7 @@ namespace CollectaMundo
             _typingTimer.Start(); // Restart the timer with each keystroke
         }
 
-        // Timer elapsed event handler
+        // Timer elapsed event handler. 
         private void TypingTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs? e)
         {
             if (sender == null || e == null)
@@ -61,7 +61,7 @@ namespace CollectaMundo
         }
 
         // Method to handle text change logic
-        private void CardsOwnedTextChangedLogic(TextBox? textBox, ObservableCollection<CardSet.CardItem>? targetCollection)
+        private static void CardsOwnedTextChangedLogic(TextBox? textBox, ObservableCollection<CardSet.CardItem>? targetCollection)
         {
             if (textBox?.DataContext is CardSet.CardItem cardItem)
             {
@@ -90,7 +90,7 @@ namespace CollectaMundo
                 }
             }
         }
-        public void CardsForTradeTextHandler(object sender, TextChangedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
+        public static void CardsForTradeTextHandler(object sender)
         {
             var textBox = sender as TextBox;
             if (textBox?.DataContext is CardSet.CardItem cardItem)
@@ -126,9 +126,6 @@ namespace CollectaMundo
             }
         }
 
-
-
-
         // Plus and minus buttons for card owned or cards for trade
         public void IncrementButtonHandler(object sender, RoutedEventArgs e)
         {
@@ -151,7 +148,7 @@ namespace CollectaMundo
                 }
             }
         }
-        public void DecrementButtonHandler(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
+        public void DecrementButtonHandler(object sender, ObservableCollection<CardSet.CardItem> targetCollection)
         {
             var button = sender as Button;
             if (button?.DataContext is CardSet.CardItem cardItem)
@@ -182,9 +179,8 @@ namespace CollectaMundo
             }
         }
 
-
         // Adds cards to the listview
-        public async void AddOrEditCardHandler(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
+        public static async void AddOrEditCardHandler(object sender, ObservableCollection<CardSet.CardItem> targetCollection)
         {
             var button = sender as Button;
             if (button?.DataContext is CardSet selectedCard)
@@ -468,7 +464,7 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.ButtonEditCardsInMyCollection.Visibility = Visibility.Collapsed;
             }
         }
-        private async Task<int?> CheckForExistingCardAsync(CardItem cardItem)
+        private static async Task<int?> CheckForExistingCardAsync(CardItem cardItem)
         {
             string selectSql = @"SELECT id, count FROM myCollection WHERE uuid = @uuid AND condition = @condition AND language = @language AND finish = @finish";
             try
@@ -502,8 +498,12 @@ namespace CollectaMundo
         // Adjust listviews column widths so text is not clipped
         public static void AdjustColumnWidths()
         {
-            var gridView = MainWindow.CurrentInstance.CardsToAddListView.View as GridView;
-            if (gridView != null)
+            AdjustListViewColumnWidths(MainWindow.CurrentInstance.CardsToAddListView);
+            AdjustListViewColumnWidths(MainWindow.CurrentInstance.CardsToEditListView);
+        }
+        private static void AdjustListViewColumnWidths(ListView listView)
+        {
+            if (listView.View is GridView gridView)
             {
                 foreach (var column in gridView.Columns)
                 {

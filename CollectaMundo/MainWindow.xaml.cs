@@ -259,10 +259,8 @@ namespace CollectaMundo
         }
 
         /* To do
-         * Bugs:
-         *      håndter sprog, hvis man forsøger at importere kort, der ikke er på det sprog
-         *      Tilføj kort fra alle korts filter - håndter trade
-         *      plus og minus til trade...
+         * Generel oprydning - kan man lave cardItemstoAdd static osv.
+         * Sorter kort
          * Performance optimer load kort         
          * Refaktorer installer oprettelse
          */
@@ -775,12 +773,12 @@ namespace CollectaMundo
                     {
                         if (cardItem.CardsOwned > 0)
                         {
-                            addToCollectionManager.DecrementButtonHandler(sender, e, targetCollection);
+                            addToCollectionManager.DecrementButtonHandler(sender, targetCollection);
                         }
                     }
                     else
                     {
-                        addToCollectionManager.DecrementButtonHandler(sender, e, targetCollection);
+                        addToCollectionManager.DecrementButtonHandler(sender, targetCollection);
 
                         // If there is nothing in cardItemsToAdd, hide listview and button
                         if (targetCollection.Count == 0)
@@ -794,26 +792,25 @@ namespace CollectaMundo
         }
         private void CardsOwnedTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            addToCollectionManager.CardsOwnedTextHandler(sender, e, addToCollectionManager.cardItemsToAdd);
+            addToCollectionManager.CardsOwnedTextHandler(sender, addToCollectionManager.cardItemsToAdd);
         }
         private void CardsForTradeTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            addToCollectionManager.CardsForTradeTextHandler(sender, e, addToCollectionManager.cardItemsToAdd);
+            AddToCollectionManager.CardsForTradeTextHandler(sender);
         }
-
         private void AddCardToCollection_Click(object sender, RoutedEventArgs e)
         {
             AddStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToAddListView.Visibility = Visibility.Visible;
             ButtonAddCardsToMyCollection.Visibility = Visibility.Visible;
-            addToCollectionManager.AddOrEditCardHandler(sender, e, addToCollectionManager.cardItemsToAdd);
+            AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.cardItemsToAdd);
         }
         private void EditCardInCollection_Click(object sender, RoutedEventArgs e)
         {
             EditStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToEditListView.Visibility = Visibility.Visible;
             ButtonEditCardsInMyCollection.Visibility = Visibility.Visible;
-            addToCollectionManager.AddOrEditCardHandler(sender, e, addToCollectionManager.cardItemsToEdit);
+            AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.cardItemsToEdit);
         }
         private void ListViewComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
