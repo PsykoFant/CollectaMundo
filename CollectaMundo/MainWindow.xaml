@@ -425,16 +425,10 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-                            <GridViewColumn Header="+1">
+                            <GridViewColumn Header="+">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <Button Content="+" Tag="CardsOwned" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15" Click="IncrementCount_Click"/>
-                                        </Grid>
+                                        <Button Content="+" Tag="CardsOwned" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15" Click="IncrementCount_Click"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -453,33 +447,21 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-                            <GridViewColumn Header="-1">
+                            <GridViewColumn Header="-">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-                                            <Button Content="-" Tag="CardsOwned" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15" Click="DecrementCount_Click"/>
-                                        </Grid>
+                                        <Button Content="-" Tag="CardsOwned" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15" Click="DecrementCount_Click"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-                            <GridViewColumn Header="+1">
+                            <GridViewColumn Header="+">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <Button Content="+" Tag="CardsForTrade" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15" Click="IncrementCount_Click"/>
-                                        </Grid>
+                                        <Button Content="+" Tag="CardsForTrade" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15" Click="IncrementCount_Click"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-                            <GridViewColumn Header="For Trade">
+                            <GridViewColumn Header="Trade">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBox Width="Auto" HorizontalAlignment="Center" TextChanged="CardsForTradeTextBox_TextChanged">
@@ -497,13 +479,7 @@
                             <GridViewColumn Header="-1">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-                                            <Button Content="-" Tag="CardsForTrade" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15" Click="DecrementCount_Click"/>
-                                        </Grid>
+                                        <Button Content="-" Tag="CardsForTrade" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15" Click="DecrementCount_Click"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
