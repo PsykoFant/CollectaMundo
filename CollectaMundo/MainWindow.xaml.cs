@@ -758,7 +758,7 @@ namespace CollectaMundo
         #region Pick up events for add to or edit collection 
         private void IncrementCount_Click(object sender, RoutedEventArgs e)
         {
-            addToCollectionManager.IncrementCountHandler(sender, e);
+            addToCollectionManager.IncrementButtonHandler(sender, e);
         }
         private void DecrementCount_Click(object sender, RoutedEventArgs e)
         {
@@ -775,12 +775,12 @@ namespace CollectaMundo
                     {
                         if (cardItem.CardsOwned > 0)
                         {
-                            addToCollectionManager.DecrementCountHandler(sender, e, targetCollection);
+                            addToCollectionManager.DecrementButtonHandler(sender, e, targetCollection);
                         }
                     }
                     else
                     {
-                        addToCollectionManager.DecrementCountHandler(sender, e, targetCollection);
+                        addToCollectionManager.DecrementButtonHandler(sender, e, targetCollection);
 
                         // If there is nothing in cardItemsToAdd, hide listview and button
                         if (targetCollection.Count == 0)

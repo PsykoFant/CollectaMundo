@@ -14,99 +14,79 @@ namespace CollectaMundo
         public static AddToCollectionManager Instance => _instance ?? (_instance = new AddToCollectionManager());
         public ObservableCollection<CardSet.CardItem> cardItemsToAdd { get; private set; }
         public ObservableCollection<CardSet.CardItem> cardItemsToEdit { get; private set; }
+
+        // Timer for delayed processing
+        private System.Timers.Timer _typingTimer;
+        private const int TypingDelay = 500; // 500 milliseconds delay
+        private TextBox? _lastTextBox;
+        private ObservableCollection<CardSet.CardItem>? _lastTargetCollection;
+
         public AddToCollectionManager()
         {
             cardItemsToAdd = new ObservableCollection<CardSet.CardItem>();
             cardItemsToEdit = new ObservableCollection<CardSet.CardItem>();
-        }
-        public void IncrementCountHandler(object sender, RoutedEventArgs e)
-        {
-            // Retrieve the DataContext (bound item) of the button that was clicked
-            var button = sender as Button;
 
-            if (button?.DataContext is CardSet.CardItem cardItem)
-            {
-                // Check the Tag property to determine which field to increment
-                if (button.Tag?.ToString() == "CardsOwned")
-                {
-                    cardItem.CardsOwned++;
-                }
-                else if (button.Tag?.ToString() == "CardsForTrade")
-                {
-                    if (cardItem.CardsForTrade < cardItem.CardsOwned)
-                    {
-                        cardItem.CardsForTrade++;
-                    }
-                }
-            }
+            // Initialize the timer
+            _typingTimer = new System.Timers.Timer(TypingDelay);
+            _typingTimer.Elapsed += TypingTimer_Elapsed;
+            _typingTimer.AutoReset = false; // Ensure the timer runs only once per typing event
         }
-        public void DecrementCountHandler(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
+
+        // Handler for TextBox TextChanged event
+        public void CardsOwnedTextHandler(object sender, TextChangedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
         {
-            var button = sender as Button;
-            if (button?.DataContext is CardSet.CardItem cardItem)
+            _lastTextBox = sender as TextBox;
+            _lastTargetCollection = targetCollection;
+
+            if (_typingTimer.Enabled)
             {
-                // Decrease the count
-                if (button.Tag?.ToString() == "CardsOwned")
+                _typingTimer.Stop();
+            }
+
+            _typingTimer.Start(); // Restart the timer with each keystroke
+        }
+
+        // Timer elapsed event handler
+        private void TypingTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs? e)
+        {
+            if (sender == null || e == null)
+            {
+                return; // Safeguard against potential nulls, though they shouldn't be null
+            }
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                CardsOwnedTextChangedLogic(_lastTextBox, _lastTargetCollection);
+            });
+        }
+
+        // Method to handle text change logic
+        private void CardsOwnedTextChangedLogic(TextBox? textBox, ObservableCollection<CardSet.CardItem>? targetCollection)
+        {
+            if (textBox?.DataContext is CardSet.CardItem cardItem)
+            {
+                // Try parsing the new value
+                if (int.TryParse(textBox.Text, out int newCount) && newCount >= 0)
                 {
-                    cardItem.CardsOwned--;
+                    // Update CardsOwned with the parsed value
+                    cardItem.CardsOwned = newCount;
+
+                    // Adjust CardsForTrade if necessary
                     if (cardItem.CardsOwned < cardItem.CardsForTrade)
                     {
-                        cardItem.CardsForTrade--;
+                        cardItem.CardsForTrade = cardItem.CardsOwned;
                     }
-                }
-                else if (button.Tag?.ToString() == "CardsForTrade" && cardItem.CardsForTrade != 0)
-                {
-                    cardItem.CardsForTrade--;
-                }
 
-                // Check if the count has dropped to zero or below
-                if (targetCollection == cardItemsToAdd)
-                {
-                    if (cardItem.CardsOwned <= 0)
+                    // If CardsOwned drops to zero or below, remove the item
+                    if (cardItem.CardsOwned <= 0 && targetCollection != null)
                     {
-                        // Remove the card item from the specified ObservableCollection
                         targetCollection.Remove(cardItem);
                     }
                 }
-            }
-        }
-        public void CardsOwnedTextHandler(object sender, TextChangedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
-        {
-            var textBox = sender as TextBox;
-            if (textBox?.DataContext is CardSet.CardItem cardItem)
-            {
-                // Use the TextBox's binding expression to check for validation errors
-                var bindingExpression = textBox.GetBindingExpression(TextBox.TextProperty);
-                if (bindingExpression.HasError)
-                {
-                    // Reset to the previous valid value if there's a validation error
-                    textBox.Text = cardItem.CardsOwned.ToString();
-                }
                 else
                 {
-                    // Try parsing the new value
-                    if (int.TryParse(textBox.Text, out int newCount) && newCount >= 0)
-                    {
-                        // Update CardsOwned with the parsed value
-                        cardItem.CardsOwned = newCount;
-
-                        // Adjust CardsForTrade if necessary
-                        if (cardItem.CardsOwned < cardItem.CardsForTrade)
-                        {
-                            cardItem.CardsForTrade = cardItem.CardsOwned;
-                        }
-
-                        // If CardsOwned drops to zero or below, remove the item
-                        if (cardItem.CardsOwned <= 0 && targetCollection != null)
-                        {
-                            targetCollection.Remove(cardItem);
-                        }
-                    }
-                    else
-                    {
-                        // If not valid, reset to the previous valid value
-                        textBox.Text = cardItem.CardsOwned.ToString();
-                    }
+                    // If not valid, reset to the previous valid value
+                    textBox.Text = cardItem.CardsOwned.ToString();
                 }
             }
         }
@@ -145,6 +125,65 @@ namespace CollectaMundo
                 }
             }
         }
+
+
+
+
+        // Plus and minus buttons for card owned or cards for trade
+        public void IncrementButtonHandler(object sender, RoutedEventArgs e)
+        {
+            // Retrieve the DataContext (bound item) of the button that was clicked
+            var button = sender as Button;
+
+            if (button?.DataContext is CardSet.CardItem cardItem)
+            {
+                // Check the Tag property to determine which field to increment
+                if (button.Tag?.ToString() == "CardsOwned")
+                {
+                    cardItem.CardsOwned++;
+                }
+                else if (button.Tag?.ToString() == "CardsForTrade")
+                {
+                    if (cardItem.CardsForTrade < cardItem.CardsOwned)
+                    {
+                        cardItem.CardsForTrade++;
+                    }
+                }
+            }
+        }
+        public void DecrementButtonHandler(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
+        {
+            var button = sender as Button;
+            if (button?.DataContext is CardSet.CardItem cardItem)
+            {
+                // Decrease the count
+                if (button.Tag?.ToString() == "CardsOwned")
+                {
+                    cardItem.CardsOwned--;
+                    if (cardItem.CardsOwned < cardItem.CardsForTrade)
+                    {
+                        cardItem.CardsForTrade--;
+                    }
+                }
+                else if (button.Tag?.ToString() == "CardsForTrade" && cardItem.CardsForTrade != 0)
+                {
+                    cardItem.CardsForTrade--;
+                }
+
+                // Check if the count has dropped to zero or below
+                if (targetCollection == cardItemsToAdd)
+                {
+                    if (cardItem.CardsOwned <= 0)
+                    {
+                        // Remove the card item from the specified ObservableCollection
+                        targetCollection.Remove(cardItem);
+                    }
+                }
+            }
+        }
+
+
+        // Adds cards to the listview
         public async void AddOrEditCardHandler(object sender, RoutedEventArgs e, ObservableCollection<CardSet.CardItem> targetCollection)
         {
             var button = sender as Button;
@@ -197,24 +236,6 @@ namespace CollectaMundo
                 {
                     MessageBox.Show($"Failed to add card to collection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     Debug.WriteLine($"AddOrEditCardHandler error: {ex.Message}");
-                }
-            }
-        }
-        public static void AdjustColumnWidths()
-        {
-            var gridView = MainWindow.CurrentInstance.CardsToAddListView.View as GridView;
-            if (gridView != null)
-            {
-                foreach (var column in gridView.Columns)
-                {
-                    // Measure the width of the column header
-                    if (double.IsNaN(column.Width))
-                    {
-                        column.Width = column.ActualWidth;
-                    }
-
-                    // Reset the width to Auto (NaN) to resize according to content
-                    column.Width = double.NaN;
                 }
             }
         }
@@ -477,5 +498,26 @@ namespace CollectaMundo
             }
             return null; // Return null if no existing entry is found or an exception occurs
         }
+
+        // Adjust listviews column widths so text is not clipped
+        public static void AdjustColumnWidths()
+        {
+            var gridView = MainWindow.CurrentInstance.CardsToAddListView.View as GridView;
+            if (gridView != null)
+            {
+                foreach (var column in gridView.Columns)
+                {
+                    // Measure the width of the column header
+                    if (double.IsNaN(column.Width))
+                    {
+                        column.Width = column.ActualWidth;
+                    }
+
+                    // Reset the width to Auto (NaN) to resize according to content
+                    column.Width = double.NaN;
+                }
+            }
+        }
+
     }
 }
