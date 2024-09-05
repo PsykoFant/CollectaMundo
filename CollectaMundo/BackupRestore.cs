@@ -1724,11 +1724,11 @@ namespace CollectaMundo
 
                             // Check available languages for this UUID
                             string checkLanguagesQuery = @"
-                                SELECT language FROM cardForeignData WHERE uuid = @uuid
-                                UNION
-                                SELECT language FROM cards WHERE uuid = @uuid
-                                UNION
-                                SELECT language FROM tokens WHERE uuid = @uuid";
+                        SELECT language FROM cardForeignData WHERE uuid = @uuid
+                        UNION
+                        SELECT language FROM cards WHERE uuid = @uuid
+                        UNION
+                        SELECT language FROM tokens WHERE uuid = @uuid";
 
                             var availableLanguages = new HashSet<string>();
 
@@ -1739,7 +1739,11 @@ namespace CollectaMundo
                                 {
                                     while (await reader.ReadAsync())
                                     {
-                                        availableLanguages.Add(reader["language"].ToString());
+                                        var languageFromDb = reader["language"]?.ToString();
+                                        if (!string.IsNullOrEmpty(languageFromDb))
+                                        {
+                                            availableLanguages.Add(languageFromDb);
+                                        }
                                     }
                                 }
                             }
@@ -1798,15 +1802,17 @@ namespace CollectaMundo
                         }
 
                         // Execute all commands for the batch
-                        using (var transaction = DBAccess.connection.BeginTransaction())
+                        if (DBAccess.connection != null)
                         {
-                            foreach (var cmd in commands)
+                            using (var transaction = DBAccess.connection.BeginTransaction())
                             {
-                                await cmd.ExecuteNonQueryAsync();
+                                foreach (var cmd in commands)
+                                {
+                                    await cmd.ExecuteNonQueryAsync();
+                                }
+                                transaction.Commit();
                             }
-                            transaction.Commit();
                         }
-
                     });
                 }
 
@@ -1855,8 +1861,6 @@ namespace CollectaMundo
             // If no mapping or 'unmapped', return the default value
             return defaultValue;
         }
-
-
 
         #endregion
 

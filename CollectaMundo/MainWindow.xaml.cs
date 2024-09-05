@@ -259,7 +259,6 @@ namespace CollectaMundo
         }
 
         /* To do
-         * Generel oprydning - kan man lave cardItemstoAdd static osv.
          * Sorter kort
          * Performance optimer load kort         
          * Refaktorer installer oprettelse
