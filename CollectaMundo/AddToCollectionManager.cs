@@ -11,20 +11,20 @@ namespace CollectaMundo
     public class AddToCollectionManager
     {
         private static AddToCollectionManager? _instance;
-        public static AddToCollectionManager Instance => _instance ?? (_instance = new AddToCollectionManager());
-        public ObservableCollection<CardSet.CardItem> cardItemsToAdd { get; private set; }
-        public ObservableCollection<CardSet.CardItem> cardItemsToEdit { get; private set; }
+        public static AddToCollectionManager Instance => _instance ??= new AddToCollectionManager();
+        public ObservableCollection<CardSet.CardItem> CardItemsToAdd { get; private set; }
+        public ObservableCollection<CardSet.CardItem> CardItemsToEdit { get; private set; }
 
         // Timer for delayed processing
         private System.Timers.Timer _typingTimer;
-        private const int TypingDelay = 300; // 500 milliseconds delay
+        private const int TypingDelay = 500; // 500 milliseconds delay
         private TextBox? _lastTextBox;
         private ObservableCollection<CardSet.CardItem>? _lastTargetCollection;
 
         public AddToCollectionManager()
         {
-            cardItemsToAdd = new ObservableCollection<CardSet.CardItem>();
-            cardItemsToEdit = new ObservableCollection<CardSet.CardItem>();
+            CardItemsToAdd = new ObservableCollection<CardSet.CardItem>();
+            CardItemsToEdit = new ObservableCollection<CardSet.CardItem>();
 
             // Initialize the timer
             _typingTimer = new System.Timers.Timer(TypingDelay);
@@ -168,7 +168,7 @@ namespace CollectaMundo
                 }
 
                 // Check if the count has dropped to zero or below
-                if (targetCollection == cardItemsToAdd)
+                if (targetCollection == CardItemsToAdd)
                 {
                     if (cardItem.CardsOwned <= 0)
                     {
@@ -299,7 +299,7 @@ namespace CollectaMundo
             await DBAccess.connection.OpenAsync();
             try
             {
-                foreach (var currentCardItem in cardItemsToAdd)
+                foreach (var currentCardItem in CardItemsToAdd)
                 {
                     var existingCardId = await CheckForExistingCardAsync(currentCardItem);
                     if (existingCardId.HasValue)
@@ -347,7 +347,7 @@ namespace CollectaMundo
             finally
             {
                 // Provide update of the operation
-                var cardDetails = cardItemsToAdd.Select(card =>
+                var cardDetails = CardItemsToAdd.Select(card =>
                     $"- {card.Name} (CardsOwned: {card.CardsOwned}, Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish})")
                     .Aggregate((current, next) => current + "\n" + next);
 
@@ -360,7 +360,7 @@ namespace CollectaMundo
                 await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
                 DBAccess.connection.Close();
 
-                cardItemsToAdd.Clear();
+                CardItemsToAdd.Clear();
                 MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Collapsed;
                 MainWindow.CurrentInstance.ButtonAddCardsToMyCollection.Visibility = Visibility.Collapsed;
 
@@ -377,7 +377,7 @@ namespace CollectaMundo
             await DBAccess.connection.OpenAsync();
             try
             {
-                foreach (var currentCardItem in cardItemsToEdit)
+                foreach (var currentCardItem in CardItemsToEdit)
                 {
                     var existingCardId = await CheckForExistingCardAsync(currentCardItem);
                     if (existingCardId.HasValue && existingCardId != currentCardItem.CardId)
@@ -442,7 +442,7 @@ namespace CollectaMundo
             finally
             {
                 // Provide update of the operation
-                var cardDetails = cardItemsToEdit.Select(card =>
+                var cardDetails = CardItemsToEdit.Select(card =>
                     card.CardsOwned == 0
                         ? $"{card.Name} - DELETED FROM COLLECTION"  // Display this message if card count is zero
                         : $"- {card.Name} (CardsOwned: {card.CardsOwned}, Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish})")
@@ -459,7 +459,7 @@ namespace CollectaMundo
 
                 MainWindow.CurrentInstance.ApplyFilterSelection();
 
-                cardItemsToEdit.Clear();
+                CardItemsToEdit.Clear();
                 MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Collapsed;
                 MainWindow.CurrentInstance.ButtonEditCardsInMyCollection.Visibility = Visibility.Collapsed;
             }

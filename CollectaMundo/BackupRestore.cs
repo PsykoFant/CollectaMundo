@@ -999,7 +999,7 @@ namespace CollectaMundo
             // Convert to List explicitly to ensure we have a concrete collection to work with
             var multipleUuidsList = multipleUuidsItems.ToList();
 
-            // Update tempImport and cardItemsToAdd with the uuids for the selected versions of the cards
+            // Update tempImport and CardItemsToAdd with the uuids for the selected versions of the cards
             ProcessMultipleUuidSelections(multipleUuidsList);
 
             // Prepare the listview to map additional fields and make the screen visible
@@ -1783,9 +1783,7 @@ namespace CollectaMundo
                                     else
                                     {
                                         // Row does not exist, insert a new entry
-                                        string insertQuery = @"
-                                    INSERT INTO myCollection (uuid, count, trade, condition, finish, language)
-                                    VALUES (@uuid, @count, @trade, @condition, @finish, @language)";
+                                        string insertQuery = @"INSERT INTO myCollection (uuid, count, trade, condition, finish, language) VALUES (@uuid, @count, @trade, @condition, @finish, @language)";
                                         var insertCommand = new SQLiteCommand(insertQuery, DBAccess.connection);
                                         insertCommand.Parameters.AddWithValue("@uuid", uuid);
                                         insertCommand.Parameters.AddWithValue("@count", cardsOwned);
@@ -1891,7 +1889,7 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Collapsed;
         }
 
-        // Try to guess which column name maps to cardItemsToAdd field by looking for matching column/field names
+        // Try to guess which column name maps to CardItemsToAdd field by looking for matching column/field names
         private static string? GuessMapping(string searchValue, List<string> options)
         {
             var lowerSearchValue = searchValue.ToLower();

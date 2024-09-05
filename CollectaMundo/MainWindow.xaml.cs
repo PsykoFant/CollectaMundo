@@ -53,7 +53,7 @@ namespace CollectaMundo
         private static MainWindow? _currentInstance;
 
         // Query strings to load cards into datagrids
-        public string myCollectionQuery = @"
+        public readonly string myCollectionQuery = @"
                     SELECT                        
                         c.name AS Name,
                         s.name AS SetName,
@@ -128,7 +128,7 @@ namespace CollectaMundo
                         uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
                     WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid);
                 ";
-        private string allCardsQuery = @"                    
+        private readonly string allCardsQuery = @"                    
                     SELECT 
                         c.name AS Name, 
                         s.name AS SetName, 
@@ -191,8 +191,8 @@ namespace CollectaMundo
         public List<CardSet> myCards = new List<CardSet>();
 
         // The filter object from the FilterContext class
-        private FilterContext filterContext = new FilterContext();
-        private FilterManager filterManager;
+        private readonly FilterContext filterContext = new FilterContext();
+        private readonly FilterManager filterManager;
 
         // Object of AddToCollectionManager class to access that functionality
         private AddToCollectionManager addToCollectionManager = new AddToCollectionManager();
@@ -254,8 +254,8 @@ namespace CollectaMundo
 
             DBAccess.CloseConnection();
 
-            CardsToAddListView.ItemsSource = addToCollectionManager.cardItemsToAdd;
-            CardsToEditListView.ItemsSource = addToCollectionManager.cardItemsToEdit;
+            CardsToAddListView.ItemsSource = addToCollectionManager.CardItemsToAdd;
+            CardsToEditListView.ItemsSource = addToCollectionManager.CardItemsToEdit;
         }
 
         /* To do
@@ -766,10 +766,10 @@ namespace CollectaMundo
                 {
                     // Determine which ListView initiated the event and pass the appropriate collection
                     ObservableCollection<CardSet.CardItem> targetCollection =
-                        (CardsToEditListView.Items.Contains(cardItem)) ? addToCollectionManager.cardItemsToEdit : addToCollectionManager.cardItemsToAdd;
+                        (CardsToEditListView.Items.Contains(cardItem)) ? addToCollectionManager.CardItemsToEdit : addToCollectionManager.CardItemsToAdd;
 
-                    // Only decrement for cardItemsToEdit if count is above 0
-                    if (targetCollection == addToCollectionManager.cardItemsToEdit)
+                    // Only decrement for CardItemsToEdit if count is above 0
+                    if (targetCollection == addToCollectionManager.CardItemsToEdit)
                     {
                         if (cardItem.CardsOwned > 0)
                         {
@@ -780,7 +780,7 @@ namespace CollectaMundo
                     {
                         addToCollectionManager.DecrementButtonHandler(sender, targetCollection);
 
-                        // If there is nothing in cardItemsToAdd, hide listview and button
+                        // If there is nothing in CardItemsToAdd, hide listview and button
                         if (targetCollection.Count == 0)
                         {
                             CardsToAddListView.Visibility = Visibility.Collapsed;
@@ -792,7 +792,7 @@ namespace CollectaMundo
         }
         private void CardsOwnedTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            addToCollectionManager.CardsOwnedTextHandler(sender, addToCollectionManager.cardItemsToAdd);
+            addToCollectionManager.CardsOwnedTextHandler(sender, addToCollectionManager.CardItemsToAdd);
         }
         private void CardsForTradeTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -803,14 +803,14 @@ namespace CollectaMundo
             AddStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToAddListView.Visibility = Visibility.Visible;
             ButtonAddCardsToMyCollection.Visibility = Visibility.Visible;
-            AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.cardItemsToAdd);
+            AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.CardItemsToAdd);
         }
         private void EditCardInCollection_Click(object sender, RoutedEventArgs e)
         {
             EditStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToEditListView.Visibility = Visibility.Visible;
             ButtonEditCardsInMyCollection.Visibility = Visibility.Visible;
-            AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.cardItemsToEdit);
+            AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.CardItemsToEdit);
         }
         private void ListViewComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
