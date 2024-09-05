@@ -705,51 +705,206 @@ public class DownloadAndPrepDB
             MessageBox.Show($"Error during creation of indices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
-    private static async Task CreateViews()
+    public static async Task CreateViews()
     {
         try
         {
-            string createViewQuery = @"
-            CREATE VIEW IF NOT EXISTS CardTokenView AS
-            SELECT 
-                c.uuid,
-                c.name,
-                s.name AS setName,
-                c.setCode,
-                NULL AS tokenSetCode,
-                NULL AS faceName
-            FROM 
-                cards c
-            JOIN 
-                sets s ON c.setCode = s.code
-            WHERE 
-                c.side IS NULL OR c.side = 'a'
-            UNION ALL
-            SELECT 
-                t.uuid,
-                t.name,
-                s.name AS setName,
-                s.code AS setCode,
-                s.tokenSetCode,
-                t.faceName
-            FROM 
-                tokens t
-            JOIN 
-                sets s ON t.setCode = s.tokenSetCode
-            WHERE 
-                t.side IS NULL OR t.side = 'a';
+            // SQL for creating the cardTokenView
+            string createCardTokenViewQuery = @"
+        CREATE VIEW IF NOT EXISTS cardTokenView AS
+        SELECT 
+            c.uuid,
+            c.name,
+            s.name AS setName,
+            c.setCode,
+            NULL AS tokenSetCode,
+            NULL AS faceName
+        FROM 
+            cards c
+        JOIN 
+            sets s ON c.setCode = s.code
+        WHERE 
+            c.side IS NULL OR c.side = 'a'
+        UNION ALL
+        SELECT 
+            t.uuid,
+            t.name,
+            s.name AS setName,
+            s.code AS setCode,
+            s.tokenSetCode,
+            t.faceName
+        FROM 
+            tokens t
+        JOIN 
+            sets s ON t.setCode = s.tokenSetCode
+        WHERE 
+            t.side IS NULL OR t.side = 'a';
         ";
 
-            using (var command = new SQLiteCommand(createViewQuery, DBAccess.connection))
+            // SQL for creating the allCardsView
+            string createAllCardsViewQuery = @"
+        CREATE VIEW IF NOT EXISTS allCardsView AS
+        SELECT 
+            c.name AS Name, 
+            s.name AS SetName, 
+            k.keyruneImage AS KeyRuneImage, 
+            c.manaCost AS ManaCost, 
+            u.manaCostImage AS ManaCostImage, 
+            c.types AS Types, 
+            c.supertypes AS SuperTypes, 
+            c.subtypes AS SubTypes, 
+            c.type AS Type, 
+            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+            c.text AS RulesText, 
+            c.manaValue AS ManaValue, 
+            c.language AS Language,
+            c.uuid AS Uuid, 
+            c.finishes AS Finishes, 
+            c.side AS Side 
+                FROM cards c
+                JOIN sets s ON c.setCode = s.code
+                LEFT JOIN keyruneImages k ON c.setCode = k.setCode
+                LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                LEFT JOIN (
+            SELECT 
+                cc.SetCode, 
+                cc.Name, 
+                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+            FROM cards cc
+            GROUP BY cc.SetCode, cc.Name
+        ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+        WHERE c.side IS NULL OR c.side = 'a'
+
+        UNION ALL
+
+        SELECT 
+            t.name AS Name, 
+            s.name AS SetName, 
+            k.keyruneImage AS KeyRuneImage, 
+            t.manaCost AS ManaCost, 
+            u.manaCostImage AS ManaCostImage, 
+            t.types AS Types, 
+            t.supertypes AS SuperTypes, 
+            t.subtypes AS SubTypes, 
+            t.type AS Type, 
+            t.keywords AS Keywords, 
+            t.text AS RulesText, 
+            NULL AS ManaValue,  -- 'manaValue' does not exist in 'tokens'
+            t.language AS Language,
+            t.uuid AS Uuid, 
+            t.finishes AS Finishes, 
+            t.side AS Side 
+        FROM tokens t 
+        JOIN sets s ON t.setCode = s.tokenSetCode 
+            LEFT JOIN keyruneImages k ON (SELECT code FROM sets WHERE tokenSetCode = t.setCode) = k.setCode
+            LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+        WHERE t.side IS NULL OR t.side = 'a';
+        ";
+
+            // SQL for creating the myCollectionView
+            string createMyCollectionViewQuery = @"
+        CREATE VIEW IF NOT EXISTS myCollectionView AS
+        SELECT                        
+            c.name AS Name,
+            s.name AS SetName,
+            k.keyruneImage AS KeyRuneImage,
+            c.manaCost AS ManaCost,
+            u.manaCostImage AS ManaCostImage,
+            c.types AS Types,
+            c.supertypes AS SuperTypes,
+            c.subtypes AS SubTypes,
+            c.type AS Type,
+            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+            c.text AS RulesText,
+            c.manaValue AS ManaValue,
+            c.uuid AS Uuid,
+            m.id AS CardId,
+            m.count AS CardsOwned,
+            m.trade AS CardsForTrade,
+            m.condition AS Condition,
+            m.language AS Language,
+            m.finish AS Finishes,
+            c.side AS Side
+                FROM
+                    myCollection m
+                JOIN
+                    cards c ON m.uuid = c.uuid
+                LEFT JOIN 
+                    sets s ON c.setCode = s.code
+                LEFT JOIN 
+                    keyruneImages k ON c.setCode = k.setCode
+                LEFT JOIN 
+                    uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                LEFT JOIN (
+            SELECT 
+                cc.SetCode, 
+                cc.Name, 
+                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+            FROM cards cc
+            GROUP BY cc.SetCode, cc.Name
+        ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+        WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
+        UNION ALL
+        SELECT
+            t.name AS Name,
+            s.name AS SetName,
+            k.keyruneImage AS KeyRuneImage,
+            t.manaCost AS ManaCost,
+            u.manaCostImage AS ManaCostImage,
+            t.types AS Types,
+            t.supertypes AS SuperTypes,
+            t.subtypes AS SubTypes,
+            t.type AS Type,
+            t.keywords AS Keywords,
+            t.text AS RulesText,
+            NULL AS ManaValue,  -- Tokens do not have manaValue
+            t.uuid AS Uuid,
+            m.id AS CardId,
+            m.count AS CardsOwned,
+            m.trade AS CardsForTrade,
+            m.condition AS Condition,
+            m.language AS Language,
+            m.finish AS Finishes,
+            t.side AS Side
+                FROM
+                    myCollection m
+                JOIN
+                    tokens t ON m.uuid = t.uuid
+                LEFT JOIN 
+                    sets s ON t.setCode = s.code
+                LEFT JOIN 
+                    keyruneImages k ON t.setCode = k.setCode
+                LEFT JOIN 
+                    uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+            WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid);
+        ";
+
+            // Execute creation of cardTokenView
+            using (var command = new SQLiteCommand(createCardTokenViewQuery, DBAccess.connection))
             {
                 await command.ExecuteNonQueryAsync();
-                Debug.WriteLine("Created view CardTokenView.");
+                Debug.WriteLine("Created view cardTokenView.");
             }
+
+            // Execute creation of allCardsView
+            using (var command = new SQLiteCommand(createAllCardsViewQuery, DBAccess.connection))
+            {
+                await command.ExecuteNonQueryAsync();
+                Debug.WriteLine("Created view allCardsView.");
+            }
+
+            // Execute creation of myCollectionView
+            using (var command = new SQLiteCommand(createMyCollectionViewQuery, DBAccess.connection))
+            {
+                await command.ExecuteNonQueryAsync();
+                Debug.WriteLine("Created view myCollectionView.");
+            }
+
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"Error during creation of view CardTokenView: {ex.Message}");
-            MessageBox.Show($"Error during creation of view CardTokenView: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            Debug.WriteLine($"Error during creation of views: {ex.Message}");
+            MessageBox.Show($"Error during creation of views: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 

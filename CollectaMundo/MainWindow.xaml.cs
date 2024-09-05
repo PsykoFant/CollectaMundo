@@ -53,138 +53,8 @@ namespace CollectaMundo
         private static MainWindow? _currentInstance;
 
         // Query strings to load cards into datagrids
-        public readonly string myCollectionQuery = @"
-                    SELECT                        
-                        c.name AS Name,
-                        s.name AS SetName,
-                        k.keyruneImage AS KeyRuneImage,
-                        c.manaCost AS ManaCost,
-                        u.manaCostImage AS ManaCostImage,
-                        c.types AS Types,
-                        c.supertypes AS SuperTypes,
-                        c.subtypes AS SubTypes,
-                        c.type AS Type,
-                        COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
-                        c.text AS RulesText,
-                        c.manaValue AS ManaValue,
-                        c.uuid AS Uuid,
-                        m.id AS CardId,
-                        m.count AS CardsOwned,
-                        m.trade AS CardsForTrade,
-                        m.condition AS Condition,
-                        m.language AS Language,
-                        m.finish AS Finishes,
-                        c.side AS Side
-                    FROM
-                        myCollection m
-                    JOIN
-                        cards c ON m.uuid = c.uuid
-                    LEFT JOIN 
-                        sets s ON c.setCode = s.code
-                    LEFT JOIN 
-                        keyruneImages k ON c.setCode = k.setCode
-                    LEFT JOIN 
-                        uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                    LEFT JOIN (
-                        SELECT 
-                            cc.SetCode, 
-                            cc.Name, 
-                            GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                        FROM cards cc
-                        GROUP BY cc.SetCode, cc.Name
-                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
-                    WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
-                UNION ALL
-                    SELECT
-                        t.name AS Name,
-                        s.name AS SetName,
-                        k.keyruneImage AS KeyRuneImage,
-                        t.manaCost AS ManaCost,
-                        u.manaCostImage AS ManaCostImage,
-                        t.types AS Types,
-                        t.supertypes AS SuperTypes,
-                        t.subtypes AS SubTypes,
-                        t.type AS Type,
-                        t.keywords AS Keywords,
-                        t.text AS RulesText,
-                        NULL AS ManaValue,  -- Tokens do not have manaValue
-                        t.uuid AS Uuid,
-                        m.id AS CardId,
-                        m.count AS CardsOwned,
-                        m.trade AS CardsForTrade,
-                        m.condition AS Condition,
-                        m.language AS Language,
-                        m.finish AS Finishes,
-                        t.side AS Side
-                    FROM
-                        myCollection m
-                    JOIN
-                        tokens t ON m.uuid = t.uuid
-                    LEFT JOIN 
-                        sets s ON t.setCode = s.code
-                    LEFT JOIN 
-                        keyruneImages k ON t.setCode = k.setCode
-                    LEFT JOIN 
-                        uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-                    WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid);
-                ";
-        private readonly string allCardsQuery = @"                    
-                    SELECT 
-                        c.name AS Name, 
-                        s.name AS SetName, 
-                        k.keyruneImage AS KeyRuneImage, 
-                        c.manaCost AS ManaCost, 
-                        u.manaCostImage AS ManaCostImage, 
-                        c.types AS Types, 
-                        c.supertypes AS SuperTypes, 
-                        c.subtypes AS SubTypes, 
-                        c.type AS Type, 
-                        COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
-                        c.text AS RulesText, 
-                        c.manaValue AS ManaValue, 
-                        c.language AS Language,
-                        c.uuid AS Uuid, 
-                        c.finishes AS Finishes, 
-                        c.side AS Side 
-                    FROM cards c
-                    JOIN sets s ON c.setCode = s.code
-                    LEFT JOIN keyruneImages k ON c.setCode = k.setCode
-                    LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                    LEFT JOIN (
-                        SELECT 
-                            cc.SetCode, 
-                            cc.Name, 
-                            GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                        FROM cards cc
-                        GROUP BY cc.SetCode, cc.Name
-                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
-                    WHERE c.side IS NULL OR c.side = 'a'
-
-                    UNION ALL
-
-                    SELECT 
-                        t.name AS Name, 
-                        s.name AS SetName, 
-                        k.keyruneImage AS KeyRuneImage, 
-                        t.manaCost AS ManaCost, 
-                        u.manaCostImage AS ManaCostImage, 
-                        t.types AS Types, 
-                        t.supertypes AS SuperTypes, 
-                        t.subtypes AS SubTypes, 
-                        t.type AS Type, 
-                        t.keywords AS Keywords, 
-                        t.text AS RulesText, 
-                        NULL AS ManaValue,  -- 'manaValue' does not exist in 'tokens'
-                        t.language AS Language,
-                        t.uuid AS Uuid, 
-                        t.finishes AS Finishes, 
-                        t.side AS Side 
-                    FROM tokens t 
-                    JOIN sets s ON t.setCode = s.tokenSetCode 
-                    LEFT JOIN keyruneImages k ON (SELECT code FROM sets WHERE tokenSetCode = t.setCode) = k.setCode
-                    LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-                    WHERE t.side IS NULL OR t.side = 'a'
-                    ";
+        public readonly string myCollectionQuery = "SELECT * FROM myCollectionView";
+        private readonly string allCardsQuery = "SELECT * FROM allCardsView";
 
         // The CardSet object which holds all the cards read from db
         private List<CardSet> allCards = new List<CardSet>();
@@ -874,7 +744,7 @@ namespace CollectaMundo
                 CurrentInstance.progressBar.Visibility = Visibility.Visible;
             }
         }
-        private CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
+        private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
         {
             var card = isCardItem ? (CardSet)new CardItem() : new CardSet();
 
@@ -905,10 +775,9 @@ namespace CollectaMundo
                 cardItem.SelectedFinish = reader["Finishes"]?.ToString();
             }
 
-
             return card;
         }
-        private BitmapImage? ConvertImage(byte[]? imageData)
+        private static BitmapImage? ConvertImage(byte[]? imageData)
         {
             if (imageData != null)
             {
@@ -916,7 +785,7 @@ namespace CollectaMundo
             }
             return null;
         }
-        private string ProcessManaCost(string manaCostRaw)
+        private static string ProcessManaCost(string manaCostRaw)
         {
             return string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
         }

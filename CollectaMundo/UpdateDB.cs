@@ -161,8 +161,9 @@ namespace CollectaMundo
                     Debug.WriteLine($"Detached tempDb...");
                 }
 
-                // Recreate indices after copying tables
+                // Recreate indices and views after copying tables
                 await DownloadAndPrepDB.CreateIndices();
+                await DownloadAndPrepDB.CreateViews();
             }
             catch (SQLiteException ex)
             {
