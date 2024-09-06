@@ -61,6 +61,12 @@ namespace CollectaMundo
         public string? Uuid { get; set; }
         public ImageSource? SetIcon { get; set; }
         public ImageSource? ManaCostImage { get; set; }
+
+
+        public byte[]? SetIconBytes { get; set; }
+        public byte[]? ManaCostImageBytes { get; set; }
+        public string? ManaCostRaw { get; set; }
+
         public class CardItem : CardSet, INotifyPropertyChanged
         {
             public int? CardId { get; set; }

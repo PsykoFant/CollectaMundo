@@ -705,32 +705,85 @@ namespace CollectaMundo
                 await ShowStatusWindowAsync(true);  // Show loading message                
                 CurrentInstance.StatusLabel.Content = "Loading ALL the cards ... ";
                 CurrentInstance.progressBar.Visibility = Visibility.Collapsed;
+
                 // Force the UI to update
                 Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+
+
+                cardList.Clear();
+
+                List<CardSet> tempCardList = new List<CardSet>();
+
+                // Process all database rows sequentially
+                using var command = new SQLiteCommand(query, DBAccess.connection);
+                using var reader = await command.ExecuteReaderAsync();
 
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
 
-                cardList.Clear();
-
-                using var command = new SQLiteCommand(query, DBAccess.connection);
-                using var reader = await command.ExecuteReaderAsync();
-
                 while (await reader.ReadAsync())
                 {
-                    var card = CreateCardFromReader(reader, isCardItem);  // Use DbDataReader
-                    cardList.Add(card);
+                    try
+                    {
+                        var card = CreateCardFromReader(reader, isCardItem);
+                        tempCardList.Add(card); // Collect all cards first
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error while creating card: {ex.Message}");
+                        throw;
+                    }
                 }
 
-                Dispatcher.Invoke(() =>
-                {
-                    dataGrid.ItemsSource = cardList;
-                    ICollectionView collectionView = CollectionViewSource.GetDefaultView(cardList);
-                    collectionView.Refresh();
-                });
+                stopwatch.Stop();
+                Debug.WriteLine($"Time for processing all columns except CPU-bound: {stopwatch.ElapsedMilliseconds} ms");
+
+
+                stopwatch.Restart();
+                // Parallelize only the CPU-bound processing, excluding UI-bound tasks
+                var processedCards = tempCardList
+                    .AsParallel()
+                    .WithDegreeOfParallelism(Environment.ProcessorCount) // Utilize available processors
+                    .Select(card =>
+                    {
+                        // Perform non-database parallelizable work here
+                        card.ManaCost = ProcessManaCost(card.ManaCostRaw);
+                        return card;
+                    })
+                    .ToList();
 
                 stopwatch.Stop();
-                Debug.WriteLine($"Data loading method execution time: {stopwatch.ElapsedMilliseconds} ms");
+                Debug.WriteLine($"Parallelize only the CPU-bound processing, excluding UI-bound tasks: {stopwatch.ElapsedMilliseconds} ms");
+
+                stopwatch.Restart();
+                // Create ImageSource objects (UI-bound) on the UI thread
+                await Dispatcher.InvokeAsync(async () =>
+                {
+                    int batchSize = 1000; // Number of cards processed per batch
+                    for (int i = 0; i < processedCards.Count; i += batchSize)
+                    {
+                        var batch = processedCards.Skip(i).Take(batchSize).ToList();
+                        foreach (var card in batch)
+                        {
+                            card.SetIcon = ConvertImage(card.SetIconBytes);
+                            card.ManaCostImage = ConvertImage(card.ManaCostImageBytes);
+                        }
+
+                        // Update the card list and UI in batches
+                        cardList.AddRange(batch);
+                        dataGrid.ItemsSource = cardList;
+
+                        //await Task.Delay(1); // Small delay to allow the UI to process
+                    }
+                    ICollectionView collectionView = CollectionViewSource.GetDefaultView(cardList);
+                    collectionView.Refresh();
+
+                });
+
+
+                stopwatch.Stop();
+                Debug.WriteLine($"Create ImageSource objects (UI-bound) on the UI thread: {stopwatch.ElapsedMilliseconds} ms");
+
             }
             catch (Exception ex)
             {
@@ -744,39 +797,53 @@ namespace CollectaMundo
                 CurrentInstance.progressBar.Visibility = Visibility.Visible;
             }
         }
+
         private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
         {
-            var card = isCardItem ? (CardSet)new CardItem() : new CardSet();
-
-            // Initialize common properties
-            card.Name = reader["Name"]?.ToString() ?? string.Empty;
-            card.SetName = reader["SetName"]?.ToString() ?? string.Empty;
-            card.SetIcon = ConvertImage(reader["KeyRuneImage"] as byte[]);
-            card.ManaCost = ProcessManaCost(reader["ManaCost"]?.ToString() ?? string.Empty);
-            card.ManaCostImage = ConvertImage(reader["ManaCostImage"] as byte[]);
-            card.Types = reader["Types"]?.ToString() ?? string.Empty;
-            card.SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty;
-            card.SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty;
-            card.Type = reader["Type"]?.ToString() ?? string.Empty;
-            card.Keywords = reader["Keywords"]?.ToString() ?? string.Empty;
-            card.Text = reader["RulesText"]?.ToString() ?? string.Empty;
-            card.ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0;
-            card.Language = reader["Language"]?.ToString() ?? string.Empty;
-            card.Uuid = reader["Uuid"]?.ToString() ?? string.Empty;
-            card.Side = reader["Side"]?.ToString() ?? string.Empty;
-            card.Finishes = reader["Finishes"]?.ToString();
-
-            if (card is CardItem cardItem)
+            try
             {
-                cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
-                cardItem.CardsOwned = Convert.ToInt32(reader["CardsOwned"]);
-                cardItem.CardsForTrade = Convert.ToInt32(reader["CardsForTrade"]);
-                cardItem.SelectedCondition = reader["Condition"]?.ToString();
-                cardItem.SelectedFinish = reader["Finishes"]?.ToString();
-            }
+                var card = isCardItem ? (CardSet)new CardItem() : new CardSet();
 
-            return card;
+                // Populate common properties
+                card.Name = reader["Name"]?.ToString() ?? string.Empty;
+                card.SetName = reader["SetName"]?.ToString() ?? string.Empty;
+                card.Types = reader["Types"]?.ToString() ?? string.Empty;
+                card.SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty;
+                card.SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty;
+                card.Type = reader["Type"]?.ToString() ?? string.Empty;
+                card.Keywords = reader["Keywords"]?.ToString() ?? string.Empty;
+                card.Text = reader["RulesText"]?.ToString() ?? string.Empty;
+                card.ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0;
+                card.Language = reader["Language"]?.ToString() ?? string.Empty;
+                card.Uuid = reader["Uuid"]?.ToString() ?? string.Empty;
+                card.Side = reader["Side"]?.ToString() ?? string.Empty;
+                card.Finishes = reader["Finishes"]?.ToString();
+
+                // Populate raw data fields for parallel processing
+                card.SetIconBytes = reader["KeyRuneImage"] as byte[];
+                card.ManaCostImageBytes = reader["ManaCostImage"] as byte[];
+                card.ManaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
+
+                if (card is CardItem cardItem)
+                {
+                    cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
+                    cardItem.CardsOwned = Convert.ToInt32(reader["CardsOwned"]);
+                    cardItem.CardsForTrade = Convert.ToInt32(reader["CardsForTrade"]);
+                    cardItem.SelectedCondition = reader["Condition"]?.ToString();
+                    cardItem.SelectedFinish = reader["Finishes"]?.ToString();
+                }
+
+                return card;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in CreateCardFromReader: {ex.Message}");
+                throw;
+            }
         }
+
+
+
         private static BitmapImage? ConvertImage(byte[]? imageData)
         {
             if (imageData != null)
