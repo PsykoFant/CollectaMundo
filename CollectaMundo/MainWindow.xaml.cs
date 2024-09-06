@@ -709,7 +709,6 @@ namespace CollectaMundo
                 // Force the UI to update
                 Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
 
-
                 cardList.Clear();
 
                 List<CardSet> tempCardList = new List<CardSet>();
@@ -717,9 +716,6 @@ namespace CollectaMundo
                 // Process all database rows sequentially
                 using var command = new SQLiteCommand(query, DBAccess.connection);
                 using var reader = await command.ExecuteReaderAsync();
-
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
 
                 while (await reader.ReadAsync())
                 {
@@ -735,54 +731,33 @@ namespace CollectaMundo
                     }
                 }
 
-                stopwatch.Stop();
-                Debug.WriteLine($"Time for processing all columns except CPU-bound: {stopwatch.ElapsedMilliseconds} ms");
+                // Assign card data to the DataGrid without images
+                cardList.AddRange(tempCardList);
+                dataGrid.ItemsSource = cardList;
+                ICollectionView collectionView = CollectionViewSource.GetDefaultView(cardList);
+                collectionView.Refresh();
 
-
-                stopwatch.Restart();
-                // Parallelize only the CPU-bound processing, excluding UI-bound tasks
-                var processedCards = tempCardList
-                    .AsParallel()
-                    .WithDegreeOfParallelism(Environment.ProcessorCount) // Utilize available processors
-                    .Select(card =>
-                    {
-                        // Perform non-database parallelizable work here
-                        card.ManaCost = ProcessManaCost(card.ManaCostRaw);
-                        return card;
-                    })
-                    .ToList();
-
-                stopwatch.Stop();
-                Debug.WriteLine($"Parallelize only the CPU-bound processing, excluding UI-bound tasks: {stopwatch.ElapsedMilliseconds} ms");
-
-                stopwatch.Restart();
-                // Create ImageSource objects (UI-bound) on the UI thread
-                await Dispatcher.InvokeAsync(async () =>
+                // Add this: Trigger lazy image loading when DataGrid is fully loaded
+                dataGrid.Loaded += async (s, e) =>
                 {
-                    int batchSize = 1000; // Number of cards processed per batch
-                    for (int i = 0; i < processedCards.Count; i += batchSize)
+                    await LoadManaCostImagesForVisibleRowsAsync(dataGrid, cardList); // Load visible row images
+                };
+
+                // Add this: Handle scroll event to load images as the user scrolls
+                var scrollViewer = FindVisualChild<ScrollViewer>(dataGrid);
+                if (scrollViewer != null)
+                {
+                    scrollViewer.ScrollChanged += async (s, e) =>
                     {
-                        var batch = processedCards.Skip(i).Take(batchSize).ToList();
-                        foreach (var card in batch)
+                        if (e.VerticalChange != 0)  // Only react to vertical scrolling
                         {
-                            card.SetIcon = ConvertImage(card.SetIconBytes);
-                            card.ManaCostImage = ConvertImage(card.ManaCostImageBytes);
+                            await LoadManaCostImagesForVisibleRowsAsync(dataGrid, cardList); // Load images for new visible rows
                         }
+                    };
+                }
 
-                        // Update the card list and UI in batches
-                        cardList.AddRange(batch);
-                        dataGrid.ItemsSource = cardList;
-
-                        //await Task.Delay(1); // Small delay to allow the UI to process
-                    }
-                    ICollectionView collectionView = CollectionViewSource.GetDefaultView(cardList);
-                    collectionView.Refresh();
-
-                });
-
-
-                stopwatch.Stop();
-                Debug.WriteLine($"Create ImageSource objects (UI-bound) on the UI thread: {stopwatch.ElapsedMilliseconds} ms");
+                // Add this: Load images for initially visible rows
+                await LoadManaCostImagesForVisibleRowsAsync(dataGrid, cardList); // Initial load
 
             }
             catch (Exception ex)
@@ -796,6 +771,49 @@ namespace CollectaMundo
                 await ShowStatusWindowAsync(false);
                 CurrentInstance.progressBar.Visibility = Visibility.Visible;
             }
+        }
+
+        private async Task LoadManaCostImagesForVisibleRowsAsync(DataGrid dataGrid, List<CardSet> cardList)
+        {
+            // Get the ItemContainerGenerator for the DataGrid
+            var itemContainerGenerator = dataGrid.ItemContainerGenerator;
+
+            // Get the index range of the visible rows in the DataGrid
+            int firstVisibleIndex = -1, lastVisibleIndex = -1;
+
+            for (int i = 0; i < dataGrid.Items.Count; i++)
+            {
+                // Try to get the container (row) for each item
+                var container = itemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
+
+                if (container != null && container.IsVisible)
+                {
+                    if (firstVisibleIndex == -1)
+                        firstVisibleIndex = i;
+
+                    lastVisibleIndex = i;
+                }
+            }
+
+            if (firstVisibleIndex == -1 || lastVisibleIndex == -1)
+            {
+                Debug.WriteLine("No visible rows found.");
+                return; // If no visible rows found, exit
+            }
+
+            // Load ManaCostImage for each visible card in that range
+            for (int i = firstVisibleIndex; i <= lastVisibleIndex && i < cardList.Count; i++)
+            {
+                var card = cardList[i];
+                if (card.ManaCostImage == null) // Only load if not already loaded
+                {
+                    card.ManaCostImage = ConvertImage(card.ManaCostImageBytes);
+                }
+            }
+
+            // Refresh the DataGrid to display loaded images
+            ICollectionView collectionView = CollectionViewSource.GetDefaultView(cardList);
+            collectionView.Refresh();
         }
 
         private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
