@@ -697,6 +697,8 @@ namespace CollectaMundo
         #endregion
 
         #region Load data and populate UI elements
+        private HashSet<int> processedRows = new HashSet<int>();
+
         public async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
         {
             Debug.WriteLine("Loading data asynchronously...");
@@ -710,6 +712,7 @@ namespace CollectaMundo
                 Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
 
                 cardList.Clear();
+                processedRows.Clear();  // Clear previously processed rows
 
                 List<CardSet> tempCardList = new List<CardSet>();
 
@@ -737,13 +740,13 @@ namespace CollectaMundo
                 ICollectionView collectionView = CollectionViewSource.GetDefaultView(cardList);
                 collectionView.Refresh();
 
-                // Add this: Trigger lazy image loading when DataGrid is fully loaded
+                // Trigger lazy image loading when DataGrid is fully loaded
                 dataGrid.Loaded += async (s, e) =>
                 {
                     await LoadManaCostImagesForVisibleRowsAsync(dataGrid, cardList); // Load visible row images
                 };
 
-                // Add this: Handle scroll event to load images as the user scrolls
+                // Handle scroll event to load images as the user scrolls
                 var scrollViewer = FindVisualChild<ScrollViewer>(dataGrid);
                 if (scrollViewer != null)
                 {
@@ -756,7 +759,7 @@ namespace CollectaMundo
                     };
                 }
 
-                // Add this: Load images for initially visible rows
+                // Load images for initially visible rows
                 await LoadManaCostImagesForVisibleRowsAsync(dataGrid, cardList); // Initial load
 
             }
@@ -775,30 +778,33 @@ namespace CollectaMundo
 
         private async Task LoadManaCostImagesForVisibleRowsAsync(DataGrid dataGrid, List<CardSet> cardList)
         {
-            // Get the ItemContainerGenerator for the DataGrid
-            var itemContainerGenerator = dataGrid.ItemContainerGenerator;
+            // Get the ScrollViewer of the DataGrid
+            var scrollViewer = FindVisualChild<ScrollViewer>(dataGrid);
 
-            // Get the index range of the visible rows in the DataGrid
-            int firstVisibleIndex = -1, lastVisibleIndex = -1;
-
-            for (int i = 0; i < dataGrid.Items.Count; i++)
+            if (scrollViewer == null)
             {
-                // Try to get the container (row) for each item
-                var container = itemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
-
-                if (container != null && container.IsVisible)
-                {
-                    if (firstVisibleIndex == -1)
-                        firstVisibleIndex = i;
-
-                    lastVisibleIndex = i;
-                }
+                Debug.WriteLine("ScrollViewer not found.");
+                return;
             }
 
-            if (firstVisibleIndex == -1 || lastVisibleIndex == -1)
+            // Get the height of a single row (assuming all rows have the same height)
+            var rowHeight = 22; // Adjust this based on your DataGrid row height
+
+            // Get the visible range of rows
+            var firstVisibleIndex = (int)(scrollViewer.VerticalOffset / rowHeight);
+            var lastVisibleIndex = firstVisibleIndex + (int)(scrollViewer.ViewportHeight / rowHeight);
+
+            Debug.WriteLine($"Visible rows from {firstVisibleIndex} to {lastVisibleIndex}");
+
+            // Ensure indexes are within the valid range
+            if (firstVisibleIndex < 0)
             {
-                Debug.WriteLine("No visible rows found.");
-                return; // If no visible rows found, exit
+                firstVisibleIndex = 0;
+            }
+
+            if (lastVisibleIndex >= cardList.Count)
+            {
+                lastVisibleIndex = cardList.Count - 1;
             }
 
             // Load ManaCostImage for each visible card in that range
@@ -815,6 +821,7 @@ namespace CollectaMundo
             ICollectionView collectionView = CollectionViewSource.GetDefaultView(cardList);
             collectionView.Refresh();
         }
+
 
         private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
         {
@@ -859,9 +866,6 @@ namespace CollectaMundo
                 throw;
             }
         }
-
-
-
         private static BitmapImage? ConvertImage(byte[]? imageData)
         {
             if (imageData != null)
