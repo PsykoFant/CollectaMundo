@@ -121,7 +121,7 @@ namespace CollectaMundo
             await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
             await FillComboBoxesAsync();
-
+            LogVisibleRows(MyCollectionDatagrid);
             DBAccess.CloseConnection();
 
             CardsToAddListView.ItemsSource = addToCollectionManager.CardItemsToAdd;
@@ -773,8 +773,42 @@ namespace CollectaMundo
                 CurrentInstance.StatusLabel.Content = string.Empty;
                 await ShowStatusWindowAsync(false);
                 CurrentInstance.progressBar.Visibility = Visibility.Visible;
+
             }
         }
+        private void LogVisibleRows(DataGrid dataGrid)
+        {
+            var itemContainerGenerator = dataGrid.ItemContainerGenerator;
+
+            // Get the visible row range
+            int firstVisibleIndex = -1, lastVisibleIndex = -1;
+
+            for (int i = 0; i < dataGrid.Items.Count; i++)
+            {
+                // Try to get the container (row) for each item
+                var container = itemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
+
+                if (container != null && container.IsVisible)
+                {
+                    if (firstVisibleIndex == -1)
+                    {
+                        firstVisibleIndex = i;
+                    }
+
+                    lastVisibleIndex = i;
+                }
+            }
+
+            if (firstVisibleIndex != -1 && lastVisibleIndex != -1)
+            {
+                Debug.WriteLine($"Visible rows: {firstVisibleIndex} to {lastVisibleIndex}");
+            }
+            else
+            {
+                Debug.WriteLine("No visible rows found.");
+            }
+        }
+
 
         private async Task LoadManaCostImagesForVisibleRowsAsync(DataGrid dataGrid, List<CardSet> cardList)
         {
@@ -788,7 +822,7 @@ namespace CollectaMundo
             }
 
             // Get the height of a single row (assuming all rows have the same height)
-            var rowHeight = 22; // Adjust this based on your DataGrid row height
+            var rowHeight = 20; // Adjust this based on your DataGrid row height
 
             // Get the visible range of rows
             var firstVisibleIndex = (int)(scrollViewer.VerticalOffset / rowHeight);
