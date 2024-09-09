@@ -121,7 +121,6 @@ namespace CollectaMundo
             await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
             await FillComboBoxesAsync();
-            LogVisibleRows(MyCollectionDatagrid);
             DBAccess.CloseConnection();
 
             CardsToAddListView.ItemsSource = addToCollectionManager.CardItemsToAdd;
@@ -737,30 +736,23 @@ namespace CollectaMundo
                 // Assign card data to the DataGrid without images
                 cardList.AddRange(tempCardList);
                 dataGrid.ItemsSource = cardList;
+
+                dataGrid.ItemsSource = cardList;
                 ICollectionView collectionView = CollectionViewSource.GetDefaultView(cardList);
-                collectionView.Refresh();
+                //collectionView.Refresh();
 
-                // Trigger lazy image loading when DataGrid is fully loaded
-                dataGrid.Loaded += async (s, e) =>
+                void OnLayoutUpdated(object sender, EventArgs e)
                 {
-                    await LoadManaCostImagesForVisibleRowsAsync(dataGrid, cardList); // Load visible row images
-                };
-
-                // Handle scroll event to load images as the user scrolls
-                var scrollViewer = FindVisualChild<ScrollViewer>(dataGrid);
-                if (scrollViewer != null)
-                {
-                    scrollViewer.ScrollChanged += async (s, e) =>
+                    dataGrid.LayoutUpdated -= OnLayoutUpdated;  // Detach the event to avoid reprocessing
+                    Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        if (e.VerticalChange != 0)  // Only react to vertical scrolling
-                        {
-                            await LoadManaCostImagesForVisibleRowsAsync(dataGrid, cardList); // Load images for new visible rows
-                        }
-                    };
+                        // Call the method to load ManaCostImage for the specific row
+                        RenderImagesForVisibleRows(dataGrid);
+                    }), System.Windows.Threading.DispatcherPriority.Background);
+
                 }
 
-                // Load images for initially visible rows
-                await LoadManaCostImagesForVisibleRowsAsync(dataGrid, cardList); // Initial load
+                dataGrid.LayoutUpdated += OnLayoutUpdated;
 
             }
             catch (Exception ex)
@@ -776,86 +768,88 @@ namespace CollectaMundo
 
             }
         }
-        private void LogVisibleRows(DataGrid dataGrid)
-        {
-            var itemContainerGenerator = dataGrid.ItemContainerGenerator;
 
-            // Get the visible row range
-            int firstVisibleIndex = -1, lastVisibleIndex = -1;
+        private void RenderImagesForVisibleRows(DataGrid dataGrid)
+        {
+            var visibleIndices = GetVisibleRowIndices(dataGrid);
+            foreach (var index in visibleIndices)
+            {
+                var cardSet = dataGrid.Items[index] as CardSet;
+                if (cardSet != null && cardSet.ManaCostImage == null)
+                {
+                    cardSet.ManaCostImage = ConvertImage(cardSet.ManaCostImageBytes);
+                }
+            }
+
+
+            dataGrid.Items.Refresh(); // Refresh items only once after updating visible rows
+        }
+
+        private List<int> GetVisibleRowIndices(DataGrid dataGrid)
+        {
+            var visibleIndices = new List<int>();
+            var scrollViewer = GetScrollViewer(dataGrid);
+            double topBound = scrollViewer.VerticalOffset;
+            double bottomBound = topBound + scrollViewer.ViewportHeight;
+            double accumulatedHeight = 0.0;
+            var itemHeight = CalculateEstimatedRowHeight(dataGrid);
 
             for (int i = 0; i < dataGrid.Items.Count; i++)
             {
-                // Try to get the container (row) for each item
-                var container = itemContainerGenerator.ContainerFromIndex(i) as DataGridRow;
-
-                if (container != null && container.IsVisible)
+                if (accumulatedHeight >= topBound && accumulatedHeight <= bottomBound)
                 {
-                    if (firstVisibleIndex == -1)
-                    {
-                        firstVisibleIndex = i;
-                    }
-
-                    lastVisibleIndex = i;
+                    visibleIndices.Add(i);
                 }
+                accumulatedHeight += itemHeight;
+                if (accumulatedHeight > bottomBound)
+                    break;
             }
-
-            if (firstVisibleIndex != -1 && lastVisibleIndex != -1)
-            {
-                Debug.WriteLine($"Visible rows: {firstVisibleIndex} to {lastVisibleIndex}");
-            }
-            else
-            {
-                Debug.WriteLine("No visible rows found.");
-            }
+            return visibleIndices;
         }
 
-
-        private async Task LoadManaCostImagesForVisibleRowsAsync(DataGrid dataGrid, List<CardSet> cardList)
+        private double CalculateEstimatedRowHeight(DataGrid dataGrid)
         {
-            // Get the ScrollViewer of the DataGrid
-            var scrollViewer = FindVisualChild<ScrollViewer>(dataGrid);
-
-            if (scrollViewer == null)
+            // Assuming uniform row height for the estimation
+            if (dataGrid.Items.Count > 0)
             {
-                Debug.WriteLine("ScrollViewer not found.");
-                return;
-            }
-
-            // Get the height of a single row (assuming all rows have the same height)
-            var rowHeight = 20; // Adjust this based on your DataGrid row height
-
-            // Get the visible range of rows
-            var firstVisibleIndex = (int)(scrollViewer.VerticalOffset / rowHeight);
-            var lastVisibleIndex = firstVisibleIndex + (int)(scrollViewer.ViewportHeight / rowHeight);
-
-            Debug.WriteLine($"Visible rows from {firstVisibleIndex} to {lastVisibleIndex}");
-
-            // Ensure indexes are within the valid range
-            if (firstVisibleIndex < 0)
-            {
-                firstVisibleIndex = 0;
-            }
-
-            if (lastVisibleIndex >= cardList.Count)
-            {
-                lastVisibleIndex = cardList.Count - 1;
-            }
-
-            // Load ManaCostImage for each visible card in that range
-            for (int i = firstVisibleIndex; i <= lastVisibleIndex && i < cardList.Count; i++)
-            {
-                var card = cardList[i];
-                if (card.ManaCostImage == null) // Only load if not already loaded
+                var firstRowContainer = dataGrid.ItemContainerGenerator.ContainerFromIndex(0) as DataGridRow;
+                if (firstRowContainer != null)
                 {
-                    card.ManaCostImage = ConvertImage(card.ManaCostImageBytes);
+                    return firstRowContainer.ActualHeight;
                 }
+                // Provide a fallback if the first row isn't generated yet
+                return 10; // Default row height or estimated average
             }
-
-            // Refresh the DataGrid to display loaded images
-            ICollectionView collectionView = CollectionViewSource.GetDefaultView(cardList);
-            collectionView.Refresh();
+            return 0;
         }
 
+        private static ScrollViewer GetScrollViewer(UIElement element)
+        {
+            if (element == null) return null;
+            ScrollViewer scrollviewer = null;
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+            {
+                var child = VisualTreeHelper.GetChild(element, i);
+                if (child is ScrollViewer)
+                {
+                    scrollviewer = (ScrollViewer)child;
+                    break;
+                }
+                else
+                {
+                    scrollviewer = GetScrollViewer(child as UIElement);
+                    if (scrollviewer != null) break;
+                }
+            }
+            return scrollviewer;
+        }
+        private void DataGrid_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (e.VerticalChange != 0)
+            {
+                RenderImagesForVisibleRows(sender as DataGrid);
+            }
+        }
 
         private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
         {
@@ -900,6 +894,11 @@ namespace CollectaMundo
                 throw;
             }
         }
+
+        private static string ProcessManaCost(string manaCostRaw)
+        {
+            return string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
+        }
         private static BitmapImage? ConvertImage(byte[]? imageData)
         {
             if (imageData != null)
@@ -908,11 +907,6 @@ namespace CollectaMundo
             }
             return null;
         }
-        private static string ProcessManaCost(string manaCostRaw)
-        {
-            return string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
-        }
-
         // Convert byte array (for set icon) into an image to display in the datagrid
         private static BitmapImage? ConvertByteArrayToBitmapImage(byte[] imageData)
         {
