@@ -126,9 +126,221 @@ namespace CollectaMundo
 
         /* To do
          * Sorter kort
-         * Performance optimer load kort         
          * Refaktorer installer oprettelse
          */
+
+        #region Load data and populate UI elements
+        private HashSet<int> processedRows = new HashSet<int>();
+
+        public async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
+        {
+            Debug.WriteLine("Loading data asynchronously...");
+            try
+            {
+                await ShowStatusWindowAsync(true);  // Show loading message                
+                CurrentInstance.StatusLabel.Content = "Loading ALL the cards ... ";
+                CurrentInstance.progressBar.Visibility = Visibility.Collapsed;
+                // Force the UI to update
+                Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+
+                cardList.Clear();
+                processedRows.Clear();
+
+                List<CardSet> tempCardList = new List<CardSet>();
+                using var command = new SQLiteCommand(query, DBAccess.connection);
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    try
+                    {
+                        var card = CreateCardFromReader(reader, isCardItem);
+                        tempCardList.Add(card);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error while creating card: {ex.Message}");
+                        throw;
+                    }
+                }
+
+                cardList.AddRange(tempCardList);
+                dataGrid.ItemsSource = cardList;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while loading cards: {ex.Message}");
+                MessageBox.Show($"Error while loading cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                CurrentInstance.StatusLabel.Content = string.Empty;
+                await ShowStatusWindowAsync(false);
+                CurrentInstance.progressBar.Visibility = Visibility.Visible;
+            }
+        }
+        private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
+        {
+            try
+            {
+                var card = isCardItem ? (CardSet)new CardItem() : new CardSet();
+
+                // Populate common properties
+                card.Name = reader["Name"]?.ToString() ?? string.Empty;
+                card.SetName = reader["SetName"]?.ToString() ?? string.Empty;
+                card.Types = reader["Types"]?.ToString() ?? string.Empty;
+                card.ManaCost = ProcessManaCost(reader["ManaCost"]?.ToString() ?? string.Empty);
+                card.SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty;
+                card.SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty;
+                card.Type = reader["Type"]?.ToString() ?? string.Empty;
+                card.Keywords = reader["Keywords"]?.ToString() ?? string.Empty;
+                card.Text = reader["RulesText"]?.ToString() ?? string.Empty;
+                card.ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0;
+                card.Language = reader["Language"]?.ToString() ?? string.Empty;
+                card.Uuid = reader["Uuid"]?.ToString() ?? string.Empty;
+                card.Side = reader["Side"]?.ToString() ?? string.Empty;
+                card.Finishes = reader["Finishes"]?.ToString();
+
+                // Populate raw data fields for parallel processing
+                card.SetIconBytes = reader["KeyRuneImage"] as byte[];
+                card.ManaCostImageBytes = reader["ManaCostImage"] as byte[];
+                card.ManaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
+
+                if (card is CardItem cardItem)
+                {
+                    cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
+                    cardItem.CardsOwned = Convert.ToInt32(reader["CardsOwned"]);
+                    cardItem.CardsForTrade = Convert.ToInt32(reader["CardsForTrade"]);
+                    cardItem.SelectedCondition = reader["Condition"]?.ToString();
+                    cardItem.SelectedFinish = reader["Finishes"]?.ToString();
+                }
+
+                return card;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in CreateCardFromReader: {ex.Message}");
+                throw;
+            }
+        }
+        private static string ProcessManaCost(string manaCostRaw)
+        {
+            return string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
+        }
+        private Task FillComboBoxesAsync()
+        {
+            try
+            {
+                // Make sure lists are clear
+                filterContext.AllSuperTypes.Clear();
+                filterContext.AllTypes.Clear();
+                filterContext.AllSubTypes.Clear();
+                filterContext.AllColors.Clear();
+                filterContext.AllKeywords.Clear();
+
+                // Get the values to populate the comboboxes
+                var cardNames = allCards.Select(card => card.Name).Distinct().ToList();
+                var setNames = allCards.Select(card => card.SetName).Distinct().ToList();
+                var types = allCards.Select(card => card.Types).Distinct().ToList();
+                var superTypes = allCards.Select(card => card.SuperTypes).Distinct().ToList();
+                var subTypes = allCards.Select(card => card.SubTypes).Distinct().ToList();
+                var keywords = allCards.Select(card => card.Keywords).Distinct().ToList();
+
+                filterContext.AllColors.AddRange(new[] { "W", "U", "B", "R", "G", "C", "X" });
+
+                var allOrNoneColorsOption = new List<string> { "Cards with any of these colors", "Cards with all of these colors", "Cards with none of these colors" };
+                var manaValueOptions = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000 };
+                var manaValueCompareOptions = new List<string> { "less than", "less than/eq", "greater than", "greater than/eq", "equal to" };
+
+                // Set up elements in supertype listbox
+                filterContext.AllSuperTypes = superTypes
+                    .Where(type => type != null)
+                    .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                    .Select(p => p.Trim())
+                    .Distinct()
+                    .OrderBy(type => type)
+                    .ToList();
+
+                // List of unwanted types. Old cards, weird types from un-sets etc. 
+                var typesToRemove = new HashSet<string>
+                {
+                    "Eaturecray",
+                    "Summon",
+                    "Scariest",
+                    "You'll",
+                    "Ever",
+                    "See",
+                    "Jaguar",
+                    "Dragon",
+                    "Knights",
+                    "Legend",
+                    "instant"
+                };
+
+                // Set up elements in type listbox, removing unwanted types
+                filterContext.AllTypes = types
+                    .Where(type => type != null)
+                    .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                    .Select(p => p.Trim())
+                    .Where(p => !typesToRemove.Contains(p))  // Filter out unwanted types
+                    .Distinct()
+                    .OrderBy(type => type)
+                    .ToList();
+
+                // Set up elements in subtype listbox
+                filterContext.AllSubTypes = subTypes
+                    .Where(type => type != null)
+                    .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                    .Select(p => p.Trim())
+                    .Distinct()
+                    .OrderBy(type => type)
+                    .ToList();
+
+                // Set up elements in keywords listbox
+                filterContext.AllKeywords = keywords
+                    .Where(keyword => keyword != null)
+                    .SelectMany(keyword => keyword!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                    .Select(p => p.Trim())
+                    .Distinct()
+                    .OrderBy(keyword => keyword)
+                    .ToList();
+
+                Dispatcher.Invoke(() =>
+                {
+                    FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
+                    FilterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
+                    FilterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
+                    FilterColorsListBox.ItemsSource = filterContext.AllColors;
+                    AllOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
+                    AllOrNoneComboBox.SelectedIndex = 0;
+                    ManaValueComboBox.ItemsSource = manaValueOptions;
+                    ManaValueComboBox.SelectedIndex = -1;
+                    ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
+                    ManaValueOperatorComboBox.SelectedIndex = -1;
+                    SetDefaultTextInComboBox(SuperTypesComboBox, "FilterSuperTypesTextBox", filterContext.SuperTypesDefaultText);
+                    SetDefaultTextInComboBox(TypesComboBox, "FilterTypesTextBox", filterContext.TypesDefaultText);
+                    SetDefaultTextInComboBox(SubTypesComboBox, "FilterSubTypesTextBox", filterContext.SubTypesDefaultText);
+                    SetDefaultTextInComboBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
+                MessageBox.Show($"Error while filling comboboxes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            return Task.CompletedTask;
+        }
+        private static void SetDefaultTextInComboBox(ComboBox comboBox, string textBoxName, string defaultText)
+        {
+            var filterTextBox = comboBox.Template.FindName(textBoxName, comboBox) as TextBox;
+            if (filterTextBox != null)
+            {
+                filterTextBox.Text = defaultText;
+                filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            }
+        }
+
+        #endregion
 
         #region Filter elements handling        
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -692,218 +904,7 @@ namespace CollectaMundo
 
         #endregion
 
-        #region Load data and populate UI elements
-        private HashSet<int> processedRows = new HashSet<int>();
 
-        public async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
-        {
-            Debug.WriteLine("Loading data asynchronously...");
-            try
-            {
-                await ShowStatusWindowAsync(true);  // Show loading message                
-                CurrentInstance.StatusLabel.Content = "Loading ALL the cards ... ";
-                CurrentInstance.progressBar.Visibility = Visibility.Collapsed;
-                // Force the UI to update
-                Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
-
-                cardList.Clear();
-                processedRows.Clear();
-
-                List<CardSet> tempCardList = new List<CardSet>();
-                using var command = new SQLiteCommand(query, DBAccess.connection);
-                using var reader = await command.ExecuteReaderAsync();
-
-                while (await reader.ReadAsync())
-                {
-                    try
-                    {
-                        var card = CreateCardFromReader(reader, isCardItem);
-                        tempCardList.Add(card);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Error while creating card: {ex.Message}");
-                        throw;
-                    }
-                }
-
-                cardList.AddRange(tempCardList);
-                dataGrid.ItemsSource = cardList;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while loading cards: {ex.Message}");
-                MessageBox.Show($"Error while loading cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                CurrentInstance.StatusLabel.Content = string.Empty;
-                await ShowStatusWindowAsync(false);
-                CurrentInstance.progressBar.Visibility = Visibility.Visible;
-            }
-        }
-        private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
-        {
-            try
-            {
-                var card = isCardItem ? (CardSet)new CardItem() : new CardSet();
-
-                // Populate common properties
-                card.Name = reader["Name"]?.ToString() ?? string.Empty;
-                card.SetName = reader["SetName"]?.ToString() ?? string.Empty;
-                card.Types = reader["Types"]?.ToString() ?? string.Empty;
-                card.ManaCost = ProcessManaCost(reader["ManaCost"]?.ToString() ?? string.Empty);
-                card.SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty;
-                card.SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty;
-                card.Type = reader["Type"]?.ToString() ?? string.Empty;
-                card.Keywords = reader["Keywords"]?.ToString() ?? string.Empty;
-                card.Text = reader["RulesText"]?.ToString() ?? string.Empty;
-                card.ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0;
-                card.Language = reader["Language"]?.ToString() ?? string.Empty;
-                card.Uuid = reader["Uuid"]?.ToString() ?? string.Empty;
-                card.Side = reader["Side"]?.ToString() ?? string.Empty;
-                card.Finishes = reader["Finishes"]?.ToString();
-
-                // Populate raw data fields for parallel processing
-                card.SetIconBytes = reader["KeyRuneImage"] as byte[];
-                card.ManaCostImageBytes = reader["ManaCostImage"] as byte[];
-                card.ManaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
-
-                if (card is CardItem cardItem)
-                {
-                    cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
-                    cardItem.CardsOwned = Convert.ToInt32(reader["CardsOwned"]);
-                    cardItem.CardsForTrade = Convert.ToInt32(reader["CardsForTrade"]);
-                    cardItem.SelectedCondition = reader["Condition"]?.ToString();
-                    cardItem.SelectedFinish = reader["Finishes"]?.ToString();
-                }
-
-                return card;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in CreateCardFromReader: {ex.Message}");
-                throw;
-            }
-        }
-        private static string ProcessManaCost(string manaCostRaw)
-        {
-            return string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
-        }
-        private Task FillComboBoxesAsync()
-        {
-            try
-            {
-                // Make sure lists are clear
-                filterContext.AllSuperTypes.Clear();
-                filterContext.AllTypes.Clear();
-                filterContext.AllSubTypes.Clear();
-                filterContext.AllColors.Clear();
-                filterContext.AllKeywords.Clear();
-
-                // Get the values to populate the comboboxes
-                var cardNames = allCards.Select(card => card.Name).Distinct().ToList();
-                var setNames = allCards.Select(card => card.SetName).Distinct().ToList();
-                var types = allCards.Select(card => card.Types).Distinct().ToList();
-                var superTypes = allCards.Select(card => card.SuperTypes).Distinct().ToList();
-                var subTypes = allCards.Select(card => card.SubTypes).Distinct().ToList();
-                var keywords = allCards.Select(card => card.Keywords).Distinct().ToList();
-
-                filterContext.AllColors.AddRange(new[] { "W", "U", "B", "R", "G", "C", "X" });
-
-                var allOrNoneColorsOption = new List<string> { "Cards with any of these colors", "Cards with all of these colors", "Cards with none of these colors" };
-                var manaValueOptions = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000 };
-                var manaValueCompareOptions = new List<string> { "less than", "less than/eq", "greater than", "greater than/eq", "equal to" };
-
-                // Set up elements in supertype listbox
-                filterContext.AllSuperTypes = superTypes
-                    .Where(type => type != null)
-                    .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(p => p.Trim())
-                    .Distinct()
-                    .OrderBy(type => type)
-                    .ToList();
-
-                // List of unwanted types. Old cards, weird types from un-sets etc. 
-                var typesToRemove = new HashSet<string>
-                {
-                    "Eaturecray",
-                    "Summon",
-                    "Scariest",
-                    "You'll",
-                    "Ever",
-                    "See",
-                    "Jaguar",
-                    "Dragon",
-                    "Knights",
-                    "Legend",
-                    "instant"
-                };
-
-                // Set up elements in type listbox, removing unwanted types
-                filterContext.AllTypes = types
-                    .Where(type => type != null)
-                    .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(p => p.Trim())
-                    .Where(p => !typesToRemove.Contains(p))  // Filter out unwanted types
-                    .Distinct()
-                    .OrderBy(type => type)
-                    .ToList();
-
-                // Set up elements in subtype listbox
-                filterContext.AllSubTypes = subTypes
-                    .Where(type => type != null)
-                    .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(p => p.Trim())
-                    .Distinct()
-                    .OrderBy(type => type)
-                    .ToList();
-
-                // Set up elements in keywords listbox
-                filterContext.AllKeywords = keywords
-                    .Where(keyword => keyword != null)
-                    .SelectMany(keyword => keyword!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(p => p.Trim())
-                    .Distinct()
-                    .OrderBy(keyword => keyword)
-                    .ToList();
-
-                Dispatcher.Invoke(() =>
-                {
-                    FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
-                    FilterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
-                    FilterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
-                    FilterColorsListBox.ItemsSource = filterContext.AllColors;
-                    AllOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
-                    AllOrNoneComboBox.SelectedIndex = 0;
-                    ManaValueComboBox.ItemsSource = manaValueOptions;
-                    ManaValueComboBox.SelectedIndex = -1;
-                    ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
-                    ManaValueOperatorComboBox.SelectedIndex = -1;
-                    SetDefaultTextInComboBox(SuperTypesComboBox, "FilterSuperTypesTextBox", filterContext.SuperTypesDefaultText);
-                    SetDefaultTextInComboBox(TypesComboBox, "FilterTypesTextBox", filterContext.TypesDefaultText);
-                    SetDefaultTextInComboBox(SubTypesComboBox, "FilterSubTypesTextBox", filterContext.SubTypesDefaultText);
-                    SetDefaultTextInComboBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);
-                });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
-                MessageBox.Show($"Error while filling comboboxes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            return Task.CompletedTask;
-        }
-        void SetDefaultTextInComboBox(ComboBox comboBox, string textBoxName, string defaultText)
-        {
-            var filterTextBox = comboBox.Template.FindName(textBoxName, comboBox) as TextBox;
-            if (filterTextBox != null)
-            {
-                filterTextBox.Text = defaultText;
-                filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            }
-        }
-
-        #endregion
 
         #region UI elements for utilities
         private async void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)

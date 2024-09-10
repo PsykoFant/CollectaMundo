@@ -175,58 +175,53 @@ public class DownloadAndPrepDB
             stopwatch.Start();
 
             List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
-            List<string> uniqueSymbols = new();
+            HashSet<string> uniqueSymbols = new();
 
-            foreach (string manaCost in uniqueManaCosts)
+            // Extract unique symbols in parallel
+            uniqueManaCosts.AsParallel().ForAll(manaCost =>
             {
-                // Use regex to match all occurrences of values between '{' and '}'
                 MatchCollection matches = Regex.Matches(manaCost, @"\{(.*?)\}");
-
                 foreach (Match match in matches)
                 {
                     string value = match.Groups[1].Value;
-
-                    // Add to the uniqueSymbols list if not already present
-                    if (!uniqueSymbols.Contains(value))
+                    lock (uniqueSymbols)
                     {
                         uniqueSymbols.Add(value);
                     }
                 }
-            }
+            });
 
-            // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
-            foreach (string symbol in uniqueSymbols)
-            {
-                await InsertValueInTableAsync(symbol, "uniqueManaSymbols", "uniqueManaSymbol");
-            }
+            // Batch insert unique symbols into the database
+            await Task.WhenAll(uniqueSymbols.Select(symbol =>
+                InsertValueInTableAsync(symbol, "uniqueManaSymbols", "uniqueManaSymbol")));
 
             Debug.WriteLine("Insertion of uniqueManaSymbols completed.");
 
             // Get a list of mana symbols without image
             List<string> symbolsWithNullImage = await GetValuesWithNullAsync("uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
 
-            // Generate the missing mana cost symbols and insert them into table uniqueManaSymbols
-            int counter = 0;
-            foreach (string missingImage in symbolsWithNullImage)
+            // Parallel generation of missing mana cost symbols and batch update
+            var results = await Task.WhenAll(symbolsWithNullImage.Select(async symbol =>
             {
-                counter++;
-                byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
+                byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync($"https://svgs.scryfall.io/card-symbols/{symbol.Replace("/", "")}.svg");
+                return new { Symbol = symbol, PngData = pngData };
+            }));
 
-                if (pngData.Length != 0)
+            foreach (var result in results)
+            {
+                if (result.PngData.Length != 0)
                 {
-                    // Update the 'uniqueManaSymbols' table with the PNG data
-                    await UpdateImageInTableAsync(missingImage, "uniqueManaSymbols", "manaSymbolImage", "uniqueManaSymbol", pngData);
-                    StatusMessageUpdated?.Invoke($"Added image generated from https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg ({counter} out of {symbolsWithNullImage.Count.ToString()})");
+                    await UpdateImageInTableAsync(result.Symbol, "uniqueManaSymbols", "manaSymbolImage", "uniqueManaSymbol", result.PngData);
+                    StatusMessageUpdated?.Invoke($"Added image for {result.Symbol}");
                 }
                 else
                 {
-                    // Handle the case when conversion fails (e.g., log, show error message, etc.)
-                    Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {missingImage}");
+                    Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {result.Symbol}");
                 }
             }
 
             stopwatch.Stop();
-            Debug.WriteLine($"GenerateManaSymbolsFromSvgAsync {stopwatch.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"GenerateManaSymbolsFromSvgAsync completed in {stopwatch.ElapsedMilliseconds} ms");
 
         }
         catch (Exception ex)
@@ -245,24 +240,27 @@ public class DownloadAndPrepDB
             List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
 
             // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
-            foreach (string manaCost in uniqueManaCosts)
-            {
-                await InsertValueInTableAsync(manaCost, "uniqueManaCostImages", "uniqueManaCost");
-                StatusMessageUpdated?.Invoke($"Added {manaCost} to table");
-            }
+            var insertTasks = uniqueManaCosts.Select(manaCost =>
+                InsertValueInTableAsync(manaCost, "uniqueManaCostImages", "uniqueManaCost")
+            ).ToList();
+
+            await Task.WhenAll(insertTasks);
+            uniqueManaCosts.ForEach(manaCost => StatusMessageUpdated?.Invoke($"Added {manaCost} to table"));
 
             List<string> manaCostsWithNullImage = await GetValuesWithNullAsync("uniqueManaCostImages", "uniqueManaCost", "manaCostImage");
 
-            // Generate the missing mana cost images and insert them into table uniqueManaCostImages
-            int counter = 0;
-            foreach (string missingImage in manaCostsWithNullImage)
+            // Generate the missing mana cost images and insert them into table uniqueManaCostImages using parallel processing
+            var updateTasks = manaCostsWithNullImage.Select(async (manaCost, index) =>
             {
-                counter++;
-                await UpdateImageInTableAsync(missingImage, "uniqueManaCostImages", "manaCostImage", "uniqueManaCost", await ProcessManaCostInputAsync(missingImage));
-                StatusMessageUpdated?.Invoke($"Added image for the mana cost {missingImage} ({counter.ToString()} of {manaCostsWithNullImage.Count().ToString()}");
-            }
+                byte[] imageData = await ProcessManaCostInputAsync(manaCost);
+                await UpdateImageInTableAsync(manaCost, "uniqueManaCostImages", "manaCostImage", "uniqueManaCost", imageData);
+                StatusMessageUpdated?.Invoke($"Added image for the mana cost {manaCost} ({index + 1} of {manaCostsWithNullImage.Count})");
+            }).ToList();
+
+            await Task.WhenAll(updateTasks);
+
             stopwatch.Stop();
-            Debug.WriteLine($"GenerateManaCostImagesAsync {stopwatch.ElapsedMilliseconds} ms");
+            Debug.WriteLine($"GenerateManaCostImagesAsync completed in {stopwatch.ElapsedMilliseconds} ms");
         }
         catch (Exception ex)
         {
@@ -331,7 +329,6 @@ public class DownloadAndPrepDB
             MessageBox.Show($"Error during insertion of keyRuneImages: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
-
 
     #region Helper methods
     private static async Task<byte[]> ProcessManaCostInputAsync(string manaCostInput)
@@ -687,173 +684,202 @@ public class DownloadAndPrepDB
         {
             // SQL for creating the cardTokenView
             string createCardTokenViewQuery = @"
-        CREATE VIEW IF NOT EXISTS cardTokenView AS
-        SELECT 
-            c.uuid,
-            c.name,
-            s.name AS setName,
-            c.setCode,
-            NULL AS tokenSetCode,
-            NULL AS faceName
-        FROM 
-            cards c
-        JOIN 
-            sets s ON c.setCode = s.code
-        WHERE 
-            c.side IS NULL OR c.side = 'a'
-        UNION ALL
-        SELECT 
-            t.uuid,
-            t.name,
-            s.name AS setName,
-            s.code AS setCode,
-            s.tokenSetCode,
-            t.faceName
-        FROM 
-            tokens t
-        JOIN 
-            sets s ON t.setCode = s.tokenSetCode
-        WHERE 
-            t.side IS NULL OR t.side = 'a';
-        ";
+                CREATE VIEW IF NOT EXISTS cardTokenView AS
+                SELECT 
+                    c.uuid,
+                    c.name,
+                    s.name AS setName,
+                    c.setCode,
+                    NULL AS tokenSetCode,
+                    NULL AS faceName
+                FROM 
+                    cards c
+                JOIN 
+                    sets s ON c.setCode = s.code
+                WHERE 
+                    c.side IS NULL OR c.side = 'a'
+                UNION ALL
+                SELECT 
+                    t.uuid,
+                    t.name,
+                    s.name AS setName,
+                    s.code AS setCode,
+                    s.tokenSetCode,
+                    t.faceName
+                FROM 
+                    tokens t
+                JOIN 
+                    sets s ON t.setCode = s.tokenSetCode
+                WHERE 
+                    t.side IS NULL OR t.side = 'a';
+                ";
 
             // SQL for creating the allCardsView
             string createAllCardsViewQuery = @"
-        CREATE VIEW IF NOT EXISTS allCardsView AS
-        SELECT 
-            c.name AS Name, 
-            s.name AS SetName, 
-            k.keyruneImage AS KeyRuneImage, 
-            c.manaCost AS ManaCost, 
-            u.manaCostImage AS ManaCostImage, 
-            c.types AS Types, 
-            c.supertypes AS SuperTypes, 
-            c.subtypes AS SubTypes, 
-            c.type AS Type, 
-            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
-            c.text AS RulesText, 
-            c.manaValue AS ManaValue, 
-            c.language AS Language,
-            c.uuid AS Uuid, 
-            c.finishes AS Finishes, 
-            c.side AS Side 
-                FROM cards c
-                JOIN sets s ON c.setCode = s.code
-                LEFT JOIN keyruneImages k ON c.setCode = k.setCode
-                LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                LEFT JOIN (
-            SELECT 
-                cc.SetCode, 
-                cc.Name, 
-                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-            FROM cards cc
-            GROUP BY cc.SetCode, cc.Name
-        ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
-        WHERE c.side IS NULL OR c.side = 'a'
+                CREATE VIEW IF NOT EXISTS allCardsView AS
+                SELECT * FROM (
+                    SELECT 
+                        c.name AS Name, 
+                        s.name AS SetName, 
+                        s.releaseDate AS ReleaseDate,
+                        k.keyruneImage AS KeyRuneImage, 
+                        c.manaCost AS ManaCost, 
+                        u.manaCostImage AS ManaCostImage, 
+                        c.types AS Types, 
+                        c.colors AS Colors,
+                        c.supertypes AS SuperTypes, 
+                        c.subtypes AS SubTypes, 
+                        c.type AS Type, 
+                        COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+                        c.text AS RulesText, 
+                        c.manaValue AS ManaValue, 
+                        c.language AS Language,
+                        c.uuid AS Uuid, 
+                        c.finishes AS Finishes, 
+                        c.side AS Side 
+                    FROM cards c
+                    JOIN sets s ON c.setCode = s.code
+                    LEFT JOIN keyruneImages k ON c.setCode = k.setCode
+                    LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                    LEFT JOIN (
+                        SELECT 
+                            cc.SetCode, 
+                            cc.Name, 
+                            GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                        FROM cards cc
+                        GROUP BY cc.SetCode, cc.Name
+                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+                    WHERE c.side IS NULL OR c.side = 'a'
 
-        UNION ALL
+                    UNION ALL
 
-        SELECT 
-            t.name AS Name, 
-            s.name AS SetName, 
-            k.keyruneImage AS KeyRuneImage, 
-            t.manaCost AS ManaCost, 
-            u.manaCostImage AS ManaCostImage, 
-            t.types AS Types, 
-            t.supertypes AS SuperTypes, 
-            t.subtypes AS SubTypes, 
-            t.type AS Type, 
-            t.keywords AS Keywords, 
-            t.text AS RulesText, 
-            NULL AS ManaValue,  -- 'manaValue' does not exist in 'tokens'
-            t.language AS Language,
-            t.uuid AS Uuid, 
-            t.finishes AS Finishes, 
-            t.side AS Side 
-        FROM tokens t 
-        JOIN sets s ON t.setCode = s.tokenSetCode 
-            LEFT JOIN keyruneImages k ON (SELECT code FROM sets WHERE tokenSetCode = t.setCode) = k.setCode
-            LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-        WHERE t.side IS NULL OR t.side = 'a';
-        ";
+                    SELECT 
+                        t.name AS Name, 
+                        s.name AS SetName, 
+                        s.releaseDate AS ReleaseDate,
+                        k.keyruneImage AS KeyRuneImage, 
+                        t.manaCost AS ManaCost, 
+                        u.manaCostImage AS ManaCostImage, 
+                        t.types AS Types, 
+                        t.colors AS Colors,
+                        t.supertypes AS SuperTypes, 
+                        t.subtypes AS SubTypes, 
+                        t.type AS Type, 
+                        t.keywords AS Keywords, 
+                        t.text AS RulesText, 
+                        NULL AS ManaValue, 
+                        t.language AS Language,
+                        t.uuid AS Uuid, 
+                        t.finishes AS Finishes, 
+                        t.side AS Side 
+                    FROM tokens t 
+                    JOIN sets s ON t.setCode = s.tokenSetCode 
+                    LEFT JOIN keyruneImages k ON t.setCode = k.setCode
+                    LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+                    WHERE t.side IS NULL OR t.side = 'a'
+                ) ORDER BY ReleaseDate DESC, SetName, Types,
+                    CASE Colors
+                        WHEN 'W' THEN 1
+                        WHEN 'U' THEN 2
+                        WHEN 'B' THEN 3
+                        WHEN 'R' THEN 4
+                        WHEN 'G' THEN 5
+                        WHEN 'U' THEN 6
+                        ELSE 7
+                    END;
+                ";
 
             // SQL for creating the myCollectionView
             string createMyCollectionViewQuery = @"
-        CREATE VIEW IF NOT EXISTS myCollectionView AS
-        SELECT                        
-            c.name AS Name,
-            s.name AS SetName,
-            k.keyruneImage AS KeyRuneImage,
-            c.manaCost AS ManaCost,
-            u.manaCostImage AS ManaCostImage,
-            c.types AS Types,
-            c.supertypes AS SuperTypes,
-            c.subtypes AS SubTypes,
-            c.type AS Type,
-            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
-            c.text AS RulesText,
-            c.manaValue AS ManaValue,
-            c.uuid AS Uuid,
-            m.id AS CardId,
-            m.count AS CardsOwned,
-            m.trade AS CardsForTrade,
-            m.condition AS Condition,
-            m.language AS Language,
-            m.finish AS Finishes,
-            c.side AS Side
-                FROM
-                    myCollection m
-                JOIN
-                    cards c ON m.uuid = c.uuid
-                LEFT JOIN 
-                    sets s ON c.setCode = s.code
-                LEFT JOIN 
-                    keyruneImages k ON c.setCode = k.setCode
-                LEFT JOIN 
-                    uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                LEFT JOIN (
-            SELECT 
-                cc.SetCode, 
-                cc.Name, 
-                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-            FROM cards cc
-            GROUP BY cc.SetCode, cc.Name
-        ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
-        WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
-        UNION ALL
-        SELECT
-            t.name AS Name,
-            s.name AS SetName,
-            k.keyruneImage AS KeyRuneImage,
-            t.manaCost AS ManaCost,
-            u.manaCostImage AS ManaCostImage,
-            t.types AS Types,
-            t.supertypes AS SuperTypes,
-            t.subtypes AS SubTypes,
-            t.type AS Type,
-            t.keywords AS Keywords,
-            t.text AS RulesText,
-            NULL AS ManaValue,  -- Tokens do not have manaValue
-            t.uuid AS Uuid,
-            m.id AS CardId,
-            m.count AS CardsOwned,
-            m.trade AS CardsForTrade,
-            m.condition AS Condition,
-            m.language AS Language,
-            m.finish AS Finishes,
-            t.side AS Side
-                FROM
-                    myCollection m
-                JOIN
-                    tokens t ON m.uuid = t.uuid
-                LEFT JOIN 
-                    sets s ON t.setCode = s.code
-                LEFT JOIN 
-                    keyruneImages k ON t.setCode = k.setCode
-                LEFT JOIN 
-                    uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-            WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid);
-        ";
+               CREATE VIEW IF NOT EXISTS myCollectionView AS
+                SELECT * FROM (
+                    SELECT                        
+                        c.name AS Name,
+                        s.name AS SetName,
+                        s.releaseDate AS ReleaseDate,
+                        k.keyruneImage AS KeyRuneImage,
+                        c.manaCost AS ManaCost,
+                        u.manaCostImage AS ManaCostImage,
+                        c.types AS Types,
+                        c.colors AS Colors,
+                        c.supertypes AS SuperTypes,
+                        c.subtypes AS SubTypes,
+                        c.type AS Type,
+                        COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+                        c.text AS RulesText,
+                        c.manaValue AS ManaValue,
+                        c.uuid AS Uuid,
+                        m.id AS CardId,
+                        m.count AS CardsOwned,
+                        m.trade AS CardsForTrade,
+                        m.condition AS Condition,
+                        c.language AS Language,
+                        c.finishes AS Finishes,
+                        c.side AS Side
+                    FROM
+                        myCollection m
+                    JOIN
+                        cards c ON m.uuid = c.uuid
+                    LEFT JOIN 
+                        sets s ON c.setCode = s.code
+                    LEFT JOIN 
+                        keyruneImages k ON c.setCode = k.setCode
+                    LEFT JOIN 
+                        uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                    LEFT JOIN (
+                        SELECT 
+                            cc.SetCode, 
+                            cc.Name, 
+                            GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                        FROM cards cc
+                        GROUP BY cc.SetCode, cc.Name
+                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+                    WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
+                    UNION ALL
+                    SELECT
+                        t.name AS Name,
+                        s.name AS SetName,
+                        s.releaseDate AS ReleaseDate,
+                        k.keyruneImage AS KeyRuneImage,
+                        t.manaCost AS ManaCost,
+                        u.manaCostImage AS ManaCostImage,
+                        t.types AS Types,
+                        t.colors AS Colors,
+                        t.supertypes AS SuperTypes,
+                        t.subtypes AS SubTypes,
+                        t.type AS Type,
+                        t.keywords AS Keywords,
+                        t.text AS RulesText,
+                        NULL AS ManaValue,  -- Tokens do not have manaValue
+                        t.uuid AS Uuid,
+                        m.id AS CardId,
+                        m.count AS CardsOwned,
+                        m.trade AS CardsForTrade,
+                        m.condition AS Condition,
+                        m.language AS Language,
+                        m.finish AS Finishes,
+                        t.side AS Side
+                    FROM
+                        myCollection m
+                    JOIN
+                        tokens t ON m.uuid = t.uuid
+                    LEFT JOIN 
+                        sets s ON t.setCode = s.tokenSetCode
+                    LEFT JOIN 
+                        keyruneImages k ON t.setCode = k.setCode
+                    LEFT JOIN 
+                        uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+                    WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
+                ) ORDER BY ReleaseDate DESC, SetName, Types,
+                    CASE Colors
+                        WHEN 'W' THEN 1
+                        WHEN 'U' THEN 2
+                        WHEN 'B' THEN 3
+                        WHEN 'R' THEN 4
+                        WHEN 'G' THEN 5
+                        ELSE 6
+                    END;
+                ";
 
             // Execute creation of cardTokenView
             using (var command = new SQLiteCommand(createCardTokenViewQuery, DBAccess.connection))
