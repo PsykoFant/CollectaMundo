@@ -125,13 +125,10 @@ namespace CollectaMundo
         }
 
         /* To do
-         * Sorter kort
          * Refaktorer installer oprettelse
          */
 
         #region Load data and populate UI elements
-        private HashSet<int> processedRows = new HashSet<int>();
-
         public async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
         {
             Debug.WriteLine("Loading data asynchronously...");
@@ -144,7 +141,6 @@ namespace CollectaMundo
                 Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
 
                 cardList.Clear();
-                processedRows.Clear();
 
                 List<CardSet> tempCardList = new List<CardSet>();
                 using var command = new SQLiteCommand(query, DBAccess.connection);

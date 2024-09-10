@@ -40,6 +40,9 @@
         <Grid x:Name="GridContentSection" Margin="0,40,0,0" >
             <Grid x:Name="GridSideMenu" Width="300" HorizontalAlignment="Left">                
                 <Grid x:Name="GridFiltering">
+
+                    <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="87" Style="{StaticResource BelerenBold}" Click="ClearFiltersButton_Click"/>
+
                     <!--Card name and set comboboxes-->
                     <Label x:Name="CardNameLabel" Content="Card Name" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
                     <ComboBox x:Name="FilterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,63,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
@@ -316,7 +319,6 @@
                     <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="95,711,0,0" VerticalAlignment="Top" Width="92" Height="20"/>
 
                     <!--Misc filtering-->
-                    <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="87" Click="ClearFiltersButton_Click"/>
                     <CheckBox x:Name="ShowFoilCheckBox" Content="Show foil cards" HorizontalAlignment="Left" Margin="10,739,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled" Height="16" Width="104"  Style="{StaticResource BelerenBold}"/>
 
                     <!--filter selections text blocks-->
