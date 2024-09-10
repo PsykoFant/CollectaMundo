@@ -4,11 +4,9 @@ using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using static CollectaMundo.BackupRestore;
 using static CollectaMundo.CardSet;
 
@@ -116,6 +114,8 @@ namespace CollectaMundo
             ResetGrids();
             GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Visible;
+
+            await DownloadAndPrepDB.GenerateSetKeyruneFromSvgAsync();
 
             await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
@@ -702,9 +702,11 @@ namespace CollectaMundo
             Debug.WriteLine("Loading data asynchronously...");
             try
             {
-                await ShowStatusWindowAsync(true);
-                CurrentInstance.StatusLabel.Content = "Loading ALL the cards ...";
+                await ShowStatusWindowAsync(true);  // Show loading message                
+                CurrentInstance.StatusLabel.Content = "Loading ALL the cards ... ";
                 CurrentInstance.progressBar.Visibility = Visibility.Collapsed;
+                // Force the UI to update
+                Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
 
                 cardList.Clear();
                 processedRows.Clear();
@@ -752,6 +754,7 @@ namespace CollectaMundo
                 card.Name = reader["Name"]?.ToString() ?? string.Empty;
                 card.SetName = reader["SetName"]?.ToString() ?? string.Empty;
                 card.Types = reader["Types"]?.ToString() ?? string.Empty;
+                card.ManaCost = ProcessManaCost(reader["ManaCost"]?.ToString() ?? string.Empty);
                 card.SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty;
                 card.SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty;
                 card.Type = reader["Type"]?.ToString() ?? string.Empty;
@@ -788,40 +791,6 @@ namespace CollectaMundo
         private static string ProcessManaCost(string manaCostRaw)
         {
             return string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
-        }
-        private static BitmapImage? ConvertImage(byte[]? imageData)
-        {
-            if (imageData != null)
-            {
-                return ConvertByteArrayToBitmapImage(imageData);
-            }
-            return null;
-        }
-        // Convert byte array (for set icon) into an image to display in the datagrid
-        private static BitmapImage? ConvertByteArrayToBitmapImage(byte[] imageData)
-        {
-            try
-            {
-                if (imageData != null && imageData.Length > 0)
-                {
-                    using (MemoryStream stream = new MemoryStream(imageData))
-                    {
-                        BitmapImage bitmapImage = new BitmapImage();
-                        bitmapImage.BeginInit();
-                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmapImage.StreamSource = stream;
-                        bitmapImage.EndInit();
-                        return bitmapImage;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error converting byte array to BitmapImage: {ex.Message}");
-                MessageBox.Show($"Error converting byte array to BitmapImage: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
-            return null;
         }
         private Task FillComboBoxesAsync()
         {

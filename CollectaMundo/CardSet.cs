@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -61,13 +62,23 @@ namespace CollectaMundo
         public string? Type { get; set; }
         public string? Types { get; set; }
         public string? Uuid { get; set; }
-        public ImageSource? SetIcon { get; set; }
-        //public ImageSource? ManaCostImage { get; set; }
 
-
+        private ImageSource? _setIcon;
+        public ImageSource? SetIcon
+        {
+            get
+            {
+                if (_setIcon == null && SetIconBytes != null)
+                {
+                    _setIcon = ConvertImage(SetIconBytes);
+                }
+                return _setIcon;
+            }
+            set => _setIcon = value;
+        }
         public byte[]? SetIconBytes { get; set; }
-        //public byte[]? ManaCostImageBytes { get; set; }
         public string? ManaCostRaw { get; set; }
+
         private ImageSource? _manaCostImage;
         public ImageSource? ManaCostImage
         {
@@ -86,16 +97,27 @@ namespace CollectaMundo
 
         private ImageSource ConvertImage(byte[] imageData)
         {
-            using (var ms = new MemoryStream(imageData))
+            try
             {
-                var image = new BitmapImage();
-                image.BeginInit();
-                image.CacheOption = BitmapCacheOption.OnLoad;
-                image.StreamSource = ms;
-                image.EndInit();
-                return image;
+                using (MemoryStream ms = new MemoryStream(imageData))
+                {
+                    BitmapImage image = new BitmapImage();
+                    ms.Position = 0; // Reset stream position to the beginning
+                    image.BeginInit();
+                    image.CacheOption = BitmapCacheOption.OnLoad;
+                    image.StreamSource = ms;
+                    image.EndInit();
+                    image.Freeze(); // Make the image usable across threads
+                    return image;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to convert image: {ex.Message}");
+                return null;
             }
         }
+
         public class CardItem : CardSet, INotifyPropertyChanged
         {
             public int? CardId { get; set; }
