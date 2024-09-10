@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="*" Name="CollectaMundo" Language="1033" Version="1.0.0.0" Manufacturer="Claus Petersen" UpgradeCode="5d36057a-367f-435b-802b-dd729c8b2627">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perUser" />
+
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+		<MediaTemplate />
+
+		<Feature Id="ProductFeature" Title="Installer" Level="1">
+			<ComponentGroupRef Id="ProductComponents" />
+		</Feature>
+	</Product>
+
+	<Fragment>
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="LocalAppDataFolder">
+				<Directory Id="INSTALLFOLDER" Name="CollectaMundo" />
+			</Directory>
+		</Directory>
+	</Fragment>
+
+	<Fragment>
+		<DirectoryRef Id="INSTALLFOLDER">
+			<ComponentGroup Id="ProductComponents">
+				<Component Id="CollectaMundoApp" Guid="PUT-YOUR-GUID-HERE">
+					<File Id="CollectaMundoExe" Source="c:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\CollectaMundo.exe" KeyPath="yes" Checksum="yes"/>
+					<!-- Add other related files here if necessary -->
+				</Component>
+			</ComponentGroup>
+		</DirectoryRef>
+	</Fragment>
+</Wix>
