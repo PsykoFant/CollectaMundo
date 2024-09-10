@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel;
+using System.IO;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace CollectaMundo
 {
@@ -60,13 +62,40 @@ namespace CollectaMundo
         public string? Types { get; set; }
         public string? Uuid { get; set; }
         public ImageSource? SetIcon { get; set; }
-        public ImageSource? ManaCostImage { get; set; }
+        //public ImageSource? ManaCostImage { get; set; }
 
 
         public byte[]? SetIconBytes { get; set; }
-        public byte[]? ManaCostImageBytes { get; set; }
+        //public byte[]? ManaCostImageBytes { get; set; }
         public string? ManaCostRaw { get; set; }
+        private ImageSource? _manaCostImage;
+        public ImageSource? ManaCostImage
+        {
+            get
+            {
+                if (_manaCostImage == null && ManaCostImageBytes != null)
+                {
+                    _manaCostImage = ConvertImage(ManaCostImageBytes);
+                }
+                return _manaCostImage;
+            }
+            set => _manaCostImage = value;
+        }
 
+        public byte[]? ManaCostImageBytes { get; set; }
+
+        private ImageSource ConvertImage(byte[] imageData)
+        {
+            using (var ms = new MemoryStream(imageData))
+            {
+                var image = new BitmapImage();
+                image.BeginInit();
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.StreamSource = ms;
+                image.EndInit();
+                return image;
+            }
+        }
         public class CardItem : CardSet, INotifyPropertyChanged
         {
             public int? CardId { get; set; }

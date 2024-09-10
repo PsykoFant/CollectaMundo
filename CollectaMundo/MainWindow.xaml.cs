@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using static CollectaMundo.BackupRestore;
@@ -703,19 +702,14 @@ namespace CollectaMundo
             Debug.WriteLine("Loading data asynchronously...");
             try
             {
-                await ShowStatusWindowAsync(true);  // Show loading message                
-                CurrentInstance.StatusLabel.Content = "Loading ALL the cards ... ";
+                await ShowStatusWindowAsync(true);
+                CurrentInstance.StatusLabel.Content = "Loading ALL the cards ...";
                 CurrentInstance.progressBar.Visibility = Visibility.Collapsed;
 
-                // Force the UI to update
-                Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
-
                 cardList.Clear();
-                processedRows.Clear();  // Clear previously processed rows
+                processedRows.Clear();
 
                 List<CardSet> tempCardList = new List<CardSet>();
-
-                // Process all database rows sequentially
                 using var command = new SQLiteCommand(query, DBAccess.connection);
                 using var reader = await command.ExecuteReaderAsync();
 
@@ -724,7 +718,7 @@ namespace CollectaMundo
                     try
                     {
                         var card = CreateCardFromReader(reader, isCardItem);
-                        tempCardList.Add(card); // Collect all cards first
+                        tempCardList.Add(card);
                     }
                     catch (Exception ex)
                     {
@@ -733,27 +727,8 @@ namespace CollectaMundo
                     }
                 }
 
-                // Assign card data to the DataGrid without images
                 cardList.AddRange(tempCardList);
                 dataGrid.ItemsSource = cardList;
-
-                dataGrid.ItemsSource = cardList;
-                ICollectionView collectionView = CollectionViewSource.GetDefaultView(cardList);
-                //collectionView.Refresh();
-
-                void OnLayoutUpdated(object sender, EventArgs e)
-                {
-                    dataGrid.LayoutUpdated -= OnLayoutUpdated;  // Detach the event to avoid reprocessing
-                    Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        // Call the method to load ManaCostImage for the specific row
-                        RenderImagesForVisibleRows(dataGrid);
-                    }), System.Windows.Threading.DispatcherPriority.Background);
-
-                }
-
-                dataGrid.LayoutUpdated += OnLayoutUpdated;
-
             }
             catch (Exception ex)
             {
@@ -765,92 +740,8 @@ namespace CollectaMundo
                 CurrentInstance.StatusLabel.Content = string.Empty;
                 await ShowStatusWindowAsync(false);
                 CurrentInstance.progressBar.Visibility = Visibility.Visible;
-
             }
         }
-
-        private void RenderImagesForVisibleRows(DataGrid dataGrid)
-        {
-            var visibleIndices = GetVisibleRowIndices(dataGrid);
-            foreach (var index in visibleIndices)
-            {
-                var cardSet = dataGrid.Items[index] as CardSet;
-                if (cardSet != null && cardSet.ManaCostImage == null)
-                {
-                    cardSet.ManaCostImage = ConvertImage(cardSet.ManaCostImageBytes);
-                }
-            }
-
-
-            dataGrid.Items.Refresh(); // Refresh items only once after updating visible rows
-        }
-
-        private List<int> GetVisibleRowIndices(DataGrid dataGrid)
-        {
-            var visibleIndices = new List<int>();
-            var scrollViewer = GetScrollViewer(dataGrid);
-            double topBound = scrollViewer.VerticalOffset;
-            double bottomBound = topBound + scrollViewer.ViewportHeight;
-            double accumulatedHeight = 0.0;
-            var itemHeight = CalculateEstimatedRowHeight(dataGrid);
-
-            for (int i = 0; i < dataGrid.Items.Count; i++)
-            {
-                if (accumulatedHeight >= topBound && accumulatedHeight <= bottomBound)
-                {
-                    visibleIndices.Add(i);
-                }
-                accumulatedHeight += itemHeight;
-                if (accumulatedHeight > bottomBound)
-                    break;
-            }
-            return visibleIndices;
-        }
-
-        private double CalculateEstimatedRowHeight(DataGrid dataGrid)
-        {
-            // Assuming uniform row height for the estimation
-            if (dataGrid.Items.Count > 0)
-            {
-                var firstRowContainer = dataGrid.ItemContainerGenerator.ContainerFromIndex(0) as DataGridRow;
-                if (firstRowContainer != null)
-                {
-                    return firstRowContainer.ActualHeight;
-                }
-                // Provide a fallback if the first row isn't generated yet
-                return 10; // Default row height or estimated average
-            }
-            return 0;
-        }
-
-        private static ScrollViewer GetScrollViewer(UIElement element)
-        {
-            if (element == null) return null;
-            ScrollViewer scrollviewer = null;
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
-            {
-                var child = VisualTreeHelper.GetChild(element, i);
-                if (child is ScrollViewer)
-                {
-                    scrollviewer = (ScrollViewer)child;
-                    break;
-                }
-                else
-                {
-                    scrollviewer = GetScrollViewer(child as UIElement);
-                    if (scrollviewer != null) break;
-                }
-            }
-            return scrollviewer;
-        }
-        private void DataGrid_ScrollChanged(object sender, ScrollChangedEventArgs e)
-        {
-            if (e.VerticalChange != 0)
-            {
-                RenderImagesForVisibleRows(sender as DataGrid);
-            }
-        }
-
         private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
         {
             try
@@ -894,7 +785,6 @@ namespace CollectaMundo
                 throw;
             }
         }
-
         private static string ProcessManaCost(string manaCostRaw)
         {
             return string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
