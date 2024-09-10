@@ -171,6 +171,9 @@ public class DownloadAndPrepDB
         StatusMessageUpdated?.Invoke("Generating mana symbol images");
         try
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
             List<string> uniqueSymbols = new();
 
@@ -207,16 +210,13 @@ public class DownloadAndPrepDB
             foreach (string missingImage in symbolsWithNullImage)
             {
                 counter++;
-                // Convert SVG to PNG using the ConvertSvgToPng function
                 byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
-                //byte[] pngData = await ConvertSvgToPngAsync($"https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
 
                 if (pngData.Length != 0)
                 {
                     // Update the 'uniqueManaSymbols' table with the PNG data
                     await UpdateImageInTableAsync(missingImage, "uniqueManaSymbols", "manaSymbolImage", "uniqueManaSymbol", pngData);
                     StatusMessageUpdated?.Invoke($"Added image generated from https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg ({counter} out of {symbolsWithNullImage.Count.ToString()})");
-                    Debug.WriteLine($"Added image generated from https://svgs.scryfall.io/card-symbols/{missingImage.Replace("/", "")}.svg");
                 }
                 else
                 {
@@ -224,6 +224,10 @@ public class DownloadAndPrepDB
                     Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {missingImage}");
                 }
             }
+
+            stopwatch.Stop();
+            Debug.WriteLine($"GenerateManaSymbolsFromSvgAsync {stopwatch.ElapsedMilliseconds} ms");
+
         }
         catch (Exception ex)
         {
@@ -235,6 +239,9 @@ public class DownloadAndPrepDB
     {
         try
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
 
             // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
@@ -253,8 +260,9 @@ public class DownloadAndPrepDB
                 counter++;
                 await UpdateImageInTableAsync(missingImage, "uniqueManaCostImages", "manaCostImage", "uniqueManaCost", await ProcessManaCostInputAsync(missingImage));
                 StatusMessageUpdated?.Invoke($"Added image for the mana cost {missingImage} ({counter.ToString()} of {manaCostsWithNullImage.Count().ToString()}");
-                Debug.WriteLine($"Added image for the mana cost {missingImage} ({counter.ToString()} of {manaCostsWithNullImage.Count().ToString()})");
             }
+            stopwatch.Stop();
+            Debug.WriteLine($"GenerateManaCostImagesAsync {stopwatch.ElapsedMilliseconds} ms");
         }
         catch (Exception ex)
         {
@@ -266,93 +274,64 @@ public class DownloadAndPrepDB
     {
         try
         {
-            // Insert setCode into the 'keyRuneImages' table if it's not already there
-            StatusMessageUpdated?.Invoke($"Copying set image references");
-            await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "code");
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
 
+            StatusMessageUpdated?.Invoke("Copying set image references");
+            await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "code");
             List<string> setCodesWithNoImage = await GetValuesWithNullAsync("keyruneImages", "setCode", "keyruneImage");
 
-            // Initialize an array of List<string> with two elements
-            List<string>[] setCodesToGenerateImagesFrom = new List<string>[2];
-
-
-            // Assign the first position with the list from the database
-            setCodesToGenerateImagesFrom[0] = setCodesWithNoImage;
-            setCodesToGenerateImagesFrom[1] = new List<string>();
-
             HttpClient client = new HttpClient();
-            string url = $"https://api.scryfall.com/sets/";
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Your User-Agent Here");
+            client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
 
-            try
+            string url = "https://api.scryfall.com/sets/";
+            HttpResponseMessage response = await client.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
             {
-                StatusMessageUpdated?.Invoke($"Downloading reference for new set icons");
-                // Asynchronously make a request to get all sets
-                HttpResponseMessage response = await client.GetAsync(url); // Use async/await instead of .Result
-                if (response.IsSuccessStatusCode)
-                {
-                    string jsonResponse = await response.Content.ReadAsStringAsync(); // Use async/await instead of .Result
-                    JObject allSets = JObject.Parse(jsonResponse);
-                    JArray? data = allSets["data"] as JArray;
-
-                    if (data != null)
-                    {
-                        foreach (string setCode in setCodesWithNoImage)
-                        {
-                            var matchingSet = data.FirstOrDefault(x => x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
-
-                            if (matchingSet != null)
-                            {
-                                // Found a matching set, extract the SVG URI
-                                string svgUri = matchingSet["icon_svg_uri"]?.ToString() ?? "https://svgs.scryfall.io/sets/default.svg";
-                                setCodesToGenerateImagesFrom[1].Add(svgUri);
-                            }
-                            else
-                            {
-                                // No matching set found, use the default SVG URI
-                                string defaultSvgUri = "https://svgs.scryfall.io/sets/default.svg";
-                                setCodesToGenerateImagesFrom[1].Add(defaultSvgUri);
-                                Debug.WriteLine($"No matching setCode. Added {defaultSvgUri} to array");
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"An error occurred while trying to get set information from Scryfall: {ex.Message}");
-                MessageBox.Show($"An error occurred while trying to get set information from Scryfall: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                string responseContent = await response.Content.ReadAsStringAsync();
+                Debug.WriteLine($"API Error: {responseContent}");
+                return;
             }
 
+            string jsonResponse = await response.Content.ReadAsStringAsync();
+            JObject allSets = JObject.Parse(jsonResponse);
+            JArray? data = allSets["data"] as JArray;
 
-            // Generate the missing set images and insert them into table 'keyruneImages'
-            for (int i = 0; i < setCodesToGenerateImagesFrom[0].Count; i++)
+            var tasks = setCodesWithNoImage.Select(async setCode =>
             {
-                string setCode = setCodesToGenerateImagesFrom[0][i];
-                string svgUri = setCodesToGenerateImagesFrom[1][i];
-
-                // Convert SVG to PNG using the ConvertSvgToPng function
+                var matchingSet = data?.FirstOrDefault(x => x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
+                string svgUri = matchingSet?["icon_svg_uri"]?.ToString() ?? "https://svgs.scryfall.io/sets/default.svg";
                 byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync(svgUri);
+                return new { SetCode = setCode, PngData = pngData };
+            }).ToList();
 
-                if (pngData.Length != 0)
+            // Await all conversion tasks
+            var results = await Task.WhenAll(tasks);
+
+            // Perform batch update to the database
+            foreach (var result in results)
+            {
+                if (result.PngData.Length != 0)
                 {
-                    // Update the 'uniqueManaSymbols' table with the PNG data
-                    await UpdateImageInTableAsync(setCode, "keyruneImages", "keyruneImage", "setCode", pngData);
-                    StatusMessageUpdated?.Invoke($"Generated set icon from {svgUri} ({i} of {setCodesToGenerateImagesFrom[0].Count})");
-                    Debug.WriteLine($"Generated set icon image from {svgUri}");
+                    await UpdateImageInTableAsync(result.SetCode, "keyruneImages", "keyruneImage", "setCode", result.PngData);
+                    StatusMessageUpdated?.Invoke($"Generated set icon from {result.SetCode}");
                 }
                 else
                 {
-                    // Handle the case when conversion fails (e.g., log, show error message, etc.)
-                    Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {setCode}");
+                    Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {result.SetCode}");
                 }
             }
+            stopwatch.Stop();
+            Debug.WriteLine($"GenerateSetKeyruneFromSvgAsync {stopwatch.ElapsedMilliseconds} ms");
         }
         catch (Exception ex)
         {
-            // Handle exceptions (e.g., log, show error message, etc.)
             Debug.WriteLine($"Error during insertion of keyRuneImages: {ex.Message}");
+            MessageBox.Show($"Error during insertion of keyRuneImages: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
+
 
     #region Helper methods
     private static async Task<byte[]> ProcessManaCostInputAsync(string manaCostInput)
@@ -471,7 +450,6 @@ public class DownloadAndPrepDB
             {
                 var svgData = await httpClient.GetStringAsync(svgUrl);
                 var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgData));
-                Debug.WriteLine($"Length of svgStream: {svgStream.Length}");
                 var settings = new WpfDrawingSettings
                 {
                     IncludeRuntime = false,
@@ -500,7 +478,6 @@ public class DownloadAndPrepDB
                 using (MemoryStream memoryStream = new MemoryStream())
                 {
                     encoder.Save(memoryStream);
-                    Debug.WriteLine($"Length of stream (Sharpvectors): {memoryStream.Length.ToString()}");
                     return memoryStream.ToArray();
                 }
             }
@@ -592,7 +569,6 @@ public class DownloadAndPrepDB
                     {
                         insertCommand.Parameters.AddWithValue("@value", value);
                         await insertCommand.ExecuteNonQueryAsync();
-                        Debug.WriteLine($"Added {value} to the table");
                     }
                 }
             }

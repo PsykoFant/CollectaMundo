@@ -115,8 +115,6 @@ namespace CollectaMundo
             GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Visible;
 
-            await DownloadAndPrepDB.GenerateSetKeyruneFromSvgAsync();
-
             await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
             await FillComboBoxesAsync();
