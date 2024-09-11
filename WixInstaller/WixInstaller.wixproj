@@ -1,5 +1,10 @@
 ﻿<Project Sdk="WixToolset.Sdk/5.0.1">
   <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.1" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.1" />
+    <PackageReference Include="WixToolset.VisualStudio.wixext" Version="5.0.1" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\CollectaMundo\CollectaMundo.csproj" />
   </ItemGroup>
 </Project>
