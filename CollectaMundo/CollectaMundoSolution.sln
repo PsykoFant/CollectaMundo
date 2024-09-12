@@ -5,6 +5,8 @@ VisualStudioVersion = 17.8.34525.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CollectaMundo", "CollectaMundo.csproj", "{86FB2F77-52DD-4044-83D8-78695CCDF161}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "CollectaMundoInstaller", "..\CollectaMundoInstaller\CollectaMundoInstaller.vdproj", "{57A24CB9-86AF-413F-9186-8DC8DE681477}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Any CPU = All|Any CPU
@@ -57,6 +59,22 @@ Global
 		{86FB2F77-52DD-4044-83D8-78695CCDF161}.Release|x64.Build.0 = Release|Any CPU
 		{86FB2F77-52DD-4044-83D8-78695CCDF161}.Release|x86.ActiveCfg = Release|Any CPU
 		{86FB2F77-52DD-4044-83D8-78695CCDF161}.Release|x86.Build.0 = Release|Any CPU
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.All|Any CPU.ActiveCfg = Debug
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.All|ARM64.ActiveCfg = Debug
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.All|x64.ActiveCfg = Debug
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.All|x86.ActiveCfg = Debug
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.Debug|Any CPU.ActiveCfg = Debug
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.Debug|ARM64.ActiveCfg = Debug
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.Debug|x64.ActiveCfg = Debug
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.Debug|x86.ActiveCfg = Debug
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.DefaultBuild|Any CPU.ActiveCfg = Debug
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.DefaultBuild|ARM64.ActiveCfg = Debug
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.DefaultBuild|x64.ActiveCfg = Debug
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.DefaultBuild|x86.ActiveCfg = Debug
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.Release|Any CPU.ActiveCfg = Release
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.Release|ARM64.ActiveCfg = Release
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.Release|x64.ActiveCfg = Release
+		{57A24CB9-86AF-413F-9186-8DC8DE681477}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
