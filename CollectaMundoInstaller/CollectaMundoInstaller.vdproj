@@ -13,6 +13,12 @@
 "SccProvider" = "8:"
     "Hierarchy"
     {
+        "Entry"
+        {
+        "MsmKey" = "8:_9523F8C9C31D45D48E7136E6C5972B10"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
     }
     "Configurations"
     {
@@ -111,9 +117,9 @@
             }
             "{3C67513D-01DD-4637-8A68-80971EB9504F}:_65BF62F5EFCD4155864D61BF11D3ED86"
             {
-            "DefaultLocation" = "8:[ProgramFiles64Folder][Manufacturer]\\[ProductName]"
+            "DefaultLocation" = "8:[AppData]\\[ProductName]"
             "Name" = "8:#1925"
-            "AlwaysCreate" = "11:FALSE"
+            "AlwaysCreate" = "11:TRUE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Property" = "8:TARGETDIR"
@@ -149,7 +155,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:CollectaMundoInstaller"
         "ProductCode" = "8:{8DF3F423-10A1-480B-8F86-0BF492ED8470}"
-        "PackageCode" = "8:{7654BB1F-986F-4FAB-9C3E-11064C844655}"
+        "PackageCode" = "8:{605E2849-B133-4535-9DFE-2943A587B29B}"
         "UpgradeCode" = "8:{2CB97345-A9D4-4D06-9B82-6049294629FF}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
@@ -269,6 +275,20 @@
         }
         "Shortcut"
         {
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_68259B699F904A0D8BAE838797D116EA"
+            {
+            "Name" = "8:CollectaMundo"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_D17DBDB98D6247999413FD6BD5448E3B"
+            "Folder" = "8:_D17DBDB98D6247999413FD6BD5448E3B"
+            "WorkingFolder" = "8:_D17DBDB98D6247999413FD6BD5448E3B"
+            "Icon" = "8:"
+            "Feature" = "8:"
+            }
         }
         "UserInterface"
         {
@@ -668,6 +688,34 @@
         }
         "ProjectOutput"
         {
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_9523F8C9C31D45D48E7136E6C5972B10"
+            {
+            "SourcePath" = "8:..\\..\\obj\\Release\\net8.0-windows\\CollectaMundo.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_65BF62F5EFCD4155864D61BF11D3ED86"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{86FB2F77-52DD-4044-83D8-78695CCDF161}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
         }
     }
 }
