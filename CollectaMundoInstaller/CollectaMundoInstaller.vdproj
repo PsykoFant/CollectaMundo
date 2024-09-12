@@ -15,7 +15,7 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_9523F8C9C31D45D48E7136E6C5972B10"
+        "MsmKey" = "8:_82C533AD0A77473E9CF0E51735B94CC5"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -44,6 +44,14 @@
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
             "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
+                    }
+                }
             }
         }
         "Release"
@@ -94,6 +102,16 @@
         {
             "LaunchCondition"
             {
+                "{A06ECF26-33A3-4562-8140-9B0E340D4F24}:_EF0D92326ABF4A349FB4996C2440505E"
+                {
+                "Name" = "8:.NET Core"
+                "Message" = "8:[VSDNETCOREMSG]"
+                "AllowLaterVersions" = "11:FALSE"
+                "InstallUrl" = "8:https://dotnet.microsoft.com/download/dotnet-core/[NetCoreVerMajorDotMinor]"
+                "IsNETCore" = "11:TRUE"
+                "Architecture" = "2:0"
+                "Runtime" = "2:0"
+                }
             }
         }
         "File"
@@ -117,9 +135,9 @@
             }
             "{3C67513D-01DD-4637-8A68-80971EB9504F}:_65BF62F5EFCD4155864D61BF11D3ED86"
             {
-            "DefaultLocation" = "8:[AppData]\\[ProductName]"
+            "DefaultLocation" = "8:[AppDataFolder]\\[ProductName]"
             "Name" = "8:#1925"
-            "AlwaysCreate" = "11:TRUE"
+            "AlwaysCreate" = "11:FALSE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Property" = "8:TARGETDIR"
@@ -130,7 +148,7 @@
             "{1525181F-901A-416C-8A58-119130FE478E}:_D17DBDB98D6247999413FD6BD5448E3B"
             {
             "Name" = "8:#1916"
-            "AlwaysCreate" = "11:FALSE"
+            "AlwaysCreate" = "11:TRUE"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Property" = "8:DesktopFolder"
@@ -153,9 +171,9 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:CollectaMundoInstaller"
+        "ProductName" = "8:CollectaMundo"
         "ProductCode" = "8:{8DF3F423-10A1-480B-8F86-0BF492ED8470}"
-        "PackageCode" = "8:{605E2849-B133-4535-9DFE-2943A587B29B}"
+        "PackageCode" = "8:{F71A5260-8899-4E81-B542-4CF86E96795D}"
         "UpgradeCode" = "8:{2CB97345-A9D4-4D06-9B82-6049294629FF}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
@@ -275,17 +293,17 @@
         }
         "Shortcut"
         {
-            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_68259B699F904A0D8BAE838797D116EA"
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_29B5CB6C68254903ACBC380F11B1B5B2"
             {
-            "Name" = "8:CollectaMundo"
+            "Name" = "8:Shortcut to %sPublish Items from CollectaMundo (Active)"
             "Arguments" = "8:"
             "Description" = "8:"
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_D17DBDB98D6247999413FD6BD5448E3B"
+            "Target" = "8:_82C533AD0A77473E9CF0E51735B94CC5"
             "Folder" = "8:_D17DBDB98D6247999413FD6BD5448E3B"
-            "WorkingFolder" = "8:_D17DBDB98D6247999413FD6BD5448E3B"
+            "WorkingFolder" = "8:_65BF62F5EFCD4155864D61BF11D3ED86"
             "Icon" = "8:"
             "Feature" = "8:"
             }
@@ -688,9 +706,9 @@
         }
         "ProjectOutput"
         {
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_9523F8C9C31D45D48E7136E6C5972B10"
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_82C533AD0A77473E9CF0E51735B94CC5"
             {
-            "SourcePath" = "8:..\\..\\obj\\Release\\net8.0-windows\\CollectaMundo.dll"
+            "SourcePath" = "8:..\\CollectaMundo\\obj\\Release\\net8.0-windows\\apphost.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_65BF62F5EFCD4155864D61BF11D3ED86"
@@ -709,7 +727,7 @@
             "IsolateTo" = "8:"
             "ProjectOutputGroupRegister" = "3:1"
             "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
+            "OutputGroupCanonicalName" = "8:PublishItems"
             "OutputProjectGuid" = "8:{86FB2F77-52DD-4044-83D8-78695CCDF161}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
