@@ -92,7 +92,7 @@
         "InstallerBootstrapper" = "3:2"
             "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
             {
-            "Enabled" = "11:TRUE"
+            "Enabled" = "11:FALSE"
             "PromptEnabled" = "11:TRUE"
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
@@ -106,7 +106,7 @@
                     }
                     "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.NetCore.DesktopRuntime.8.0.x64"
                     {
-                    "Name" = "8:.NET Desktop Runtime 8.0.5 (x64)"
+                    "Name" = "8:.NET Desktop Runtime 8.0.8 (x64)"
                     "ProductCode" = "8:Microsoft.NetCore.DesktopRuntime.8.0.x64"
                     }
                 }
@@ -181,7 +181,7 @@
             }
             "{3C67513D-01DD-4637-8A68-80971EB9504F}:_B9A6D5CC56124617B7D52D4B14EEC0FF"
             {
-            "DefaultLocation" = "8:[AppDataFolder]\\CollectaMundo"
+            "DefaultLocation" = "8:[AppDataFolder]\\[ProductName]"
             "Name" = "8:#1925"
             "AlwaysCreate" = "11:FALSE"
             "Condition" = "8:"
@@ -217,9 +217,9 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:CollectaMundoSetup"
+        "ProductName" = "8:CollectaMundo"
         "ProductCode" = "8:{F85B01EF-F970-41A9-89E6-75898133D38C}"
-        "PackageCode" = "8:{17DFB12C-93FC-4DD9-B8E2-D1E31EE57414}"
+        "PackageCode" = "8:{ADB40DF8-04AC-4983-8AD5-9A8CAB2E247D}"
         "UpgradeCode" = "8:{62A235D8-21DC-4286-97D5-46F64D72BF3F}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
