@@ -8,9 +8,10 @@
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-AppId={{61B44382-626B-4444-BBCB-1934CB9F91E6}
+AppId={{02D76BD7-501E-410E-8388-4742A27ECF4C}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
+;AppVerName={#MyAppName} {#MyAppVersion}
 DefaultDirName={userappdata}\{#MyAppName}
 DisableDirPage=yes
 DisableProgramGroupPage=yes

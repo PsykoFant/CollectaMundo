@@ -5,6 +5,11 @@ VisualStudioVersion = 17.8.34525.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CollectaMundo", "CollectaMundo.csproj", "{86FB2F77-52DD-4044-83D8-78695CCDF161}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E0C6969A-4C94-43D8-8B82-208C03C33B55}"
+	ProjectSection(SolutionItems) = preProject
+		..\CollectaMundoInstall.iss = ..\CollectaMundoInstall.iss
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Any CPU = All|Any CPU
