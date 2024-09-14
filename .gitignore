@@ -8,6 +8,7 @@
 **/Debug/
 *.user
 *.msi
+/Output
 
 # Locally generated or machine-specific settings
 *.localsettings.json

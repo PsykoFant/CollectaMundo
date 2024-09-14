@@ -20,6 +20,7 @@ PrivilegesRequired=lowest
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
+OutputBaseFilename=CollectaMundoSetup
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -61,7 +62,7 @@ Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\System.D
 Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\System.Data.SQLite.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\System.Data.SQLite.EF6.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\System.Linq.Dynamic.Core.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\runtimes\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\runtimes\*"; DestDir: "{app}\runtimes"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -70,4 +71,7 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[UninstallDelete]
+Type: filesandordirs; Name: "{userappdata}\{#MyAppName}"
 
