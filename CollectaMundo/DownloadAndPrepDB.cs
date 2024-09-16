@@ -38,7 +38,10 @@ public class DownloadAndPrepDB
 
                 await DBAccess.OpenConnectionAsync();
 
+                StatusMessageUpdated?.Invoke($"Creating tables and indices ...");
                 await CreateCustomTablesAndIndices(databasePath);
+
+                StatusMessageUpdated?.Invoke($"Creating images for mana symbols and set codes ...");
                 await GenerateManaSymbolsFromSvgAsync();
                 // Now run the last two functions in parallel
                 var generateManaCostImagesTask = GenerateManaCostImagesAsync();
@@ -47,6 +50,10 @@ public class DownloadAndPrepDB
 
                 DBAccess.CloseConnection();
                 await MainWindow.ShowStatusWindowAsync(false);
+            }
+            else
+            {
+                MainWindow.CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
             }
         }
         catch (Exception ex)
@@ -188,8 +195,7 @@ public class DownloadAndPrepDB
             });
 
             // Batch insert unique symbols into the database
-            await Task.WhenAll(uniqueSymbols.Select(symbol =>
-                InsertValueInTableAsync(symbol, "uniqueManaSymbols", "uniqueManaSymbol")));
+            await Task.WhenAll(uniqueSymbols.Select(symbol => InsertValueInTableAsync(symbol, "uniqueManaSymbols", "uniqueManaSymbol")));
 
             Debug.WriteLine("Insertion of uniqueManaSymbols completed.");
 
@@ -203,7 +209,6 @@ public class DownloadAndPrepDB
                 return new { Symbol = symbol, PngData = pngData };
             }));
 
-            StatusMessageUpdated?.Invoke($"Generating mana symbol images...");
             foreach (var result in results)
             {
                 if (result.PngData.Length != 0)
@@ -226,9 +231,6 @@ public class DownloadAndPrepDB
     {
         try
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
 
             // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
@@ -250,9 +252,6 @@ public class DownloadAndPrepDB
             }).ToList();
 
             await Task.WhenAll(updateTasks);
-
-            stopwatch.Stop();
-            Debug.WriteLine($"GenerateManaCostImagesAsync completed in {stopwatch.ElapsedMilliseconds} ms");
         }
         catch (Exception ex)
         {
@@ -264,7 +263,6 @@ public class DownloadAndPrepDB
     {
         try
         {
-            StatusMessageUpdated?.Invoke("Copying set image references");
             await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "code");
             List<string> setCodesWithNoImage = await GetValuesWithNullAsync("keyruneImages", "setCode", "keyruneImage");
 
@@ -297,7 +295,6 @@ public class DownloadAndPrepDB
             var results = await Task.WhenAll(tasks);
 
             // Perform batch update to the database
-            StatusMessageUpdated?.Invoke($"Generating set icons...");
             foreach (var result in results)
             {
                 if (result.PngData.Length != 0)
@@ -655,7 +652,6 @@ public class DownloadAndPrepDB
                 using (var command = new SQLiteCommand(item.Value, DBAccess.connection))
                 {
                     await command.ExecuteNonQueryAsync();
-                    Debug.WriteLine($"Created index for {item.Key}.");
                 }
             }
         }

@@ -95,19 +95,19 @@ namespace CollectaMundo
 
         public byte[]? ManaCostImageBytes { get; set; }
 
-        private static ImageSource ConvertImage(byte[] imageData)
+        private static BitmapImage? ConvertImage(byte[] imageData)
         {
             try
             {
                 using (MemoryStream ms = new(imageData))
                 {
                     BitmapImage image = new();
-                    ms.Position = 0; // Reset stream position to the beginning
+                    ms.Position = 0;
                     image.BeginInit();
                     image.CacheOption = BitmapCacheOption.OnLoad;
                     image.StreamSource = ms;
                     image.EndInit();
-                    image.Freeze(); // Make the image usable across threads
+                    image.Freeze();
                     return image;
                 }
             }
@@ -117,6 +117,7 @@ namespace CollectaMundo
                 return null;
             }
         }
+
 
         public class CardItem : CardSet, INotifyPropertyChanged
         {

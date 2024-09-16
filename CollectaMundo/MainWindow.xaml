@@ -37,7 +37,7 @@
 
 
         </Grid>
-        <Grid x:Name="GridContentSection" Margin="0,40,0,0" >
+        <Grid x:Name="GridContentSection" Margin="0,40,0,0" Visibility="Collapsed">
             <Grid x:Name="GridSideMenu" Width="300" HorizontalAlignment="Left">                
                 <Grid x:Name="GridFiltering">
 
