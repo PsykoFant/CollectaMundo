@@ -95,13 +95,13 @@ namespace CollectaMundo
 
         public byte[]? ManaCostImageBytes { get; set; }
 
-        private ImageSource ConvertImage(byte[] imageData)
+        private static ImageSource ConvertImage(byte[] imageData)
         {
             try
             {
-                using (MemoryStream ms = new MemoryStream(imageData))
+                using (MemoryStream ms = new(imageData))
                 {
-                    BitmapImage image = new BitmapImage();
+                    BitmapImage image = new();
                     ms.Position = 0; // Reset stream position to the beginning
                     image.BeginInit();
                     image.CacheOption = BitmapCacheOption.OnLoad;

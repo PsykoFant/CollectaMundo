@@ -30,12 +30,12 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\AddToCollectionManager.cs"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\AddToCollectionManager.cs"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\CollectaMundo.deps.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\CollectaMundo.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\CollectaMundo.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\CollectaMundo.exe.config"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\CollectaMundo.pdb"; DestDir: "{app}"; Flags: ignoreversion
+;Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\CollectaMundo.pdb"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\CollectaMundo.runtimeconfig.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\EntityFramework.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\code\CollectaMundo\CollectaMundo\bin\Release\net8.0-windows\EntityFramework.SqlServer.dll"; DestDir: "{app}"; Flags: ignoreversion

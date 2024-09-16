@@ -9,7 +9,7 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"       
 
         mc:Ignorable="d"
-        Title="MainWindow">
+        Title="CollectaMundo">
 
     <!-- Define resources accessible by all elements in this Window -->
     <Window.Resources>

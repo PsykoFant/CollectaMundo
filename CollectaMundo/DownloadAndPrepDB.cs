@@ -110,7 +110,7 @@ public class DownloadAndPrepDB
         {
             MessageBox.Show($"Error during download of card database: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             Debug.WriteLine($"Error during download of card database: {ex.Message}");
-            StatusMessageUpdated?.Invoke("Download failed.");
+            StatusMessageUpdated?.Invoke("Download failed :-(");
         }
         finally
         {
@@ -132,7 +132,7 @@ public class DownloadAndPrepDB
     {
         try
         {
-            StatusMessageUpdated?.Invoke("Creating custom tables and indices");
+            StatusMessageUpdated?.Invoke("Creating custom tables and indices...");
 
             // Define tables to create
             Dictionary<string, string> tables = new()
@@ -150,7 +150,6 @@ public class DownloadAndPrepDB
                 using (var command = new SQLiteCommand(item.Value, DBAccess.connection))
                 {
                     await command.ExecuteNonQueryAsync();
-                    Debug.WriteLine($"Created table for {item.Key}.");
                 }
             }
 
@@ -171,9 +170,6 @@ public class DownloadAndPrepDB
         StatusMessageUpdated?.Invoke("Generating mana symbol images");
         try
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
             HashSet<string> uniqueSymbols = new();
 
@@ -207,22 +203,18 @@ public class DownloadAndPrepDB
                 return new { Symbol = symbol, PngData = pngData };
             }));
 
+            StatusMessageUpdated?.Invoke($"Generating mana symbol images...");
             foreach (var result in results)
             {
                 if (result.PngData.Length != 0)
                 {
                     await UpdateImageInTableAsync(result.Symbol, "uniqueManaSymbols", "manaSymbolImage", "uniqueManaSymbol", result.PngData);
-                    StatusMessageUpdated?.Invoke($"Added image for {result.Symbol}");
                 }
                 else
                 {
                     Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {result.Symbol}");
                 }
             }
-
-            stopwatch.Stop();
-            Debug.WriteLine($"GenerateManaSymbolsFromSvgAsync completed in {stopwatch.ElapsedMilliseconds} ms");
-
         }
         catch (Exception ex)
         {
@@ -272,9 +264,6 @@ public class DownloadAndPrepDB
     {
         try
         {
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             StatusMessageUpdated?.Invoke("Copying set image references");
             await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "code");
             List<string> setCodesWithNoImage = await GetValuesWithNullAsync("keyruneImages", "setCode", "keyruneImage");
@@ -308,20 +297,18 @@ public class DownloadAndPrepDB
             var results = await Task.WhenAll(tasks);
 
             // Perform batch update to the database
+            StatusMessageUpdated?.Invoke($"Generating set icons...");
             foreach (var result in results)
             {
                 if (result.PngData.Length != 0)
                 {
                     await UpdateImageInTableAsync(result.SetCode, "keyruneImages", "keyruneImage", "setCode", result.PngData);
-                    StatusMessageUpdated?.Invoke($"Generated set icon from {result.SetCode}");
                 }
                 else
                 {
                     Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {result.SetCode}");
                 }
             }
-            stopwatch.Stop();
-            Debug.WriteLine($"GenerateSetKeyruneFromSvgAsync {stopwatch.ElapsedMilliseconds} ms");
         }
         catch (Exception ex)
         {
