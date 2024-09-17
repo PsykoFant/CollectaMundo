@@ -1044,6 +1044,11 @@ namespace CollectaMundo
             GridMyCollection.Visibility = Visibility.Collapsed;
             GridUtilitiesSection.Visibility = Visibility.Collapsed;
 
+            ImagePromoLabel.Content = string.Empty;
+            ImageSetLabel.Content = string.Empty;
+            ImageSourceUrl = null;
+            ImageSourceUrl2nd = null;
+
             LogoSmall.Visibility = Visibility.Collapsed;
             GridFiltering.Visibility = Visibility.Collapsed;
             GridUtilsMenu.Visibility = Visibility.Collapsed;

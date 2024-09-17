@@ -30,6 +30,12 @@
     </Window.Resources>
 
     <Grid Width="1920" Style="{StaticResource MPlantin}" VerticalAlignment="Top" HorizontalAlignment="Center">
+        <Grid.Background>
+            <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                <GradientStop Color="#FFFFF8E7"/>
+                <GradientStop Color="White" Offset="1"/>
+            </LinearGradientBrush>
+        </Grid.Background>
         <Grid x:Name="GridTopMenu" VerticalAlignment="Top" Height="40" Style="{StaticResource BelerenBold}">
             <Button x:Name="MenuSearchAndFilterButton" Content="Search and Filter" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuSearchAndFilter_Click"/>
             <Button x:Name="MenuMyCollectionButton" Content="My Collection" HorizontalAlignment="Left" Margin="174,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuMyCollection_Click"/>
@@ -37,7 +43,7 @@
             <Button x:Name="MenuUtilsButton" Content="Utilities" HorizontalAlignment="Left" Margin="502,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuUtilsButton_Click"/>
         </Grid>
         <Grid x:Name="GridContentSection" Margin="0,40,0,0" Visibility="Collapsed">
-            <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="211" Width="211" RenderTransformOrigin="0.5,0.5" Margin="0,40,0,0" d:IsHidden="True" />
+            <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="211" Width="211" RenderTransformOrigin="0.5,0.5" Margin="0,40,0,0" d:IsHidden="True" Opacity="0.8" />
             <Grid x:Name="GridSideMenu" Width="300" HorizontalAlignment="Left" d:IsHidden="True">
                 <Grid x:Name="GridFiltering">
                     <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="87" Style="{StaticResource BelerenBold}" Click="ClearFiltersButton_Click"/>
