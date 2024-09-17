@@ -63,7 +63,7 @@
 
                     <!--Rulestext filtering-->
                     <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="11,132,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="256" Height="45"/>
-                    <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="11,177,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="filterRulesTextButton_Click" Height="20.4"/>
+                    <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="11,177,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="FilterRulesTextButton_Click" Height="20.4"/>
 
                     <!--Supertype listbox and filtering-->
                     <CheckBox x:Name="SuperTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,237,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>

@@ -34,14 +34,17 @@ public class DownloadAndPrepDB
                 await MainWindow.ShowStatusWindowAsync(true);
 
                 // Call the download method with the progress handler
+
                 await DownloadDatabaseIfNotExistsAsync(databasePath, "Performing first-time setup of card database - please wait...");
 
                 await DBAccess.OpenConnectionAsync();
 
-                StatusMessageUpdated?.Invoke($"Creating tables and indices ...");
-                await CreateCustomTablesAndIndices(databasePath);
+                StatusMessageUpdated?.Invoke($"Getting things ready ...");
+                await Task.Run(async () =>
+                {
+                    await CreateCustomTablesAndIndices(databasePath);
+                });
 
-                StatusMessageUpdated?.Invoke($"Creating images for mana symbols and set codes ...");
                 await GenerateManaSymbolsFromSvgAsync();
                 // Now run the last two functions in parallel
                 var generateManaCostImagesTask = GenerateManaCostImagesAsync();

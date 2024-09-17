@@ -2,7 +2,6 @@
 using ServiceStack;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
@@ -913,26 +912,6 @@ namespace CollectaMundo
                             csvToUuidsMap[key].Add(uuid);
                         }
                     }
-                }
-            }
-        }
-        private static async Task ProcessReaderResults(DbDataReader reader, string setNameOrCode, Dictionary<string, List<string>> csvToUuidsMap)
-        {
-            while (await reader.ReadAsync())
-            {
-                var uuid = reader["uuid"]?.ToString();
-                var cardName = reader["name"]?.ToString();
-                var setNameOrCodeValue = reader[setNameOrCode]?.ToString(); // This will handle either setName or setCode
-
-                var key = $"{cardName}_{setNameOrCodeValue}";
-
-                if (!string.IsNullOrEmpty(uuid) && !string.IsNullOrEmpty(key))
-                {
-                    if (!csvToUuidsMap.ContainsKey(key))
-                    {
-                        csvToUuidsMap[key] = new List<string>();
-                    }
-                    csvToUuidsMap[key].Add(uuid);
                 }
             }
         }

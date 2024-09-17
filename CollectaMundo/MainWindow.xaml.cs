@@ -124,14 +124,11 @@ namespace CollectaMundo
             CardsToEditListView.ItemsSource = addToCollectionManager.CardItemsToEdit;
         }
 
-        /* To do
-         * Refaktorer installer oprettelse
-         */
-
         #region Load data and populate UI elements
         public async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
         {
             Debug.WriteLine("Loading data asynchronously...");
+            Stopwatch sw = Stopwatch.StartNew();
             try
             {
                 await ShowStatusWindowAsync(true);  // Show loading message                
@@ -173,6 +170,8 @@ namespace CollectaMundo
                 CurrentInstance.StatusLabel.Content = string.Empty;
                 await ShowStatusWindowAsync(false);
                 CurrentInstance.progressBar.Visibility = Visibility.Visible;
+                sw.Stop();
+                Debug.WriteLine($"Loaded in {sw.ElapsedMilliseconds} ms");
             }
         }
         private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
@@ -714,7 +713,7 @@ namespace CollectaMundo
 
             return null;
         }
-        private void filterRulesTextButton_Click(object sender, RoutedEventArgs e) // Apply filter for rulestext freetext search
+        private void FilterRulesTextButton_Click(object sender, RoutedEventArgs e) // Apply filter for rulestext freetext search
         {
             ApplyFilterSelection();
         }
@@ -788,7 +787,7 @@ namespace CollectaMundo
                 filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
             }
         }
-        private void ClearListBoxSelections(ListBox listBox)
+        private static void ClearListBoxSelections(ListBox listBox)
         {
             foreach (var item in listBox.Items)
             {
@@ -899,8 +898,6 @@ namespace CollectaMundo
         }
 
         #endregion
-
-
 
         #region UI elements for utilities
         private async void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)

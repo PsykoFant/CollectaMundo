@@ -20,7 +20,7 @@ namespace CollectaMundo
 
                 string cardFilter = MainWindow.CurrentInstance.FilterCardNameComboBox.SelectedItem?.ToString() ?? string.Empty;
                 string setFilter = MainWindow.CurrentInstance.FilterSetNameComboBox.SelectedItem?.ToString() ?? string.Empty;
-                string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text;
+                string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
                 bool useAnd = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
                 bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
                 string compareOperator = MainWindow.CurrentInstance.ManaValueOperatorComboBox.SelectedItem?.ToString() ?? string.Empty;
@@ -82,9 +82,9 @@ namespace CollectaMundo
             }
             return filteredCards;
         }
-        private IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet> cards, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector, bool exclude = false)
+        private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector, bool exclude = false)
         {
-            if (cards == null)
+            if (cards == null || propertySelector == null)
             {
                 return Enumerable.Empty<CardSet>();
             }
@@ -96,7 +96,7 @@ namespace CollectaMundo
 
             return cards.Where(card =>
             {
-                var propertyValue = propertySelector(card);
+                var propertyValue = propertySelector(card) ?? string.Empty;  // Avoid nulls in property values
                 var criteria = propertyValue.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
 
                 bool match = useAnd ? selectedCriteria.All(c => criteria.Contains(c)) : selectedCriteria.Any(c => criteria.Contains(c));
