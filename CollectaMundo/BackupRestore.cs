@@ -1870,6 +1870,8 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.ButtonImportConfirm.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.Inspiredtinkering.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.LogoSmall.Visibility = Visibility.Visible;
         }
 
         // Try to guess which column name maps to CardItemsToAdd field by looking for matching column/field names

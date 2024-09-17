@@ -15,6 +15,9 @@
   <ItemGroup>
     <None Remove="Fonts\Beleren-Bold.ttf" />
     <None Remove="Fonts\mplantin.ttf" />
+    <None Remove="Images\Icon.ico" />
+    <None Remove="Images\inspired-tinkering-183.png" />
+    <None Remove="Images\Logo.png" />
     <None Remove="Images\rush_of_knowledge.jpg" />
     <None Remove="UpgradeLog.htm" />
   </ItemGroup>
@@ -42,6 +45,15 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Fonts\mplantin.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\Icon.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\inspired-tinkering-183.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\Logo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Images\rush_of_knowledge.jpg">

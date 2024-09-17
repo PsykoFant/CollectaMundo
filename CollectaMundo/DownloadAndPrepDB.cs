@@ -251,7 +251,6 @@ public class DownloadAndPrepDB
             {
                 byte[] imageData = await ProcessManaCostInputAsync(manaCost);
                 await UpdateImageInTableAsync(manaCost, "uniqueManaCostImages", "manaCostImage", "uniqueManaCost", imageData);
-                StatusMessageUpdated?.Invoke($"Added image for the mana cost {manaCost} ({index + 1} of {manaCostsWithNullImage.Count})");
             }).ToList();
 
             await Task.WhenAll(updateTasks);

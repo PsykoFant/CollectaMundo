@@ -114,6 +114,7 @@ namespace CollectaMundo
             ResetGrids();
             GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Visible;
+            LogoSmall.Visibility = Visibility.Visible;
 
             await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
@@ -926,6 +927,7 @@ namespace CollectaMundo
         // Import wizard different steps button methods
         private void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
         {
+            Inspiredtinkering.Visibility = Visibility.Collapsed;
             GridImportWizard.Visibility = Visibility.Visible;
             GridImportStartScreen.Visibility = Visibility.Visible;
         }
@@ -1013,6 +1015,7 @@ namespace CollectaMundo
         private void MenuSearchAndFilter_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
+            LogoSmall.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Visible;
             GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
             AddToCollectionManager.AdjustColumnWidths();
@@ -1020,6 +1023,7 @@ namespace CollectaMundo
         private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
+            LogoSmall.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Visible;
             AddToCollectionManager.AdjustColumnWidths();
@@ -1032,6 +1036,7 @@ namespace CollectaMundo
         }
         public void ResetGrids()
         {
+
             EditStatusTextBlock.Text = string.Empty;
             AddStatusTextBlock.Text = string.Empty;
             UtilsInfoLabel.Content = "";
@@ -1039,6 +1044,7 @@ namespace CollectaMundo
             GridMyCollection.Visibility = Visibility.Collapsed;
             GridUtilitiesSection.Visibility = Visibility.Collapsed;
 
+            LogoSmall.Visibility = Visibility.Collapsed;
             GridFiltering.Visibility = Visibility.Collapsed;
             GridUtilsMenu.Visibility = Visibility.Collapsed;
             ApplyFilterSelection();
