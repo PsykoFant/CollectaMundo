@@ -34,7 +34,7 @@
         </LinearGradientBrush>
     </Window.Background>
 
-    <Grid Width="1680" Style="{StaticResource MPlantin}" VerticalAlignment="Top" HorizontalAlignment="Center"> 
+    <Grid Style="{StaticResource MPlantin}" VerticalAlignment="Top">
         <Grid x:Name="GridTopMenu" VerticalAlignment="Top" Height="40" Style="{StaticResource BelerenBold}">
             <Button x:Name="MenuSearchAndFilterButton" Content="Search and Filter" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuSearchAndFilter_Click"/>
             <Button x:Name="MenuMyCollectionButton" Content="My Collection" HorizontalAlignment="Left" Margin="174,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuMyCollection_Click"/>
@@ -43,12 +43,12 @@
         </Grid>
         <Grid x:Name="GridContentSection" Margin="0,40,0,0" Visibility="Visible">
             <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="211" Width="211" RenderTransformOrigin="0.5,0.5" Margin="0,40,0,0" d:IsHidden="True" Opacity="0.8" />
-            <Grid x:Name="GridSideMenu" Width="300" HorizontalAlignment="Left">
+            <Grid x:Name="GridSideMenu" Width="250" HorizontalAlignment="Left">
                 <Grid x:Name="GridFiltering">
                     <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="87" Style="{StaticResource BelerenBold}" Click="ClearFiltersButton_Click"/>
                     <!--Card name and set comboboxes-->
                     <Label x:Name="CardNameLabel" Content="Card Name" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
-                    <ComboBox x:Name="FilterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,63,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
+                    <ComboBox x:Name="FilterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,63,0,0" Width="240" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
                         <ComboBox.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <VirtualizingStackPanel />
@@ -56,7 +56,7 @@
                         </ComboBox.ItemsPanel>
                     </ComboBox>
                     <Label x:Name="SetNameLabel" Content="Set Name" HorizontalAlignment="Left" Margin="10,84,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
-                    <ComboBox x:Name="FilterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,107,0,0" Width="257" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
+                    <ComboBox x:Name="FilterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,107,0,0" Width="240" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
                         <ComboBox.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <VirtualizingStackPanel />
@@ -65,12 +65,12 @@
                     </ComboBox>
 
                     <!--Rulestext filtering-->
-                    <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="11,132,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="256" Height="45"/>
-                    <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="11,177,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="FilterRulesTextButton_Click" Height="20.4"/>
+                    <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="10,132,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="240" Height="45"/>
+                    <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,177,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="FilterRulesTextButton_Click" Height="20.4"/>
 
                     <!--Supertype listbox and filtering-->
                     <CheckBox x:Name="SuperTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,237,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
-                    <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,252,0,0" VerticalAlignment="Top" Width="256" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                    <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,252,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                         <ComboBox.Template>
                             <ControlTemplate TargetType="{x:Type ComboBox}">
                                 <Grid>
@@ -127,7 +127,7 @@
 
                     <!--Card type listbox and filtering-->
                     <CheckBox x:Name="TypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,308,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
-                    <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,323,0,0" VerticalAlignment="Top" Width="256" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                    <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,323,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                         <ComboBox.Template>
                             <ControlTemplate TargetType="{x:Type ComboBox}">
                                 <Grid>
@@ -182,7 +182,7 @@
 
                     <!--Subtype listbox and filtering-->
                     <CheckBox x:Name="SubTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,379,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
-                    <ComboBox x:Name="SubTypesComboBox" HorizontalAlignment="Left" Margin="10,394,0,0" VerticalAlignment="Top" Width="256" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                    <ComboBox x:Name="SubTypesComboBox" HorizontalAlignment="Left" Margin="10,394,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                         <ComboBox.Template>
                             <ControlTemplate TargetType="{x:Type ComboBox}">
                                 <Grid>
@@ -239,7 +239,7 @@
 
                     <!--Keywords listbox and filtering-->
                     <CheckBox x:Name="KeywordsAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,450,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
-                    <ComboBox x:Name="KeywordsComboBox" HorizontalAlignment="Left" Margin="9,465,0,0" VerticalAlignment="Top" Width="256" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                    <ComboBox x:Name="KeywordsComboBox" HorizontalAlignment="Left" Margin="9,465,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                         <ComboBox.Template>
                             <ControlTemplate TargetType="{x:Type ComboBox}">
                                 <Grid>
@@ -293,7 +293,7 @@
                     </ComboBox>
 
                     <!--Color filtering-->
-                    <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Left" Margin="10,520,0,0" VerticalAlignment="Top" Width="256"/>
+                    <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Left" Margin="10,520,0,0" VerticalAlignment="Top" Width="240"/>
                     <ListBox x:Name="FilterColorsListBox" Margin="10,547,0,0" Width="130" HorizontalAlignment="Left" ItemsSource="{Binding}" SelectionMode="Extended" Height="155" VerticalAlignment="Top" BorderBrush="White">
                         <ListBox.Resources>
                             <Style TargetType="{x:Type ListBoxItem}">
@@ -325,11 +325,11 @@
                     <CheckBox x:Name="ShowFoilCheckBox" Content="Show foil cards" HorizontalAlignment="Left" Margin="10,739,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled" Height="16" Width="104"  Style="{StaticResource BelerenBold}"/>
 
                     <!--filter selections text blocks-->
-                    <TextBlock x:Name="CardSuperTypesTextBlock" HorizontalAlignment="Left" Margin="11,272,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
-                    <TextBlock x:Name="CardTypesTextBlock" HorizontalAlignment="Left" Margin="10,343,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
-                    <TextBlock x:Name="CardSubTypesTextBlock" HorizontalAlignment="Left" Margin="10,414,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
-                    <TextBlock x:Name="CardKeyWordsTextBlock" HorizontalAlignment="Left" Margin="10,485,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
-                    <TextBlock x:Name="CardRulesTextTextBlock" HorizontalAlignment="Left" Margin="10,197,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="256" Height="30"/>
+                    <TextBlock x:Name="CardSuperTypesTextBlock" HorizontalAlignment="Left" Margin="11,272,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
+                    <TextBlock x:Name="CardTypesTextBlock" HorizontalAlignment="Left" Margin="10,343,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
+                    <TextBlock x:Name="CardSubTypesTextBlock" HorizontalAlignment="Left" Margin="10,414,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
+                    <TextBlock x:Name="CardKeyWordsTextBlock" HorizontalAlignment="Left" Margin="10,485,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
+                    <TextBlock x:Name="CardRulesTextTextBlock" HorizontalAlignment="Left" Margin="10,197,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
 
                 </Grid>
                 <Grid x:Name="GridUtilsMenu" Visibility="Collapsed">
@@ -340,25 +340,21 @@
                     <Button x:Name="ImportCollectionButton" Content="Import to my collection" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="ImportCollectionButton_Click"/>
                 </Grid>
             </Grid>
-            <Grid x:Name="GridCardImages" HorizontalAlignment="Right" Width="300" d:IsHidden="True">
-                <Label x:Name="ImagePromoLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="290"/>
-                <Label x:Name="ImageSetLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="290" Margin="0,35,0,0"/>
+            <Grid x:Name="GridCardImages" HorizontalAlignment="Right" Width="250" d:IsHidden="True">
+                <Label x:Name="ImagePromoLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="250"/>
+                <Label x:Name="ImageSetLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="250" Margin="0,35,0,0"/>
                 <Image x:Name="CardImage" 
                    Source="{Binding ImageSourceUrl, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}"
-                   HorizontalAlignment="Left"
+                   HorizontalAlignment="Center"
                    VerticalAlignment="Top"
-                   Width="268"
-                   Height="374"
-                   Margin="0,80,0,0"/>
+                   Margin="0,80,10,0"/>
 
                 <Image x:Name="CardImageSecondary"
                    Source="{Binding ImageSourceUrl2nd, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}"
-                   HorizontalAlignment="Left"
-                   VerticalAlignment="Top"
-                   Width="268"
-                   Height="375" Margin="0,461,0,0"/>
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Top" Margin="0,461,10,0"/>
             </Grid>
-            <Grid x:Name="GridSearchAndFilterAllCards" HorizontalAlignment="Center" Width="1080">
+            <Grid x:Name="GridSearchAndFilterAllCards" Width="1000" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
                 <!--The main card view datagrid-->
@@ -370,8 +366,7 @@
                           EnableColumnVirtualization="True"
                           VirtualizingPanel.IsVirtualizing="True"
                           CanUserAddRows="False"
-                          HorizontalAlignment="Center" 
-                          Width="1080">
+                          HorizontalAlignment="Stretch">
                     <DataGrid.CellStyle>
                         <Style/>
                     </DataGrid.CellStyle>
@@ -405,7 +400,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
                 <!--Cards to add listview-->
-                <ListView x:Name="CardsToAddListView" Margin="0,40,0,0" VerticalAlignment="Top" Height="211" HorizontalAlignment="Center" Width="1080" Visibility="Collapsed">
+                <ListView x:Name="CardsToAddListView" Margin="0,40,0,0" VerticalAlignment="Top" Height="211" Visibility="Collapsed">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -497,16 +492,23 @@
                         </GridView>
                     </ListView.View>
                 </ListView>
-                <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Left" Margin="1111,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonAddCardsToMyCollection_Click" Visibility="Collapsed"/>
-                <TextBlock x:Name="AddStatusTextBlock" HorizontalAlignment="Center" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Width="1080" Visibility="Collapsed"/>
+                <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Right" Margin="0,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonAddCardsToMyCollection_Click" Visibility="Collapsed"/>
+                <TextBlock x:Name="AddStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Visibility="Collapsed"/>
+                <Button x:Name="ButtonEditCardsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonEditCardsInMyCollection_Click" Visibility="Collapsed"/>
             </Grid>
-            <Grid x:Name="GridMyCollection" HorizontalAlignment="Center" VerticalAlignment="Top" Width="1080" d:IsHidden="True">
+            <Grid x:Name="GridMyCollection" VerticalAlignment="Top" Width="1000" d:IsHidden="True">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
+                <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
                 <!--The my collection datagrid-->
-                <DataGrid x:Name="MyCollectionDatagrid" Margin="0,260,0,0" AutoGenerateColumns="False" SelectionChanged="CardImageSelectionChangedHandler" ScrollViewer.CanContentScroll="True" EnableColumnVirtualization="True" 
+                <DataGrid x:Name="MyCollectionDatagrid" 
+                          Margin="0,260,0,0" 
+                          AutoGenerateColumns="False" 
+                          SelectionChanged="CardImageSelectionChangedHandler" 
+                          ScrollViewer.CanContentScroll="True" 
+                          EnableColumnVirtualization="True" 
                           VirtualizingPanel.IsVirtualizing="True"
-                          CanUserAddRows="False" HorizontalAlignment="Center" Width="1080">
+                          CanUserAddRows="False" 
+                          HorizontalAlignment="Stretch">
                     <DataGrid.CellStyle>
                         <Style/>
                     </DataGrid.CellStyle>
@@ -544,7 +546,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
                 <!--Cards to edit-->
-                <ListView x:Name="CardsToEditListView" Margin="0,40,0,0" VerticalAlignment="Top" Height="211" HorizontalAlignment="Center" Width="1080" Visibility="Collapsed">
+                <ListView x:Name="CardsToEditListView" Margin="0,40,0,0" VerticalAlignment="Top" Height="211" Visibility="Collapsed">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -636,8 +638,7 @@
                         </GridView>
                     </ListView.View>
                 </ListView>
-                <Button x:Name="ButtonEditCardsInMyCollection" Content="Update selected cards" HorizontalAlignment="Left" Margin="1111,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonEditCardsInMyCollection_Click" Visibility="Collapsed"/>
-                <TextBlock x:Name="EditStatusTextBlock" HorizontalAlignment="Center" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Width="1300" Visibility="Collapsed"/>
+                <TextBlock x:Name="EditStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Visibility="Collapsed"/>
             </Grid>
             <Grid x:Name="GridUtilitiesSection" Width="1080" HorizontalAlignment="Center" VerticalAlignment="Top" d:IsHidden="True">
                 <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600"/>

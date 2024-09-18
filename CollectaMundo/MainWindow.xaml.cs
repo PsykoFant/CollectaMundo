@@ -891,10 +891,12 @@ namespace CollectaMundo
         }
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
+            LogoSmall.Visibility = Visibility.Collapsed;
             addToCollectionManager.SubmitNewCardsToCollection(sender, e);
         }
         private void ButtonEditCardsInMyCollection_Click(object sender, RoutedEventArgs e)
         {
+            LogoSmall.Visibility = Visibility.Collapsed;
             addToCollectionManager.SubmitEditedCardsToCollection(sender, e);
         }
 
