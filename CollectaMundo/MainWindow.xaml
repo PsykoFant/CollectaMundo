@@ -306,12 +306,13 @@
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
-                                                <!-- Directly attach Checked and Unchecked event handlers to the CheckBox -->
                                                 <CheckBox Grid.Column="0" Margin="5,2"
                                       IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource TemplatedParent}}"
                                       Content="{TemplateBinding Content}"
                                       Checked="CheckBox_Checked"
-                                      Unchecked="CheckBox_Unchecked" />
+                                      Unchecked="CheckBox_Unchecked"
+                                      Loaded="CheckBox_Loaded"
+                                      Tag="Colors"/>
                                                 <Image Grid.Column="1" Source="Images/Logo.png" Width="20" Height="20"/>
                                             </Grid>
                                         </ControlTemplate>
@@ -320,6 +321,7 @@
                             </Style>
                         </ListBox.Resources>
                     </ListBox>
+
 
 
                     <!--Mana value filtering-->
