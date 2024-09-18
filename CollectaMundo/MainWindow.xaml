@@ -294,27 +294,33 @@
 
                     <!--Color filtering-->
                     <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Left" Margin="10,520,0,0" VerticalAlignment="Top" Width="240"/>
-                    <ListBox x:Name="FilterColorsListBox" Margin="10,547,0,0" Width="130" HorizontalAlignment="Left" ItemsSource="{Binding}" SelectionMode="Extended" Height="155" VerticalAlignment="Top" BorderBrush="White">
+                    <ListBox x:Name="FilterColorsListBox" Margin="10,547,0,0" Width="130" HorizontalAlignment="Left" ItemsSource="{Binding}" SelectionMode="Extended" Height="155" VerticalAlignment="Top" Background="{x:Null}">
                         <ListBox.Resources>
                             <Style TargetType="{x:Type ListBoxItem}">
                                 <Setter Property="SnapsToDevicePixels" Value="true" />
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                            <CheckBox Margin="5,2" 
-                                                      IsChecked="{TemplateBinding IsSelected}" 
-                                                      Loaded="CheckBox_Loaded"
-                                                      Tag="Colors">
-                                                <ContentPresenter />
-                                            </CheckBox>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <!-- Directly attach Checked and Unchecked event handlers to the CheckBox -->
+                                                <CheckBox Grid.Column="0" Margin="5,2"
+                                      IsChecked="{Binding Path=IsSelected, RelativeSource={RelativeSource TemplatedParent}}"
+                                      Content="{TemplateBinding Content}"
+                                      Checked="CheckBox_Checked"
+                                      Unchecked="CheckBox_Unchecked" />
+                                                <Image Grid.Column="1" Source="Images/Logo.png" Width="20" Height="20"/>
+                                            </Grid>
                                         </ControlTemplate>
                                     </Setter.Value>
                                 </Setter>
-                                <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked" />
-                                <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked" />
                             </Style>
                         </ListBox.Resources>
                     </ListBox>
+
 
                     <!--Mana value filtering-->
                     <Label x:Name="ManaValueLabel" Content="Mana value is " HorizontalAlignment="Left" Margin="10,708,0,0" VerticalAlignment="Top"  Style="{StaticResource BelerenBold}"/>

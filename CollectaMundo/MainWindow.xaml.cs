@@ -586,6 +586,7 @@ namespace CollectaMundo
         // When a combobox checkbox item is checked or unchecked
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
+            Debug.WriteLine("CheckBox_Checked was clicked...");
             try
             {
                 var dependencyObject = sender as DependencyObject;
