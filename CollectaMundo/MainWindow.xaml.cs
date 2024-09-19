@@ -223,6 +223,9 @@ namespace CollectaMundo
         {
             return string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
         }
+
+
+
         private Task FillComboBoxesAsync()
         {
             try
@@ -249,13 +252,12 @@ namespace CollectaMundo
                 var manaValueCompareOptions = new List<string> { "less than", "less than/eq", "greater than", "greater than/eq", "equal to" };
 
                 // Set up elements in supertype listbox
-                filterContext.AllSuperTypes = superTypes
+                filterContext.AllSuperTypes = [.. superTypes
                     .Where(type => type != null)
                     .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                     .Select(p => p.Trim())
                     .Distinct()
-                    .OrderBy(type => type)
-                    .ToList();
+                    .OrderBy(type => type)];
 
                 // List of unwanted types. Old cards, weird types from un-sets etc. 
                 var typesToRemove = new HashSet<string>
@@ -274,32 +276,29 @@ namespace CollectaMundo
                 };
 
                 // Set up elements in type listbox, removing unwanted types
-                filterContext.AllTypes = types
+                filterContext.AllTypes = [.. types
                     .Where(type => type != null)
                     .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                     .Select(p => p.Trim())
                     .Where(p => !typesToRemove.Contains(p))  // Filter out unwanted types
                     .Distinct()
-                    .OrderBy(type => type)
-                    .ToList();
+                    .OrderBy(type => type)];
 
                 // Set up elements in subtype listbox
-                filterContext.AllSubTypes = subTypes
+                filterContext.AllSubTypes = [.. subTypes
                     .Where(type => type != null)
                     .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                     .Select(p => p.Trim())
                     .Distinct()
-                    .OrderBy(type => type)
-                    .ToList();
+                    .OrderBy(type => type)];
 
                 // Set up elements in keywords listbox
-                filterContext.AllKeywords = keywords
+                filterContext.AllKeywords = [.. keywords
                     .Where(keyword => keyword != null)
                     .SelectMany(keyword => keyword!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                     .Select(p => p.Trim())
                     .Distinct()
-                    .OrderBy(keyword => keyword)
-                    .ToList();
+                    .OrderBy(keyword => keyword)];
 
                 Dispatcher.Invoke(() =>
                 {
@@ -484,7 +483,7 @@ namespace CollectaMundo
 
                 List<string> filteredItems = !string.IsNullOrWhiteSpace(filterText)
                     ? dataSet.Where(type => type.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList()
-                    : dataSet.Distinct().OrderBy(type => type).ToList();
+                    : [.. dataSet.Distinct().OrderBy(type => type)];
 
                 listBox.ItemsSource = filteredItems;
 

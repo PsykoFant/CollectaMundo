@@ -2,17 +2,17 @@
 {
     public class FilterContext
     {
-        public List<string> AllColors { get; set; } = new List<string>();
-        public List<string> AllTypes { get; set; } = new List<string>();
-        public List<string> AllSuperTypes { get; set; } = new List<string>();
-        public List<string> AllSubTypes { get; set; } = new List<string>();
-        public List<string> AllKeywords { get; set; } = new List<string>();
+        public List<string> AllColors { get; set; } = [];
+        public List<string> AllTypes { get; set; } = [];
+        public List<string> AllSuperTypes { get; set; } = [];
+        public List<string> AllSubTypes { get; set; } = [];
+        public List<string> AllKeywords { get; set; } = [];
 
-        public HashSet<string> SelectedColors { get; set; } = new HashSet<string>();
-        public HashSet<string> SelectedTypes { get; set; } = new HashSet<string>();
-        public HashSet<string> SelectedSuperTypes { get; set; } = new HashSet<string>();
-        public HashSet<string> SelectedSubTypes { get; set; } = new HashSet<string>();
-        public HashSet<string> SelectedKeywords { get; set; } = new HashSet<string>();
+        public HashSet<string> SelectedColors { get; set; } = [];
+        public HashSet<string> SelectedTypes { get; set; } = [];
+        public HashSet<string> SelectedSuperTypes { get; set; } = [];
+        public HashSet<string> SelectedSubTypes { get; set; } = [];
+        public HashSet<string> SelectedKeywords { get; set; } = [];
 
         // Filter defaults
         public string RulesTextDefaultText { get; } = "Filter rulestext...";

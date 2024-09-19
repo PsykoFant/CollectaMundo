@@ -315,32 +315,15 @@
                                     <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked" />
                                 </Style>
                             </ListBox.Resources>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="Images/Logo.png" Width="20" Height="20" Margin="5,0,0,0"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
                         </ListBox>
                     </Grid>
-                <!--<Image Grid.Column="1" Source="Images/Logo.png" Width="20" Height="20"/>-->
-
-                    <!--<ListBox x:Name="FilterColorsListBox" Margin="10,547,0,0" Width="130" HorizontalAlignment="Left" ItemsSource="{Binding}" SelectionMode="Extended" Height="155" VerticalAlignment="Top" BorderBrush="White">
-                        <ListBox.Resources>
-                            <Style TargetType="{x:Type ListBoxItem}">
-                                <Setter Property="SnapsToDevicePixels" Value="true" />
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                            <CheckBox Margin="5,2" 
-                                                      IsChecked="{TemplateBinding IsSelected}" 
-                                                      Loaded="CheckBox_Loaded"
-                                                      Tag="Colors">
-                                                <ContentPresenter />
-                                            </CheckBox>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                                <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked" />
-                                <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked" />
-                            </Style>
-                        </ListBox.Resources>
-                    </ListBox>-->
-
 
                     <!--Mana value filtering-->
                     <Label x:Name="ManaValueLabel" Content="Mana value is " HorizontalAlignment="Left" Margin="10,708,0,0" VerticalAlignment="Top"  Style="{StaticResource BelerenBold}"/>
