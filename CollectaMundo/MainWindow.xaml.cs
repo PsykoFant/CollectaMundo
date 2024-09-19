@@ -53,6 +53,7 @@ namespace CollectaMundo
         // Query strings to load cards into datagrids
         public readonly string myCollectionQuery = "SELECT * FROM myCollectionView";
         private readonly string allCardsQuery = "SELECT * FROM allCardsView";
+        private readonly string colourQuery = "SELECT* FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ('W', 'U', 'B', 'R', 'G', 'C', 'X') ORDER BY CASE uniqueManaSymbol WHEN 'W' THEN 1 WHEN 'U' THEN 2 WHEN 'B' THEN 3 WHEN 'R' THEN 4 WHEN 'G' THEN 5 WHEN 'C' THEN 6 WHEN 'X' THEN 7 END;";
 
         // The CardSet object which holds all the cards read from db
         private List<CardSet> allCards = new List<CardSet>();
@@ -132,77 +133,56 @@ namespace CollectaMundo
 
         public async Task LoadColors(List<CardSet> cardList, string query, ListBox listBox)
         {
-            Debug.WriteLine("Loading colors...");
             try
             {
-                CreateCardFromReader(reader, isCardItem);
+                cardList.Clear();
+
+                List<CardSet> tempCardList = new List<CardSet>();
+                using var command = new SQLiteCommand(query, DBAccess.connection);
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    try
+                    {
+                        var card = CreateColorIcon(reader);
+                        tempCardList.Add(card);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error while creating card: {ex.Message}");
+                        throw;
+                    }
+                }
 
                 cardList.AddRange(tempCardList);
-                listBox.ItemsSource = cardList;
+                FilterColorsListBox.ItemsSource = cardList;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error while loading cards: {ex.Message}");
                 MessageBox.Show($"Error while loading cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally
-            {
-                CurrentInstance.StatusLabel.Content = string.Empty;
-                await ShowStatusWindowAsync(false);
-                CurrentInstance.progressBar.Visibility = Visibility.Visible;
-                sw.Stop();
-                Debug.WriteLine($"Loaded in {sw.ElapsedMilliseconds} ms");
-            }
         }
 
-        private static CardSet CreateColorIcon(DbDataReader reader, bool isCardItem)
+        private static CardSet CreateColorIcon(DbDataReader reader)
         {
             try
             {
-
-                // Populate common properties
-                card.Name = reader["Name"]?.ToString() ?? string.Empty;
-                card.SetName = reader["SetName"]?.ToString() ?? string.Empty;
-                card.Types = reader["Types"]?.ToString() ?? string.Empty;
-                card.ManaCost = ProcessManaCost(reader["ManaCost"]?.ToString() ?? string.Empty);
-                card.SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty;
-                card.SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty;
-                card.Type = reader["Type"]?.ToString() ?? string.Empty;
-                card.Keywords = reader["Keywords"]?.ToString() ?? string.Empty;
-                card.Text = reader["RulesText"]?.ToString() ?? string.Empty;
-                card.ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0;
-                card.Language = reader["Language"]?.ToString() ?? string.Empty;
-                card.Uuid = reader["Uuid"]?.ToString() ?? string.Empty;
-                card.Side = reader["Side"]?.ToString() ?? string.Empty;
-                card.Finishes = reader["Finishes"]?.ToString();
-
-                // Populate raw data fields for parallel processing
-                card.SetIconBytes = reader["KeyRuneImage"] as byte[];
-                card.ManaCostImageBytes = reader["ManaCostImage"] as byte[];
-                card.ManaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
-
-                if (card is CardItem cardItem)
-                {
-                    cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
-                    cardItem.CardsOwned = Convert.ToInt32(reader["CardsOwned"]);
-                    cardItem.CardsForTrade = Convert.ToInt32(reader["CardsForTrade"]);
-                    cardItem.SelectedCondition = reader["Condition"]?.ToString();
-                    cardItem.SelectedFinish = reader["Finishes"]?.ToString();
-                }
-
+                var card = new CardSet();
+                card.ManaCostImageBytes = reader["ManaSymbolImage"] as byte[];
+                card.ManaCostRaw = reader["uniqueManaSymbol"]?.ToString() ?? string.Empty;
                 return card;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in CreateCardFromReader: {ex.Message}");
+                Debug.WriteLine($"Error in CreateColorIcon: {ex.Message}");
                 throw;
             }
         }
 
         public async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
         {
-            Debug.WriteLine("Loading data asynchronously...");
-            Stopwatch sw = Stopwatch.StartNew();
             try
             {
                 await ShowStatusWindowAsync(true);  // Show loading message                
@@ -244,8 +224,6 @@ namespace CollectaMundo
                 CurrentInstance.StatusLabel.Content = string.Empty;
                 await ShowStatusWindowAsync(false);
                 CurrentInstance.progressBar.Visibility = Visibility.Visible;
-                sw.Stop();
-                Debug.WriteLine($"Loaded in {sw.ElapsedMilliseconds} ms");
             }
         }
         private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
