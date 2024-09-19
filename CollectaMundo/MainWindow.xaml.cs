@@ -47,6 +47,7 @@ namespace CollectaMundo
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
         private static MainWindow? _currentInstance;
 
         // Query strings to load cards into datagrids
@@ -56,6 +57,8 @@ namespace CollectaMundo
         // The CardSet object which holds all the cards read from db
         private List<CardSet> allCards = new List<CardSet>();
         public List<CardSet> myCards = new List<CardSet>();
+
+        private List<CardSet> Colors = new List<CardSet>();
 
         // The filter object from the FilterContext class
         private readonly FilterContext filterContext = new FilterContext();
@@ -126,6 +129,76 @@ namespace CollectaMundo
         }
 
         #region Load data and populate UI elements
+
+        public async Task LoadColors(List<CardSet> cardList, string query, ListBox listBox)
+        {
+            Debug.WriteLine("Loading colors...");
+            try
+            {
+                CreateCardFromReader(reader, isCardItem);
+
+                cardList.AddRange(tempCardList);
+                listBox.ItemsSource = cardList;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while loading cards: {ex.Message}");
+                MessageBox.Show($"Error while loading cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                CurrentInstance.StatusLabel.Content = string.Empty;
+                await ShowStatusWindowAsync(false);
+                CurrentInstance.progressBar.Visibility = Visibility.Visible;
+                sw.Stop();
+                Debug.WriteLine($"Loaded in {sw.ElapsedMilliseconds} ms");
+            }
+        }
+
+        private static CardSet CreateColorIcon(DbDataReader reader, bool isCardItem)
+        {
+            try
+            {
+
+                // Populate common properties
+                card.Name = reader["Name"]?.ToString() ?? string.Empty;
+                card.SetName = reader["SetName"]?.ToString() ?? string.Empty;
+                card.Types = reader["Types"]?.ToString() ?? string.Empty;
+                card.ManaCost = ProcessManaCost(reader["ManaCost"]?.ToString() ?? string.Empty);
+                card.SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty;
+                card.SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty;
+                card.Type = reader["Type"]?.ToString() ?? string.Empty;
+                card.Keywords = reader["Keywords"]?.ToString() ?? string.Empty;
+                card.Text = reader["RulesText"]?.ToString() ?? string.Empty;
+                card.ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0;
+                card.Language = reader["Language"]?.ToString() ?? string.Empty;
+                card.Uuid = reader["Uuid"]?.ToString() ?? string.Empty;
+                card.Side = reader["Side"]?.ToString() ?? string.Empty;
+                card.Finishes = reader["Finishes"]?.ToString();
+
+                // Populate raw data fields for parallel processing
+                card.SetIconBytes = reader["KeyRuneImage"] as byte[];
+                card.ManaCostImageBytes = reader["ManaCostImage"] as byte[];
+                card.ManaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
+
+                if (card is CardItem cardItem)
+                {
+                    cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
+                    cardItem.CardsOwned = Convert.ToInt32(reader["CardsOwned"]);
+                    cardItem.CardsForTrade = Convert.ToInt32(reader["CardsForTrade"]);
+                    cardItem.SelectedCondition = reader["Condition"]?.ToString();
+                    cardItem.SelectedFinish = reader["Finishes"]?.ToString();
+                }
+
+                return card;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in CreateCardFromReader: {ex.Message}");
+                throw;
+            }
+        }
+
         public async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
         {
             Debug.WriteLine("Loading data asynchronously...");
