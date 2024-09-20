@@ -56,16 +56,16 @@ namespace CollectaMundo
         private readonly string colourQuery = "SELECT* FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ('W', 'U', 'B', 'R', 'G', 'C', 'X') ORDER BY CASE uniqueManaSymbol WHEN 'W' THEN 1 WHEN 'U' THEN 2 WHEN 'B' THEN 3 WHEN 'R' THEN 4 WHEN 'G' THEN 5 WHEN 'C' THEN 6 WHEN 'X' THEN 7 END;";
 
         // The CardSet object which holds all the cards read from db
-        private List<CardSet> allCards = new List<CardSet>();
-        public List<CardSet> myCards = new List<CardSet>();
-        private List<CardSet> ColorIcons = new List<CardSet>();
+        private readonly List<CardSet> allCards = [];
+        public List<CardSet> myCards = [];
+        private readonly List<CardSet> ColorIcons = [];
 
         // The filter object from the FilterContext class
-        private readonly FilterContext filterContext = new FilterContext();
+        private readonly FilterContext filterContext = new();
         private readonly FilterManager filterManager;
 
         // Object of AddToCollectionManager class to access that functionality
-        private AddToCollectionManager addToCollectionManager = new AddToCollectionManager();
+        private readonly AddToCollectionManager addToCollectionManager = new();
 
         #endregion
         public static MainWindow CurrentInstance
@@ -130,57 +130,6 @@ namespace CollectaMundo
         }
 
         #region Load data and populate UI elements
-
-        public async Task LoadColors(List<CardSet> cardList, string query)
-        {
-            try
-            {
-                cardList.Clear();
-
-                List<CardSet> tempCardList = new List<CardSet>();
-                using var command = new SQLiteCommand(query, DBAccess.connection);
-                using var reader = await command.ExecuteReaderAsync();
-
-                while (await reader.ReadAsync())
-                {
-                    try
-                    {
-                        var card = CreateColorIcon(reader);
-                        tempCardList.Add(card);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Error while creating card: {ex.Message}");
-                        throw;
-                    }
-                }
-
-                cardList.AddRange(tempCardList);
-                FilterColorsListBoxIcons.ItemsSource = cardList;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while loading cards: {ex.Message}");
-                MessageBox.Show($"Error while loading cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private static CardSet CreateColorIcon(DbDataReader reader)
-        {
-            try
-            {
-                var card = new CardSet();
-                card.ManaCostImageBytes = reader["ManaSymbolImage"] as byte[];
-                card.ManaCostRaw = reader["uniqueManaSymbol"]?.ToString() ?? string.Empty;
-                return card;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in CreateColorIcon: {ex.Message}");
-                throw;
-            }
-        }
-
         public async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
         {
             try
@@ -193,7 +142,7 @@ namespace CollectaMundo
 
                 cardList.Clear();
 
-                List<CardSet> tempCardList = new List<CardSet>();
+                List<CardSet> tempCardList = [];
                 using var command = new SQLiteCommand(query, DBAccess.connection);
                 using var reader = await command.ExecuteReaderAsync();
 
@@ -274,9 +223,48 @@ namespace CollectaMundo
         {
             return string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
         }
+        public async Task LoadColors(List<CardSet> cardList, string query)
+        {
+            try
+            {
+                cardList.Clear();
 
+                List<CardSet> tempCardList = [];
+                using var command = new SQLiteCommand(query, DBAccess.connection);
+                using var reader = await command.ExecuteReaderAsync();
 
+                while (await reader.ReadAsync())
+                {
+                    var card = CreateColorIcon(reader);
+                    tempCardList.Add(card);
+                }
 
+                cardList.AddRange(tempCardList);
+                FilterColorsListBoxIcons.ItemsSource = cardList;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while loading color icons: {ex.Message}");
+                MessageBox.Show($"Error while loading color icons: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private static CardSet CreateColorIcon(DbDataReader reader)
+        {
+            try
+            {
+                var card = new CardSet
+                {
+                    ManaCostImageBytes = reader["ManaSymbolImage"] as byte[],
+                    ManaCostRaw = reader["uniqueManaSymbol"]?.ToString() ?? string.Empty
+                };
+                return card;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in CreateColorIcon: {ex.Message}");
+                throw;
+            }
+        }
         private Task FillComboBoxesAsync()
         {
             try
@@ -831,7 +819,7 @@ namespace CollectaMundo
             // Update filter label and apply filters to refresh the DataGrid            
             ApplyFilterSelection();
         }
-        private void ResetFilterTextBox(ComboBox comboBox, string textBoxName, string defaultText)
+        private static void ResetFilterTextBox(ComboBox comboBox, string textBoxName, string defaultText)
         {
             if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
             {
