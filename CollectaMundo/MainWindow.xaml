@@ -317,12 +317,11 @@
                             </ListBox.Resources>
                         </ListBox>
                     </Grid>
-                        <ListBox x:Name="FilterColorsListBoxIcons" Margin="50,547,0,0" Width="50" HorizontalAlignment="Left" ItemsSource="{Binding}" Height="155" VerticalAlignment="Top" BorderBrush="White">
+                        <ListBox x:Name="FilterColorsListBoxIcons" Margin="35,547,0,0" Width="50" HorizontalAlignment="Left" ItemsSource="{Binding}" Height="155" VerticalAlignment="Top" BorderBrush="White">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
-                                        <!--<Image Source="Images/Logo.png" Width="20" Height="20" Margin="5,0,0,0"/>-->
-                                    <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
+                                    <Image Source="{Binding ManaCostImage}" Height="15" HorizontalAlignment="Right"/>
                                 </StackPanel>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
