@@ -295,7 +295,7 @@
                     <!--Color filtering-->
                     <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Left" Margin="10,520,0,0" VerticalAlignment="Top" Width="240"/>
                     <Grid>
-                        <ListBox x:Name="FilterColorsListBox" Margin="10,547,0,0" Width="130" HorizontalAlignment="Left" ItemsSource="{Binding}" SelectionMode="Extended" Height="155" VerticalAlignment="Top" BorderBrush="White">
+                        <ListBox x:Name="FilterColorsListBox" Margin="10,547,0,0" Width="50" HorizontalAlignment="Left" ItemsSource="{Binding}" SelectionMode="Extended" Height="155" VerticalAlignment="Top" BorderBrush="White">
                             <ListBox.Resources>
                                 <Style TargetType="{x:Type ListBoxItem}">
                                     <Setter Property="SnapsToDevicePixels" Value="true" />
@@ -315,15 +315,19 @@
                                     <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked" />
                                 </Style>
                             </ListBox.Resources>
+                        </ListBox>
+                    </Grid>
+                        <ListBox x:Name="FilterColorsListBoxIcons" Margin="50,547,0,0" Width="50" HorizontalAlignment="Left" ItemsSource="{Binding}" Height="155" VerticalAlignment="Top" BorderBrush="White">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
-                                        <Image Source="Images/Logo.png" Width="20" Height="20" Margin="5,0,0,0"/>
-                                    </StackPanel>
+                                        <!--<Image Source="Images/Logo.png" Width="20" Height="20" Margin="5,0,0,0"/>-->
+                                    <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
+                                </StackPanel>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
-                    </Grid>
+
 
                     <!--Mana value filtering-->
                     <Label x:Name="ManaValueLabel" Content="Mana value is " HorizontalAlignment="Left" Margin="10,708,0,0" VerticalAlignment="Top"  Style="{StaticResource BelerenBold}"/>

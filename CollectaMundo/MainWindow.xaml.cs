@@ -58,8 +58,7 @@ namespace CollectaMundo
         // The CardSet object which holds all the cards read from db
         private List<CardSet> allCards = new List<CardSet>();
         public List<CardSet> myCards = new List<CardSet>();
-
-        private List<CardSet> Colors = new List<CardSet>();
+        private List<CardSet> ColorIcons = new List<CardSet>();
 
         // The filter object from the FilterContext class
         private readonly FilterContext filterContext = new FilterContext();
@@ -122,6 +121,7 @@ namespace CollectaMundo
 
             await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
+            await LoadColors(ColorIcons, colourQuery);
             await FillComboBoxesAsync();
             DBAccess.CloseConnection();
 
@@ -131,7 +131,7 @@ namespace CollectaMundo
 
         #region Load data and populate UI elements
 
-        public async Task LoadColors(List<CardSet> cardList, string query, ListBox listBox)
+        public async Task LoadColors(List<CardSet> cardList, string query)
         {
             try
             {
@@ -156,7 +156,7 @@ namespace CollectaMundo
                 }
 
                 cardList.AddRange(tempCardList);
-                FilterColorsListBox.ItemsSource = cardList;
+                FilterColorsListBoxIcons.ItemsSource = cardList;
             }
             catch (Exception ex)
             {
