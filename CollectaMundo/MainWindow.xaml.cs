@@ -121,7 +121,7 @@ namespace CollectaMundo
 
             await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
-            await LoadColors(ColorIcons, colourQuery);
+            await LoadColorIcons(ColorIcons, colourQuery);
             await FillComboBoxesAsync();
             DBAccess.CloseConnection();
 
@@ -223,7 +223,7 @@ namespace CollectaMundo
         {
             return string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
         }
-        public async Task LoadColors(List<CardSet> cardList, string query)
+        public async Task LoadColorIcons(List<CardSet> cardList, string query)
         {
             try
             {
@@ -1106,25 +1106,21 @@ namespace CollectaMundo
                     if (visible)
                     {
                         // Disable top menu buttons
-                        CurrentInstance.MenuSearchAndFilterButton.IsEnabled = false;
-                        CurrentInstance.MenuMyCollectionButton.IsEnabled = false;
-                        CurrentInstance.MenuDecksButton.IsEnabled = false;
-                        CurrentInstance.MenuUtilsButton.IsEnabled = false;
+                        CurrentInstance.GridTopMenu.IsEnabled = false;
 
                         // Show status section and hide others
                         CurrentInstance.GridContentSection.Visibility = Visibility.Collapsed;
-                        CurrentInstance.GridUtilitiesSection.Visibility = Visibility.Collapsed;
+                        CurrentInstance.GridFiltering.Visibility = Visibility.Collapsed;
+                        CurrentInstance.GridCardImages.Visibility = Visibility.Collapsed;
                         CurrentInstance.GridStatus.Visibility = Visibility.Visible;
                     }
                     else
                     {
-                        CurrentInstance.MenuSearchAndFilterButton.IsEnabled = true;
-                        CurrentInstance.MenuMyCollectionButton.IsEnabled = true;
-                        CurrentInstance.MenuDecksButton.IsEnabled = true;
-                        CurrentInstance.MenuUtilsButton.IsEnabled = true;
-
+                        CurrentInstance.GridTopMenu.IsEnabled = true;
                         CurrentInstance.GridStatus.Visibility = Visibility.Collapsed;
                         CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
+                        CurrentInstance.GridFiltering.Visibility = Visibility.Visible;
+                        CurrentInstance.GridCardImages.Visibility = Visibility.Visible;
 
                     }
                 });
