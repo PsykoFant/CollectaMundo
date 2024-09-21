@@ -29,7 +29,7 @@
     </Window.Resources>
     <Window.Background>
         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-            <GradientStop Color="#FFFFF8E7"/>
+            <GradientStop Color="#FFFFF2D1"/>
             <GradientStop Color="White" Offset="1"/>
         </LinearGradientBrush>
     </Window.Background>
@@ -42,7 +42,7 @@
             <Button x:Name="MenuUtilsButton" Content="Utilities" HorizontalAlignment="Left" Margin="502,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuUtilsButton_Click"/>
         </Grid>
         <Grid x:Name="GridContentSection" Margin="0,40,0,0" Visibility="Visible">
-            <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="211" Width="211" RenderTransformOrigin="0.5,0.5" Margin="0,40,0,0" d:IsHidden="True" Opacity="0.8" />
+            <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="211" Width="211" RenderTransformOrigin="0.5,0.5" Margin="0,40,0,0" Opacity="0.8" />
             <Grid x:Name="GridSideMenu" Width="250" HorizontalAlignment="Left">
                 <Grid x:Name="GridFiltering">
                     <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="87" Style="{StaticResource BelerenBold}" Click="ClearFiltersButton_Click"/>
@@ -294,7 +294,7 @@
 
                     <!--Color filtering-->
                     <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Left" Margin="10,520,0,0" VerticalAlignment="Top" Width="240"/>
-                    <ListBox x:Name="FilterColorsListBox" Margin="10,547,0,0" Width="50" HorizontalAlignment="Left" ItemsSource="{Binding}" SelectionMode="Extended" Height="140" VerticalAlignment="Top" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="{x:Null}">
+                    <ListBox x:Name="FilterColorsListBox" Margin="10,547,0,0" Width="50" HorizontalAlignment="Left" ItemsSource="{Binding}" SelectionMode="Extended" Height="140" VerticalAlignment="Top" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="{x:Null}" FontSize="0.01">
                         <ListBox.Resources>
                             <Style TargetType="{x:Type ListBoxItem}">
                                 <Setter Property="SnapsToDevicePixels" Value="true" />
@@ -315,7 +315,7 @@
                             </Style>
                         </ListBox.Resources>
                         </ListBox>
-                    <ListBox x:Name="FilterColorsListBoxIcons" Margin="28,547,0,0" Width="50" HorizontalAlignment="Left" ItemsSource="{Binding}" Height="140" VerticalAlignment="Top" Background="White" BorderBrush="{x:Null}" Foreground="{x:Null}">
+                    <ListBox x:Name="FilterColorsListBoxIcons" Margin="28,547,0,0" Width="50" HorizontalAlignment="Left" ItemsSource="{Binding}" Height="140" VerticalAlignment="Top" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="{x:Null}">
                         <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
@@ -349,7 +349,7 @@
                     <Button x:Name="ImportCollectionButton" Content="Import to my collection" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="ImportCollectionButton_Click"/>
                 </Grid>
             </Grid>
-            <Grid x:Name="GridCardImages" HorizontalAlignment="Right" Width="250" d:IsHidden="True">
+            <Grid x:Name="GridCardImages" HorizontalAlignment="Right" Width="250">
                 <Label x:Name="ImagePromoLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="250"/>
                 <Label x:Name="ImageSetLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="250" Margin="0,35,0,0"/>
                 <Image x:Name="CardImage" 
