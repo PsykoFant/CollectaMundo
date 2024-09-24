@@ -180,61 +180,45 @@ namespace CollectaMundo
         }
 
         // Adds cards to the listview
-        public static async void AddOrEditCardHandler(object sender, ObservableCollection<CardSet.CardItem> targetCollection)
+        public static async void AddOrEditCardHandler(CardSet selectedCard, ObservableCollection<CardSet.CardItem> targetCollection)
         {
-            var button = sender as Button;
-            if (button?.DataContext is CardSet selectedCard)
+            if (selectedCard.Uuid == null)
             {
-                if (selectedCard.Uuid == null)
+                MessageBox.Show("Card UUID is null, cannot fetch languages.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return; // Exit if UUID is null to prevent errors
+            }
+
+            try
+            {
+                await DBAccess.OpenConnectionAsync();
+                var languages = await FetchLanguagesForCardAsync(selectedCard.Uuid);
+                var finishes = await FetchFinishesForCardAsync(selectedCard.Uuid);
+                DBAccess.CloseConnection();
+
+                var newItem = new CardSet.CardItem
                 {
-                    MessageBox.Show("Card UUID is null, cannot fetch languages.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return; // Exit if UUID is null to prevent errors
-                }
+                    Name = selectedCard.Name,
+                    SetName = selectedCard.SetName,
+                    Uuid = selectedCard.Uuid,
+                    CardsOwned = 1,
+                    CardsForTrade = 0,
+                    AvailableFinishes = finishes,
+                    SelectedFinish = finishes.FirstOrDefault(),
+                    Language = selectedCard.Language,
+                    OtherLanguages = languages,
+                    SelectedCondition = "Near Mint",
+                };
 
-                try
-                {
-
-                    // Open the connection asynchronously and fetch languages
-                    await DBAccess.OpenConnectionAsync();
-                    var languages = await FetchLanguagesForCardAsync(selectedCard.Uuid);
-                    var finishes = await FetchFinishesForCardAsync(selectedCard.Uuid);
-                    DBAccess.CloseConnection();
-
-                    var newItem = new CardSet.CardItem
-                    {
-                        Name = selectedCard.Name,
-                        SetName = selectedCard.SetName,
-                        Uuid = selectedCard.Uuid,
-                        CardsOwned = 1,
-                        CardsForTrade = 0,
-                        AvailableFinishes = finishes,
-                        SelectedFinish = finishes.FirstOrDefault(),
-                        Language = selectedCard.Language,
-                        OtherLanguages = languages,
-                        SelectedCondition = "Near Mint",
-                    };
-
-                    // Adjust properties if the selected card is to edit an existing card item.
-                    if (selectedCard is CardItem cardItem)
-                    {
-                        newItem.CardId = cardItem.CardId;
-                        newItem.CardsOwned = cardItem.CardsOwned;
-                        newItem.CardsForTrade = cardItem.CardsForTrade;
-                        newItem.SelectedFinish = cardItem.SelectedFinish;
-                        newItem.SelectedCondition = cardItem.SelectedCondition;
-                    }
-
-                    targetCollection.Add(newItem);
-
-                    AdjustColumnWidths();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Failed to add card to collection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Debug.WriteLine($"AddOrEditCardHandler error: {ex.Message}");
-                }
+                targetCollection.Add(newItem);
+                AdjustColumnWidths();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to add card to collection: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"AddOrEditCardHandler error: {ex.Message}");
             }
         }
+
         private static async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
         {
             if (string.IsNullOrEmpty(uuid))

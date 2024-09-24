@@ -14,8 +14,8 @@
 
     <!-- Define resources accessible by all elements in this Window -->
     <Window.Resources>
-        <!-- Add the image source converter here -->
         <local:StringToImageSourceConverter x:Key="StringToImageSourceConverter"/>
+        <local:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
 
         <Style x:Key="BelerenBold">
             <Setter Property="TextElement.FontFamily"
@@ -356,13 +356,13 @@
                 <Button x:Name="ImportCollectionButton" Content="Import to my collection" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="ImportCollectionButton_Click"/>
             </Grid>
         </Grid>
-        <Grid Grid.Row="1" Grid.Column="1" x:Name="GridContentSection" Margin="5,00,5,0" Visibility="Visible">
+        <Grid Grid.Row="1" Grid.Column="1" x:Name="GridContentSection" Margin="5,00,5,0" Visibility="Visible" d:IsHidden="True">
             <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="211" Width="211" RenderTransformOrigin="0.5,0.5" Margin="0,40,0,0" Opacity="0.8" />                        
             <Grid x:Name="GridSearchAndFilterAllCards">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
                 <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,20,0,0" VerticalAlignment="Top" Width="199" Style="{StaticResource BelerenBold}" Click="ButtonSubmitCardsToMyCollection_Click" Visibility="Collapsed"/>
-                <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Right" Margin="0,232,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
+                <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Right" Margin="0,232,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonAddCardsToMyCollection_Click"/>
                 
                 <TextBlock x:Name="AddStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Visibility="Collapsed"/>
                 <!--Cards to add listview-->
@@ -523,7 +523,7 @@
                 </DataGrid>
                 
             </Grid>
-            <Grid x:Name="GridMyCollection" d:IsHidden="True">
+            <Grid x:Name="GridMyCollection">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
                 <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,20,0,0" VerticalAlignment="Top" Width="199" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
@@ -714,7 +714,7 @@
                 </ListView>
                 <TextBlock x:Name="EditStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Visibility="Collapsed"/>
             </Grid>
-            <Grid x:Name="GridUtilitiesSection" Width="1080" HorizontalAlignment="Center" VerticalAlignment="Top" d:IsHidden="True">
+            <Grid x:Name="GridUtilitiesSection" Width="1080" HorizontalAlignment="Center" VerticalAlignment="Top">
                 <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600"/>
                 <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Grid x:Name="GridUtilsScreen" HorizontalAlignment="Center" Width="1080" d:IsHidden="True">
@@ -1020,11 +1020,11 @@
                    HorizontalAlignment="Center"
                    VerticalAlignment="Top" Margin="0,461,10,0"/>
         </Grid>
-        <Grid Grid.Row="1" Grid.Column="1" x:Name="GridStatus" Margin="0,40,0,0" VerticalAlignment="Top" d:IsHidden="True">
+        <Grid Grid.Row="1" Grid.Column="1" x:Name="GridStatus" Margin="0,40,0,0" VerticalAlignment="Top">
             <Image Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="500" Width="500" RenderTransformOrigin="0.5,0.5" Margin="0,76,0,0" />
             <Label Content="CollectaMundo" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
             <ProgressBar x:Name="progressBar" HorizontalAlignment="Center" Height="11" Margin="0,652,0,0" VerticalAlignment="Top" Width="738"/>
-            <Label x:Name="StatusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top" Width="738"/>
+            <Label x:Name="StatusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top"/>
             <Label x:Name="FirstTimeSetupLabel" Content="" HorizontalAlignment="Left" Margin="591,582,0,0" VerticalAlignment="Top" FontSize="18"/>
         </Grid>
     </Grid>

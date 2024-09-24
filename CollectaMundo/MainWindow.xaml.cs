@@ -367,8 +367,7 @@ namespace CollectaMundo
         }
         private static void SetDefaultTextInComboBox(ComboBox comboBox, string textBoxName, string defaultText)
         {
-            var filterTextBox = comboBox.Template.FindName(textBoxName, comboBox) as TextBox;
-            if (filterTextBox != null)
+            if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
             {
                 filterTextBox.Text = defaultText;
                 filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
@@ -390,8 +389,7 @@ namespace CollectaMundo
                 {
                     var (defaultText, filterTextBoxName, listBoxName) = GetComboBoxConfig(comboBox.Name);
 
-                    var filterTextBox = comboBox.Template.FindName(filterTextBoxName, comboBox) as TextBox;
-                    if (filterTextBox != null && (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == defaultText))
+                    if (comboBox.Template.FindName(filterTextBoxName, comboBox) is TextBox filterTextBox && (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == defaultText))
                     {
                         PopulateListBoxWithValues(comboBox, listBoxName);
                         filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
@@ -407,8 +405,7 @@ namespace CollectaMundo
         {
             try
             {
-                var listBox = comboBox.Template.FindName(listBoxName, comboBox) as ListBox;
-                if (listBox != null)
+                if (comboBox.Template.FindName(listBoxName, comboBox) is ListBox listBox)
                 {
                     // Get both items source and the corresponding selected items set.
                     var (itemsSource, selectedItems) = GetDataSetAndSelection(listBoxName);
@@ -418,8 +415,7 @@ namespace CollectaMundo
                     {
                         foreach (var item in itemsSource)
                         {
-                            var listBoxItem = listBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
-                            if (listBoxItem != null)
+                            if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem listBoxItem)
                             {
                                 var checkBox = FindVisualChild<CheckBox>(listBoxItem);
                                 if (checkBox != null)
@@ -491,8 +487,7 @@ namespace CollectaMundo
                         }
 
                         // Finding the associated ListBox using the dynamically determined name
-                        var listBox = comboBox.Template.FindName(listBoxName, comboBox) as ListBox;
-                        if (listBox != null)
+                        if (comboBox.Template.FindName(listBoxName, comboBox) is ListBox listBox)
                         {
                             UpdateListBoxItems(listBox, textBox.Text);
 
@@ -531,8 +526,7 @@ namespace CollectaMundo
                 {
                     foreach (var item in filteredItems)
                     {
-                        var listBoxItem = listBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
-                        if (listBoxItem != null) // Check if listBoxItem is not null
+                        if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem listBoxItem) // Check if listBoxItem is not null
                         {
                             var checkBox = FindVisualChild<CheckBox>(listBoxItem);
                             if (checkBox != null) // Check if checkBox is not null
@@ -628,8 +622,7 @@ namespace CollectaMundo
             Debug.WriteLine("CheckBox_Checked was clicked...");
             try
             {
-                var dependencyObject = sender as DependencyObject;
-                if (dependencyObject == null)
+                if (sender is not DependencyObject dependencyObject)
                 {
                     return; // Exit if casting failed
                 }
@@ -668,8 +661,7 @@ namespace CollectaMundo
         {
             try
             {
-                var dependencyObject = sender as DependencyObject;
-                if (dependencyObject == null)
+                if (sender is not DependencyObject dependencyObject)
                 {
                     return; // Exit if casting failed
                 }
@@ -832,8 +824,7 @@ namespace CollectaMundo
         {
             foreach (var item in listBox.Items)
             {
-                var container = listBox.ItemContainerGenerator.ContainerFromItem(item) as ListBoxItem;
-                if (container != null)
+                if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem container)
                 {
                     var checkBox = FindVisualChild<CheckBox>(container);
                     if (checkBox != null)
@@ -913,17 +904,39 @@ namespace CollectaMundo
         }
         private void AddCardToCollection_Click(object sender, RoutedEventArgs e)
         {
+            if (sender is Button button && button.DataContext is CardSet selectedCard)
+            {
+                AddStatusTextBlock.Visibility = Visibility.Collapsed;
+                CardsToAddListView.Visibility = Visibility.Visible;
+                ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
+                AddToCollectionManager.AddOrEditCardHandler(selectedCard, addToCollectionManager.CardItemsToAdd);
+            }
+            else
+            {
+                MessageBox.Show("No card selected or button context is incorrect.");
+            }
+        }
+
+
+        private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (CardSet selectedCard in AllCardsDataGrid.SelectedItems)
+            {
+                AddToCollectionManager.AddOrEditCardHandler(selectedCard, addToCollectionManager.CardItemsToAdd);
+            }
+
             AddStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToAddListView.Visibility = Visibility.Visible;
             ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
-            AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.CardItemsToAdd);
         }
+
+
         private void EditCardInCollection_Click(object sender, RoutedEventArgs e)
         {
             EditStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToEditListView.Visibility = Visibility.Visible;
             ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Visible;
-            AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.CardItemsToEdit);
+            //AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.CardItemsToEdit);
         }
         private void ListViewComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
