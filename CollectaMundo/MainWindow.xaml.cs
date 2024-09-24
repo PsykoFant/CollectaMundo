@@ -209,7 +209,6 @@ namespace CollectaMundo
                     cardItem.CardsForTrade = Convert.ToInt32(reader["CardsForTrade"]);
                     cardItem.SelectedCondition = reader["Condition"]?.ToString();
                     cardItem.SelectedFinish = reader["Finishes"]?.ToString();
-                    Debug.WriteLine(reader["Finishes"]?.ToString());
                 }
 
                 return card;

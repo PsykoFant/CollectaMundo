@@ -1283,6 +1283,10 @@ namespace CollectaMundo
             var languageMappings = CreateMappingDictionary(MainWindow.CurrentInstance.LanguageMappingListView, "Language", "English");
             StoreMapping("Language", languageMappings, true);
 
+            var currentMargin = MainWindow.CurrentInstance.ButtonCancelImport.Margin;
+            var newMargin = new Thickness(currentMargin.Left, 180, currentMargin.Right, currentMargin.Bottom);
+            MainWindow.CurrentInstance.ButtonCancelImport.Margin = newMargin;
+
             MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Collapsed;
             DebugFieldMappings();
             GoToFinalStep();
@@ -1495,7 +1499,7 @@ namespace CollectaMundo
 
         #endregion
 
-        #region Import Wizrd - Confirm and import
+        #region Import Wizard - Confirm and import
         public static void SaveUnimportedItemsToFile()
         {
             // Create a SaveFileDialog to prompt the user to choose a save location
@@ -1871,7 +1875,16 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.Inspiredtinkering.Visibility = Visibility.Visible;
-            MainWindow.CurrentInstance.LogoSmall.Visibility = Visibility.Visible;
+
+            var currentMargin = MainWindow.CurrentInstance.ButtonCancelImport.Margin;
+            var newMargin = new Thickness(currentMargin.Left, 350, currentMargin.Right, currentMargin.Bottom);
+            MainWindow.CurrentInstance.ButtonCancelImport.Margin = newMargin;
+
+            // Reset card images
+            MainWindow.CurrentInstance.ImagePromoLabel.Content = string.Empty;
+            MainWindow.CurrentInstance.ImageSetLabel.Content = string.Empty;
+            MainWindow.CurrentInstance.ImageSourceUrl = null;
+            MainWindow.CurrentInstance.ImageSourceUrl2nd = null;
         }
 
         // Try to guess which column name maps to CardItemsToAdd field by looking for matching column/field names
