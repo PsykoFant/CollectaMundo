@@ -6,6 +6,7 @@ using System.Data.SQLite;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using static CollectaMundo.BackupRestore;
 using static CollectaMundo.CardSet;
@@ -857,6 +858,8 @@ namespace CollectaMundo
         #endregion
 
         #region Pick up events for add to or edit collection 
+
+        // Modify values in the listview
         private void IncrementCount_Click(object sender, RoutedEventArgs e)
         {
             addToCollectionManager.IncrementButtonHandler(sender, e);
@@ -901,22 +904,35 @@ namespace CollectaMundo
         {
             AddToCollectionManager.CardsForTradeTextHandler(sender);
         }
-        private void AddCardToCollection_Click(object sender, RoutedEventArgs e)
+        private void ListViewComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (sender is Button button && button.DataContext is CardSet selectedCard)
-            {
-                AddStatusTextBlock.Visibility = Visibility.Collapsed;
-                CardsToAddListView.Visibility = Visibility.Visible;
-                ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
-                AddToCollectionManager.AddOrEditCardHandler(selectedCard, addToCollectionManager.CardItemsToAdd);
-            }
-            else
-            {
-                MessageBox.Show("No card selected or button context is incorrect.");
-            }
+            AddToCollectionManager.AdjustColumnWidths();
+        }
+        private void ButtonClearCardsToAdd_Click(object sender, RoutedEventArgs e)
+        {
+            addToCollectionManager.CardItemsToAdd.Clear();
+            CardsToAddListView.Visibility = Visibility.Collapsed;
+            ButtonSubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
+            ButtonClearCardsToAdd.Visibility = Visibility.Collapsed;
         }
 
+        // Add cards to add or edit listview
+        private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            AddStatusTextBlock.Visibility = Visibility.Collapsed;
+            CardsToAddListView.Visibility = Visibility.Visible;
+            ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
+            ButtonClearCardsToAdd.Visibility = Visibility.Visible;
 
+            if (sender is DataGrid grid && grid.SelectedItem != null)
+            {
+                // Assuming your items are of type CardSet
+                if (grid.SelectedItem is CardSet card)
+                {
+                    AddToCollectionManager.AddOrEditCardHandler(card, addToCollectionManager.CardItemsToAdd);
+                }
+            }
+        }
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
             foreach (CardSet selectedCard in AllCardsDataGrid.SelectedItems)
@@ -924,12 +940,13 @@ namespace CollectaMundo
                 AddToCollectionManager.AddOrEditCardHandler(selectedCard, addToCollectionManager.CardItemsToAdd);
             }
 
+            AllCardsDataGrid.UnselectAll();
+
             AddStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToAddListView.Visibility = Visibility.Visible;
             ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
+            ButtonClearCardsToAdd.Visibility = Visibility.Visible;
         }
-
-
         private void EditCardInCollection_Click(object sender, RoutedEventArgs e)
         {
             EditStatusTextBlock.Visibility = Visibility.Collapsed;
@@ -937,10 +954,10 @@ namespace CollectaMundo
             ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Visible;
             //AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.CardItemsToEdit);
         }
-        private void ListViewComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            AddToCollectionManager.AdjustColumnWidths();
-        }
+
+
+
+        // Submit cards in add or edit listviews
         private void ButtonSubmitCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
             LogoSmall.Visibility = Visibility.Collapsed;

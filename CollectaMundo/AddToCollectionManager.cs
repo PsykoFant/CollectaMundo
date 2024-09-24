@@ -347,6 +347,7 @@ namespace CollectaMundo
                 CardItemsToAdd.Clear();
                 MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Collapsed;
                 MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
+                MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Collapsed;
 
             }
         }

@@ -357,16 +357,17 @@
             </Grid>
         </Grid>
         <Grid Grid.Row="1" Grid.Column="1" x:Name="GridContentSection" Margin="5,00,5,0" Visibility="Visible">
-            <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="211" Width="211" RenderTransformOrigin="0.5,0.5" Margin="0,40,0,0" Opacity="0.8" d:IsHidden="True" />                        
-            <Grid x:Name="GridSearchAndFilterAllCards" d:IsHidden="True">
+            <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="200" Width="200" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" />                        
+            <Grid x:Name="GridSearchAndFilterAllCards">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
-                <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,20,0,0" VerticalAlignment="Top" Width="199" Style="{StaticResource BelerenBold}" Click="ButtonSubmitCardsToMyCollection_Click" Visibility="Collapsed"/>
-                <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Right" Margin="0,232,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonAddCardsToMyCollection_Click"/>
+                <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
+                <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,50,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="ButtonSubmitCardsToMyCollection_Click" Visibility="Collapsed"/>
+                <Button x:Name="ButtonClearCardsToAdd" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,50,210,0" VerticalAlignment="Top" Click="ButtonClearCardsToAdd_Click" Style="{StaticResource BelerenBold}" Visibility="Collapsed"/>
+                <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Right" Margin="0,252,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonAddCardsToMyCollection_Click"/>
                 
                 <TextBlock x:Name="AddStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Visibility="Collapsed"/>
                 <!--Cards to add listview-->
-                <ListView x:Name="CardsToAddListView" Margin="0,40,0,0" VerticalAlignment="Top" Height="211" Visibility="Collapsed">
+                <ListView x:Name="CardsToAddListView" Margin="0,70,0,0" VerticalAlignment="Top" Height="200" Visibility="Collapsed">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -460,9 +461,10 @@
                 </ListView>
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
-                          Margin="0,260,0,0"
+                          Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"
+                          MouseDoubleClick="DataGrid_MouseDoubleClick"
                           ScrollViewer.CanContentScroll="True"
                           EnableColumnVirtualization="True"
                           VirtualizingPanel.IsVirtualizing="True"
@@ -509,13 +511,6 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Finishes}" TextWrapping="Wrap" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Action" IsReadOnly="True" Width="Auto">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="Add to collection" Click="AddCardToCollection_Click"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -714,7 +709,7 @@
                 </ListView>
                 <TextBlock x:Name="EditStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Visibility="Collapsed"/>
             </Grid>
-            <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top">
+            <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top" d:IsHidden="True">
                 <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698"/>
                 <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Grid x:Name="GridUtilsScreen">
