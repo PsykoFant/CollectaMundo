@@ -10,7 +10,7 @@
         mc:Ignorable="d"
         Title="CollectaMundo"
         Icon="Images/Icon.ico" 
-        Width="1280">
+        Width="1920">
 
     <!-- Define resources accessible by all elements in this Window -->
     <Window.Resources>
@@ -358,9 +358,10 @@
         </Grid>
         <Grid Grid.Row="1" Grid.Column="1" x:Name="GridContentSection" Margin="5,00,5,0" Visibility="Visible">
             <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="211" Width="211" RenderTransformOrigin="0.5,0.5" Margin="0,40,0,0" Opacity="0.8" />                        
-            <Grid x:Name="GridSearchAndFilterAllCards">
+            <Grid x:Name="GridSearchAndFilterAllCards" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="10,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
+                <Button x:Name="SubmitCardsToMyCollection" Content="Submit selected cards to my collection" HorizontalAlignment="Right" Margin="0,20,0,0" VerticalAlignment="Top" Width="199" Click="SubmitCardsToMyCollection_Click" Visibility="Collapsed"/>
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
                           Margin="0,260,0,0"
@@ -517,14 +518,13 @@
                             </GridViewColumn>
                         </GridView>
                     </ListView.View>
-                </ListView>
-                <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Right" Margin="0,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonAddCardsToMyCollection_Click" Visibility="Collapsed"/>
-                <TextBlock x:Name="AddStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Visibility="Collapsed"/>
-                <Button x:Name="ButtonEditCardsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,20,0,0" VerticalAlignment="Top" Width="199" Click="ButtonEditCardsInMyCollection_Click" Visibility="Collapsed"/>
+                </ListView>                
+                <TextBlock x:Name="AddStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Visibility="Collapsed"/>                
             </Grid>
-            <Grid x:Name="GridMyCollection" d:IsHidden="True">
+            <Grid x:Name="GridMyCollection">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
+                <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,20,0,0" VerticalAlignment="Top" Width="199" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
                 <!--The my collection datagrid-->
                 <DataGrid x:Name="MyCollectionDatagrid"
                           Margin="0,260,0,0"

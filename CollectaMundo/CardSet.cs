@@ -92,7 +92,6 @@ namespace CollectaMundo
             }
             set => _manaCostImage = value;
         }
-
         public byte[]? ManaCostImageBytes { get; set; }
 
         private static BitmapImage? ConvertImage(byte[] imageData)
@@ -117,7 +116,6 @@ namespace CollectaMundo
                 return null;
             }
         }
-
 
         public class CardItem : CardSet, INotifyPropertyChanged
         {

@@ -209,6 +209,7 @@ namespace CollectaMundo
                     cardItem.CardsForTrade = Convert.ToInt32(reader["CardsForTrade"]);
                     cardItem.SelectedCondition = reader["Condition"]?.ToString();
                     cardItem.SelectedFinish = reader["Finishes"]?.ToString();
+                    Debug.WriteLine(reader["Finishes"]?.ToString());
                 }
 
                 return card;
@@ -896,7 +897,7 @@ namespace CollectaMundo
                         if (targetCollection.Count == 0)
                         {
                             CardsToAddListView.Visibility = Visibility.Collapsed;
-                            ButtonAddCardsToMyCollection.Visibility = Visibility.Collapsed;
+                            SubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
                         }
                     }
                 }
@@ -914,26 +915,26 @@ namespace CollectaMundo
         {
             AddStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToAddListView.Visibility = Visibility.Visible;
-            ButtonAddCardsToMyCollection.Visibility = Visibility.Visible;
+            SubmitCardsToMyCollection.Visibility = Visibility.Visible;
             AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.CardItemsToAdd);
         }
         private void EditCardInCollection_Click(object sender, RoutedEventArgs e)
         {
             EditStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToEditListView.Visibility = Visibility.Visible;
-            ButtonEditCardsInMyCollection.Visibility = Visibility.Visible;
+            ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Visible;
             AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.CardItemsToEdit);
         }
         private void ListViewComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             AddToCollectionManager.AdjustColumnWidths();
         }
-        private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
+        private void SubmitCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
             LogoSmall.Visibility = Visibility.Collapsed;
             addToCollectionManager.SubmitNewCardsToCollection(sender, e);
         }
-        private void ButtonEditCardsInMyCollection_Click(object sender, RoutedEventArgs e)
+        private void SubmitCardEditsInMyCollection_Click(object sender, RoutedEventArgs e)
         {
             LogoSmall.Visibility = Visibility.Collapsed;
             addToCollectionManager.SubmitEditedCardsToCollection(sender, e);

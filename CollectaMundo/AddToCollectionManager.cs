@@ -362,7 +362,7 @@ namespace CollectaMundo
 
                 CardItemsToAdd.Clear();
                 MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Collapsed;
-                MainWindow.CurrentInstance.ButtonAddCardsToMyCollection.Visibility = Visibility.Collapsed;
+                MainWindow.CurrentInstance.SubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
 
             }
         }
@@ -461,7 +461,7 @@ namespace CollectaMundo
 
                 CardItemsToEdit.Clear();
                 MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Collapsed;
-                MainWindow.CurrentInstance.ButtonEditCardsInMyCollection.Visibility = Visibility.Collapsed;
+                MainWindow.CurrentInstance.ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Collapsed;
             }
         }
         private static async Task<int?> CheckForExistingCardAsync(CardItem cardItem)

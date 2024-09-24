@@ -798,8 +798,8 @@ public class DownloadAndPrepDB
                         m.count AS CardsOwned,
                         m.trade AS CardsForTrade,
                         m.condition AS Condition,
-                        c.language AS Language,
-                        c.finishes AS Finishes,
+                        m.language AS Language,
+                        m.finish AS Finishes,
                         c.side AS Side
                     FROM
                         myCollection m
