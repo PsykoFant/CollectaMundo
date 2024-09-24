@@ -897,7 +897,7 @@ namespace CollectaMundo
                         if (targetCollection.Count == 0)
                         {
                             CardsToAddListView.Visibility = Visibility.Collapsed;
-                            SubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
+                            ButtonSubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
                         }
                     }
                 }
@@ -915,7 +915,7 @@ namespace CollectaMundo
         {
             AddStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToAddListView.Visibility = Visibility.Visible;
-            SubmitCardsToMyCollection.Visibility = Visibility.Visible;
+            ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
             AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.CardItemsToAdd);
         }
         private void EditCardInCollection_Click(object sender, RoutedEventArgs e)
@@ -929,7 +929,7 @@ namespace CollectaMundo
         {
             AddToCollectionManager.AdjustColumnWidths();
         }
-        private void SubmitCardsToMyCollection_Click(object sender, RoutedEventArgs e)
+        private void ButtonSubmitCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
             LogoSmall.Visibility = Visibility.Collapsed;
             addToCollectionManager.SubmitNewCardsToCollection(sender, e);
