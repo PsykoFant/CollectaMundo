@@ -23,8 +23,8 @@ namespace CollectaMundo
 
         public AddToCollectionManager()
         {
-            CardItemsToAdd = new ObservableCollection<CardSet.CardItem>();
-            CardItemsToEdit = new ObservableCollection<CardSet.CardItem>();
+            CardItemsToAdd = [];
+            CardItemsToEdit = [];
 
             // Initialize the timer
             _typingTimer = new System.Timers.Timer(TypingDelay);
@@ -218,15 +218,27 @@ namespace CollectaMundo
                 Debug.WriteLine($"AddOrEditCardHandler error: {ex.Message}");
             }
         }
-
+        public static void ShowCardsToAddListView()
+        {
+            MainWindow.CurrentInstance.AddStatusTextBlock.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Visible;
+        }
+        public static void HideCardsToAddListView()
+        {
+            MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Collapsed;
+        }
         private static async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
         {
             if (string.IsNullOrEmpty(uuid))
             {
-                return new List<string> { "English" }; // Return default list if UUID is null or empty
+                return ["English"]; // Return default list if UUID is null or empty
             }
 
-            List<string> languages = new List<string>();
+            List<string> languages = [];
             // Updated query to select language from both 'cardForeignData' and 'cards' tables
             string query = @"
                 SELECT language FROM cardForeignData WHERE uuid = @uuid
@@ -345,9 +357,7 @@ namespace CollectaMundo
                 DBAccess.connection.Close();
 
                 CardItemsToAdd.Clear();
-                MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Collapsed;
-                MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
-                MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Collapsed;
+                HideCardsToAddListView();
 
             }
         }

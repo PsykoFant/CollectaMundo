@@ -889,8 +889,7 @@ namespace CollectaMundo
                         // If there is nothing in CardItemsToAdd, hide listview and button
                         if (targetCollection.Count == 0)
                         {
-                            CardsToAddListView.Visibility = Visibility.Collapsed;
-                            ButtonSubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
+                            AddToCollectionManager.HideCardsToAddListView();
                         }
                     }
                 }
@@ -911,19 +910,13 @@ namespace CollectaMundo
         private void ButtonClearCardsToAdd_Click(object sender, RoutedEventArgs e)
         {
             addToCollectionManager.CardItemsToAdd.Clear();
-            CardsToAddListView.Visibility = Visibility.Collapsed;
-            ButtonSubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
-            ButtonClearCardsToAdd.Visibility = Visibility.Collapsed;
+            AddToCollectionManager.HideCardsToAddListView();
         }
 
         // Add cards to add or edit listview
         private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            AddStatusTextBlock.Visibility = Visibility.Collapsed;
-            CardsToAddListView.Visibility = Visibility.Visible;
-            ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
-            ButtonClearCardsToAdd.Visibility = Visibility.Visible;
-
+            AddToCollectionManager.ShowCardsToAddListView();
             if (sender is DataGrid grid && grid.SelectedItem != null)
             {
                 // Assuming your items are of type CardSet
@@ -931,21 +924,18 @@ namespace CollectaMundo
                 {
                     AddToCollectionManager.AddOrEditCardHandler(card, addToCollectionManager.CardItemsToAdd);
                 }
+                AllCardsDataGrid.UnselectAll();
             }
         }
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
+            AddToCollectionManager.ShowCardsToAddListView();
             foreach (CardSet selectedCard in AllCardsDataGrid.SelectedItems)
             {
                 AddToCollectionManager.AddOrEditCardHandler(selectedCard, addToCollectionManager.CardItemsToAdd);
             }
 
             AllCardsDataGrid.UnselectAll();
-
-            AddStatusTextBlock.Visibility = Visibility.Collapsed;
-            CardsToAddListView.Visibility = Visibility.Visible;
-            ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
-            ButtonClearCardsToAdd.Visibility = Visibility.Visible;
         }
         private void EditCardInCollection_Click(object sender, RoutedEventArgs e)
         {
