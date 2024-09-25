@@ -934,9 +934,18 @@ namespace CollectaMundo
             {
                 AddToCollectionManager.AddOrEditCardHandler(selectedCard, addToCollectionManager.CardItemsToAdd);
             }
-
             AllCardsDataGrid.UnselectAll();
         }
+        private void ButtonAddCardsToMyCollectionWithDefaultValues_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedCards = AllCardsDataGrid.SelectedItems.Cast<CardSet>().ToList();
+            if (selectedCards.Count > 0)
+            {
+                addToCollectionManager.SubmitNewCardsToCollectionWithDefaultValues(selectedCards);
+                AllCardsDataGrid.UnselectAll();
+            }
+        }
+
         private void EditCardInCollection_Click(object sender, RoutedEventArgs e)
         {
             EditStatusTextBlock.Visibility = Visibility.Collapsed;

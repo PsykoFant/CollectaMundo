@@ -471,6 +471,12 @@
                           CanUserAddRows="False"
                           HorizontalAlignment="Stretch"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Add selected card(s) to Collection" Click="ButtonAddCardsToMyCollection_Click"/>
+                            <MenuItem Header="card(s) with default values to Collection" Click="ButtonAddCardsToMyCollectionWithDefaultValues_Click"/>                            
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Name" Width="*">
                             <DataGridTemplateColumn.CellTemplate>
