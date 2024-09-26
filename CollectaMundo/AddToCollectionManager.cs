@@ -209,6 +209,16 @@ namespace CollectaMundo
                     SelectedCondition = "Near Mint",
                 };
 
+                // Adjust properties if the selected card is to edit an existing card item.
+                if (selectedCard is CardItem cardItem)
+                {
+                    newItem.CardId = cardItem.CardId;
+                    newItem.CardsOwned = cardItem.CardsOwned;
+                    newItem.CardsForTrade = cardItem.CardsForTrade;
+                    newItem.SelectedFinish = cardItem.SelectedFinish;
+                    newItem.SelectedCondition = cardItem.SelectedCondition;
+                }
+
                 targetCollection.Add(newItem);
                 AdjustColumnWidths();
             }

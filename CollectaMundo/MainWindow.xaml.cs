@@ -920,27 +920,20 @@ namespace CollectaMundo
             if (sender is DataGrid grid && grid.SelectedItem != null)
             {
                 // Cast the selected item to CardSet
-                if (grid.SelectedItem is CardSet card)
+                if (grid.SelectedItem is CardSet cardSetCard && grid.Name == "AllCardsDataGrid")
                 {
-                    // Check the identity of the DataGrid
-                    if (grid.Name == "AllCardsDataGrid")
-                    {
-                        // If the source is AllCardsDataGrid, add to CardItemsToAdd
-                        AddToCollectionManager.AddOrEditCardHandler(card, addToCollectionManager.CardItemsToAdd);
-                        AddToCollectionManager.ShowCardsToAddListView();
-                    }
-                    else if (grid.Name == "MyCollectionDataGrid")
-                    {
-                        // If the source is MyCollectionDataGrid, add to CardItemsToEdit
-                        AddToCollectionManager.AddOrEditCardHandler(card, addToCollectionManager.CardItemsToEdit);
-                    }
-
-                    // Optionally, unselect all selections in the DataGrid
+                    // If the source is AllCardsDataGrid, add to CardItemsToAdd
+                    AddToCollectionManager.AddOrEditCardHandler(cardSetCard, addToCollectionManager.CardItemsToAdd);
+                    AddToCollectionManager.ShowCardsToAddListView();
+                    grid.UnselectAll();
+                }
+                else if (grid.SelectedItem is CardItem cardItemCard && grid.Name == "MyCollectionDatagrid")
+                {
+                    AddToCollectionManager.AddOrEditCardHandler(cardItemCard, addToCollectionManager.CardItemsToEdit);
                     grid.UnselectAll();
                 }
             }
         }
-
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
             AddToCollectionManager.ShowCardsToAddListView();
@@ -960,11 +953,17 @@ namespace CollectaMundo
             }
         }
 
-        private void EditCardInCollection_Click(object sender, RoutedEventArgs e)
+        private void ButtonEditCardsInCollection_Click(object sender, RoutedEventArgs e)
         {
             EditStatusTextBlock.Visibility = Visibility.Collapsed;
             CardsToEditListView.Visibility = Visibility.Visible;
             ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Visible;
+
+            foreach (CardSet selectedCard in MyCollectionDatagrid.SelectedItems)
+            {
+                AddToCollectionManager.AddOrEditCardHandler(selectedCard, addToCollectionManager.CardItemsToEdit);
+            }
+            MyCollectionDatagrid.UnselectAll();
             //AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.CardItemsToEdit);
         }
 
