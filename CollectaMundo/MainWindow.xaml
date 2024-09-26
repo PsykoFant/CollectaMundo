@@ -362,7 +362,7 @@
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
                 <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,50,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="ButtonSubmitCardsToMyCollection_Click" Visibility="Collapsed"/>
-                <Button x:Name="ButtonClearCardsToAdd" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,50,210,0" VerticalAlignment="Top" Click="ButtonClearCardsToAdd_Click" Style="{StaticResource BelerenBold}" Visibility="Collapsed"/>
+                <Button x:Name="ButtonClearCardsToAdd" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,50,210,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="Collapsed" Click="ButtonClearCardsToAdd_Click"/>
                 <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Right" Margin="0,252,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonAddCardsToMyCollection_Click"/>
                 
                 <TextBlock x:Name="AddStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Visibility="Collapsed"/>
@@ -568,7 +568,8 @@
             <Grid x:Name="GridMyCollection">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
-                <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,50,0,0" VerticalAlignment="Top" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
+                <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,50,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
+                <Button x:Name="ButtonClearCardsToEdit" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,50,210,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="Collapsed" Click="ButtonClearCardsToEdit_Click"/>                
                 <Button x:Name="ButtonEditCardsInMyCollection" Content="Edit selected cards" HorizontalAlignment="Right" Margin="0,252,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="{Binding ElementName=MyCollectionDatagrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonEditCardsInCollection_Click"/>
 
                 <TextBlock x:Name="EditStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Visibility="Collapsed"/>
@@ -745,13 +746,6 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding CardsForTrade}" TextWrapping="Wrap" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Action" Width="Auto">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Button Content="Edit" Click="ButtonEditCardsInCollection_Click"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -1067,7 +1061,7 @@
         <Grid Grid.Row="1" Grid.Column="1" x:Name="GridStatus" Margin="0,40,0,0" VerticalAlignment="Top" d:IsHidden="True">
             <Image Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="500" Width="500" RenderTransformOrigin="0.5,0.5" Margin="0,76,0,0" />
             <Label Content="CollectaMundo" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
-            <ProgressBar x:Name="progressBar" HorizontalAlignment="Center" Height="11" Margin="0,652,0,0" VerticalAlignment="Top" Width="738"/>
+            <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Center" Height="11" Margin="0,652,0,0" VerticalAlignment="Top" Width="738"/>
             <Label x:Name="StatusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top"/>
             <Label x:Name="FirstTimeSetupLabel" Content="" HorizontalAlignment="Center" Margin="0,582,0,0" VerticalAlignment="Top" FontSize="18"/>
         </Grid>

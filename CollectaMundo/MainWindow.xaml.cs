@@ -137,7 +137,7 @@ namespace CollectaMundo
             {
                 await ShowStatusWindowAsync(true);  // Show loading message                
                 CurrentInstance.StatusLabel.Content = "Loading ALL the cards ... ";
-                CurrentInstance.progressBar.Visibility = Visibility.Collapsed;
+                CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
                 // Force the UI to update
                 Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
 
@@ -173,7 +173,7 @@ namespace CollectaMundo
             {
                 CurrentInstance.StatusLabel.Content = string.Empty;
                 await ShowStatusWindowAsync(false);
-                CurrentInstance.progressBar.Visibility = Visibility.Visible;
+                CurrentInstance.ProgressBar.Visibility = Visibility.Visible;
             }
         }
         private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
@@ -912,6 +912,12 @@ namespace CollectaMundo
             addToCollectionManager.CardItemsToAdd.Clear();
             AddToCollectionManager.HideCardsToAddListView(true);
         }
+        private void ButtonClearCardsToEdit_Click(object sender, RoutedEventArgs e)
+        {
+            addToCollectionManager.CardItemsToEdit.Clear();
+            AddToCollectionManager.HideCardsToEditListView(true);
+        }
+
 
         // Add cards to add or edit listview
         private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)

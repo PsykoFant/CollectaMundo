@@ -30,9 +30,6 @@ namespace CollectaMundo
                     string cardImageUrl = $"https://cards.scryfall.io/normal/front/{dir1}/{dir2}/{scryfallId}.jpg";
                     string secondCardImageUrl = $"https://cards.scryfall.io/normal/back/{dir1}/{dir2}/{scryfallId}.jpg";
 
-                    Debug.WriteLine(scryfallId);
-                    Debug.WriteLine(cardImageUrl);
-
                     MainWindow.CurrentInstance.ImageSourceUrl = cardImageUrl;
 
                     if (await IsDoubleSidedCardAsync(uuid))

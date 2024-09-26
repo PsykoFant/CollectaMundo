@@ -71,11 +71,11 @@ public class DownloadAndPrepDB
         {
             MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = statusMessage;
 
-            if (MainWindow.CurrentInstance?.progressBar != null)
+            if (MainWindow.CurrentInstance?.ProgressBar != null)
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    MainWindow.CurrentInstance.progressBar.Visibility = Visibility.Visible;
+                    MainWindow.CurrentInstance.ProgressBar.Visibility = Visibility.Visible;
                 });
             }
 
@@ -83,9 +83,9 @@ public class DownloadAndPrepDB
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    if (MainWindow.CurrentInstance?.progressBar != null)
+                    if (MainWindow.CurrentInstance?.ProgressBar != null)
                     {
-                        MainWindow.CurrentInstance.progressBar.Value = value;
+                        MainWindow.CurrentInstance.ProgressBar.Value = value;
                     }
                 });
             });
@@ -124,12 +124,12 @@ public class DownloadAndPrepDB
         }
         finally
         {
-            if (MainWindow.CurrentInstance?.progressBar != null)
+            if (MainWindow.CurrentInstance?.ProgressBar != null)
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = string.Empty;
-                    MainWindow.CurrentInstance.progressBar.Visibility = Visibility.Hidden;
+                    MainWindow.CurrentInstance.ProgressBar.Visibility = Visibility.Hidden;
                 });
             }
         }
@@ -242,7 +242,6 @@ public class DownloadAndPrepDB
             ).ToList();
 
             await Task.WhenAll(insertTasks);
-            uniqueManaCosts.ForEach(manaCost => StatusMessageUpdated?.Invoke($"Added {manaCost} to table"));
 
             List<string> manaCostsWithNullImage = await GetValuesWithNullAsync("uniqueManaCostImages", "uniqueManaCost", "manaCostImage");
 

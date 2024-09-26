@@ -235,6 +235,13 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Visible;
         }
+        public static void ShowCardsToEditListView()
+        {
+            MainWindow.CurrentInstance.EditStatusTextBlock.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.ButtonClearCardsToEdit.Visibility = Visibility.Visible;
+        }
         public static void HideCardsToAddListView(bool showLogo)
         {
             MainWindow.CurrentInstance.LogoSmall.Visibility = showLogo ? Visibility.Visible : Visibility.Collapsed;
@@ -242,17 +249,13 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Collapsed;
         }
-
-
-        public static void ShowCardsToEditListView()
+        public static void HideCardsToEditListView(bool showLogo)
         {
-            MainWindow.CurrentInstance.EditStatusTextBlock.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Visible;
-            MainWindow.CurrentInstance.ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.LogoSmall.Visibility = showLogo ? Visibility.Visible : Visibility.Collapsed;
+            MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.ButtonClearCardsToEdit.Visibility = Visibility.Collapsed;
         }
-
-
-
         private static async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
         {
             if (string.IsNullOrEmpty(uuid))
@@ -534,17 +537,15 @@ namespace CollectaMundo
                 // Set the detailed string with linebreaks to the TextBlock
                 MainWindow.CurrentInstance.EditStatusTextBlock.Visibility = Visibility.Visible;
                 MainWindow.CurrentInstance.EditStatusTextBlock.Text = "Edited the following cards in your collection:\n\n" + cardDetails;
+                HideCardsToEditListView(false);
+
+                CardItemsToEdit.Clear();
 
                 // Reload my collection
                 MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
                 await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
+
                 DBAccess.connection.Close();
-
-                MainWindow.CurrentInstance.ApplyFilterSelection();
-
-                CardItemsToEdit.Clear();
-                MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Collapsed;
-                MainWindow.CurrentInstance.ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Collapsed;
             }
         }
         private static async Task<int?> CheckForExistingCardAsync(CardSet card)
