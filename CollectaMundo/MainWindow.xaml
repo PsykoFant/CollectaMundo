@@ -575,6 +575,7 @@
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"
+                          MouseDoubleClick="DataGrid_MouseDoubleClick"
                           ScrollViewer.CanContentScroll="True"
                           EnableColumnVirtualization="True"
                           VirtualizingPanel.IsVirtualizing="True"

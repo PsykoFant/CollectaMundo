@@ -916,17 +916,31 @@ namespace CollectaMundo
         // Add cards to add or edit listview
         private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            AddToCollectionManager.ShowCardsToAddListView();
+            // Check if the sender is a DataGrid and has a selected item
             if (sender is DataGrid grid && grid.SelectedItem != null)
             {
-                // Assuming your items are of type CardSet
+                // Cast the selected item to CardSet
                 if (grid.SelectedItem is CardSet card)
                 {
-                    AddToCollectionManager.AddOrEditCardHandler(card, addToCollectionManager.CardItemsToAdd);
+                    // Check the identity of the DataGrid
+                    if (grid.Name == "AllCardsDataGrid")
+                    {
+                        // If the source is AllCardsDataGrid, add to CardItemsToAdd
+                        AddToCollectionManager.AddOrEditCardHandler(card, addToCollectionManager.CardItemsToAdd);
+                        AddToCollectionManager.ShowCardsToAddListView();
+                    }
+                    else if (grid.Name == "MyCollectionDataGrid")
+                    {
+                        // If the source is MyCollectionDataGrid, add to CardItemsToEdit
+                        AddToCollectionManager.AddOrEditCardHandler(card, addToCollectionManager.CardItemsToEdit);
+                    }
+
+                    // Optionally, unselect all selections in the DataGrid
+                    grid.UnselectAll();
                 }
-                AllCardsDataGrid.UnselectAll();
             }
         }
+
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
             AddToCollectionManager.ShowCardsToAddListView();
