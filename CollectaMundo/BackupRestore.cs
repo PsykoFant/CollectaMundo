@@ -745,20 +745,20 @@ namespace CollectaMundo
                     var batchQueryBuilder = new StringBuilder();
                     batchQueryBuilder.Append(@"
                         SELECT uuid, name, setCode
-                        FROM cardTokenView
+                        FROM view_cardToken
                         WHERE name ");
 
                     var scenario2QueryBuilder = new StringBuilder(@"
                         UNION ALL
                         SELECT uuid, name, tokenSetCode AS setCode
-                        FROM cardTokenView
+                        FROM view_cardToken
                         WHERE tokenSetCode <> setCode
                         AND name ");
 
                     var scenario3QueryBuilder = new StringBuilder(@"
                         UNION ALL
                         SELECT uuid, faceName AS name, tokenSetCode AS setCode
-                        FROM cardTokenView
+                        FROM view_cardToken
                         WHERE faceName ");
 
                     List<SQLiteParameter> nameParameters;
@@ -819,13 +819,13 @@ namespace CollectaMundo
                     var batchQueryBuilder = new StringBuilder();
                     batchQueryBuilder.Append(@"
                         SELECT uuid, name, setName
-                        FROM cardTokenView
+                        FROM view_cardToken
                         WHERE name ");
 
                     var scenario2QueryBuilder = new StringBuilder(@"
                         UNION ALL
                         SELECT uuid, faceName AS name, setName
-                        FROM cardTokenView
+                        FROM view_cardToken
                         WHERE faceName ");
 
                     List<SQLiteParameter> nameParameters;

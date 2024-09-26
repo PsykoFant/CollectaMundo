@@ -667,9 +667,8 @@ public class DownloadAndPrepDB
     {
         try
         {
-            // SQL for creating the cardTokenView
             string createCardTokenViewQuery = @"
-                CREATE VIEW IF NOT EXISTS cardTokenView AS
+                CREATE VIEW IF NOT EXISTS view_cardToken AS
                 SELECT 
                     c.uuid,
                     c.name,
@@ -699,9 +698,8 @@ public class DownloadAndPrepDB
                     t.side IS NULL OR t.side = 'a';
                 ";
 
-            // SQL for creating the allCardsView
             string createAllCardsViewQuery = @"
-                CREATE VIEW IF NOT EXISTS allCardsView AS
+                CREATE VIEW IF NOT EXISTS view_allCards AS
                 SELECT * FROM (
                     SELECT 
                         c.name AS Name, 
@@ -774,9 +772,8 @@ public class DownloadAndPrepDB
                     END;
                 ";
 
-            // SQL for creating the myCollectionView
             string createMyCollectionViewQuery = @"
-               CREATE VIEW IF NOT EXISTS myCollectionView AS
+                CREATE VIEW IF NOT EXISTS view_myCollection AS
                 SELECT * FROM (
                     SELECT                        
                         c.name AS Name,
@@ -799,7 +796,7 @@ public class DownloadAndPrepDB
                         m.trade AS CardsForTrade,
                         m.condition AS Condition,
                         m.language AS Language,
-                        m.finish AS Finishes,
+                        m.finish AS Finish,
                         c.side AS Side
                     FROM
                         myCollection m
@@ -842,7 +839,7 @@ public class DownloadAndPrepDB
                         m.trade AS CardsForTrade,
                         m.condition AS Condition,
                         m.language AS Language,
-                        m.finish AS Finishes,
+                        m.finish AS Finish,
                         t.side AS Side
                     FROM
                         myCollection m
@@ -863,28 +860,25 @@ public class DownloadAndPrepDB
                         WHEN 'R' THEN 4
                         WHEN 'G' THEN 5
                         ELSE 6
-                    END;
+                    END
                 ";
 
-            // Execute creation of cardTokenView
             using (var command = new SQLiteCommand(createCardTokenViewQuery, DBAccess.connection))
             {
                 await command.ExecuteNonQueryAsync();
-                Debug.WriteLine("Created view cardTokenView.");
+                Debug.WriteLine("Created view view_cardToken.");
             }
 
-            // Execute creation of allCardsView
             using (var command = new SQLiteCommand(createAllCardsViewQuery, DBAccess.connection))
             {
                 await command.ExecuteNonQueryAsync();
-                Debug.WriteLine("Created view allCardsView.");
+                Debug.WriteLine("Created view view_allCards.");
             }
 
-            // Execute creation of myCollectionView
             using (var command = new SQLiteCommand(createMyCollectionViewQuery, DBAccess.connection))
             {
                 await command.ExecuteNonQueryAsync();
-                Debug.WriteLine("Created view myCollectionView.");
+                Debug.WriteLine("Created view view_myCollection.");
             }
 
         }

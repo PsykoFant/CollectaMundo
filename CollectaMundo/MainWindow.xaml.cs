@@ -52,8 +52,8 @@ namespace CollectaMundo
         private static MainWindow? _currentInstance;
 
         // Query strings to load cards into datagrids
-        public readonly string myCollectionQuery = "SELECT * FROM myCollectionView";
-        private readonly string allCardsQuery = "SELECT * FROM allCardsView";
+        private readonly string allCardsQuery = "SELECT * FROM view_allCards";
+        public readonly string myCollectionQuery = "SELECT * FROM view_myCollection";
         private readonly string colourQuery = "SELECT* FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ('W', 'U', 'B', 'R', 'G', 'C', 'X') ORDER BY CASE uniqueManaSymbol WHEN 'W' THEN 1 WHEN 'U' THEN 2 WHEN 'B' THEN 3 WHEN 'R' THEN 4 WHEN 'G' THEN 5 WHEN 'C' THEN 6 WHEN 'X' THEN 7 END;";
 
         // The CardSet object which holds all the cards read from db
@@ -120,7 +120,7 @@ namespace CollectaMundo
             GridFiltering.Visibility = Visibility.Visible;
             LogoSmall.Visibility = Visibility.Visible;
 
-            await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
+            //await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
             await LoadColorIcons(ColorIcons, colourQuery);
             await FillComboBoxesAsync();
@@ -209,7 +209,7 @@ namespace CollectaMundo
                     cardItem.CardsOwned = Convert.ToInt32(reader["CardsOwned"]);
                     cardItem.CardsForTrade = Convert.ToInt32(reader["CardsForTrade"]);
                     cardItem.SelectedCondition = reader["Condition"]?.ToString();
-                    cardItem.SelectedFinish = reader["Finishes"]?.ToString();
+                    cardItem.SelectedFinish = reader["Finish"]?.ToString();
                 }
 
                 return card;
@@ -919,10 +919,9 @@ namespace CollectaMundo
             // Check if the sender is a DataGrid and has a selected item
             if (sender is DataGrid grid && grid.SelectedItem != null)
             {
-                // Cast the selected item to CardSet
+                // If the source is AllCardsDataGrid, add to CardItemsToAdd. Else, add to CardItemsToEdit
                 if (grid.SelectedItem is CardSet cardSetCard && grid.Name == "AllCardsDataGrid")
                 {
-                    // If the source is AllCardsDataGrid, add to CardItemsToAdd
                     AddToCollectionManager.AddOrEditCardHandler(cardSetCard, addToCollectionManager.CardItemsToAdd);
                     AddToCollectionManager.ShowCardsToAddListView();
                     grid.UnselectAll();
@@ -930,6 +929,7 @@ namespace CollectaMundo
                 else if (grid.SelectedItem is CardItem cardItemCard && grid.Name == "MyCollectionDatagrid")
                 {
                     AddToCollectionManager.AddOrEditCardHandler(cardItemCard, addToCollectionManager.CardItemsToEdit);
+                    AddToCollectionManager.ShowCardsToEditListView();
                     grid.UnselectAll();
                 }
             }
@@ -955,16 +955,12 @@ namespace CollectaMundo
 
         private void ButtonEditCardsInCollection_Click(object sender, RoutedEventArgs e)
         {
-            EditStatusTextBlock.Visibility = Visibility.Collapsed;
-            CardsToEditListView.Visibility = Visibility.Visible;
-            ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Visible;
-
+            AddToCollectionManager.ShowCardsToEditListView();
             foreach (CardSet selectedCard in MyCollectionDatagrid.SelectedItems)
             {
                 AddToCollectionManager.AddOrEditCardHandler(selectedCard, addToCollectionManager.CardItemsToEdit);
             }
             MyCollectionDatagrid.UnselectAll();
-            //AddToCollectionManager.AddOrEditCardHandler(sender, addToCollectionManager.CardItemsToEdit);
         }
 
 

@@ -242,6 +242,17 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Collapsed;
         }
+
+
+        public static void ShowCardsToEditListView()
+        {
+            MainWindow.CurrentInstance.EditStatusTextBlock.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Visible;
+        }
+
+
+
         private static async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
         {
             if (string.IsNullOrEmpty(uuid))
@@ -295,6 +306,9 @@ namespace CollectaMundo
             }
             return finishes.Distinct().ToList();
         }
+
+
+        // Submit new or edited cards to collection
         public async void SubmitNewCardsToCollection(object sender, RoutedEventArgs e)
         {
             if (DBAccess.connection == null)
@@ -435,7 +449,6 @@ namespace CollectaMundo
                 DBAccess.connection.Close();
             }
         }
-
         public async void SubmitEditedCardsToCollection(object sender, RoutedEventArgs e)
         {
             if (DBAccess.connection == null)
