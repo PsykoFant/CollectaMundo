@@ -225,9 +225,9 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Visible;
         }
-        public static void HideCardsToAddListView()
+        public static void HideCardsToAddListView(bool showLogo)
         {
-            MainWindow.CurrentInstance.LogoSmall.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.LogoSmall.Visibility = showLogo ? Visibility.Visible : Visibility.Collapsed;
             MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Collapsed;
@@ -348,20 +348,20 @@ namespace CollectaMundo
                     $"- {card.Name} (CardsOwned: {card.CardsOwned}, Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish})")
                     .Aggregate((current, next) => current + "\n" + next);
 
-                MainWindow.CurrentInstance.LogoSmall.Visibility = Visibility.Collapsed;
                 MainWindow.CurrentInstance.AddStatusTextBlock.Visibility = Visibility.Visible;
                 MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards to your collection:\n\n" + cardDetails;
+                HideCardsToAddListView(false);
+
+                CardItemsToAdd.Clear();
 
                 // Reload my collection
                 MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
                 await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
-                DBAccess.connection.Close();
 
-                CardItemsToAdd.Clear();
-                HideCardsToAddListView();
+                DBAccess.connection.Close();
             }
         }
-        public async void SubmitNewCardsToCollectionWithDefaultValues(List<CardSet> selectedCards)
+        public static async void SubmitNewCardsToCollectionWithDefaultValues(List<CardSet> selectedCards)
         {
             if (DBAccess.connection == null)
             {

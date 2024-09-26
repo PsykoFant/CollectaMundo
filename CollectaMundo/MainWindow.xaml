@@ -358,7 +358,7 @@
         </Grid>
         <Grid Grid.Row="1" Grid.Column="1" x:Name="GridContentSection" Margin="5,00,5,0" Visibility="Visible">
             <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="200" Width="200" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" />                        
-            <Grid x:Name="GridSearchAndFilterAllCards">
+            <Grid x:Name="GridSearchAndFilterAllCards" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
                 <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,50,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="ButtonSubmitCardsToMyCollection_Click" Visibility="Collapsed"/>
@@ -472,9 +472,51 @@
                           HorizontalAlignment="Stretch"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <DataGrid.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="Add selected card(s) to Collection" Click="ButtonAddCardsToMyCollection_Click"/>
-                            <MenuItem Header="card(s) with default values to Collection" Click="ButtonAddCardsToMyCollectionWithDefaultValues_Click"/>                            
+                        <ContextMenu Style="{StaticResource MPlantin}">
+                            <MenuItem Header="Add selected card(s) to Collection" Click="ButtonAddCardsToMyCollection_Click" Style="{StaticResource BelerenBold}"/>
+                            <MenuItem Header="Add selected card(s) with DEFAULT values to Collection" Click="ButtonAddCardsToMyCollectionWithDefaultValues_Click" Style="{StaticResource BelerenBold}"/>
+                            <MenuItem Header="">
+                                <MenuItem.Template>
+                                    <ControlTemplate>
+                                        <Label Content="Default values are:" Margin="30,0,0,0"/>
+                                    </ControlTemplate>
+                                </MenuItem.Template>
+                            </MenuItem>
+                            <MenuItem Header="">
+                                <MenuItem.Template>
+                                    <ControlTemplate>
+                                        <Label Content=" - Condition: Near Mint" Margin="30,0,0,0"/>
+                                    </ControlTemplate>
+                                </MenuItem.Template>
+                            </MenuItem>
+                            <MenuItem Header="">
+                                <MenuItem.Template>
+                                    <ControlTemplate>
+                                        <Label Content=" - Language: English" Margin="30,0,0,0"/>
+                                    </ControlTemplate>
+                                </MenuItem.Template>
+                            </MenuItem>
+                            <MenuItem Header="">
+                                <MenuItem.Template>
+                                    <ControlTemplate>
+                                        <Label Content=" - Finish: nonfoil" Margin="30,0,0,0"/>
+                                    </ControlTemplate>
+                                </MenuItem.Template>
+                            </MenuItem>
+                            <MenuItem Header="">
+                                <MenuItem.Template>
+                                    <ControlTemplate>
+                                        <Label Content=" - Count: 1" Margin="30,0,0,0"/>
+                                    </ControlTemplate>
+                                </MenuItem.Template>
+                            </MenuItem>
+                            <MenuItem Header="">
+                                <MenuItem.Template>
+                                    <ControlTemplate>
+                                        <Label Content=" - Trade: 0" Margin="30,0,0,0"/>
+                                    </ControlTemplate>
+                                </MenuItem.Template>
+                            </MenuItem>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
                     <DataGrid.Columns>
@@ -524,13 +566,13 @@
                 </DataGrid>
                 
             </Grid>
-            <Grid x:Name="GridMyCollection" d:IsHidden="True">
+            <Grid x:Name="GridMyCollection">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Width="165" Height="30"/>
-                <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,20,0,0" VerticalAlignment="Top" Width="199" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
+                <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
+                <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,50,0,0" VerticalAlignment="Top" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
                 <!--The my collection datagrid-->
                 <DataGrid x:Name="MyCollectionDatagrid"
-                          Margin="0,260,0,0"
+                          Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"
                           ScrollViewer.CanContentScroll="True"

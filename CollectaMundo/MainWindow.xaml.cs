@@ -889,7 +889,7 @@ namespace CollectaMundo
                         // If there is nothing in CardItemsToAdd, hide listview and button
                         if (targetCollection.Count == 0)
                         {
-                            AddToCollectionManager.HideCardsToAddListView();
+                            AddToCollectionManager.HideCardsToAddListView(true);
                         }
                     }
                 }
@@ -910,7 +910,7 @@ namespace CollectaMundo
         private void ButtonClearCardsToAdd_Click(object sender, RoutedEventArgs e)
         {
             addToCollectionManager.CardItemsToAdd.Clear();
-            AddToCollectionManager.HideCardsToAddListView();
+            AddToCollectionManager.HideCardsToAddListView(true);
         }
 
         // Add cards to add or edit listview
@@ -941,7 +941,7 @@ namespace CollectaMundo
             var selectedCards = AllCardsDataGrid.SelectedItems.Cast<CardSet>().ToList();
             if (selectedCards.Count > 0)
             {
-                addToCollectionManager.SubmitNewCardsToCollectionWithDefaultValues(selectedCards);
+                AddToCollectionManager.SubmitNewCardsToCollectionWithDefaultValues(selectedCards);
                 AllCardsDataGrid.UnselectAll();
             }
         }
