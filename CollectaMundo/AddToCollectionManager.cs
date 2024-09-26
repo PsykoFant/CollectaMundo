@@ -399,35 +399,35 @@ namespace CollectaMundo
             await DBAccess.connection.OpenAsync();
             try
             {
-                foreach (CardSet currentCardItem in selectedCards)
-                {
-                    var finishes = await FetchFinishesForCardAsync(currentCardItem.Uuid);
-                    string selectedFinish = finishes.Contains("nonfoil") ? "nonfoil" : finishes.FirstOrDefault();
+                //foreach (CardSet currentCardItem in selectedCards)
+                //{
+                //    var finishes = await FetchFinishesForCardAsync(currentCardItem.Uuid);
+                //    string selectedFinish = finishes.Contains("nonfoil") ? "nonfoil" : finishes.FirstOrDefault();
 
-                    var existingCardId = await CheckForExistingCardAsync(currentCardItem);
-                    if (existingCardId.HasValue)
-                    {
-                        // Update the count in the database
-                        string updateSql = @"UPDATE myCollection SET count = count + 1 WHERE id = @id";
-                        using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
-                        {
-                            updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
-                            await updateCommand.ExecuteNonQueryAsync();
-                        }
-                    }
-                    else
-                    {
-                        // Insert a new row
-                        string insertSql = "INSERT INTO myCollection (uuid, count, trade, condition, language, finish) VALUES (@uuid, 1, 0, 'Near Mint', @language, @finish)";
-                        using (var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection))
-                        {
-                            insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
-                            insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
-                            insertCommand.Parameters.AddWithValue("@finish", selectedFinish ?? "nonfoil"); // Default to nonfoil if no finishes are available
-                            await insertCommand.ExecuteNonQueryAsync();
-                        }
-                    }
-                }
+                //    var existingCardId = await CheckForExistingCardAsync(currentCardItem);
+                //    if (existingCardId.HasValue)
+                //    {
+                //        // Update the count in the database
+                //        string updateSql = @"UPDATE myCollection SET count = count + 1 WHERE id = @id";
+                //        using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
+                //        {
+                //            updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
+                //            await updateCommand.ExecuteNonQueryAsync();
+                //        }
+                //    }
+                //    else
+                //    {
+                //        // Insert a new row
+                //        string insertSql = "INSERT INTO myCollection (uuid, count, trade, condition, language, finish) VALUES (@uuid, 1, 0, 'Near Mint', @language, @finish)";
+                //        using (var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection))
+                //        {
+                //            insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
+                //            insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
+                //            insertCommand.Parameters.AddWithValue("@finish", selectedFinish ?? "nonfoil"); // Default to nonfoil if no finishes are available
+                //            await insertCommand.ExecuteNonQueryAsync();
+                //        }
+                //    }
+                //}
             }
             catch (Exception ex)
             {
@@ -548,20 +548,28 @@ namespace CollectaMundo
                 DBAccess.connection.Close();
             }
         }
-        private static async Task<int?> CheckForExistingCardAsync(CardSet card)
+        private static async Task<int?> CheckForExistingCardAsync(CardItem card)
         {
-            string selectSql = @"SELECT id, count FROM myCollection WHERE uuid = @uuid";
+            string selectSql = @"
+                SELECT id FROM myCollection 
+                WHERE uuid = @uuid 
+                  AND condition = @condition 
+                  AND language = @language 
+                  AND finish = @finish";
             try
             {
                 using (var selectCommand = new SQLiteCommand(selectSql, DBAccess.connection))
                 {
                     selectCommand.Parameters.AddWithValue("@uuid", card.Uuid);
+                    selectCommand.Parameters.AddWithValue("@condition", card.SelectedCondition);
+                    selectCommand.Parameters.AddWithValue("@language", card.Language);
+                    selectCommand.Parameters.AddWithValue("@finish", card.SelectedFinish);
 
                     using (var reader = await selectCommand.ExecuteReaderAsync())
                     {
                         if (reader.Read())
                         {
-                            return reader.GetInt32(0);  // 'id' is the first column in the SELECT query
+                            return reader.GetInt32(0); // 'id' is the first column in the SELECT query
                         }
                     }
                 }
@@ -573,6 +581,7 @@ namespace CollectaMundo
             }
             return null; // Return null if no existing entry is found or an exception occurs
         }
+
 
 
         // Adjust listviews column widths so text is not clipped
