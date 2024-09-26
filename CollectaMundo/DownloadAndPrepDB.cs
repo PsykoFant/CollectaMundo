@@ -790,6 +790,7 @@ public class DownloadAndPrepDB
                         COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
                         c.text AS RulesText,
                         c.manaValue AS ManaValue,
+						c.finishes AS Finishes,
                         c.uuid AS Uuid,
                         m.id AS CardId,
                         m.count AS CardsOwned,
@@ -833,6 +834,7 @@ public class DownloadAndPrepDB
                         t.keywords AS Keywords,
                         t.text AS RulesText,
                         NULL AS ManaValue,  -- Tokens do not have manaValue
+						t.finishes AS Finishes,
                         t.uuid AS Uuid,
                         m.id AS CardId,
                         m.count AS CardsOwned,
@@ -860,8 +862,7 @@ public class DownloadAndPrepDB
                         WHEN 'R' THEN 4
                         WHEN 'G' THEN 5
                         ELSE 6
-                    END
-                ";
+                    END";
 
             using (var command = new SQLiteCommand(createCardTokenViewQuery, DBAccess.connection))
             {

@@ -120,7 +120,7 @@ namespace CollectaMundo
             GridFiltering.Visibility = Visibility.Visible;
             LogoSmall.Visibility = Visibility.Visible;
 
-            //await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
+            await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
             await LoadColorIcons(ColorIcons, colourQuery);
             await FillComboBoxesAsync();
