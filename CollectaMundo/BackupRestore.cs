@@ -132,7 +132,7 @@ namespace CollectaMundo
                     throw new InvalidOperationException("Database connection is not initialized.");
                 }
 
-                using (SQLiteCommand command = new SQLiteCommand("SELECT * FROM myCollection", DBAccess.connection))
+                using (SQLiteCommand command = new("SELECT * FROM myCollection", DBAccess.connection))
                 using (System.Data.Common.DbDataReader reader = await command.ExecuteReaderAsync())
                 {
                     // Check if the reader has any rows
@@ -145,7 +145,7 @@ namespace CollectaMundo
                     // If there are rows, proceed with creating the backup
                     string backupFilePath = Path.Combine(backupFolderPath, $"CollectaMundoMyCollection_backup_{DateTime.Now:yyyyMMdd}.csv");
 
-                    using (StreamWriter writer = new StreamWriter(backupFilePath, false, Encoding.UTF8))
+                    using (StreamWriter writer = new(backupFilePath, false, Encoding.UTF8))
                     {
                         // Write CSV header
                         for (int i = 0; i < reader.FieldCount; i++)
@@ -205,7 +205,7 @@ namespace CollectaMundo
         {
             try
             {
-                OpenFileDialog openFileDialog = new OpenFileDialog
+                OpenFileDialog openFileDialog = new()
                 {
                     Filter = "CSV files (*.csv)|*.csv",
                     Title = "Select a CSV file"
@@ -226,11 +226,11 @@ namespace CollectaMundo
         }
         private static async Task<ObservableCollection<TempCardItem>> ParseCsvFileAsync(string filePath)
         {
-            ObservableCollection<TempCardItem> cardItems = new ObservableCollection<TempCardItem>();
+            ObservableCollection<TempCardItem> cardItems = [];
             List<string> headers = [];
             char delimiter = ',';
 
-            using (StreamReader reader = new StreamReader(filePath, Encoding.UTF8))
+            using (StreamReader reader = new(filePath, Encoding.UTF8))
             {
                 // Read the header
                 string? header = await reader.ReadLineAsync();
@@ -256,7 +256,7 @@ namespace CollectaMundo
                     }
 
                     List<string> values = ParseCsvLine(line, delimiter);
-                    TempCardItem cardItem = new TempCardItem();
+                    TempCardItem cardItem = new();
 
                     for (int i = 0; i < headers.Count; i++)
                     {
@@ -273,8 +273,8 @@ namespace CollectaMundo
         }
         private static List<string> ParseCsvLine(string line, char delimiter)
         {
-            List<string> values = new List<string>();
-            StringBuilder currentField = new StringBuilder();
+            List<string> values = [];
+            StringBuilder currentField = new();
             bool inQuotes = false;
 
             for (int i = 0; i < line.Length; i++)
@@ -346,7 +346,7 @@ namespace CollectaMundo
                 List<string> csvHeaders = TempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? [];
                 List<string> databaseFields = GetCardIdentifierColumns(); // Fetch database columns
 
-                ColumnMapping mappingItem = new ColumnMapping
+                ColumnMapping mappingItem = new()
                 {
                     DatabaseFields = databaseFields,
                     CsvHeaders = csvHeaders,
@@ -364,7 +364,7 @@ namespace CollectaMundo
         }
         private static List<string> GetCardIdentifierColumns()
         {
-            List<string> columns = new List<string>();
+            List<string> columns = [];
             try
             {
                 // Open the database connection
@@ -376,7 +376,7 @@ namespace CollectaMundo
 
                 // Get the column names from cardIdentifiers table
                 string query = "PRAGMA table_info(cardIdentifiers);";
-                using (SQLiteCommand command = new SQLiteCommand(query, DBAccess.connection))
+                using (SQLiteCommand command = new(query, DBAccess.connection))
                 {
                     using (SQLiteDataReader reader = command.ExecuteReader())
                     {
@@ -455,7 +455,7 @@ namespace CollectaMundo
         }
         private static void GoToNameAndSetMapping()
         {
-            List<string> cardSetFields = new List<string> { "Card Name", "Set Name", "Set Code" };
+            List<string> cardSetFields = ["Card Name", "Set Name", "Set Code"];
             PopulateColumnMappingListView(MainWindow.CurrentInstance.NameAndSetMappingListView, cardSetFields);
 
             MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
@@ -466,8 +466,7 @@ namespace CollectaMundo
             try
             {
                 // Get the field from IdColumnMappingListView
-                List<ColumnMapping>? idColumnMapping = MainWindow.CurrentInstance.IdColumnMappingListView.ItemsSource as List<ColumnMapping>;
-                if (idColumnMapping == null || !idColumnMapping.Any())
+                if (MainWindow.CurrentInstance.IdColumnMappingListView.ItemsSource is not List<ColumnMapping> idColumnMapping || idColumnMapping.Count == 0)
                 {
                     Debug.WriteLine("No ID column mappings found.");
                     return;
@@ -487,7 +486,7 @@ namespace CollectaMundo
                 await DBAccess.OpenConnectionAsync();
 
                 // Build a dictionary to hold CSV values and their corresponding UUIDs
-                Dictionary<string, List<string>> csvToUuidsMap = new Dictionary<string, List<string>>();
+                Dictionary<string, List<string>> csvToUuidsMap = [];
 
                 // Use a StringBuilder to build a batch SQL query
                 StringBuilder batchQueryBuilder = new StringBuilder(@"
@@ -547,7 +546,7 @@ namespace CollectaMundo
                 // Combine both parts into one query
                 batchQueryBuilder.Append(tokenQueryBuilder);
 
-                using (SQLiteCommand command = new SQLiteCommand(batchQueryBuilder.ToString(), DBAccess.connection))
+                using (SQLiteCommand command = new(batchQueryBuilder.ToString(), DBAccess.connection))
                 {
                     index = 0;
                     foreach (string csvValue in csvToUuidsMap.Keys)
@@ -728,7 +727,7 @@ namespace CollectaMundo
 
             try
             {
-                Dictionary<string, List<string>> csvToUuidsMap = new Dictionary<string, List<string>>();
+                Dictionary<string, List<string>> csvToUuidsMap = [];
 
                 for (int batchStart = 0; batchStart < TempImport.Count; batchStart += batchSize)
                 {
@@ -742,33 +741,31 @@ namespace CollectaMundo
                         continue;
                     }
 
-                    StringBuilder batchQueryBuilder = new StringBuilder();
+                    StringBuilder batchQueryBuilder = new();
                     batchQueryBuilder.Append(@"
                         SELECT uuid, name, setCode
                         FROM view_cardToken
                         WHERE name ");
 
-                    StringBuilder scenario2QueryBuilder = new StringBuilder(@"
+                    StringBuilder scenario2QueryBuilder = new(@"
                         UNION ALL
                         SELECT uuid, name, tokenSetCode AS setCode
                         FROM view_cardToken
                         WHERE tokenSetCode <> setCode
                         AND name ");
 
-                    StringBuilder scenario3QueryBuilder = new StringBuilder(@"
+                    StringBuilder scenario3QueryBuilder = new(@"
                         UNION ALL
                         SELECT uuid, faceName AS name, tokenSetCode AS setCode
                         FROM view_cardToken
                         WHERE faceName ");
 
-                    List<SQLiteParameter> nameParameters;
-                    StringBuilder cardNameInClause = BuildInClause("cardName", currentBatch, out nameParameters, "Card Name");
+                    StringBuilder cardNameInClause = BuildInClause("cardName", currentBatch, out List<SQLiteParameter> nameParameters, "Card Name");
                     batchQueryBuilder.Append(cardNameInClause);
                     scenario2QueryBuilder.Append(cardNameInClause);
                     scenario3QueryBuilder.Append(cardNameInClause);
 
-                    List<SQLiteParameter> setCodeParameters;
-                    StringBuilder setCodeInClause = BuildInClause("setCode", currentBatch, out setCodeParameters, "Set Code");
+                    StringBuilder setCodeInClause = BuildInClause("setCode", currentBatch, out List<SQLiteParameter> setCodeParameters, "Set Code");
                     batchQueryBuilder.Append(" AND setCode ").Append(setCodeInClause);
                     scenario2QueryBuilder.Append(" AND tokenSetCode ").Append(setCodeInClause);
                     scenario3QueryBuilder.Append(" AND tokenSetCode ").Append(setCodeInClause);
@@ -776,7 +773,7 @@ namespace CollectaMundo
                     batchQueryBuilder.Append(scenario2QueryBuilder);
                     batchQueryBuilder.Append(scenario3QueryBuilder);
 
-                    await ExecuteBatchQuery(batchQueryBuilder.ToString(), nameParameters.Concat(setCodeParameters).ToList(), csvToUuidsMap, "name", "setCode", "cardName");
+                    await ExecuteBatchQuery(batchQueryBuilder.ToString(), [.. nameParameters, .. setCodeParameters], csvToUuidsMap, "name", "setCode", "cardName");
                 }
 
                 await ProcessUuidResultsForField("Set Code", csvToUuidsMap);
@@ -790,19 +787,15 @@ namespace CollectaMundo
             finally
             {
                 Debug.WriteLine("Status of import after search by name and set code:");
-                DebugImportProcess();
             }
         }
         private static async Task SearchBySetName()
         {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
-
             const int batchSize = 800;
 
             try
             {
-                Dictionary<string, List<string>> csvToUuidsMap = new Dictionary<string, List<string>>();
+                Dictionary<string, List<string>> csvToUuidsMap = [];
 
                 for (int batchStart = 0; batchStart < TempImport.Count; batchStart += batchSize)
                 {
@@ -816,31 +809,29 @@ namespace CollectaMundo
                         continue;
                     }
 
-                    StringBuilder batchQueryBuilder = new StringBuilder();
+                    StringBuilder batchQueryBuilder = new();
                     batchQueryBuilder.Append(@"
                         SELECT uuid, name, setName
                         FROM view_cardToken
                         WHERE name ");
 
-                    StringBuilder scenario2QueryBuilder = new StringBuilder(@"
+                    StringBuilder scenario2QueryBuilder = new(@"
                         UNION ALL
                         SELECT uuid, faceName AS name, setName
                         FROM view_cardToken
                         WHERE faceName ");
 
-                    List<SQLiteParameter> nameParameters;
-                    StringBuilder cardNameInClause = BuildInClause("cardName", currentBatch, out nameParameters, "Card Name");
+                    StringBuilder cardNameInClause = BuildInClause("cardName", currentBatch, out List<SQLiteParameter> nameParameters, "Card Name");
                     batchQueryBuilder.Append(cardNameInClause);
                     scenario2QueryBuilder.Append(cardNameInClause);
 
-                    List<SQLiteParameter> setNameParameters;
-                    StringBuilder setNameInClause = BuildInClause("setName", currentBatch, out setNameParameters, "Set Name");
+                    StringBuilder setNameInClause = BuildInClause("setName", currentBatch, out List<SQLiteParameter> setNameParameters, "Set Name");
                     batchQueryBuilder.Append(" AND setName ").Append(setNameInClause);
                     scenario2QueryBuilder.Append(" AND setName ").Append(setNameInClause);
 
                     batchQueryBuilder.Append(scenario2QueryBuilder);
 
-                    await ExecuteBatchQuery(batchQueryBuilder.ToString(), nameParameters.Concat(setNameParameters).ToList(), csvToUuidsMap, "name", "setName", "cardName");
+                    await ExecuteBatchQuery(batchQueryBuilder.ToString(), [.. nameParameters, .. setNameParameters], csvToUuidsMap, "name", "setName", "cardName");
                 }
 
                 await ProcessUuidResultsForField("Set Name", csvToUuidsMap);
@@ -851,20 +842,12 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error searching by set name: {ex.Message}");
                 MessageBox.Show($"Error searching by set name: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally
-            {
-                stopwatch.Stop();
-                Debug.WriteLine($"Searching by card name and set name completed in {stopwatch.ElapsedMilliseconds} ms");
-
-                Debug.WriteLine("Status of import after search by name and set name:");
-                DebugImportProcess();
-            }
         }
 
         // Helper methods for SearchBySetCode and SearchBySetName
         private static StringBuilder BuildInClause(string parameterPrefix, List<TempCardItem> currentBatch, out List<SQLiteParameter> parameters, string searchField)
         {
-            StringBuilder queryBuilder = new StringBuilder();
+            StringBuilder queryBuilder = new();
             parameters = [];
             queryBuilder.Append("IN (");
 
@@ -889,9 +872,9 @@ namespace CollectaMundo
         }
         private static async Task ExecuteBatchQuery(string query, List<SQLiteParameter> parameters, Dictionary<string, List<string>> csvToUuidsMap, string searchField, string fieldName, string keyField)
         {
-            using (SQLiteCommand command = new SQLiteCommand(query, DBAccess.connection))
+            using (SQLiteCommand command = new(query, DBAccess.connection))
             {
-                command.Parameters.AddRange(parameters.ToArray());
+                command.Parameters.AddRange([.. parameters]);
 
                 using (System.Data.Common.DbDataReader reader = await command.ExecuteReaderAsync())
                 {
@@ -940,7 +923,7 @@ namespace CollectaMundo
         public static void ButtonMultipleUuidsNext()
         {
             // Directly retrieve items from DataGrid
-            List<MultipleUuidsItem> multipleUuidsItems = new List<MultipleUuidsItem>();
+            List<MultipleUuidsItem> multipleUuidsItems = [];
             bool allSelected = true;
 
             // Check that all dropdowns has a value selected
@@ -976,7 +959,7 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.GridImportMultipleUuidsSelection.Visibility = Visibility.Collapsed;
 
             // Convert to List explicitly to ensure we have a concrete collection to work with
-            List<MultipleUuidsItem> multipleUuidsList = multipleUuidsItems.ToList();
+            List<MultipleUuidsItem> multipleUuidsList = [.. multipleUuidsItems];
 
             // Update TempImport and CardItemsToAdd with the uuids for the selected versions of the cards
             ProcessMultipleUuidSelections(multipleUuidsList);
@@ -1031,7 +1014,7 @@ namespace CollectaMundo
             else if (uuids.Count > 1)
             {
                 // Optimized joining using StringBuilder
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
                 for (int i = 0; i < uuids.Count; i++)
                 {
                     if (i > 0)
@@ -1071,7 +1054,7 @@ namespace CollectaMundo
                 Debug.WriteLine($"Populated MultipleUuidsDataGrid with {itemsWithMultipleUuids.Count} items.");
 
                 MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
-                MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Any() ? Visibility.Visible : Visibility.Collapsed;
+                MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Count != 0 ? Visibility.Visible : Visibility.Collapsed;
             }
             catch (Exception ex)
             {
@@ -1091,7 +1074,7 @@ namespace CollectaMundo
                 (item.Fields.TryGetValue("uuids", out string? uuids) && string.IsNullOrEmpty(uuids))
             ).ToList();
 
-            if (invalidUuidAndUuidsItems.Any())
+            if (invalidUuidAndUuidsItems.Count != 0)
             {
                 foreach (TempCardItem? item in invalidUuidAndUuidsItems)
                 {
@@ -1100,7 +1083,7 @@ namespace CollectaMundo
                 throw new InvalidOperationException("One or more items in TempImport have both 'uuid' and 'uuids' fields with values, which is not allowed.");
             }
 
-            if (invalidUuidOrUuidsItems.Any())
+            if (invalidUuidOrUuidsItems.Count != 0)
             {
                 foreach (TempCardItem? item in invalidUuidOrUuidsItems)
                 {
@@ -1161,9 +1144,8 @@ namespace CollectaMundo
         public static async Task ButtonAdditionalFieldsNext()
         {
             // Create list of the mapped items
-            List<ColumnMapping>? mappingsList = MainWindow.CurrentInstance.AddionalFieldsMappingListView.ItemsSource as List<ColumnMapping>;
 
-            if (mappingsList == null)
+            if (MainWindow.CurrentInstance.AddionalFieldsMappingListView.ItemsSource is not List<ColumnMapping> mappingsList)
             {
                 MessageBox.Show("No mappings found. Please ensure you have selected the appropriate mappings.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
@@ -1284,7 +1266,7 @@ namespace CollectaMundo
             StoreMapping("Language", languageMappings, true);
 
             Thickness currentMargin = MainWindow.CurrentInstance.ButtonCancelImport.Margin;
-            Thickness newMargin = new Thickness(currentMargin.Left, 180, currentMargin.Right, currentMargin.Bottom);
+            Thickness newMargin = new(currentMargin.Left, 180, currentMargin.Right, currentMargin.Bottom);
             MainWindow.CurrentInstance.ButtonCancelImport.Margin = newMargin;
 
             MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Collapsed;
@@ -1340,7 +1322,7 @@ namespace CollectaMundo
                 // Mapping values for condition should be the ones specified in the Condition field in the CardSet class.
                 else
                 {
-                    CardSet.CardItem cardItem = new CardSet.CardItem();
+                    CardSet.CardItem cardItem = new();
                     mappingValues = cardItem.Conditions;
 
                 }
@@ -1349,7 +1331,7 @@ namespace CollectaMundo
                 List<string> csvValues = GetUniqueValuesFromCsv(csvHeader);
 
                 // Check if csvValues is empty and write a debug message if it is. Set it to umapped if it is
-                if (csvValues == null || !csvValues.Any())
+                if (csvValues == null || csvValues.Count == 0)
                 {
                     Debug.WriteLine($"No unique values found for CSV header: {csvHeader}, setting it to unmapped");
 
@@ -1396,12 +1378,12 @@ namespace CollectaMundo
         }
         private static async Task<List<string>> GetUniqueValuesFromDbColumn(string dbColumn)
         {
-            HashSet<string> uniqueValues = new HashSet<string>();
+            HashSet<string> uniqueValues = [];
 
             string query = $"SELECT DISTINCT {dbColumn} FROM cards";
 
             await DBAccess.OpenConnectionAsync();
-            using (SQLiteCommand command = new SQLiteCommand(query, DBAccess.connection))
+            using (SQLiteCommand command = new(query, DBAccess.connection))
             using (System.Data.Common.DbDataReader reader = await command.ExecuteReaderAsync())
             {
                 while (await reader.ReadAsync())
@@ -1423,7 +1405,7 @@ namespace CollectaMundo
         }
         private static List<string> GetUniqueValuesFromCsv(string? csvHeader)
         {
-            HashSet<string> uniqueValues = new HashSet<string>();
+            HashSet<string> uniqueValues = [];
 
             if (csvHeader == null)
             {
@@ -1447,12 +1429,11 @@ namespace CollectaMundo
             try
             {
                 // Initialize the dictionary that will hold the mappings for the specified field
-                Dictionary<string, string> fieldMappingDict = new Dictionary<string, string>();
+                Dictionary<string, string> fieldMappingDict = [];
 
                 // Get the mappings from the specified ListView
-                List<ValueMapping>? mappings = mappingListView.ItemsSource as List<ValueMapping>;
 
-                if (mappings == null)
+                if (mappingListView.ItemsSource is not List<ValueMapping> mappings)
                 {
                     Debug.WriteLine("No mappings found.");
                     return fieldMappingDict;
@@ -1486,7 +1467,7 @@ namespace CollectaMundo
         }
         private static void MarkFieldAsUnmapped(string cardSetField)
         {
-            Dictionary<string, string> mappingDict = new Dictionary<string, string> { ["unmapped_field"] = "unmapped" };
+            Dictionary<string, string> mappingDict = new() { ["unmapped_field"] = "unmapped" };
             StoreMapping(cardSetField, mappingDict, false);
         }
 
@@ -1503,7 +1484,7 @@ namespace CollectaMundo
         public static void SaveUnimportedItemsToFile()
         {
             // Create a SaveFileDialog to prompt the user to choose a save location
-            SaveFileDialog saveFileDialog = new Microsoft.Win32.SaveFileDialog
+            SaveFileDialog saveFileDialog = new()
             {
                 FileName = "UnimportedItems", // Default file name
                 DefaultExt = ".txt", // Default file extension
@@ -1519,7 +1500,7 @@ namespace CollectaMundo
                 string filePath = saveFileDialog.FileName;
 
                 // Generate the content for the file
-                List<string> lines = new List<string> { "Unable to find matching cards in the database for the following items:\n" };
+                List<string> lines = ["Unable to find matching cards in the database for the following items:\n"];
 
                 foreach (TempCardItem item in TempImport)
                 {
@@ -1548,7 +1529,7 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.ImportSummaryContainer.Children.Clear();
 
             // Add the summary text in a two-column table format
-            Grid summaryGrid = new Grid
+            Grid summaryGrid = new()
             {
                 Margin = new Thickness(0, 10, 0, 10)
             };
@@ -1600,7 +1581,7 @@ namespace CollectaMundo
             {
                 MainWindow.CurrentInstance.ImportSummaryTextBlock.Inlines.Add(new System.Windows.Documents.Run("\nUnable to find matching cards in the database for the following items:\n\n"));
 
-                Grid tableGrid = new Grid
+                Grid tableGrid = new()
                 {
                     Margin = new Thickness(0, 10, 0, 0)
                 };
@@ -1644,7 +1625,7 @@ namespace CollectaMundo
         }
         private static void AddTextToGrid(Grid grid, string text, int row, int column, FontWeight? fontWeight = null)
         {
-            TextBlock textBlock = new TextBlock { Text = text, Margin = new Thickness(5) };
+            TextBlock textBlock = new() { Text = text, Margin = new Thickness(5) };
             if (fontWeight.HasValue)
             {
                 textBlock.FontWeight = fontWeight.Value;
@@ -1657,7 +1638,7 @@ namespace CollectaMundo
         // Add imported cards to database
         public static async Task AddItemsToDatabaseAsync()
         {
-            Stopwatch stopwatch = new Stopwatch();
+            Stopwatch stopwatch = new();
             stopwatch.Start();
 
             // Disable UI elements during import
@@ -1684,7 +1665,7 @@ namespace CollectaMundo
                     await Task.Run(async () =>
                     {
                         // Create a list to store all database commands for this batch
-                        List<SQLiteCommand> commands = new List<SQLiteCommand>();
+                        List<SQLiteCommand> commands = [];
 
                         foreach (TempCardItem? tempItem in currentBatch)
                         {
@@ -1713,9 +1694,9 @@ namespace CollectaMundo
                         UNION
                         SELECT language FROM tokens WHERE uuid = @uuid";
 
-                            HashSet<string> availableLanguages = new HashSet<string>();
+                            HashSet<string> availableLanguages = [];
 
-                            using (SQLiteCommand checkLanguagesCommand = new SQLiteCommand(checkLanguagesQuery, DBAccess.connection))
+                            using (SQLiteCommand checkLanguagesCommand = new(checkLanguagesQuery, DBAccess.connection))
                             {
                                 checkLanguagesCommand.Parameters.AddWithValue("@uuid", uuid);
                                 using (System.Data.Common.DbDataReader reader = await checkLanguagesCommand.ExecuteReaderAsync())
@@ -1739,7 +1720,7 @@ namespace CollectaMundo
 
                             // Check if an entry exists in 'myCollection' with the same uuid, language, and finish
                             string query = "SELECT count, trade FROM myCollection WHERE uuid = @uuid AND language = @language AND finish = @finish";
-                            using (SQLiteCommand command = new SQLiteCommand(query, DBAccess.connection))
+                            using (SQLiteCommand command = new(query, DBAccess.connection))
                             {
                                 command.Parameters.AddWithValue("@uuid", uuid);
                                 command.Parameters.AddWithValue("@language", language);
@@ -1759,7 +1740,7 @@ namespace CollectaMundo
 
                                         // Update query
                                         string updateQuery = "UPDATE myCollection SET count = @count, trade = @trade WHERE uuid = @uuid AND language = @language AND finish = @finish";
-                                        SQLiteCommand updateCommand = new SQLiteCommand(updateQuery, DBAccess.connection);
+                                        SQLiteCommand updateCommand = new(updateQuery, DBAccess.connection);
                                         updateCommand.Parameters.AddWithValue("@count", currentCount);
                                         updateCommand.Parameters.AddWithValue("@trade", currentTrade);
                                         updateCommand.Parameters.AddWithValue("@uuid", uuid);
@@ -1771,7 +1752,7 @@ namespace CollectaMundo
                                     {
                                         // Row does not exist, insert a new entry
                                         string insertQuery = @"INSERT INTO myCollection (uuid, count, trade, condition, finish, language) VALUES (@uuid, @count, @trade, @condition, @finish, @language)";
-                                        SQLiteCommand insertCommand = new SQLiteCommand(insertQuery, DBAccess.connection);
+                                        SQLiteCommand insertCommand = new(insertQuery, DBAccess.connection);
                                         insertCommand.Parameters.AddWithValue("@uuid", uuid);
                                         insertCommand.Parameters.AddWithValue("@count", cardsOwned);
                                         insertCommand.Parameters.AddWithValue("@trade", cardsForTrade);
@@ -1877,7 +1858,7 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.Inspiredtinkering.Visibility = Visibility.Visible;
 
             Thickness currentMargin = MainWindow.CurrentInstance.ButtonCancelImport.Margin;
-            Thickness newMargin = new Thickness(currentMargin.Left, 350, currentMargin.Right, currentMargin.Bottom);
+            Thickness newMargin = new(currentMargin.Left, 350, currentMargin.Right, currentMargin.Bottom);
             MainWindow.CurrentInstance.ButtonCancelImport.Margin = newMargin;
 
             // Reset card images
@@ -1893,7 +1874,7 @@ namespace CollectaMundo
             string lowerSearchValue = searchValue.ToLower();
 
             // Dictionary of educated guesses for each search value
-            Dictionary<string, List<string>> educatedGuesses = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase)
+            Dictionary<string, List<string>> educatedGuesses = new(StringComparer.OrdinalIgnoreCase)
                 {
                     { "Card Name", new List<string> { "Name", "Card", "CardName" } },
                     { "Set Name", new List<string> { "Set", "Edition", "Edition Name" } },

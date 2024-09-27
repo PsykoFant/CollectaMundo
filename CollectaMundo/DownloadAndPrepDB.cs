@@ -269,7 +269,7 @@ namespace CollectaMundo
                 await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "code");
                 List<string> setCodesWithNoImage = await GetValuesWithNullAsync("keyruneImages", "setCode", "keyruneImage");
 
-                HttpClient client = new HttpClient();
+                HttpClient client = new();
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("Your User-Agent Here");
                 client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
 
@@ -320,7 +320,7 @@ namespace CollectaMundo
         #region Helper methods
         private static async Task<byte[]> ProcessManaCostInputAsync(string manaCostInput)
         {
-            List<Bitmap> manaSymbolImage = new List<Bitmap>();
+            List<Bitmap> manaSymbolImage = new();
 
             try
             {
@@ -328,7 +328,7 @@ namespace CollectaMundo
 
                 foreach (string symbol in manaSymbols)
                 {
-                    using (SQLiteCommand command = new SQLiteCommand(
+                    using (SQLiteCommand command = new(
                             $"SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol",
                             DBAccess.connection))
                     {
@@ -339,9 +339,9 @@ namespace CollectaMundo
                             if (await reader.ReadAsync())
                             {
                                 byte[] imageBytes = (byte[])reader["manaSymbolImage"];
-                                using (MemoryStream ms = new MemoryStream(imageBytes))
+                                using (MemoryStream ms = new(imageBytes))
                                 {
-                                    Bitmap bitmap = new Bitmap(ms); // Bitmap and SkiaSharp operations are not async
+                                    Bitmap bitmap = new(ms); // Bitmap and SkiaSharp operations are not async
                                     manaSymbolImage.Add(bitmap);
                                 }
                             }
@@ -443,7 +443,7 @@ namespace CollectaMundo
                     var reader = new FileSvgReader(settings);
                     var drawing = reader.Read(svgStream);
 
-                    DrawingImage drawingImage = new DrawingImage(drawing);
+                    DrawingImage drawingImage = new(drawing);
                     var drawingVisual = new DrawingVisual();
                     double aspectRatio = drawingImage.Width / drawingImage.Height;
                     int newHeight = 20;
@@ -453,13 +453,13 @@ namespace CollectaMundo
                     {
                         drawingContext.DrawImage(drawingImage, new Rect(0, 0, newWidth, newHeight));
                     }
-                    RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap(newWidth, newHeight, 96, 96, PixelFormats.Pbgra32);
+                    RenderTargetBitmap renderTargetBitmap = new(newWidth, newHeight, 96, 96, PixelFormats.Pbgra32);
                     renderTargetBitmap.Render(drawingVisual);
 
                     System.Windows.Media.Imaging.BitmapEncoder encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
                     encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(renderTargetBitmap));
 
-                    using (MemoryStream memoryStream = new MemoryStream())
+                    using (MemoryStream memoryStream = new())
                     {
                         encoder.Save(memoryStream);
                         return memoryStream.ToArray();
@@ -565,7 +565,7 @@ namespace CollectaMundo
         }
         private static async Task<List<string>> GetValuesWithNullAsync(string tableName, string returnColumnName, string searchColumnName)
         {
-            List<string> valuesWithNull = new List<string>();
+            List<string> valuesWithNull = new();
             try
             {
                 string query = $"SELECT {returnColumnName} FROM {tableName} WHERE {searchColumnName} IS NULL";
@@ -590,7 +590,7 @@ namespace CollectaMundo
         }
         public static async Task<List<string>> GetUniqueValuesAsync(string tableName, string columnName)
         {
-            List<string> uniqueValues = new List<string>();
+            List<string> uniqueValues = new();
 
             try
             {
