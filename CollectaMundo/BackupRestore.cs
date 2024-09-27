@@ -926,6 +926,32 @@ namespace CollectaMundo
         #region Import Wizard - Step 2c - Find UUIDs - Choose between multiple uuids found
 
         // Populate the datagrid where a single version can be selected of a card with multiple identical set and card names       
+        private static void PopulateMultipleUuidsDataGrid()
+        {
+            try
+            {
+                List<MultipleUuidsItem> itemsWithMultipleUuids = TempImport
+                    .Where(item => item.Fields.ContainsKey("uuids"))
+                    .Select(item => new MultipleUuidsItem
+                    {
+                        Name = item.Fields.ContainsKey("Card Name") ? item.Fields["Card Name"] : "Unknown",
+                        VersionedUuids = item.Fields["uuids"].Split(',').Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid }).ToList(),
+                        CMImportKey = item.Fields["CMImportKey"],
+                        SelectedUuid = null // Set the initial selection to null
+                    })
+                    .ToList();
+
+                Debug.WriteLine($"Populated MultipleUuidsDataGrid with {itemsWithMultipleUuids.Count} items.");
+
+                MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
+                MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Count != 0 ? Visibility.Visible : Visibility.Collapsed;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error populating multiple uuids datagrid: {ex.Message}");
+                MessageBox.Show($"Error populating multiple uuids datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
         public static void ButtonMultipleUuidsNext()
         {
             // Directly retrieve items from DataGrid
@@ -1039,33 +1065,17 @@ namespace CollectaMundo
             }
         }
 
-        // Prepare for multiple UUIDs selection if necessary      
-        private static void PopulateMultipleUuidsDataGrid()
+        // Helper method for getting debug info for AssertNoInvalidUuidFields()
+        private static string GetItemDetails(TempCardItem item)
         {
-            try
-            {
-                List<MultipleUuidsItem> itemsWithMultipleUuids = TempImport
-                    .Where(item => item.Fields.ContainsKey("uuids"))
-                    .Select(item => new MultipleUuidsItem
-                    {
-                        Name = item.Fields.ContainsKey("Card Name") ? item.Fields["Card Name"] : "Unknown",
-                        VersionedUuids = item.Fields["uuids"].Split(',').Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid }).ToList(),
-                        CMImportKey = item.Fields["CMImportKey"],
-                        SelectedUuid = null // Set the initial selection to null
-                    })
-                    .ToList();
+            item.Fields.TryGetValue("Card Name", out string? cardName);
+            item.Fields.TryGetValue("Set Name", out string? setName);
+            item.Fields.TryGetValue("Set Code", out string? setCode);
 
-                Debug.WriteLine($"Populated MultipleUuidsDataGrid with {itemsWithMultipleUuids.Count} items.");
-
-                MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemsSource = itemsWithMultipleUuids;
-                MainWindow.CurrentInstance.MultipleUuidsDataGrid.Visibility = itemsWithMultipleUuids.Count != 0 ? Visibility.Visible : Visibility.Collapsed;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error populating multiple uuids datagrid: {ex.Message}");
-                MessageBox.Show($"Error populating multiple uuids datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            return $"Card Name: {cardName}, Set Name: {setName}, Set Code: {setCode}, UUID: {item.Fields.GetValueOrDefault("uuid")}, UUIDs: {item.Fields.GetValueOrDefault("uuids")}";
         }
+
+        // Utility methods to help determine whether to proceed to additionalfields mapping
         private static void AssertNoInvalidUuidFields()
         {
             List<TempCardItem> invalidUuidAndUuidsItems = TempImport.Where(item =>
@@ -1096,18 +1106,6 @@ namespace CollectaMundo
                 throw new InvalidOperationException("One or more items in TempImport have 'uuid' or 'uuids' field with no value, which is not allowed.");
             }
         }
-
-        // Helper method for getting debug info for AssertNoInvalidUuidFields()
-        private static string GetItemDetails(TempCardItem item)
-        {
-            item.Fields.TryGetValue("Card Name", out string? cardName);
-            item.Fields.TryGetValue("Set Name", out string? setName);
-            item.Fields.TryGetValue("Set Code", out string? setCode);
-
-            return $"Card Name: {cardName}, Set Name: {setName}, Set Code: {setCode}, UUID: {item.Fields.GetValueOrDefault("uuid")}, UUIDs: {item.Fields.GetValueOrDefault("uuids")}";
-        }
-
-        // Utility methods to help determine whether to proceed to additionalfields mapping
         private static bool AllItemsHaveUuid()
         {
             foreach (TempCardItem tempItem in TempImport)
