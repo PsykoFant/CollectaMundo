@@ -12,14 +12,14 @@ namespace CollectaMundo
     {
         private static AddToCollectionManager? _instance;
         public static AddToCollectionManager Instance => _instance ??= new AddToCollectionManager();
-        public ObservableCollection<CardSet.CardItem> CardItemsToAdd { get; private set; }
-        public ObservableCollection<CardSet.CardItem> CardItemsToEdit { get; private set; }
+        public ObservableCollection<CardItem> CardItemsToAdd { get; private set; }
+        public ObservableCollection<CardItem> CardItemsToEdit { get; private set; }
 
         // Timer for delayed processing
-        private System.Timers.Timer _typingTimer;
+        private readonly System.Timers.Timer _typingTimer;
         private const int TypingDelay = 500; // 500 milliseconds delay
         private TextBox? _lastTextBox;
-        private ObservableCollection<CardSet.CardItem>? _lastTargetCollection;
+        private ObservableCollection<CardItem>? _lastTargetCollection;
 
         public AddToCollectionManager()
         {
@@ -33,7 +33,7 @@ namespace CollectaMundo
         }
 
         // Handling typing numbers directly into count and trade fields
-        public void CardsOwnedTextHandler(object sender, ObservableCollection<CardSet.CardItem> targetCollection)
+        public void CardsOwnedTextHandler(object sender, ObservableCollection<CardItem> targetCollection)
         {
             _lastTextBox = sender as TextBox;
             _lastTargetCollection = targetCollection;
@@ -57,9 +57,9 @@ namespace CollectaMundo
                 CardsOwnedTextChangedLogic(_lastTextBox, _lastTargetCollection);
             });
         }
-        private static void CardsOwnedTextChangedLogic(TextBox? textBox, ObservableCollection<CardSet.CardItem>? targetCollection)
+        private static void CardsOwnedTextChangedLogic(TextBox? textBox, ObservableCollection<CardItem>? targetCollection)
         {
-            if (textBox?.DataContext is CardSet.CardItem cardItem)
+            if (textBox?.DataContext is CardItem cardItem)
             {
                 // Try parsing the new value
                 if (int.TryParse(textBox.Text, out int newCount) && newCount >= 0)
@@ -89,7 +89,7 @@ namespace CollectaMundo
         public static void CardsForTradeTextHandler(object sender)
         {
             var textBox = sender as TextBox;
-            if (textBox?.DataContext is CardSet.CardItem cardItem)
+            if (textBox?.DataContext is CardItem cardItem)
             {
                 // Use the TextBox's binding expression to check for validation errors
                 var bindingExpression = textBox.GetBindingExpression(TextBox.TextProperty);
@@ -128,7 +128,7 @@ namespace CollectaMundo
             // Retrieve the DataContext (bound item) of the button that was clicked
             var button = sender as Button;
 
-            if (button?.DataContext is CardSet.CardItem cardItem)
+            if (button?.DataContext is CardItem cardItem)
             {
                 // Check the Tag property to determine which field to increment
                 if (button.Tag?.ToString() == "CardsOwned")
@@ -144,10 +144,10 @@ namespace CollectaMundo
                 }
             }
         }
-        public void DecrementButtonHandler(object sender, ObservableCollection<CardSet.CardItem> targetCollection)
+        public void DecrementButtonHandler(object sender, ObservableCollection<CardItem> targetCollection)
         {
             var button = sender as Button;
-            if (button?.DataContext is CardSet.CardItem cardItem)
+            if (button?.DataContext is CardItem cardItem)
             {
                 // Decrease the count
                 if (button.Tag?.ToString() == "CardsOwned")
@@ -176,7 +176,7 @@ namespace CollectaMundo
         }
 
         // Adds cards to the listview
-        public static async void AddOrEditCardHandler(CardSet selectedCard, ObservableCollection<CardSet.CardItem> targetCollection)
+        public static async void AddOrEditCardHandler(CardSet selectedCard, ObservableCollection<CardItem> targetCollection)
         {
             if (selectedCard.Uuid == null)
             {
@@ -191,7 +191,7 @@ namespace CollectaMundo
                 var finishes = await FetchFinishesForCardAsync(selectedCard.Uuid);
                 DBAccess.CloseConnection();
 
-                var newItem = new CardSet.CardItem
+                var newItem = new CardItem
                 {
                     Name = selectedCard.Name,
                     SetName = selectedCard.SetName,
@@ -368,7 +368,7 @@ namespace CollectaMundo
             {
                 // Provide update of the operation
                 var cardDetails = CardItemsToAdd.Select(card =>
-                    $"- {card.Name} (CardsOwned: {card.CardsOwned}, Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish})")
+                    $"- {card.Name} (Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish}, Cards owned: {card.CardsOwned}, Cards for trade: {card.CardsForTrade})")
                     .Aggregate((current, next) => current + "\n" + next);
 
                 MainWindow.CurrentInstance.AddStatusTextBlock.Visibility = Visibility.Visible;
@@ -537,7 +537,7 @@ namespace CollectaMundo
                 var cardDetails = CardItemsToEdit.Select(card =>
                     card.CardsOwned == 0
                         ? $"{card.Name} - DELETED FROM COLLECTION"  // Display this message if card count is zero
-                        : $"- {card.Name} (CardsOwned: {card.CardsOwned}, Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish})")
+                        : $"- {card.Name} (Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish}, Cards owned: {card.CardsOwned}, Cards for trade: {card.CardsForTrade})")
                     .Aggregate((current, next) => current + "\n" + next);
 
                 // Set the detailed string with linebreaks to the TextBlock
@@ -600,8 +600,6 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.ApplyFilterSelection();
             }
         }
-
-
         private static async Task<int?> CheckForExistingCardAsync(CardItem card)
         {
             string selectSql = @"
@@ -635,7 +633,6 @@ namespace CollectaMundo
             }
             return null; // Return null if no existing entry is found or an exception occurs
         }
-
 
         // Adjust listviews column widths so text is not clipped
         public static void AdjustColumnWidths()

@@ -120,14 +120,18 @@ namespace CollectaMundo
             GridFiltering.Visibility = Visibility.Visible;
             LogoSmall.Visibility = Visibility.Visible;
 
-            await LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
-            await LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
-            await LoadColorIcons(ColorIcons, colourQuery);
-            await FillComboBoxesAsync();
+            var loadAllCards = LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
+            var loadMyCollection = LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
+            var loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
+            var fillComboBoxes = FillComboBoxesAsync();
+
+            await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, fillComboBoxes);
+
             DBAccess.CloseConnection();
 
             CardsToAddListView.ItemsSource = addToCollectionManager.CardItemsToAdd;
             CardsToEditListView.ItemsSource = addToCollectionManager.CardItemsToEdit;
+            ShowFoilCheckBox.IsChecked = true;
         }
 
         #region Load data and populate UI elements
