@@ -399,59 +399,71 @@ namespace CollectaMundo
             await DBAccess.connection.OpenAsync();
             try
             {
-                //foreach (CardSet currentCardItem in selectedCards)
-                //{
-                //    var finishes = await FetchFinishesForCardAsync(currentCardItem.Uuid);
-                //    string selectedFinish = finishes.Contains("nonfoil") ? "nonfoil" : finishes.FirstOrDefault();
+                foreach (CardSet card in selectedCards)
+                {
+                    // Create a CardItem from CardSet if necessary
+                    CardItem currentCardItem = card as CardItem ?? new CardItem
+                    {
+                        Uuid = card.Uuid,
+                        Name = card.Name,
+                        Language = "English", // Default language
+                        SelectedCondition = "Near Mint", // Default condition
+                        SelectedFinish = "nonfoil" // Default finish
+                    };
 
-                //    var existingCardId = await CheckForExistingCardAsync(currentCardItem);
-                //    if (existingCardId.HasValue)
-                //    {
-                //        // Update the count in the database
-                //        string updateSql = @"UPDATE myCollection SET count = count + 1 WHERE id = @id";
-                //        using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
-                //        {
-                //            updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
-                //            await updateCommand.ExecuteNonQueryAsync();
-                //        }
-                //    }
-                //    else
-                //    {
-                //        // Insert a new row
-                //        string insertSql = "INSERT INTO myCollection (uuid, count, trade, condition, language, finish) VALUES (@uuid, 1, 0, 'Near Mint', @language, @finish)";
-                //        using (var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection))
-                //        {
-                //            insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
-                //            insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
-                //            insertCommand.Parameters.AddWithValue("@finish", selectedFinish ?? "nonfoil"); // Default to nonfoil if no finishes are available
-                //            await insertCommand.ExecuteNonQueryAsync();
-                //        }
-                //    }
-                //}
+                    // Fetch finishes if it's not a predefined nonfoil
+                    if (currentCardItem.SelectedFinish == "nonfoil")
+                    {
+                        var finishes = await FetchFinishesForCardAsync(currentCardItem.Uuid);
+                        currentCardItem.SelectedFinish = finishes.Contains("nonfoil") ? "nonfoil" : finishes.FirstOrDefault() ?? "nonfoil";
+                    }
+
+                    var existingCardId = await CheckForExistingCardAsync(currentCardItem);
+                    if (existingCardId.HasValue)
+                    {
+                        string updateSql = @"UPDATE myCollection SET count = count + 1 WHERE id = @id";
+                        using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
+                        {
+                            updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
+                            await updateCommand.ExecuteNonQueryAsync();
+                        }
+                    }
+                    else
+                    {
+                        string insertSql = "INSERT INTO myCollection (uuid, count, trade, condition, language, finish) VALUES (@uuid, 1, 0, @condition, @language, @finish)";
+                        using (var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection))
+                        {
+                            insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
+                            insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
+                            insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
+                            insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
+                            await insertCommand.ExecuteNonQueryAsync();
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to update the database: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                Debug.WriteLine($"Failed to update the database: {ex.Message}");
+                MessageBox.Show($"Failed to add card with default values: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Failed to add card with default values: {ex.Message}");
             }
             finally
             {
                 // Provide update of the operation
                 var cardDetails = selectedCards.Select(card =>
-                    $"- {card.Name} (CardsOwned: 1, Condition: Near Mint, Language: {card.Language}, Finish: nonfoil)").Aggregate((current, next) => current + "\n" + next);
+                    $"- {card.Name} (CardsOwned: 1, Condition: Near Mint, Language: English, Finish: nonfoil)").Aggregate((current, next) => current + "\n" + next);
 
-                MainWindow.CurrentInstance.LogoSmall.Visibility = Visibility.Collapsed;
                 MainWindow.CurrentInstance.AddStatusTextBlock.Visibility = Visibility.Visible;
                 MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards to your collection:\n\n" + cardDetails;
 
-
-                // Reload my collection
+                // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
                 await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
 
                 DBAccess.connection.Close();
             }
         }
+
         public async void SubmitEditedCardsToCollection(object sender, RoutedEventArgs e)
         {
             if (DBAccess.connection == null)
