@@ -62,7 +62,7 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
                 MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return Enumerable.Empty<CardSet>();
+                return [];
             }
         }
         private IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
@@ -86,7 +86,7 @@ namespace CollectaMundo
         {
             if (cards == null || propertySelector == null)
             {
-                return Enumerable.Empty<CardSet>();
+                return [];
             }
 
             if (selectedCriteria == null || selectedCriteria.Count == 0)
