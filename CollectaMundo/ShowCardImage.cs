@@ -109,7 +109,6 @@ namespace CollectaMundo
                         var imageSet = reader["name"]?.ToString();
                         if (!string.IsNullOrEmpty(imageSet))
                         {
-                            Debug.WriteLine(imageSet.ToString());
                             return imageSet;
                         }
                     }

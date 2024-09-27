@@ -844,13 +844,11 @@ namespace CollectaMundo
             {
                 if (selectedCard.Uuid != null)
                 {
-                    Debug.WriteLine($"Trying to show image with uuid: {selectedCard.Uuid}");
                     await ShowCardImage.ShowImage(selectedCard.Uuid, selectedCard.Types);
                 }
             }
             else if (sender is ComboBox comboBox && comboBox.SelectedItem is UuidVersion selectedVersion && !string.IsNullOrEmpty(selectedVersion.Uuid))
             {
-                Debug.WriteLine($"Trying to show image with uuid: {selectedVersion.Uuid}");
                 await ShowCardImage.ShowImage(selectedVersion.Uuid);
             }
         }
@@ -958,7 +956,6 @@ namespace CollectaMundo
                 AllCardsDataGrid.UnselectAll();
             }
         }
-
         private void ButtonEditCardsInCollection_Click(object sender, RoutedEventArgs e)
         {
             AddToCollectionManager.ShowCardsToEditListView();
@@ -968,8 +965,6 @@ namespace CollectaMundo
             }
             MyCollectionDatagrid.UnselectAll();
         }
-
-
 
         // Submit cards in add or edit listviews
         private void ButtonSubmitCardsToMyCollection_Click(object sender, RoutedEventArgs e)
@@ -981,6 +976,15 @@ namespace CollectaMundo
         {
             LogoSmall.Visibility = Visibility.Collapsed;
             addToCollectionManager.SubmitEditedCardsToCollection(sender, e);
+        }
+        private void ButtonDeleteCardsFromCollection_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedCards = MyCollectionDatagrid.SelectedItems.Cast<CardItem>().ToList();
+            if (selectedCards.Count > 0)
+            {
+                AddToCollectionManager.DeleteCardsFromCollection(selectedCards);
+                AllCardsDataGrid.UnselectAll();
+            }
         }
 
         #endregion

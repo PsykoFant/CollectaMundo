@@ -32,7 +32,7 @@ namespace CollectaMundo
             _typingTimer.AutoReset = false; // Ensure the timer runs only once per typing event
         }
 
-        // Handler for TextBox TextChanged event
+        // Handling typing numbers directly into count and trade fields
         public void CardsOwnedTextHandler(object sender, ObservableCollection<CardSet.CardItem> targetCollection)
         {
             _lastTextBox = sender as TextBox;
@@ -45,8 +45,6 @@ namespace CollectaMundo
 
             _typingTimer.Start(); // Restart the timer with each keystroke
         }
-
-        // Timer elapsed event handler. 
         private void TypingTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs? e)
         {
             if (sender == null || e == null)
@@ -59,8 +57,6 @@ namespace CollectaMundo
                 CardsOwnedTextChangedLogic(_lastTextBox, _lastTargetCollection);
             });
         }
-
-        // Method to handle text change logic
         private static void CardsOwnedTextChangedLogic(TextBox? textBox, ObservableCollection<CardSet.CardItem>? targetCollection)
         {
             if (textBox?.DataContext is CardSet.CardItem cardItem)
@@ -401,7 +397,6 @@ namespace CollectaMundo
             {
                 foreach (CardSet card in selectedCards)
                 {
-                    // Create a CardItem from CardSet if necessary
                     CardItem currentCardItem = card as CardItem ?? new CardItem
                     {
                         Uuid = card.Uuid,
@@ -412,7 +407,7 @@ namespace CollectaMundo
                     };
 
                     // Fetch finishes if it's not a predefined nonfoil
-                    if (currentCardItem.SelectedFinish == "nonfoil")
+                    if (currentCardItem.SelectedFinish == "nonfoil" && currentCardItem.Uuid != null)
                     {
                         var finishes = await FetchFinishesForCardAsync(currentCardItem.Uuid);
                         currentCardItem.SelectedFinish = finishes.Contains("nonfoil") ? "nonfoil" : finishes.FirstOrDefault() ?? "nonfoil";
@@ -451,10 +446,10 @@ namespace CollectaMundo
             {
                 // Provide update of the operation
                 var cardDetails = selectedCards.Select(card =>
-                    $"- {card.Name} (CardsOwned: 1, Condition: Near Mint, Language: English, Finish: nonfoil)").Aggregate((current, next) => current + "\n" + next);
+                    $"- {card.Name}").Aggregate((current, next) => current + "\n" + next);
 
                 MainWindow.CurrentInstance.AddStatusTextBlock.Visibility = Visibility.Visible;
-                MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards to your collection:\n\n" + cardDetails;
+                MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards with default values to your collection:\n\n" + cardDetails;
 
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
@@ -463,7 +458,6 @@ namespace CollectaMundo
                 DBAccess.connection.Close();
             }
         }
-
         public async void SubmitEditedCardsToCollection(object sender, RoutedEventArgs e)
         {
             if (DBAccess.connection == null)
@@ -557,9 +551,57 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
                 await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
 
+                MainWindow.CurrentInstance.ApplyFilterSelection();
+
                 DBAccess.connection.Close();
             }
         }
+        public static async void DeleteCardsFromCollection(List<CardItem> selectedCards)
+        {
+            if (DBAccess.connection == null)
+            {
+                MessageBox.Show("Database connection is not initialized.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            await DBAccess.connection.OpenAsync();
+            try
+            {
+                foreach (CardItem card in selectedCards)
+                {
+                    string insertSql = "DELETE FROM myCollection WHERE uuid = @uuid;";
+                    using (var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection))
+                    {
+                        insertCommand.Parameters.AddWithValue("@uuid", card.Uuid);
+                        await insertCommand.ExecuteNonQueryAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to delete cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Failed to delete cards: {ex.Message}");
+            }
+            finally
+            {
+                // Provide update of the operation
+                var cardDetails = selectedCards.Select(card =>
+                    $"- {card.Name} ").Aggregate((current, next) => current + "\n" + next);
+
+                MainWindow.CurrentInstance.EditStatusTextBlock.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.EditStatusTextBlock.Text = "Deleted the following cards from your collection:\n\n" + cardDetails;
+
+                // Reload the collection
+                MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
+                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
+
+                DBAccess.connection.Close();
+
+                MainWindow.CurrentInstance.ApplyFilterSelection();
+            }
+        }
+
+
         private static async Task<int?> CheckForExistingCardAsync(CardItem card)
         {
             string selectSql = @"
@@ -593,7 +635,6 @@ namespace CollectaMundo
             }
             return null; // Return null if no existing entry is found or an exception occurs
         }
-
 
 
         // Adjust listviews column widths so text is not clipped
