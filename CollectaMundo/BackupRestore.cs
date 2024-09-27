@@ -22,7 +22,7 @@ namespace CollectaMundo
         private static List<string>? _mappings;
         public class TempCardItem
         {
-            public Dictionary<string, string> Fields { get; set; } = new Dictionary<string, string>();
+            public Dictionary<string, string> Fields { get; set; } = [];
         }
         public class UuidVersion
         {
@@ -86,7 +86,7 @@ namespace CollectaMundo
                     OnPropertyChanged(nameof(SelectedCsvHeader));
                 }
             }
-            public List<string>? CsvHeaders { get; set; } = new List<string>();
+            public List<string>? CsvHeaders { get; set; } = [];
             public List<string>? DatabaseFields { get; set; }
             public string? SelectedDatabaseField
             {
@@ -105,16 +105,16 @@ namespace CollectaMundo
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             }
         }
-        public static ObservableCollection<TempCardItem> tempImport { get; private set; } = new ObservableCollection<TempCardItem>();
-        public static List<string> AdditionalFieldsList { get; private set; } = new List<string>
-            {
+        public static ObservableCollection<TempCardItem> TempImport { get; private set; } = [];
+        public static List<string> AdditionalFieldsList { get; private set; } =
+            [
                 "Condition",
                 "Card Finish",
                 "Cards Owned",
                 "Cards For Trade/Selling",
                 "Language"
-            };
-        public static Dictionary<string, Dictionary<string, string>> FieldMappings { get; private set; } = new Dictionary<string, Dictionary<string, string>>();
+            ];
+        public static Dictionary<string, Dictionary<string, string>> FieldMappings { get; private set; } = [];
 
         #endregion
 
@@ -194,7 +194,7 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.GridTopMenu.IsEnabled = false;
             MainWindow.CurrentInstance.GridSideMenu.IsEnabled = false;
 
-            // Select the csv-file and create a tempImport object with the content
+            // Select the csv-file and create a TempImport object with the content
             await ImportCsvAsync();
             PopulateIdColumnMappingListView(MainWindow.CurrentInstance.IdColumnMappingListView);
             MainWindow.CurrentInstance.ButtonCancelImport.Visibility = Visibility.Visible;
@@ -215,7 +215,7 @@ namespace CollectaMundo
                 if (result == true)
                 {
                     string filePath = openFileDialog.FileName;
-                    tempImport = await ParseCsvFileAsync(filePath);
+                    TempImport = await ParseCsvFileAsync(filePath);
                 }
             }
             catch (Exception ex)
@@ -227,7 +227,7 @@ namespace CollectaMundo
         private static async Task<ObservableCollection<TempCardItem>> ParseCsvFileAsync(string filePath)
         {
             var cardItems = new ObservableCollection<TempCardItem>();
-            List<string> headers = new List<string>();
+            List<string> headers = [];
             char delimiter = ',';
 
             using (var reader = new StreamReader(filePath, Encoding.UTF8))
@@ -343,7 +343,7 @@ namespace CollectaMundo
         {
             try
             {
-                var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
+                var csvHeaders = TempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? [];
                 var databaseFields = GetCardIdentifierColumns(); // Fetch database columns
 
                 var mappingItem = new ColumnMapping
@@ -516,13 +516,13 @@ namespace CollectaMundo
 
                 bool hasValues = false;
                 int index = 0;
-                foreach (var tempItem in tempImport)
+                foreach (var tempItem in TempImport)
                 {
                     if (tempItem.Fields.TryGetValue(csvHeader, out var csvValue) && !string.IsNullOrEmpty(csvValue))
                     {
                         if (!csvToUuidsMap.ContainsKey(csvValue))
                         {
-                            csvToUuidsMap[csvValue] = new List<string>();
+                            csvToUuidsMap[csvValue] = [];
                             batchQueryBuilder.Append($"@csvValue_{index},");
                             tokenQueryBuilder.Append($"@csvValue_{index},");
                             index++;
@@ -577,7 +577,7 @@ namespace CollectaMundo
                         }
                     }
                 }
-                await Task.WhenAll(tempImport.Select(tempItem =>
+                await Task.WhenAll(TempImport.Select(tempItem =>
                 {
                     if (tempItem.Fields.TryGetValue(csvHeader, out var csvValue) && csvToUuidsMap.TryGetValue(csvValue, out var uuids))
                     {
@@ -698,7 +698,7 @@ namespace CollectaMundo
                     throw new InvalidOperationException("Name field not found.");
                 }
 
-                // Rename the CSV columns in tempImport based on the mappings
+                // Rename the CSV columns in TempImport based on the mappings
                 RenameFieldsInTempImport(mappings);
 
                 if (!string.IsNullOrEmpty(setCodeCsvHeader))
@@ -730,10 +730,10 @@ namespace CollectaMundo
             {
                 var csvToUuidsMap = new Dictionary<string, List<string>>();
 
-                for (int batchStart = 0; batchStart < tempImport.Count; batchStart += batchSize)
+                for (int batchStart = 0; batchStart < TempImport.Count; batchStart += batchSize)
                 {
-                    var batchEnd = Math.Min(batchStart + batchSize, tempImport.Count);
-                    var currentBatch = tempImport.Skip(batchStart).Take(batchEnd - batchStart)
+                    var batchEnd = Math.Min(batchStart + batchSize, TempImport.Count);
+                    var currentBatch = TempImport.Skip(batchStart).Take(batchEnd - batchStart)
                         .Where(item => !item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids"))
                         .ToList();
 
@@ -804,10 +804,10 @@ namespace CollectaMundo
             {
                 var csvToUuidsMap = new Dictionary<string, List<string>>();
 
-                for (int batchStart = 0; batchStart < tempImport.Count; batchStart += batchSize)
+                for (int batchStart = 0; batchStart < TempImport.Count; batchStart += batchSize)
                 {
-                    var batchEnd = Math.Min(batchStart + batchSize, tempImport.Count);
-                    var currentBatch = tempImport.Skip(batchStart).Take(batchEnd - batchStart)
+                    var batchEnd = Math.Min(batchStart + batchSize, TempImport.Count);
+                    var currentBatch = TempImport.Skip(batchStart).Take(batchEnd - batchStart)
                         .Where(item => !item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids"))
                         .ToList();
 
@@ -865,7 +865,7 @@ namespace CollectaMundo
         private static StringBuilder BuildInClause(string parameterPrefix, List<TempCardItem> currentBatch, out List<SQLiteParameter> parameters, string searchField)
         {
             var queryBuilder = new StringBuilder();
-            parameters = new List<SQLiteParameter>();
+            parameters = [];
             queryBuilder.Append("IN (");
 
             int index = 0;
@@ -907,7 +907,7 @@ namespace CollectaMundo
                         {
                             if (!csvToUuidsMap.ContainsKey(key))
                             {
-                                csvToUuidsMap[key] = new List<string>();
+                                csvToUuidsMap[key] = [];
                             }
                             csvToUuidsMap[key].Add(uuid);
                         }
@@ -917,7 +917,7 @@ namespace CollectaMundo
         }
         private static async Task ProcessUuidResultsForField(string fieldName, Dictionary<string, List<string>> csvToUuidsMap)
         {
-            await Task.WhenAll(tempImport.Select(tempItem =>
+            await Task.WhenAll(TempImport.Select(tempItem =>
             {
                 if (tempItem.Fields.TryGetValue("Card Name", out var cardName) &&
                     tempItem.Fields.TryGetValue(fieldName, out var setValue))
@@ -978,7 +978,7 @@ namespace CollectaMundo
             // Convert to List explicitly to ensure we have a concrete collection to work with
             var multipleUuidsList = multipleUuidsItems.ToList();
 
-            // Update tempImport and CardItemsToAdd with the uuids for the selected versions of the cards
+            // Update TempImport and CardItemsToAdd with the uuids for the selected versions of the cards
             ProcessMultipleUuidSelections(multipleUuidsList);
 
             // Prepare the listview to map additional fields and make the screen visible
@@ -991,14 +991,14 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
         }
 
-        // Update tempImport object with the cards where a uuid match was found
+        // Update TempImport object with the cards where a uuid match was found
         private static void ProcessMultipleUuidSelections(List<MultipleUuidsItem> multipleUuidsItems)
         {
             foreach (var item in multipleUuidsItems)
             {
                 if (!string.IsNullOrEmpty(item.SelectedUuid))
                 {
-                    var tempItem = tempImport.FirstOrDefault(t => t.Fields.ContainsKey("Card Name") && t.Fields["Card Name"] == item.Name);
+                    var tempItem = TempImport.FirstOrDefault(t => t.Fields.ContainsKey("Card Name") && t.Fields["Card Name"] == item.Name);
 
                     // Remove the field uuids and add the field uuid with the selected version of the card
                     if (tempItem != null)
@@ -1055,7 +1055,7 @@ namespace CollectaMundo
         {
             try
             {
-                var itemsWithMultipleUuids = tempImport
+                var itemsWithMultipleUuids = TempImport
                     .Where(item => item.Fields.ContainsKey("uuids"))
                     .Select(item => new MultipleUuidsItem
                     {
@@ -1081,12 +1081,12 @@ namespace CollectaMundo
         }
         private static void AssertNoInvalidUuidFields()
         {
-            var invalidUuidAndUuidsItems = tempImport.Where(item =>
+            var invalidUuidAndUuidsItems = TempImport.Where(item =>
                 item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid) &&
                 item.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrEmpty(uuids)
             ).ToList();
 
-            var invalidUuidOrUuidsItems = tempImport.Where(item =>
+            var invalidUuidOrUuidsItems = TempImport.Where(item =>
                 (item.Fields.TryGetValue("uuid", out var uuid) && string.IsNullOrEmpty(uuid)) ||
                 (item.Fields.TryGetValue("uuids", out var uuids) && string.IsNullOrEmpty(uuids))
             ).ToList();
@@ -1097,7 +1097,7 @@ namespace CollectaMundo
                 {
                     Debug.WriteLine($"Invalid item with both 'uuid' and 'uuids' fields with values: {GetItemDetails(item)}");
                 }
-                throw new InvalidOperationException("One or more items in tempImport have both 'uuid' and 'uuids' fields with values, which is not allowed.");
+                throw new InvalidOperationException("One or more items in TempImport have both 'uuid' and 'uuids' fields with values, which is not allowed.");
             }
 
             if (invalidUuidOrUuidsItems.Any())
@@ -1106,7 +1106,7 @@ namespace CollectaMundo
                 {
                     Debug.WriteLine($"Invalid item with 'uuid' or 'uuids' field with no value: {GetItemDetails(item)}");
                 }
-                throw new InvalidOperationException("One or more items in tempImport have 'uuid' or 'uuids' field with no value, which is not allowed.");
+                throw new InvalidOperationException("One or more items in TempImport have 'uuid' or 'uuids' field with no value, which is not allowed.");
             }
         }
 
@@ -1123,7 +1123,7 @@ namespace CollectaMundo
         // Utility methods to help determine whether to proceed to additionalfields mapping
         private static bool AllItemsHaveUuid()
         {
-            foreach (var tempItem in tempImport)
+            foreach (var tempItem in TempImport)
             {
                 if (!tempItem.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
                 {
@@ -1134,7 +1134,7 @@ namespace CollectaMundo
         }
         private static bool AnyItemWithMultipleUuidsField()
         {
-            bool hasUuids = tempImport.Any(item =>
+            bool hasUuids = TempImport.Any(item =>
             {
                 if (item.Fields.TryGetValue("uuids", out var uuids))
                 {
@@ -1152,7 +1152,7 @@ namespace CollectaMundo
         }
         private static bool AnyItemWithUuidField()
         {
-            return tempImport.Any(item => item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid));
+            return TempImport.Any(item => item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid));
         }
 
         #endregion
@@ -1169,7 +1169,7 @@ namespace CollectaMundo
                 return;
             }
 
-            // Rename the fields in tempImport based on the mappings
+            // Rename the fields in TempImport based on the mappings
             RenameFieldsInTempImport(mappingsList);
 
             // Store the CardSetField values in _mappings (List<string>)
@@ -1430,7 +1430,7 @@ namespace CollectaMundo
                 return [.. uniqueValues];
             }
 
-            foreach (var item in tempImport)
+            foreach (var item in TempImport)
             {
                 if (item.Fields.TryGetValue(csvHeader, out var value) && !string.IsNullOrEmpty(value))
                 {
@@ -1521,7 +1521,7 @@ namespace CollectaMundo
                 // Generate the content for the file
                 var lines = new List<string> { "Unable to find matching cards in the database for the following items:\n" };
 
-                foreach (var item in tempImport)
+                foreach (var item in TempImport)
                 {
                     // Check if the item does not have a "uuid" field or if the "uuid" field is empty
                     if (!item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
@@ -1561,7 +1561,7 @@ namespace CollectaMundo
             int countUnableToImport = 0;
             int totalCardsToAdd = 0;
 
-            foreach (var item in tempImport)
+            foreach (var item in TempImport)
             {
                 if (item.Fields.TryGetValue("uuid", out var uuid) && !string.IsNullOrEmpty(uuid))
                 {
@@ -1618,7 +1618,7 @@ namespace CollectaMundo
 
                 int row = 1;
 
-                foreach (var item in tempImport)
+                foreach (var item in TempImport)
                 {
                     if (!item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
                     {
@@ -1674,11 +1674,11 @@ namespace CollectaMundo
                 // Open the database connection
                 await DBAccess.OpenConnectionAsync();
 
-                // Process tempImport in batches
-                for (int batchStart = 0; batchStart < tempImport.Count; batchStart += batchSize)
+                // Process TempImport in batches
+                for (int batchStart = 0; batchStart < TempImport.Count; batchStart += batchSize)
                 {
-                    var batchEnd = Math.Min(batchStart + batchSize, tempImport.Count);
-                    var currentBatch = tempImport.Skip(batchStart).Take(batchEnd - batchStart).ToList();
+                    var batchEnd = Math.Min(batchStart + batchSize, TempImport.Count);
+                    var currentBatch = TempImport.Skip(batchStart).Take(batchEnd - batchStart).ToList();
 
                     // Run batch processing in a background thread
                     await Task.Run(async () =>
@@ -1850,7 +1850,7 @@ namespace CollectaMundo
         #region Import Wizard - Misc. helper and shared methods
         public static void EndImport()
         {
-            tempImport.Clear();
+            TempImport.Clear();
 
             // Make sure all the import wizard screens are collapsed (we don't know when the import is cancelled)
             MainWindow.CurrentInstance.GridImportWizard.Visibility = Visibility.Collapsed;
@@ -1923,15 +1923,15 @@ namespace CollectaMundo
             return options.FirstOrDefault(option => option.ToLower().Contains(lowerSearchValue));
         }
 
-        // Rename fields on tempImport object
+        // Rename fields on TempImport object
         private static void RenameFieldsInTempImport(List<ColumnMapping> mappings)
         {
             foreach (var mapping in mappings)
             {
                 if (!string.IsNullOrEmpty(mapping.CsvHeader) && !string.IsNullOrEmpty(mapping.CardSetField))
                 {
-                    // Rename fields in tempImport based on the field
-                    foreach (var item in tempImport)
+                    // Rename fields in TempImport based on the field
+                    foreach (var item in TempImport)
                     {
                         if (item.Fields.ContainsKey(mapping.CsvHeader))
                         {
@@ -1955,7 +1955,7 @@ namespace CollectaMundo
         {
             try
             {
-                var csvHeaders = tempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? new List<string>();
+                var csvHeaders = TempImport.FirstOrDefault()?.Fields.Keys.ToList() ?? [];
 
                 var mappingItems = cardSetFields.Select(field => new ColumnMapping
                 {
@@ -1999,8 +1999,8 @@ namespace CollectaMundo
         public static void DebugAllItems()
         {
             Debug.WriteLine("\n");
-            Debug.WriteLine("Debugging tempImport items:");
-            foreach (var tempItem in tempImport)
+            Debug.WriteLine("Debugging TempImport items:");
+            foreach (var tempItem in TempImport)
             {
                 Debug.WriteLine("TempItem:");
                 foreach (var field in tempItem.Fields)
@@ -2012,26 +2012,26 @@ namespace CollectaMundo
         }
         private static void DebugImportProcess()
         {
-            // Total number of items in tempImport
-            int totalTempImportItems = tempImport.Count;
+            // Total number of items in TempImport
+            int totalTempImportItems = TempImport.Count;
 
-            // Number of tempImport items with a single uuid
-            int singleUuidItems = tempImport.Count(item => item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids"));
+            // Number of TempImport items with a single uuid
+            int singleUuidItems = TempImport.Count(item => item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids"));
 
-            // Number of tempImport items with multiple uuids
-            int multipleUuidItems = tempImport.Count(item => item.Fields.ContainsKey("uuids"));
+            // Number of TempImport items with multiple uuids
+            int multipleUuidItems = TempImport.Count(item => item.Fields.ContainsKey("uuids"));
 
-            int noUuidItems = tempImport.Count(item => !item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids"));
+            int noUuidItems = TempImport.Count(item => !item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids"));
 
             // Debug write lines
-            Debug.WriteLine($"Total number of items in tempImport: {totalTempImportItems}");
-            Debug.WriteLine($"Number of tempImport items with single uuid: {singleUuidItems}");
-            Debug.WriteLine($"Number of tempImport items with multiple uuids: {multipleUuidItems}");
-            Debug.WriteLine($"Number of tempImport items with no uuid or uuids: {noUuidItems}");
+            Debug.WriteLine($"Total number of items in TempImport: {totalTempImportItems}");
+            Debug.WriteLine($"Number of TempImport items with single uuid: {singleUuidItems}");
+            Debug.WriteLine($"Number of TempImport items with multiple uuids: {multipleUuidItems}");
+            Debug.WriteLine($"Number of TempImport items with no uuid or uuids: {noUuidItems}");
         }
         private static void DebugItemsWithoutUuid()
         {
-            foreach (var item in tempImport)
+            foreach (var item in TempImport)
             {
                 // Check if the item does not have a "uuid" field or if the "uuid" field is empty
                 if (!item.Fields.TryGetValue("uuid", out var uuid) || string.IsNullOrEmpty(uuid))
