@@ -34,6 +34,7 @@ namespace CollectaMundo
             public string? Name { get; set; }
             public List<UuidVersion>? VersionedUuids { get; set; }
             public string? SelectedUuid { get; set; }
+            public string? CMImportKey { get; set; } // Unique key to identify each instance distinctly
         }
         public class ValueMapping : INotifyPropertyChanged
         {
@@ -265,12 +266,17 @@ namespace CollectaMundo
                         cardItem.Fields[headers[i]] = cleanedValue;
                     }
 
+                    // Add a unique key to each item
+                    string uniqueKey = Guid.NewGuid().ToString(); // Use GUID for uniqueness
+                    cardItem.Fields["CMImportKey"] = uniqueKey;
+
                     cardItems.Add(cardItem);
                 }
             }
 
             return cardItems;
         }
+
         private static List<string> ParseCsvLine(string line, char delimiter)
         {
             List<string> values = [];
@@ -981,7 +987,7 @@ namespace CollectaMundo
             {
                 if (!string.IsNullOrEmpty(item.SelectedUuid))
                 {
-                    TempCardItem? tempItem = TempImport.FirstOrDefault(t => t.Fields.ContainsKey("Card Name") && t.Fields["Card Name"] == item.Name);
+                    TempCardItem? tempItem = TempImport.FirstOrDefault(t => t.Fields.ContainsKey("CMImportKey") && t.Fields["CMImportKey"] == item.CMImportKey);
 
                     // Remove the field uuids and add the field uuid with the selected version of the card
                     if (tempItem != null)
@@ -1043,10 +1049,8 @@ namespace CollectaMundo
                     .Select(item => new MultipleUuidsItem
                     {
                         Name = item.Fields.ContainsKey("Card Name") ? item.Fields["Card Name"] : "Unknown",
-                        VersionedUuids = item.Fields["uuids"]
-                            .Split(',')
-                            .Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid })
-                            .ToList(),
+                        VersionedUuids = item.Fields["uuids"].Split(',').Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid }).ToList(),
+                        CMImportKey = item.Fields["CMImportKey"],
                         SelectedUuid = null // Set the initial selection to null
                     })
                     .ToList();
