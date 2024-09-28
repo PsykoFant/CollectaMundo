@@ -123,9 +123,9 @@ namespace CollectaMundo
             var loadAllCards = LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             var loadMyCollection = LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
             var loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
-            var fillComboBoxes = FillComboBoxesAsync();
 
-            await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, fillComboBoxes);
+            await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons);
+            await FillComboBoxesAsync();
 
             DBAccess.CloseConnection();
 
