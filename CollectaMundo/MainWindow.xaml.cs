@@ -1064,7 +1064,10 @@ namespace CollectaMundo
         {
             await AddItemsToDatabaseAsync();
         }
-
+        private async void ButtonEndImportWizard_Click(object sender, RoutedEventArgs e)
+        {
+            await EndImportWizard();
+        }
 
         // Import wizards misc. buttons and helper methods
         private void ClearMappingButton_Click(object sender, RoutedEventArgs e)

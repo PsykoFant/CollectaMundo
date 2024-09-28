@@ -356,15 +356,15 @@
                 <Button x:Name="ImportCollectionButton" Content="Import to my collection" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="ImportCollectionButton_Click"/>
             </Grid>
         </Grid>
-        <Grid Grid.Row="1" Grid.Column="1" x:Name="GridContentSection" Margin="5,00,5,0" Visibility="Visible">
-            <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="200" Width="200" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" d:IsHidden="True" />                        
+        <Grid Grid.Row="1" Grid.Column="1" x:Name="GridContentSection" Margin="5,00,5,0">
+            <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="200" Width="200" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" d:IsHidden="True" />
             <Grid x:Name="GridSearchAndFilterAllCards" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
                 <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,50,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="ButtonSubmitCardsToMyCollection_Click" Visibility="Collapsed"/>
                 <Button x:Name="ButtonClearCardsToAdd" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,50,210,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="Collapsed" Click="ButtonClearCardsToAdd_Click"/>
                 <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Right" Margin="0,252,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonAddCardsToMyCollection_Click"/>
-                
+
                 <TextBlock x:Name="AddStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Visibility="Collapsed"/>
                 <!--Cards to add listview-->
                 <ListView x:Name="CardsToAddListView" Margin="0,70,0,0" VerticalAlignment="Top" Height="200" Visibility="Collapsed">
@@ -563,13 +563,13 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
-                </DataGrid>                
+                </DataGrid>
             </Grid>
             <Grid x:Name="GridMyCollection" d:IsHidden="True">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
                 <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,50,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
-                <Button x:Name="ButtonClearCardsToEdit" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,50,210,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="Collapsed" Click="ButtonClearCardsToEdit_Click"/>                
+                <Button x:Name="ButtonClearCardsToEdit" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,50,210,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="Collapsed" Click="ButtonClearCardsToEdit_Click"/>
                 <Button x:Name="ButtonEditCardsInMyCollection" Content="Edit selected cards" HorizontalAlignment="Right" Margin="0,252,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="{Binding ElementName=MyCollectionDatagrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonEditCardsInCollection_Click"/>
 
                 <TextBlock x:Name="EditStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Visibility="Collapsed"/>
@@ -756,13 +756,13 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
-                </DataGrid>                
+                </DataGrid>
             </Grid>
             <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top">
                 <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698" d:IsHidden="True"/>
                 <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}" d:IsHidden="True"/>
                 <Grid x:Name="GridUtilsScreen">
-                    <Grid x:Name="GridImportWizard" Visibility="Visible">
+                    <Grid x:Name="GridImportWizard" Visibility="Collapsed">
                         <Label x:Name="ImportStartLabel" Content="The Import Wizard" HorizontalAlignment="Center" Margin="0,45,0,0" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
                         <Button x:Name="ButtonCancelImport" Content="Cancel Import" HorizontalAlignment="Center" Margin="0,350,420,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="Collapsed" Click="CancelImport_Click"/>
                         <Label x:Name="CrunchingDataLabel" Content="Please wait - crunching data..." HorizontalAlignment="Center" Margin="0,350,0,0" VerticalAlignment="Top" Height="25" Width="170" Visibility="Collapsed"/>
@@ -1038,13 +1038,59 @@
                             </ListView>
                             <Button x:Name="ButtonLanguageMappingNext" Content="Next" HorizontalAlignment="Center" Margin="470,350,0,0" VerticalAlignment="Top"  Width="30" Height="20" Style="{StaticResource BelerenBold}" Click="ButtonLanguageMappingNext_Click"/>
                         </Grid>
-                        <Grid x:Name="GridImportConfirm" Visibility="Visible">
+                        <Grid x:Name="GridImportConfirm" Visibility="Collapsed">
                             <Label Content="Summary and confirmation" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,140,0,0" FontSize="24" Style="{StaticResource BelerenBold}"/>
-                            <StackPanel x:Name="ImportSummaryContainer" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,200,0,0" Width="500">
-                                <TextBlock x:Name="ImportSummaryTextBlock" TextWrapping="Wrap" Height="Auto" Visibility="Visible"/>
-                            </StackPanel>
                             <Button x:Name="ButtonImportConfirm" Content="Looks good! Proceed with import..." HorizontalAlignment="Center" Margin="0,180,0,0" VerticalAlignment="Top" Width="200" Height="20" Style="{StaticResource BelerenBold}" Click="ButtonImportConfirm_Click"/>
-                            <Button x:Name="SaveListOfUnimportedItems" Content="Save unimported items to text file" HorizontalAlignment="Right" Margin="0,180,0,0" VerticalAlignment="Top" Width="200" Height="20" Style="{StaticResource BelerenBold}" Visibility="Collapsed" Click="SaveListOfUnimportedItems_Click"/>
+                            <Grid x:Name="GridImportSummary" Margin="0,210,0,0" Width="500">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="30"/>
+                                    <RowDefinition Height="30"/>
+                                    <RowDefinition Height="30"/>
+                                    <RowDefinition Height="30"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Grid Grid.Row="0" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <Label Content="Number of individual cards that will be added to collection:" HorizontalAlignment="Left" VerticalAlignment="Center" Height="25"  Style="{StaticResource BelerenBold}"/>
+                                </Grid>
+                                <Grid Grid.Row="0" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <Label x:Name="LabelIndividualCards" HorizontalAlignment="Left" VerticalAlignment="Center" Height="25" />
+                                </Grid>
+                                <Grid Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <Label Content="Total count of cards that will be added to collection:" HorizontalAlignment="Left" VerticalAlignment="Center" Height="25"  Style="{StaticResource BelerenBold}"/>
+                                </Grid>
+                                <Grid Grid.Row="1" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <Label x:Name="LabelTotalSumOfCards" HorizontalAlignment="Left" VerticalAlignment="Center" Height="25" />
+                                </Grid>
+                                <Grid Grid.Row="2" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <Label Content="Number of individual cards not possible to import:" HorizontalAlignment="Left" VerticalAlignment="Center" Height="25"  Style="{StaticResource BelerenBold}"/>
+                                </Grid>
+                                <Grid Grid.Row="2" Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <Label x:Name="LabelSumOfUnAbleToImport" HorizontalAlignment="Left" VerticalAlignment="Center" Height="25" />
+                                </Grid>
+                                <Grid Grid.Row="3" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <Label x:Name="LabelUnableToImportCardsHeading" Content="Unable to import the following cards:" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16" Style="{StaticResource BelerenBold}" Visibility="Collapsed"/>
+                                </Grid>
+                                <Grid Grid.Row="3" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <Button x:Name="SaveListOfUnimportedItems" Content="Save list to text file" HorizontalAlignment="Right" VerticalAlignment="Center" Height="20" Style="{StaticResource BelerenBold}" Visibility="Collapsed" Click="SaveListOfUnimportedItems_Click"/>                                    
+                                </Grid>
+                                <Grid Grid.Row="4" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                    <StackPanel x:Name="ImportSummaryContainer" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0" Width="500">
+                                        <TextBlock x:Name="ImportSummaryTextBlock" TextWrapping="Wrap" Height="Auto"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                        <Grid x:Name="GridImportSuccess" Visibility="Collapsed">
+                            <Label Content="Import complete!" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,140,0,0" FontSize="24" Style="{StaticResource BelerenBold}"/>
+                            <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="16" Height="18.5" >
+                                <Run Text="The cards have now been added to your collection."/>
+                            </TextBlock>
+                            <Image Margin="0,230,0,0" Source="Images/IxidorsWill.jpg" HorizontalAlignment="Center" VerticalAlignment="Top" Height="274" Width="344" Opacity="0.7"/>
+                            <Button x:Name="ButtonEndImportWizard" Content="Awesome! Take me to my collection..." HorizontalAlignment="Center" Margin="0,540,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="ButtonEndImportWizard_Click"/>
                         </Grid>
                     </Grid>
                 </Grid>

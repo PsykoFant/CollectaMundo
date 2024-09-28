@@ -1272,7 +1272,6 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.ButtonCancelImport.Margin = newMargin;
 
             MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Collapsed;
-            DebugFieldMappings();
             GoToFinalStep();
         }
 
@@ -1482,7 +1481,7 @@ namespace CollectaMundo
 
         #endregion
 
-        #region Import Wizard - Confirm and import
+        #region Import Wizard - Confirm, import and end wizard
         public static void SaveUnimportedItemsToFile()
         {
             // Create a SaveFileDialog to prompt the user to choose a save location
@@ -1560,15 +1559,9 @@ namespace CollectaMundo
                 }
             }
 
-            // Add summary information to the grid
-            AddTextToGrid(summaryGrid, "Number of individual cards to be imported:", 0, 0, FontWeights.Bold);
-            AddTextToGrid(summaryGrid, countReadyToImport.ToString(), 0, 1);
-
-            AddTextToGrid(summaryGrid, "Sum of new cards to be added to my collection:", 1, 0, FontWeights.Bold);
-            AddTextToGrid(summaryGrid, totalCardsToAdd.ToString(), 1, 1);
-
-            AddTextToGrid(summaryGrid, "Number of individual cards unable to import:", 2, 0, FontWeights.Bold);
-            AddTextToGrid(summaryGrid, countUnableToImport.ToString(), 2, 1);
+            MainWindow.CurrentInstance.LabelIndividualCards.Content = countReadyToImport.ToString();
+            MainWindow.CurrentInstance.LabelTotalSumOfCards.Content = totalCardsToAdd.ToString();
+            MainWindow.CurrentInstance.LabelSumOfUnAbleToImport.Content = countUnableToImport.ToString();
 
             // Add rows to the summaryGrid to ensure the items are displayed on separate lines
             summaryGrid.RowDefinitions.Add(new RowDefinition());
@@ -1581,7 +1574,8 @@ namespace CollectaMundo
             // If there are items without uuids, create a Grid to display them in a table format
             if (countUnableToImport > 0)
             {
-                MainWindow.CurrentInstance.ImportSummaryTextBlock.Inlines.Add(new System.Windows.Documents.Run("\nUnable to find matching cards in the database for the following items:\n\n"));
+                MainWindow.CurrentInstance.LabelUnableToImportCardsHeading.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Visible;
 
                 Grid tableGrid = new()
                 {
@@ -1622,7 +1616,6 @@ namespace CollectaMundo
 
                 // Add the Grid to the container
                 MainWindow.CurrentInstance.ImportSummaryContainer.Children.Add(tableGrid);
-                MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Visible;
             }
         }
         private static void AddTextToGrid(Grid grid, string text, int row, int column, FontWeight? fontWeight = null)
@@ -1640,13 +1633,12 @@ namespace CollectaMundo
         // Add imported cards to database
         public static async Task AddItemsToDatabaseAsync()
         {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
-
             // Disable UI elements during import
             MainWindow.CurrentInstance.ButtonCancelImport.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.ButtonImportConfirm.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.LabelUnableToImportCardsHeading.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.ImportSummaryContainer.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.CrunchingDataLabel.Content = "Importing cards";
 
@@ -1690,11 +1682,11 @@ namespace CollectaMundo
 
                             // Check available languages for this UUID
                             string checkLanguagesQuery = @"
-                        SELECT language FROM cardForeignData WHERE uuid = @uuid
-                        UNION
-                        SELECT language FROM cards WHERE uuid = @uuid
-                        UNION
-                        SELECT language FROM tokens WHERE uuid = @uuid";
+                                SELECT language FROM cardForeignData WHERE uuid = @uuid
+                                UNION
+                                SELECT language FROM cards WHERE uuid = @uuid
+                                UNION
+                                SELECT language FROM tokens WHERE uuid = @uuid";
 
                             HashSet<string> availableLanguages = [];
 
@@ -1781,20 +1773,6 @@ namespace CollectaMundo
                         }
                     });
                 }
-
-                stopwatch.Stop();
-                Debug.WriteLine($"Import to db completed in {stopwatch.ElapsedMilliseconds} ms");
-
-                // Cleanup
-                MainWindow.CurrentInstance.CrunchingDataLabel.Content = "Reloading my collection";
-                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
-
-                EndImport();
-
-                // Go to My Collections
-                MainWindow.CurrentInstance.ResetGrids();
-                MainWindow.CurrentInstance.GridFiltering.Visibility = Visibility.Visible;
-                MainWindow.CurrentInstance.GridMyCollection.Visibility = Visibility.Visible;
             }
             catch (Exception ex)
             {
@@ -1805,6 +1783,9 @@ namespace CollectaMundo
             {
                 // Ensure the database connection is closed
                 DBAccess.CloseConnection();
+                MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Collapsed;
+                MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Collapsed;
+                MainWindow.CurrentInstance.GridImportSuccess.Visibility = Visibility.Visible;
                 Debug.WriteLine("Import complete");
             }
         }
@@ -1827,6 +1808,21 @@ namespace CollectaMundo
             // If no mapping or 'unmapped', return the default value
             return defaultValue;
         }
+        public static async Task EndImportWizard()
+        {
+            await DBAccess.OpenConnectionAsync();
+            await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
+            DBAccess.CloseConnection();
+
+            EndImport();
+
+            // Go to My Collections
+            MainWindow.CurrentInstance.ResetGrids();
+            MainWindow.CurrentInstance.GridFiltering.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.LogoSmall.Visibility = Visibility.Visible;
+            MainWindow.CurrentInstance.GridMyCollection.Visibility = Visibility.Visible;
+        }
+
 
         #endregion
 
@@ -1846,16 +1842,18 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.GridImportFinishesMapping.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.GridImportLanguageMapping.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.GridImportSuccess.Visibility = Visibility.Collapsed;
 
             // Reenable menu buttons
             MainWindow.CurrentInstance.GridTopMenu.IsEnabled = true;
             MainWindow.CurrentInstance.GridSideMenu.IsEnabled = true;
 
-            // Reset other Import UI elements
+            // Reset other Import UI elements            
             MainWindow.CurrentInstance.CrunchingDataLabel.Content = string.Empty;
             MainWindow.CurrentInstance.ButtonCancelImport.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.ButtonImportConfirm.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.SaveListOfUnimportedItems.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.LabelUnableToImportCardsHeading.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.Inspiredtinkering.Visibility = Visibility.Visible;
 
@@ -1956,7 +1954,9 @@ namespace CollectaMundo
             }
         }
 
-        // Debug methods
+        #endregion
+
+        #region Debug methods
         public static void DebugFieldMappings()
         {
             try
