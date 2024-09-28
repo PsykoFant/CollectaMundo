@@ -9,7 +9,7 @@
 
         mc:Ignorable="d"
         Title="CollectaMundo"
-        Icon="Images/Icon.ico" 
+        Icon="/Resources/Images/Icon.ico" 
         Width="1920">
 
     <!-- Define resources accessible by all elements in this Window -->
@@ -19,12 +19,12 @@
 
         <Style x:Key="BelerenBold">
             <Setter Property="TextElement.FontFamily"
-                    Value="/Fonts/#Beleren Bold">
+                    Value="/Resources/Fonts/#Beleren Bold">
             </Setter>
         </Style>
         <Style x:Key="MPlantin">
             <Setter Property="TextElement.FontFamily"
-                    Value="/Fonts/#Mplantin">
+                    Value="/Resources/Fonts/#Mplantin">
             </Setter>
         </Style>
     </Window.Resources>
@@ -357,7 +357,7 @@
             </Grid>
         </Grid>
         <Grid Grid.Row="1" Grid.Column="1" x:Name="GridContentSection" Margin="5,00,5,0">
-            <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="200" Width="200" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" d:IsHidden="True" />
+            <Image x:Name="LogoSmall" Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="200" Width="200" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" d:IsHidden="True" />
             <Grid x:Name="GridSearchAndFilterAllCards" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
@@ -759,7 +759,7 @@
                 </DataGrid>
             </Grid>
             <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top">
-                <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698" d:IsHidden="True"/>
+                <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Resources/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698" d:IsHidden="True"/>
                 <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}" d:IsHidden="True"/>
                 <Grid x:Name="GridUtilsScreen">
                     <Grid x:Name="GridImportWizard" Visibility="Collapsed">
@@ -781,7 +781,7 @@
                                 <LineBreak/><LineBreak/>
                                 <Run Text="...we need to figure out which specific version of &quot;Flooded Strand&quot; should be added to your collection."/><LineBreak/>
                             </TextBlock>
-                            <Image Margin="0,449,0,0" Source="Images/rush_of_knowledge.jpg" HorizontalAlignment="Center" VerticalAlignment="Top" Height="274" Width="344" Opacity="0.7"/>
+                            <Image Margin="0,449,0,0" Source="/Resources/Images/rush_of_knowledge.jpg" HorizontalAlignment="Center" VerticalAlignment="Top" Height="274" Width="344" Opacity="0.7"/>
                             <Button x:Name="BeginImportButton" Content="Let's go!" HorizontalAlignment="Center" Margin="0,734,0,0" VerticalAlignment="Top" Click="BeginImportButton_Click" Width="74" Style="{StaticResource BelerenBold}"/>
                         </Grid>
                         <Grid x:Name="GridImportIdColumnMapping" Visibility="Collapsed">
@@ -1089,7 +1089,7 @@
                             <TextBlock HorizontalAlignment="Center" Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" FontSize="16" Height="18.5" >
                                 <Run Text="The cards have now been added to your collection."/>
                             </TextBlock>
-                            <Image Margin="0,230,0,0" Source="Images/IxidorsWill.jpg" HorizontalAlignment="Center" VerticalAlignment="Top" Height="274" Width="344" Opacity="0.7"/>
+                            <Image Margin="0,230,0,0" Source="Resources/Images/IxidorsWill.jpg" HorizontalAlignment="Center" VerticalAlignment="Top" Height="274" Width="344" Opacity="0.7"/>
                             <Button x:Name="ButtonEndImportWizard" Content="Awesome! Take me to my collection..." HorizontalAlignment="Center" Margin="0,540,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="ButtonEndImportWizard_Click"/>
                         </Grid>
                     </Grid>
@@ -1111,7 +1111,7 @@
                    VerticalAlignment="Top" Margin="0,461,10,0"/>
         </Grid>
         <Grid Grid.Row="1" Grid.Column="1" x:Name="GridStatus" Margin="0,40,0,0" VerticalAlignment="Top" d:IsHidden="True">
-            <Image Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="500" Width="500" RenderTransformOrigin="0.5,0.5" Margin="0,76,0,0" />
+            <Image Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="500" Width="500" RenderTransformOrigin="0.5,0.5" Margin="0,76,0,0" />
             <Label Content="CollectaMundo" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
             <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Center" Height="11" Margin="0,652,0,0" VerticalAlignment="Top" Width="738"/>
             <Label x:Name="StatusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top"/>

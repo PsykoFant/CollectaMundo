@@ -13,13 +13,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Fonts\Beleren-Bold.ttf" />
-    <None Remove="Fonts\mplantin.ttf" />
-    <None Remove="Images\Icon.ico" />
-    <None Remove="Images\inspired-tinkering-183.png" />
-    <None Remove="Images\IxidorsWill.jpg" />
-    <None Remove="Images\Logo.png" />
-    <None Remove="Images\rush_of_knowledge.jpg" />
+    <None Remove="Resources\Fonts\Beleren-Bold.ttf" />
+    <None Remove="Resources\Fonts\mplantin.ttf" />
+    <None Remove="Resources\Images\Icon.ico" />
+    <None Remove="Resources\Images\inspired-tinkering-183.png" />
+    <None Remove="Resources\Images\IxidorsWill.jpg" />
+    <None Remove="Resources\Images\Logo.png" />
+    <None Remove="Resources\Images\rush_of_knowledge.jpg" />
     <None Remove="UpgradeLog.htm" />
   </ItemGroup>
 
@@ -42,25 +42,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Fonts\Beleren-Bold.ttf">
+    <Resource Include="Resources\Fonts\Beleren-Bold.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Fonts\mplantin.ttf">
+    <Resource Include="Resources\Fonts\mplantin.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Images\Icon.ico">
+    <Resource Include="Resources\Images\Icon.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Images\inspired-tinkering-183.png">
+    <Resource Include="Resources\Images\inspired-tinkering-183.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Images\IxidorsWill.jpg">
+    <Resource Include="Resources\Images\IxidorsWill.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Images\Logo.png">
+    <Resource Include="Resources\Images\Logo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Images\rush_of_knowledge.jpg">
+    <Resource Include="Resources\Images\rush_of_knowledge.jpg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>
