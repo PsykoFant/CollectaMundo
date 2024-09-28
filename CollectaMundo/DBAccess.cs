@@ -14,7 +14,7 @@ namespace CollectaMundo
 
         public static SQLiteConnection? connection; // instantiate SQLite connection to use for db access
         public static SQLiteConnection? tempDbConnection; // instantiate SQLite connection to use for temp db access when updating        
-        public static string sqlitePath // Get the path to the db
+        public static string SqlitePath // Get the path to the db
         {
             get
             {
@@ -50,12 +50,12 @@ namespace CollectaMundo
                         throw new InvalidOperationException("Connection string not found in appsettings.json.");
                     }
 
-                    if (string.IsNullOrEmpty(sqlitePath))
+                    if (string.IsNullOrEmpty(SqlitePath))
                     {
                         throw new InvalidOperationException("SQLite database path not found in appsettings.json.");
                     }
 
-                    string fullConnectionString = connectionString.Replace("{SQLitePath}", sqlitePath);
+                    string fullConnectionString = connectionString.Replace("{SQLitePath}", SqlitePath);
                     connection = new SQLiteConnection(fullConnectionString);
                 }
 
@@ -125,6 +125,5 @@ namespace CollectaMundo
                 MessageBox.Show($"Error creating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
     }
 }

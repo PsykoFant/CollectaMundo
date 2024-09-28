@@ -379,7 +379,7 @@ namespace CollectaMundo
 
                 // Reload my collection
                 MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
-                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
+                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true, false);
 
                 DBAccess.connection.Close();
             }
@@ -453,7 +453,7 @@ namespace CollectaMundo
 
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
-                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
+                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true, false);
 
                 DBAccess.connection.Close();
             }
@@ -549,7 +549,7 @@ namespace CollectaMundo
 
                 // Reload my collection
                 MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
-                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
+                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true, false);
 
                 MainWindow.CurrentInstance.ApplyFilterSelection();
 
@@ -593,7 +593,7 @@ namespace CollectaMundo
 
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
-                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true);
+                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true, false);
 
                 DBAccess.connection.Close();
 

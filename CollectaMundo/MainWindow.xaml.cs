@@ -120,8 +120,8 @@ namespace CollectaMundo
             GridFiltering.Visibility = Visibility.Visible;
             LogoSmall.Visibility = Visibility.Visible;
 
-            var loadAllCards = LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
-            var loadMyCollection = LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true);
+            var loadAllCards = LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false, true);
+            var loadMyCollection = LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true, true);
             var loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
 
             await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons);
@@ -135,15 +135,18 @@ namespace CollectaMundo
         }
 
         #region Load data and populate UI elements
-        public async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
+        public async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem, bool showLoadScreen)
         {
             try
             {
-                await ShowStatusWindowAsync(true);  // Show loading message                
-                CurrentInstance.StatusLabel.Content = "Loading ALL the cards ... ";
-                CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
-                // Force the UI to update
-                Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+                if (showLoadScreen)
+                {
+                    await ShowStatusWindowAsync(true);  // Show loading message                
+                    CurrentInstance.StatusLabel.Content = "Loading ALL the cards ... ";
+                    CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
+                    // Force the UI to update
+                    Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+                }
 
                 cardList.Clear();
 
@@ -176,8 +179,12 @@ namespace CollectaMundo
             finally
             {
                 CurrentInstance.StatusLabel.Content = string.Empty;
-                await ShowStatusWindowAsync(false);
-                CurrentInstance.ProgressBar.Visibility = Visibility.Visible;
+
+                if (showLoadScreen)
+                {
+                    await ShowStatusWindowAsync(false);
+                    CurrentInstance.ProgressBar.Visibility = Visibility.Visible;
+                }
             }
         }
         private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
@@ -1111,6 +1118,7 @@ namespace CollectaMundo
         private void MenuSearchAndFilter_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
+            MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
             LogoSmall.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Visible;
             GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
@@ -1119,6 +1127,7 @@ namespace CollectaMundo
         private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
+            MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
             LogoSmall.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Visible;
@@ -1127,11 +1136,15 @@ namespace CollectaMundo
         private void MenuUtilsButton_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
+            MenuUtilsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
             GridUtilsMenu.Visibility = Visibility.Visible;
             GridUtilitiesSection.Visibility = Visibility.Visible;
         }
         public void ResetGrids()
         {
+            MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
+            MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
+            MenuUtilsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
 
             EditStatusTextBlock.Text = string.Empty;
             AddStatusTextBlock.Text = string.Empty;

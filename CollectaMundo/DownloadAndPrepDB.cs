@@ -18,7 +18,7 @@ namespace CollectaMundo
     public class DownloadAndPrepDB
     {
         public static event Action<string>? StatusMessageUpdated;
-        private static readonly string databasePath = Path.Combine(DBAccess.sqlitePath, "AllPrintings.sqlite");
+        private static readonly string databasePath = Path.Combine(DBAccess.SqlitePath, "AllPrintings.sqlite");
 
         /// <summary>
         /// Check if the card database exists in the location specified by appsettings.json. 
@@ -102,18 +102,16 @@ namespace CollectaMundo
                     var megabytes = string.Format("{0:0.0} MB", totalBytes / 1000000.0);
                     var totalBytesRead = 0L;
                     var buffer = new byte[4096];
-                    using (var contentStream = await response.Content.ReadAsStreamAsync())
-                    using (var fileStream = new FileStream(databasePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
+                    using var contentStream = await response.Content.ReadAsStreamAsync();
+                    using var fileStream = new FileStream(databasePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
+                    StatusMessageUpdated?.Invoke($"Downloading card database ({megabytes})");
+                    var bytesRead = 0;
+                    while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
                     {
-                        StatusMessageUpdated?.Invoke($"Downloading card database ({megabytes})");
-                        var bytesRead = 0;
-                        while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
-                        {
-                            await fileStream.WriteAsync(buffer, 0, bytesRead);
-                            totalBytesRead += bytesRead;
-                            var progressPercentage = totalBytes != -1 ? (int)((totalBytesRead * 100) / totalBytes) : -1;
-                            progress?.Report(progressPercentage);
-                        }
+                        await fileStream.WriteAsync(buffer, 0, bytesRead);
+                        totalBytesRead += bytesRead;
+                        var progressPercentage = totalBytes != -1 ? (int)((totalBytesRead * 100) / totalBytes) : -1;
+                        progress?.Report(progressPercentage);
                     }
                 }
                 Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
@@ -159,10 +157,8 @@ namespace CollectaMundo
                 // Create the tables asynchronously
                 foreach (var item in tables)
                 {
-                    using (var command = new SQLiteCommand(item.Value, DBAccess.connection))
-                    {
-                        await command.ExecuteNonQueryAsync();
-                    }
+                    using var command = new SQLiteCommand(item.Value, DBAccess.connection);
+                    await command.ExecuteNonQueryAsync();
                 }
 
                 // Create indices
@@ -179,7 +175,7 @@ namespace CollectaMundo
         }
         public static async Task GenerateManaSymbolsFromSvgAsync()
         {
-            StatusMessageUpdated?.Invoke("Generating mana symbol images");
+            StatusMessageUpdated?.Invoke("Generating mana symbol images...");
             try
             {
                 List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
@@ -264,6 +260,7 @@ namespace CollectaMundo
         }
         public static async Task GenerateSetKeyruneFromSvgAsync()
         {
+            StatusMessageUpdated?.Invoke("Generating set icons ...");
             try
             {
                 await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "code");
@@ -329,24 +326,18 @@ namespace CollectaMundo
 
                 foreach (string symbol in manaSymbols)
                 {
-                    using (SQLiteCommand command = new(
+                    using SQLiteCommand command = new(
                             $"SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol",
-                            DBAccess.connection))
-                    {
-                        command.Parameters.AddWithValue("@symbol", symbol);
+                            DBAccess.connection);
+                    command.Parameters.AddWithValue("@symbol", symbol);
 
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            if (await reader.ReadAsync())
-                            {
-                                byte[] imageBytes = (byte[])reader["manaSymbolImage"];
-                                using (MemoryStream ms = new(imageBytes))
-                                {
-                                    Bitmap bitmap = new(ms); // Bitmap and SkiaSharp operations are not async
-                                    manaSymbolImage.Add(bitmap);
-                                }
-                            }
-                        }
+                    using var reader = await command.ExecuteReaderAsync();
+                    if (await reader.ReadAsync())
+                    {
+                        byte[] imageBytes = (byte[])reader["manaSymbolImage"];
+                        using MemoryStream ms = new(imageBytes);
+                        Bitmap bitmap = new(ms); // Bitmap and SkiaSharp operations are not async
+                        manaSymbolImage.Add(bitmap);
                     }
                 }
             }
@@ -389,33 +380,29 @@ namespace CollectaMundo
                 {
                     var firstImage = images[0];
                     // Create a new bitmap with matching DPI and pixel format
-                    using (var combinedImage = new Bitmap(totalWidth, maxHeight, firstImage.PixelFormat))
+                    using var combinedImage = new Bitmap(totalWidth, maxHeight, firstImage.PixelFormat);
+                    combinedImage.SetResolution(firstImage.HorizontalResolution, firstImage.VerticalResolution);
+
+                    using (var g = Graphics.FromImage(combinedImage))
                     {
-                        combinedImage.SetResolution(firstImage.HorizontalResolution, firstImage.VerticalResolution);
+                        // Set high-quality rendering options
+                        g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
 
-                        using (var g = Graphics.FromImage(combinedImage))
+                        // Draw each image side by side
+                        int offset = 0;
+                        foreach (var image in images)
                         {
-                            // Set high-quality rendering options
-                            g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-                            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-
-                            // Draw each image side by side
-                            int offset = 0;
-                            foreach (var image in images)
-                            {
-                                g.DrawImage(image, new System.Drawing.Point(offset, 0));
-                                offset += image.Width;
-                            }
-                        }
-
-                        // Convert the combined image to a byte array
-                        using (var ms = new MemoryStream())
-                        {
-                            combinedImage.Save(ms, ImageFormat.Png);
-                            return ms.ToArray();
+                            g.DrawImage(image, new System.Drawing.Point(offset, 0));
+                            offset += image.Width;
                         }
                     }
+
+                    // Convert the combined image to a byte array
+                    using var ms = new MemoryStream();
+                    combinedImage.Save(ms, ImageFormat.Png);
+                    return ms.ToArray();
                 }
             }
             catch (Exception ex)
@@ -425,53 +412,49 @@ namespace CollectaMundo
             }
 
             // Return an empty array failure
-            return new byte[0];
+            return [];
         }
         public static async Task<byte[]> ConvertSvgToByteArraySharpVectorsAsync(string svgUrl)
         {
             try
             {
-                using (var httpClient = new HttpClient())
+                using var httpClient = new HttpClient();
+                var svgData = await httpClient.GetStringAsync(svgUrl);
+                var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgData));
+                var settings = new WpfDrawingSettings
                 {
-                    var svgData = await httpClient.GetStringAsync(svgUrl);
-                    var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgData));
-                    var settings = new WpfDrawingSettings
-                    {
-                        IncludeRuntime = false,
-                        TextAsGeometry = false,
-                        OptimizePath = true,
-                    };
-                    var reader = new FileSvgReader(settings);
-                    var drawing = reader.Read(svgStream);
+                    IncludeRuntime = false,
+                    TextAsGeometry = false,
+                    OptimizePath = true,
+                };
+                var reader = new FileSvgReader(settings);
+                var drawing = reader.Read(svgStream);
 
-                    DrawingImage drawingImage = new(drawing);
-                    var drawingVisual = new DrawingVisual();
-                    double aspectRatio = drawingImage.Width / drawingImage.Height;
-                    int newHeight = 20;
-                    int newWidth = (int)(newHeight * aspectRatio);
+                DrawingImage drawingImage = new(drawing);
+                var drawingVisual = new DrawingVisual();
+                double aspectRatio = drawingImage.Width / drawingImage.Height;
+                int newHeight = 20;
+                int newWidth = (int)(newHeight * aspectRatio);
 
-                    using (var drawingContext = drawingVisual.RenderOpen())
-                    {
-                        drawingContext.DrawImage(drawingImage, new Rect(0, 0, newWidth, newHeight));
-                    }
-                    RenderTargetBitmap renderTargetBitmap = new(newWidth, newHeight, 96, 96, PixelFormats.Pbgra32);
-                    renderTargetBitmap.Render(drawingVisual);
-
-                    System.Windows.Media.Imaging.BitmapEncoder encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
-                    encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(renderTargetBitmap));
-
-                    using (MemoryStream memoryStream = new())
-                    {
-                        encoder.Save(memoryStream);
-                        return memoryStream.ToArray();
-                    }
+                using (var drawingContext = drawingVisual.RenderOpen())
+                {
+                    drawingContext.DrawImage(drawingImage, new Rect(0, 0, newWidth, newHeight));
                 }
+                RenderTargetBitmap renderTargetBitmap = new(newWidth, newHeight, 96, 96, PixelFormats.Pbgra32);
+                renderTargetBitmap.Render(drawingVisual);
+
+                System.Windows.Media.Imaging.BitmapEncoder encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(renderTargetBitmap));
+
+                using MemoryStream memoryStream = new();
+                encoder.Save(memoryStream);
+                return memoryStream.ToArray();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error converting SVG to byte array: {ex.Message}");
                 MessageBox.Show($"Error converting SVG to byte array: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return Array.Empty<byte>();
+                return [];
             }
         }
         private static async Task CopyColumnIfEmptyOrAddMissingRowsAsync(string targetTable, string targetColumn, string sourceTable, string sourceColumn)
@@ -479,36 +462,32 @@ namespace CollectaMundo
             try
             {
                 string checkQuery = $"SELECT COUNT(*) FROM {targetTable} WHERE {targetColumn} IS NOT NULL AND {targetColumn} != '';";
-                using (var checkCommand = new SQLiteCommand(checkQuery, DBAccess.connection))
-                {
-                    int result = Convert.ToInt32(await checkCommand.ExecuteScalarAsync());
+                using var checkCommand = new SQLiteCommand(checkQuery, DBAccess.connection);
+                int result = Convert.ToInt32(await checkCommand.ExecuteScalarAsync());
 
-                    if (result == 0)
-                    {
-                        string copyQuery = $@"
+                if (result == 0)
+                {
+                    string copyQuery = $@"
                         BEGIN TRANSACTION;
                         INSERT OR IGNORE INTO {targetTable} ({targetColumn})
                         SELECT DISTINCT {sourceColumn} FROM {sourceTable};
                         COMMIT;";
-                        using (var copyCommand = new SQLiteCommand(copyQuery, DBAccess.connection))
-                        {
-                            await copyCommand.ExecuteNonQueryAsync();
-                            Debug.WriteLine($"Copied all rows from {sourceTable}, column {sourceColumn} to {targetTable}, {targetColumn}");
-                        }
-                    }
-                    else
-                    {
-                        string copyQuery = $@"
+                    using var copyCommand = new SQLiteCommand(copyQuery, DBAccess.connection);
+                    await copyCommand.ExecuteNonQueryAsync();
+                    Debug.WriteLine($"Copied all rows from {sourceTable}, column {sourceColumn} to {targetTable}, {targetColumn}");
+                }
+                else
+                {
+                    string copyQuery = $@"
                         INSERT INTO {targetTable} ({targetColumn})
                         SELECT {sourceTable}.{sourceColumn} FROM {sourceTable}
                         LEFT JOIN {targetTable} ON {sourceTable}.{sourceColumn} = {targetTable}.{targetColumn}
                         WHERE {targetTable}.{targetColumn} IS NULL;";
-                        using (var command = new SQLiteCommand(copyQuery, DBAccess.connection))
-                        {
-                            await command.ExecuteNonQueryAsync();
-                        }
-                        Debug.WriteLine($"Updated missing rows in {targetTable}");
+                    using (var command = new SQLiteCommand(copyQuery, DBAccess.connection))
+                    {
+                        await command.ExecuteNonQueryAsync();
                     }
+                    Debug.WriteLine($"Updated missing rows in {targetTable}");
                 }
             }
             catch (Exception ex)
@@ -522,14 +501,10 @@ namespace CollectaMundo
         {
             try
             {
-                using (var command = new SQLiteCommand(
-                                $"UPDATE {tableName} SET {columnToUpdate} = @imageData WHERE {columnToUpdate} IS NULL AND {columnToReference} = @referenceColumn",
-                                DBAccess.connection))
-                {
-                    command.Parameters.AddWithValue("@referenceColumn", imageToUpdate);
-                    command.Parameters.AddWithValue("@imageData", imageData);
-                    await command.ExecuteNonQueryAsync();
-                }
+                using var command = new SQLiteCommand($"UPDATE {tableName} SET {columnToUpdate} = @imageData WHERE {columnToUpdate} IS NULL AND {columnToReference} = @referenceColumn", DBAccess.connection);
+                command.Parameters.AddWithValue("@referenceColumn", imageToUpdate);
+                command.Parameters.AddWithValue("@imageData", imageData);
+                await command.ExecuteNonQueryAsync();
             }
             catch (Exception ex)
             {
@@ -541,21 +516,16 @@ namespace CollectaMundo
         {
             try
             {
-                using (var selectCommand = new SQLiteCommand(
-                    $"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @value", DBAccess.connection))
-                {
-                    selectCommand.Parameters.AddWithValue("@value", value);
-                    var count = Convert.ToInt32(await selectCommand.ExecuteScalarAsync());
+                using var selectCommand = new SQLiteCommand($"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @value", DBAccess.connection);
+                selectCommand.Parameters.AddWithValue("@value", value);
+                var count = Convert.ToInt32(await selectCommand.ExecuteScalarAsync());
 
-                    if (count == 0)
-                    {
-                        using (var insertCommand = new SQLiteCommand(
-                            $"INSERT INTO {tableName} ({columnName}) VALUES (@value)", DBAccess.connection))
-                        {
-                            insertCommand.Parameters.AddWithValue("@value", value);
-                            await insertCommand.ExecuteNonQueryAsync();
-                        }
-                    }
+                if (count == 0)
+                {
+                    using var insertCommand = new SQLiteCommand(
+                        $"INSERT INTO {tableName} ({columnName}) VALUES (@value)", DBAccess.connection);
+                    insertCommand.Parameters.AddWithValue("@value", value);
+                    await insertCommand.ExecuteNonQueryAsync();
                 }
             }
             catch (Exception ex)
@@ -570,16 +540,12 @@ namespace CollectaMundo
             try
             {
                 string query = $"SELECT {returnColumnName} FROM {tableName} WHERE {searchColumnName} IS NULL";
-                using (var command = new SQLiteCommand(query, DBAccess.connection))
+                using var command = new SQLiteCommand(query, DBAccess.connection);
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
                 {
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            string value = reader[returnColumnName]?.ToString() ?? string.Empty;
-                            valuesWithNull.Add(value);
-                        }
-                    }
+                    string value = reader[returnColumnName]?.ToString() ?? string.Empty;
+                    valuesWithNull.Add(value);
                 }
             }
             catch (Exception ex)
@@ -597,18 +563,14 @@ namespace CollectaMundo
             {
                 string query = $"SELECT DISTINCT {columnName} FROM {tableName};";
 
-                using (var command = new SQLiteCommand(query, DBAccess.connection))
+                using var command = new SQLiteCommand(query, DBAccess.connection);
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
                 {
-                    using (var reader = await command.ExecuteReaderAsync())
+                    string value = reader[columnName]?.ToString() ?? string.Empty;
+                    if (!string.IsNullOrEmpty(value))
                     {
-                        while (await reader.ReadAsync())
-                        {
-                            string value = reader[columnName]?.ToString() ?? string.Empty;
-                            if (!string.IsNullOrEmpty(value))
-                            {
-                                uniqueValues.Add(value);
-                            }
-                        }
+                        uniqueValues.Add(value);
                     }
                 }
             }
@@ -622,41 +584,37 @@ namespace CollectaMundo
         }
         public static async Task CreateIndices()
         {
-            // Define indices to create
             Dictionary<string, string> indices = new()
-        {
-            {"uniqueManaSymbols", "CREATE INDEX IF NOT EXISTS uniqueManaSymbols_uniqueManaSymbol ON uniqueManaSymbols(uniqueManaSymbol);"},
-            {"uniqueManaCostImages", "CREATE INDEX IF NOT EXISTS uniqueManaCostImages_uniqueManaCost ON uniqueManaCostImages(uniqueManaCost);"},
-            {"keyruneImages", "CREATE INDEX IF NOT EXISTS keyruneImages_setCode ON keyruneImages(setCode);"},
-            {"cardForeignData", "CREATE INDEX IF NOT EXISTS cardForeignData_uuid ON cardForeignData(uuid);"},
-            {"cardIdentifiers", "CREATE INDEX IF NOT EXISTS cardIdentifiers_uuid ON cardIdentifiers(uuid);"},
-            {"cardLegalities", "CREATE INDEX IF NOT EXISTS cardLegalities_uuid ON cardLegalities(uuid);"},
-            {"cardPurchaseUrls", "CREATE INDEX IF NOT EXISTS cardPurchaseUrls_uuid ON cardPurchaseUrls(uuid);"},
-            {"cardRulings", "CREATE INDEX IF NOT EXISTS cardRulings_uuid ON cardRulings(uuid);"},
-            {"cards_uuid", "CREATE INDEX IF NOT EXISTS cards_uuid ON cards(uuid);"},
-            {"cards_name", "CREATE INDEX IF NOT EXISTS cards_name ON cards(name);"},
-            {"cards_setCode", "CREATE INDEX IF NOT EXISTS cards_setCode ON cards(setCode);"},
-            {"cards_side", "CREATE INDEX IF NOT EXISTS cards_side ON cards(side);"},
-            {"cards_keywords", "CREATE INDEX IF NOT EXISTS cards_keywords ON cards(keywords);"},
-            {"sets_code", "CREATE INDEX IF NOT EXISTS sets_code ON sets(code);"},
-            {"sets_tokenSetCode", "CREATE INDEX IF NOT EXISTS sets_tokenSetCode ON sets(tokenSetCode);"},
-            {"tokenIdentifiers", "CREATE INDEX IF NOT EXISTS tokenIdentifiers_uuid ON tokenIdentifiers(uuid);"},
-            {"tokens_uuid", "CREATE INDEX IF NOT EXISTS tokens_uuid ON tokens(uuid);"},
-            {"tokens_name", "CREATE INDEX IF NOT EXISTS tokens_name ON tokens(name);"},
-            {"tokens_setCode", "CREATE INDEX IF NOT EXISTS tokens_setCode ON tokens(setCode);"},
-            {"tokens_faceName", "CREATE INDEX IF NOT EXISTS tokens_faceName ON tokens(faceName);"},
-            {"myCollection", "CREATE INDEX IF NOT EXISTS myCollection_uuid ON myCollection(uuid);"}
-        };
+            {
+                {"uniqueManaSymbols", "CREATE INDEX IF NOT EXISTS uniqueManaSymbols_uniqueManaSymbol ON uniqueManaSymbols(uniqueManaSymbol);"},
+                {"uniqueManaCostImages", "CREATE INDEX IF NOT EXISTS uniqueManaCostImages_uniqueManaCost ON uniqueManaCostImages(uniqueManaCost);"},
+                {"keyruneImages", "CREATE INDEX IF NOT EXISTS keyruneImages_setCode ON keyruneImages(setCode);"},
+                {"cardForeignData", "CREATE INDEX IF NOT EXISTS cardForeignData_uuid ON cardForeignData(uuid);"},
+                {"cardIdentifiers", "CREATE INDEX IF NOT EXISTS cardIdentifiers_uuid ON cardIdentifiers(uuid);"},
+                {"cardLegalities", "CREATE INDEX IF NOT EXISTS cardLegalities_uuid ON cardLegalities(uuid);"},
+                {"cardPurchaseUrls", "CREATE INDEX IF NOT EXISTS cardPurchaseUrls_uuid ON cardPurchaseUrls(uuid);"},
+                {"cardRulings", "CREATE INDEX IF NOT EXISTS cardRulings_uuid ON cardRulings(uuid);"},
+                {"cards_uuid", "CREATE INDEX IF NOT EXISTS cards_uuid ON cards(uuid);"},
+                {"cards_name", "CREATE INDEX IF NOT EXISTS cards_name ON cards(name);"},
+                {"cards_setCode", "CREATE INDEX IF NOT EXISTS cards_setCode ON cards(setCode);"},
+                {"cards_side", "CREATE INDEX IF NOT EXISTS cards_side ON cards(side);"},
+                {"cards_keywords", "CREATE INDEX IF NOT EXISTS cards_keywords ON cards(keywords);"},
+                {"sets_code", "CREATE INDEX IF NOT EXISTS sets_code ON sets(code);"},
+                {"sets_tokenSetCode", "CREATE INDEX IF NOT EXISTS sets_tokenSetCode ON sets(tokenSetCode);"},
+                {"tokenIdentifiers", "CREATE INDEX IF NOT EXISTS tokenIdentifiers_uuid ON tokenIdentifiers(uuid);"},
+                {"tokens_uuid", "CREATE INDEX IF NOT EXISTS tokens_uuid ON tokens(uuid);"},
+                {"tokens_name", "CREATE INDEX IF NOT EXISTS tokens_name ON tokens(name);"},
+                {"tokens_setCode", "CREATE INDEX IF NOT EXISTS tokens_setCode ON tokens(setCode);"},
+                {"tokens_faceName", "CREATE INDEX IF NOT EXISTS tokens_faceName ON tokens(faceName);"},
+                {"myCollection", "CREATE INDEX IF NOT EXISTS myCollection_uuid ON myCollection(uuid);"}
+            };
 
             try
             {
-                // Create the indices asynchronously
                 foreach (var item in indices)
                 {
-                    using (var command = new SQLiteCommand(item.Value, DBAccess.connection))
-                    {
-                        await command.ExecuteNonQueryAsync();
-                    }
+                    using var command = new SQLiteCommand(item.Value, DBAccess.connection);
+                    await command.ExecuteNonQueryAsync();
                 }
             }
             catch (Exception ex)
@@ -670,201 +628,199 @@ namespace CollectaMundo
             try
             {
                 string createCardTokenViewQuery = @"
-                CREATE VIEW IF NOT EXISTS view_cardToken AS
-                SELECT 
-                    c.uuid,
-                    c.name,
-                    s.name AS setName,
-                    c.setCode,
-                    NULL AS tokenSetCode,
-                    NULL AS faceName
-                FROM 
-                    cards c
-                JOIN 
-                    sets s ON c.setCode = s.code
-                WHERE 
-                    c.side IS NULL OR c.side = 'a'
-                UNION ALL
-                SELECT 
-                    t.uuid,
-                    t.name,
-                    s.name AS setName,
-                    s.code AS setCode,
-                    s.tokenSetCode,
-                    t.faceName
-                FROM 
-                    tokens t
-                JOIN 
-                    sets s ON t.setCode = s.tokenSetCode
-                WHERE 
-                    t.side IS NULL OR t.side = 'a';
-                ";
-
-                string createAllCardsViewQuery = @"
-                CREATE VIEW IF NOT EXISTS view_allCards AS
-                SELECT * FROM (
+                    CREATE VIEW IF NOT EXISTS view_cardToken AS
                     SELECT 
-                        c.name AS Name, 
-                        s.name AS SetName, 
-                        s.releaseDate AS ReleaseDate,
-                        k.keyruneImage AS KeyRuneImage, 
-                        c.manaCost AS ManaCost, 
-                        u.manaCostImage AS ManaCostImage, 
-                        c.types AS Types, 
-                        c.colors AS Colors,
-                        c.supertypes AS SuperTypes, 
-                        c.subtypes AS SubTypes, 
-                        c.type AS Type, 
-                        COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
-                        c.text AS RulesText, 
-                        c.manaValue AS ManaValue, 
-                        c.language AS Language,
-                        c.uuid AS Uuid, 
-                        c.finishes AS Finishes, 
-                        c.side AS Side 
-                    FROM cards c
-                    JOIN sets s ON c.setCode = s.code
-                    LEFT JOIN keyruneImages k ON c.setCode = k.setCode
-                    LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                    LEFT JOIN (
-                        SELECT 
-                            cc.SetCode, 
-                            cc.Name, 
-                            GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                        FROM cards cc
-                        GROUP BY cc.SetCode, cc.Name
-                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
-                    WHERE c.side IS NULL OR c.side = 'a'
-
-                    UNION ALL
-
-                    SELECT 
-                        t.name AS Name, 
-                        s.name AS SetName, 
-                        s.releaseDate AS ReleaseDate,
-                        k.keyruneImage AS KeyRuneImage, 
-                        t.manaCost AS ManaCost, 
-                        u.manaCostImage AS ManaCostImage, 
-                        t.types AS Types, 
-                        t.colors AS Colors,
-                        t.supertypes AS SuperTypes, 
-                        t.subtypes AS SubTypes, 
-                        t.type AS Type, 
-                        t.keywords AS Keywords, 
-                        t.text AS RulesText, 
-                        NULL AS ManaValue, 
-                        t.language AS Language,
-                        t.uuid AS Uuid, 
-                        t.finishes AS Finishes, 
-                        t.side AS Side 
-                    FROM tokens t 
-                    JOIN sets s ON t.setCode = s.tokenSetCode 
-                    LEFT JOIN keyruneImages k ON t.setCode = k.setCode
-                    LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-                    WHERE t.side IS NULL OR t.side = 'a'
-                ) ORDER BY ReleaseDate DESC, SetName, Types,
-                    CASE Colors
-                        WHEN 'W' THEN 1
-                        WHEN 'U' THEN 2
-                        WHEN 'B' THEN 3
-                        WHEN 'R' THEN 4
-                        WHEN 'G' THEN 5
-                        WHEN 'U' THEN 6
-                        ELSE 7
-                    END;
-                ";
-
-                string createMyCollectionViewQuery = @"
-                CREATE VIEW IF NOT EXISTS view_myCollection AS
-                SELECT * FROM (
-                    SELECT                        
-                        c.name AS Name,
-                        s.name AS SetName,
-                        s.releaseDate AS ReleaseDate,
-                        k.keyruneImage AS KeyRuneImage,
-                        c.manaCost AS ManaCost,
-                        u.manaCostImage AS ManaCostImage,
-                        c.types AS Types,
-                        c.colors AS Colors,
-                        c.supertypes AS SuperTypes,
-                        c.subtypes AS SubTypes,
-                        c.type AS Type,
-                        COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
-                        c.text AS RulesText,
-                        c.manaValue AS ManaValue,
-						c.finishes AS Finishes,
-                        c.uuid AS Uuid,
-                        m.id AS CardId,
-                        m.count AS CardsOwned,
-                        m.trade AS CardsForTrade,
-                        m.condition AS Condition,
-                        m.language AS Language,
-                        m.finish AS Finish,
-                        c.side AS Side
-                    FROM
-                        myCollection m
-                    JOIN
-                        cards c ON m.uuid = c.uuid
-                    LEFT JOIN 
+                        c.uuid,
+                        c.name,
+                        s.name AS setName,
+                        c.setCode,
+                        NULL AS tokenSetCode,
+                        NULL AS faceName
+                    FROM 
+                        cards c
+                    JOIN 
                         sets s ON c.setCode = s.code
-                    LEFT JOIN 
-                        keyruneImages k ON c.setCode = k.setCode
-                    LEFT JOIN 
-                        uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                    LEFT JOIN (
-                        SELECT 
-                            cc.SetCode, 
-                            cc.Name, 
-                            GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                        FROM cards cc
-                        GROUP BY cc.SetCode, cc.Name
-                    ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
-                    WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
+                    WHERE 
+                        c.side IS NULL OR c.side = 'a'
                     UNION ALL
-                    SELECT
-                        t.name AS Name,
-                        s.name AS SetName,
-                        s.releaseDate AS ReleaseDate,
-                        k.keyruneImage AS KeyRuneImage,
-                        t.manaCost AS ManaCost,
-                        u.manaCostImage AS ManaCostImage,
-                        t.types AS Types,
-                        t.colors AS Colors,
-                        t.supertypes AS SuperTypes,
-                        t.subtypes AS SubTypes,
-                        t.type AS Type,
-                        t.keywords AS Keywords,
-                        t.text AS RulesText,
-                        NULL AS ManaValue,  -- Tokens do not have manaValue
-						t.finishes AS Finishes,
-                        t.uuid AS Uuid,
-                        m.id AS CardId,
-                        m.count AS CardsOwned,
-                        m.trade AS CardsForTrade,
-                        m.condition AS Condition,
-                        m.language AS Language,
-                        m.finish AS Finish,
-                        t.side AS Side
-                    FROM
-                        myCollection m
-                    JOIN
-                        tokens t ON m.uuid = t.uuid
-                    LEFT JOIN 
+                    SELECT 
+                        t.uuid,
+                        t.name,
+                        s.name AS setName,
+                        s.code AS setCode,
+                        s.tokenSetCode,
+                        t.faceName
+                    FROM 
+                        tokens t
+                    JOIN 
                         sets s ON t.setCode = s.tokenSetCode
-                    LEFT JOIN 
-                        keyruneImages k ON t.setCode = k.setCode
-                    LEFT JOIN 
-                        uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-                    WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
-                ) ORDER BY ReleaseDate DESC, SetName, Types,
-                    CASE Colors
-                        WHEN 'W' THEN 1
-                        WHEN 'U' THEN 2
-                        WHEN 'B' THEN 3
-                        WHEN 'R' THEN 4
-                        WHEN 'G' THEN 5
-                        ELSE 6
-                    END";
+                    WHERE 
+                        t.side IS NULL OR t.side = 'a';
+                    ";
+                string createAllCardsViewQuery = @"
+                    CREATE VIEW IF NOT EXISTS view_allCards AS
+                    SELECT * FROM (
+                        SELECT 
+                            c.name AS Name, 
+                            s.name AS SetName, 
+                            s.releaseDate AS ReleaseDate,
+                            k.keyruneImage AS KeyRuneImage, 
+                            c.manaCost AS ManaCost, 
+                            u.manaCostImage AS ManaCostImage, 
+                            c.types AS Types, 
+                            c.colors AS Colors,
+                            c.supertypes AS SuperTypes, 
+                            c.subtypes AS SubTypes, 
+                            c.type AS Type, 
+                            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+                            c.text AS RulesText, 
+                            c.manaValue AS ManaValue, 
+                            c.language AS Language,
+                            c.uuid AS Uuid, 
+                            c.finishes AS Finishes, 
+                            c.side AS Side 
+                        FROM cards c
+                        JOIN sets s ON c.setCode = s.code
+                        LEFT JOIN keyruneImages k ON c.setCode = k.setCode
+                        LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                        LEFT JOIN (
+                            SELECT 
+                                cc.SetCode, 
+                                cc.Name, 
+                                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                            FROM cards cc
+                            GROUP BY cc.SetCode, cc.Name
+                        ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+                        WHERE c.side IS NULL OR c.side = 'a'
+
+                        UNION ALL
+
+                        SELECT 
+                            t.name AS Name, 
+                            s.name AS SetName, 
+                            s.releaseDate AS ReleaseDate,
+                            k.keyruneImage AS KeyRuneImage, 
+                            t.manaCost AS ManaCost, 
+                            u.manaCostImage AS ManaCostImage, 
+                            t.types AS Types, 
+                            t.colors AS Colors,
+                            t.supertypes AS SuperTypes, 
+                            t.subtypes AS SubTypes, 
+                            t.type AS Type, 
+                            t.keywords AS Keywords, 
+                            t.text AS RulesText, 
+                            NULL AS ManaValue, 
+                            t.language AS Language,
+                            t.uuid AS Uuid, 
+                            t.finishes AS Finishes, 
+                            t.side AS Side 
+                        FROM tokens t 
+                        JOIN sets s ON t.setCode = s.tokenSetCode 
+                        LEFT JOIN keyruneImages k ON t.setCode = k.setCode
+                        LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+                        WHERE t.side IS NULL OR t.side = 'a'
+                    ) ORDER BY ReleaseDate DESC, SetName, Types,
+                        CASE Colors
+                            WHEN 'W' THEN 1
+                            WHEN 'U' THEN 2
+                            WHEN 'B' THEN 3
+                            WHEN 'R' THEN 4
+                            WHEN 'G' THEN 5
+                            WHEN 'U' THEN 6
+                            ELSE 7
+                        END;
+                    ";
+                string createMyCollectionViewQuery = @"
+                    CREATE VIEW IF NOT EXISTS view_myCollection AS
+                    SELECT * FROM (
+                        SELECT                        
+                            c.name AS Name,
+                            s.name AS SetName,
+                            s.releaseDate AS ReleaseDate,
+                            k.keyruneImage AS KeyRuneImage,
+                            c.manaCost AS ManaCost,
+                            u.manaCostImage AS ManaCostImage,
+                            c.types AS Types,
+                            c.colors AS Colors,
+                            c.supertypes AS SuperTypes,
+                            c.subtypes AS SubTypes,
+                            c.type AS Type,
+                            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+                            c.text AS RulesText,
+                            c.manaValue AS ManaValue,
+						    c.finishes AS Finishes,
+                            c.uuid AS Uuid,
+                            m.id AS CardId,
+                            m.count AS CardsOwned,
+                            m.trade AS CardsForTrade,
+                            m.condition AS Condition,
+                            m.language AS Language,
+                            m.finish AS Finish,
+                            c.side AS Side
+                        FROM
+                            myCollection m
+                        JOIN
+                            cards c ON m.uuid = c.uuid
+                        LEFT JOIN 
+                            sets s ON c.setCode = s.code
+                        LEFT JOIN 
+                            keyruneImages k ON c.setCode = k.setCode
+                        LEFT JOIN 
+                            uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                        LEFT JOIN (
+                            SELECT 
+                                cc.SetCode, 
+                                cc.Name, 
+                                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                            FROM cards cc
+                            GROUP BY cc.SetCode, cc.Name
+                        ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+                        WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
+                        UNION ALL
+                        SELECT
+                            t.name AS Name,
+                            s.name AS SetName,
+                            s.releaseDate AS ReleaseDate,
+                            k.keyruneImage AS KeyRuneImage,
+                            t.manaCost AS ManaCost,
+                            u.manaCostImage AS ManaCostImage,
+                            t.types AS Types,
+                            t.colors AS Colors,
+                            t.supertypes AS SuperTypes,
+                            t.subtypes AS SubTypes,
+                            t.type AS Type,
+                            t.keywords AS Keywords,
+                            t.text AS RulesText,
+                            NULL AS ManaValue,  -- Tokens do not have manaValue
+						    t.finishes AS Finishes,
+                            t.uuid AS Uuid,
+                            m.id AS CardId,
+                            m.count AS CardsOwned,
+                            m.trade AS CardsForTrade,
+                            m.condition AS Condition,
+                            m.language AS Language,
+                            m.finish AS Finish,
+                            t.side AS Side
+                        FROM
+                            myCollection m
+                        JOIN
+                            tokens t ON m.uuid = t.uuid
+                        LEFT JOIN 
+                            sets s ON t.setCode = s.tokenSetCode
+                        LEFT JOIN 
+                            keyruneImages k ON t.setCode = k.setCode
+                        LEFT JOIN 
+                            uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+                        WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
+                    ) ORDER BY ReleaseDate DESC, SetName, Types,
+                        CASE Colors
+                            WHEN 'W' THEN 1
+                            WHEN 'U' THEN 2
+                            WHEN 'B' THEN 3
+                            WHEN 'R' THEN 4
+                            WHEN 'G' THEN 5
+                            ELSE 6
+                        END";
 
                 using (var command = new SQLiteCommand(createCardTokenViewQuery, DBAccess.connection))
                 {

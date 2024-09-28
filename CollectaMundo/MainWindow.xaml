@@ -16,7 +16,8 @@
     <Window.Resources>
         <local:StringToImageSourceConverter x:Key="StringToImageSourceConverter"/>
         <local:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
-
+        
+        <!-- Custom font styles -->
         <Style x:Key="BelerenBold">
             <Setter Property="TextElement.FontFamily"
                     Value="/Resources/Fonts/#Beleren Bold">
@@ -27,10 +28,36 @@
                     Value="/Resources/Fonts/#Mplantin">
             </Setter>
         </Style>
+
+        <!-- Define the Style for the ProgressBar -->
+        <Style x:Key="HorizontalGradientProgressBar" TargetType="{x:Type ProgressBar}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ProgressBar}">
+                        <Border x:Name="PART_Track" CornerRadius="2" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            BorderThickness="{TemplateBinding BorderThickness}" 
+                            Background="{TemplateBinding Background}">
+                            <Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="2">
+                                <!-- Set the LinearGradientBrush for the Background of PART_Indicator -->
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#fcffd3" Offset="0"/>
+                                        <GradientStop Color="#213c4c" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+
     </Window.Resources>
     <Window.Background>
         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-            <GradientStop Color="#FFFFF2D1"/>
+            <GradientStop Color="#FFFBF7B4"/>
             <GradientStop Color="White" Offset="1"/>
         </LinearGradientBrush>
     </Window.Background>
@@ -1075,7 +1102,7 @@
                                     <Label x:Name="LabelUnableToImportCardsHeading" Content="Unable to import the following cards:" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16" Style="{StaticResource BelerenBold}" Visibility="Collapsed"/>
                                 </Grid>
                                 <Grid Grid.Row="3" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                    <Button x:Name="SaveListOfUnimportedItems" Content="Save list to text file" HorizontalAlignment="Right" VerticalAlignment="Center" Height="20" Style="{StaticResource BelerenBold}" Visibility="Collapsed" Click="SaveListOfUnimportedItems_Click"/>                                    
+                                    <Button x:Name="SaveListOfUnimportedItems" Content="Save list to text file" HorizontalAlignment="Right" VerticalAlignment="Center" Height="20" Style="{StaticResource BelerenBold}" Visibility="Collapsed" Click="SaveListOfUnimportedItems_Click"/>
                                 </Grid>
                                 <Grid Grid.Row="4" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Top">
                                     <StackPanel x:Name="ImportSummaryContainer" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0" Width="500">
@@ -1110,10 +1137,10 @@
                    HorizontalAlignment="Center"
                    VerticalAlignment="Top" Margin="0,461,10,0"/>
         </Grid>
-        <Grid Grid.Row="1" Grid.Column="1" x:Name="GridStatus" Margin="0,40,0,0" VerticalAlignment="Top" d:IsHidden="True">
-            <Image Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="500" Width="500" RenderTransformOrigin="0.5,0.5" Margin="0,76,0,0" />
+        <Grid Grid.Row="1" Grid.Column="1" x:Name="GridStatus" Margin="0,40,0,0" VerticalAlignment="Top">
+            <Image Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="500" Width="500" Margin="0,76,0,0" />
             <Label Content="CollectaMundo" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
-            <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Center" Height="11" Margin="0,652,0,0" VerticalAlignment="Top" Width="738"/>
+            <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Center" Height="15" Margin="0,650,0,0" VerticalAlignment="Top" Width="500" Style="{StaticResource HorizontalGradientProgressBar}" BorderBrush="Black"/>
             <Label x:Name="StatusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top"/>
             <Label x:Name="FirstTimeSetupLabel" Content="" HorizontalAlignment="Center" Margin="0,582,0,0" VerticalAlignment="Top" FontSize="18"/>
         </Grid>
