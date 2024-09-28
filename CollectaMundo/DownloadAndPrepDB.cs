@@ -18,7 +18,7 @@ namespace CollectaMundo
     public class DownloadAndPrepDB
     {
         public static event Action<string>? StatusMessageUpdated;
-        private static string databasePath = Path.Combine(DBAccess.sqlitePath, "AllPrintings.sqlite");
+        private static readonly string databasePath = Path.Combine(DBAccess.sqlitePath, "AllPrintings.sqlite");
 
         /// <summary>
         /// Check if the card database exists in the location specified by appsettings.json. 
@@ -148,13 +148,13 @@ namespace CollectaMundo
 
                 // Define tables to create
                 Dictionary<string, string> tables = new()
-        {
-            {"uniqueManaSymbols", "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);"},
-            {"uniqueManaCostImages", "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);"},
-            {"keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB);"},
-            {"AggregatedCardKeywords", "CREATE TABLE IF NOT EXISTS AggregatedCardKeywords (uuid TEXT PRIMARY KEY, aggregatedKeywords TEXT);"},
-            {"myCollection", "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid TEXT, count INTEGER, trade INTEGER, condition TEXT, language TEXT, finish TEXT);"},
-        };
+                {
+                    {"uniqueManaSymbols", "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);"},
+                    {"uniqueManaCostImages", "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);"},
+                    {"keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB);"},
+                    {"AggregatedCardKeywords", "CREATE TABLE IF NOT EXISTS AggregatedCardKeywords (uuid TEXT PRIMARY KEY, aggregatedKeywords TEXT);"},
+                    {"myCollection", "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid TEXT, count INTEGER, trade INTEGER, condition TEXT, language TEXT, finish TEXT);"},
+                };
 
                 // Create the tables asynchronously
                 foreach (var item in tables)
@@ -183,7 +183,7 @@ namespace CollectaMundo
             try
             {
                 List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
-                HashSet<string> uniqueSymbols = new();
+                HashSet<string> uniqueSymbols = [];
 
                 // Extract unique symbols in parallel
                 uniqueManaCosts.AsParallel().ForAll(manaCost =>
@@ -267,6 +267,7 @@ namespace CollectaMundo
             try
             {
                 await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "code");
+                await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "tokenSetCode");
                 List<string> setCodesWithNoImage = await GetValuesWithNullAsync("keyruneImages", "setCode", "keyruneImage");
 
                 HttpClient client = new();
@@ -320,7 +321,7 @@ namespace CollectaMundo
         #region Helper methods
         private static async Task<byte[]> ProcessManaCostInputAsync(string manaCostInput)
         {
-            List<Bitmap> manaSymbolImage = new();
+            List<Bitmap> manaSymbolImage = [];
 
             try
             {
@@ -565,7 +566,7 @@ namespace CollectaMundo
         }
         private static async Task<List<string>> GetValuesWithNullAsync(string tableName, string returnColumnName, string searchColumnName)
         {
-            List<string> valuesWithNull = new();
+            List<string> valuesWithNull = [];
             try
             {
                 string query = $"SELECT {returnColumnName} FROM {tableName} WHERE {searchColumnName} IS NULL";
@@ -590,7 +591,7 @@ namespace CollectaMundo
         }
         public static async Task<List<string>> GetUniqueValuesAsync(string tableName, string columnName)
         {
-            List<string> uniqueValues = new();
+            List<string> uniqueValues = [];
 
             try
             {
