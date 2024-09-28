@@ -357,7 +357,7 @@
             </Grid>
         </Grid>
         <Grid Grid.Row="1" Grid.Column="1" x:Name="GridContentSection" Margin="5,00,5,0" Visibility="Visible">
-            <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="200" Width="200" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" />                        
+            <Image x:Name="LogoSmall" Source="/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="200" Width="200" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" d:IsHidden="True" />                        
             <Grid x:Name="GridSearchAndFilterAllCards" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
@@ -565,7 +565,7 @@
                     </DataGrid.Columns>
                 </DataGrid>                
             </Grid>
-            <Grid x:Name="GridMyCollection">
+            <Grid x:Name="GridMyCollection" d:IsHidden="True">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
                 <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,50,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
@@ -758,11 +758,11 @@
                     </DataGrid.Columns>
                 </DataGrid>                
             </Grid>
-            <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top" d:IsHidden="True">
-                <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698"/>
-                <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
+            <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top">
+                <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698" d:IsHidden="True"/>
+                <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}" d:IsHidden="True"/>
                 <Grid x:Name="GridUtilsScreen">
-                    <Grid x:Name="GridImportWizard" Visibility="Collapsed">
+                    <Grid x:Name="GridImportWizard" Visibility="Visible">
                         <Label x:Name="ImportStartLabel" Content="The Import Wizard" HorizontalAlignment="Center" Margin="0,45,0,0" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
                         <Button x:Name="ButtonCancelImport" Content="Cancel Import" HorizontalAlignment="Center" Margin="0,350,420,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Visibility="Collapsed" Click="CancelImport_Click"/>
                         <Label x:Name="CrunchingDataLabel" Content="Please wait - crunching data..." HorizontalAlignment="Center" Margin="0,350,0,0" VerticalAlignment="Top" Height="25" Width="170" Visibility="Collapsed"/>
@@ -785,13 +785,13 @@
                             <Button x:Name="BeginImportButton" Content="Let's go!" HorizontalAlignment="Center" Margin="0,734,0,0" VerticalAlignment="Top" Click="BeginImportButton_Click" Width="74" Style="{StaticResource BelerenBold}"/>
                         </Grid>
                         <Grid x:Name="GridImportIdColumnMapping" Visibility="Collapsed">
-                            <Label Content="Card ID Mapping" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,140,0,0" FontSize="24" Style="{StaticResource BelerenBold}"/>
+                            <Label Content="Does you import file have an ID column?" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,140,0,0" FontSize="24" Style="{StaticResource BelerenBold}"/>
                             <TextBlock Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" FontSize="16" HorizontalAlignment="Center">
                                 <Run Text="If your csv-file has any column with card Id, The Import Wizard will have the greatest chance of succesfully mapping your cards to be imported with cards in the main card database."/>
                                 <LineBreak/><LineBreak/>
                                 <Run Text="It will recognize a variety of card id formats, e.g. Scryfall Id, Card Market Id, TCG Player Id etc."/><LineBreak/>
-                                <Run Text=" &#x2022; In the left column, choose the card Id header in your import file"/><LineBreak/>
-                                <Run Text=" &#x2022; In the right column, choose the matching format available in the card database"/><LineBreak/>
+                                <Run Text=" &#x2022; In the "/><Run FontWeight="Bold" Text="left"/><Run Text=" column, choose the card Id header in your import file"/><LineBreak/>
+                                <Run Text=" &#x2022; In the "/><Run FontWeight="Bold" Text="right"/><Run Text=" column, choose the matching format available in the card database"/><LineBreak/>
                                 <Run Text=" &#x2022; If your import file does not contain a card id column, simply click &quot;Skip&quot;"/>
                             </TextBlock>
                             <ListView x:Name="IdColumnMappingListView" Margin="0,380,0,0" Width="500" Height="77" HorizontalAlignment="Center" VerticalAlignment="Top">
@@ -1038,7 +1038,7 @@
                             </ListView>
                             <Button x:Name="ButtonLanguageMappingNext" Content="Next" HorizontalAlignment="Center" Margin="470,350,0,0" VerticalAlignment="Top"  Width="30" Height="20" Style="{StaticResource BelerenBold}" Click="ButtonLanguageMappingNext_Click"/>
                         </Grid>
-                        <Grid x:Name="GridImportConfirm" Visibility="Collapsed">
+                        <Grid x:Name="GridImportConfirm" Visibility="Visible">
                             <Label Content="Summary and confirmation" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,140,0,0" FontSize="24" Style="{StaticResource BelerenBold}"/>
                             <StackPanel x:Name="ImportSummaryContainer" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,200,0,0" Width="500">
                                 <TextBlock x:Name="ImportSummaryTextBlock" TextWrapping="Wrap" Height="Auto" Visibility="Visible"/>
