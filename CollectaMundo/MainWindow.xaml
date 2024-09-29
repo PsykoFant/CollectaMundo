@@ -53,6 +53,38 @@
             </Setter>
         </Style>
 
+        <Style x:Key="CustomButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#FFDDDDDD"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="BorderBrush" Value="#FF707070"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#5cb9ca"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+
+
+
 
     </Window.Resources>
     <Window.Background>
@@ -72,10 +104,10 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid Grid.Row="0" Grid.ColumnSpan="3" x:Name="GridTopMenu" VerticalAlignment="Top" Height="40" Style="{StaticResource BelerenBold}">
-            <Button x:Name="MenuSearchAndFilterButton" Content="Search and Filter" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuSearchAndFilter_Click"/>
-            <Button x:Name="MenuMyCollectionButton" Content="My Collection" HorizontalAlignment="Left" Margin="174,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuMyCollection_Click"/>
-            <Button x:Name="MenuDecksButton" Content="Decks" HorizontalAlignment="Left" Margin="338,10,0,0" VerticalAlignment="Top" Width="159"/>
-            <Button x:Name="MenuUtilsButton" Content="Utilities" HorizontalAlignment="Left" Margin="502,10,0,0" VerticalAlignment="Top" Width="159" Click="MenuUtilsButton_Click"/>
+            <Button x:Name="MenuSearchAndFilterButton" Content="Search and Filter" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="160" Style="{StaticResource CustomButtonStyle}" Click="MenuSearchAndFilter_Click" Height="20"/>
+            <Button x:Name="MenuMyCollectionButton" Content="My Collection" HorizontalAlignment="Left" Margin="175,10,0,0" VerticalAlignment="Top" Width="160" Click="MenuMyCollection_Click" Height="20"/>
+            <Button x:Name="MenuDecksButton" Content="Decks" HorizontalAlignment="Left" Margin="340,10,0,0" VerticalAlignment="Top" Width="160" Height="20"/>
+            <Button x:Name="MenuUtilsButton" Content="Utilities" HorizontalAlignment="Left" Margin="505,10,0,0" VerticalAlignment="Top" Width="160" Click="MenuUtilsButton_Click" Height="20"/>
         </Grid>
         <Grid Grid.Row="1" Grid.Column="0" x:Name="GridSideMenu" Width="250" HorizontalAlignment="Left" Margin="0,40,0,0">
             <Grid x:Name="GridFiltering">
