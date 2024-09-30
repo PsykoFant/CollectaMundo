@@ -4,6 +4,73 @@
              xmlns:local="clr-namespace:CollectaMundo"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+
+        <!-- Define the Style for the buttons -->
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#FFDDDDDD"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="BorderBrush" Value="#FF707070"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontFamily" Value="/Resources/Fonts/#Beleren Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#5cb9ca"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Background" Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Define the Style for the ProgressBar -->
+        <Style x:Key="HorizontalGradientProgressBar" TargetType="{x:Type ProgressBar}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ProgressBar}">
+                        <Border x:Name="PART_Track" CornerRadius="2" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                Background="{TemplateBinding Background}">
+                            <Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="2">
+                                <!-- Set the LinearGradientBrush for the Background of PART_Indicator -->
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#fcffd3" Offset="0"/>
+                                        <GradientStop Color="#213c4c" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Custom font styles -->
+        <Style x:Key="MPlantin">
+            <Setter Property="TextElement.FontFamily"
+                    Value="/Resources/Fonts/#Mplantin">
+            </Setter>
+        </Style>
+        <Style x:Key="BelerenBold">
+            <Setter Property="TextElement.FontFamily"
+                    Value="/Resources/Fonts/#Beleren Bold">
+            </Setter>
+        </Style>
+        
     </Application.Resources>
 </Application>
