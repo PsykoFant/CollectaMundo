@@ -35,6 +35,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        
 
         <!-- Define the Style for the ProgressBar -->
         <Style x:Key="HorizontalGradientProgressBar" TargetType="{x:Type ProgressBar}">
