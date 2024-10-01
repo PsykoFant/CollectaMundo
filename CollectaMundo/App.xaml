@@ -6,7 +6,7 @@
     <Application.Resources>
 
         <!-- Define the Style for the buttons -->
-        <Style TargetType="Button">
+        <Style x:Key="BaseButtonStyle" TargetType="{x:Type ButtonBase}">
             <Setter Property="Background" Value="#FFDDDDDD"/>
             <Setter Property="Foreground" Value="Black"/>
             <Setter Property="BorderBrush" Value="#FF707070"/>
@@ -14,11 +14,11 @@
             <Setter Property="FontFamily" Value="/Resources/Fonts/#Beleren Bold"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Button">
+                    <ControlTemplate TargetType="{x:Type ButtonBase}">
                         <Border x:Name="border" 
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}">
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -35,7 +35,17 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        
+       
+        <Style TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}"/>
+
+        <Style TargetType="{x:Type ToggleButton}" BasedOn="{StaticResource BaseButtonStyle}"/>
+
+        <Style TargetType="{x:Type TextBox}">
+            <Setter Property="Background" Value="#FFDDDDDD"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="BorderBrush" Value="#FF707070"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
 
         <!-- Define the Style for the ProgressBar -->
         <Style x:Key="HorizontalGradientProgressBar" TargetType="{x:Type ProgressBar}">
