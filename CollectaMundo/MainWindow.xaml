@@ -15,7 +15,7 @@
     <!-- Define resources accessible by all elements in this Window -->
     <Window.Resources>
         <local:StringToImageSourceConverter x:Key="StringToImageSourceConverter"/>
-        <local:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>      
+        <local:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
 
 
 
@@ -417,6 +417,9 @@
                         </GridView>
                     </ListView.View>
                 </ListView>
+
+                
+
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
                           Margin="0,280,0,0"
@@ -479,6 +482,22 @@
                     </DataGrid.ContextMenu>
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Name" Width="*">
+                            <DataGridTemplateColumn.HeaderTemplate>
+                                <DataTemplate>
+                                    <ComboBox x:Name="DataGridAllCardsCardNameComboBox"
+                                              IsTextSearchEnabled="True"
+                                              Width="NaN" 
+                                              Height="NaN" 
+                                              IsEditable="True"
+                                              ItemsSource="{Binding DataContext.CardNames, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                        <ComboBox.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <VirtualizingStackPanel />
+                                            </ItemsPanelTemplate>
+                                        </ComboBox.ItemsPanel>
+                                    </ComboBox>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.HeaderTemplate>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />

@@ -86,6 +86,7 @@ namespace CollectaMundo
         {
             InitializeComponent();
             _currentInstance = this;
+            DataContext = filterContext;
 
             // Update the statusbox with messages from methods in DownloadAndPrepareDB
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
@@ -361,6 +362,13 @@ namespace CollectaMundo
                     .Distinct()
                     .OrderBy(keyword => keyword)];
 
+                foreach (var name in cardNames)
+                {
+                    filterContext.CardNames.Add(name);
+                }
+
+
+
                 Dispatcher.Invoke(() =>
                 {
                     FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
@@ -386,6 +394,34 @@ namespace CollectaMundo
             }
             return Task.CompletedTask;
         }
+
+        private void DataGridAllCardsCardNameComboBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            var comboBox = sender as ComboBox;
+            if (comboBox != null)
+            {
+                Debug.WriteLine("ComboBox loaded");
+
+                if (allCards != null && allCards.Any())
+                {
+                    var cardNames = allCards.Select(card => card.Name).Distinct().OrderBy(name => name).ToList();
+                    comboBox.ItemsSource = cardNames;  // Directly set ItemsSource to avoid clearing issues
+                    Debug.WriteLine("ComboBox items set");
+                }
+                else
+                {
+                    Debug.WriteLine("allCards is empty or null");
+                }
+            }
+            else
+            {
+                Debug.WriteLine("Sender is not a ComboBox");
+            }
+        }
+
+
+
+
         private static void SetDefaultTextInComboBox(ComboBox comboBox, string textBoxName, string defaultText)
         {
             if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
