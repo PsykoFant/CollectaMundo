@@ -7,13 +7,17 @@ namespace CollectaMundo
     public class FilterManager(FilterContext context)
     {
         private readonly FilterContext filterContext = context;
-        public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards, string listName)
+        public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards, string listName, string cardNameFilter = "")
         {
             try
             {
                 var filteredCards = cards.AsEnumerable();
 
-                string cardFilter = MainWindow.CurrentInstance.FilterCardNameComboBox.SelectedItem?.ToString() ?? string.Empty;
+                // Use cardNameFilter if it's provided and not empty, otherwise use the default card name filter
+                string cardFilter = string.IsNullOrWhiteSpace(cardNameFilter)
+                    ? MainWindow.CurrentInstance.FilterCardNameComboBox.SelectedItem?.ToString() ?? string.Empty
+                    : cardNameFilter;
+
                 string setFilter = MainWindow.CurrentInstance.FilterSetNameComboBox.SelectedItem?.ToString() ?? string.Empty;
                 string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
                 bool useAnd = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
@@ -57,23 +61,24 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
                 MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return [];
+                return Enumerable.Empty<CardSet>();
             }
         }
+
         private IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
         {
             var filteredCards = cards;
             if (!string.IsNullOrEmpty(cardFilter))
             {
-                filteredCards = filteredCards.Where(card => card.Name != null && card.Name.IndexOf(cardFilter, StringComparison.OrdinalIgnoreCase) >= 0);
+                filteredCards = filteredCards.Where(card => card.Name != null && card.Name.Contains(cardFilter, StringComparison.OrdinalIgnoreCase));
             }
             if (!string.IsNullOrEmpty(setFilter))
             {
-                filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.IndexOf(setFilter, StringComparison.OrdinalIgnoreCase) >= 0);
+                filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.Contains(setFilter, StringComparison.OrdinalIgnoreCase));
             }
             if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != filterContext.RulesTextDefaultText)
             {
-                filteredCards = filteredCards.Where(card => card.Text != null && card.Text.IndexOf(rulesTextFilter, StringComparison.OrdinalIgnoreCase) >= 0);
+                filteredCards = filteredCards.Where(card => card.Text != null && card.Text.Contains(rulesTextFilter, StringComparison.OrdinalIgnoreCase));
             }
             return filteredCards;
         }

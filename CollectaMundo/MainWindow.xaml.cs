@@ -362,12 +362,11 @@ namespace CollectaMundo
                     .Distinct()
                     .OrderBy(keyword => keyword)];
 
+
                 foreach (var name in cardNames)
                 {
                     filterContext.CardNames.Add(name);
                 }
-
-
 
                 Dispatcher.Invoke(() =>
                 {
@@ -394,34 +393,6 @@ namespace CollectaMundo
             }
             return Task.CompletedTask;
         }
-
-        private void DataGridAllCardsCardNameComboBox_Loaded(object sender, RoutedEventArgs e)
-        {
-            var comboBox = sender as ComboBox;
-            if (comboBox != null)
-            {
-                Debug.WriteLine("ComboBox loaded");
-
-                if (allCards != null && allCards.Any())
-                {
-                    var cardNames = allCards.Select(card => card.Name).Distinct().OrderBy(name => name).ToList();
-                    comboBox.ItemsSource = cardNames;  // Directly set ItemsSource to avoid clearing issues
-                    Debug.WriteLine("ComboBox items set");
-                }
-                else
-                {
-                    Debug.WriteLine("allCards is empty or null");
-                }
-            }
-            else
-            {
-                Debug.WriteLine("Sender is not a ComboBox");
-            }
-        }
-
-
-
-
         private static void SetDefaultTextInComboBox(ComboBox comboBox, string textBoxName, string defaultText)
         {
             if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
@@ -436,8 +407,27 @@ namespace CollectaMundo
         #region Filter elements handling        
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            ApplyFilterSelection();
+            // Check if the event source is the specific embedded ComboBox in the DataGrid header
+            if (sender is ComboBox comboBox && comboBox.Name == "DataGridAllCardsCardNameComboBox")
+            {
+                // Handle filtering based on the selection from the embedded ComboBox
+                string selectedCardName = comboBox.SelectedItem?.ToString() ?? "";
+
+                // Apply the filter with the selected card name to the 'allCards' list.
+                var filteredAllCards = filterManager.ApplyFilter(allCards, "allCards", selectedCardName);
+                AllCardsDataGrid.ItemsSource = filteredAllCards;
+            }
+            else
+            {
+                // Handle filtering for all other ComboBoxes
+                var filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
+                var filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
+
+                AllCardsDataGrid.ItemsSource = filteredAllCards;
+                MyCollectionDatagrid.ItemsSource = filteredMyCards;
+            }
         }
+
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
             if (sender is ComboBox comboBox)

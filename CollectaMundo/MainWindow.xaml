@@ -417,9 +417,6 @@
                         </GridView>
                     </ListView.View>
                 </ListView>
-
-                
-
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
                           Margin="0,280,0,0"
@@ -485,11 +482,11 @@
                             <DataGridTemplateColumn.HeaderTemplate>
                                 <DataTemplate>
                                     <ComboBox x:Name="DataGridAllCardsCardNameComboBox"
-                                              IsTextSearchEnabled="True"
-                                              Width="NaN" 
-                                              Height="NaN" 
+                                              IsTextSearchEnabled="True" 
+                                              Height="20" 
                                               IsEditable="True"
-                                              ItemsSource="{Binding DataContext.CardNames, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                              ItemsSource="{Binding DataContext.CardNames, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                              SelectionChanged="ComboBox_SelectionChanged">
                                         <ComboBox.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <VirtualizingStackPanel />
