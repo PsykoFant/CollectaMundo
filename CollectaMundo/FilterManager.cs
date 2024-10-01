@@ -4,14 +4,9 @@ using System.Windows.Controls;
 
 namespace CollectaMundo
 {
-    public class FilterManager
+    public class FilterManager(FilterContext context)
     {
-        private FilterContext filterContext;
-
-        public FilterManager(FilterContext context)
-        {
-            this.filterContext = context;
-        }
+        private readonly FilterContext filterContext = context;
         public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards, string listName)
         {
             try
@@ -103,7 +98,7 @@ namespace CollectaMundo
                 return exclude ? !match : match;
             });
         }
-        private IEnumerable<CardSet> FilterByManaValue(IEnumerable<CardSet> cards, string compareOperator, double manaValueCompare)
+        private static IEnumerable<CardSet> FilterByManaValue(IEnumerable<CardSet> cards, string compareOperator, double manaValueCompare)
         {
             if (MainWindow.CurrentInstance.ManaValueComboBox.SelectedIndex != -1 && MainWindow.CurrentInstance.ManaValueOperatorComboBox.SelectedIndex != -1)
             {
@@ -126,7 +121,7 @@ namespace CollectaMundo
                 return cards;
             }
         }
-        private IEnumerable<CardSet> FilterByIncludeFoil(IEnumerable<CardSet> cards)
+        private static IEnumerable<CardSet> FilterByIncludeFoil(IEnumerable<CardSet> cards)
         {
             bool includeFoil = MainWindow.CurrentInstance.ShowFoilCheckBox.IsChecked ?? false;
             return cards.Where(card =>
@@ -157,7 +152,7 @@ namespace CollectaMundo
             UpdateLabelContent(filterContext.SelectedSubTypes, MainWindow.CurrentInstance.CardSubTypesTextBlock, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, "Card subtypes");
             UpdateLabelContent(filterContext.SelectedKeywords, MainWindow.CurrentInstance.CardKeyWordsTextBlock, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, "Keywords");
         }
-        private void UpdateLabelContent(HashSet<string> selectedItems, TextBlock targetTextBlock, bool useAnd, string prefix)
+        private static void UpdateLabelContent(HashSet<string> selectedItems, TextBlock targetTextBlock, bool useAnd, string prefix)
         {
             if (selectedItems.Count > 0)
             {

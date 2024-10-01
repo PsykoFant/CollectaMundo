@@ -326,6 +326,15 @@ namespace CollectaMundo
                     "instant"
                 };
 
+                // List of unwanted types. Old cards, weird types from un-sets etc. 
+                var subTypesToRemove = new HashSet<string>
+                {
+                    "(creature",
+                    "and/or",
+                    "type)|Judge",
+                    "The"
+                };
+
                 // Set up elements in type listbox, removing unwanted types
                 filterContext.AllTypes = [.. types
                     .Where(type => type != null)
@@ -340,6 +349,7 @@ namespace CollectaMundo
                     .Where(type => type != null)
                     .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
                     .Select(p => p.Trim())
+                    .Where(p => !subTypesToRemove.Contains(p))  // Filter out unwanted subtypes
                     .Distinct()
                     .OrderBy(type => type)];
 
@@ -774,7 +784,7 @@ namespace CollectaMundo
         public void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
             // Reset filter TextBoxes for each ComboBox
-            ResetFilterTextBox(SubTypesComboBox, "FilterSuperTypesTextBox", filterContext.SuperTypesDefaultText);
+            ResetFilterTextBox(SuperTypesComboBox, "FilterSuperTypesTextBox", filterContext.SuperTypesDefaultText);
             ResetFilterTextBox(TypesComboBox, "FilterTypesTextBox", filterContext.TypesDefaultText);
             ResetFilterTextBox(SubTypesComboBox, "FilterSubTypesTextBox", filterContext.SubTypesDefaultText);
             ResetFilterTextBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);

@@ -70,7 +70,7 @@
 
                 <!--Supertype listbox and filtering-->
                 <CheckBox x:Name="SuperTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,237,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
-                <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,252,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,252,0,0" VerticalAlignment="Top" Width="240" Height="20" DropDownOpened="ComboBox_DropDownOpened">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -81,16 +81,14 @@
                                          LostFocus="TextBox_LostFocus"
                                          Foreground="{TemplateBinding Foreground}"
                                          Padding="3,3,0,0"
-                                         Margin="0,0,0,0" 
-                                         Height="20"/>
+                                         Margin="0,0,0,0"/>
                                 <ToggleButton x:Name="ToggleButtonSuperTypes"
                                               Content="Supertypes" 
                                               Focusable="false"
                                               ClickMode="Press"
                                               IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
                                               HorizontalAlignment="Right"
-                                              Width="69" 
-                                              Height="20"/>
+                                              Width="70"/>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
                                         <ListBox x:Name="FilterSuperTypesListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
@@ -122,30 +120,25 @@
 
                 <!--Card type listbox and filtering-->
                 <CheckBox x:Name="TypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,308,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
-                <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,323,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,323,0,0" VerticalAlignment="Top" Width="240" Height="20" DropDownOpened="ComboBox_DropDownOpened">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterTypesTextBox"
-                                 VerticalAlignment="Top"
-                                 BorderThickness="1"
-                                 Background="Transparent"
-                                 TextChanged="FilterTextBox_TextChanged"
-                                 GotFocus="TextBox_GotFocus"
-                                 LostFocus="TextBox_LostFocus"
-                                 Foreground="{TemplateBinding Foreground}"
-                                 FontFamily="{TemplateBinding FontFamily}"
-                                 FontSize="{TemplateBinding FontSize}"
-                                 Padding="3,3,0,0"
-                                 Margin="0,0,0,0" 
-                                 Height="20"/>
-                                <ToggleButton Grid.Row="0" x:Name="ToggleButtonTypes" Content="Types" Focusable="false"
+                                         Background="Transparent"
+                                         TextChanged="FilterTextBox_TextChanged"
+                                         GotFocus="TextBox_GotFocus"
+                                         LostFocus="TextBox_LostFocus"
+                                         Foreground="{TemplateBinding Foreground}"
+                                         Padding="3,3,0,0"
+                                         Margin="0,0,0,0"/>
+                                <ToggleButton x:Name="ToggleButtonTypes" 
+                                              Content="Types"
+                                              Focusable="false"
                                               ClickMode="Press"
                                               IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                                              VerticalAlignment="Top"
                                               HorizontalAlignment="Right"
-                                              Width="40" 
-                                              Height="20"/>
+                                              Width="40"/>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
                                         <ListBox x:Name="FilterTypesListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
@@ -182,25 +175,20 @@
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterSubTypesTextBox"
-                                         VerticalAlignment="Top"
-                                         BorderThickness="1"
                                          Background="Transparent"
                                          TextChanged="FilterTextBox_TextChanged"
                                          GotFocus="TextBox_GotFocus"
                                          LostFocus="TextBox_LostFocus"
                                          Foreground="{TemplateBinding Foreground}"
                                          Padding="3,3,0,0"
-                                         Margin="0,0,0,0" 
-                                         Height="20"/>
+                                         Margin="0,0,0,0"/>
                                 <ToggleButton x:Name="ToggleButtonSubTypes"
                                               Content="Subtypes"
                                               Focusable="false"
                                               ClickMode="Press"
                                               IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                                              VerticalAlignment="Center"
                                               HorizontalAlignment="Right"
-                                              Width="58"
-                                              Height="20"/>
+                                              Width="58"/>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
                                         <ListBox x:Name="FilterSubTypesListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
@@ -237,26 +225,18 @@
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterKeywordsTextBox"
-                             VerticalAlignment="Top"
-                             BorderThickness="1"
-                             Background="Transparent"
-                             TextChanged="FilterTextBox_TextChanged"
-                             GotFocus="TextBox_GotFocus"
-                             LostFocus="TextBox_LostFocus"
-                             Foreground="{TemplateBinding Foreground}"
-                             FontFamily="{TemplateBinding FontFamily}"
-                             FontSize="{TemplateBinding FontSize}"
-                             Padding="3,3,0,0"
-                             Margin="0,0,0,0"
-                             Height="20"/>
+                                         Background="Transparent"
+                                         TextChanged="FilterTextBox_TextChanged"
+                                         GotFocus="TextBox_GotFocus"
+                                         LostFocus="TextBox_LostFocus"
+                                         Foreground="{TemplateBinding Foreground}"
+                                         Padding="3,3,0,0"
+                                         Margin="0,0,0,0"/>
                                 <ToggleButton x:Name="ToggleButtonKeywords" Content="Keywords" Focusable="false"
-                                  ClickMode="Press"
-                                  IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                                  VerticalAlignment="Center"
-                                  HorizontalAlignment="Right"
-                                  Width="60" 
-                                  Height="20"
-                                  Style="{StaticResource BelerenBold}"/>
+                                              ClickMode="Press"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+                                              HorizontalAlignment="Right"
+                                              Width="60"/>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
                                         <ListBox x:Name="FilterKeywordsListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
@@ -284,6 +264,7 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
+                <TextBlock x:Name="CardKeyWordsTextBlock" HorizontalAlignment="Left" Margin="10,485,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
 
                 <!--Color filtering-->
                 <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Left" Margin="10,520,0,0" VerticalAlignment="Top" Width="240"/>
@@ -325,13 +306,6 @@
 
                 <!--Misc filtering-->
                 <CheckBox x:Name="ShowFoilCheckBox" Content="Show foil only cards" HorizontalAlignment="Left" Margin="10,740,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled" Height="16"  Style="{StaticResource BelerenBold}" IsChecked="False"/>
-
-                <!--filter selections text blocks-->
-                
-                
-                
-                <TextBlock x:Name="CardKeyWordsTextBlock" HorizontalAlignment="Left" Margin="10,485,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>                
-
             </Grid>
             <Grid x:Name="GridUtilsMenu" Visibility="Visible" d:IsHidden="True">
                 <Button x:Name="CheckForUpdatesButton" Content="Check for updates" HorizontalAlignment="Left" VerticalAlignment="Top" Width="170" Margin="10,60,0,0" Click="CheckForUpdatesButton_Click" Height="20"/>
