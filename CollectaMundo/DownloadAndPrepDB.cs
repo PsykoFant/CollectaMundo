@@ -20,10 +20,8 @@ namespace CollectaMundo
         public static event Action<string>? StatusMessageUpdated;
         private static readonly string databasePath = Path.Combine(DBAccess.SqlitePath, "AllPrintings.sqlite");
 
-        /// <summary>
-        /// Check if the card database exists in the location specified by appsettings.json. 
-        /// If it doesn't download it and populate it with custom data, including image data for mana symbols and set images
-        /// </summary>
+        // Check if the card database exists in the location specified by appsettings.json. 
+        // If it doesn't download it and populate it with custom data, including image data for mana symbols and set images
         public static async Task CheckDatabaseExistenceAsync()
         {
             try
@@ -44,7 +42,7 @@ namespace CollectaMundo
                     StatusMessageUpdated?.Invoke($"Getting things ready ...");
                     await Task.Run(async () =>
                     {
-                        await CreateCustomTablesAndIndices(databasePath);
+                        await CreateCustomTablesAndIndices();
                     });
 
                     await GenerateManaSymbolsFromSvgAsync();
@@ -135,10 +133,8 @@ namespace CollectaMundo
             }
         }
 
-        /// <summary>
-        /// Generate custom data such as manasymbols, mana cost, set images and save them as png in database
-        /// </summary>
-        private static async Task CreateCustomTablesAndIndices(string databasePath)
+        // Generate custom data such as manasymbols, mana cost, set images and save them as png in database
+        private static async Task CreateCustomTablesAndIndices()
         {
             try
             {

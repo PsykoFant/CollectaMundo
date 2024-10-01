@@ -14,7 +14,9 @@ namespace CollectaMundo
 
         public static SQLiteConnection? connection; // instantiate SQLite connection to use for db access
         public static SQLiteConnection? tempDbConnection; // instantiate SQLite connection to use for temp db access when updating        
-        public static string SqlitePath // Get the path to the db
+
+        // Get the path to the db
+        public static string SqlitePath
         {
             get
             {
@@ -26,7 +28,8 @@ namespace CollectaMundo
             }
         }
 
-        static DBAccess() // Build the string to the db from appsettings.json
+        // Build the string to the db from appsettings.json
+        static DBAccess()
         {
             // Ensure the appsettings.json file is created before reading it
             EnsureAppSettings();

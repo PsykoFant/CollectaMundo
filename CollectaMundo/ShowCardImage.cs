@@ -20,7 +20,7 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.ImageSetLabel.Content = imageSet ?? string.Empty;
 
                 // Get the Scryfall ID
-                string? scryfallId = await GetScryfallIdByUuidAsync(uuid, types);
+                string? scryfallId = await GetScryfallIdByUuidAsync(uuid);
 
                 if (!string.IsNullOrEmpty(scryfallId) && scryfallId.Length >= 2)
                 {
@@ -52,7 +52,7 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
-        private static async Task<string?> GetScryfallIdByUuidAsync(string uuid, string? types = null)
+        private static async Task<string?> GetScryfallIdByUuidAsync(string uuid)
         {
             string query = "SELECT scryfallId FROM cardIdentifiers WHERE uuid = @uuid UNION ALL SELECT scryfallId FROM tokenIdentifiers WHERE uuid = @uuid";
 
