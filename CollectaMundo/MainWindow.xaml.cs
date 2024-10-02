@@ -502,7 +502,7 @@ namespace CollectaMundo
                 {
                     // Finding the parent ComboBox by traversing up the visual tree
                     DependencyObject parent = VisualTreeHelper.GetParent(textBox);
-                    while (parent != null && !(parent is ComboBox))
+                    while (parent != null && parent is not ComboBox)
                     {
                         parent = VisualTreeHelper.GetParent(parent);
                     }
@@ -807,6 +807,13 @@ namespace CollectaMundo
             AllOrNoneComboBox.SelectedIndex = 0;
             ManaValueComboBox.SelectedIndex = -1;
             ManaValueOperatorComboBox.SelectedIndex = -1;
+
+
+            var headerComboBox = FindVisualChild<ComboBox>(AllCardsDataGrid);
+            if (headerComboBox != null)
+            {
+                headerComboBox.SelectedIndex = -1;
+            }
 
             // Clear selections in the colors listbox
             ClearListBoxSelections(FilterColorsListBox);

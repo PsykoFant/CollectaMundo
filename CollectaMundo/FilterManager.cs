@@ -7,17 +7,13 @@ namespace CollectaMundo
     public class FilterManager(FilterContext context)
     {
         private readonly FilterContext filterContext = context;
-        public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards, string listName, string cardNameFilter = "")
+        public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards, string listName)
         {
             try
             {
                 var filteredCards = cards.AsEnumerable();
 
-                // Use cardNameFilter if it's provided and not empty, otherwise use the default card name filter
-                string cardFilter = string.IsNullOrWhiteSpace(cardNameFilter)
-                    ? MainWindow.CurrentInstance.FilterCardNameComboBox.SelectedItem?.ToString() ?? string.Empty
-                    : cardNameFilter;
-
+                string cardFilter = MainWindow.FindVisualChild<ComboBox>(MainWindow.CurrentInstance.AllCardsDataGrid)?.SelectedItem?.ToString() ?? string.Empty;
                 string setFilter = MainWindow.CurrentInstance.FilterSetNameComboBox.SelectedItem?.ToString() ?? string.Empty;
                 string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
                 bool useAnd = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
@@ -61,7 +57,7 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
                 MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return Enumerable.Empty<CardSet>();
+                return [];
             }
         }
 
