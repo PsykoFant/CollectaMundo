@@ -473,22 +473,29 @@
                         <DataGridTemplateColumn Header="Name" Width="*">
                             <DataGridTemplateColumn.HeaderTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Label Content="Card Name:"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Label Content="Filter by Name:" VerticalAlignment="Center" Grid.Column="0"/>
                                         <ComboBox x:Name="DataGridAllCardsCardNameComboBox"
                                                   IsTextSearchEnabled="True" 
-                                                  Height="20" 
+                                                  Grid.Column="1"
+                                                  HorizontalAlignment="Stretch"
+                                                  MinWidth="120"
+                                                  Height="20"
                                                   IsEditable="True"
                                                   ItemsSource="{Binding DataContext.CardNames, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                   Tag="AllCardsName"
-                                                  SelectionChanged="ComboBox_SelectionChanged" Width="120">
+                                                  SelectionChanged="ComboBox_SelectionChanged">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
                                                 </ItemsPanelTemplate>
                                             </ComboBox.ItemsPanel>
                                         </ComboBox>
-                                    </StackPanel>
+                                    </Grid>
                                 </DataTemplate>
                             </DataGridTemplateColumn.HeaderTemplate>
                             <DataGridTemplateColumn.CellTemplate>
