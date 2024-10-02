@@ -407,25 +407,11 @@ namespace CollectaMundo
         #region Filter elements handling        
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Check if the event source is the specific embedded ComboBox in the DataGrid header
-            if (sender is ComboBox comboBox && comboBox.Name == "DataGridAllCardsCardNameComboBox")
-            {
-                // Handle filtering based on the selection from the embedded ComboBox
-                string selectedCardName = comboBox.SelectedItem?.ToString() ?? "";
+            var filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
+            var filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
 
-                // Apply the filter with the selected card name to the 'allCards' list.
-                var filteredAllCards = filterManager.ApplyFilter(allCards, "allCards", selectedCardName);
-                AllCardsDataGrid.ItemsSource = filteredAllCards;
-            }
-            else
-            {
-                // Handle filtering for all other ComboBoxes
-                var filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
-                var filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
-
-                AllCardsDataGrid.ItemsSource = filteredAllCards;
-                MyCollectionDatagrid.ItemsSource = filteredMyCards;
-            }
+            AllCardsDataGrid.ItemsSource = filteredAllCards;
+            MyCollectionDatagrid.ItemsSource = filteredMyCards;
         }
 
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
