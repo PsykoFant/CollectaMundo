@@ -68,6 +68,15 @@ namespace CollectaMundo
         // Object of AddToCollectionManager class to access that functionality
         private readonly AddToCollectionManager addToCollectionManager = new();
 
+
+        public static readonly DependencyProperty ColumnWidthProperty = DependencyProperty.Register("ColumnWidth", typeof(double), typeof(MainWindow), new PropertyMetadata(default(double)));
+
+        public double ColumnWidth
+        {
+            get { return (double)GetValue(ColumnWidthProperty); }
+            set { SetValue(ColumnWidthProperty, value); }
+        }
+
         #endregion
         public static MainWindow CurrentInstance
         {
@@ -108,6 +117,17 @@ namespace CollectaMundo
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
         }
+
+        private void DataGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // Assuming your column is the first column in the DataGrid
+            var dg = sender as DataGrid;
+            if (dg != null && dg.Columns.Count > 1)
+            {
+                ColumnWidth = dg.Columns[1].ActualWidth - 50; // Update the property based on the actual column width
+            }
+        }
+
         public async Task LoadDataIntoUiElements()
         {
             await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
