@@ -46,14 +46,6 @@
             <Grid x:Name="GridFiltering">
                 <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="90" Click="ClearFiltersButton_Click" Height="20"/>
                 <!--Card name and set comboboxes-->
-                <Label x:Name="CardNameLabel" Content="Card Name" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
-                <ComboBox x:Name="FilterCardNameComboBox" IsTextSearchEnabled="True" Margin="10,63,0,0" Width="240" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
-                    <ComboBox.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <VirtualizingStackPanel />
-                        </ItemsPanelTemplate>
-                    </ComboBox.ItemsPanel>
-                </ComboBox>
                 <Label x:Name="SetNameLabel" Content="Set Name" HorizontalAlignment="Left" Margin="10,84,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
                 <ComboBox x:Name="FilterSetNameComboBox" IsTextSearchEnabled="True" Margin="10,107,0,0" Width="240" HorizontalAlignment="Left" Height="20" VerticalAlignment="Top" IsEditable="True">
                     <ComboBox.ItemsPanel>
@@ -481,19 +473,22 @@
                         <DataGridTemplateColumn Header="Name" Width="*">
                             <DataGridTemplateColumn.HeaderTemplate>
                                 <DataTemplate>
-                                    <ComboBox x:Name="DataGridAllCardsCardNameComboBox"
-                                              IsTextSearchEnabled="True" 
-                                              Height="20" 
-                                              IsEditable="True"
-                                              ItemsSource="{Binding DataContext.CardNames, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                              Tag="AllCardsName"
-                                              SelectionChanged="ComboBox_SelectionChanged">
-                                        <ComboBox.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <VirtualizingStackPanel />
-                                            </ItemsPanelTemplate>
-                                        </ComboBox.ItemsPanel>
-                                    </ComboBox>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Label Content="Card Name:"/>
+                                        <ComboBox x:Name="DataGridAllCardsCardNameComboBox"
+                                                  IsTextSearchEnabled="True" 
+                                                  Height="20" 
+                                                  IsEditable="True"
+                                                  ItemsSource="{Binding DataContext.CardNames, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                  Tag="AllCardsName"
+                                                  SelectionChanged="ComboBox_SelectionChanged" Width="120">
+                                            <ComboBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel />
+                                                </ItemsPanelTemplate>
+                                            </ComboBox.ItemsPanel>
+                                        </ComboBox>
+                                    </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.HeaderTemplate>
                             <DataGridTemplateColumn.CellTemplate>

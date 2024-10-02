@@ -103,7 +103,6 @@ namespace CollectaMundo
             filterManager = new FilterManager(filterContext);
 
             // Pick up filtering comboboxes changes
-            FilterCardNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             FilterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             AllOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
@@ -283,6 +282,7 @@ namespace CollectaMundo
             try
             {
                 // Make sure lists are clear
+                filterContext.CardNames.Clear();
                 filterContext.AllSuperTypes.Clear();
                 filterContext.AllTypes.Clear();
                 filterContext.AllSubTypes.Clear();
@@ -297,7 +297,7 @@ namespace CollectaMundo
                 var subTypes = allCards.Select(card => card.SubTypes).Distinct().ToList();
                 var keywords = allCards.Select(card => card.Keywords).Distinct().ToList();
 
-                filterContext.AllColors.AddRange(new[] { "W", "U", "B", "R", "G", "C", "X" });
+                filterContext.AllColors.AddRange(["W", "U", "B", "R", "G", "C", "X"]);
 
                 var allOrNoneColorsOption = new List<string> { "Cards with any of these colors", "Cards with all of these colors", "Cards with none of these colors" };
                 var manaValueOptions = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000 };
@@ -327,15 +327,6 @@ namespace CollectaMundo
                     "instant"
                 };
 
-                // List of unwanted types. Old cards, weird types from un-sets etc. 
-                var subTypesToRemove = new HashSet<string>
-                {
-                    "(creature",
-                    "and/or",
-                    "type)|Judge",
-                    "The"
-                };
-
                 // Set up elements in type listbox, removing unwanted types
                 filterContext.AllTypes = [.. types
                     .Where(type => type != null)
@@ -344,6 +335,15 @@ namespace CollectaMundo
                     .Where(p => !typesToRemove.Contains(p))  // Filter out unwanted types
                     .Distinct()
                     .OrderBy(type => type)];
+
+                // List of unwanted subtypes. Old cards, weird types from un-sets etc. 
+                var subTypesToRemove = new HashSet<string>
+                {
+                    "(creature",
+                    "and/or",
+                    "type)|Judge",
+                    "The"
+                };
 
                 // Set up elements in subtype listbox
                 filterContext.AllSubTypes = [.. subTypes
@@ -371,7 +371,6 @@ namespace CollectaMundo
                 Dispatcher.Invoke(() =>
                 {
                     FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
-                    FilterCardNameComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                     FilterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                     FilterColorsListBox.ItemsSource = filterContext.AllColors;
                     AllOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
@@ -802,7 +801,6 @@ namespace CollectaMundo
             ResetFilterTextBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);
 
             // Clear non-custom comboboxes
-            FilterCardNameComboBox.SelectedIndex = -1;
             FilterSetNameComboBox.SelectedIndex = -1;
             AllOrNoneComboBox.SelectedIndex = 0;
             ManaValueComboBox.SelectedIndex = -1;
