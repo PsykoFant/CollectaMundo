@@ -70,12 +70,12 @@ namespace CollectaMundo
 
 
         public static readonly DependencyProperty ColumnWidthProperty = DependencyProperty.Register("ColumnWidth", typeof(double), typeof(MainWindow), new PropertyMetadata(default(double)));
-
         public double ColumnWidth
         {
             get { return (double)GetValue(ColumnWidthProperty); }
             set { SetValue(ColumnWidthProperty, value); }
         }
+        private double lastKnownWidth = 0; // Field to store the last known width of the column
 
         #endregion
         public static MainWindow CurrentInstance
@@ -108,6 +108,8 @@ namespace CollectaMundo
                 await LoadDataIntoUiElements();
             };
 
+            // After initializing components, subscribe to column width changes
+            AllCardsDataGrid.LayoutUpdated += DataGrid_LayoutUpdated;
 
             filterManager = new FilterManager(filterContext);
 
@@ -118,13 +120,34 @@ namespace CollectaMundo
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
         }
 
+        // Used to resize combo-boxes
+        private void ColumnWidthChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "Value")
+            {
+                // Assuming the ComboBox is in the first column
+                ColumnWidth = AllCardsDataGrid.Columns[0].ActualWidth - 65; // Adjust as necessary
+                Debug.WriteLine($"Adjusted size of datagrid column 1 is {AllCardsDataGrid.Columns[0].ActualWidth}");
+            }
+        }
         private void DataGrid_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            // Assuming your column is the first column in the DataGrid
-            var dg = sender as DataGrid;
-            if (dg != null && dg.Columns.Count > 1)
+            if (sender is DataGrid dg)
             {
-                ColumnWidth = dg.Columns[1].ActualWidth - 50; // Update the property based on the actual column width
+                // Width is width of column 1 (zero-based)
+                ColumnWidth = dg.Columns[0].ActualWidth - 65; // minus approx. width of label
+                Debug.WriteLine($"Size of datagrid column 1 is {dg.Columns[0].ActualWidth}");
+            }
+        }
+        private void DataGrid_LayoutUpdated(object sender, EventArgs e)
+        {
+            double currentWidth = AllCardsDataGrid.Columns[0].ActualWidth;
+            if (currentWidth != lastKnownWidth)
+            {
+                lastKnownWidth = currentWidth; // Update last known width
+                ColumnWidth = currentWidth - 65; // Adjust the space for the label or other controls
+                Debug.WriteLine($"Size of DataGrid column 1 is now {currentWidth}");
+                // Here you can invoke other actions to adjust the size of your ComboBox or other UI elements.
             }
         }
 
@@ -140,9 +163,9 @@ namespace CollectaMundo
             GridFiltering.Visibility = Visibility.Visible;
             LogoSmall.Visibility = Visibility.Visible;
 
-            var loadAllCards = LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false, true);
-            var loadMyCollection = LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true, true);
-            var loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
+            Task loadAllCards = LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false, true);
+            Task loadMyCollection = LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true, true);
+            Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
 
             await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons);
             await FillComboBoxesAsync();
@@ -171,14 +194,14 @@ namespace CollectaMundo
                 cardList.Clear();
 
                 List<CardSet> tempCardList = [];
-                using var command = new SQLiteCommand(query, DBAccess.connection);
-                using var reader = await command.ExecuteReaderAsync();
+                using SQLiteCommand command = new SQLiteCommand(query, DBAccess.connection);
+                using DbDataReader reader = await command.ExecuteReaderAsync();
 
                 while (await reader.ReadAsync())
                 {
                     try
                     {
-                        var card = CreateCardFromReader(reader, isCardItem);
+                        CardSet card = CreateCardFromReader(reader, isCardItem);
                         tempCardList.Add(card);
                     }
                     catch (Exception ex)
@@ -211,7 +234,7 @@ namespace CollectaMundo
         {
             try
             {
-                var card = isCardItem ? (CardSet)new CardItem() : new CardSet();
+                CardSet card = isCardItem ? (CardSet)new CardItem() : new CardSet();
 
                 // Populate common properties
                 card.Name = reader["Name"]?.ToString() ?? string.Empty;
@@ -262,12 +285,12 @@ namespace CollectaMundo
                 cardList.Clear();
 
                 List<CardSet> tempCardList = [];
-                using var command = new SQLiteCommand(query, DBAccess.connection);
-                using var reader = await command.ExecuteReaderAsync();
+                using SQLiteCommand command = new SQLiteCommand(query, DBAccess.connection);
+                using DbDataReader reader = await command.ExecuteReaderAsync();
 
                 while (await reader.ReadAsync())
                 {
-                    var card = CreateColorIcon(reader);
+                    CardSet card = CreateColorIcon(reader);
                     tempCardList.Add(card);
                 }
 
@@ -284,7 +307,7 @@ namespace CollectaMundo
         {
             try
             {
-                var card = new CardSet
+                CardSet card = new CardSet
                 {
                     ManaCostImageBytes = reader["ManaSymbolImage"] as byte[],
                     ManaCostRaw = reader["uniqueManaSymbol"]?.ToString() ?? string.Empty
@@ -310,18 +333,18 @@ namespace CollectaMundo
                 filterContext.AllKeywords.Clear();
 
                 // Get the values to populate the comboboxes
-                var cardNames = allCards.Select(card => card.Name).Distinct().ToList();
-                var setNames = allCards.Select(card => card.SetName).Distinct().ToList();
-                var types = allCards.Select(card => card.Types).Distinct().ToList();
-                var superTypes = allCards.Select(card => card.SuperTypes).Distinct().ToList();
-                var subTypes = allCards.Select(card => card.SubTypes).Distinct().ToList();
-                var keywords = allCards.Select(card => card.Keywords).Distinct().ToList();
+                List<string?> cardNames = allCards.Select(card => card.Name).Distinct().ToList();
+                List<string?> setNames = allCards.Select(card => card.SetName).Distinct().ToList();
+                List<string?> types = allCards.Select(card => card.Types).Distinct().ToList();
+                List<string?> superTypes = allCards.Select(card => card.SuperTypes).Distinct().ToList();
+                List<string?> subTypes = allCards.Select(card => card.SubTypes).Distinct().ToList();
+                List<string?> keywords = allCards.Select(card => card.Keywords).Distinct().ToList();
 
                 filterContext.AllColors.AddRange(["W", "U", "B", "R", "G", "C", "X"]);
 
-                var allOrNoneColorsOption = new List<string> { "Cards with any of these colors", "Cards with all of these colors", "Cards with none of these colors" };
-                var manaValueOptions = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000 };
-                var manaValueCompareOptions = new List<string> { "less than", "less than/eq", "greater than", "greater than/eq", "equal to" };
+                List<string> allOrNoneColorsOption = new List<string> { "Cards with any of these colors", "Cards with all of these colors", "Cards with none of these colors" };
+                List<int> manaValueOptions = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000 };
+                List<string> manaValueCompareOptions = new List<string> { "less than", "less than/eq", "greater than", "greater than/eq", "equal to" };
 
                 // Set up elements in supertype listbox
                 filterContext.AllSuperTypes = [.. superTypes
@@ -332,7 +355,7 @@ namespace CollectaMundo
                     .OrderBy(type => type)];
 
                 // List of unwanted types. Old cards, weird types from un-sets etc. 
-                var typesToRemove = new HashSet<string>
+                HashSet<string> typesToRemove = new HashSet<string>
                 {
                     "Eaturecray",
                     "Summon",
@@ -357,7 +380,7 @@ namespace CollectaMundo
                     .OrderBy(type => type)];
 
                 // List of unwanted subtypes. Old cards, weird types from un-sets etc. 
-                var subTypesToRemove = new HashSet<string>
+                HashSet<string> subTypesToRemove = new HashSet<string>
                 {
                     "(creature",
                     "and/or",
@@ -383,7 +406,7 @@ namespace CollectaMundo
                     .OrderBy(keyword => keyword)];
 
 
-                foreach (var name in cardNames)
+                foreach (string? name in cardNames)
                 {
                     filterContext.CardNames.Add(name);
                 }
@@ -426,8 +449,8 @@ namespace CollectaMundo
         #region Filter elements handling        
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
-            var filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
+            IEnumerable<CardSet> filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
+            IEnumerable<CardSet> filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
 
             AllCardsDataGrid.ItemsSource = filteredAllCards;
             MyCollectionDatagrid.ItemsSource = filteredMyCards;
@@ -439,7 +462,7 @@ namespace CollectaMundo
             {
                 try
                 {
-                    var (defaultText, filterTextBoxName, listBoxName) = GetComboBoxConfig(comboBox.Name);
+                    (string defaultText, string filterTextBoxName, string listBoxName) = GetComboBoxConfig(comboBox.Name);
 
                     if (comboBox.Template.FindName(filterTextBoxName, comboBox) is TextBox filterTextBox && (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == defaultText))
                     {
@@ -460,16 +483,16 @@ namespace CollectaMundo
                 if (comboBox.Template.FindName(listBoxName, comboBox) is ListBox listBox)
                 {
                     // Get both items source and the corresponding selected items set.
-                    var (itemsSource, selectedItems) = GetDataSetAndSelection(listBoxName);
+                    (IEnumerable<string> itemsSource, HashSet<string> selectedItems) = GetDataSetAndSelection(listBoxName);
                     listBox.ItemsSource = itemsSource;
 
                     listBox.Dispatcher.Invoke(() =>
                     {
-                        foreach (var item in itemsSource)
+                        foreach (string item in itemsSource)
                         {
                             if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem listBoxItem)
                             {
-                                var checkBox = FindVisualChild<CheckBox>(listBoxItem);
+                                CheckBox? checkBox = FindVisualChild<CheckBox>(listBoxItem);
                                 if (checkBox != null)
                                 {
                                     checkBox.IsChecked = selectedItems.Contains(item);
@@ -530,7 +553,7 @@ namespace CollectaMundo
                     if (parent is ComboBox comboBox)
                     {
                         // Get configuration for this specific ComboBox
-                        var (defaultText, _, listBoxName) = GetComboBoxConfig(comboBox.Name);
+                        (string defaultText, string _, string listBoxName) = GetComboBoxConfig(comboBox.Name);
 
                         // Check if the typed text is the default text
                         if (textBox.Text == defaultText)
@@ -566,7 +589,7 @@ namespace CollectaMundo
         {
             try
             {
-                var (dataSet, selectedItems) = GetDataSetAndSelection(listBox.Name);
+                (IEnumerable<string> dataSet, HashSet<string> selectedItems) = GetDataSetAndSelection(listBox.Name);
 
                 List<string> filteredItems = !string.IsNullOrWhiteSpace(filterText)
                     ? dataSet.Where(type => type.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList()
@@ -576,11 +599,11 @@ namespace CollectaMundo
 
                 listBox.Dispatcher.Invoke(() =>
                 {
-                    foreach (var item in filteredItems)
+                    foreach (string item in filteredItems)
                     {
                         if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem listBoxItem) // Check if listBoxItem is not null
                         {
-                            var checkBox = FindVisualChild<CheckBox>(listBoxItem);
+                            CheckBox? checkBox = FindVisualChild<CheckBox>(listBoxItem);
                             if (checkBox != null) // Check if checkBox is not null
                             {
                                 checkBox.IsChecked = selectedItems.Contains(item);
@@ -679,11 +702,11 @@ namespace CollectaMundo
                     return; // Exit if casting failed
                 }
 
-                var checkBox = FindVisualChild<CheckBox>(dependencyObject);
+                CheckBox? checkBox = FindVisualChild<CheckBox>(dependencyObject);
 
                 if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
                 {
-                    var label = contentPresenter.Content as string;
+                    string? label = contentPresenter.Content as string;
                     if (!string.IsNullOrEmpty(label))
                     {
                         HashSet<string>? targetCollection = checkBox.Tag switch
@@ -718,10 +741,10 @@ namespace CollectaMundo
                     return; // Exit if casting failed
                 }
 
-                var checkBox = FindVisualChild<CheckBox>(dependencyObject);
+                CheckBox? checkBox = FindVisualChild<CheckBox>(dependencyObject);
                 if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
                 {
-                    var label = contentPresenter.Content as string;
+                    string? label = contentPresenter.Content as string;
                     if (!string.IsNullOrEmpty(label))
                     {
                         HashSet<string>? targetCollection = checkBox.Tag switch
@@ -804,8 +827,8 @@ namespace CollectaMundo
         }
         public void ApplyFilterSelection()
         {
-            var filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
-            var filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
+            IEnumerable<CardSet> filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
+            IEnumerable<CardSet> filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
 
             AllCardsDataGrid.ItemsSource = filteredAllCards;
             MyCollectionDatagrid.ItemsSource = filteredMyCards;
@@ -827,7 +850,7 @@ namespace CollectaMundo
             ManaValueOperatorComboBox.SelectedIndex = -1;
 
 
-            var headerComboBox = FindVisualChild<ComboBox>(AllCardsDataGrid);
+            ComboBox? headerComboBox = FindVisualChild<ComboBox>(AllCardsDataGrid);
             if (headerComboBox != null)
             {
                 headerComboBox.SelectedIndex = -1;
@@ -880,11 +903,11 @@ namespace CollectaMundo
         }
         private static void ClearListBoxSelections(ListBox listBox)
         {
-            foreach (var item in listBox.Items)
+            foreach (object? item in listBox.Items)
             {
                 if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem container)
                 {
-                    var checkBox = FindVisualChild<CheckBox>(container);
+                    CheckBox? checkBox = FindVisualChild<CheckBox>(container);
                     if (checkBox != null)
                     {
                         checkBox.IsChecked = false;
@@ -1007,7 +1030,7 @@ namespace CollectaMundo
         }
         private void ButtonAddCardsToMyCollectionWithDefaultValues_Click(object sender, RoutedEventArgs e)
         {
-            var selectedCards = AllCardsDataGrid.SelectedItems.Cast<CardSet>().ToList();
+            List<CardSet> selectedCards = AllCardsDataGrid.SelectedItems.Cast<CardSet>().ToList();
             if (selectedCards.Count > 0)
             {
                 AddToCollectionManager.SubmitNewCardsToCollectionWithDefaultValues(selectedCards);
@@ -1037,7 +1060,7 @@ namespace CollectaMundo
         }
         private void ButtonDeleteCardsFromCollection_Click(object sender, RoutedEventArgs e)
         {
-            var selectedCards = MyCollectionDatagrid.SelectedItems.Cast<CardItem>().ToList();
+            List<CardItem> selectedCards = MyCollectionDatagrid.SelectedItems.Cast<CardItem>().ToList();
             if (selectedCards.Count > 0)
             {
                 AddToCollectionManager.DeleteCardsFromCollection(selectedCards);
