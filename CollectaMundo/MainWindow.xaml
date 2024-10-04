@@ -420,8 +420,7 @@
                           VirtualizingPanel.IsVirtualizing="True"
                           CanUserAddRows="False"
                           HorizontalAlignment="Stretch"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                          SizeChanged="DataGrid_SizeChanged">
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <DataGrid.ContextMenu>
                         <ContextMenu Style="{StaticResource MPlantin}">
                             <MenuItem Header="Add selected card(s) to Collection" Click="ButtonAddCardsToMyCollection_Click" Style="{StaticResource BelerenBold}"/>

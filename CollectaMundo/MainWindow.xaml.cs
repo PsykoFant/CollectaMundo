@@ -69,15 +69,7 @@ namespace CollectaMundo
         private readonly AddToCollectionManager addToCollectionManager = new();
 
 
-        public static readonly DependencyProperty ColumnWidthProperty = DependencyProperty.Register("ColumnWidth", typeof(double), typeof(MainWindow), new PropertyMetadata(default(double)));
-
-        public ObservableCollection<double> ColumnWidths { get; set; } = new ObservableCollection<double>();
-        public double ColumnWidth
-        {
-            get { return (double)GetValue(ColumnWidthProperty); }
-            set { SetValue(ColumnWidthProperty, value); }
-        }
-        private double lastKnownWidth = 0; // Field to store the last known width of the column
+        public ObservableCollection<double> ColumnWidths { get; set; } = [];
 
         #endregion
         public static MainWindow CurrentInstance
@@ -133,26 +125,6 @@ namespace CollectaMundo
             }
         }
 
-        private void ColumnWidthChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == "Value")
-            {
-                // Assuming the ComboBox is in the first column
-                ColumnWidth = AllCardsDataGrid.Columns[0].ActualWidth - 65; // Adjust as necessary
-                Debug.WriteLine($"Adjusted size of datagrid column 1 is {AllCardsDataGrid.Columns[0].ActualWidth}");
-            }
-        }
-
-        // bliver kaldt hvergang selve datagrid bliver resized
-        private void DataGrid_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (sender is DataGrid dg)
-            {
-                // Width is width of column 1 (zero-based)
-                ColumnWidth = dg.Columns[0].ActualWidth - 65; // minus approx. width of label
-                Debug.WriteLine($"(datagrid resize) Size of datagrid column 1 is {dg.Columns[0].ActualWidth}");
-            }
-        }
         // Når kolonne bliver resized, bliver den her kaldt
         private void DataGrid_LayoutUpdated(object sender, EventArgs e)
         {
@@ -359,9 +331,9 @@ namespace CollectaMundo
 
                 filterContext.AllColors.AddRange(["W", "U", "B", "R", "G", "C", "X"]);
 
-                List<string> allOrNoneColorsOption = new List<string> { "Cards with any of these colors", "Cards with all of these colors", "Cards with none of these colors" };
-                List<int> manaValueOptions = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000 };
-                List<string> manaValueCompareOptions = new List<string> { "less than", "less than/eq", "greater than", "greater than/eq", "equal to" };
+                List<string> allOrNoneColorsOption = ["Cards with any of these colors", "Cards with all of these colors", "Cards with none of these colors"];
+                List<int> manaValueOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000];
+                List<string> manaValueCompareOptions = ["less than", "less than/eq", "greater than", "greater than/eq", "equal to"];
 
                 // Set up elements in supertype listbox
                 filterContext.AllSuperTypes = [.. superTypes
@@ -372,8 +344,8 @@ namespace CollectaMundo
                     .OrderBy(type => type)];
 
                 // List of unwanted types. Old cards, weird types from un-sets etc. 
-                HashSet<string> typesToRemove = new HashSet<string>
-                {
+                HashSet<string> typesToRemove =
+                [
                     "Eaturecray",
                     "Summon",
                     "Scariest",
@@ -385,7 +357,7 @@ namespace CollectaMundo
                     "Knights",
                     "Legend",
                     "instant"
-                };
+                ];
 
                 // Set up elements in type listbox, removing unwanted types
                 filterContext.AllTypes = [.. types
@@ -397,13 +369,13 @@ namespace CollectaMundo
                     .OrderBy(type => type)];
 
                 // List of unwanted subtypes. Old cards, weird types from un-sets etc. 
-                HashSet<string> subTypesToRemove = new HashSet<string>
-                {
+                HashSet<string> subTypesToRemove =
+                [
                     "(creature",
                     "and/or",
                     "type)|Judge",
                     "The"
-                };
+                ];
 
                 // Set up elements in subtype listbox
                 filterContext.AllSubTypes = [.. subTypes
