@@ -102,10 +102,10 @@ namespace CollectaMundo
                 await LoadDataIntoUiElements();
             };
 
-            InitializeColumnWidths();
+            FilterManager.InitializeColumnWidths();
 
             // After initializing components, subscribe to column width changes
-            AllCardsDataGrid.LayoutUpdated += DataGrid_LayoutUpdated;
+            AllCardsDataGrid.LayoutUpdated += FilterManager.DataGrid_LayoutUpdated;
 
             filterManager = new FilterManager(filterContext);
 
@@ -116,28 +116,10 @@ namespace CollectaMundo
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
         }
 
-        // Used to resize combo-boxes
-        private void InitializeColumnWidths()
-        {
-            for (int i = 0; i < AllCardsDataGrid.Columns.Count; i++)
-            {
-                ColumnWidths.Add(0);  // Initialize with default widths, here 0 or a sensible default based on your UI
-            }
-        }
+
 
         // Når kolonne bliver resized, bliver den her kaldt
-        private void DataGrid_LayoutUpdated(object sender, EventArgs e)
-        {
-            for (int i = 0; i < AllCardsDataGrid.Columns.Count; i++)
-            {
-                double currentWidth = AllCardsDataGrid.Columns[i].ActualWidth;
-                if (currentWidth != ColumnWidths[i])
-                {
-                    ColumnWidths[i] = currentWidth - 65; // Adjust based on padding or other UI elements
-                    Debug.WriteLine($"(column resize) Size of DataGrid column {i} is now {currentWidth}");
-                }
-            }
-        }
+
 
 
         public async Task LoadDataIntoUiElements()

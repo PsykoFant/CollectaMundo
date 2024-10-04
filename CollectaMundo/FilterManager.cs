@@ -60,7 +60,6 @@ namespace CollectaMundo
                 return [];
             }
         }
-
         private IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
         {
             var filteredCards = cards;
@@ -166,5 +165,30 @@ namespace CollectaMundo
                 targetTextBlock.Text = string.Empty;
             }
         }
+
+        // Methods below used to resize combobox dropdown in card datagrids automatically
+
+        // Initialize object that holds the column widths
+        public static void InitializeColumnWidths()
+        {
+            for (int i = 0; i < MainWindow.CurrentInstance.AllCardsDataGrid.Columns.Count; i++)
+            {
+                MainWindow.CurrentInstance.ColumnWidths.Add(0);  // Initialize with arbitrary default widths
+            }
+        }
+
+        // Update the object to which the combobox width is bound
+        public static void DataGrid_LayoutUpdated(object sender, EventArgs e)
+        {
+            for (int i = 0; i < MainWindow.CurrentInstance.AllCardsDataGrid.Columns.Count; i++)
+            {
+                double currentWidth = MainWindow.CurrentInstance.AllCardsDataGrid.Columns[i].ActualWidth;
+                if (currentWidth != MainWindow.CurrentInstance.ColumnWidths[i])
+                {
+                    MainWindow.CurrentInstance.ColumnWidths[i] = currentWidth - 65; // Adjust based on padding or other UI elements
+                }
+            }
+        }
+
     }
 }
