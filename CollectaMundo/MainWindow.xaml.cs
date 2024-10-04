@@ -118,13 +118,13 @@ namespace CollectaMundo
         {
             await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
 
-            await DBAccess.OpenConnectionAsync();
-
             // Start on the all cards page            
             ResetGrids();
             GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Visible;
             LogoSmall.Visibility = Visibility.Visible;
+
+            await DBAccess.OpenConnectionAsync();
 
             Task loadAllCards = LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false, true);
             Task loadMyCollection = LoadDataAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);

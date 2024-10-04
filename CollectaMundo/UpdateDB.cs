@@ -61,29 +61,39 @@ namespace CollectaMundo
         {
             try
             {
-                // Disbale buttons while updating
+                // First, create a backup
+                await BackupRestore.CreateCsvBackupAsync();
+
+                // Disable buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
 
-                // Download new card database to currentuser/downloads
-                await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(newDatabasePath, "Downloading fresh card database and updating...");
+                // Attempt to download new card database
+                bool downloadSuccess = await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(newDatabasePath, "Downloading fresh card database and updating...");
+
+                if (!downloadSuccess)
+                {
+                    throw new InvalidOperationException("Failed to download the new database.");
+                }
 
                 await DBAccess.OpenConnectionAsync();
+
                 // Copy tables from new card database
                 await CopyTablesAsync();
 
                 // Generate new custom data if needed
                 await DownloadAndPrepDB.GenerateManaSymbolsFromSvgAsync();
-                // Now run the last two functions in parallel
+
+                // Run the last two functions in parallel
                 var generateManaCostImagesTask = DownloadAndPrepDB.GenerateManaCostImagesAsync();
                 var generateSetKeyruneFromSvgTask = DownloadAndPrepDB.GenerateSetKeyruneFromSvgAsync();
                 await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
 
                 DBAccess.CloseConnection();
 
-                StatusMessageUpdated?.Invoke($"Card database has been updated!");
+                StatusMessageUpdated?.Invoke("Card database has been updated!");
                 await Task.Delay(1000); // Leave the message for a few seconds
 
-                StatusMessageUpdated?.Invoke($"Reloading card database...");
+                StatusMessageUpdated?.Invoke("Reloading card database...");
                 await Task.Delay(1000); // Leave the message for a few seconds
             }
             catch (Exception ex)
@@ -95,7 +105,7 @@ namespace CollectaMundo
             {
                 await MainWindow.ShowStatusWindowAsync(false);
 
-                // Reenable buttons and go to search and filter                
+                // Reenable buttons and go to search and filter
                 MainWindow.CurrentInstance.ResetGrids();
                 MainWindow.CurrentInstance.UpdateDbButton.Visibility = Visibility.Collapsed;
                 MainWindow.CurrentInstance.GridUtilitiesSection.Visibility = Visibility.Visible;
@@ -103,6 +113,8 @@ namespace CollectaMundo
                 await MainWindow.CurrentInstance.LoadDataIntoUiElements();
             }
         }
+
+
         private static async Task CopyTablesAsync()
         {
             try

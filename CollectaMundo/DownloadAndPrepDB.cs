@@ -26,24 +26,40 @@ namespace CollectaMundo
         {
             try
             {
+                await DBAccess.OpenConnectionAsync();
+
+                bool redownloadDB = false;
+                string utilsInfoLabelContent = string.Empty;
+                string downloadMessage = string.Empty;
+
                 if (!File.Exists(databasePath))
                 {
-                    MainWindow.CurrentInstance.UtilsInfoLabel.Content = "No card database found...";
+                    redownloadDB = true;
+                    utilsInfoLabelContent = "No card database found ...";
+                    downloadMessage = "Performing first-time setup of card database - please wait...";
+                }
+                else if (!await DBAccess.CheckDatabaseIntegrityAsync())
+                {
+                    File.Delete(databasePath);
+                    redownloadDB = true;
+                    utilsInfoLabelContent = "Card database corrupted! ...";
+                    downloadMessage = "Card database was corrupt, re-downloading - please wait...";
+                }
+
+                if (redownloadDB)
+                {
+                    MainWindow.CurrentInstance.UtilsInfoLabel.Content = utilsInfoLabelContent;
 
                     // Disbale buttons while updating
                     await MainWindow.ShowStatusWindowAsync(true);
 
                     // Call the download method with the progress handler
 
-                    await DownloadDatabaseIfNotExistsAsync(databasePath, "Performing first-time setup of card database - please wait...");
-
-                    await DBAccess.OpenConnectionAsync();
+                    await DownloadDatabaseIfNotExistsAsync(databasePath, downloadMessage);
 
                     StatusMessageUpdated?.Invoke($"Getting things ready ...");
-                    await Task.Run(async () =>
-                    {
-                        await CreateCustomTablesAndIndices();
-                    });
+
+                    await Task.Run(CreateCustomTablesAndIndices);
 
                     await GenerateManaSymbolsFromSvgAsync();
                     // Now run the last two functions in parallel
@@ -51,7 +67,6 @@ namespace CollectaMundo
                     var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
                     await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
 
-                    DBAccess.CloseConnection();
                     await MainWindow.ShowStatusWindowAsync(false);
                 }
                 else
@@ -64,13 +79,18 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error while checking database existence: {ex.Message}");
                 MessageBox.Show($"Error while checking database existence: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
         }
-        public static async Task DownloadDatabaseIfNotExistsAsync(string databasePath, string statusMessage) // Download card database from mtgjson in SQLite format    
+
+        // Download card database from mtgjson in SQLite format
+        public static async Task<bool> DownloadDatabaseIfNotExistsAsync(string databasePath, string statusMessage)
         {
             try
             {
                 MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = statusMessage;
-
                 if (MainWindow.CurrentInstance?.ProgressBar != null)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
@@ -97,12 +117,14 @@ namespace CollectaMundo
                 {
                     response.EnsureSuccessStatusCode();
                     var totalBytes = response.Content.Headers.ContentLength ?? -1L;
-                    var megabytes = string.Format("{0:0.0} MB", totalBytes / 1000000.0);
                     var totalBytesRead = 0L;
                     var buffer = new byte[4096];
                     using var contentStream = await response.Content.ReadAsStreamAsync();
                     using var fileStream = new FileStream(databasePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
+
+                    var megabytes = string.Format("{0:0.0} MB", totalBytes / 1000000.0);
                     StatusMessageUpdated?.Invoke($"Downloading card database ({megabytes})");
+
                     var bytesRead = 0;
                     while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
                     {
@@ -111,14 +133,16 @@ namespace CollectaMundo
                         var progressPercentage = totalBytes != -1 ? (int)((totalBytesRead * 100) / totalBytes) : -1;
                         progress?.Report(progressPercentage);
                     }
+
+                    Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
+                    return true; // Return true if download completes successfully
                 }
-                Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error during download of card database: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Debug.WriteLine($"Error during download of card database: {ex.Message}");
-                StatusMessageUpdated?.Invoke("Download failed :-(");
+                return false; // Return false in case of any exception
             }
             finally
             {
@@ -127,11 +151,12 @@ namespace CollectaMundo
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = string.Empty;
-                        MainWindow.CurrentInstance.ProgressBar.Visibility = Visibility.Hidden;
+                        MainWindow.CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
                     });
                 }
             }
         }
+
 
         // Generate custom data such as manasymbols, mana cost, set images and save them as png in database
         private static async Task CreateCustomTablesAndIndices()

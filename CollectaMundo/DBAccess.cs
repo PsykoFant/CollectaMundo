@@ -128,5 +128,72 @@ namespace CollectaMundo
                 MessageBox.Show($"Error creating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        public static async Task<bool> CheckDatabaseIntegrityAsync()
+        {
+            try
+            {
+                if (connection != null && connection.State == System.Data.ConnectionState.Open)
+                {
+                    // First, check if the database has the expected tables
+                    if (!await DatabaseHasTablesAsync())
+                    {
+                        Debug.WriteLine("Database does not contain expected tables.");
+                        return false; // Consider the absence of expected tables as a failure
+                    }
+
+                    // Proceed with the integrity check if the tables exist
+                    using (var command = new SQLiteCommand("PRAGMA quick_check", connection))
+                    {
+                        var result = await command.ExecuteScalarAsync();
+                        string resultString = result?.ToString() ?? "unknown";
+
+                        if (resultString == "ok")
+                        {
+                            Debug.WriteLine("Database integrity check passed.");
+                            return true;
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"Database integrity check failed: {resultString}");
+                            return false;
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine("Failed to open database connection for integrity check.");
+                    return false;
+                }
+            }
+            catch (SQLiteException ex)
+            {
+                Debug.WriteLine($"SQLite error during database integrity check: {ex.Message}");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Unexpected error during database integrity check: {ex.Message}");
+                return false;
+            }
+        }
+        public static async Task<bool> DatabaseHasTablesAsync()
+        {
+            if (connection == null || connection.State != System.Data.ConnectionState.Open)
+            {
+                return false;
+            }
+
+            string checkTableExistenceQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='cards';";
+
+            using (var command = new SQLiteCommand(checkTableExistenceQuery, connection))
+            {
+                var result = await command.ExecuteScalarAsync();
+                return result != null; // Returns true if the table exists
+            }
+        }
+
+
+
+
     }
 }
