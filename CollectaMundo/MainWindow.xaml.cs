@@ -67,8 +67,11 @@ namespace CollectaMundo
 
         // Object of AddToCollectionManager class to access that functionality
         private readonly AddToCollectionManager addToCollectionManager = new();
-        public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [];
-
+        public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = new ObservableCollection<ObservableCollection<double>>
+        {
+            new ObservableCollection<double> {100, 100}, // Defaults for AllCardsDataGrid
+            new ObservableCollection<double> {100, 100}  // Defaults for MyCollectionDataGrid
+        };
 
         #endregion
         public static MainWindow CurrentInstance
@@ -89,11 +92,7 @@ namespace CollectaMundo
             InitializeComponent();
             _currentInstance = this;
             DataContext = filterContext;
-
-            // Update the statusbox with messages from methods in DownloadAndPrepareDB
-            DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
-            // Update the statusbox with messages from methods in UpdateDB
-            UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
+            filterManager = new FilterManager(filterContext);
 
             // Set up system
             Loaded += async (sender, args) =>
@@ -101,13 +100,13 @@ namespace CollectaMundo
                 await LoadDataIntoUiElements();
             };
 
-            FilterManager.InitializeColumnWidthsForDataGrids(2, new int[] { 2, 2 });
-
-
-            // After initializing components, subscribe to column width changes
+            // Subscribe to column width changes
             AllCardsDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(0);
 
-            filterManager = new FilterManager(filterContext);
+            // Update the statusbox with messages from methods in DownloadAndPrepareDB
+            DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
+            // Update the statusbox with messages from methods in UpdateDB
+            UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
 
             // Pick up filtering comboboxes changes
             FilterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
@@ -115,13 +114,6 @@ namespace CollectaMundo
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
         }
-
-
-
-        // Når kolonne bliver resized, bliver den her kaldt
-
-
-
         public async Task LoadDataIntoUiElements()
         {
             await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
@@ -135,7 +127,7 @@ namespace CollectaMundo
             LogoSmall.Visibility = Visibility.Visible;
 
             Task loadAllCards = LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false, true);
-            Task loadMyCollection = LoadDataAsync(myCards, myCollectionQuery, MyCollectionDatagrid, true, true);
+            Task loadMyCollection = LoadDataAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
             Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
 
             await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons);
@@ -376,10 +368,12 @@ namespace CollectaMundo
                     .Distinct()
                     .OrderBy(keyword => keyword)];
 
-
                 foreach (string? name in cardNames)
                 {
-                    filterContext.CardNames.Add(name);
+                    if (name != null)
+                    {
+                        filterContext.CardNames.Add(name);
+                    }
                 }
 
                 Dispatcher.Invoke(() =>
@@ -424,9 +418,8 @@ namespace CollectaMundo
             IEnumerable<CardSet> filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
 
             AllCardsDataGrid.ItemsSource = filteredAllCards;
-            MyCollectionDatagrid.ItemsSource = filteredMyCards;
+            MyCollectionDataGrid.ItemsSource = filteredMyCards;
         }
-
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
             if (sender is ComboBox comboBox)
@@ -802,7 +795,7 @@ namespace CollectaMundo
             IEnumerable<CardSet> filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
 
             AllCardsDataGrid.ItemsSource = filteredAllCards;
-            MyCollectionDatagrid.ItemsSource = filteredMyCards;
+            MyCollectionDataGrid.ItemsSource = filteredMyCards;
         }
 
         // Reset filter elements
@@ -982,7 +975,7 @@ namespace CollectaMundo
                     AddToCollectionManager.ShowCardsToAddListView();
                     grid.UnselectAll();
                 }
-                else if (grid.SelectedItem is CardItem cardItemCard && grid.Name == "MyCollectionDatagrid")
+                else if (grid.SelectedItem is CardItem cardItemCard && grid.Name == "MyCollectionDataGrid")
                 {
                     AddToCollectionManager.AddOrEditCardHandler(cardItemCard, addToCollectionManager.CardItemsToEdit);
                     AddToCollectionManager.ShowCardsToEditListView();
@@ -1011,11 +1004,11 @@ namespace CollectaMundo
         private void ButtonEditCardsInCollection_Click(object sender, RoutedEventArgs e)
         {
             AddToCollectionManager.ShowCardsToEditListView();
-            foreach (CardSet selectedCard in MyCollectionDatagrid.SelectedItems)
+            foreach (CardSet selectedCard in MyCollectionDataGrid.SelectedItems)
             {
                 AddToCollectionManager.AddOrEditCardHandler(selectedCard, addToCollectionManager.CardItemsToEdit);
             }
-            MyCollectionDatagrid.UnselectAll();
+            MyCollectionDataGrid.UnselectAll();
         }
 
         // Submit cards in add or edit listviews
@@ -1031,7 +1024,7 @@ namespace CollectaMundo
         }
         private void ButtonDeleteCardsFromCollection_Click(object sender, RoutedEventArgs e)
         {
-            List<CardItem> selectedCards = MyCollectionDatagrid.SelectedItems.Cast<CardItem>().ToList();
+            List<CardItem> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardItem>().ToList();
             if (selectedCards.Count > 0)
             {
                 AddToCollectionManager.DeleteCardsFromCollection(selectedCards);

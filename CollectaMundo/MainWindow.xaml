@@ -547,7 +547,7 @@
                 <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
                 <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
                 <Button x:Name="ButtonClearCardsToEdit" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonClearCardsToEdit_Click"/>
-                <Button x:Name="ButtonEditCardsInMyCollection" Content="Edit selected cards" HorizontalAlignment="Right" Margin="0,252,0,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="{Binding ElementName=MyCollectionDatagrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonEditCardsInCollection_Click"/>
+                <Button x:Name="ButtonEditCardsInMyCollection" Content="Edit selected cards" HorizontalAlignment="Right" Margin="0,252,0,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="{Binding ElementName=MyCollectionDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonEditCardsInCollection_Click"/>
 
                 <TextBlock x:Name="EditStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="187" Visibility="Collapsed"/>
                 <!--Cards to edit-->
@@ -644,7 +644,7 @@
                     </ListView.View>
                 </ListView>
                 <!--The my collection datagrid-->
-                <DataGrid x:Name="MyCollectionDatagrid"
+                <DataGrid x:Name="MyCollectionDataGrid"
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"

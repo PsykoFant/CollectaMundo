@@ -378,8 +378,8 @@ namespace CollectaMundo
                 CardItemsToAdd.Clear();
 
                 // Reload my collection
-                MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
-                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true, false);
+                MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
+                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
 
                 DBAccess.connection.Close();
             }
@@ -452,8 +452,8 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards with default values to your collection:\n\n" + cardDetails;
 
                 // Reload the collection
-                MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
-                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true, false);
+                MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
+                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
 
                 DBAccess.connection.Close();
             }
@@ -548,8 +548,8 @@ namespace CollectaMundo
                 CardItemsToEdit.Clear();
 
                 // Reload my collection
-                MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
-                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true, false);
+                MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
+                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
 
                 MainWindow.CurrentInstance.ApplyFilterSelection();
 
@@ -592,8 +592,8 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.EditStatusTextBlock.Text = "Deleted the following cards from your collection:\n\n" + cardDetails;
 
                 // Reload the collection
-                MainWindow.CurrentInstance.MyCollectionDatagrid.ItemsSource = null;
-                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDatagrid, true, false);
+                MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
+                await MainWindow.CurrentInstance.LoadDataAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
 
                 DBAccess.connection.Close();
 

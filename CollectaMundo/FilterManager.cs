@@ -1,5 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -8,6 +7,8 @@ namespace CollectaMundo
     public class FilterManager(FilterContext context)
     {
         private readonly FilterContext filterContext = context;
+
+        #region Filtering
         public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards, string listName)
         {
             try
@@ -129,7 +130,7 @@ namespace CollectaMundo
             {
                 // Check if 'Finishes' column contains only 'foil' or 'etched'
                 var finishes = card.Finishes?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                 .Select(f => f.Trim()).ToList() ?? new List<string>();
+                                 .Select(f => f.Trim()).ToList() ?? [];
 
                 // If 'includeFoil' is false, filter out cards where 'Finishes' contains only 'foil' or 'etched'
                 if (!includeFoil)
@@ -141,6 +142,10 @@ namespace CollectaMundo
                 return true;
             });
         }
+
+        #endregion
+
+        #region Filter UI updates
         private void UpdateFilterLabel()
         {
             if (MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != filterContext.RulesTextDefaultText && MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != string.Empty)
@@ -167,44 +172,25 @@ namespace CollectaMundo
             }
         }
 
-        // Methods below used to resize combobox dropdown in card datagrids automatically
-
-        // Initialize object that holds the column widths
-        public static void InitializeColumnWidthsForDataGrids(int numberOfDataGrids, int[] numberOfColumnsPerGrid)
-        {
-            MainWindow.CurrentInstance.ColumnWidths.Clear();
-            for (int i = 0; i < numberOfDataGrids; i++)
-            {
-                ObservableCollection<double> widths = new ObservableCollection<double>();
-                for (int j = 0; j < numberOfColumnsPerGrid[i]; j++)
-                {
-                    widths.Add(0); // Initialize with 0 or another default value appropriate for your layout
-                }
-                MainWindow.CurrentInstance.ColumnWidths.Add(widths);
-            }
-        }
-
-
         // Update the object to which the width of the combobox is bound
         public static void DataGrid_LayoutUpdated(int dataGridIndex)
         {
-            // Selecting the correct DataGrid based on the index
-            DataGrid currentDataGrid = dataGridIndex switch
+            if (dataGridIndex < 0 || dataGridIndex >= MainWindow.CurrentInstance.ColumnWidths.Count)
             {
-                0 => MainWindow.CurrentInstance.AllCardsDataGrid,
-                1 => MainWindow.CurrentInstance.MyCollectionDatagrid,
-                _ => throw new ArgumentException("Invalid dataGridIndex provided."),
-            };
+                return; // Protect against out-of-range errors
+            }
 
-            // Adjust the first column
-            if (currentDataGrid != null)
+            var currentDataGrid = dataGridIndex == 0 ? MainWindow.CurrentInstance.AllCardsDataGrid : MainWindow.CurrentInstance.MyCollectionDataGrid;
+            double currentWidth = currentDataGrid.Columns[0].ActualWidth;
+            double newWidth = currentWidth - 65; // Deduct the padding or margin width
+
+            if (newWidth > 0 && Math.Abs(MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][0] - newWidth) > 0.5) // Check for a significant change
             {
-                double currentWidth = currentDataGrid.Columns[0].ActualWidth;
-                if (currentWidth != MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][0])
-                {
-                    MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][0] = currentWidth - 65; // minus width of "Card" label
-                }
+                MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][0] = newWidth;
             }
         }
+
+
+        #endregion
     }
 }
