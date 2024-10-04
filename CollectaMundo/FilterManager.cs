@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -169,24 +170,35 @@ namespace CollectaMundo
         // Methods below used to resize combobox dropdown in card datagrids automatically
 
         // Initialize object that holds the column widths
-        public static void InitializeColumnWidths()
+        public static void InitializeColumnWidthsForDataGrids(int numberOfDataGrids, int[] numberOfColumnsPerGrid)
         {
-            for (int i = 0; i < MainWindow.CurrentInstance.AllCardsDataGrid.Columns.Count; i++)
+            MainWindow.CurrentInstance.ColumnWidths.Clear();
+            for (int i = 0; i < numberOfDataGrids; i++)
             {
-                MainWindow.CurrentInstance.ColumnWidths.Add(0);  // Initialize with arbitrary default widths
+                ObservableCollection<double> widths = new ObservableCollection<double>();
+                for (int j = 0; j < numberOfColumnsPerGrid[i]; j++)
+                {
+                    widths.Add(0); // Initialize with 0 or another default value appropriate for your layout
+                }
+                MainWindow.CurrentInstance.ColumnWidths.Add(widths);
             }
         }
+
 
         // Update the object to which the combobox width is bound
         public static void DataGrid_LayoutUpdated(object? sender, EventArgs e)
         {
+
+            // Assuming you want to track the width of the first column in the DataGrid
             double currentWidth = MainWindow.CurrentInstance.AllCardsDataGrid.Columns[0].ActualWidth;
-            if (currentWidth != MainWindow.CurrentInstance.ColumnWidths[0])
+            if (currentWidth != MainWindow.CurrentInstance.ColumnWidths[0][0])
             {
-                MainWindow.CurrentInstance.ColumnWidths[0] = currentWidth - 65; // Adjust based on padding or other UI elements
+                // Set the new width minus whatever margin or padding you wish to consider
+                MainWindow.CurrentInstance.ColumnWidths[0][0] = currentWidth - 65;
             }
 
         }
+
 
     }
 }

@@ -485,7 +485,7 @@
                                                   HorizontalAlignment="Stretch"
                                                   Height="20"
                                                   IsEditable="True"
-                                                  Width="{Binding ColumnWidths[0], RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                  Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}" 
                                                   ItemsSource="{Binding DataContext.CardNames, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                   Tag="AllCardsName"
                                                   SelectionChanged="ComboBox_SelectionChanged">

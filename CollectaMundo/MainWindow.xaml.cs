@@ -67,7 +67,8 @@ namespace CollectaMundo
 
         // Object of AddToCollectionManager class to access that functionality
         private readonly AddToCollectionManager addToCollectionManager = new();
-        public ObservableCollection<double> ColumnWidths { get; set; } = [];
+        public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [];
+
 
         #endregion
         public static MainWindow CurrentInstance
@@ -100,7 +101,8 @@ namespace CollectaMundo
                 await LoadDataIntoUiElements();
             };
 
-            FilterManager.InitializeColumnWidths();
+            FilterManager.InitializeColumnWidthsForDataGrids(2, new int[] { 2, 2 });
+
 
             // After initializing components, subscribe to column width changes
             AllCardsDataGrid.LayoutUpdated += FilterManager.DataGrid_LayoutUpdated;
