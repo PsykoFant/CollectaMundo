@@ -178,16 +178,14 @@ namespace CollectaMundo
         }
 
         // Update the object to which the combobox width is bound
-        public static void DataGrid_LayoutUpdated(object sender, EventArgs e)
+        public static void DataGrid_LayoutUpdated(object? sender, EventArgs e)
         {
-            for (int i = 0; i < MainWindow.CurrentInstance.AllCardsDataGrid.Columns.Count; i++)
+            double currentWidth = MainWindow.CurrentInstance.AllCardsDataGrid.Columns[0].ActualWidth;
+            if (currentWidth != MainWindow.CurrentInstance.ColumnWidths[0])
             {
-                double currentWidth = MainWindow.CurrentInstance.AllCardsDataGrid.Columns[i].ActualWidth;
-                if (currentWidth != MainWindow.CurrentInstance.ColumnWidths[i])
-                {
-                    MainWindow.CurrentInstance.ColumnWidths[i] = currentWidth - 65; // Adjust based on padding or other UI elements
-                }
+                MainWindow.CurrentInstance.ColumnWidths[0] = currentWidth - 65; // Adjust based on padding or other UI elements
             }
+
         }
 
     }

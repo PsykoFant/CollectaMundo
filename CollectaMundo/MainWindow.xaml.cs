@@ -67,8 +67,6 @@ namespace CollectaMundo
 
         // Object of AddToCollectionManager class to access that functionality
         private readonly AddToCollectionManager addToCollectionManager = new();
-
-
         public ObservableCollection<double> ColumnWidths { get; set; } = [];
 
         #endregion
