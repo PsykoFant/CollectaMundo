@@ -185,20 +185,26 @@ namespace CollectaMundo
         }
 
 
-        // Update the object to which the combobox width is bound
-        public static void DataGrid_LayoutUpdated(object? sender, EventArgs e)
+        // Update the object to which the width of the combobox is bound
+        public static void DataGrid_LayoutUpdated(int dataGridIndex)
         {
-
-            // Assuming you want to track the width of the first column in the DataGrid
-            double currentWidth = MainWindow.CurrentInstance.AllCardsDataGrid.Columns[0].ActualWidth;
-            if (currentWidth != MainWindow.CurrentInstance.ColumnWidths[0][0])
+            // Selecting the correct DataGrid based on the index
+            DataGrid currentDataGrid = dataGridIndex switch
             {
-                // Set the new width minus whatever margin or padding you wish to consider
-                MainWindow.CurrentInstance.ColumnWidths[0][0] = currentWidth - 65;
+                0 => MainWindow.CurrentInstance.AllCardsDataGrid,
+                1 => MainWindow.CurrentInstance.MyCollectionDatagrid,
+                _ => throw new ArgumentException("Invalid dataGridIndex provided."),
+            };
+
+            // Adjust the first column
+            if (currentDataGrid != null)
+            {
+                double currentWidth = currentDataGrid.Columns[0].ActualWidth;
+                if (currentWidth != MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][0])
+                {
+                    MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][0] = currentWidth - 65; // minus width of "Card" label
+                }
             }
-
         }
-
-
     }
 }

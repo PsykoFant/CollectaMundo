@@ -105,7 +105,7 @@ namespace CollectaMundo
 
 
             // After initializing components, subscribe to column width changes
-            AllCardsDataGrid.LayoutUpdated += FilterManager.DataGrid_LayoutUpdated;
+            AllCardsDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(0);
 
             filterManager = new FilterManager(filterContext);
 
