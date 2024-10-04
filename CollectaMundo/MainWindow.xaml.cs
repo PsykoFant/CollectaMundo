@@ -70,6 +70,8 @@ namespace CollectaMundo
 
 
         public static readonly DependencyProperty ColumnWidthProperty = DependencyProperty.Register("ColumnWidth", typeof(double), typeof(MainWindow), new PropertyMetadata(default(double)));
+
+        public ObservableCollection<double> ColumnWidths { get; set; } = new ObservableCollection<double>();
         public double ColumnWidth
         {
             get { return (double)GetValue(ColumnWidthProperty); }
@@ -108,6 +110,8 @@ namespace CollectaMundo
                 await LoadDataIntoUiElements();
             };
 
+            InitializeColumnWidths();
+
             // After initializing components, subscribe to column width changes
             AllCardsDataGrid.LayoutUpdated += DataGrid_LayoutUpdated;
 
@@ -121,6 +125,14 @@ namespace CollectaMundo
         }
 
         // Used to resize combo-boxes
+        private void InitializeColumnWidths()
+        {
+            for (int i = 0; i < AllCardsDataGrid.Columns.Count; i++)
+            {
+                ColumnWidths.Add(0);  // Initialize with default widths, here 0 or a sensible default based on your UI
+            }
+        }
+
         private void ColumnWidthChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == "Value")
@@ -130,26 +142,31 @@ namespace CollectaMundo
                 Debug.WriteLine($"Adjusted size of datagrid column 1 is {AllCardsDataGrid.Columns[0].ActualWidth}");
             }
         }
+
+        // bliver kaldt hvergang selve datagrid bliver resized
         private void DataGrid_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (sender is DataGrid dg)
             {
                 // Width is width of column 1 (zero-based)
                 ColumnWidth = dg.Columns[0].ActualWidth - 65; // minus approx. width of label
-                Debug.WriteLine($"Size of datagrid column 1 is {dg.Columns[0].ActualWidth}");
+                Debug.WriteLine($"(datagrid resize) Size of datagrid column 1 is {dg.Columns[0].ActualWidth}");
             }
         }
+        // Når kolonne bliver resized, bliver den her kaldt
         private void DataGrid_LayoutUpdated(object sender, EventArgs e)
         {
-            double currentWidth = AllCardsDataGrid.Columns[0].ActualWidth;
-            if (currentWidth != lastKnownWidth)
+            for (int i = 0; i < AllCardsDataGrid.Columns.Count; i++)
             {
-                lastKnownWidth = currentWidth; // Update last known width
-                ColumnWidth = currentWidth - 65; // Adjust the space for the label or other controls
-                Debug.WriteLine($"Size of DataGrid column 1 is now {currentWidth}");
-                // Here you can invoke other actions to adjust the size of your ComboBox or other UI elements.
+                double currentWidth = AllCardsDataGrid.Columns[i].ActualWidth;
+                if (currentWidth != ColumnWidths[i])
+                {
+                    ColumnWidths[i] = currentWidth - 65; // Adjust based on padding or other UI elements
+                    Debug.WriteLine($"(column resize) Size of DataGrid column {i} is now {currentWidth}");
+                }
             }
         }
+
 
         public async Task LoadDataIntoUiElements()
         {
