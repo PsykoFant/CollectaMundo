@@ -24,63 +24,60 @@ namespace CollectaMundo
         // If it doesn't download it and populate it with custom data, including image data for mana symbols and set images
         public static async Task CheckDatabaseExistenceAsync()
         {
-            try
+            bool redownloadDB = false;
+            string utilsInfoLabelContent = string.Empty;
+            string downloadMessage = string.Empty;
+
+            if (!File.Exists(databasePath))
             {
-                await DBAccess.OpenConnectionAsync();
-
-                bool redownloadDB = false;
-                string utilsInfoLabelContent = string.Empty;
-                string downloadMessage = string.Empty;
-
-                if (!File.Exists(databasePath))
-                {
-                    redownloadDB = true;
-                    utilsInfoLabelContent = "No card database found ...";
-                    downloadMessage = "Performing first-time setup of card database - please wait...";
-                }
-                else if (!await DBAccess.CheckDatabaseIntegrityAsync())
+                redownloadDB = true;
+                utilsInfoLabelContent = "No card database found ...";
+                downloadMessage = "Performing first-time setup of card database - please wait...";
+            }
+            else
+            {
+                if (!await DBAccess.CheckDatabaseIntegrityAsync())
                 {
                     File.Delete(databasePath);
                     redownloadDB = true;
                     utilsInfoLabelContent = "Card database corrupted! ...";
                     downloadMessage = "Card database was corrupt, re-downloading - please wait...";
-                }
 
-                if (redownloadDB)
-                {
-                    MainWindow.CurrentInstance.UtilsInfoLabel.Content = utilsInfoLabelContent;
-
-                    // Disbale buttons while updating
-                    await MainWindow.ShowStatusWindowAsync(true);
-
-                    // Call the download method with the progress handler
-
-                    await DownloadDatabaseIfNotExistsAsync(databasePath, downloadMessage);
-
-                    StatusMessageUpdated?.Invoke($"Getting things ready ...");
-
-                    await Task.Run(CreateCustomTablesAndIndices);
-
-                    await GenerateManaSymbolsFromSvgAsync();
-                    // Now run the last two functions in parallel
-                    var generateManaCostImagesTask = GenerateManaCostImagesAsync();
-                    var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
-                    await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
-
-                    await MainWindow.ShowStatusWindowAsync(false);
-                }
-                else
-                {
-                    MainWindow.CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
                 }
             }
-            catch (Exception ex)
+
+            if (redownloadDB)
             {
-                Debug.WriteLine($"Error while checking database existence: {ex.Message}");
-                MessageBox.Show($"Error while checking database existence: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                await DownloadAndPrepareCardDatabase(utilsInfoLabelContent, downloadMessage);
             }
-            finally
+            else
             {
+                MainWindow.CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
+            }
+        }
+
+        public static async Task DownloadAndPrepareCardDatabase(string utilsInfoLabelContent, string downloadMessage)
+        {
+            MainWindow.CurrentInstance.UtilsInfoLabel.Content = utilsInfoLabelContent;
+
+            // Disbale buttons while updating
+            await MainWindow.ShowStatusWindowAsync(true);
+
+            // Call the download method with the progress handler
+            if (await DownloadDatabaseIfNotExistsAsync(databasePath, downloadMessage))
+            {
+                await DBAccess.OpenConnectionAsync();
+
+                await Task.Run(CreateCustomTablesAndIndices);
+
+                await GenerateManaSymbolsFromSvgAsync();
+                // Now run the last two functions in parallel
+                var generateManaCostImagesTask = GenerateManaCostImagesAsync();
+                var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
+                await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
+
+                await MainWindow.ShowStatusWindowAsync(false);
+
                 DBAccess.CloseConnection();
             }
         }
