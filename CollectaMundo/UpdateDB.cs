@@ -89,11 +89,10 @@ namespace CollectaMundo
             }
             finally
             {
+                MainWindow.CurrentInstance.UpdateDbButton.Visibility = Visibility.Collapsed;
                 await MainWindow.CurrentInstance.LoadDataIntoUiElements();
             }
         }
-
-
         private static async Task<bool> CopyTablesAsync()
         {
             try

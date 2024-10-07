@@ -85,32 +85,30 @@ namespace CollectaMundo
                 });
 
                 string downloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
-                using (var httpClient = new HttpClient())
-                using (var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl))
-                using (var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
+                using var httpClient = new HttpClient();
+                using var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
+                using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                response.EnsureSuccessStatusCode();
+                var totalBytes = response.Content.Headers.ContentLength ?? -1L;
+                var totalBytesRead = 0L;
+                var buffer = new byte[4096];
+                using var contentStream = await response.Content.ReadAsStreamAsync();
+                using var fileStream = new FileStream(databasePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
+
+                var megabytes = string.Format("{0:0.0} MB", totalBytes / 1000000.0);
+                StatusMessageUpdated?.Invoke($"Downloading card database ({megabytes})");
+
+                var bytesRead = 0;
+                while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
                 {
-                    response.EnsureSuccessStatusCode();
-                    var totalBytes = response.Content.Headers.ContentLength ?? -1L;
-                    var totalBytesRead = 0L;
-                    var buffer = new byte[4096];
-                    using var contentStream = await response.Content.ReadAsStreamAsync();
-                    using var fileStream = new FileStream(databasePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
-
-                    var megabytes = string.Format("{0:0.0} MB", totalBytes / 1000000.0);
-                    StatusMessageUpdated?.Invoke($"Downloading card database ({megabytes})");
-
-                    var bytesRead = 0;
-                    while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
-                    {
-                        await fileStream.WriteAsync(buffer, 0, bytesRead);
-                        totalBytesRead += bytesRead;
-                        var progressPercentage = totalBytes != -1 ? (int)((totalBytesRead * 100) / totalBytes) : -1;
-                        progress?.Report(progressPercentage);
-                    }
-
-                    Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
-                    return true; // Return true if download completes successfully
+                    await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
+                    totalBytesRead += bytesRead;
+                    var progressPercentage = totalBytes != -1 ? (int)((totalBytesRead * 100) / totalBytes) : -1;
+                    progress?.Report(progressPercentage);
                 }
+
+                Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
+                return true; // Return true if download completes successfully
             }
             catch (Exception ex)
             {
@@ -131,15 +129,12 @@ namespace CollectaMundo
             }
         }
 
-
         // Generate custom data such as manasymbols, mana cost, set images and save them as png in database
         public static async Task PrepareDownloadedCardDatabase()
         {
             await DBAccess.OpenConnectionAsync();
 
             await Task.Run(CreateCustomTablesAndIndices);
-
-            await Task.Delay(10);
 
             await GenerateManaSymbolsFromSvgAsync();
             // Now run the last two functions in parallel

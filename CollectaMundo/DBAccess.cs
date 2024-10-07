@@ -40,7 +40,6 @@ namespace CollectaMundo
 
             Configuration = builder.Build();
         }
-
         public static async Task OpenConnectionAsync()
         {
             try
