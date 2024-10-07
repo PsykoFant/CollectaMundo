@@ -136,14 +136,27 @@ namespace CollectaMundo
 
                 if (connection != null && connection.State == System.Data.ConnectionState.Open)
                 {
-                    // First, check if the database has the expected tables
-                    if (!await DatabaseHasTablesAsync())
+                    // Define a list of all required tables and views
+                    var requiredDbObjects = new List<string>
+                        {
+                            "cards",
+                            "myCollection",
+                            "uniqueManaCostImages",
+                            "uniqueManaSymbols",
+                            "keyruneImages",
+                            "view_allCards",
+                            "view_myCollection",
+                            "view_cardToken"
+                        };
+
+                    // First, check if the database has the expected tables and views
+                    if (!await DatabaseHasTablesAndViewsAsync(requiredDbObjects))
                     {
-                        Debug.WriteLine("Database does not contain expected tables.");
-                        return false; // Consider the absence of expected tables as a failure
+                        Debug.WriteLine("Database does not contain all expected tables and views.");
+                        return false; // Consider the absence of expected tables or views as a failure
                     }
 
-                    // Proceed with the integrity check if the tables exist
+                    // Proceed with the integrity check if the tables and views exist
                     using (var command = new SQLiteCommand("PRAGMA quick_check", connection))
                     {
                         var result = await command.ExecuteScalarAsync();
@@ -182,24 +195,27 @@ namespace CollectaMundo
                 CloseConnection();
             }
         }
-        public static async Task<bool> DatabaseHasTablesAsync()
+        public static async Task<bool> DatabaseHasTablesAndViewsAsync(List<string> expectedObjects)
         {
             if (connection == null || connection.State != System.Data.ConnectionState.Open)
             {
                 return false;
             }
 
-            string checkTableExistenceQuery = "SELECT name FROM sqlite_master WHERE type='table' AND name='cards';";
-
-            using (var command = new SQLiteCommand(checkTableExistenceQuery, connection))
+            foreach (var name in expectedObjects)
             {
-                var result = await command.ExecuteScalarAsync();
-                return result != null; // Returns true if the table exists
+                string checkExistenceQuery = $"SELECT name FROM sqlite_master WHERE (type='table' OR type='view') AND name='{name}';";
+                using (var command = new SQLiteCommand(checkExistenceQuery, connection))
+                {
+                    var result = await command.ExecuteScalarAsync();
+                    if (result == null)
+                    {
+                        Debug.WriteLine($"Missing expected database object: {name}");
+                        return false; // Return false immediately if one of the objects is missing
+                    }
+                }
             }
+            return true; // If all checks pass
         }
-
-
-
-
     }
 }

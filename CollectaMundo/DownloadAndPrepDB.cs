@@ -21,17 +21,15 @@ namespace CollectaMundo
         private static readonly string databasePath = Path.Combine(DBAccess.SqlitePath, "AllPrintings.sqlite");
 
         // Check if the card database exists in the location specified by appsettings.json. 
-        // If it doesn't download it and populate it with custom data, including image data for mana symbols and set images
-        public static async Task CheckDatabaseExistenceAsync()
+        // If it doesn't exist, download it and populate it with custom data, including image data for mana symbols and set images
+        public static async Task SystemIntegrityCheckAsync()
         {
             bool redownloadDB = false;
-            string utilsInfoLabelContent = string.Empty;
             string downloadMessage = string.Empty;
 
             if (!File.Exists(databasePath))
             {
                 redownloadDB = true;
-                utilsInfoLabelContent = "No card database found ...";
                 downloadMessage = "Performing first-time setup of card database - please wait...";
             }
             else
@@ -40,45 +38,24 @@ namespace CollectaMundo
                 {
                     File.Delete(databasePath);
                     redownloadDB = true;
-                    utilsInfoLabelContent = "Card database corrupted! ...";
-                    downloadMessage = "Card database was corrupt, re-downloading - please wait...";
-
+                    downloadMessage = "Card database was corrupted! Re-downloading - please wait...";
                 }
             }
 
             if (redownloadDB)
             {
-                await DownloadAndPrepareCardDatabase(utilsInfoLabelContent, downloadMessage);
+                if (await DownloadDatabaseIfNotExistsAsync(databasePath, downloadMessage))
+                {
+                    await PrepareDownloadedCardDatabase();
+                }
+                else
+                {
+                    await SystemIntegrityCheckAsync();
+                }
             }
             else
             {
                 MainWindow.CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
-            }
-        }
-
-        public static async Task DownloadAndPrepareCardDatabase(string utilsInfoLabelContent, string downloadMessage)
-        {
-            MainWindow.CurrentInstance.UtilsInfoLabel.Content = utilsInfoLabelContent;
-
-            // Disbale buttons while updating
-            await MainWindow.ShowStatusWindowAsync(true);
-
-            // Call the download method with the progress handler
-            if (await DownloadDatabaseIfNotExistsAsync(databasePath, downloadMessage))
-            {
-                await DBAccess.OpenConnectionAsync();
-
-                await Task.Run(CreateCustomTablesAndIndices);
-
-                await GenerateManaSymbolsFromSvgAsync();
-                // Now run the last two functions in parallel
-                var generateManaCostImagesTask = GenerateManaCostImagesAsync();
-                var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
-                await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
-
-                await MainWindow.ShowStatusWindowAsync(false);
-
-                DBAccess.CloseConnection();
             }
         }
 
@@ -156,6 +133,22 @@ namespace CollectaMundo
 
 
         // Generate custom data such as manasymbols, mana cost, set images and save them as png in database
+        public static async Task PrepareDownloadedCardDatabase()
+        {
+            await DBAccess.OpenConnectionAsync();
+
+            await Task.Run(CreateCustomTablesAndIndices);
+
+            await Task.Delay(10);
+
+            await GenerateManaSymbolsFromSvgAsync();
+            // Now run the last two functions in parallel
+            var generateManaCostImagesTask = GenerateManaCostImagesAsync();
+            var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
+            await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
+
+            DBAccess.CloseConnection();
+        }
         private static async Task CreateCustomTablesAndIndices()
         {
             try

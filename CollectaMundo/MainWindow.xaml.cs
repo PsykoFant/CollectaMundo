@@ -116,18 +116,14 @@ namespace CollectaMundo
         }
         public async Task LoadDataIntoUiElements()
         {
-            await DownloadAndPrepDB.CheckDatabaseExistenceAsync();
+            await ShowStatusWindowAsync(true);
 
-            // Start on the all cards page            
-            ResetGrids();
-            GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
-            GridFiltering.Visibility = Visibility.Visible;
-            LogoSmall.Visibility = Visibility.Visible;
+            await DownloadAndPrepDB.SystemIntegrityCheckAsync();
 
             await DBAccess.OpenConnectionAsync();
 
-            Task loadAllCards = LoadDataAsync(allCards, allCardsQuery, AllCardsDataGrid, false, true);
-            Task loadMyCollection = LoadDataAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
+            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false, true);
+            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
             Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
 
             await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons);
@@ -138,10 +134,20 @@ namespace CollectaMundo
             CardsToAddListView.ItemsSource = addToCollectionManager.CardItemsToAdd;
             CardsToEditListView.ItemsSource = addToCollectionManager.CardItemsToEdit;
             ShowFoilCheckBox.IsChecked = true;
+
+            // Start on the search and filter all cards page            
+            ResetGrids();
+            MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
+            LogoSmall.Visibility = Visibility.Visible;
+            GridFiltering.Visibility = Visibility.Visible;
+            GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
+
+            await ShowStatusWindowAsync(false);
+
         }
 
         #region Load data and populate UI elements
-        public async Task LoadDataAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem, bool showLoadScreen)
+        public async Task PopulateCardDataGridAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem, bool showLoadScreen)
         {
             try
             {
@@ -149,7 +155,7 @@ namespace CollectaMundo
                 {
                     await ShowStatusWindowAsync(true);  // Show loading message                
                     CurrentInstance.StatusLabel.Content = "Loading ALL the cards ... ";
-                    CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
+                    CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed; // Progressbar is for download only
                     // Force the UI to update
                     Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
                 }
@@ -1212,7 +1218,7 @@ namespace CollectaMundo
 
                         // Show status section and hide others
                         CurrentInstance.GridContentSection.Visibility = Visibility.Collapsed;
-                        CurrentInstance.GridFiltering.Visibility = Visibility.Collapsed;
+                        CurrentInstance.GridSideMenu.Visibility = Visibility.Collapsed;
                         CurrentInstance.GridCardImages.Visibility = Visibility.Collapsed;
                         CurrentInstance.GridStatus.Visibility = Visibility.Visible;
                     }
@@ -1221,7 +1227,7 @@ namespace CollectaMundo
                         CurrentInstance.GridTopMenu.IsEnabled = true;
                         CurrentInstance.GridStatus.Visibility = Visibility.Collapsed;
                         CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
-                        CurrentInstance.GridFiltering.Visibility = Visibility.Visible;
+                        CurrentInstance.GridSideMenu.Visibility = Visibility.Visible;
                         CurrentInstance.GridCardImages.Visibility = Visibility.Visible;
 
                     }

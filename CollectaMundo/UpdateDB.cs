@@ -67,28 +67,14 @@ namespace CollectaMundo
                 // Disable buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
 
-                // Attempt to download new card database
-                bool downloadSuccess = await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(newDatabasePath, "Downloading fresh card database and updating...");
-
-                if (!downloadSuccess)
+                if (await DownloadAndPrepDB.DownloadDatabaseIfNotExistsAsync(newDatabasePath, "Downloading fresh card database and updating..."))
                 {
-                    throw new InvalidOperationException("Failed to download the new database.");
+                    // Copy tables from new card database
+                    if (await CopyTablesAsync())
+                    {
+                        await DownloadAndPrepDB.PrepareDownloadedCardDatabase();
+                    }
                 }
-
-                await DBAccess.OpenConnectionAsync();
-
-                // Copy tables from new card database
-                await CopyTablesAsync();
-
-                // Generate new custom data if needed
-                await DownloadAndPrepDB.GenerateManaSymbolsFromSvgAsync();
-
-                // Run the last two functions in parallel
-                var generateManaCostImagesTask = DownloadAndPrepDB.GenerateManaCostImagesAsync();
-                var generateSetKeyruneFromSvgTask = DownloadAndPrepDB.GenerateSetKeyruneFromSvgAsync();
-                await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
-
-                DBAccess.CloseConnection();
 
                 StatusMessageUpdated?.Invoke("Card database has been updated!");
                 await Task.Delay(1000); // Leave the message for a few seconds
@@ -103,22 +89,17 @@ namespace CollectaMundo
             }
             finally
             {
-                await MainWindow.ShowStatusWindowAsync(false);
-
-                // Reenable buttons and go to search and filter
-                MainWindow.CurrentInstance.ResetGrids();
-                MainWindow.CurrentInstance.UpdateDbButton.Visibility = Visibility.Collapsed;
-                MainWindow.CurrentInstance.GridUtilitiesSection.Visibility = Visibility.Visible;
-
                 await MainWindow.CurrentInstance.LoadDataIntoUiElements();
             }
         }
 
 
-        private static async Task CopyTablesAsync()
+        private static async Task<bool> CopyTablesAsync()
         {
             try
             {
+                await DBAccess.OpenConnectionAsync();
+
                 // Check and drop the table in regularDb if it exists
                 Dictionary<string, string> tables = new()
                     {
@@ -144,7 +125,7 @@ namespace CollectaMundo
                     {
                         await dropCommand.ExecuteNonQueryAsync();
                     }
-                    await Task.Delay(50); // for UI to update
+                    await Task.Delay(10); // for UI to update
                     StatusMessageUpdated?.Invoke($"Table {item.Key} dropped...");
                 }
 
@@ -176,11 +157,17 @@ namespace CollectaMundo
                 // Recreate indices and views after copying tables
                 await DownloadAndPrepDB.CreateIndices();
                 await DownloadAndPrepDB.CreateViews();
+                return true;
             }
             catch (SQLiteException ex)
             {
                 Debug.WriteLine($"Error copying tables: {ex.Message}");
                 MessageBox.Show($"Error copying tables: {ex.Message}", "Filter Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
             }
         }
         private static async Task<int> FetchSetsCountAsync()
