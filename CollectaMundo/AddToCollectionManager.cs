@@ -226,14 +226,14 @@ namespace CollectaMundo
         }
         public static void ShowCardsToAddListView()
         {
-            MainWindow.CurrentInstance.AddStatusTextBlock.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Visible;
         }
         public static void ShowCardsToEditListView()
         {
-            MainWindow.CurrentInstance.EditStatusTextBlock.Visibility = Visibility.Collapsed;
+            MainWindow.CurrentInstance.EditStatusScrollViewer.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.ButtonClearCardsToEdit.Visibility = Visibility.Visible;
@@ -371,7 +371,7 @@ namespace CollectaMundo
                     $"- {card.Name} (Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish}, Cards owned: {card.CardsOwned}, Cards for trade: {card.CardsForTrade})")
                     .Aggregate((current, next) => current + "\n" + next);
 
-                MainWindow.CurrentInstance.AddStatusTextBlock.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Visible;
                 MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards to your collection:\n\n" + cardDetails;
                 HideCardsToAddListView(false);
 
@@ -448,7 +448,7 @@ namespace CollectaMundo
                 var cardDetails = selectedCards.Select(card =>
                     $"- {card.Name}").Aggregate((current, next) => current + "\n" + next);
 
-                MainWindow.CurrentInstance.AddStatusTextBlock.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Visible;
                 MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards with default values to your collection:\n\n" + cardDetails;
 
                 // Reload the collection
@@ -541,7 +541,7 @@ namespace CollectaMundo
                     .Aggregate((current, next) => current + "\n" + next);
 
                 // Set the detailed string with linebreaks to the TextBlock
-                MainWindow.CurrentInstance.EditStatusTextBlock.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.EditStatusScrollViewer.Visibility = Visibility.Visible;
                 MainWindow.CurrentInstance.EditStatusTextBlock.Text = "Edited the following cards in your collection:\n\n" + cardDetails;
                 HideCardsToEditListView(false);
 
@@ -588,7 +588,7 @@ namespace CollectaMundo
                 var cardDetails = selectedCards.Select(card =>
                     $"- {card.Name} ").Aggregate((current, next) => current + "\n" + next);
 
-                MainWindow.CurrentInstance.EditStatusTextBlock.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.EditStatusScrollViewer.Visibility = Visibility.Visible;
                 MainWindow.CurrentInstance.EditStatusTextBlock.Text = "Deleted the following cards from your collection:\n\n" + cardDetails;
 
                 // Reload the collection
