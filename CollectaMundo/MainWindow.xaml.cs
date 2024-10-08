@@ -76,7 +76,6 @@ namespace CollectaMundo
         #endregion
 
         /*TO DO
-         * Opdater my collection datagrid
          * Bug - add default når der er search and filter cards
          * Bug - mange kort, mangler scroll-knap
          * Opdater filterlayout

@@ -744,56 +744,56 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Icon" Width="Auto" IsReadOnly="True">
+                        <DataGridTemplateColumn Header="Icon" IsReadOnly="True" Width="Auto" SortMemberPath="ReleaseDate">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Image Source="{Binding SetIcon}" Width="20" Height="20" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Mana Cost" Width="Auto" IsReadOnly="True">
+                        <DataGridTemplateColumn Header="Mana Cost" Width="Auto" IsReadOnly="True" SortMemberPath="ManaValue">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Card Types" Width="*">
+                        <DataGridTemplateColumn Header="Card Types" Width="*" SortMemberPath="Types">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Types}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Finish" Width="*">
+                        <DataGridTemplateColumn Header="Finish" Width="*" SortMemberPath="SelectedFinish">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding SelectedFinish}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Language" Width="*">
+                        <DataGridTemplateColumn Header="Language" Width="*" SortMemberPath="Language">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Language}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Condition" Width="*">
+                        <DataGridTemplateColumn Header="Condition" Width="*" SortMemberPath="SelectedCondition">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding SelectedCondition}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Count" Width="*">
+                        <DataGridTemplateColumn Header="Count" Width="*" SortMemberPath="CardsOwned">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding CardsOwned}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding CardsOwned}" TextWrapping="Wrap"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Trade" Width="*">
+                        <DataGridTemplateColumn Header="Trade" Width="*" SortMemberPath="CardsForTrade">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding CardsForTrade}" TextWrapping="Wrap" />
