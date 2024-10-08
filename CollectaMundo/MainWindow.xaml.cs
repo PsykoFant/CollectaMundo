@@ -108,7 +108,6 @@ namespace CollectaMundo
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
 
             // Pick up filtering comboboxes changes
-            FilterSetNameComboBox.SelectionChanged += ComboBox_SelectionChanged;
             AllOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
@@ -381,14 +380,19 @@ namespace CollectaMundo
                 Dispatcher.Invoke(() =>
                 {
 
-                    // Find and update the embedded ComboBox in DataGrid header
-                    ComboBox? headerComboBox = FindVisualChild<ComboBox>(AllCardsDataGrid);
-                    if (headerComboBox?.Tag?.ToString() == "AllCardsName")
+                    // Find and update all embedded ComboBoxes in DataGrid headers
+                    List<ComboBox> headerComboBoxes = FindVisualChildren<ComboBox>(AllCardsDataGrid);
+                    foreach (ComboBox comboBox in headerComboBoxes)
                     {
-                        headerComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
+                        if (comboBox.Tag?.ToString() == "AllCardsName")
+                        {
+                            comboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
+                        }
+                        else if (comboBox.Tag?.ToString() == "AllCardsSet")
+                        {
+                            comboBox.ItemsSource = setNames.OrderBy(set => set).ToList();
+                        }
                     }
-
-                    FilterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
 
                     FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
                     FilterColorsListBox.ItemsSource = filterContext.AllColors;
@@ -413,6 +417,26 @@ namespace CollectaMundo
             }
             return Task.CompletedTask;
         }
+
+        public static List<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
+        {
+            List<T> children = [];
+            if (depObj != null)
+            {
+                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+                {
+                    DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
+                    if (child is not null and T)
+                    {
+                        children.Add((T)child);
+                    }
+
+                    children.AddRange(FindVisualChildren<T>(child)); // Recursive call to fetch children
+                }
+            }
+            return children;
+        }
+
         private static void SetDefaultTextInComboBox(ComboBox comboBox, string textBoxName, string defaultText)
         {
             if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
@@ -521,7 +545,7 @@ namespace CollectaMundo
                 {
                     // Finding the parent ComboBox by traversing up the visual tree
                     DependencyObject parent = VisualTreeHelper.GetParent(textBox);
-                    while (parent != null && parent is not ComboBox)
+                    while (parent is not null and not ComboBox)
                     {
                         parent = VisualTreeHelper.GetParent(parent);
                     }
@@ -821,14 +845,13 @@ namespace CollectaMundo
             ResetFilterTextBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);
 
             // Clear non-custom comboboxes
-            FilterSetNameComboBox.SelectedIndex = -1;
             AllOrNoneComboBox.SelectedIndex = 0;
             ManaValueComboBox.SelectedIndex = -1;
             ManaValueOperatorComboBox.SelectedIndex = -1;
 
-
-            ComboBox? headerComboBox = FindVisualChild<ComboBox>(AllCardsDataGrid);
-            if (headerComboBox != null)
+            // Find and clear all ComboBoxes in the DataGrid header
+            var headerComboBoxes = FindVisualChildren<ComboBox>(AllCardsDataGrid);
+            foreach (ComboBox headerComboBox in headerComboBoxes)
             {
                 headerComboBox.SelectedIndex = -1;
             }

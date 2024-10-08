@@ -15,13 +15,19 @@ namespace CollectaMundo
             {
                 var filteredCards = cards.AsEnumerable();
 
-                string cardFilter = MainWindow.FindVisualChild<ComboBox>(MainWindow.CurrentInstance.AllCardsDataGrid)?.SelectedItem?.ToString() ?? string.Empty;
-                string setFilter = MainWindow.CurrentInstance.FilterSetNameComboBox.SelectedItem?.ToString() ?? string.Empty;
+                // Find all ComboBoxes and then find the specific ones by their tags
+                var headerComboBoxes = MainWindow.FindVisualChildren<ComboBox>(MainWindow.CurrentInstance.AllCardsDataGrid);
+                ComboBox? nameComboBox = headerComboBoxes.FirstOrDefault(cb => cb.Tag?.ToString() == "AllCardsName");
+                ComboBox? setComboBox = headerComboBoxes.FirstOrDefault(cb => cb.Tag?.ToString() == "AllCardsSet");
+
+                string cardFilter = nameComboBox?.SelectedItem?.ToString() ?? string.Empty;
+                string setFilter = setComboBox?.SelectedItem?.ToString() ?? string.Empty;
+
                 string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
                 bool useAnd = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
                 bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
                 string compareOperator = MainWindow.CurrentInstance.ManaValueOperatorComboBox.SelectedItem?.ToString() ?? string.Empty;
-                double.TryParse(MainWindow.CurrentInstance.ManaValueComboBox.SelectedItem?.ToString(), out double manaValueCompare);
+                _ = double.TryParse(MainWindow.CurrentInstance.ManaValueComboBox.SelectedItem?.ToString(), out double manaValueCompare);
 
                 // Filter by mana value
                 filteredCards = FilterByManaValue(filteredCards, compareOperator, manaValueCompare);
@@ -58,7 +64,7 @@ namespace CollectaMundo
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
-                MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                _ = MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return [];
             }
         }
@@ -180,15 +186,30 @@ namespace CollectaMundo
                 return; // Protect against out-of-range errors
             }
 
-            var currentDataGrid = dataGridIndex == 0 ? MainWindow.CurrentInstance.AllCardsDataGrid : MainWindow.CurrentInstance.MyCollectionDataGrid;
-            double currentWidth = currentDataGrid.Columns[0].ActualWidth;
-            double newWidth = currentWidth - 65; // Deduct the padding or margin width
+            // Define paddings for each column. Ensure this list matches the number of columns you have.
+            int[] paddings = [65, 50];
 
-            if (newWidth > 0 && Math.Abs(MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][0] - newWidth) > 0.5) // Check for a significant change
+            var currentDataGrid = dataGridIndex == 0 ? MainWindow.CurrentInstance.AllCardsDataGrid : MainWindow.CurrentInstance.MyCollectionDataGrid;
+
+            for (int colIndex = 0; colIndex < paddings.Length; colIndex++)
             {
-                MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][0] = newWidth;
+                if (colIndex >= MainWindow.CurrentInstance.ColumnWidths[dataGridIndex].Count || colIndex >= paddings.Length)
+                {
+                    continue; // Protect against out-of-range errors when column widths or paddings list is shorter than the number of actual columns
+                }
+
+                double currentWidth = currentDataGrid.Columns[colIndex].ActualWidth;
+                double newWidth = currentWidth - paddings[colIndex]; // Apply specific padding for each column
+
+                // Check for a significant change before updating
+                if (newWidth > 0 && Math.Abs(MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][colIndex] - newWidth) > 0.5)
+                {
+                    MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][colIndex] = newWidth;
+                }
             }
         }
+
+
 
 
         #endregion
