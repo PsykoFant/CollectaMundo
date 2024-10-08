@@ -6,7 +6,9 @@ namespace CollectaMundo
 {
     public class FilterManager(FilterContext context)
     {
+        public string WhichDropdown = string.Empty;
         private readonly FilterContext filterContext = context;
+        private static readonly char[] separator = [','];
 
         #region Filtering
         public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards, string listName)
@@ -16,12 +18,40 @@ namespace CollectaMundo
                 var filteredCards = cards.AsEnumerable();
 
                 // Find all ComboBoxes and then find the specific ones by their tags
-                var headerComboBoxes = MainWindow.FindVisualChildren<ComboBox>(MainWindow.CurrentInstance.AllCardsDataGrid);
-                ComboBox? nameComboBox = headerComboBoxes.FirstOrDefault(cb => cb.Tag?.ToString() == "AllCardsName");
-                ComboBox? setComboBox = headerComboBoxes.FirstOrDefault(cb => cb.Tag?.ToString() == "AllCardsSet");
+                var headerComboBoxesAllCards = MainWindow.FindVisualChildren<ComboBox>(MainWindow.CurrentInstance.AllCardsDataGrid);
+                ComboBox? nameComboBoxAllCards = headerComboBoxesAllCards.FirstOrDefault(cb => cb.Tag?.ToString() == "AllCardsName");
+                ComboBox? setComboBoxAllCards = headerComboBoxesAllCards.FirstOrDefault(cb => cb.Tag?.ToString() == "AllCardsSet");
 
-                string cardFilter = nameComboBox?.SelectedItem?.ToString() ?? string.Empty;
-                string setFilter = setComboBox?.SelectedItem?.ToString() ?? string.Empty;
+                var headerComboBoxesMyCollection = MainWindow.FindVisualChildren<ComboBox>(MainWindow.CurrentInstance.MyCollectionDataGrid);
+                ComboBox? nameComboBoxMyCollection = headerComboBoxesMyCollection.FirstOrDefault(cb => cb.Tag?.ToString() == "MyCollectionName");
+                ComboBox? setComboBoxMyCollection = headerComboBoxesMyCollection.FirstOrDefault(cb => cb.Tag?.ToString() == "MyCollectionSet");
+
+                string cardFilter = string.Empty;
+                string setFilter = string.Empty;
+
+                if (WhichDropdown == "AllCards")
+                {
+                    cardFilter = nameComboBoxAllCards?.SelectedItem?.ToString() ?? string.Empty;
+                    setFilter = setComboBoxAllCards?.SelectedItem?.ToString() ?? string.Empty;
+
+                }
+                if (WhichDropdown == "MyCollection")
+                {
+                    cardFilter = nameComboBoxMyCollection?.SelectedItem?.ToString() ?? string.Empty;
+                    setFilter = setComboBoxMyCollection?.SelectedItem?.ToString() ?? string.Empty;
+                }
+
+                //if (nameComboBoxAllCards?.SelectedItem?.ToString() != null)
+                //{
+                //    Debug.WriteLine($"Nulstil dropdown i MyCollection og filtrer ved AllCards valget");
+                //}
+                //if (nameComboBoxMyCollection?.SelectedItem?.ToString() != null)
+                //{
+                //    Debug.WriteLine($"Nulstil dropdown i AllCards og filtrer ved MyCollection valget");
+                //}
+
+                //Debug.WriteLine($"Value of nameComboBoxAllCards: {nameComboBoxAllCards?.SelectedItem?.ToString()}");
+                //Debug.WriteLine($"Value of nameComboBoxMyCollection: {nameComboBoxMyCollection?.SelectedItem?.ToString()}");
 
                 string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
                 bool useAnd = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
@@ -85,7 +115,7 @@ namespace CollectaMundo
             }
             return filteredCards;
         }
-        private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string> selectedCriteria, bool useAnd, Func<CardSet, string> propertySelector, bool exclude = false)
+        private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string>? selectedCriteria, bool useAnd, Func<CardSet, string?> propertySelector, bool exclude = false)
         {
             if (cards == null || propertySelector == null)
             {
@@ -100,7 +130,7 @@ namespace CollectaMundo
             return cards.Where(card =>
             {
                 var propertyValue = propertySelector(card) ?? string.Empty;  // Avoid nulls in property values
-                var criteria = propertyValue.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
+                var criteria = propertyValue.Split(separator, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
 
                 bool match = useAnd ? selectedCriteria.All(c => criteria.Contains(c)) : selectedCriteria.Any(c => criteria.Contains(c));
                 return exclude ? !match : match;
@@ -135,7 +165,7 @@ namespace CollectaMundo
             return cards.Where(card =>
             {
                 // Check if 'Finishes' column contains only 'foil' or 'etched'
-                var finishes = card.Finishes?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                var finishes = card.Finishes?.Split(separator, StringSplitOptions.RemoveEmptyEntries)
                                  .Select(f => f.Trim()).ToList() ?? [];
 
                 // If 'includeFoil' is false, filter out cards where 'Finishes' contains only 'foil' or 'etched'

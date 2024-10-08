@@ -113,6 +113,7 @@ namespace CollectaMundo
 
             // Subscribe to column width changes
             AllCardsDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(0);
+            MyCollectionDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(1);
 
             // Update the statusbox with messages from methods in DownloadAndPrepareDB
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
@@ -391,20 +392,11 @@ namespace CollectaMundo
 
                 Dispatcher.Invoke(() =>
                 {
-
-                    // Find and update all embedded ComboBoxes in DataGrid headers
-                    List<ComboBox> headerComboBoxes = FindVisualChildren<ComboBox>(AllCardsDataGrid);
-                    foreach (ComboBox comboBox in headerComboBoxes)
-                    {
-                        if (comboBox.Tag?.ToString() == "AllCardsName")
-                        {
-                            comboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
-                        }
-                        else if (comboBox.Tag?.ToString() == "AllCardsSet")
-                        {
-                            comboBox.ItemsSource = setNames.OrderBy(set => set).ToList();
-                        }
-                    }
+                    // Update DataGrid ComboBoxes
+                    UpdateComboBoxSource(AllCardsDataGrid, "AllCardsName", cardNames);
+                    UpdateComboBoxSource(AllCardsDataGrid, "AllCardsSet", setNames);
+                    UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionName", cardNames);
+                    UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionSet", setNames);
 
                     FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
                     FilterColorsListBox.ItemsSource = filterContext.AllColors;
@@ -451,6 +443,17 @@ namespace CollectaMundo
             }
             return children;
         }
+        private void UpdateComboBoxSource(DataGrid dataGrid, string tag, List<string?> dataSource)
+        {
+            List<ComboBox> headerComboBoxes = FindVisualChildren<ComboBox>(dataGrid);
+            foreach (ComboBox comboBox in headerComboBoxes)
+            {
+                if (comboBox.Tag?.ToString() == tag)
+                {
+                    comboBox.ItemsSource = dataSource.OrderBy(name => name).ToList();
+                }
+            }
+        }
         private static void SetDefaultTextInComboBox(ComboBox comboBox, string textBoxName, string defaultText)
         {
             if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
@@ -460,11 +463,37 @@ namespace CollectaMundo
             }
         }
 
+
         #endregion
 
         #region Filter elements handling        
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+
+            if (sender is ComboBox comboBox)
+            {
+                if (comboBox.Name == "AllCardsNameComboBox" || comboBox.Name == "AllCardsSetComboBox")
+                {
+                    filterManager.WhichDropdown = "AllCards";
+                    var headerComboBoxesMyCollection = FindVisualChildren<ComboBox>(MyCollectionDataGrid);
+                    foreach (ComboBox headerComboBox in headerComboBoxesMyCollection)
+                    {
+                        headerComboBox.SelectedIndex = -1;
+                    }
+                }
+                if (comboBox.Name == "MyCollectionNameComboBox" || comboBox.Name == "MyCollectionSetComboBox")
+                {
+                    filterManager.WhichDropdown = "MyCollection";
+
+                    // Clear the selections in the other datagrid
+                    var headerComboBoxesAllCards = FindVisualChildren<ComboBox>(AllCardsDataGrid);
+                    foreach (ComboBox headerComboBox in headerComboBoxesAllCards)
+                    {
+                        headerComboBox.SelectedIndex = -1;
+                    }
+                }
+            }
+
             IEnumerable<CardSet> filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
             IEnumerable<CardSet> filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
 
@@ -709,7 +738,6 @@ namespace CollectaMundo
         // When a combobox checkbox item is checked or unchecked
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            Debug.WriteLine("CheckBox_Checked was clicked...");
             try
             {
                 if (sender is not DependencyObject dependencyObject)
@@ -864,8 +892,13 @@ namespace CollectaMundo
             ManaValueOperatorComboBox.SelectedIndex = -1;
 
             // Find and clear all ComboBoxes in the DataGrid header
-            var headerComboBoxes = FindVisualChildren<ComboBox>(AllCardsDataGrid);
-            foreach (ComboBox headerComboBox in headerComboBoxes)
+            var headerComboBoxesAllCards = FindVisualChildren<ComboBox>(AllCardsDataGrid);
+            foreach (ComboBox headerComboBox in headerComboBoxesAllCards)
+            {
+                headerComboBox.SelectedIndex = -1;
+            }
+            var headerComboBoxesMyCollection = FindVisualChildren<ComboBox>(MyCollectionDataGrid);
+            foreach (ComboBox headerComboBox in headerComboBoxesMyCollection)
             {
                 headerComboBox.SelectedIndex = -1;
             }

@@ -300,7 +300,7 @@
         </Grid>
         <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,00,5,0" Visibility="Visible">
             <Image x:Name="LogoSmall" Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="200" Width="200" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" />
-            <Grid x:Name="GridSearchAndFilterAllCards">
+            <Grid x:Name="GridSearchAndFilterAllCards" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
                 <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonSubmitCardsToMyCollection_Click"/>
@@ -471,7 +471,8 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Label Content="Name" VerticalAlignment="Center" Grid.Column="0"/>
-                                        <ComboBox IsTextSearchEnabled="True" 
+                                        <ComboBox x:Name="AllCardsNameComboBox"
+                                                  IsTextSearchEnabled="True" 
                                                   Grid.Column="1"
                                                   HorizontalAlignment="Stretch"
                                                   Height="20"
@@ -504,7 +505,7 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Label Content="Set" VerticalAlignment="Center" Grid.Column="0"/>
-                                        <ComboBox IsTextSearchEnabled="True" 
+                                        <ComboBox x:Name="AllCardsSetComboBox" IsTextSearchEnabled="True" 
                                                   Grid.Column="1"
                                                   HorizontalAlignment="Stretch"
                                                   Height="20"
@@ -559,7 +560,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
-            <Grid x:Name="GridMyCollection" d:IsHidden="True">
+            <Grid x:Name="GridMyCollection">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
                 <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
@@ -670,6 +671,7 @@
                           EnableColumnVirtualization="True"
                           VirtualizingPanel.IsVirtualizing="True"
                           CanUserAddRows="False"
+                          CanUserSortColumns="True"
                           HorizontalAlignment="Stretch"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <DataGrid.ContextMenu>
@@ -679,14 +681,67 @@
                         </ContextMenu>
                     </DataGrid.ContextMenu>
                     <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="Name" Width="*">
+                        <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
+                            <DataGridTemplateColumn.HeaderTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Label Content="Name" VerticalAlignment="Center" Grid.Column="0"/>
+                                        <ComboBox x:Name="MyCollectionNameComboBox" IsTextSearchEnabled="True"
+                                                  Grid.Column="1"
+                                                  HorizontalAlignment="Stretch"
+                                                  Height="20"
+                                                  IsEditable="True"
+                                                  Width="{Binding ColumnWidths[1][0], RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                  ItemsSource="{Binding ItemsSource}"
+                                                  Tag="MyCollectionName"
+                                                  SelectionChanged="ComboBox_SelectionChanged">
+                                            <ComboBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel />
+                                                </ItemsPanelTemplate>
+                                            </ComboBox.ItemsPanel>
+                                        </ComboBox>
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.HeaderTemplate>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="SetName" Width="*">
+                        <DataGridTemplateColumn Header="Set" Width="*" SortMemberPath="SetName">
+                            <DataGridTemplateColumn.HeaderTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Label Content="Set" VerticalAlignment="Center" Grid.Column="0"/>
+                                        <ComboBox x:Name="MyCollectionSetComboBox" 
+                                                  IsTextSearchEnabled="True"
+                                                  Grid.Column="1"
+                                                  HorizontalAlignment="Stretch"
+                                                  Height="20"
+                                                  IsEditable="True"
+                                                  Width="{Binding ColumnWidths[1][1], RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  ItemsSource="{Binding ItemsSource}"
+                                                  Tag="MyCollectionSet"
+                                                  SelectionChanged="ComboBox_SelectionChanged">
+                                            <ComboBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel />
+                                                </ItemsPanelTemplate>
+                                            </ComboBox.ItemsPanel>
+                                        </ComboBox>
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.HeaderTemplate>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding SetName}" TextWrapping="Wrap" />
