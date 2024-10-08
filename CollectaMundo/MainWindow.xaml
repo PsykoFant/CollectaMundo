@@ -478,7 +478,6 @@
                                                   Height="20"
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}" 
-                                                  ItemsSource="{Binding ItemsSource}"
                                                   Tag="AllCardsName"
                                                   SelectionChanged="ComboBox_SelectionChanged">
                                             <ComboBox.ItemsPanel>
@@ -511,7 +510,6 @@
                                                   Height="20"
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[0][1], RelativeSource={RelativeSource AncestorType=Window}}" 
-                                                  ItemsSource="{Binding ItemsSource}"
                                                   Tag="AllCardsSet"
                                                   SelectionChanged="ComboBox_SelectionChanged">
                                             <ComboBox.ItemsPanel>
@@ -696,7 +694,6 @@
                                                   Height="20"
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[1][0], RelativeSource={RelativeSource AncestorType=Window}}" 
-                                                  ItemsSource="{Binding ItemsSource}"
                                                   Tag="MyCollectionName"
                                                   SelectionChanged="ComboBox_SelectionChanged">
                                             <ComboBox.ItemsPanel>
@@ -730,7 +727,6 @@
                                                   Height="20"
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[1][1], RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  ItemsSource="{Binding ItemsSource}"
                                                   Tag="MyCollectionSet"
                                                   SelectionChanged="ComboBox_SelectionChanged">
                                             <ComboBox.ItemsPanel>

@@ -41,18 +41,6 @@ namespace CollectaMundo
                     setFilter = setComboBoxMyCollection?.SelectedItem?.ToString() ?? string.Empty;
                 }
 
-                //if (nameComboBoxAllCards?.SelectedItem?.ToString() != null)
-                //{
-                //    Debug.WriteLine($"Nulstil dropdown i MyCollection og filtrer ved AllCards valget");
-                //}
-                //if (nameComboBoxMyCollection?.SelectedItem?.ToString() != null)
-                //{
-                //    Debug.WriteLine($"Nulstil dropdown i AllCards og filtrer ved MyCollection valget");
-                //}
-
-                //Debug.WriteLine($"Value of nameComboBoxAllCards: {nameComboBoxAllCards?.SelectedItem?.ToString()}");
-                //Debug.WriteLine($"Value of nameComboBoxMyCollection: {nameComboBoxMyCollection?.SelectedItem?.ToString()}");
-
                 string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
                 bool useAnd = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
                 bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
