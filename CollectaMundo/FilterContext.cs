@@ -7,7 +7,6 @@
         public List<string> AllSuperTypes { get; set; } = [];
         public List<string> AllSubTypes { get; set; } = [];
         public List<string> AllKeywords { get; set; } = [];
-        public List<string> CardNames { get; set; } = [];
 
         public HashSet<string> SelectedColors { get; set; } = [];
         public HashSet<string> SelectedTypes { get; set; } = [];

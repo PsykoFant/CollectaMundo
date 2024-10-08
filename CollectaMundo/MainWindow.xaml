@@ -307,7 +307,7 @@
                 <Button x:Name="ImportCollectionButton" Content="The Import Wizard" HorizontalAlignment="Left" Margin="10,30,0,0" VerticalAlignment="Top" Click="ImportCollectionButton_Click" Width="170" Height="20"/>
             </Grid>
         </Grid>
-        <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,00,5,0" Visibility="Collapsed">
+        <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,00,5,0" Visibility="Visible">
             <Image x:Name="LogoSmall" Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="200" Width="200" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" />
             <Grid x:Name="GridSearchAndFilterAllCards">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
@@ -486,7 +486,7 @@
                                                   Height="20"
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}" 
-                                                  ItemsSource="{Binding DataContext.CardNames, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                  ItemsSource="{Binding ItemsSource}"
                                                   Tag="AllCardsName"
                                                   SelectionChanged="ComboBox_SelectionChanged">
                                             <ComboBox.ItemsPanel>
@@ -542,7 +542,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
-            <Grid x:Name="GridMyCollection">
+            <Grid x:Name="GridMyCollection" d:IsHidden="True">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
                 <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
@@ -735,7 +735,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
-            <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top">
+            <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top" d:IsHidden="True">
                 <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Resources/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698" d:IsHidden="True"/>
                 <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Grid x:Name="GridUtilsScreen">
@@ -1088,7 +1088,7 @@
                    HorizontalAlignment="Center"
                    VerticalAlignment="Top" Margin="0,461,10,0"/>
         </Grid>
-        <Grid x:Name="GridStatus" Grid.Row="1" Grid.Column="1" Margin="0,40,0,0" VerticalAlignment="Top">
+        <Grid x:Name="GridStatus" Grid.Row="1" Grid.Column="1" Margin="0,40,0,0" VerticalAlignment="Top" d:IsHidden="True">
             <Image Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="500" Width="500" Margin="0,76,0,0" />
             <Label Content="CollectaMundo" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
             <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Center" Height="15" Margin="0,650,0,0" VerticalAlignment="Top" Width="500" BorderBrush="Black" Visibility="Collapsed"/>

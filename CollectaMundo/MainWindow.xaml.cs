@@ -67,11 +67,11 @@ namespace CollectaMundo
 
         // Object of AddToCollectionManager class to access that functionality
         private readonly AddToCollectionManager addToCollectionManager = new();
-        public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = new ObservableCollection<ObservableCollection<double>>
-        {
-            new ObservableCollection<double> {100, 100}, // Defaults for AllCardsDataGrid
-            new ObservableCollection<double> {100, 100}  // Defaults for MyCollectionDataGrid
-        };
+        public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } =
+        [
+            [100, 100], // Defaults for AllCardsDataGrid
+            [100, 100]  // Defaults for MyCollectionDataGrid
+        ];
 
         #endregion
         public static MainWindow CurrentInstance
@@ -91,7 +91,6 @@ namespace CollectaMundo
         {
             InitializeComponent();
             _currentInstance = this;
-            DataContext = filterContext;
             filterManager = new FilterManager(filterContext);
 
             // Set up system
@@ -163,7 +162,7 @@ namespace CollectaMundo
                 cardList.Clear();
 
                 List<CardSet> tempCardList = [];
-                using SQLiteCommand command = new SQLiteCommand(query, DBAccess.connection);
+                using SQLiteCommand command = new(query, DBAccess.connection);
                 using DbDataReader reader = await command.ExecuteReaderAsync();
 
                 while (await reader.ReadAsync())
@@ -254,7 +253,7 @@ namespace CollectaMundo
                 cardList.Clear();
 
                 List<CardSet> tempCardList = [];
-                using SQLiteCommand command = new SQLiteCommand(query, DBAccess.connection);
+                using SQLiteCommand command = new(query, DBAccess.connection);
                 using DbDataReader reader = await command.ExecuteReaderAsync();
 
                 while (await reader.ReadAsync())
@@ -276,7 +275,7 @@ namespace CollectaMundo
         {
             try
             {
-                CardSet card = new CardSet
+                CardSet card = new()
                 {
                     ManaCostImageBytes = reader["ManaSymbolImage"] as byte[],
                     ManaCostRaw = reader["uniqueManaSymbol"]?.ToString() ?? string.Empty
@@ -294,7 +293,6 @@ namespace CollectaMundo
             try
             {
                 // Make sure lists are clear
-                filterContext.CardNames.Clear();
                 filterContext.AllSuperTypes.Clear();
                 filterContext.AllTypes.Clear();
                 filterContext.AllSubTypes.Clear();
@@ -374,16 +372,25 @@ namespace CollectaMundo
                     .Distinct()
                     .OrderBy(keyword => keyword)];
 
-                foreach (string? name in cardNames)
-                {
-                    if (name != null)
-                    {
-                        filterContext.CardNames.Add(name);
-                    }
-                }
+                //foreach (string? name in cardNames)
+                //{
+                //    if (name != null)
+                //    {
+                //        filterContext.CardNames.Add(name);
+                //    }
+                //}
 
                 Dispatcher.Invoke(() =>
                 {
+
+                    // Find and update the embedded ComboBox in DataGrid header
+                    ComboBox? headerComboBox = FindVisualChild<ComboBox>(AllCardsDataGrid);
+                    if (headerComboBox?.Tag?.ToString() == "AllCardsName")
+                    {
+                        headerComboBox.ItemsSource = cardNames;
+                    }
+
+
                     FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
                     FilterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                     FilterColorsListBox.ItemsSource = filterContext.AllColors;
@@ -397,6 +404,8 @@ namespace CollectaMundo
                     SetDefaultTextInComboBox(TypesComboBox, "FilterTypesTextBox", filterContext.TypesDefaultText);
                     SetDefaultTextInComboBox(SubTypesComboBox, "FilterSubTypesTextBox", filterContext.SubTypesDefaultText);
                     SetDefaultTextInComboBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);
+
+
                 });
             }
             catch (Exception ex)
@@ -406,6 +415,14 @@ namespace CollectaMundo
             }
             return Task.CompletedTask;
         }
+        //private static void SetDefaultTextInComboBox(DataGrid dataGrid)
+        //{
+        //    if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
+        //    {
+        //        filterTextBox.Text = defaultText;
+        //        filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+        //    }
+        //}
         private static void SetDefaultTextInComboBox(ComboBox comboBox, string textBoxName, string defaultText)
         {
             if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
@@ -414,6 +431,8 @@ namespace CollectaMundo
                 filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
             }
         }
+
+
 
         #endregion
 
