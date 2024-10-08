@@ -71,7 +71,7 @@ namespace CollectaMundo
             }
             if (!string.IsNullOrEmpty(setFilter))
             {
-                filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.Contains(setFilter, StringComparison.OrdinalIgnoreCase));
+                filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.Equals(setFilter, StringComparison.OrdinalIgnoreCase));
             }
             if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != filterContext.RulesTextDefaultText)
             {

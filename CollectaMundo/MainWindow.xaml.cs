@@ -115,8 +115,6 @@ namespace CollectaMundo
         }
         public async Task LoadDataIntoUiElements()
         {
-            await ShowStatusWindowAsync(true);
-
             await DownloadAndPrepDB.SystemIntegrityCheckAsync();
 
             await DBAccess.OpenConnectionAsync();
@@ -219,6 +217,14 @@ namespace CollectaMundo
                 card.Uuid = reader["Uuid"]?.ToString() ?? string.Empty;
                 card.Side = reader["Side"]?.ToString() ?? string.Empty;
                 card.Finishes = reader["Finishes"]?.ToString();
+                if (DateTime.TryParse(reader["ReleaseDate"]?.ToString(), out DateTime releaseDate))
+                {
+                    card.ReleaseDate = releaseDate;
+                }
+                else
+                {
+                    card.ReleaseDate = null;
+                }
 
                 // Populate raw data fields for parallel processing
                 card.SetIconBytes = reader["KeyRuneImage"] as byte[];
@@ -372,14 +378,6 @@ namespace CollectaMundo
                     .Distinct()
                     .OrderBy(keyword => keyword)];
 
-                //foreach (string? name in cardNames)
-                //{
-                //    if (name != null)
-                //    {
-                //        filterContext.CardNames.Add(name);
-                //    }
-                //}
-
                 Dispatcher.Invoke(() =>
                 {
 
@@ -387,12 +385,12 @@ namespace CollectaMundo
                     ComboBox? headerComboBox = FindVisualChild<ComboBox>(AllCardsDataGrid);
                     if (headerComboBox?.Tag?.ToString() == "AllCardsName")
                     {
-                        headerComboBox.ItemsSource = cardNames;
+                        headerComboBox.ItemsSource = cardNames.OrderBy(name => name).ToList();
                     }
 
+                    FilterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
 
                     FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
-                    FilterSetNameComboBox.ItemsSource = setNames.OrderBy(name => name).ToList();
                     FilterColorsListBox.ItemsSource = filterContext.AllColors;
                     AllOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
                     AllOrNoneComboBox.SelectedIndex = 0;
@@ -415,14 +413,6 @@ namespace CollectaMundo
             }
             return Task.CompletedTask;
         }
-        //private static void SetDefaultTextInComboBox(DataGrid dataGrid)
-        //{
-        //    if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
-        //    {
-        //        filterTextBox.Text = defaultText;
-        //        filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-        //    }
-        //}
         private static void SetDefaultTextInComboBox(ComboBox comboBox, string textBoxName, string defaultText)
         {
             if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
@@ -431,8 +421,6 @@ namespace CollectaMundo
                 filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
             }
         }
-
-
 
         #endregion
 

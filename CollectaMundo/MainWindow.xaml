@@ -419,6 +419,7 @@
                           EnableColumnVirtualization="True"
                           VirtualizingPanel.IsVirtualizing="True"
                           CanUserAddRows="False"
+                          CanUserSortColumns="True"
                           HorizontalAlignment="Stretch"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                     <DataGrid.ContextMenu>
@@ -470,7 +471,7 @@
                         </ContextMenu>
                     </DataGrid.ContextMenu>
                     <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="Name" Width="*">
+                        <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                             <DataGridTemplateColumn.HeaderTemplate>
                                 <DataTemplate>
                                     <Grid>
@@ -504,28 +505,28 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Set Name" Width="*">
+                        <DataGridTemplateColumn Header="Set Name" Width="*" SortMemberPath="SetName">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding SetName}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Icon" IsReadOnly="True" Width="Auto">
+                        <DataGridTemplateColumn Header="Icon" IsReadOnly="True" Width="Auto" SortMemberPath="ReleaseDate">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Image Source="{Binding SetIcon}" Width="20" Height="20" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Mana Cost" IsReadOnly="True" Width="Auto">
+                        <DataGridTemplateColumn Header="Mana Cost" IsReadOnly="True" Width="Auto" SortMemberPath="ManaValue">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Card Types" Width="*">
+                        <DataGridTemplateColumn Header="Card Types" Width="*" SortMemberPath="Types">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Types}" TextWrapping="Wrap" />

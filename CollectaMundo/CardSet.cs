@@ -51,6 +51,7 @@ namespace CollectaMundo
         public List<string>? PromoTypes { get; set; }
         public string? Rarity { get; set; }
         public List<string>? RebalancedPrintings { get; set; }
+        public DateTime? ReleaseDate { get; set; }
         public string? SetCode { get; set; }
         public string? SetName { get; set; }
         public string? Side { get; set; }
