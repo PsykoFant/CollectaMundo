@@ -74,6 +74,18 @@ namespace CollectaMundo
         ];
 
         #endregion
+
+        /*TO DO
+         * Opdater my collection datagrid
+         * Bug - add default når der er search and filter cards
+         * Bug - mange kort, mangler scroll-knap
+         * Opdater filterlayout
+         * Filterknap - cards for trade
+         * 
+         */
+
+
+
         public static MainWindow CurrentInstance
         {
             get
@@ -417,7 +429,6 @@ namespace CollectaMundo
             }
             return Task.CompletedTask;
         }
-
         public static List<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
         {
             List<T> children = [];
@@ -426,17 +437,20 @@ namespace CollectaMundo
                 for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
                 {
                     DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
-                    if (child is not null and T)
+                    if (child != null)
                     {
-                        children.Add((T)child);
-                    }
+                        if (child is T t)
+                        {
+                            children.Add(t);
+                        }
 
-                    children.AddRange(FindVisualChildren<T>(child)); // Recursive call to fetch children
+                        // Recursive call only if child is not null
+                        children.AddRange(FindVisualChildren<T>(child));
+                    }
                 }
             }
             return children;
         }
-
         private static void SetDefaultTextInComboBox(ComboBox comboBox, string textBoxName, string defaultText)
         {
             if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)

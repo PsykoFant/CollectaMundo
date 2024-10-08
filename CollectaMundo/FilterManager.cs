@@ -209,9 +209,6 @@ namespace CollectaMundo
             }
         }
 
-
-
-
         #endregion
     }
 }
