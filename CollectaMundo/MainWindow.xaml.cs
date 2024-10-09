@@ -131,7 +131,6 @@ namespace CollectaMundo
 
             CardsToAddListView.ItemsSource = addToCollectionManager.CardItemsToAdd;
             CardsToEditListView.ItemsSource = addToCollectionManager.CardItemsToEdit;
-            ShowFoilCheckBox.IsChecked = true;
 
             // Start on the search and filter all cards page            
             ResetGrids();
@@ -918,7 +917,6 @@ namespace CollectaMundo
             SuperTypesAndOrCheckBox.IsChecked = false;
             SubTypesAndOrCheckBox.IsChecked = false;
             KeywordsAndOrCheckBox.IsChecked = false;
-            ShowFoilCheckBox.IsChecked = false;
 
             // Reset card images
             ImagePromoLabel.Content = string.Empty;

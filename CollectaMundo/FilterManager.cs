@@ -63,7 +63,6 @@ namespace CollectaMundo
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, card => card.Keywords);
 
                 // Filter for including/excluding cards based on foil or etched finishes
-                filteredCards = FilterByIncludeFoil(filteredCards);
 
                 var finalFilteredCards = filteredCards.ToList();
                 UpdateFilterLabel();
@@ -147,25 +146,25 @@ namespace CollectaMundo
                 return cards;
             }
         }
-        private static IEnumerable<CardSet> FilterByIncludeFoil(IEnumerable<CardSet> cards)
-        {
-            bool includeFoil = MainWindow.CurrentInstance.ShowFoilCheckBox.IsChecked ?? false;
-            return cards.Where(card =>
-            {
-                // Check if 'Finishes' column contains only 'foil' or 'etched'
-                var finishes = card.Finishes?.Split(separator, StringSplitOptions.RemoveEmptyEntries)
-                                 .Select(f => f.Trim()).ToList() ?? [];
+        //private static IEnumerable<CardSet> FilterByIncludeFoil(IEnumerable<CardSet> cards)
+        //{
+        //    bool includeFoil = MainWindow.CurrentInstance.ShowFoilCheckBox.IsChecked ?? false;
+        //    return cards.Where(card =>
+        //    {
+        //        // Check if 'Finishes' column contains only 'foil' or 'etched'
+        //        var finishes = card.Finishes?.Split(separator, StringSplitOptions.RemoveEmptyEntries)
+        //                         .Select(f => f.Trim()).ToList() ?? [];
 
-                // If 'includeFoil' is false, filter out cards where 'Finishes' contains only 'foil' or 'etched'
-                if (!includeFoil)
-                {
-                    return finishes.Any(finish => finish != "foil" && finish != "etched");
-                }
+        //        // If 'includeFoil' is false, filter out cards where 'Finishes' contains only 'foil' or 'etched'
+        //        if (!includeFoil)
+        //        {
+        //            return finishes.Any(finish => finish != "foil" && finish != "etched");
+        //        }
 
-                // If 'includeFoil' is true, include all cards
-                return true;
-            });
-        }
+        //        // If 'includeFoil' is true, include all cards
+        //        return true;
+        //    });
+        //}
 
         #endregion
 
