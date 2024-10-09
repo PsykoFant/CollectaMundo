@@ -57,7 +57,7 @@ namespace CollectaMundo
         private readonly string colourQuery = "SELECT* FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ('W', 'U', 'B', 'R', 'G', 'C', 'X') ORDER BY CASE uniqueManaSymbol WHEN 'W' THEN 1 WHEN 'U' THEN 2 WHEN 'B' THEN 3 WHEN 'R' THEN 4 WHEN 'G' THEN 5 WHEN 'C' THEN 6 WHEN 'X' THEN 7 END;";
 
         // The CardSet object which holds all the cards read from db
-        private readonly List<CardSet> allCards = [];
+        public readonly List<CardSet> allCards = [];
         public List<CardSet> myCards = [];
         private readonly List<CardSet> ColorIcons = [];
 

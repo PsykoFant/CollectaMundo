@@ -80,8 +80,8 @@
                 </ListBox>
 
                 <!--Supertype listbox and filtering-->
-                <CheckBox x:Name="SuperTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,212,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
-                <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,227,0,0" VerticalAlignment="Top" Width="240" Height="20" DropDownOpened="ComboBox_DropDownOpened">
+                <CheckBox x:Name="SuperTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,210,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
+                <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,225,0,0" VerticalAlignment="Top" Width="240" Height="20" DropDownOpened="ComboBox_DropDownOpened">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -127,11 +127,11 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <TextBlock x:Name="CardSuperTypesTextBlock" HorizontalAlignment="Left" Margin="11,247,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
+                <TextBlock x:Name="CardSuperTypesTextBlock" HorizontalAlignment="Left" Margin="11,245,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
 
                 <!--Card type listbox and filtering-->
-                <CheckBox x:Name="TypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,308,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
-                <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,323,0,0" VerticalAlignment="Top" Width="240" Height="20" DropDownOpened="ComboBox_DropDownOpened">
+                <CheckBox x:Name="TypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,280,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
+                <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,295,0,0" VerticalAlignment="Top" Width="240" Height="20" DropDownOpened="ComboBox_DropDownOpened">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -177,11 +177,11 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <TextBlock x:Name="CardTypesTextBlock" HorizontalAlignment="Left" Margin="10,343,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
+                <TextBlock x:Name="CardTypesTextBlock" HorizontalAlignment="Left" Margin="10,315,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
 
                 <!--Subtype listbox and filtering-->
-                <CheckBox x:Name="SubTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,379,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
-                <ComboBox x:Name="SubTypesComboBox" HorizontalAlignment="Left" Margin="10,394,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <CheckBox x:Name="SubTypesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,350,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
+                <ComboBox x:Name="SubTypesComboBox" HorizontalAlignment="Left" Margin="10,365,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -227,11 +227,11 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <TextBlock x:Name="CardSubTypesTextBlock" HorizontalAlignment="Left" Margin="10,414,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
+                <TextBlock x:Name="CardSubTypesTextBlock" HorizontalAlignment="Left" Margin="10,385,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
 
                 <!--Keywords listbox and filtering-->
-                <CheckBox x:Name="KeywordsAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,450,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
-                <ComboBox x:Name="KeywordsComboBox" HorizontalAlignment="Left" Margin="9,465,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <CheckBox x:Name="KeywordsAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,420,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
+                <ComboBox x:Name="KeywordsComboBox" HorizontalAlignment="Left" Margin="9,435,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -275,21 +275,20 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <TextBlock x:Name="CardKeyWordsTextBlock" HorizontalAlignment="Left" Margin="10,485,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
+                <TextBlock x:Name="CardKeyWordsTextBlock" HorizontalAlignment="Left" Margin="10,455,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
 
                 <!--Rulestext filtering-->
-                <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="10,530,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="240" Height="45" Background="White"/>
-                <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,580,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
-                <TextBlock x:Name="CardRulesTextTextBlock" HorizontalAlignment="Left" Margin="10,605,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
-
+                <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="10,490,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="240" Height="45" Background="White"/>
+                <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,540,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
+                <TextBlock x:Name="CardRulesTextTextBlock" HorizontalAlignment="Left" Margin="10,560,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
 
                 <!--Mana value filtering-->
-                <Label x:Name="ManaValueLabel" Content="Mana value is " HorizontalAlignment="Left" Margin="10,690,0,0" VerticalAlignment="Top"  Style="{StaticResource BelerenBold}"/>
-                <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="130,710,0,0" VerticalAlignment="Top" Width="75" Height="20"/>
-                <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="10,710,0,0" VerticalAlignment="Top" Width="110" Height="20"/>
+                <Label x:Name="ManaValueLabel" Content="Mana value is " HorizontalAlignment="Left" Margin="10,580,0,0" VerticalAlignment="Top"  Style="{StaticResource BelerenBold}"/>
+                <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="130,600,0,0" VerticalAlignment="Top" Width="75" Height="20"/>
+                <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="10,600,0,0" VerticalAlignment="Top" Width="110" Height="20"/>
 
                 <!--Misc filtering-->
-                <CheckBox x:Name="ShowFoilCheckBox" Content="Show foil only cards" HorizontalAlignment="Left" Margin="10,740,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled" Height="16"  Style="{StaticResource BelerenBold}" IsChecked="False"/>
+                <CheckBox x:Name="ShowFoilCheckBox" Content="Show foil only cards" HorizontalAlignment="Left" Margin="10,640,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled" Height="16"  Style="{StaticResource BelerenBold}" IsChecked="False"/>
             </Grid>
             <Grid x:Name="GridUtilsMenu" Visibility="Collapsed" d:IsHidden="True">
                 <Button x:Name="CheckForUpdatesButton" Content="Check for updates" HorizontalAlignment="Left" VerticalAlignment="Top" Width="170" Margin="10,60,0,0" Click="CheckForUpdatesButton_Click" Height="20"/>
@@ -307,7 +306,7 @@
                 <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonSubmitCardsToMyCollection_Click"/>
                 <Button x:Name="ButtonClearCardsToAdd" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonClearCardsToAdd_Click"/>
                 <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Right" Margin="0,250,0,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonAddCardsToMyCollection_Click"/>
-                <ScrollViewer x:Name="AddStatusScrollViewer" HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" Visibility="Collapsed">
+                <ScrollViewer x:Name="AddStatusScrollViewer" HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Visibility="Collapsed">
                     <TextBlock x:Name="AddStatusTextBlock" TextWrapping="Wrap" VerticalAlignment="Top"/>
                 </ScrollViewer>
                 <!--Cards to add listview-->
@@ -567,7 +566,7 @@
                 <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
                 <Button x:Name="ButtonClearCardsToEdit" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonClearCardsToEdit_Click"/>
                 <Button x:Name="ButtonEditCardsInMyCollection" Content="Edit selected cards" HorizontalAlignment="Right" Margin="0,250,0,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="{Binding ElementName=MyCollectionDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonEditCardsInCollection_Click"/>
-                <ScrollViewer x:Name="EditStatusScrollViewer" HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" Visibility="Collapsed">
+                <ScrollViewer x:Name="EditStatusScrollViewer" HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Visibility="Collapsed">
                     <TextBlock x:Name="EditStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
                 </ScrollViewer>
                 <!--Cards to edit-->

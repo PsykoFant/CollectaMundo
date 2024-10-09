@@ -70,11 +70,11 @@ namespace CollectaMundo
 
                 if (listName == "allCards")
                 {
-                    MainWindow.CurrentInstance.AllCardsCountLabel.Content = $"Cards shown: {finalFilteredCards.Count}";
+                    MainWindow.CurrentInstance.AllCardsCountLabel.Content = $"Showing: {finalFilteredCards.Count} cards out of total {MainWindow.CurrentInstance.allCards.Count} cards.";
                 }
                 else
                 {
-                    MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Cards shown: {finalFilteredCards.Count}";
+                    MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {finalFilteredCards.Count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
                 }
 
                 return finalFilteredCards;
