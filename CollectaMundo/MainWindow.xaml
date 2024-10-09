@@ -344,14 +344,14 @@
                             <GridViewColumn Header="+">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="+" Tag="CardsOwned" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15" Click="IncrementCount_Click"/>
+                                        <Button Content="+" Tag="CardsOwned" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15" Background="#FFFBF7B4" Click="IncrementCount_Click"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
                             <GridViewColumn Header="Count">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBox Width="Auto" HorizontalAlignment="Center" TextChanged="CardsOwnedTextBox_TextChanged">
+                                        <TextBox Width="Auto" HorizontalAlignment="Center" Background="White" TextChanged="CardsOwnedTextBox_TextChanged">
                                             <TextBox.Text>
                                                 <Binding Path="CardsOwned" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True" NotifyOnValidationError="True">
                                                     <Binding.ValidationRules>
@@ -366,21 +366,21 @@
                             <GridViewColumn Header="-">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="-" Tag="CardsOwned" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15" Click="DecrementCount_Click"/>
+                                        <Button Content="-" Tag="CardsOwned" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15" Background="#FFFBF7B4" Click="DecrementCount_Click"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
                             <GridViewColumn Header="+">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="+" Tag="CardsForTrade" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15" Click="IncrementCount_Click"/>
+                                        <Button Content="+" Tag="CardsForTrade" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15" Background="#FFFBF7B4" Click="IncrementCount_Click"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
                             <GridViewColumn Header="Trade">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBox Width="Auto" HorizontalAlignment="Center" TextChanged="CardsForTradeTextBox_TextChanged">
+                                        <TextBox Width="Auto" HorizontalAlignment="Center" Background="White" TextChanged="CardsForTradeTextBox_TextChanged">
                                             <TextBox.Text>
                                                 <Binding Path="CardsForTrade" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True" NotifyOnValidationError="True">
                                                     <Binding.ValidationRules>
@@ -395,7 +395,7 @@
                             <GridViewColumn Header="-1">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="-" Tag="CardsForTrade" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15" Click="DecrementCount_Click"/>
+                                        <Button Content="-" Tag="CardsForTrade" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15" Background="#FFFBF7B4" Click="DecrementCount_Click"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -604,14 +604,14 @@
                             <GridViewColumn Header="+">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="+" Tag="CardsOwned" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15" Click="IncrementCount_Click"/>
+                                        <Button Content="+" Tag="CardsOwned" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15" Background="#FFFBF7B4" Click="IncrementCount_Click"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
                             <GridViewColumn Header="Count">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBox Width="Auto" HorizontalAlignment="Center" TextChanged="CardsOwnedTextBox_TextChanged">
+                                        <TextBox Width="Auto" HorizontalAlignment="Center" Background="White" TextChanged="CardsOwnedTextBox_TextChanged">
                                             <TextBox.Text>
                                                 <Binding Path="CardsOwned" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True" NotifyOnValidationError="True">
                                                     <Binding.ValidationRules>
@@ -626,21 +626,21 @@
                             <GridViewColumn Header="-">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="-" Tag="CardsOwned" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15" Click="DecrementCount_Click"/>
+                                        <Button Content="-" Tag="CardsOwned" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15" Background="#FFFBF7B4" Click="DecrementCount_Click"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
                             <GridViewColumn Header="+">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="+" Tag="CardsForTrade" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15" Click="IncrementCount_Click"/>
+                                        <Button Content="+" Tag="CardsForTrade" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15" Background="#FFFBF7B4" Click="IncrementCount_Click"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
                             <GridViewColumn Header="Trade">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBox Width="Auto" HorizontalAlignment="Center" TextChanged="CardsForTradeTextBox_TextChanged">
+                                        <TextBox Width="Auto" HorizontalAlignment="Center" Background="White" TextChanged="CardsForTradeTextBox_TextChanged">
                                             <TextBox.Text>
                                                 <Binding Path="CardsForTrade" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True" NotifyOnValidationError="True">
                                                     <Binding.ValidationRules>
@@ -655,7 +655,7 @@
                             <GridViewColumn Header="-1">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="-" Tag="CardsForTrade" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15" Click="DecrementCount_Click"/>
+                                        <Button Content="-" Tag="CardsForTrade" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15" Background="#FFFBF7B4" Click="DecrementCount_Click"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>

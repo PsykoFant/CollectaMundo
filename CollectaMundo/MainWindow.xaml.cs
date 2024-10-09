@@ -75,14 +75,6 @@ namespace CollectaMundo
 
         #endregion
 
-        /*TO DO
-         * Opdater filterlayout
-         * Filterknap - cards for trade
-         * PRISER!!!
-         */
-
-
-
         public static MainWindow CurrentInstance
         {
             get
