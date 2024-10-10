@@ -73,6 +73,8 @@ namespace CollectaMundo
             [100, 100]  // Defaults for MyCollectionDataGrid
         ];
 
+        private static readonly char[] separator = ['{', '}'];
+
         #endregion
 
         public static MainWindow CurrentInstance
@@ -250,7 +252,7 @@ namespace CollectaMundo
         }
         private static string ProcessManaCost(string manaCostRaw)
         {
-            return string.Join(",", manaCostRaw.Split(new[] { '{', '}' }, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
+            return string.Join(",", manaCostRaw.Split(separator, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
         }
         public async Task LoadColorIcons(List<CardSet> cardList, string query)
         {
