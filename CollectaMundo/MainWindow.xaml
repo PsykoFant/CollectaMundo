@@ -280,7 +280,8 @@
                 <TextBlock x:Name="CardKeyWordsTextBlock" HorizontalAlignment="Left" Margin="10,515,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
 
                 <!--Finishes listbox and filtering-->
-                <ComboBox x:Name="FinishesComboBox" HorizontalAlignment="Left" Margin="10,550,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <CheckBox x:Name="FinishesAndOrCheckBox" Content="Must contain all" HorizontalAlignment="Left" Margin="10,550,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
+                <ComboBox x:Name="FinishesComboBox" HorizontalAlignment="Left" Margin="10,565,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -324,12 +325,12 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <TextBlock x:Name="FinishesTextBlock" HorizontalAlignment="Left" Margin="10,570,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
+                <TextBlock x:Name="FinishesTextBlock" HorizontalAlignment="Left" Margin="10,585,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
 
                 <!--Rulestext filtering-->
-                <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="10,605,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="240" Height="45" Background="White"/>
-                <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,655,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
-                <TextBlock x:Name="CardRulesTextTextBlock" HorizontalAlignment="Left" Margin="10,680,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
+                <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="10,625,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="240" Height="45" Background="White"/>
+                <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,675,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
+                <TextBlock x:Name="CardRulesTextTextBlock" HorizontalAlignment="Left" Margin="10,695,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
 
 
             </Grid>
