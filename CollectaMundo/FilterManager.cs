@@ -61,6 +61,7 @@ namespace CollectaMundo
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.SuperTypesAndOrCheckBox.IsChecked ?? false, card => card.SuperTypes);
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, card => card.SubTypes);
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, card => card.Keywords);
+                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, card => card.Finishes);
 
                 // Filter for including/excluding cards based on foil or etched finishes
 
@@ -146,25 +147,7 @@ namespace CollectaMundo
                 return cards;
             }
         }
-        //private static IEnumerable<CardSet> FilterByIncludeFoil(IEnumerable<CardSet> cards)
-        //{
-        //    bool includeFoil = MainWindow.CurrentInstance.ShowFoilCheckBox.IsChecked ?? false;
-        //    return cards.Where(card =>
-        //    {
-        //        // Check if 'Finishes' column contains only 'foil' or 'etched'
-        //        var finishes = card.Finishes?.Split(separator, StringSplitOptions.RemoveEmptyEntries)
-        //                         .Select(f => f.Trim()).ToList() ?? [];
 
-        //        // If 'includeFoil' is false, filter out cards where 'Finishes' contains only 'foil' or 'etched'
-        //        if (!includeFoil)
-        //        {
-        //            return finishes.Any(finish => finish != "foil" && finish != "etched");
-        //        }
-
-        //        // If 'includeFoil' is true, include all cards
-        //        return true;
-        //    });
-        //}
 
         #endregion
 
@@ -180,6 +163,7 @@ namespace CollectaMundo
             UpdateLabelContent(filterContext.SelectedTypes, MainWindow.CurrentInstance.CardTypesTextBlock, MainWindow.CurrentInstance.TypesAndOrCheckBox.IsChecked ?? false, "Card types");
             UpdateLabelContent(filterContext.SelectedSubTypes, MainWindow.CurrentInstance.CardSubTypesTextBlock, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, "Card subtypes");
             UpdateLabelContent(filterContext.SelectedKeywords, MainWindow.CurrentInstance.CardKeyWordsTextBlock, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, "Keywords");
+            UpdateLabelContent(filterContext.SelectedFinishes, MainWindow.CurrentInstance.CardFinishesTextBlock, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, "Finishes");
         }
         private static void UpdateLabelContent(HashSet<string> selectedItems, TextBlock targetTextBlock, bool useAnd, string prefix)
         {

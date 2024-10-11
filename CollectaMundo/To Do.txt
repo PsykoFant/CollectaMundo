@@ -1,7 +1,7 @@
 
         /*TO DO
-         * foil, etched crap
-         * Filterknap - cards for trade
+         * Filter på sprog, condition og trade
+         * Højreklik - sæt for trade
          * PRISER!!!
          */
 

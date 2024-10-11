@@ -73,8 +73,6 @@ namespace CollectaMundo
             [100, 100]  // Defaults for MyCollectionDataGrid
         ];
 
-        private static readonly char[] separator = ['{', '}'];
-
         #endregion
 
         public static MainWindow CurrentInstance
@@ -252,6 +250,7 @@ namespace CollectaMundo
         }
         private static string ProcessManaCost(string manaCostRaw)
         {
+            char[] separator = ['{', '}'];
             return string.Join(",", manaCostRaw.Split(separator, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
         }
         public async Task LoadColorIcons(List<CardSet> cardList, string query)
@@ -306,6 +305,7 @@ namespace CollectaMundo
                 filterContext.AllSubTypes.Clear();
                 filterContext.AllColors.Clear();
                 filterContext.AllKeywords.Clear();
+                filterContext.AllFinishes.Clear();
 
                 // Get the values to populate the comboboxes
                 List<string?> cardNames = allCards.Select(card => card.Name).Distinct().ToList();
@@ -314,6 +314,7 @@ namespace CollectaMundo
                 List<string?> superTypes = allCards.Select(card => card.SuperTypes).Distinct().ToList();
                 List<string?> subTypes = allCards.Select(card => card.SubTypes).Distinct().ToList();
                 List<string?> keywords = allCards.Select(card => card.Keywords).Distinct().ToList();
+                List<string?> finishes = allCards.Select(card => card.Finishes).Distinct().ToList();
 
                 filterContext.AllColors.AddRange(["W", "U", "B", "R", "G", "C", "X"]);
 
@@ -321,10 +322,12 @@ namespace CollectaMundo
                 List<int> manaValueOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000];
                 List<string> manaValueCompareOptions = ["less than", "less than/eq", "greater than", "greater than/eq", "equal to"];
 
+                char[] separatorArray = [','];
+
                 // Set up elements in supertype listbox
                 filterContext.AllSuperTypes = [.. superTypes
                     .Where(type => type != null)
-                    .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                    .SelectMany(type => type!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
                     .Select(p => p.Trim())
                     .Distinct()
                     .OrderBy(type => type)];
@@ -348,7 +351,7 @@ namespace CollectaMundo
                 // Set up elements in type listbox, removing unwanted types
                 filterContext.AllTypes = [.. types
                     .Where(type => type != null)
-                    .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                    .SelectMany(type => type!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
                     .Select(p => p.Trim())
                     .Where(p => !typesToRemove.Contains(p))  // Filter out unwanted types
                     .Distinct()
@@ -366,7 +369,7 @@ namespace CollectaMundo
                 // Set up elements in subtype listbox
                 filterContext.AllSubTypes = [.. subTypes
                     .Where(type => type != null)
-                    .SelectMany(type => type!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                    .SelectMany(type => type!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
                     .Select(p => p.Trim())
                     .Where(p => !subTypesToRemove.Contains(p))  // Filter out unwanted subtypes
                     .Distinct()
@@ -375,10 +378,18 @@ namespace CollectaMundo
                 // Set up elements in keywords listbox
                 filterContext.AllKeywords = [.. keywords
                     .Where(keyword => keyword != null)
-                    .SelectMany(keyword => keyword!.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                    .SelectMany(keyword => keyword!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
                     .Select(p => p.Trim())
                     .Distinct()
                     .OrderBy(keyword => keyword)];
+
+                // Set up elements in finishes listbox
+                filterContext.AllFinishes = [.. finishes
+                    .Where(finishes => finishes != null)
+                    .SelectMany(finishes => finishes!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
+                    .Select(p => p.Trim())
+                    .Distinct()
+                    .OrderBy(finishes => finishes)];
 
                 Dispatcher.Invoke(() =>
                 {
@@ -400,7 +411,7 @@ namespace CollectaMundo
                     SetDefaultTextInComboBox(TypesComboBox, "FilterTypesTextBox", filterContext.TypesDefaultText);
                     SetDefaultTextInComboBox(SubTypesComboBox, "FilterSubTypesTextBox", filterContext.SubTypesDefaultText);
                     SetDefaultTextInComboBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);
-
+                    SetDefaultTextInComboBox(FinishesComboBox, "FilterFinishesTextBox", filterContext.FinishesDefaultText);
 
                 });
             }
@@ -433,7 +444,7 @@ namespace CollectaMundo
             }
             return children;
         }
-        private void UpdateComboBoxSource(DataGrid dataGrid, string tag, List<string?> dataSource)
+        private static void UpdateComboBoxSource(DataGrid dataGrid, string tag, List<string?> dataSource)
         {
             List<ComboBox> headerComboBoxes = FindVisualChildren<ComboBox>(dataGrid);
             foreach (ComboBox comboBox in headerComboBoxes)
@@ -452,7 +463,6 @@ namespace CollectaMundo
                 filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
             }
         }
-
 
         #endregion
 
@@ -564,6 +574,10 @@ namespace CollectaMundo
                     itemsSource = filterContext.AllKeywords;
                     selectedItemsSet = filterContext.SelectedKeywords;
                     break;
+                case "FilterFinishesListBox":
+                    itemsSource = filterContext.AllFinishes;
+                    selectedItemsSet = filterContext.SelectedFinishes;
+                    break;
                 default:
                     throw new InvalidOperationException($"ListBox name not recognized: {listBoxName}");
             }
@@ -659,6 +673,7 @@ namespace CollectaMundo
                 "TypesComboBox" => (filterContext.TypesDefaultText, "FilterTypesTextBox", "FilterTypesListBox"),
                 "SubTypesComboBox" => (filterContext.SubTypesDefaultText, "FilterSubTypesTextBox", "FilterSubTypesListBox"),
                 "KeywordsComboBox" => (filterContext.KeywordsDefaultText, "FilterKeywordsTextBox", "FilterKeywordsListBox"),
+                "FinishesComboBox" => (filterContext.FinishesDefaultText, "FilterFinishesTextBox", "FilterFinishesListBox"),
                 _ => throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}")
             };
         }
@@ -680,6 +695,7 @@ namespace CollectaMundo
                         "FilterTypesTextBox" => filterContext.TypesDefaultText,
                         "FilterSubTypesTextBox" => filterContext.SubTypesDefaultText,
                         "FilterKeywordsTextBox" => filterContext.KeywordsDefaultText,
+                        "FilterFinishesTextBox" => filterContext.FinishesDefaultText,
                         "FilterRulesTextTextBox" => filterContext.RulesTextDefaultText,
                         _ => ""
                     };
@@ -708,6 +724,7 @@ namespace CollectaMundo
                         "FilterTypesTextBox" => filterContext.TypesDefaultText,
                         "FilterSubTypesTextBox" => filterContext.SubTypesDefaultText,
                         "FilterKeywordsTextBox" => filterContext.KeywordsDefaultText,
+                        "FilterFinishesTextBox" => filterContext.FinishesDefaultText,
                         "FilterRulesTextTextBox" => filterContext.RulesTextDefaultText,
                         _ => ""
                     };
@@ -748,6 +765,7 @@ namespace CollectaMundo
                             "SuperType" => filterContext.SelectedSuperTypes,
                             "SubType" => filterContext.SelectedSubTypes,
                             "Keywords" => filterContext.SelectedKeywords,
+                            "Finishes" => filterContext.SelectedFinishes,
                             "Colors" => filterContext.SelectedColors,
                             _ => null
                         };
@@ -786,6 +804,7 @@ namespace CollectaMundo
                             "SuperType" => filterContext.SelectedSuperTypes,
                             "SubType" => filterContext.SelectedSubTypes,
                             "Keywords" => filterContext.SelectedKeywords,
+                            "Finishes" => filterContext.SelectedFinishes,
                             "Colors" => filterContext.SelectedColors,
                             _ => null
                         };
@@ -820,6 +839,9 @@ namespace CollectaMundo
                         break;
                     case "Keywords":
                         checkBox.IsChecked = filterContext.SelectedKeywords.Contains(dataContext);
+                        break;
+                    case "Finishes":
+                        checkBox.IsChecked = filterContext.SelectedFinishes.Contains(dataContext);
                         break;
                     case "Colors":
                         checkBox.IsChecked = filterContext.SelectedColors.Contains(dataContext);
@@ -875,6 +897,7 @@ namespace CollectaMundo
             ResetFilterTextBox(TypesComboBox, "FilterTypesTextBox", filterContext.TypesDefaultText);
             ResetFilterTextBox(SubTypesComboBox, "FilterSubTypesTextBox", filterContext.SubTypesDefaultText);
             ResetFilterTextBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);
+            ResetFilterTextBox(FinishesComboBox, "FilterFinishesTextBox", filterContext.FinishesDefaultText);
 
             // Clear non-custom comboboxes
             AllOrNoneComboBox.SelectedIndex = 0;
@@ -901,6 +924,7 @@ namespace CollectaMundo
             filterContext.SelectedSuperTypes.Clear();
             filterContext.SelectedSubTypes.Clear();
             filterContext.SelectedKeywords.Clear();
+            filterContext.SelectedFinishes.Clear();
             filterContext.SelectedColors.Clear();
 
             // Clear rulestext textbox
@@ -913,12 +937,14 @@ namespace CollectaMundo
             CardTypesTextBlock.Text = string.Empty;
             CardSubTypesTextBlock.Text = string.Empty;
             CardKeyWordsTextBlock.Text = string.Empty;
+            CardFinishesTextBlock.Text = string.Empty;
 
             // Uncheck CheckBoxes if necessary
             TypesAndOrCheckBox.IsChecked = false;
             SuperTypesAndOrCheckBox.IsChecked = false;
             SubTypesAndOrCheckBox.IsChecked = false;
             KeywordsAndOrCheckBox.IsChecked = false;
+            FinishesAndOrCheckBox.IsChecked = false;
 
             // Reset card images
             ImagePromoLabel.Content = string.Empty;

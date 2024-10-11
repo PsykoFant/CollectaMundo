@@ -325,13 +325,103 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <TextBlock x:Name="FinishesTextBlock" HorizontalAlignment="Left" Margin="10,585,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
+                <TextBlock x:Name="CardFinishesTextBlock" HorizontalAlignment="Left" Margin="10,585,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
 
                 <!--Rulestext filtering-->
                 <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="10,625,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="240" Height="45" Background="White"/>
                 <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,675,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
                 <TextBlock x:Name="CardRulesTextTextBlock" HorizontalAlignment="Left" Margin="10,695,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
 
+                <!--Languages filtering-->
+                <ComboBox x:Name="LanguagesComboBox" HorizontalAlignment="Left" Margin="10,740,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                    <ComboBox.Template>
+                        <ControlTemplate TargetType="{x:Type ComboBox}">
+                            <Grid>
+                                <TextBox x:Name="FilterLanguagesTextBox"
+                                         Background="Transparent"
+                                         TextChanged="FilterTextBox_TextChanged"
+                                         GotFocus="TextBox_GotFocus"
+                                         LostFocus="TextBox_LostFocus"
+                                         Foreground="{TemplateBinding Foreground}"
+                                         Padding="3,3,0,0"
+                                         Margin="0,0,0,0"/>
+                                <ToggleButton x:Name="ToggleButtonLanguages" Content="Languages" Focusable="false" ClickMode="Press"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+                                              HorizontalAlignment="Right"
+                                              Width="65"/>
+                                <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
+                                    <Border Background="White" BorderThickness="1" BorderBrush="Black">
+                                        <ListBox x:Name="FilterLanguagesListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
+                                            <ListBox.Resources>
+                                                <Style TargetType="{x:Type ListBoxItem}">
+                                                    <Setter Property="SnapsToDevicePixels" Value="true"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                                <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded" Tag="Languages">
+                                                                    <ContentPresenter/>
+                                                                </CheckBox>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked"/>
+                                                    <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked"/>
+                                                </Style>
+                                            </ListBox.Resources>
+                                        </ListBox>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </ControlTemplate>
+                    </ComboBox.Template>
+                    <sys:String>&gt;</sys:String>
+                </ComboBox>
+                <TextBlock x:Name="CardLanguagesTextBlock" HorizontalAlignment="Left" Margin="10,760,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
+
+                <ComboBox x:Name="ConditionsComboBox" HorizontalAlignment="Left" Margin="10,810,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                    <ComboBox.Template>
+                        <ControlTemplate TargetType="{x:Type ComboBox}">
+                            <Grid>
+                                <TextBox x:Name="FilterConditionsTextBox"
+                                         Background="Transparent"
+                                         TextChanged="FilterTextBox_TextChanged"
+                                         GotFocus="TextBox_GotFocus"
+                                         LostFocus="TextBox_LostFocus"
+                                         Foreground="{TemplateBinding Foreground}"
+                                         Padding="3,3,0,0"
+                                         Margin="0,0,0,0"/>
+                                <ToggleButton x:Name="ToggleButtonConditions" Content="Card Conditions" Focusable="false" ClickMode="Press"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+                                              HorizontalAlignment="Right"
+                                              Width="100"/>
+                                <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
+                                    <Border Background="White" BorderThickness="1" BorderBrush="Black">
+                                        <ListBox x:Name="FilterConditionsListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
+                                            <ListBox.Resources>
+                                                <Style TargetType="{x:Type ListBoxItem}">
+                                                    <Setter Property="SnapsToDevicePixels" Value="true"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                                <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded" Tag="Conditions">
+                                                                    <ContentPresenter/>
+                                                                </CheckBox>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked"/>
+                                                    <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked"/>
+                                                </Style>
+                                            </ListBox.Resources>
+                                        </ListBox>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </ControlTemplate>
+                    </ComboBox.Template>
+                    <sys:String>&gt;</sys:String>
+                </ComboBox>
+                <TextBlock x:Name="CardConditionsTextBlock" HorizontalAlignment="Left" Margin="10,830,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
 
             </Grid>
             <Grid x:Name="GridUtilsMenu" Visibility="Collapsed" d:IsHidden="True">
