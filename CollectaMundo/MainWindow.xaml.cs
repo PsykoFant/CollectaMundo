@@ -306,6 +306,8 @@ namespace CollectaMundo
                 filterContext.AllColors.Clear();
                 filterContext.AllKeywords.Clear();
                 filterContext.AllFinishes.Clear();
+                filterContext.AllLanguages.Clear();
+                filterContext.AllConditions.Clear();
 
                 // Get the values to populate the comboboxes
                 List<string?> cardNames = allCards.Select(card => card.Name).Distinct().ToList();
@@ -315,6 +317,8 @@ namespace CollectaMundo
                 List<string?> subTypes = allCards.Select(card => card.SubTypes).Distinct().ToList();
                 List<string?> keywords = allCards.Select(card => card.Keywords).Distinct().ToList();
                 List<string?> finishes = allCards.Select(card => card.Finishes).Distinct().ToList();
+                List<string?> languages = myCards.Select(card => card.Language).Distinct().ToList();
+                List<string?> conditions = myCards.OfType<CardItem>().Select(card => card.SelectedCondition).Distinct().ToList();
 
                 filterContext.AllColors.AddRange(["W", "U", "B", "R", "G", "C", "X"]);
 
@@ -391,6 +395,22 @@ namespace CollectaMundo
                     .Distinct()
                     .OrderBy(finishes => finishes)];
 
+                // Set up elements in languages listbox
+                filterContext.AllLanguages = [.. languages
+                    .Where(languages => languages != null)
+                    .SelectMany(languages => languages!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
+                    .Select(p => p.Trim())
+                    .Distinct()
+                    .OrderBy(languages => languages)];
+
+                // Set up elements in languages listbox
+                filterContext.AllConditions = [.. conditions
+                    .Where(conditions => conditions != null)
+                    .SelectMany(conditions => conditions!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
+                    .Select(p => p.Trim())
+                    .Distinct()
+                    .OrderBy(conditions => conditions)];
+
                 Dispatcher.Invoke(() =>
                 {
                     // Update DataGrid ComboBoxes
@@ -412,6 +432,8 @@ namespace CollectaMundo
                     SetDefaultTextInComboBox(SubTypesComboBox, "FilterSubTypesTextBox", filterContext.SubTypesDefaultText);
                     SetDefaultTextInComboBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);
                     SetDefaultTextInComboBox(FinishesComboBox, "FilterFinishesTextBox", filterContext.FinishesDefaultText);
+                    SetDefaultTextInComboBox(LanguagesComboBox, "FilterLanguagesTextBox", filterContext.LanguagesDefaultText);
+                    SetDefaultTextInComboBox(ConditionsComboBox, "FilterConditionsTextBox", filterContext.ConditionsDefaultText);
 
                 });
             }
@@ -578,6 +600,14 @@ namespace CollectaMundo
                     itemsSource = filterContext.AllFinishes;
                     selectedItemsSet = filterContext.SelectedFinishes;
                     break;
+                case "FilterLanguagesListBox":
+                    itemsSource = filterContext.AllLanguages;
+                    selectedItemsSet = filterContext.SelectedLanguages;
+                    break;
+                case "FilterConditionsListBox":
+                    itemsSource = filterContext.AllConditions;
+                    selectedItemsSet = filterContext.SelectedConditions;
+                    break;
                 default:
                     throw new InvalidOperationException($"ListBox name not recognized: {listBoxName}");
             }
@@ -674,6 +704,8 @@ namespace CollectaMundo
                 "SubTypesComboBox" => (filterContext.SubTypesDefaultText, "FilterSubTypesTextBox", "FilterSubTypesListBox"),
                 "KeywordsComboBox" => (filterContext.KeywordsDefaultText, "FilterKeywordsTextBox", "FilterKeywordsListBox"),
                 "FinishesComboBox" => (filterContext.FinishesDefaultText, "FilterFinishesTextBox", "FilterFinishesListBox"),
+                "LanguagesComboBox" => (filterContext.LanguagesDefaultText, "FilterLanguagesTextBox", "FilterLanguagesListBox"),
+                "ConditionsComboBox" => (filterContext.ConditionsDefaultText, "FilterConditionsTextBox", "FilterConditionsListBox"),
                 _ => throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}")
             };
         }
@@ -697,6 +729,8 @@ namespace CollectaMundo
                         "FilterKeywordsTextBox" => filterContext.KeywordsDefaultText,
                         "FilterFinishesTextBox" => filterContext.FinishesDefaultText,
                         "FilterRulesTextTextBox" => filterContext.RulesTextDefaultText,
+                        "FilterLanguagesTextBox" => filterContext.LanguagesDefaultText,
+                        "FilterConditionsTextBox" => filterContext.ConditionsDefaultText,
                         _ => ""
                     };
 
@@ -726,6 +760,8 @@ namespace CollectaMundo
                         "FilterKeywordsTextBox" => filterContext.KeywordsDefaultText,
                         "FilterFinishesTextBox" => filterContext.FinishesDefaultText,
                         "FilterRulesTextTextBox" => filterContext.RulesTextDefaultText,
+                        "FilterLanguagesTextBox" => filterContext.LanguagesDefaultText,
+                        "FilterConditionsTextBox" => filterContext.ConditionsDefaultText,
                         _ => ""
                     };
 
@@ -767,6 +803,8 @@ namespace CollectaMundo
                             "Keywords" => filterContext.SelectedKeywords,
                             "Finishes" => filterContext.SelectedFinishes,
                             "Colors" => filterContext.SelectedColors,
+                            "Languages" => filterContext.SelectedLanguages,
+                            "Conditions" => filterContext.SelectedConditions,
                             _ => null
                         };
 
@@ -806,6 +844,8 @@ namespace CollectaMundo
                             "Keywords" => filterContext.SelectedKeywords,
                             "Finishes" => filterContext.SelectedFinishes,
                             "Colors" => filterContext.SelectedColors,
+                            "Languages" => filterContext.SelectedLanguages,
+                            "Conditions" => filterContext.SelectedConditions,
                             _ => null
                         };
 
@@ -845,6 +885,12 @@ namespace CollectaMundo
                         break;
                     case "Colors":
                         checkBox.IsChecked = filterContext.SelectedColors.Contains(dataContext);
+                        break;
+                    case "Languages":
+                        checkBox.IsChecked = filterContext.SelectedLanguages.Contains(dataContext);
+                        break;
+                    case "Conditions":
+                        checkBox.IsChecked = filterContext.SelectedConditions.Contains(dataContext);
                         break;
                 }
             }
@@ -898,6 +944,8 @@ namespace CollectaMundo
             ResetFilterTextBox(SubTypesComboBox, "FilterSubTypesTextBox", filterContext.SubTypesDefaultText);
             ResetFilterTextBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);
             ResetFilterTextBox(FinishesComboBox, "FilterFinishesTextBox", filterContext.FinishesDefaultText);
+            ResetFilterTextBox(LanguagesComboBox, "FilterLanguagesTextBox", filterContext.LanguagesDefaultText);
+            ResetFilterTextBox(ConditionsComboBox, "FilterConditionsTextBox", filterContext.ConditionsDefaultText);
 
             // Clear non-custom comboboxes
             AllOrNoneComboBox.SelectedIndex = 0;
@@ -926,6 +974,8 @@ namespace CollectaMundo
             filterContext.SelectedKeywords.Clear();
             filterContext.SelectedFinishes.Clear();
             filterContext.SelectedColors.Clear();
+            filterContext.SelectedLanguages.Clear();
+            filterContext.SelectedConditions.Clear();
 
             // Clear rulestext textbox
             FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
@@ -1263,6 +1313,10 @@ namespace CollectaMundo
             LogoSmall.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Visible;
+            LanguagesComboBox.Visibility = Visibility.Visible;
+            ConditionsComboBox.Visibility = Visibility.Visible;
+            CardLanguagesTextBlock.Visibility = Visibility.Visible;
+            CardConditionsTextBlock.Visibility = Visibility.Visible;
             AddToCollectionManager.AdjustColumnWidths();
         }
         private void MenuUtilsButton_Click(object sender, RoutedEventArgs e)
@@ -1284,6 +1338,10 @@ namespace CollectaMundo
             GridSearchAndFilterAllCards.Visibility = Visibility.Collapsed;
             GridMyCollection.Visibility = Visibility.Collapsed;
             GridUtilitiesSection.Visibility = Visibility.Collapsed;
+            LanguagesComboBox.Visibility = Visibility.Collapsed;
+            ConditionsComboBox.Visibility = Visibility.Collapsed;
+            CardLanguagesTextBlock.Visibility = Visibility.Collapsed;
+            CardConditionsTextBlock.Visibility = Visibility.Collapsed;
 
             ImagePromoLabel.Content = string.Empty;
             ImageSetLabel.Content = string.Empty;
@@ -1293,6 +1351,7 @@ namespace CollectaMundo
             LogoSmall.Visibility = Visibility.Collapsed;
             GridFiltering.Visibility = Visibility.Collapsed;
             GridUtilsMenu.Visibility = Visibility.Collapsed;
+
             ApplyFilterSelection();
         }
         #endregion

@@ -1,6 +1,8 @@
-﻿using System.Diagnostics;
+﻿using ServiceStack;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using static CollectaMundo.CardSet;
 
 namespace CollectaMundo
 {
@@ -63,7 +65,19 @@ namespace CollectaMundo
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, card => card.Keywords);
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, card => card.Finishes);
 
-                // Filter for including/excluding cards based on foil or etched finishes
+                if (listName == "myCards")
+                {
+                    filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedLanguages, false, card => card.Language);
+                    var filteredCardItems = filteredCards.OfType<CardItem>();
+
+                    if (filterContext.SelectedConditions.Count != 0)
+                    {
+                        filteredCardItems = filteredCardItems.Where(cardItem =>
+                            cardItem.SelectedCondition != null && filterContext.SelectedConditions.Contains(cardItem.SelectedCondition));
+                    }
+
+                    filteredCards = filteredCardItems.Cast<CardSet>();
+                }
 
                 var finalFilteredCards = filteredCards.ToList();
                 UpdateFilterLabel();
@@ -164,6 +178,8 @@ namespace CollectaMundo
             UpdateLabelContent(filterContext.SelectedSubTypes, MainWindow.CurrentInstance.CardSubTypesTextBlock, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, "Card subtypes");
             UpdateLabelContent(filterContext.SelectedKeywords, MainWindow.CurrentInstance.CardKeyWordsTextBlock, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, "Keywords");
             UpdateLabelContent(filterContext.SelectedFinishes, MainWindow.CurrentInstance.CardFinishesTextBlock, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, "Finishes");
+            UpdateLabelContent(filterContext.SelectedLanguages, MainWindow.CurrentInstance.CardLanguagesTextBlock, false, "Languages");
+            UpdateLabelContent(filterContext.SelectedConditions, MainWindow.CurrentInstance.CardConditionsTextBlock, false, "Conditions");
         }
         private static void UpdateLabelContent(HashSet<string> selectedItems, TextBlock targetTextBlock, bool useAnd, string prefix)
         {
