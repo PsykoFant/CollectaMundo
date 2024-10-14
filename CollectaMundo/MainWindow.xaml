@@ -423,6 +423,27 @@
                 </ComboBox>
                 <TextBlock x:Name="CardConditionsTextBlock" HorizontalAlignment="Left" Margin="10,830,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="240" Height="30"/>
 
+                <ListBox x:Name="FilterTradeOrNotListBox" Margin="10,850,0,0" Width="50" HorizontalAlignment="Left" ItemsSource="{Binding}" SelectionMode="Extended" Height="140" VerticalAlignment="Top" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="{x:Null}">
+                    <ListBox.Resources>
+                        <Style TargetType="{x:Type ListBoxItem}">
+                            <Setter Property="SnapsToDevicePixels" Value="true" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                        <CheckBox Margin="5,2"
+                                                  IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded"
+                                                  Tag="TradeOrNot">
+                                            <ContentPresenter />
+                                        </CheckBox>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked" />
+                            <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked" />
+                        </Style>
+                    </ListBox.Resources>
+                </ListBox>
+
             </Grid>
             <Grid x:Name="GridUtilsMenu" Visibility="Collapsed" d:IsHidden="True">
                 <Button x:Name="CheckForUpdatesButton" Content="Check for updates" HorizontalAlignment="Left" VerticalAlignment="Top" Width="170" Margin="10,60,0,0" Click="CheckForUpdatesButton_Click" Height="20"/>

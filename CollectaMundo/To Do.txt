@@ -1,6 +1,6 @@
 
         /*TO DO
-         * Filter på sprog, condition og trade
+         * trade
          * Højreklik - sæt for trade
          * PRISER!!!
          */
