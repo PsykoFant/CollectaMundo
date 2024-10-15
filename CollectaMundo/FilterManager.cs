@@ -68,22 +68,33 @@ namespace CollectaMundo
 
                 if (listName == "myCards")
                 {
-                    // Check status of MainWindow.CurrentInstance.FilterTradeOrNotListBox
-                    // If "Include cards for trade" option is checked, it should filter listName - al rows where field CardsForTrade is greater than 0. 
-                    // If 
-                    // Maybe use FindVisualChild
+                    // Filter by CardsForTrade if relevant checkboxes are checked
+                    bool showForTrade = MainWindow.CurrentInstance.CheckBoxCardsForTrade.IsChecked ?? false;
+                    bool showNotForTrade = MainWindow.CurrentInstance.CheckBoxCardsNotForTrade.IsChecked ?? false;
 
-
-
-                    filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedLanguages, false, card => card.Language);
                     var filteredCardItems = filteredCards.OfType<CardItem>();
 
+                    // If "Cards for Trade" is checked, filter for cards with CardsForTrade > 0
+                    if (showForTrade)
+                    {
+                        filteredCardItems = filteredCardItems.Where(cardItem => cardItem.CardsForTrade > 0);
+                    }
+
+                    // If "Cards Not for Trade" is checked, filter for cards with CardsForTrade == 0
+                    if (showNotForTrade)
+                    {
+                        filteredCardItems = filteredCardItems.Where(cardItem => cardItem.CardsForTrade == 0);
+                    }
+
+                    // Apply filter for SelectedCondition property
                     if (filterContext.SelectedConditions.Count != 0)
                     {
                         filteredCardItems = filteredCardItems.Where(cardItem =>
                             cardItem.SelectedCondition != null && filterContext.SelectedConditions.Contains(cardItem.SelectedCondition));
                     }
 
+                    // Apply additional filters like languages, conditions, etc.
+                    filteredCards = FilterByCardProperty(filteredCardItems, filterContext.SelectedLanguages, false, card => card.Language);
                     filteredCards = filteredCardItems.Cast<CardSet>();
                 }
 
@@ -169,7 +180,6 @@ namespace CollectaMundo
                 return cards;
             }
         }
-
 
         #endregion
 

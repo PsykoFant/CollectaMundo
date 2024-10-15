@@ -415,26 +415,8 @@
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
 
-                <ListBox x:Name="FilterTradeOrNotListBox" Margin="10,560,0,0" HorizontalAlignment="Left" ItemsSource="{Binding}" SelectionMode="Extended" VerticalAlignment="Top" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="{x:Null}">
-                    <ListBox.Resources>
-                        <Style TargetType="{x:Type ListBoxItem}">
-                            <Setter Property="SnapsToDevicePixels" Value="true" />
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                        <CheckBox Margin="5,2"
-                                                  IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded"
-                                                  Tag="TradeOrNot">
-                                            <ContentPresenter />
-                                        </CheckBox>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                            <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked" />
-                            <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked" />
-                        </Style>
-                    </ListBox.Resources>
-                </ListBox>
+                <CheckBox x:Name="CheckBoxCardsForTrade" Margin="10,560,0,0" Content="Filter on cards for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
+                <CheckBox x:Name="CheckBoxCardsNotForTrade" Margin="10,580,0,0" Content="Filter on cards NOT for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
                 
                 
 
