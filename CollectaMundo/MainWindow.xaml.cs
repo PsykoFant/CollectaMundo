@@ -325,7 +325,7 @@ namespace CollectaMundo
                 List<string> allOrNoneColorsOption = ["Cards with any of these colors", "Cards with all of these colors", "Cards with none of these colors"];
                 List<int> manaValueOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000];
                 List<string> manaValueCompareOptions = ["less than", "less than/eq", "greater than", "greater than/eq", "equal to"];
-                List<string> tradeOrNotOptions = ["Include cards NOT for trade", "Include cards for trade"];
+                List<string> tradeOrNotOptions = ["Only show Card for trade", "Exclude cards for trade"];
 
                 char[] separatorArray = [','];
 
@@ -982,14 +982,6 @@ namespace CollectaMundo
             FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
             FilterRulesTextTextBox.Foreground = new SolidColorBrush(Colors.Gray);
 
-            // Clear search item labels
-            CardRulesTextTextBlock.Text = string.Empty;
-            CardSuperTypesTextBlock.Text = string.Empty;
-            CardTypesTextBlock.Text = string.Empty;
-            CardSubTypesTextBlock.Text = string.Empty;
-            CardKeyWordsTextBlock.Text = string.Empty;
-            CardFinishesTextBlock.Text = string.Empty;
-
             // Uncheck CheckBoxes if necessary
             TypesAndOrCheckBox.IsChecked = false;
             SuperTypesAndOrCheckBox.IsChecked = false;
@@ -1316,8 +1308,6 @@ namespace CollectaMundo
             GridMyCollection.Visibility = Visibility.Visible;
             LanguagesComboBox.Visibility = Visibility.Visible;
             ConditionsComboBox.Visibility = Visibility.Visible;
-            CardLanguagesTextBlock.Visibility = Visibility.Visible;
-            CardConditionsTextBlock.Visibility = Visibility.Visible;
             AddToCollectionManager.AdjustColumnWidths();
         }
         private void MenuUtilsButton_Click(object sender, RoutedEventArgs e)
@@ -1341,8 +1331,6 @@ namespace CollectaMundo
             GridUtilitiesSection.Visibility = Visibility.Collapsed;
             LanguagesComboBox.Visibility = Visibility.Collapsed;
             ConditionsComboBox.Visibility = Visibility.Collapsed;
-            CardLanguagesTextBlock.Visibility = Visibility.Collapsed;
-            CardConditionsTextBlock.Visibility = Visibility.Collapsed;
 
             ImagePromoLabel.Content = string.Empty;
             ImageSetLabel.Content = string.Empty;

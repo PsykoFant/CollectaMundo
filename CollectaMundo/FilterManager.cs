@@ -1,5 +1,6 @@
 ﻿using ServiceStack;
 using System.Diagnostics;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using static CollectaMundo.CardSet;
@@ -67,6 +68,13 @@ namespace CollectaMundo
 
                 if (listName == "myCards")
                 {
+                    // Check status of MainWindow.CurrentInstance.FilterTradeOrNotListBox
+                    // If "Include cards for trade" option is checked, it should filter listName - al rows where field CardsForTrade is greater than 0. 
+                    // If 
+                    // Maybe use FindVisualChild
+
+
+
                     filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedLanguages, false, card => card.Language);
                     var filteredCardItems = filteredCards.OfType<CardItem>();
 
@@ -80,7 +88,7 @@ namespace CollectaMundo
                 }
 
                 var finalFilteredCards = filteredCards.ToList();
-                UpdateFilterLabel();
+                UpdateFilterSummary();
 
                 if (listName == "allCards")
                 {
@@ -166,32 +174,42 @@ namespace CollectaMundo
         #endregion
 
         #region Filter UI updates
-        private void UpdateFilterLabel()
+        private void UpdateFilterSummary()
         {
+            // Create a StringBuilder to build the filter summary
+            StringBuilder filterSummary = new();
+
+            // Check and add the filter rules text
             if (MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != filterContext.RulesTextDefaultText && MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != string.Empty)
             {
-                MainWindow.CurrentInstance.CardRulesTextTextBlock.Text = $"Rulestext: \"{MainWindow.CurrentInstance.FilterRulesTextTextBox.Text}\"";
+                filterSummary.Append($"Rulestext: \"{MainWindow.CurrentInstance.FilterRulesTextTextBox.Text}\" \u2022 ");
             }
 
-            UpdateLabelContent(filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.CardSuperTypesTextBlock, MainWindow.CurrentInstance.SuperTypesAndOrCheckBox.IsChecked ?? false, "Card supertypes");
-            UpdateLabelContent(filterContext.SelectedTypes, MainWindow.CurrentInstance.CardTypesTextBlock, MainWindow.CurrentInstance.TypesAndOrCheckBox.IsChecked ?? false, "Card types");
-            UpdateLabelContent(filterContext.SelectedSubTypes, MainWindow.CurrentInstance.CardSubTypesTextBlock, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, "Card subtypes");
-            UpdateLabelContent(filterContext.SelectedKeywords, MainWindow.CurrentInstance.CardKeyWordsTextBlock, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, "Keywords");
-            UpdateLabelContent(filterContext.SelectedFinishes, MainWindow.CurrentInstance.CardFinishesTextBlock, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, "Finishes");
-            UpdateLabelContent(filterContext.SelectedLanguages, MainWindow.CurrentInstance.CardLanguagesTextBlock, false, "Languages");
-            UpdateLabelContent(filterContext.SelectedConditions, MainWindow.CurrentInstance.CardConditionsTextBlock, false, "Conditions");
+            // Update the summary text with selected filter options
+            AppendFilterContent(filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.SuperTypesAndOrCheckBox.IsChecked ?? false, "Card supertypes", filterSummary);
+            AppendFilterContent(filterContext.SelectedTypes, MainWindow.CurrentInstance.TypesAndOrCheckBox.IsChecked ?? false, "Card types", filterSummary);
+            AppendFilterContent(filterContext.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, "Card subtypes", filterSummary);
+            AppendFilterContent(filterContext.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, "Keywords", filterSummary);
+            AppendFilterContent(filterContext.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, "Finishes", filterSummary);
+            AppendFilterContent(filterContext.SelectedLanguages, false, "Languages", filterSummary);
+            AppendFilterContent(filterContext.SelectedConditions, false, "Conditions", filterSummary);
+
+            // Remove the last separator if there is any content
+            if (filterSummary.Length > 0 && filterSummary.ToString().EndsWith("\u2022 "))
+            {
+                filterSummary.Remove(filterSummary.Length - 3, 3);
+            }
+
+            // Set the consolidated filter summary to the FilterSummaryTextBlock
+            MainWindow.CurrentInstance.FilterSummaryTextBlock.Text = filterSummary.ToString();
         }
-        private static void UpdateLabelContent(HashSet<string> selectedItems, TextBlock targetTextBlock, bool useAnd, string prefix)
+        private static void AppendFilterContent(HashSet<string> selectedItems, bool useAnd, string prefix, StringBuilder filterSummary)
         {
             if (selectedItems.Count > 0)
             {
                 string conjunction = useAnd ? " AND " : " OR ";
                 string content = $"{prefix}: {string.Join(conjunction, selectedItems)}";
-                targetTextBlock.Text = content;
-            }
-            else
-            {
-                targetTextBlock.Text = string.Empty;
+                filterSummary.Append($"{content} \u2022 ");
             }
         }
 
