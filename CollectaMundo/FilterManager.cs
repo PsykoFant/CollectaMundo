@@ -93,8 +93,13 @@ namespace CollectaMundo
                             cardItem.SelectedCondition != null && filterContext.SelectedConditions.Contains(cardItem.SelectedCondition));
                     }
 
-                    // Apply additional filters like languages, conditions, etc.
-                    filteredCards = FilterByCardProperty(filteredCardItems, filterContext.SelectedLanguages, false, card => card.Language);
+                    // Apply language filter, then cast the result back to IEnumerable<CardItem>
+                    var languageFilteredItems = FilterByCardProperty(filteredCardItems.Cast<CardSet>(), filterContext.SelectedLanguages, false, card => card.Language);
+
+                    // Cast back to CardItem after language filtering
+                    filteredCardItems = languageFilteredItems.OfType<CardItem>();
+
+                    // Cast back to CardSet after all filtering
                     filteredCards = filteredCardItems.Cast<CardSet>();
                 }
 

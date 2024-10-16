@@ -710,6 +710,25 @@ namespace CollectaMundo
         }
         private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e) // Trigger filtering and update label when an and/or checkbox is toggled
         {
+            // Check if the sender is the 'CheckBoxCardsForTrade' CheckBox
+            if (sender == CheckBoxCardsForTrade)
+            {
+                // If 'CheckBoxCardsNotForTrade' is checked, uncheck it
+                if (CheckBoxCardsNotForTrade.IsChecked == true)
+                {
+                    CheckBoxCardsNotForTrade.IsChecked = false;
+                }
+            }
+            // Check if the sender is the 'CheckBoxCardsNotForTrade' CheckBox
+            else if (sender == CheckBoxCardsNotForTrade)
+            {
+                // If 'CheckBoxCardsForTrade' is checked, uncheck it
+                if (CheckBoxCardsForTrade.IsChecked == true)
+                {
+                    CheckBoxCardsForTrade.IsChecked = false;
+                }
+            }
+
             ApplyFilterSelection();
         }
 

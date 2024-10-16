@@ -10,7 +10,6 @@
         public List<string> AllFinishes { get; set; } = [];
         public List<string> AllLanguages { get; set; } = [];
         public List<string> AllConditions { get; set; } = [];
-
         public HashSet<string> SelectedColors { get; set; } = [];
         public HashSet<string> SelectedTypes { get; set; } = [];
         public HashSet<string> SelectedSuperTypes { get; set; } = [];
