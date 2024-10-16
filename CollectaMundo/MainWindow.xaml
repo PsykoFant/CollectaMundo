@@ -415,8 +415,8 @@
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
 
-                <CheckBox x:Name="CheckBoxCardsForTrade" Margin="10,560,0,0" Content="Filter on cards for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
-                <CheckBox x:Name="CheckBoxCardsNotForTrade" Margin="10,580,0,0" Content="Filter on cards NOT for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
+                <CheckBox x:Name="CheckBoxCardsForTrade" Margin="10,560,0,0" Content="Filter on cards for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled" Visibility="Collapsed"/>
+                <CheckBox x:Name="CheckBoxCardsNotForTrade" Margin="10,580,0,0" Content="Filter on cards NOT for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled" Visibility="Collapsed"/>
                 
                 
 

@@ -708,29 +708,48 @@ namespace CollectaMundo
                 _ => throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}")
             };
         }
-        private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e) // Trigger filtering and update label when an and/or checkbox is toggled
+        private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)
         {
-            // Check if the sender is the 'CheckBoxCardsForTrade' CheckBox
-            if (sender == CheckBoxCardsForTrade)
-            {
-                // If 'CheckBoxCardsNotForTrade' is checked, uncheck it
-                if (CheckBoxCardsNotForTrade.IsChecked == true)
-                {
-                    CheckBoxCardsNotForTrade.IsChecked = false;
-                }
-            }
-            // Check if the sender is the 'CheckBoxCardsNotForTrade' CheckBox
-            else if (sender == CheckBoxCardsNotForTrade)
-            {
-                // If 'CheckBoxCardsForTrade' is checked, uncheck it
-                if (CheckBoxCardsForTrade.IsChecked == true)
-                {
-                    CheckBoxCardsForTrade.IsChecked = false;
-                }
-            }
+            // Unsubscribe from Checked/Unchecked events to avoid recursive triggering
+            CheckBoxCardsForTrade.Checked -= AndOrCheckBox_Toggled;
+            CheckBoxCardsForTrade.Unchecked -= AndOrCheckBox_Toggled;
+            CheckBoxCardsNotForTrade.Checked -= AndOrCheckBox_Toggled;
+            CheckBoxCardsNotForTrade.Unchecked -= AndOrCheckBox_Toggled;
 
-            ApplyFilterSelection();
+            try
+            {
+                // If 'CheckBoxCardsForTrade' is toggled
+                if (sender == CheckBoxCardsForTrade)
+                {
+                    // If 'CheckBoxCardsNotForTrade' is checked, uncheck it
+                    if (CheckBoxCardsNotForTrade.IsChecked == true)
+                    {
+                        CheckBoxCardsNotForTrade.IsChecked = false;
+                    }
+                }
+                // If 'CheckBoxCardsNotForTrade' is toggled
+                else if (sender == CheckBoxCardsNotForTrade)
+                {
+                    // If 'CheckBoxCardsForTrade' is checked, uncheck it
+                    if (CheckBoxCardsForTrade.IsChecked == true)
+                    {
+                        CheckBoxCardsForTrade.IsChecked = false;
+                    }
+                }
+
+                // Apply filter and update label after toggling the checkbox
+                ApplyFilterSelection();
+            }
+            finally
+            {
+                // Re-subscribe to Checked/Unchecked events
+                CheckBoxCardsForTrade.Checked += AndOrCheckBox_Toggled;
+                CheckBoxCardsForTrade.Unchecked += AndOrCheckBox_Toggled;
+                CheckBoxCardsNotForTrade.Checked += AndOrCheckBox_Toggled;
+                CheckBoxCardsNotForTrade.Unchecked += AndOrCheckBox_Toggled;
+            }
         }
+
 
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -1005,6 +1024,8 @@ namespace CollectaMundo
             SubTypesAndOrCheckBox.IsChecked = false;
             KeywordsAndOrCheckBox.IsChecked = false;
             FinishesAndOrCheckBox.IsChecked = false;
+            CheckBoxCardsForTrade.IsChecked = false;
+            CheckBoxCardsNotForTrade.IsChecked = false;
 
             // Reset card images
             ImagePromoLabel.Content = string.Empty;
@@ -1325,6 +1346,9 @@ namespace CollectaMundo
             GridMyCollection.Visibility = Visibility.Visible;
             LanguagesComboBox.Visibility = Visibility.Visible;
             ConditionsComboBox.Visibility = Visibility.Visible;
+            CheckBoxCardsForTrade.Visibility = Visibility.Visible;
+            CheckBoxCardsNotForTrade.Visibility = Visibility.Visible;
+
             AddToCollectionManager.AdjustColumnWidths();
         }
         private void MenuUtilsButton_Click(object sender, RoutedEventArgs e)
@@ -1348,6 +1372,8 @@ namespace CollectaMundo
             GridUtilitiesSection.Visibility = Visibility.Collapsed;
             LanguagesComboBox.Visibility = Visibility.Collapsed;
             ConditionsComboBox.Visibility = Visibility.Collapsed;
+            CheckBoxCardsForTrade.Visibility = Visibility.Collapsed;
+            CheckBoxCardsNotForTrade.Visibility = Visibility.Collapsed;
 
             ImagePromoLabel.Content = string.Empty;
             ImageSetLabel.Content = string.Empty;
