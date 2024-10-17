@@ -396,76 +396,6 @@ namespace CollectaMundo
                 DBAccess.connection.Close();
             }
         }
-        public static async void SubmitNewCardsToCollectionWithDefaultValues(List<CardSet> selectedCards)
-        {
-            if (DBAccess.connection == null)
-            {
-                MessageBox.Show("Database connection is not initialized.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-
-            await DBAccess.connection.OpenAsync();
-            try
-            {
-                foreach (CardSet card in selectedCards)
-                {
-                    CardItem currentCardItem = card as CardItem ?? new CardItem
-                    {
-                        Uuid = card.Uuid,
-                        Name = card.Name,
-                        Language = "English", // Default language
-                        SelectedCondition = "Near Mint", // Default condition
-                        SelectedFinish = "nonfoil" // Default finish
-                    };
-
-                    // Fetch finishes if it's not a predefined nonfoil
-                    if (currentCardItem.SelectedFinish == "nonfoil" && currentCardItem.Uuid != null)
-                    {
-                        var finishes = await FetchFinishesForCardAsync(currentCardItem.Uuid);
-                        currentCardItem.SelectedFinish = finishes.Contains("nonfoil") ? "nonfoil" : finishes.FirstOrDefault() ?? "nonfoil";
-                    }
-
-                    var existingCardId = await CheckForExistingCardAsync(currentCardItem);
-                    if (existingCardId.HasValue)
-                    {
-                        string updateSql = @"UPDATE myCollection SET count = count + 1 WHERE id = @id";
-                        using var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection);
-                        updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
-                        await updateCommand.ExecuteNonQueryAsync();
-                    }
-                    else
-                    {
-                        string insertSql = "INSERT INTO myCollection (uuid, count, trade, condition, language, finish) VALUES (@uuid, 1, 0, @condition, @language, @finish)";
-                        using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
-                        insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
-                        insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
-                        insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
-                        insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
-                        await insertCommand.ExecuteNonQueryAsync();
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to add card with default values: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                Debug.WriteLine($"Failed to add card with default values: {ex.Message}");
-            }
-            finally
-            {
-                // Provide update of the operation
-                var cardDetails = selectedCards.Select(card =>
-                    $"- {card.Name}").Aggregate((current, next) => current + "\n" + next);
-
-                MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Visible;
-                MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards with default values to your collection:\n\n" + cardDetails;
-
-                // Reload the collection
-                MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
-                await MainWindow.CurrentInstance.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
-
-                DBAccess.connection.Close();
-            }
-        }
         public async void SubmitEditedCardsToCollection(object sender, RoutedEventArgs e)
         {
             if (DBAccess.connection == null)
@@ -558,6 +488,107 @@ namespace CollectaMundo
                 DBAccess.connection.Close();
             }
         }
+        private static async Task<int?> CheckForExistingCardAsync(CardItem card)
+        {
+            string selectSql = @"
+                SELECT id FROM myCollection 
+                WHERE uuid = @uuid 
+                  AND condition = @condition 
+                  AND language = @language 
+                  AND finish = @finish";
+            try
+            {
+                using var selectCommand = new SQLiteCommand(selectSql, DBAccess.connection);
+                selectCommand.Parameters.AddWithValue("@uuid", card.Uuid);
+                selectCommand.Parameters.AddWithValue("@condition", card.SelectedCondition);
+                selectCommand.Parameters.AddWithValue("@language", card.Language);
+                selectCommand.Parameters.AddWithValue("@finish", card.SelectedFinish);
+
+                using var reader = await selectCommand.ExecuteReaderAsync();
+                if (reader.Read())
+                {
+                    return reader.GetInt32(0); // 'id' is the first column in the SELECT query
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to check for existing card: {ex.Message}");
+                MessageBox.Show($"Failed to check for existing card: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            return null; // Return null if no existing entry is found or an exception occurs
+        }
+
+        // Right-click specific operations
+        public static async void SubmitNewCardsToCollectionWithDefaultValues(List<CardSet> selectedCards)
+        {
+            if (DBAccess.connection == null)
+            {
+                MessageBox.Show("Database connection is not initialized.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            await DBAccess.connection.OpenAsync();
+            try
+            {
+                foreach (CardSet card in selectedCards)
+                {
+                    CardItem currentCardItem = card as CardItem ?? new CardItem
+                    {
+                        Uuid = card.Uuid,
+                        Name = card.Name,
+                        Language = "English", // Default language
+                        SelectedCondition = "Near Mint", // Default condition
+                        SelectedFinish = "nonfoil" // Default finish
+                    };
+
+                    // Fetch finishes if it's not a predefined nonfoil
+                    if (currentCardItem.SelectedFinish == "nonfoil" && currentCardItem.Uuid != null)
+                    {
+                        var finishes = await FetchFinishesForCardAsync(currentCardItem.Uuid);
+                        currentCardItem.SelectedFinish = finishes.Contains("nonfoil") ? "nonfoil" : finishes.FirstOrDefault() ?? "nonfoil";
+                    }
+
+                    var existingCardId = await CheckForExistingCardAsync(currentCardItem);
+                    if (existingCardId.HasValue)
+                    {
+                        string updateSql = @"UPDATE myCollection SET count = count + 1 WHERE id = @id";
+                        using var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection);
+                        updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
+                        await updateCommand.ExecuteNonQueryAsync();
+                    }
+                    else
+                    {
+                        string insertSql = "INSERT INTO myCollection (uuid, count, trade, condition, language, finish) VALUES (@uuid, 1, 0, @condition, @language, @finish)";
+                        using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
+                        insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
+                        insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
+                        insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
+                        insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
+                        await insertCommand.ExecuteNonQueryAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to add card with default values: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Failed to add card with default values: {ex.Message}");
+            }
+            finally
+            {
+                // Provide update of the operation
+                var cardDetails = selectedCards.Select(card =>
+                    $"- {card.Name}").Aggregate((current, next) => current + "\n" + next);
+
+                MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards with default values to your collection:\n\n" + cardDetails;
+
+                // Reload the collection
+                MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
+                await MainWindow.CurrentInstance.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
+
+                DBAccess.connection.Close();
+            }
+        }
         public async void DeleteCardsFromCollection(List<CardItem> selectedCards)
         {
             if (DBAccess.connection == null)
@@ -618,35 +649,6 @@ namespace CollectaMundo
 
                 MainWindow.CurrentInstance.ApplyFilterSelection();
             }
-        }
-        private static async Task<int?> CheckForExistingCardAsync(CardItem card)
-        {
-            string selectSql = @"
-                SELECT id FROM myCollection 
-                WHERE uuid = @uuid 
-                  AND condition = @condition 
-                  AND language = @language 
-                  AND finish = @finish";
-            try
-            {
-                using var selectCommand = new SQLiteCommand(selectSql, DBAccess.connection);
-                selectCommand.Parameters.AddWithValue("@uuid", card.Uuid);
-                selectCommand.Parameters.AddWithValue("@condition", card.SelectedCondition);
-                selectCommand.Parameters.AddWithValue("@language", card.Language);
-                selectCommand.Parameters.AddWithValue("@finish", card.SelectedFinish);
-
-                using var reader = await selectCommand.ExecuteReaderAsync();
-                if (reader.Read())
-                {
-                    return reader.GetInt32(0); // 'id' is the first column in the SELECT query
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to check for existing card: {ex.Message}");
-                MessageBox.Show($"Failed to check for existing card: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            return null; // Return null if no existing entry is found or an exception occurs
         }
 
         // Adjust listviews column widths so text is not clipped
