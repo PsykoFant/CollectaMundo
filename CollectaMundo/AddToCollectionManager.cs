@@ -176,6 +176,20 @@ namespace CollectaMundo
         }
 
         // Adds cards to the listview
+        public static void AddCardsToListView(DataGrid dataGrid, Action showListViewAction, ObservableCollection<CardItem> cardItemsCollection)
+        {
+            // Show the corresponding list view (either for adding or editing)
+            showListViewAction();
+
+            // Handle selected cards based on the provided data grid
+            foreach (CardSet selectedCard in dataGrid.SelectedItems)
+            {
+                AddOrEditCardHandler(selectedCard, cardItemsCollection);
+            }
+
+            // Unselect all items after handling
+            dataGrid.UnselectAll();
+        }
         public static async void AddOrEditCardHandler(CardSet selectedCard, ObservableCollection<CardItem> targetCollection)
         {
             if (selectedCard.Uuid == null)
@@ -186,6 +200,13 @@ namespace CollectaMundo
 
             try
             {
+                // Check if the card with the same UUID already exists in the collection
+                var existingCard = targetCollection.FirstOrDefault(card => card.Uuid == selectedCard.Uuid);
+                if (existingCard != null)
+                {
+                    return; // Exit if the card already exists in the collection
+                }
+
                 await DBAccess.OpenConnectionAsync();
                 var languages = await FetchLanguagesForCardAsync(selectedCard.Uuid);
                 var finishes = await FetchFinishesForCardAsync(selectedCard.Uuid);
@@ -224,6 +245,7 @@ namespace CollectaMundo
                 Debug.WriteLine($"AddOrEditCardHandler error: {ex.Message}");
             }
         }
+
         public static void ShowCardsToAddListView()
         {
             MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Collapsed;

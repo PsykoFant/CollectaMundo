@@ -1152,39 +1152,23 @@ namespace CollectaMundo
                 {
                     AddToCollectionManager.AddOrEditCardHandler(cardSetCard, addToCollectionManager.CardItemsToAdd);
                     AddToCollectionManager.ShowCardsToAddListView();
-                    grid.UnselectAll();
                 }
                 else if (grid.SelectedItem is CardItem cardItemCard && grid.Name == "MyCollectionDataGrid")
                 {
                     AddToCollectionManager.AddOrEditCardHandler(cardItemCard, addToCollectionManager.CardItemsToEdit);
                     AddToCollectionManager.ShowCardsToEditListView();
-                    grid.UnselectAll();
                 }
+                grid.UnselectAll();
             }
         }
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
-            ButtonHandleCards_Click(AllCardsDataGrid, AddToCollectionManager.ShowCardsToAddListView, addToCollectionManager.CardItemsToAdd);
+            AddToCollectionManager.AddCardsToListView(AllCardsDataGrid, AddToCollectionManager.ShowCardsToAddListView, addToCollectionManager.CardItemsToAdd);
         }
         private void ButtonEditCardsInCollection_Click(object sender, RoutedEventArgs e)
         {
-            ButtonHandleCards_Click(MyCollectionDataGrid, AddToCollectionManager.ShowCardsToEditListView, addToCollectionManager.CardItemsToEdit);
+            AddToCollectionManager.AddCardsToListView(MyCollectionDataGrid, AddToCollectionManager.ShowCardsToEditListView, addToCollectionManager.CardItemsToEdit);
         }
-        private static void ButtonHandleCards_Click(DataGrid dataGrid, Action showListViewAction, ObservableCollection<CardItem> cardItemsCollection)
-        {
-            // Show the corresponding list view (either for adding or editing)
-            showListViewAction();
-
-            // Handle selected cards based on the provided data grid
-            foreach (CardSet selectedCard in dataGrid.SelectedItems)
-            {
-                AddToCollectionManager.AddOrEditCardHandler(selectedCard, cardItemsCollection);
-            }
-
-            // Unselect all items after handling
-            dataGrid.UnselectAll();
-        }
-
         private void ButtonAddCardsToMyCollectionWithDefaultValues_Click(object sender, RoutedEventArgs e)
         {
             List<CardSet> selectedCards = AllCardsDataGrid.SelectedItems.Cast<CardSet>().ToList();
@@ -1194,8 +1178,6 @@ namespace CollectaMundo
                 AllCardsDataGrid.UnselectAll();
             }
         }
-
-
 
 
         // Submit cards in add or edit listviews

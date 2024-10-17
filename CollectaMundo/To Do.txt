@@ -1,7 +1,7 @@
 
-        /*TO DO
-         * trade
+        /*TO DO 
          * Højreklik - sæt for trade
+         * Håndter update slettet kort
          * PRISER!!!
          */
 
