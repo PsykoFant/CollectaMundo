@@ -245,7 +245,6 @@ namespace CollectaMundo
                 Debug.WriteLine($"AddOrEditCardHandler error: {ex.Message}");
             }
         }
-
         public static void ShowCardsToAddListView()
         {
             MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Collapsed;
@@ -292,15 +291,13 @@ namespace CollectaMundo
             using (var command = new SQLiteCommand(query, DBAccess.connection))
             {
                 command.Parameters.AddWithValue("@uuid", uuid);
-                using (var reader = await command.ExecuteReaderAsync())
+                using var reader = await command.ExecuteReaderAsync();
+                while (reader.Read())
                 {
-                    while (reader.Read())
+                    string? language = reader["language"] as string; // Safely cast to string, which may be null
+                    if (!string.IsNullOrEmpty(language))
                     {
-                        string? language = reader["language"] as string; // Safely cast to string, which may be null
-                        if (!string.IsNullOrEmpty(language))
-                        {
-                            languages.Add(language); // Only add non-null and non-empty strings
-                        }
+                        languages.Add(language); // Only add non-null and non-empty strings
                     }
                 }
             }
@@ -313,15 +310,13 @@ namespace CollectaMundo
             using (var command = new SQLiteCommand(query, DBAccess.connection))
             {
                 command.Parameters.AddWithValue("@uuid", uuid);
-                using (var reader = await command.ExecuteReaderAsync())
+                using var reader = await command.ExecuteReaderAsync();
+                while (reader.Read())
                 {
-                    while (reader.Read())
+                    var finish = reader["Finishes"].ToString();
+                    if (!string.IsNullOrEmpty(finish))
                     {
-                        var finish = reader["Finishes"].ToString();
-                        if (!string.IsNullOrEmpty(finish))
-                        {
-                            finishes.AddRange(finish.Split(',').Select(f => f.Trim()));
-                        }
+                        finishes.AddRange(finish.Split(',').Select(f => f.Trim()));
                     }
                 }
             }
@@ -347,36 +342,32 @@ namespace CollectaMundo
                     {
                         // Update the count in the database
                         string updateSql = @"UPDATE myCollection SET count = count + @newCount, trade = trade + @newTradeCount WHERE id = @id";
-                        using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
-                        {
-                            updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.CardsOwned);
-                            updateCommand.Parameters.AddWithValue("@newTradeCount", currentCardItem.CardsForTrade);
-                            updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
+                        using var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection);
+                        updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.CardsOwned);
+                        updateCommand.Parameters.AddWithValue("@newTradeCount", currentCardItem.CardsForTrade);
+                        updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
 
-                            await updateCommand.ExecuteNonQueryAsync();
-                            // Update the item in the list
-                            var cardToUpdate = MainWindow.CurrentInstance.myCards.FirstOrDefault(c => c.Uuid == currentCardItem.Uuid);
-                            if (cardToUpdate != null && cardToUpdate is CardItem card)
-                            {
-                                card.CardsOwned += currentCardItem.CardsOwned;
-                            }
+                        await updateCommand.ExecuteNonQueryAsync();
+                        // Update the item in the list
+                        var cardToUpdate = MainWindow.CurrentInstance.myCards.FirstOrDefault(c => c.Uuid == currentCardItem.Uuid);
+                        if (cardToUpdate != null && cardToUpdate is CardItem card)
+                        {
+                            card.CardsOwned += currentCardItem.CardsOwned;
                         }
                     }
                     else
                     {
                         // No existing row, insert a new one
                         string insertSql = "INSERT INTO myCollection (uuid, count, trade, condition, language, finish) VALUES (@uuid, @count, @trade, @condition, @language, @finish)";
-                        using (var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection))
-                        {
-                            insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
-                            insertCommand.Parameters.AddWithValue("@count", currentCardItem.CardsOwned);
-                            insertCommand.Parameters.AddWithValue("@trade", currentCardItem.CardsForTrade);
-                            insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
-                            insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
-                            insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
+                        using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
+                        insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
+                        insertCommand.Parameters.AddWithValue("@count", currentCardItem.CardsOwned);
+                        insertCommand.Parameters.AddWithValue("@trade", currentCardItem.CardsForTrade);
+                        insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
+                        insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
+                        insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
 
-                            await insertCommand.ExecuteNonQueryAsync();
-                        }
+                        await insertCommand.ExecuteNonQueryAsync();
                     }
                 }
             }
@@ -438,23 +429,19 @@ namespace CollectaMundo
                     if (existingCardId.HasValue)
                     {
                         string updateSql = @"UPDATE myCollection SET count = count + 1 WHERE id = @id";
-                        using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
-                        {
-                            updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
-                            await updateCommand.ExecuteNonQueryAsync();
-                        }
+                        using var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection);
+                        updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
+                        await updateCommand.ExecuteNonQueryAsync();
                     }
                     else
                     {
                         string insertSql = "INSERT INTO myCollection (uuid, count, trade, condition, language, finish) VALUES (@uuid, 1, 0, @condition, @language, @finish)";
-                        using (var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection))
-                        {
-                            insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
-                            insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
-                            insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
-                            insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
-                            await insertCommand.ExecuteNonQueryAsync();
-                        }
+                        using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
+                        insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
+                        insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
+                        insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
+                        insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
+                        await insertCommand.ExecuteNonQueryAsync();
                     }
                 }
             }
@@ -507,11 +494,9 @@ namespace CollectaMundo
 
                         // Additionally, remove the currentCardItem from the table as it's being edited and updated
                         string deleteSql = "DELETE FROM myCollection WHERE id = @id";
-                        using (var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection))
-                        {
-                            deleteCommand.Parameters.AddWithValue("@id", currentCardItem.CardId);
-                            await deleteCommand.ExecuteNonQueryAsync();
-                        }
+                        using var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection);
+                        deleteCommand.Parameters.AddWithValue("@id", currentCardItem.CardId);
+                        await deleteCommand.ExecuteNonQueryAsync();
                     }
                     else
                     {
@@ -521,28 +506,24 @@ namespace CollectaMundo
                             Debug.WriteLine($"CardsOwned set to 0, deleting card with id {currentCardItem.CardId}");
 
                             string deleteSql = "DELETE FROM myCollection WHERE id = @id";
-                            using (var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection))
-                            {
-                                deleteCommand.Parameters.AddWithValue("@id", currentCardItem.CardId);
-                                await deleteCommand.ExecuteNonQueryAsync();
-                            }
+                            using var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection);
+                            deleteCommand.Parameters.AddWithValue("@id", currentCardItem.CardId);
+                            await deleteCommand.ExecuteNonQueryAsync();
                         }
                         else
                         {
                             Debug.WriteLine($"No card like this exists already - updating card with id {currentCardItem.CardId}");
                             // If there's no matching existing card ID, update the card in myCollection
                             string updateSql = @"UPDATE myCollection SET count = @count, trade = @trade, condition = @condition, language = @language, finish = @finish WHERE id = @cardId";
-                            using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
-                            {
-                                updateCommand.Parameters.AddWithValue("@count", currentCardItem.CardsOwned);
-                                updateCommand.Parameters.AddWithValue("@trade", currentCardItem.CardsForTrade);
-                                updateCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
-                                updateCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
-                                updateCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
-                                updateCommand.Parameters.AddWithValue("@cardId", currentCardItem.CardId);
+                            using var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection);
+                            updateCommand.Parameters.AddWithValue("@count", currentCardItem.CardsOwned);
+                            updateCommand.Parameters.AddWithValue("@trade", currentCardItem.CardsForTrade);
+                            updateCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
+                            updateCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
+                            updateCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
+                            updateCommand.Parameters.AddWithValue("@cardId", currentCardItem.CardId);
 
-                                await updateCommand.ExecuteNonQueryAsync();
-                            }
+                            await updateCommand.ExecuteNonQueryAsync();
                         }
                     }
                 }
@@ -577,7 +558,7 @@ namespace CollectaMundo
                 DBAccess.connection.Close();
             }
         }
-        public static async void DeleteCardsFromCollection(List<CardItem> selectedCards)
+        public async void DeleteCardsFromCollection(List<CardItem> selectedCards)
         {
             if (DBAccess.connection == null)
             {
@@ -590,11 +571,28 @@ namespace CollectaMundo
             {
                 foreach (CardItem card in selectedCards)
                 {
-                    string insertSql = "DELETE FROM myCollection WHERE uuid = @uuid;";
-                    using (var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection))
+                    Debug.WriteLine(card.Uuid);
+
+                    // Delete card from database (myCollection)
+                    string deleteSql = "DELETE FROM myCollection WHERE uuid = @uuid;";
+                    using var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection);
+                    deleteCommand.Parameters.AddWithValue("@uuid", card.Uuid);
+                    await deleteCommand.ExecuteNonQueryAsync();
+
+                    // Check if CardItemsToEdit contains the card and remove it if found
+                    var cardToEdit = CardItemsToEdit.FirstOrDefault(editCard => editCard.Uuid == card.Uuid);
+                    if (cardToEdit != null)
                     {
-                        insertCommand.Parameters.AddWithValue("@uuid", card.Uuid);
-                        await insertCommand.ExecuteNonQueryAsync();
+                        CardItemsToEdit.Remove(cardToEdit);
+
+                        if (CardItemsToEdit.Count == 0)
+                        {
+                            HideCardsToEditListView(true);
+                        }
+
+                        Debug.WriteLine($"Card in listview: {CardItemsToEdit.Count}");
+
+
                     }
                 }
             }
@@ -607,7 +605,7 @@ namespace CollectaMundo
             {
                 // Provide update of the operation
                 var cardDetails = selectedCards.Select(card =>
-                    $"- {card.Name} ").Aggregate((current, next) => current + "\n" + next);
+                    $"- {card.Name}").Aggregate((current, next) => current + "\n" + next);
 
                 MainWindow.CurrentInstance.EditStatusScrollViewer.Visibility = Visibility.Visible;
                 MainWindow.CurrentInstance.EditStatusTextBlock.Text = "Deleted the following cards from your collection:\n\n" + cardDetails;
@@ -631,20 +629,16 @@ namespace CollectaMundo
                   AND finish = @finish";
             try
             {
-                using (var selectCommand = new SQLiteCommand(selectSql, DBAccess.connection))
-                {
-                    selectCommand.Parameters.AddWithValue("@uuid", card.Uuid);
-                    selectCommand.Parameters.AddWithValue("@condition", card.SelectedCondition);
-                    selectCommand.Parameters.AddWithValue("@language", card.Language);
-                    selectCommand.Parameters.AddWithValue("@finish", card.SelectedFinish);
+                using var selectCommand = new SQLiteCommand(selectSql, DBAccess.connection);
+                selectCommand.Parameters.AddWithValue("@uuid", card.Uuid);
+                selectCommand.Parameters.AddWithValue("@condition", card.SelectedCondition);
+                selectCommand.Parameters.AddWithValue("@language", card.Language);
+                selectCommand.Parameters.AddWithValue("@finish", card.SelectedFinish);
 
-                    using (var reader = await selectCommand.ExecuteReaderAsync())
-                    {
-                        if (reader.Read())
-                        {
-                            return reader.GetInt32(0); // 'id' is the first column in the SELECT query
-                        }
-                    }
+                using var reader = await selectCommand.ExecuteReaderAsync();
+                if (reader.Read())
+                {
+                    return reader.GetInt32(0); // 'id' is the first column in the SELECT query
                 }
             }
             catch (Exception ex)

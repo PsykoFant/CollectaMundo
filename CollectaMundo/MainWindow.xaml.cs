@@ -1196,7 +1196,7 @@ namespace CollectaMundo
             List<CardItem> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardItem>().ToList();
             if (selectedCards.Count > 0)
             {
-                AddToCollectionManager.DeleteCardsFromCollection(selectedCards);
+                addToCollectionManager.DeleteCardsFromCollection(selectedCards);
                 AllCardsDataGrid.UnselectAll();
             }
         }
