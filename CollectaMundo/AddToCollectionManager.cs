@@ -306,7 +306,6 @@ namespace CollectaMundo
             return finishes.Distinct().ToList();
         }
 
-
         // Submit new or edited cards to collection
         public async void SubmitNewCardsToCollection(object sender, RoutedEventArgs e)
         {
