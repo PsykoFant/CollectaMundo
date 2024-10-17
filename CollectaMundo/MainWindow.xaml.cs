@@ -1184,12 +1184,12 @@ namespace CollectaMundo
         private void ButtonSubmitCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
             LogoSmall.Visibility = Visibility.Collapsed;
-            addToCollectionManager.SubmitNewCardsToCollection(sender, e);
+            addToCollectionManager.SubmitCardsToCollection(addToCollectionManager.CardItemsToAdd, true);
         }
         private void SubmitCardEditsInMyCollection_Click(object sender, RoutedEventArgs e)
         {
             LogoSmall.Visibility = Visibility.Collapsed;
-            addToCollectionManager.SubmitEditedCardsToCollection(sender, e);
+            addToCollectionManager.SubmitCardsToCollection(addToCollectionManager.CardItemsToEdit, false);
         }
         private void ButtonDeleteCardsFromCollection_Click(object sender, RoutedEventArgs e)
         {
