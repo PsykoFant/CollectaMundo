@@ -611,8 +611,6 @@ namespace CollectaMundo
             {
                 foreach (CardItem card in selectedCards)
                 {
-                    Debug.WriteLine(card.Uuid);
-
                     // Delete card from database (myCollection)
                     string deleteSql = "DELETE FROM myCollection WHERE uuid = @uuid;";
                     using var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection);
@@ -629,10 +627,6 @@ namespace CollectaMundo
                         {
                             HideCardsToEditListView(true);
                         }
-
-                        Debug.WriteLine($"Card in listview: {CardItemsToEdit.Count}");
-
-
                     }
                 }
             }
@@ -653,12 +647,80 @@ namespace CollectaMundo
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
                 await MainWindow.CurrentInstance.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
+                await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 DBAccess.connection.Close();
 
                 MainWindow.CurrentInstance.ApplyFilterSelection();
             }
         }
+        public async void SetCardsForTrade(List<CardItem> selectedCards, bool setForTrade)
+        {
+            if (DBAccess.connection == null)
+            {
+                MessageBox.Show("Database connection is not initialized.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            await DBAccess.connection.OpenAsync();
+            try
+            {
+                string sqlString = string.Empty;
+
+                if (setForTrade)
+                {
+                    sqlString = "UPDATE myCollection SET trade = count WHERE uuid = @uuid;";
+                }
+                else
+                {
+                    sqlString = "UPDATE myCollection SET trade = 0 WHERE uuid = @uuid;";
+                }
+
+
+                foreach (CardItem card in selectedCards)
+                {
+
+                    using var setForTradeCommand = new SQLiteCommand(sqlString, DBAccess.connection);
+                    setForTradeCommand.Parameters.AddWithValue("@uuid", card.Uuid);
+                    await setForTradeCommand.ExecuteNonQueryAsync();
+
+                    // Check if CardItemsToEdit contains the card and remove it if found
+                    var cardToEdit = CardItemsToEdit.FirstOrDefault(editCard => editCard.Uuid == card.Uuid);
+                    if (cardToEdit != null)
+                    {
+                        CardItemsToEdit.Remove(cardToEdit);
+
+                        if (CardItemsToEdit.Count == 0)
+                        {
+                            HideCardsToEditListView(true);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to update trade count: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Failed to update trade count: {ex.Message}");
+            }
+            finally
+            {
+                // Provide update of the operation
+                var cardDetails = selectedCards.Select(card =>
+                    $"- {card.Name}").Aggregate((current, next) => current + "\n" + next);
+
+                MainWindow.CurrentInstance.EditStatusScrollViewer.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.EditStatusTextBlock.Text = "Updated trade status for the collowing cards:\n\n" + cardDetails;
+
+                // Reload the collection
+                MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
+                await MainWindow.CurrentInstance.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
+
+                DBAccess.connection.Close();
+
+                MainWindow.CurrentInstance.ApplyFilterSelection();
+            }
+        }
+
 
         // Adjust listviews column widths so text is not clipped
         public static void AdjustColumnWidths()

@@ -77,9 +77,9 @@
                 </ListBox>
 
                 <!--Mana value filtering-->
-                <Label x:Name="ManaValueLabel" Content="Mana value is " HorizontalAlignment="Right" Margin="0,95,0,0" VerticalAlignment="Top"  Style="{StaticResource BelerenBold}"/>
-                <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Right" Margin="0,115,0,0" VerticalAlignment="Top" Height="20"/>
-                <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Right" Margin="0,140,0,0" VerticalAlignment="Top" Height="20"/>
+                <Label x:Name="ManaValueLabel" Content="Mana value is: " HorizontalAlignment="Left" Margin="0,170,0,0" VerticalAlignment="Top"  Style="{StaticResource BelerenBold}"/>
+                <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="10,195,0,0" VerticalAlignment="Top" Height="20"/>
+                <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="125,195,0,0" VerticalAlignment="Top" Height="20"/>
 
                 <!--Supertype listbox and filtering-->
                 <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,225,0,0" VerticalAlignment="Top" Width="190" Height="20" DropDownOpened="ComboBox_DropDownOpened">
@@ -694,7 +694,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
-            <Grid x:Name="GridMyCollection" d:IsHidden="True">
+            <Grid x:Name="GridMyCollection">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
                 <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
@@ -812,6 +812,8 @@
                     <DataGrid.ContextMenu>
                         <ContextMenu Style="{StaticResource MPlantin}">
                             <MenuItem Header="EDIT selected card(s)" Click="ButtonEditCardsInCollection_Click" Style="{StaticResource BelerenBold}"/>
+                            <MenuItem Header="UPDATE selected card(s) - put ALL for TRADE" Click="ButtonSetCardsForTrade_Click" Style="{StaticResource BelerenBold}"/>
+                            <MenuItem Header="UPDATE selected card(s) - put NONE for TRADE" Click="ButtonSetNoneForTrade_Click" Style="{StaticResource BelerenBold}"/>
                             <MenuItem Header="DELETE card(s) from collection" Click="ButtonDeleteCardsFromCollection_Click" Style="{StaticResource BelerenBold}"/>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
@@ -940,7 +942,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
-            <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top" d:IsHidden="True">
+            <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top">
                 <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Resources/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698" d:IsHidden="True"/>
                 <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Grid x:Name="GridUtilsScreen">

@@ -1105,16 +1105,6 @@ namespace CollectaMundo
         {
             AddToCollectionManager.AddCardsToListView(MyCollectionDataGrid, AddToCollectionManager.ShowCardsToEditListView, addToCollectionManager.CardItemsToEdit);
         }
-        private void ButtonAddCardsToMyCollectionWithDefaultValues_Click(object sender, RoutedEventArgs e)
-        {
-            List<CardSet> selectedCards = AllCardsDataGrid.SelectedItems.Cast<CardSet>().ToList();
-            if (selectedCards.Count > 0)
-            {
-                AddToCollectionManager.SubmitNewCardsToCollectionWithDefaultValues(selectedCards);
-                AllCardsDataGrid.UnselectAll();
-            }
-        }
-
 
         // Submit cards in add or edit listviews
         private void ButtonSubmitCardsToMyCollection_Click(object sender, RoutedEventArgs e)
@@ -1127,13 +1117,41 @@ namespace CollectaMundo
             LogoSmall.Visibility = Visibility.Collapsed;
             addToCollectionManager.SubmitEditedCardsToCollection(sender, e);
         }
+
+        // Right-click actions 
+        private void ButtonAddCardsToMyCollectionWithDefaultValues_Click(object sender, RoutedEventArgs e)
+        {
+            List<CardSet> selectedCards = AllCardsDataGrid.SelectedItems.Cast<CardSet>().ToList();
+            if (selectedCards.Count > 0)
+            {
+                AddToCollectionManager.SubmitNewCardsToCollectionWithDefaultValues(selectedCards);
+                AllCardsDataGrid.UnselectAll();
+            }
+        }
         private void ButtonDeleteCardsFromCollection_Click(object sender, RoutedEventArgs e)
         {
             List<CardItem> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardItem>().ToList();
             if (selectedCards.Count > 0)
             {
                 addToCollectionManager.DeleteCardsFromCollection(selectedCards);
-                AllCardsDataGrid.UnselectAll();
+            }
+        }
+        private void ButtonSetCardsForTrade_Click(object sender, RoutedEventArgs e)
+        {
+            List<CardItem> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardItem>().ToList();
+            if (selectedCards.Count > 0)
+            {
+                addToCollectionManager.SetCardsForTrade(selectedCards, true);
+                MyCollectionDataGrid.UnselectAll();
+            }
+        }
+        private void ButtonSetNoneForTrade_Click(object sender, RoutedEventArgs e)
+        {
+            List<CardItem> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardItem>().ToList();
+            if (selectedCards.Count > 0)
+            {
+                addToCollectionManager.SetCardsForTrade(selectedCards, false);
+                MyCollectionDataGrid.UnselectAll();
             }
         }
 
