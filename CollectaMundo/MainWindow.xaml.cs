@@ -21,14 +21,16 @@ namespace CollectaMundo
         private string? _imageSourceUrl = string.Empty;
         private string? _imageSourceUrl2nd = string.Empty;
 
-        // Download url for card database
-        public readonly string cardDbDownloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
-
-        // Download url for card prices
-        public readonly string pricesDownloadUrl = "https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_1.json";
+        // Download urls 
+        public readonly static string cardDbDownloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
+        public readonly static string pricesDownloadUrl = "https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_1.json";
 
         // Location of user's "Downloads" folder
-        public readonly string downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+        public readonly static string downloadEnvPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        // Temporary price download location 
+        public readonly static string priceDownloadsPath = Path.Combine(downloadEnvPath, "Downloads", "prices.json");
+
 
         public string? ImageSourceUrl
         {

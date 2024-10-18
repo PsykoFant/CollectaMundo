@@ -49,9 +49,16 @@ namespace CollectaMundo
             {
                 // await DownloadResourceFileIfNotExistAsync(databasePath, MainWindow.CurrentInstance.cardDbDownloadUrl, downloadMessage, true)
                 // await DownloadResourceFileIfNotExistAsync(MainWindow.CurrentInstance.downloadsPath, MainWindow.CurrentInstance.pricesDownloadUrl, downloadMessage, true)
-                if (await DownloadResourceFileIfNotExistAsync(MainWindow.CurrentInstance.downloadsPath, MainWindow.CurrentInstance.pricesDownloadUrl, downloadMessage, true))
+
+                var downloadDatabaseTask = DownloadResourceFileIfNotExistAsync(databasePath, MainWindow.cardDbDownloadUrl, downloadMessage, "card database", true);
+                var downloadPricesTask = DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, MainWindow.pricesDownloadUrl, downloadMessage, "", false);
+
+                // Wait for both tasks to complete using Task.WhenAll
+                bool[] results = await Task.WhenAll(downloadDatabaseTask, downloadPricesTask);
+
+                // Check if both returned true
+                if (results[0] && results[1])
                 {
-                    await DownloadResourceFileIfNotExistAsync(databasePath, MainWindow.CurrentInstance.cardDbDownloadUrl, downloadMessage, true);
                     await PrepareDownloadedCardDatabase();
                 }
                 else
@@ -66,11 +73,11 @@ namespace CollectaMundo
         }
 
         // Download card database from mtgjson in SQLite format
-        public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessage, bool showStatusBar)
+        public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessageBig, string downloadFile, bool showStatusBar)
         {
             try
             {
-                MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = statusMessage;
+                MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = statusMessageBig;
 
                 if (showStatusBar && MainWindow.CurrentInstance?.ProgressBar != null)
                 {
@@ -105,7 +112,7 @@ namespace CollectaMundo
                 using var fileStream = new FileStream(downloadTargetPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
 
                 var megabytes = string.Format("{0:0.0} MB", totalBytes / 1000000.0);
-                StatusMessageUpdated?.Invoke($"Downloading resource file ({megabytes})");
+                StatusMessageUpdated?.Invoke($"Downloading {downloadFile} ({megabytes})");
 
                 var bytesRead = 0;
                 while ((bytesRead = await contentStream.ReadAsync(buffer)) != 0)

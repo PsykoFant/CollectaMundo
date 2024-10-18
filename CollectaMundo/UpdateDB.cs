@@ -17,7 +17,7 @@ namespace CollectaMundo
         /// Then create any new set icons, mana symbols or mana cost images that might need to be created from any new cards added to AllPrintings
         /// </summary>
 
-        private static readonly string newDatabasePath = Path.Combine(MainWindow.CurrentInstance.downloadsPath, "AllPrintings.sqlite");
+        private static readonly string newDatabasePath = Path.Combine(MainWindow.downloadEnvPath, "AllPrintings.sqlite");
 
         // For updating statuswindow
         public static event Action<string>? StatusMessageUpdated;
@@ -66,7 +66,7 @@ namespace CollectaMundo
                 // Disable buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
 
-                if (await DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(newDatabasePath, MainWindow.CurrentInstance.cardDbDownloadUrl, "Downloading fresh card database and updating...", true))
+                if (await DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(newDatabasePath, MainWindow.cardDbDownloadUrl, "Downloading fresh card database and updating...", "updated card database", true))
                 {
                     // Copy tables from new card database
                     if (await CopyTablesAsync())
