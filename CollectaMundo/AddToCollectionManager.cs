@@ -550,6 +550,13 @@ namespace CollectaMundo
                         currentCardItem.SelectedFinish = finishes.Contains("nonfoil") ? "nonfoil" : finishes.FirstOrDefault() ?? "nonfoil";
                     }
 
+                    // Fetch languages if it's not a predefined English
+                    if (currentCardItem.Language == "English" && currentCardItem.Uuid != null)
+                    {
+                        var languages = await FetchLanguagesForCardAsync(currentCardItem.Uuid);
+                        currentCardItem.Language = languages.Contains("English") ? "English" : languages.FirstOrDefault() ?? "English";
+                    }
+
                     var existingCardId = await CheckForExistingCardAsync(currentCardItem);
                     if (existingCardId.HasValue)
                     {
