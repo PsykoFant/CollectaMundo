@@ -125,7 +125,7 @@ namespace CollectaMundo
             Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
 
             await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons);
-            await FillComboBoxesAsync();
+            await PopulateFilterUiElements();
 
             DBAccess.CloseConnection();
 
@@ -295,11 +295,11 @@ namespace CollectaMundo
                 throw;
             }
         }
-        private Task FillComboBoxesAsync()
+        public Task PopulateFilterUiElements()
         {
             try
             {
-                // Make sure lists are clear
+                // Clear existing filter context lists
                 filterContext.AllSuperTypes.Clear();
                 filterContext.AllTypes.Clear();
                 filterContext.AllSubTypes.Clear();
@@ -309,116 +309,49 @@ namespace CollectaMundo
                 filterContext.AllLanguages.Clear();
                 filterContext.AllConditions.Clear();
 
-                // Get the values to populate the comboboxes
-                List<string?> cardNames = allCards.Select(card => card.Name).Distinct().ToList();
-                List<string?> setNames = allCards.Select(card => card.SetName).Distinct().ToList();
-                List<string?> types = allCards.Select(card => card.Types).Distinct().ToList();
-                List<string?> superTypes = allCards.Select(card => card.SuperTypes).Distinct().ToList();
-                List<string?> subTypes = allCards.Select(card => card.SubTypes).Distinct().ToList();
-                List<string?> keywords = allCards.Select(card => card.Keywords).Distinct().ToList();
-                List<string?> finishes = allCards.Select(card => card.Finishes).Distinct().ToList();
-                List<string?> languages = myCards.Select(card => card.Language).Distinct().ToList();
-                List<string?> conditions = myCards.OfType<CardItem>().Select(card => card.SelectedCondition).Distinct().ToList();
-
+                // Setup common lists
                 filterContext.AllColors.AddRange(["W", "U", "B", "R", "G", "C", "X"]);
-
                 List<string> allOrNoneColorsOption = ["Cards with any of these colors", "Cards with all of these colors", "Cards with none of these colors"];
                 List<int> manaValueOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000];
                 List<string> manaValueCompareOptions = ["less than", "less than/eq", "greater than", "greater than/eq", "equal to"];
 
+                // Split strings by commas and clean data
                 char[] separatorArray = [','];
 
-                // Set up elements in supertype listbox
-                filterContext.AllSuperTypes = [.. superTypes
-                    .Where(type => type != null)
-                    .SelectMany(type => type!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(p => p.Trim())
-                    .Distinct()
-                    .OrderBy(type => type)];
+                // Define reusable helper function for cleaning lists
+                IEnumerable<string> CleanAndFilter(IEnumerable<string?> input, HashSet<string>? removeItems = null)
+                {
+                    return input
+                        .Where(item => !string.IsNullOrEmpty(item))
+                        .SelectMany(item => item!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
+                        .Select(item => item.Trim())
+                        .Where(item => removeItems == null || !removeItems.Contains(item))
+                        .Distinct()
+                        .OrderBy(item => item);
+                }
 
-                // List of unwanted types. Old cards, weird types from un-sets etc. 
-                HashSet<string> typesToRemove =
-                [
-                    "Eaturecray",
-                    "Summon",
-                    "Scariest",
-                    "You'll",
-                    "Ever",
-                    "See",
-                    "Jaguar",
-                    "Dragon",
-                    "Knights",
-                    "Legend",
-                    "instant"
-                ];
+                // Set up unwanted types and subtypes
+                HashSet<string> typesToRemove = ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant"];
+                HashSet<string> subTypesToRemove = ["(creature", "and/or", "type)|Judge", "The"];
 
-                // Set up elements in type listbox, removing unwanted types
-                filterContext.AllTypes = [.. types
-                    .Where(type => type != null)
-                    .SelectMany(type => type!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(p => p.Trim())
-                    .Where(p => !typesToRemove.Contains(p))  // Filter out unwanted types
-                    .Distinct()
-                    .OrderBy(type => type)];
-
-                // List of unwanted subtypes. Old cards, weird types from un-sets etc. 
-                HashSet<string> subTypesToRemove =
-                [
-                    "(creature",
-                    "and/or",
-                    "type)|Judge",
-                    "The"
-                ];
-
-                // Set up elements in subtype listbox
-                filterContext.AllSubTypes = [.. subTypes
-                    .Where(type => type != null)
-                    .SelectMany(type => type!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(p => p.Trim())
-                    .Where(p => !subTypesToRemove.Contains(p))  // Filter out unwanted subtypes
-                    .Distinct()
-                    .OrderBy(type => type)];
-
-                // Set up elements in keywords listbox
-                filterContext.AllKeywords = [.. keywords
-                    .Where(keyword => keyword != null)
-                    .SelectMany(keyword => keyword!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(p => p.Trim())
-                    .Distinct()
-                    .OrderBy(keyword => keyword)];
-
-                // Set up elements in finishes listbox
-                filterContext.AllFinishes = [.. finishes
-                    .Where(finishes => finishes != null)
-                    .SelectMany(finishes => finishes!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(p => p.Trim())
-                    .Distinct()
-                    .OrderBy(finishes => finishes)];
-
-                // Set up elements in languages listbox
-                filterContext.AllLanguages = [.. languages
-                    .Where(languages => languages != null)
-                    .SelectMany(languages => languages!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(p => p.Trim())
-                    .Distinct()
-                    .OrderBy(languages => languages)];
-
-                // Set up elements in languages listbox
-                filterContext.AllConditions = [.. conditions
-                    .Where(conditions => conditions != null)
-                    .SelectMany(conditions => conditions!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(p => p.Trim())
-                    .Distinct()
-                    .OrderBy(conditions => conditions)];
+                // Populate the filtered data into context
+                filterContext.AllSuperTypes.AddRange(CleanAndFilter(allCards.Select(card => card.SuperTypes)));
+                filterContext.AllTypes.AddRange(CleanAndFilter(allCards.Select(card => card.Types), typesToRemove));
+                filterContext.AllSubTypes.AddRange(CleanAndFilter(allCards.Select(card => card.SubTypes), subTypesToRemove));
+                filterContext.AllKeywords.AddRange(CleanAndFilter(allCards.Select(card => card.Keywords)));
+                filterContext.AllFinishes.AddRange(CleanAndFilter(allCards.Select(card => card.Finishes)));
+                filterContext.AllLanguages.AddRange(CleanAndFilter(myCards.Select(card => card.Language)));
+                filterContext.AllConditions.AddRange(CleanAndFilter(myCards.OfType<CardItem>().Select(card => card.SelectedCondition)));
 
                 Dispatcher.Invoke(() =>
                 {
                     // Update DataGrid ComboBoxes
-                    UpdateComboBoxSource(AllCardsDataGrid, "AllCardsName", cardNames);
-                    UpdateComboBoxSource(AllCardsDataGrid, "AllCardsSet", setNames);
-                    UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionName", cardNames);
-                    UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionSet", setNames);
+                    UpdateComboBoxSource(AllCardsDataGrid, "AllCardsName", allCards.Select(card => card.Name).Distinct().ToList());
+                    UpdateComboBoxSource(AllCardsDataGrid, "AllCardsSet", allCards.Select(card => card.SetName).Distinct().ToList());
+                    UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionName", allCards.Select(card => card.Name).Distinct().ToList());
+                    UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionSet", allCards.Select(card => card.SetName).Distinct().ToList());
 
+                    // Set Filter Options
                     FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
                     FilterColorsListBox.ItemsSource = filterContext.AllColors;
                     AllOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
@@ -427,6 +360,8 @@ namespace CollectaMundo
                     ManaValueComboBox.SelectedIndex = -1;
                     ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
                     ManaValueOperatorComboBox.SelectedIndex = -1;
+
+                    // Set default text for other comboboxes
                     SetDefaultTextInComboBox(SuperTypesComboBox, "FilterSuperTypesTextBox", filterContext.SuperTypesDefaultText);
                     SetDefaultTextInComboBox(TypesComboBox, "FilterTypesTextBox", filterContext.TypesDefaultText);
                     SetDefaultTextInComboBox(SubTypesComboBox, "FilterSubTypesTextBox", filterContext.SubTypesDefaultText);
@@ -443,6 +378,7 @@ namespace CollectaMundo
             }
             return Task.CompletedTask;
         }
+
         public static List<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
         {
             List<T> children = [];
@@ -1184,12 +1120,12 @@ namespace CollectaMundo
         private void ButtonSubmitCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
             LogoSmall.Visibility = Visibility.Collapsed;
-            addToCollectionManager.SubmitCardsToCollection(addToCollectionManager.CardItemsToAdd, true);
+            addToCollectionManager.SubmitNewCardsToCollection(sender, e);
         }
         private void SubmitCardEditsInMyCollection_Click(object sender, RoutedEventArgs e)
         {
             LogoSmall.Visibility = Visibility.Collapsed;
-            addToCollectionManager.SubmitCardsToCollection(addToCollectionManager.CardItemsToEdit, false);
+            addToCollectionManager.SubmitEditedCardsToCollection(sender, e);
         }
         private void ButtonDeleteCardsFromCollection_Click(object sender, RoutedEventArgs e)
         {

@@ -324,7 +324,80 @@ namespace CollectaMundo
         }
 
         // Submit new or edited cards to collection
-        public async void SubmitCardsToCollection(ObservableCollection<CardItem> cardItems, bool isNewCard)
+        public async void SubmitNewCardsToCollection(object sender, RoutedEventArgs e)
+        {
+            if (DBAccess.connection == null)
+            {
+                MessageBox.Show("Database connection is not initialized.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return; // Exit the method to prevent further execution.
+            }
+
+            await DBAccess.connection.OpenAsync();
+            try
+            {
+                foreach (var currentCardItem in CardItemsToAdd)
+                {
+                    var existingCardId = await CheckForExistingCardAsync(currentCardItem);
+                    if (existingCardId.HasValue)
+                    {
+                        // Update the count in the database
+                        string updateSql = @"UPDATE myCollection SET count = count + @newCount, trade = trade + @newTradeCount WHERE id = @id";
+                        using var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection);
+                        updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.CardsOwned);
+                        updateCommand.Parameters.AddWithValue("@newTradeCount", currentCardItem.CardsForTrade);
+                        updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
+
+                        await updateCommand.ExecuteNonQueryAsync();
+                        // Update the item in the list
+                        var cardToUpdate = MainWindow.CurrentInstance.myCards.FirstOrDefault(c => c.Uuid == currentCardItem.Uuid);
+                        if (cardToUpdate != null && cardToUpdate is CardItem card)
+                        {
+                            card.CardsOwned += currentCardItem.CardsOwned;
+                        }
+                    }
+                    else
+                    {
+                        // No existing row, insert a new one
+                        string insertSql = "INSERT INTO myCollection (uuid, count, trade, condition, language, finish) VALUES (@uuid, @count, @trade, @condition, @language, @finish)";
+                        using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
+                        insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
+                        insertCommand.Parameters.AddWithValue("@count", currentCardItem.CardsOwned);
+                        insertCommand.Parameters.AddWithValue("@trade", currentCardItem.CardsForTrade);
+                        insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
+                        insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
+                        insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
+
+                        await insertCommand.ExecuteNonQueryAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to update the database: {ex.Message}");
+                MessageBox.Show($"Failed to update the database: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                // Provide update of the operation
+                var cardDetails = CardItemsToAdd.Select(card =>
+                    $"- {card.Name} (Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish}, Cards owned: {card.CardsOwned}, Cards for trade: {card.CardsForTrade})")
+                    .Aggregate((current, next) => current + "\n" + next);
+
+                MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Visible;
+                MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards to your collection:\n\n" + cardDetails;
+                HideCardsToAddListView(false);
+
+                CardItemsToAdd.Clear();
+
+                // Reload my collection
+                MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
+                await MainWindow.CurrentInstance.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
+                await MainWindow.CurrentInstance.PopulateFilterUiElements();
+
+                DBAccess.connection.Close();
+            }
+        }
+        public async void SubmitEditedCardsToCollection(object sender, RoutedEventArgs e)
         {
             if (DBAccess.connection == null)
             {
@@ -335,38 +408,53 @@ namespace CollectaMundo
             await DBAccess.connection.OpenAsync();
             try
             {
-                foreach (var currentCardItem in cardItems)
+                foreach (var currentCardItem in CardItemsToEdit)
                 {
                     var existingCardId = await CheckForExistingCardAsync(currentCardItem);
-
-                    // Logic for handling new cards
-                    if (isNewCard)
+                    if (existingCardId.HasValue && existingCardId != currentCardItem.CardId)
                     {
-                        if (existingCardId.HasValue)
+                        // Update the existing row in the myCollection table if it is not the same card
+                        string updateSql = @"UPDATE myCollection SET count = count + @newCount WHERE id = @id";
+                        using (var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection))
                         {
-                            await UpdateExistingCardAsync(currentCardItem, existingCardId.Value);
-                            UpdateCardInMemory(currentCardItem); // Update in-memory collection
+                            updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.CardsOwned);
+                            updateCommand.Parameters.AddWithValue("@id", existingCardId.Value);
+
+                            await updateCommand.ExecuteNonQueryAsync();
                         }
-                        else
-                        {
-                            await InsertNewCardAsync(currentCardItem); // Insert new card
-                        }
+
+                        // Additionally, remove the currentCardItem from the table as it's being edited and updated
+                        string deleteSql = "DELETE FROM myCollection WHERE id = @id";
+                        using var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection);
+                        deleteCommand.Parameters.AddWithValue("@id", currentCardItem.CardId);
+                        await deleteCommand.ExecuteNonQueryAsync();
                     }
                     else
                     {
-                        // Logic for handling edited cards
-                        if (existingCardId.HasValue && existingCardId != currentCardItem.CardId)
+                        // If the count is set to 0, delete the card from myCollection
+                        if (currentCardItem.CardsOwned == 0)
                         {
-                            await UpdateExistingCardAsync(currentCardItem, existingCardId.Value);
-                            await DeleteOldCardAsync(currentCardItem); // Remove old entry
-                        }
-                        else if (currentCardItem.CardsOwned == 0)
-                        {
-                            await DeleteOldCardAsync(currentCardItem); // Delete if no cards owned
+                            Debug.WriteLine($"CardsOwned set to 0, deleting card with id {currentCardItem.CardId}");
+
+                            string deleteSql = "DELETE FROM myCollection WHERE id = @id";
+                            using var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection);
+                            deleteCommand.Parameters.AddWithValue("@id", currentCardItem.CardId);
+                            await deleteCommand.ExecuteNonQueryAsync();
                         }
                         else
                         {
-                            await UpdateEditedCardAsync(currentCardItem); // Update card details
+                            Debug.WriteLine($"No card like this exists already - updating card with id {currentCardItem.CardId}");
+                            // If there's no matching existing card ID, update the card in myCollection
+                            string updateSql = @"UPDATE myCollection SET count = @count, trade = @trade, condition = @condition, language = @language, finish = @finish WHERE id = @cardId";
+                            using var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection);
+                            updateCommand.Parameters.AddWithValue("@count", currentCardItem.CardsOwned);
+                            updateCommand.Parameters.AddWithValue("@trade", currentCardItem.CardsForTrade);
+                            updateCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
+                            updateCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
+                            updateCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
+                            updateCommand.Parameters.AddWithValue("@cardId", currentCardItem.CardId);
+
+                            await updateCommand.ExecuteNonQueryAsync();
                         }
                     }
                 }
@@ -378,98 +466,30 @@ namespace CollectaMundo
             }
             finally
             {
-                DisplayOperationResult(cardItems, isNewCard);
-                await RefreshCollection();
-                DBAccess.connection.Close();
-            }
-        }
+                // Provide update of the operation
+                var cardDetails = CardItemsToEdit.Select(card =>
+                    card.CardsOwned == 0
+                        ? $"{card.Name} - DELETED FROM COLLECTION"  // Display this message if card count is zero
+                        : $"- {card.Name} (Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish}, Cards owned: {card.CardsOwned}, Cards for trade: {card.CardsForTrade})")
+                    .Aggregate((current, next) => current + "\n" + next);
 
-        private async Task UpdateExistingCardAsync(CardItem currentCardItem, int existingCardId)
-        {
-            string updateSql = @"UPDATE myCollection SET count = count + @newCount, trade = trade + @newTradeCount WHERE id = @id";
-            using var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection);
-            updateCommand.Parameters.AddWithValue("@newCount", currentCardItem.CardsOwned);
-            updateCommand.Parameters.AddWithValue("@newTradeCount", currentCardItem.CardsForTrade);
-            updateCommand.Parameters.AddWithValue("@id", existingCardId);
-
-            await updateCommand.ExecuteNonQueryAsync();
-        }
-
-        private async Task InsertNewCardAsync(CardItem currentCardItem)
-        {
-            string insertSql = "INSERT INTO myCollection (uuid, count, trade, condition, language, finish) VALUES (@uuid, @count, @trade, @condition, @language, @finish)";
-            using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
-            insertCommand.Parameters.AddWithValue("@uuid", currentCardItem.Uuid);
-            insertCommand.Parameters.AddWithValue("@count", currentCardItem.CardsOwned);
-            insertCommand.Parameters.AddWithValue("@trade", currentCardItem.CardsForTrade);
-            insertCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
-            insertCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
-            insertCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
-
-            await insertCommand.ExecuteNonQueryAsync();
-        }
-
-        private async Task DeleteOldCardAsync(CardItem currentCardItem)
-        {
-            string deleteSql = "DELETE FROM myCollection WHERE id = @id";
-            using var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection);
-            deleteCommand.Parameters.AddWithValue("@id", currentCardItem.CardId);
-
-            await deleteCommand.ExecuteNonQueryAsync();
-        }
-
-        private async Task UpdateEditedCardAsync(CardItem currentCardItem)
-        {
-            string updateSql = @"UPDATE myCollection SET count = @count, trade = @trade, condition = @condition, language = @language, finish = @finish WHERE id = @cardId";
-            using var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection);
-            updateCommand.Parameters.AddWithValue("@count", currentCardItem.CardsOwned);
-            updateCommand.Parameters.AddWithValue("@trade", currentCardItem.CardsForTrade);
-            updateCommand.Parameters.AddWithValue("@condition", currentCardItem.SelectedCondition);
-            updateCommand.Parameters.AddWithValue("@language", currentCardItem.Language);
-            updateCommand.Parameters.AddWithValue("@finish", currentCardItem.SelectedFinish);
-            updateCommand.Parameters.AddWithValue("@cardId", currentCardItem.CardId);
-
-            await updateCommand.ExecuteNonQueryAsync();
-        }
-
-        private void UpdateCardInMemory(CardItem currentCardItem)
-        {
-            var cardToUpdate = MainWindow.CurrentInstance.myCards.FirstOrDefault(c => c.Uuid == currentCardItem.Uuid);
-            if (cardToUpdate != null && cardToUpdate is CardItem card)
-            {
-                card.CardsOwned += currentCardItem.CardsOwned;
-            }
-        }
-
-        private void DisplayOperationResult(ObservableCollection<CardItem> cardItems, bool isNewCard)
-        {
-            string cardDetails = cardItems.Select(card =>
-                card.CardsOwned == 0
-                    ? $"{card.Name} - DELETED FROM COLLECTION"
-                    : $"- {card.Name} (Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish}, Cards owned: {card.CardsOwned}, Cards for trade: {card.CardsForTrade})")
-                .Aggregate((current, next) => current + "\n" + next);
-
-            if (isNewCard)
-            {
-                MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Visible;
-                MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards to your collection:\n\n" + cardDetails;
-                HideCardsToAddListView(false);
-            }
-            else
-            {
+                // Set the detailed string with linebreaks to the TextBlock
                 MainWindow.CurrentInstance.EditStatusScrollViewer.Visibility = Visibility.Visible;
                 MainWindow.CurrentInstance.EditStatusTextBlock.Text = "Edited the following cards in your collection:\n\n" + cardDetails;
                 HideCardsToEditListView(false);
+
+                CardItemsToEdit.Clear();
+
+                // Reload my collection
+                MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
+                await MainWindow.CurrentInstance.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
+                await MainWindow.CurrentInstance.PopulateFilterUiElements();
+
+                MainWindow.CurrentInstance.ApplyFilterSelection();
+
+                DBAccess.connection.Close();
             }
         }
-
-        private async Task RefreshCollection()
-        {
-            MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
-            await MainWindow.CurrentInstance.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
-            MainWindow.CurrentInstance.ApplyFilterSelection();
-        }
-
         private static async Task<int?> CheckForExistingCardAsync(CardItem card)
         {
             string selectSql = @"
