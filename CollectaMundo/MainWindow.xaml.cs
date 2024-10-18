@@ -138,6 +138,7 @@ namespace CollectaMundo
             Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
 
             await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons);
+            GridFiltering.Visibility = Visibility.Visible;
             await PopulateFilterUiElements();
 
             DBAccess.CloseConnection();

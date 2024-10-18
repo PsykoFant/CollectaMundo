@@ -47,9 +47,6 @@ namespace CollectaMundo
 
             if (redownloadDB)
             {
-                // await DownloadResourceFileIfNotExistAsync(databasePath, MainWindow.CurrentInstance.cardDbDownloadUrl, downloadMessage, true)
-                // await DownloadResourceFileIfNotExistAsync(MainWindow.CurrentInstance.downloadsPath, MainWindow.CurrentInstance.pricesDownloadUrl, downloadMessage, true)
-
                 var downloadDatabaseTask = DownloadResourceFileIfNotExistAsync(databasePath, MainWindow.cardDbDownloadUrl, downloadMessage, "card database", true);
                 var downloadPricesTask = DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, MainWindow.pricesDownloadUrl, downloadMessage, "", false);
 
