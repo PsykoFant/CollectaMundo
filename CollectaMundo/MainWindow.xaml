@@ -39,7 +39,7 @@
             <Button x:Name="MenuDecksButton" Content="Decks" HorizontalAlignment="Left" Margin="340,10,0,0" VerticalAlignment="Top" Width="160" Height="20"/>
             <Button x:Name="MenuUtilsButton" Content="Utilities" HorizontalAlignment="Left" Margin="505,10,0,0" VerticalAlignment="Top" Width="160" Click="MenuUtilsButton_Click" Height="20"/>
         </Grid>
-        <Grid x:Name="GridSideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="Visible">
+        <Grid x:Name="GridSideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="Collapsed">
             <Grid x:Name="GridFiltering">
                 <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="90" Click="ClearFiltersButton_Click" Height="20"/>
 
@@ -429,7 +429,7 @@
                 <Button x:Name="ImportCollectionButton" Content="The Import Wizard" HorizontalAlignment="Left" Margin="10,30,0,0" VerticalAlignment="Top" Click="ImportCollectionButton_Click" Width="170" Height="20"/>
             </Grid>
         </Grid>
-        <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="Visible">
+        <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="Collapsed">
             <Image x:Name="LogoSmall" Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="170" Width="170" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" />
             <ScrollViewer HorizontalAlignment="Left" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <TextBlock x:Name="FilterSummaryTextBlock" HorizontalAlignment="Left" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top"/>

@@ -27,25 +27,31 @@ namespace CollectaMundo
             bool redownloadDB = false;
             string downloadMessage = string.Empty;
 
+            // Check if card database exists            
             if (!File.Exists(databasePath))
             {
-                redownloadDB = true;
+                redownloadDB = true; // Set reload-bool to true
                 downloadMessage = "Performing first-time setup of card database - please wait...";
             }
+            // If it does, check that card database is not corrupt
             else
             {
                 if (!await DBAccess.CheckDatabaseIntegrityAsync())
                 {
+                    // If card database is corrupted, delete corrupt carddatabase. 
                     File.Delete(databasePath);
-                    redownloadDB = true;
+                    redownloadDB = true; // Set reload-bool to true
                     downloadMessage = "Card database was corrupted! Re-downloading - please wait...";
                 }
             }
 
             if (redownloadDB)
             {
-                if (await DownloadDatabaseIfNotExistsAsync(databasePath, downloadMessage))
+                // await DownloadResourceFileIfNotExistAsync(databasePath, MainWindow.CurrentInstance.cardDbDownloadUrl, downloadMessage, true)
+                // await DownloadResourceFileIfNotExistAsync(MainWindow.CurrentInstance.downloadsPath, MainWindow.CurrentInstance.pricesDownloadUrl, downloadMessage, true)
+                if (await DownloadResourceFileIfNotExistAsync(MainWindow.CurrentInstance.downloadsPath, MainWindow.CurrentInstance.pricesDownloadUrl, downloadMessage, true))
                 {
+                    await DownloadResourceFileIfNotExistAsync(databasePath, MainWindow.CurrentInstance.cardDbDownloadUrl, downloadMessage, true);
                     await PrepareDownloadedCardDatabase();
                 }
                 else
@@ -60,12 +66,13 @@ namespace CollectaMundo
         }
 
         // Download card database from mtgjson in SQLite format
-        public static async Task<bool> DownloadDatabaseIfNotExistsAsync(string databasePath, string statusMessage)
+        public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessage, bool showStatusBar)
         {
             try
             {
                 MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = statusMessage;
-                if (MainWindow.CurrentInstance?.ProgressBar != null)
+
+                if (showStatusBar && MainWindow.CurrentInstance?.ProgressBar != null)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
@@ -75,16 +82,18 @@ namespace CollectaMundo
 
                 IProgress<int> progress = new Progress<int>(value =>
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    if (showStatusBar)
                     {
-                        if (MainWindow.CurrentInstance?.ProgressBar != null)
+                        Application.Current.Dispatcher.Invoke(() =>
                         {
-                            MainWindow.CurrentInstance.ProgressBar.Value = value;
-                        }
-                    });
+                            if (MainWindow.CurrentInstance?.ProgressBar != null)
+                            {
+                                MainWindow.CurrentInstance.ProgressBar.Value = value;
+                            }
+                        });
+                    }
                 });
 
-                string downloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
                 using var httpClient = new HttpClient();
                 using var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
                 using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
@@ -93,13 +102,13 @@ namespace CollectaMundo
                 var totalBytesRead = 0L;
                 var buffer = new byte[4096];
                 using var contentStream = await response.Content.ReadAsStreamAsync();
-                using var fileStream = new FileStream(databasePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
+                using var fileStream = new FileStream(downloadTargetPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
 
                 var megabytes = string.Format("{0:0.0} MB", totalBytes / 1000000.0);
-                StatusMessageUpdated?.Invoke($"Downloading card database ({megabytes})");
+                StatusMessageUpdated?.Invoke($"Downloading resource file ({megabytes})");
 
                 var bytesRead = 0;
-                while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
+                while ((bytesRead = await contentStream.ReadAsync(buffer)) != 0)
                 {
                     await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
                     totalBytesRead += bytesRead;
@@ -107,18 +116,18 @@ namespace CollectaMundo
                     progress?.Report(progressPercentage);
                 }
 
-                Debug.WriteLine($"Download completed. The database file '{databasePath}' is now available.");
+                Debug.WriteLine($"Download completed. The file '{downloadTargetPath}' is now available.");
                 return true; // Return true if download completes successfully
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error during download of card database: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                Debug.WriteLine($"Error during download of card database: {ex.Message}");
+                MessageBox.Show($"Error during download: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error during download: {ex.Message}");
                 return false; // Return false in case of any exception
             }
             finally
             {
-                if (MainWindow.CurrentInstance?.ProgressBar != null)
+                if (showStatusBar && MainWindow.CurrentInstance?.ProgressBar != null)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
@@ -128,6 +137,7 @@ namespace CollectaMundo
                 }
             }
         }
+
 
         // Generate custom data such as manasymbols, mana cost, set images and save them as png in database
         public static async Task PrepareDownloadedCardDatabase()

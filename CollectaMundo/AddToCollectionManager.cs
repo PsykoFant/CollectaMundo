@@ -594,6 +594,7 @@ namespace CollectaMundo
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
                 await MainWindow.CurrentInstance.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
+                await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 DBAccess.connection.Close();
             }
@@ -650,8 +651,6 @@ namespace CollectaMundo
                 await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 DBAccess.connection.Close();
-
-                MainWindow.CurrentInstance.ApplyFilterSelection();
             }
         }
         public async void SetCardsForTrade(List<CardItem> selectedCards, bool setForTrade)

@@ -1,7 +1,7 @@
 
         /*TO DO 
          * PRISER!!!
-         * https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_1.json
+         * 
          */
 
 

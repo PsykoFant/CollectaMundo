@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -19,6 +20,16 @@ namespace CollectaMundo
         // Used for displaying images
         private string? _imageSourceUrl = string.Empty;
         private string? _imageSourceUrl2nd = string.Empty;
+
+        // Download url for card database
+        public readonly string cardDbDownloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
+
+        // Download url for card prices
+        public readonly string pricesDownloadUrl = "https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_1.json";
+
+        // Location of user's "Downloads" folder
+        public readonly string downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+
         public string? ImageSourceUrl
         {
             get => _imageSourceUrl;
