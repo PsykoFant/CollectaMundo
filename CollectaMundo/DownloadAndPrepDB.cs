@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
@@ -53,23 +54,44 @@ namespace CollectaMundo
                 // Wait for both tasks to complete using Task.WhenAll
                 bool[] results = await Task.WhenAll(downloadDatabaseTask, downloadPricesTask);
 
-                // Check if both returned true
-                if (results[0] && results[1])
+                // Check each result and retry if necessary
+                if (!results[0])
                 {
-                    await PrepareDownloadedCardDatabase();
+                    // Redownload card database if the first download failed
+                    Debug.WriteLine("Retrying card database download...");
+                    bool redownloadCardDb = await DownloadResourceFileIfNotExistAsync(databasePath, MainWindow.cardDbDownloadUrl, downloadMessage, "card database", true);
+                    if (!redownloadCardDb)
+                    {
+                        // Handle persistent failure
+                        Debug.WriteLine("Card database re-download failed.");
+                        await SystemIntegrityCheckAsync();
+                        return; // Exit if the re-download fails again
+                    }
                 }
-                else
+
+                if (!results[1])
                 {
-                    await SystemIntegrityCheckAsync();
+                    // Redownload prices database if the second download failed
+                    Debug.WriteLine("Retrying prices download...");
+                    bool redownloadPrices = await DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, MainWindow.pricesDownloadUrl, downloadMessage, "", false);
+                    if (!redownloadPrices)
+                    {
+                        // Handle persistent failure
+                        Debug.WriteLine("Prices re-download failed.");
+                        await SystemIntegrityCheckAsync();
+                        return; // Exit if the re-download fails again
+                    }
                 }
+
+                // If both downloads (or re-downloads) succeeded, proceed
+                await PrepareDownloadedCardDatabase();
             }
+
             else
             {
                 MainWindow.CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
             }
         }
-
-        // Download card database from mtgjson in SQLite format
         public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessageBig, string downloadFile, bool showStatusBar)
         {
             try
@@ -142,23 +164,28 @@ namespace CollectaMundo
             }
         }
 
-
-        // Generate custom data such as manasymbols, mana cost, set images and save them as png in database
         public static async Task PrepareDownloadedCardDatabase()
         {
             await DBAccess.OpenConnectionAsync();
 
-            await Task.Run(CreateCustomTablesAndIndices);
+            await Task.Run(CreateCustomTables);
 
             await GenerateManaSymbolsFromSvgAsync();
-            // Now run the last two functions in parallel
+
+            // Generate custom data such as manasymbols, mana cost, set images and save them as png in database
             var generateManaCostImagesTask = GenerateManaCostImagesAsync();
             var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
             await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
 
+            await ImportPricesFromJsonAsync();
+
+            var generateIndices = CreateIndices();
+            var generateViews = CreateViews();
+            await Task.WhenAll(generateIndices, generateViews);
+
             DBAccess.CloseConnection();
         }
-        private static async Task CreateCustomTablesAndIndices()
+        private static async Task CreateCustomTables()
         {
             try
             {
@@ -172,6 +199,22 @@ namespace CollectaMundo
                     {"keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB);"},
                     {"AggregatedCardKeywords", "CREATE TABLE IF NOT EXISTS AggregatedCardKeywords (uuid TEXT PRIMARY KEY, aggregatedKeywords TEXT);"},
                     {"myCollection", "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid TEXT, count INTEGER, trade INTEGER, condition TEXT, language TEXT, finish TEXT);"},
+                    {"cardPrices", @"CREATE TABLE IF NOT EXISTS cardPrices (
+    uuid TEXT UNIQUE, 
+    mcmId INTEGER PRIMARY KEY, 
+    avg TEXT, 
+    low TEXT, 
+    trend TEXT, 
+    avg1 TEXT, 
+    avg7 TEXT, 
+    avg30 TEXT, 
+    avgFoil TEXT, 
+    lowFoil TEXT, 
+    trendFoil TEXT, 
+    avg1Foil TEXT, 
+    avg7Foil TEXT, 
+    avg30Foil TEXT
+);"}
                 };
 
                 // Create the tables asynchronously
@@ -180,12 +223,6 @@ namespace CollectaMundo
                     using var command = new SQLiteCommand(item.Value, DBAccess.connection);
                     await command.ExecuteNonQueryAsync();
                 }
-
-                // Create indices
-                await CreateIndices();
-
-                // Create the view
-                await CreateViews();
             }
             catch (Exception ex)
             {
@@ -193,6 +230,123 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during creation of tables: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        public static async Task ImportPricesFromJsonAsync()
+        {
+            try
+            {
+                // Read the JSON file from the priceDownloadsPath
+                string jsonFilePath = MainWindow.priceDownloadsPath;
+                if (!File.Exists(jsonFilePath))
+                {
+                    throw new FileNotFoundException($"Price JSON file not found at: {jsonFilePath}");
+                }
+
+                string jsonContent = await File.ReadAllTextAsync(jsonFilePath);
+
+                // Deserialize JSON content into C# objects
+                var jsonData = JsonConvert.DeserializeObject<PriceData>(jsonContent);
+                if (jsonData == null || jsonData.PriceGuides == null || jsonData.PriceGuides.Count == 0)
+                {
+                    throw new InvalidOperationException("No price data found in the JSON file.");
+                }
+
+                // Begin inserting the parsed data into the 'cardPrices' table
+                string insertSql = @"
+            INSERT OR REPLACE INTO cardPrices
+            (mcmId, Avg, Low, Trend, Avg1, Avg7, Avg30, AvgFoil, LowFoil, TrendFoil, Avg1Foil, Avg7Foil, Avg30Foil)
+            VALUES (@mcmId, @Avg, @Low, @Trend, @Avg1, @Avg7, @Avg30, @AvgFoil, @LowFoil, @TrendFoil, @Avg1Foil, @Avg7Foil, @Avg30Foil);";
+
+                foreach (var priceGuide in jsonData.PriceGuides)
+                {
+                    using var command = new SQLiteCommand(insertSql, DBAccess.connection);
+                    command.Parameters.AddWithValue("@mcmId", priceGuide.IdProduct);
+                    command.Parameters.AddWithValue("@Avg", priceGuide.Avg);
+                    command.Parameters.AddWithValue("@Low", priceGuide.Low);
+                    command.Parameters.AddWithValue("@Trend", priceGuide.Trend);
+                    command.Parameters.AddWithValue("@Avg1", priceGuide.Avg1);
+                    command.Parameters.AddWithValue("@Avg7", priceGuide.Avg7);
+                    command.Parameters.AddWithValue("@Avg30", priceGuide.Avg30);
+                    command.Parameters.AddWithValue("@AvgFoil", priceGuide.AvgFoil);
+                    command.Parameters.AddWithValue("@LowFoil", priceGuide.LowFoil);
+                    command.Parameters.AddWithValue("@TrendFoil", priceGuide.TrendFoil);
+                    command.Parameters.AddWithValue("@Avg1Foil", priceGuide.Avg1Foil);
+                    command.Parameters.AddWithValue("@Avg7Foil", priceGuide.Avg7Foil);
+                    command.Parameters.AddWithValue("@Avg30Foil", priceGuide.Avg30Foil);
+
+                    await command.ExecuteNonQueryAsync();
+                }
+
+                // Update the 'appsettings.json' file with the 'CreatedAt' value
+                //UpdateAppSettings(jsonData.CreatedAt);
+
+                // Delete the JSON file after successful import
+                File.Delete(jsonFilePath);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error during price import: {ex.Message}");
+                MessageBox.Show($"Error during price import: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private static void UpdateAppSettings(string createdAt)
+        {
+            try
+            {
+                string appSettingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+
+                // Load the existing appsettings.json content
+                var config = JsonConvert.DeserializeObject<Dictionary<string, object>>(File.ReadAllText(appSettingsFile));
+
+                // Check if PricesUpdated field exists, and update or create it
+                if (config.ContainsKey("PricesUpdated"))
+                {
+                    var pricesUpdated = JsonConvert.DeserializeObject<Dictionary<string, string>>(config["PricesUpdated"].ToString());
+                    pricesUpdated["PricesUpdatedDate"] = createdAt;
+                    config["PricesUpdated"] = pricesUpdated;
+                }
+                else
+                {
+                    config["PricesUpdated"] = new Dictionary<string, string> { { "PricesUpdatedDate", createdAt } };
+                }
+
+                // Save the updated configuration back to appsettings.json
+                File.WriteAllText(appSettingsFile, JsonConvert.SerializeObject(config, Formatting.Indented));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error updating appsettings.json: {ex.Message}");
+                MessageBox.Show($"Error updating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+
+        // Model to represent the JSON structure
+        public class PriceData
+        {
+            public string? CreatedAt { get; set; }
+            public List<PriceGuide>? PriceGuides { get; set; }
+        }
+
+        public class PriceGuide
+        {
+            public int IdProduct { get; set; }
+            public float? Avg { get; set; }
+            public float? Low { get; set; }
+            public float? Trend { get; set; }
+            public float? Avg1 { get; set; }
+            public float? Avg7 { get; set; }
+            public float? Avg30 { get; set; }
+            public float? AvgFoil { get; set; }
+            public float? LowFoil { get; set; }
+            public float? TrendFoil { get; set; }
+            public float? Avg1Foil { get; set; }
+            public float? Avg7Foil { get; set; }
+            public float? Avg30Foil { get; set; }
+        }
+
+
+
         public static async Task GenerateManaSymbolsFromSvgAsync()
         {
             StatusMessageUpdated?.Invoke("Generating mana symbol images...");
