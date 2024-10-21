@@ -25,6 +25,8 @@ namespace CollectaMundo
         // If it doesn't exist, download it and populate it with custom data, including image data for mana symbols and set images
         public static async Task SystemIntegrityCheckAsync()
         {
+            await PrepareDownloadedCardDatabase();
+            /*
             bool redownloadDB = false;
             string downloadMessage = string.Empty;
 
@@ -91,6 +93,8 @@ namespace CollectaMundo
             {
                 MainWindow.CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
             }
+            */
+
         }
         public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessageBig, string downloadFile, bool showStatusBar)
         {
@@ -202,18 +206,18 @@ namespace CollectaMundo
                     {"cardPrices", @"CREATE TABLE IF NOT EXISTS cardPrices (
     uuid TEXT UNIQUE, 
     mcmId INTEGER PRIMARY KEY, 
-    avg TEXT, 
-    low TEXT, 
-    trend TEXT, 
-    avg1 TEXT, 
-    avg7 TEXT, 
-    avg30 TEXT, 
-    avgFoil TEXT, 
-    lowFoil TEXT, 
-    trendFoil TEXT, 
-    avg1Foil TEXT, 
-    avg7Foil TEXT, 
-    avg30Foil TEXT
+    avg DECIMAL(10, 2), 
+    low DECIMAL(10, 2), 
+    trend DECIMAL(10, 2), 
+    avg1 DECIMAL(10, 2), 
+    avg7 DECIMAL(10, 2), 
+    avg30 DECIMAL(10, 2), 
+    avgFoil DECIMAL(10, 2), 
+    lowFoil DECIMAL(10, 2), 
+    trendFoil DECIMAL(10, 2), 
+    avg1Foil DECIMAL(10, 2), 
+    avg7Foil DECIMAL(10, 2), 
+    avg30Foil DECIMAL(10, 2)
 );"}
                 };
 
@@ -233,6 +237,9 @@ namespace CollectaMundo
 
         public static async Task ImportPricesFromJsonAsync()
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             try
             {
                 // Read the JSON file from the priceDownloadsPath
@@ -251,44 +258,96 @@ namespace CollectaMundo
                     throw new InvalidOperationException("No price data found in the JSON file.");
                 }
 
-                // Begin inserting the parsed data into the 'cardPrices' table
+                // Begin inserting the parsed data into the 'cardPrices' table within a transaction
                 string insertSql = @"
             INSERT OR REPLACE INTO cardPrices
             (mcmId, Avg, Low, Trend, Avg1, Avg7, Avg30, AvgFoil, LowFoil, TrendFoil, Avg1Foil, Avg7Foil, Avg30Foil)
             VALUES (@mcmId, @Avg, @Low, @Trend, @Avg1, @Avg7, @Avg30, @AvgFoil, @LowFoil, @TrendFoil, @Avg1Foil, @Avg7Foil, @Avg30Foil);";
 
-                foreach (var priceGuide in jsonData.PriceGuides)
+                var transaction = DBAccess.connection.BeginTransaction();
+                try
                 {
                     using var command = new SQLiteCommand(insertSql, DBAccess.connection);
-                    command.Parameters.AddWithValue("@mcmId", priceGuide.IdProduct);
-                    command.Parameters.AddWithValue("@Avg", priceGuide.Avg);
-                    command.Parameters.AddWithValue("@Low", priceGuide.Low);
-                    command.Parameters.AddWithValue("@Trend", priceGuide.Trend);
-                    command.Parameters.AddWithValue("@Avg1", priceGuide.Avg1);
-                    command.Parameters.AddWithValue("@Avg7", priceGuide.Avg7);
-                    command.Parameters.AddWithValue("@Avg30", priceGuide.Avg30);
-                    command.Parameters.AddWithValue("@AvgFoil", priceGuide.AvgFoil);
-                    command.Parameters.AddWithValue("@LowFoil", priceGuide.LowFoil);
-                    command.Parameters.AddWithValue("@TrendFoil", priceGuide.TrendFoil);
-                    command.Parameters.AddWithValue("@Avg1Foil", priceGuide.Avg1Foil);
-                    command.Parameters.AddWithValue("@Avg7Foil", priceGuide.Avg7Foil);
-                    command.Parameters.AddWithValue("@Avg30Foil", priceGuide.Avg30Foil);
 
-                    await command.ExecuteNonQueryAsync();
+                    // Use a prepared statement to reuse the command for each insert
+                    command.Parameters.Add(new SQLiteParameter("@mcmId"));
+                    command.Parameters.Add(new SQLiteParameter("@Avg"));
+                    command.Parameters.Add(new SQLiteParameter("@Low"));
+                    command.Parameters.Add(new SQLiteParameter("@Trend"));
+                    command.Parameters.Add(new SQLiteParameter("@Avg1"));
+                    command.Parameters.Add(new SQLiteParameter("@Avg7"));
+                    command.Parameters.Add(new SQLiteParameter("@Avg30"));
+                    command.Parameters.Add(new SQLiteParameter("@AvgFoil"));
+                    command.Parameters.Add(new SQLiteParameter("@LowFoil"));
+                    command.Parameters.Add(new SQLiteParameter("@TrendFoil"));
+                    command.Parameters.Add(new SQLiteParameter("@Avg1Foil"));
+                    command.Parameters.Add(new SQLiteParameter("@Avg7Foil"));
+                    command.Parameters.Add(new SQLiteParameter("@Avg30Foil"));
+
+                    int batchSize = 1000;
+                    int counter = 0;
+
+                    foreach (var priceGuide in jsonData.PriceGuides)
+                    {
+                        command.Parameters["@mcmId"].Value = priceGuide.IdProduct;
+                        command.Parameters["@Avg"].Value = priceGuide.Avg;
+                        command.Parameters["@Low"].Value = priceGuide.Low;
+                        command.Parameters["@Trend"].Value = priceGuide.Trend;
+                        command.Parameters["@Avg1"].Value = priceGuide.Avg1;
+                        command.Parameters["@Avg7"].Value = priceGuide.Avg7;
+                        command.Parameters["@Avg30"].Value = priceGuide.Avg30;
+                        command.Parameters["@AvgFoil"].Value = priceGuide.AvgFoil;
+                        command.Parameters["@LowFoil"].Value = priceGuide.LowFoil;
+                        command.Parameters["@TrendFoil"].Value = priceGuide.TrendFoil;
+                        command.Parameters["@Avg1Foil"].Value = priceGuide.Avg1Foil;
+                        command.Parameters["@Avg7Foil"].Value = priceGuide.Avg7Foil;
+                        command.Parameters["@Avg30Foil"].Value = priceGuide.Avg30Foil;
+
+                        await command.ExecuteNonQueryAsync();
+
+                        // Batch commit every 1000 inserts for performance
+                        if (++counter % batchSize == 0)
+                        {
+                            await transaction.CommitAsync();
+                            transaction.Dispose();  // Manually dispose of the old transaction
+                            transaction = DBAccess.connection.BeginTransaction();  // Start a new transaction after commit
+                        }
+                    }
+
+                    // Commit any remaining inserts
+                    await transaction.CommitAsync();
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();  // Rollback in case of an exception
+                    throw;
+                }
+                finally
+                {
+                    transaction.Dispose();  // Ensure the transaction is disposed
                 }
 
-                // Update the 'appsettings.json' file with the 'CreatedAt' value
-                //UpdateAppSettings(jsonData.CreatedAt);
+                // Comment out the UpdateAppSettings
+                //await UpdateAppSettings(jsonData.CreatedAt);
 
-                // Delete the JSON file after successful import
-                File.Delete(jsonFilePath);
+                // Comment out the deletion of the JSON file
+                //File.Delete(jsonFilePath);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error during price import: {ex.Message}");
                 MessageBox.Show($"Error during price import: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally
+            {
+                stopwatch.Stop();
+                Debug.WriteLine($"ImportPricesFromJsonAsync completed in {stopwatch.Elapsed.TotalSeconds} seconds.");
+            }
         }
+
+
+
+
         private static void UpdateAppSettings(string createdAt)
         {
             try
@@ -331,19 +390,32 @@ namespace CollectaMundo
         public class PriceGuide
         {
             public int IdProduct { get; set; }
-            public float? Avg { get; set; }
-            public float? Low { get; set; }
-            public float? Trend { get; set; }
-            public float? Avg1 { get; set; }
-            public float? Avg7 { get; set; }
-            public float? Avg30 { get; set; }
-            public float? AvgFoil { get; set; }
-            public float? LowFoil { get; set; }
-            public float? TrendFoil { get; set; }
-            public float? Avg1Foil { get; set; }
-            public float? Avg7Foil { get; set; }
-            public float? Avg30Foil { get; set; }
+            public decimal? Avg { get; set; }
+            public decimal? Low { get; set; }
+            public decimal? Trend { get; set; }
+            public decimal? Avg1 { get; set; }
+            public decimal? Avg7 { get; set; }
+            public decimal? Avg30 { get; set; }
+
+            [JsonProperty("avg-foil")]
+            public decimal? AvgFoil { get; set; }
+
+            [JsonProperty("low-foil")]
+            public decimal? LowFoil { get; set; }
+
+            [JsonProperty("trend-foil")]
+            public decimal? TrendFoil { get; set; }
+
+            [JsonProperty("avg1-foil")]
+            public decimal? Avg1Foil { get; set; }
+
+            [JsonProperty("avg7-foil")]
+            public decimal? Avg7Foil { get; set; }
+
+            [JsonProperty("avg30-foil")]
+            public decimal? Avg30Foil { get; set; }
         }
+
 
 
 
