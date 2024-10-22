@@ -183,27 +183,21 @@ namespace CollectaMundo
             var stopwatch = new Stopwatch();
             stopwatch.Start();
 
-
-            StatusMessageUpdated?.Invoke("1. Creating custom tables and indices...");
             await CreateCustomTables();
-            Debug.WriteLine($"CreateCustomTables completed after {stopwatch.Elapsed.TotalSeconds} seconds.");
 
-            StatusMessageUpdated?.Invoke("2. Generating mana symbol images...");
+            StatusMessageUpdated?.Invoke("Generating mana symbol images ...");
             await GenerateManaSymbolsFromSvgAsync();
-            Debug.WriteLine($"GenerateManaSymbolsFromSvgAsync completed after {stopwatch.Elapsed.TotalSeconds} seconds.");
 
-            StatusMessageUpdated?.Invoke("3. Generating mana cost images ...");
+            StatusMessageUpdated?.Invoke("Generating mana cost images ...");
             await Task.Delay(10); // For UI to update
-            await GenerateManaCostImagesAsync();
-            Debug.WriteLine($"GenerateManaCostImagesAsync completed after {stopwatch.Elapsed.TotalSeconds} seconds.");
 
-            StatusMessageUpdated?.Invoke("4. Generating keyrune images ...");
+            await GenerateManaCostImagesAsync();
+
+            StatusMessageUpdated?.Invoke("Generating set icon images ...");
             await GenerateSetKeyruneFromSvgAsync();
-            Debug.WriteLine($"GenerateSetKeyruneFromSvgAsync completed after {stopwatch.Elapsed.TotalSeconds} seconds.");
 
             StatusMessageUpdated?.Invoke("5. Importing prices...");
             await ImportPricesFromJsonAsync(2000);
-            Debug.WriteLine($"ImportPricesFromJsonAsync completed after {stopwatch.Elapsed.TotalSeconds} seconds.");
 
             StatusMessageUpdated?.Invoke("6. Generating views and indices ...");
             var generateIndices = CreateIndices();
