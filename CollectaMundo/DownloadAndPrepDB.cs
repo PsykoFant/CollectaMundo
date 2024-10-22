@@ -192,6 +192,7 @@ namespace CollectaMundo
             StatusMessageUpdated?.Invoke("Updating card prices ...");
             await ImportPricesFromJsonAsync(2000);
 
+            // knapper disabled på status skærm
             // update uuid in cardPrices
             // opdater appsettings
 
@@ -294,6 +295,12 @@ namespace CollectaMundo
                 if (!File.Exists(jsonFilePath))
                 {
                     throw new FileNotFoundException($"Price JSON file not found at: {jsonFilePath}");
+                }
+
+                // Check if the database connection is open
+                if (DBAccess.connection == null)
+                {
+                    throw new InvalidOperationException("Database connection is not initialized.");
                 }
 
                 string jsonContent = await File.ReadAllTextAsync(jsonFilePath);
@@ -416,6 +423,12 @@ namespace CollectaMundo
         {
             try
             {
+                // Check if the database connection is open
+                if (DBAccess.connection == null)
+                {
+                    throw new InvalidOperationException("Database connection is not initialized.");
+                }
+
                 // Step 1: Update missing rows or copy columns in the database
                 await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "code");
                 await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "tokenSetCode");
@@ -453,6 +466,14 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during insertion of keyRuneImages: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        // Model to represent the JSON structure
+        public class PriceData
+        {
+            public string? CreatedAt { get; set; }
+            public List<PriceGuide>? PriceGuides { get; set; }
+        }
+        /*
         private static void UpdateAppSettings(string createdAt)
         {
             try
@@ -483,42 +504,7 @@ namespace CollectaMundo
                 MessageBox.Show($"Error updating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-        // Model to represent the JSON structure
-        public class PriceData
-        {
-            public string? CreatedAt { get; set; }
-            public List<PriceGuide>? PriceGuides { get; set; }
-        }
-        public class PriceGuide
-        {
-            public int IdProduct { get; set; }
-            public decimal? Avg { get; set; }
-            public decimal? Low { get; set; }
-            public decimal? Trend { get; set; }
-            public decimal? Avg1 { get; set; }
-            public decimal? Avg7 { get; set; }
-            public decimal? Avg30 { get; set; }
-
-            [JsonProperty("avg-foil")]
-            public decimal? AvgFoil { get; set; }
-
-            [JsonProperty("low-foil")]
-            public decimal? LowFoil { get; set; }
-
-            [JsonProperty("trend-foil")]
-            public decimal? TrendFoil { get; set; }
-
-            [JsonProperty("avg1-foil")]
-            public decimal? Avg1Foil { get; set; }
-
-            [JsonProperty("avg7-foil")]
-            public decimal? Avg7Foil { get; set; }
-
-            [JsonProperty("avg30-foil")]
-            public decimal? Avg30Foil { get; set; }
-        }
-
+        */
         #region Helper methods
         private static async Task<byte[]> ProcessManaCostInputAsync(string manaCostInput)
         {
