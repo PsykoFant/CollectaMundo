@@ -20,6 +20,15 @@ namespace CollectaMundo
     {
         public static event Action<string>? StatusMessageUpdated;
         private static readonly string databasePath = Path.Combine(DBAccess.SqlitePath, "AllPrintings.sqlite");
+        private static readonly System.Net.Http.HttpClient _httpClient = new System.Net.Http.HttpClient
+        {
+            DefaultRequestHeaders =
+            {
+                UserAgent = { System.Net.Http.Headers.ProductInfoHeaderValue.Parse("CollectaMundo/1.0") },
+                Accept = { System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json") }
+            }
+        };
+
 
         // Check if the card database exists in the location specified by appsettings.json. 
         // If it doesn't exist, download it and populate it with custom data, including image data for mana symbols and set images
@@ -418,22 +427,18 @@ namespace CollectaMundo
         {
             try
             {
+                // Step 1: Update missing rows or copy columns in the database
                 await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "code");
                 await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "tokenSetCode");
+
+                // Step 2: Get set codes that lack images
                 List<string> setCodesWithNoImage = await GetValuesWithNullAsync("keyruneImages", "setCode", "keyruneImage");
 
-                // HTTP Client Setup
-                HttpClient client = new();
-                client.DefaultRequestHeaders.UserAgent.ParseAdd("Your User-Agent Here");
-                client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
-
-                // Fetch set data from the API
-                string url = "https://api.scryfall.com/sets/";
-                HttpResponseMessage response = await client.GetAsync(url);
+                // Step 3: Fetch all set data from the API in one go
+                HttpResponseMessage response = await _httpClient.GetAsync("https://api.scryfall.com/sets/");
                 if (!response.IsSuccessStatusCode)
                 {
-                    string responseContent = await response.Content.ReadAsStringAsync();
-                    Debug.WriteLine($"API Error: {responseContent}");
+                    Debug.WriteLine($"API Error: {await response.Content.ReadAsStringAsync()}");
                     return;
                 }
 
@@ -441,30 +446,17 @@ namespace CollectaMundo
                 JObject allSets = JObject.Parse(jsonResponse);
                 JArray? data = allSets["data"] as JArray;
 
-                // Process SVGs in parallel
-                var tasks = setCodesWithNoImage.Select(async setCode =>
-                {
-                    var matchingSet = data?.FirstOrDefault(x => x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
-                    string svgUri = matchingSet?["icon_svg_uri"]?.ToString() ?? "https://svgs.scryfall.io/sets/default.svg";
-                    byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync(svgUri);
-                    return new { SetCode = setCode, PngData = pngData };
-                }).ToList();
-
-                // Await all tasks
+                // Step 4: Process SVGs using parallel tasks efficiently
+                var tasks = setCodesWithNoImage.Select(setCode => ProcessSetSvgAsync(setCode, data)).ToList();
                 var results = await Task.WhenAll(tasks);
 
-                // Update Database
-                foreach (var result in results)
+                // Step 5: Perform batch updates to the database inside a single transaction
+                using var transaction = DBAccess.connection.BeginTransaction();
+                foreach (var result in results.Where(r => r.PngData.Length != 0))
                 {
-                    if (result.PngData.Length != 0)
-                    {
-                        await UpdateImageInTableAsync(result.SetCode, "keyruneImages", "keyruneImage", "setCode", result.PngData);
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {result.SetCode}");
-                    }
+                    await UpdateImageInTableAsync(result.SetCode, "keyruneImages", "keyruneImage", "setCode", result.PngData);
                 }
+                transaction.Commit();
             }
             catch (Exception ex)
             {
@@ -472,6 +464,24 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during insertion of keyRuneImages: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        private static async Task<(string SetCode, byte[] PngData)> ProcessSetSvgAsync(string setCode, JArray? data)
+        {
+            try
+            {
+                var matchingSet = data?.FirstOrDefault(x => x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
+                string svgUri = matchingSet?["icon_svg_uri"]?.ToString() ?? "https://svgs.scryfall.io/sets/default.svg";
+                byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync(svgUri);
+                return (SetCode: setCode, PngData: pngData);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to process SVG for set: {setCode} - {ex.Message}");
+                return (SetCode: setCode, PngData: Array.Empty<byte>());
+            }
+        }
+
+
 
 
         private static void UpdateAppSettings(string createdAt)
@@ -692,6 +702,7 @@ namespace CollectaMundo
 
                 if (result == 0)
                 {
+                    // Directly copy all missing rows into the target table if it is empty
                     string copyQuery = $@"
                         BEGIN TRANSACTION;
                         INSERT OR IGNORE INTO {targetTable} ({targetColumn})
@@ -700,24 +711,11 @@ namespace CollectaMundo
                     using var copyCommand = new SQLiteCommand(copyQuery, DBAccess.connection);
                     await copyCommand.ExecuteNonQueryAsync();
                 }
-                else
-                {
-                    string copyQuery = $@"
-                        INSERT INTO {targetTable} ({targetColumn})
-                        SELECT {sourceTable}.{sourceColumn} FROM {sourceTable}
-                        LEFT JOIN {targetTable} ON {sourceTable}.{sourceColumn} = {targetTable}.{targetColumn}
-                        WHERE {targetTable}.{targetColumn} IS NULL;";
-                    using (var command = new SQLiteCommand(copyQuery, DBAccess.connection))
-                    {
-                        await command.ExecuteNonQueryAsync();
-                    }
-                }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("An error occurred while copying emty or missing rows: " + ex.Message);
-                MessageBox.Show($"An error occurred while copying emty or missing rows: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-
+                Debug.WriteLine("An error occurred while copying empty or missing rows: " + ex.Message);
+                MessageBox.Show($"An error occurred while copying empty or missing rows: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         private static async Task UpdateImageInTableAsync(string imageToUpdate, string tableName, string columnToUpdate, string columnToReference, byte[] imageData)
@@ -767,8 +765,7 @@ namespace CollectaMundo
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    string value = reader[returnColumnName]?.ToString() ?? string.Empty;
-                    valuesWithNull.Add(value);
+                    valuesWithNull.Add(reader[returnColumnName]?.ToString() ?? string.Empty);
                 }
             }
             catch (Exception ex)
