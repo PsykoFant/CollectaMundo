@@ -167,25 +167,42 @@ namespace CollectaMundo
                 }
             }
         }
-
         public static async Task PrepareDownloadedCardDatabase()
         {
             await DBAccess.OpenConnectionAsync();
 
-            await Task.Run(CreateCustomTables);
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
 
+
+            StatusMessageUpdated?.Invoke("1. Creating custom tables and indices...");
+            await CreateCustomTables();
+            Debug.WriteLine($"CreateCustomTables completed after {stopwatch.Elapsed.TotalSeconds} seconds.");
+
+            StatusMessageUpdated?.Invoke("2. Generating mana symbol images...");
             await GenerateManaSymbolsFromSvgAsync();
+            Debug.WriteLine($"GenerateManaSymbolsFromSvgAsync completed after {stopwatch.Elapsed.TotalSeconds} seconds.");
 
-            // Generate custom data such as manasymbols, mana cost, set images and save them as png in database
-            var generateManaCostImagesTask = GenerateManaCostImagesAsync();
-            var generateSetKeyruneFromSvgTask = GenerateSetKeyruneFromSvgAsync();
-            await Task.WhenAll(generateManaCostImagesTask, generateSetKeyruneFromSvgTask);
+            StatusMessageUpdated?.Invoke("3. Generating mana cost images ...");
+            await Task.Delay(10); // For UI to update
+            await GenerateManaCostImagesAsync();
+            Debug.WriteLine($"GenerateManaCostImagesAsync completed after {stopwatch.Elapsed.TotalSeconds} seconds.");
 
-            await ImportPricesFromJsonAsync();
+            StatusMessageUpdated?.Invoke("4. Generating keyrune images ...");
+            await GenerateSetKeyruneFromSvgAsync();
+            Debug.WriteLine($"GenerateSetKeyruneFromSvgAsync completed after {stopwatch.Elapsed.TotalSeconds} seconds.");
 
+            StatusMessageUpdated?.Invoke("5. Importing prices...");
+            await ImportPricesFromJsonAsync(2000);
+            Debug.WriteLine($"ImportPricesFromJsonAsync completed after {stopwatch.Elapsed.TotalSeconds} seconds.");
+
+            StatusMessageUpdated?.Invoke("6. Generating views and indices ...");
             var generateIndices = CreateIndices();
             var generateViews = CreateViews();
             await Task.WhenAll(generateIndices, generateViews);
+            stopwatch.Stop();
+
+            Debug.WriteLine($"PrepareDownloadedCardDatabase completed in {stopwatch.Elapsed.TotalSeconds} seconds.");
 
             DBAccess.CloseConnection();
         }
@@ -193,8 +210,6 @@ namespace CollectaMundo
         {
             try
             {
-                StatusMessageUpdated?.Invoke("Creating custom tables and indices...");
-
                 // Define tables to create
                 Dictionary<string, string> tables = new()
                 {
@@ -203,22 +218,7 @@ namespace CollectaMundo
                     {"keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB);"},
                     {"AggregatedCardKeywords", "CREATE TABLE IF NOT EXISTS AggregatedCardKeywords (uuid TEXT PRIMARY KEY, aggregatedKeywords TEXT);"},
                     {"myCollection", "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid TEXT, count INTEGER, trade INTEGER, condition TEXT, language TEXT, finish TEXT);"},
-                    {"cardPrices", @"CREATE TABLE IF NOT EXISTS cardPrices (
-    uuid TEXT UNIQUE, 
-    mcmId INTEGER PRIMARY KEY, 
-    avg DECIMAL(10, 2), 
-    low DECIMAL(10, 2), 
-    trend DECIMAL(10, 2), 
-    avg1 DECIMAL(10, 2), 
-    avg7 DECIMAL(10, 2), 
-    avg30 DECIMAL(10, 2), 
-    avgFoil DECIMAL(10, 2), 
-    lowFoil DECIMAL(10, 2), 
-    trendFoil DECIMAL(10, 2), 
-    avg1Foil DECIMAL(10, 2), 
-    avg7Foil DECIMAL(10, 2), 
-    avg30Foil DECIMAL(10, 2)
-);"}
+                    {"cardPrices", @"CREATE TABLE IF NOT EXISTS cardPrices (uuid TEXT UNIQUE, mcmId INTEGER PRIMARY KEY, avg DECIMAL(10, 2), low DECIMAL(10, 2), trend DECIMAL(10, 2), avg1 DECIMAL(10, 2), avg7 DECIMAL(10, 2), avg30 DECIMAL(10, 2), avgFoil DECIMAL(10, 2), lowFoil DECIMAL(10, 2), trendFoil DECIMAL(10, 2), avg1Foil DECIMAL(10, 2), avg7Foil DECIMAL(10, 2), avg30Foil DECIMAL(10, 2));"}
                 };
 
                 // Create the tables asynchronously
@@ -234,12 +234,60 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during creation of tables: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-        public static async Task ImportPricesFromJsonAsync()
+        public static async Task GenerateManaSymbolsFromSvgAsync()
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
+            try
+            {
+                List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
+                HashSet<string> uniqueSymbols = [];
 
+                // Extract unique symbols in parallel
+                uniqueManaCosts.AsParallel().ForAll(manaCost =>
+                {
+                    MatchCollection matches = Regex.Matches(manaCost, @"\{(.*?)\}");
+                    foreach (Match match in matches)
+                    {
+                        string value = match.Groups[1].Value;
+                        lock (uniqueSymbols)
+                        {
+                            uniqueSymbols.Add(value);
+                        }
+                    }
+                });
+
+                // Batch insert unique symbols into the database
+                await Task.WhenAll(uniqueSymbols.Select(symbol => InsertValueInTableAsync(symbol, "uniqueManaSymbols", "uniqueManaSymbol")));
+
+                // Get a list of mana symbols without image
+                List<string> symbolsWithNullImage = await GetValuesWithNullAsync("uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
+
+                // Parallel generation of missing mana cost symbols and batch update
+                var results = await Task.WhenAll(symbolsWithNullImage.Select(async symbol =>
+                {
+                    byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync($"https://svgs.scryfall.io/card-symbols/{symbol.Replace("/", "")}.svg");
+                    return new { Symbol = symbol, PngData = pngData };
+                }));
+
+                foreach (var result in results)
+                {
+                    if (result.PngData.Length != 0)
+                    {
+                        await UpdateImageInTableAsync(result.Symbol, "uniqueManaSymbols", "manaSymbolImage", "uniqueManaSymbol", result.PngData);
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {result.Symbol}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error during creation or insertion of uniqueManaSymbols: {ex.Message}");
+                MessageBox.Show($"Error during creation or insertion of uniqueManaSymbols: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        public static async Task ImportPricesFromJsonAsync(int batchSize)
+        {
             try
             {
                 // Read the JSON file from the priceDownloadsPath
@@ -259,10 +307,8 @@ namespace CollectaMundo
                 }
 
                 // Begin inserting the parsed data into the 'cardPrices' table within a transaction
-                string insertSql = @"
-            INSERT OR REPLACE INTO cardPrices
-            (mcmId, Avg, Low, Trend, Avg1, Avg7, Avg30, AvgFoil, LowFoil, TrendFoil, Avg1Foil, Avg7Foil, Avg30Foil)
-            VALUES (@mcmId, @Avg, @Low, @Trend, @Avg1, @Avg7, @Avg30, @AvgFoil, @LowFoil, @TrendFoil, @Avg1Foil, @Avg7Foil, @Avg30Foil);";
+                string insertSql = @"INSERT OR REPLACE INTO cardPrices (mcmId, Avg, Low, Trend, Avg1, Avg7, Avg30, AvgFoil, LowFoil, TrendFoil, Avg1Foil, Avg7Foil, Avg30Foil)
+                    VALUES (@mcmId, @Avg, @Low, @Trend, @Avg1, @Avg7, @Avg30, @AvgFoil, @LowFoil, @TrendFoil, @Avg1Foil, @Avg7Foil, @Avg30Foil);";
 
                 var transaction = DBAccess.connection.BeginTransaction();
                 try
@@ -284,7 +330,6 @@ namespace CollectaMundo
                     command.Parameters.Add(new SQLiteParameter("@Avg7Foil"));
                     command.Parameters.Add(new SQLiteParameter("@Avg30Foil"));
 
-                    int batchSize = 1000;
                     int counter = 0;
 
                     foreach (var priceGuide in jsonData.PriceGuides)
@@ -338,141 +383,6 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error during price import: {ex.Message}");
                 MessageBox.Show($"Error during price import: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally
-            {
-                stopwatch.Stop();
-                Debug.WriteLine($"ImportPricesFromJsonAsync completed in {stopwatch.Elapsed.TotalSeconds} seconds.");
-            }
-        }
-
-
-
-
-        private static void UpdateAppSettings(string createdAt)
-        {
-            try
-            {
-                string appSettingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
-
-                // Load the existing appsettings.json content
-                var config = JsonConvert.DeserializeObject<Dictionary<string, object>>(File.ReadAllText(appSettingsFile));
-
-                // Check if PricesUpdated field exists, and update or create it
-                if (config.ContainsKey("PricesUpdated"))
-                {
-                    var pricesUpdated = JsonConvert.DeserializeObject<Dictionary<string, string>>(config["PricesUpdated"].ToString());
-                    pricesUpdated["PricesUpdatedDate"] = createdAt;
-                    config["PricesUpdated"] = pricesUpdated;
-                }
-                else
-                {
-                    config["PricesUpdated"] = new Dictionary<string, string> { { "PricesUpdatedDate", createdAt } };
-                }
-
-                // Save the updated configuration back to appsettings.json
-                File.WriteAllText(appSettingsFile, JsonConvert.SerializeObject(config, Formatting.Indented));
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error updating appsettings.json: {ex.Message}");
-                MessageBox.Show($"Error updating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-
-        // Model to represent the JSON structure
-        public class PriceData
-        {
-            public string? CreatedAt { get; set; }
-            public List<PriceGuide>? PriceGuides { get; set; }
-        }
-
-        public class PriceGuide
-        {
-            public int IdProduct { get; set; }
-            public decimal? Avg { get; set; }
-            public decimal? Low { get; set; }
-            public decimal? Trend { get; set; }
-            public decimal? Avg1 { get; set; }
-            public decimal? Avg7 { get; set; }
-            public decimal? Avg30 { get; set; }
-
-            [JsonProperty("avg-foil")]
-            public decimal? AvgFoil { get; set; }
-
-            [JsonProperty("low-foil")]
-            public decimal? LowFoil { get; set; }
-
-            [JsonProperty("trend-foil")]
-            public decimal? TrendFoil { get; set; }
-
-            [JsonProperty("avg1-foil")]
-            public decimal? Avg1Foil { get; set; }
-
-            [JsonProperty("avg7-foil")]
-            public decimal? Avg7Foil { get; set; }
-
-            [JsonProperty("avg30-foil")]
-            public decimal? Avg30Foil { get; set; }
-        }
-
-
-
-
-        public static async Task GenerateManaSymbolsFromSvgAsync()
-        {
-            StatusMessageUpdated?.Invoke("Generating mana symbol images...");
-            try
-            {
-                List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
-                HashSet<string> uniqueSymbols = [];
-
-                // Extract unique symbols in parallel
-                uniqueManaCosts.AsParallel().ForAll(manaCost =>
-                {
-                    MatchCollection matches = Regex.Matches(manaCost, @"\{(.*?)\}");
-                    foreach (Match match in matches)
-                    {
-                        string value = match.Groups[1].Value;
-                        lock (uniqueSymbols)
-                        {
-                            uniqueSymbols.Add(value);
-                        }
-                    }
-                });
-
-                // Batch insert unique symbols into the database
-                await Task.WhenAll(uniqueSymbols.Select(symbol => InsertValueInTableAsync(symbol, "uniqueManaSymbols", "uniqueManaSymbol")));
-
-                Debug.WriteLine("Insertion of uniqueManaSymbols completed.");
-
-                // Get a list of mana symbols without image
-                List<string> symbolsWithNullImage = await GetValuesWithNullAsync("uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
-
-                // Parallel generation of missing mana cost symbols and batch update
-                var results = await Task.WhenAll(symbolsWithNullImage.Select(async symbol =>
-                {
-                    byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync($"https://svgs.scryfall.io/card-symbols/{symbol.Replace("/", "")}.svg");
-                    return new { Symbol = symbol, PngData = pngData };
-                }));
-
-                foreach (var result in results)
-                {
-                    if (result.PngData.Length != 0)
-                    {
-                        await UpdateImageInTableAsync(result.Symbol, "uniqueManaSymbols", "manaSymbolImage", "uniqueManaSymbol", result.PngData);
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"Failed to convert SVG to PNG for symbol: {result.Symbol}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error during creation or insertion of uniqueManaSymbols: {ex.Message}");
-                MessageBox.Show($"Error during creation or insertion of uniqueManaSymbols: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
         }
         public static async Task GenerateManaCostImagesAsync()
         {
@@ -506,17 +416,18 @@ namespace CollectaMundo
         }
         public static async Task GenerateSetKeyruneFromSvgAsync()
         {
-            StatusMessageUpdated?.Invoke("Generating set icons ...");
             try
             {
                 await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "code");
                 await CopyColumnIfEmptyOrAddMissingRowsAsync("keyruneImages", "setCode", "sets", "tokenSetCode");
                 List<string> setCodesWithNoImage = await GetValuesWithNullAsync("keyruneImages", "setCode", "keyruneImage");
 
+                // HTTP Client Setup
                 HttpClient client = new();
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("Your User-Agent Here");
                 client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
 
+                // Fetch set data from the API
                 string url = "https://api.scryfall.com/sets/";
                 HttpResponseMessage response = await client.GetAsync(url);
                 if (!response.IsSuccessStatusCode)
@@ -530,6 +441,7 @@ namespace CollectaMundo
                 JObject allSets = JObject.Parse(jsonResponse);
                 JArray? data = allSets["data"] as JArray;
 
+                // Process SVGs in parallel
                 var tasks = setCodesWithNoImage.Select(async setCode =>
                 {
                     var matchingSet = data?.FirstOrDefault(x => x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
@@ -538,10 +450,10 @@ namespace CollectaMundo
                     return new { SetCode = setCode, PngData = pngData };
                 }).ToList();
 
-                // Await all conversion tasks
+                // Await all tasks
                 var results = await Task.WhenAll(tasks);
 
-                // Perform batch update to the database
+                // Update Database
                 foreach (var result in results)
                 {
                     if (result.PngData.Length != 0)
@@ -559,6 +471,73 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error during insertion of keyRuneImages: {ex.Message}");
                 MessageBox.Show($"Error during insertion of keyRuneImages: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+
+        private static void UpdateAppSettings(string createdAt)
+        {
+            try
+            {
+                string appSettingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+
+                // Load the existing appsettings.json content
+                var config = JsonConvert.DeserializeObject<Dictionary<string, object>>(File.ReadAllText(appSettingsFile));
+
+                // Check if PricesUpdated field exists, and update or create it
+                if (config.ContainsKey("PricesUpdated"))
+                {
+                    var pricesUpdated = JsonConvert.DeserializeObject<Dictionary<string, string>>(config["PricesUpdated"].ToString());
+                    pricesUpdated["PricesUpdatedDate"] = createdAt;
+                    config["PricesUpdated"] = pricesUpdated;
+                }
+                else
+                {
+                    config["PricesUpdated"] = new Dictionary<string, string> { { "PricesUpdatedDate", createdAt } };
+                }
+
+                // Save the updated configuration back to appsettings.json
+                File.WriteAllText(appSettingsFile, JsonConvert.SerializeObject(config, Formatting.Indented));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error updating appsettings.json: {ex.Message}");
+                MessageBox.Show($"Error updating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // Model to represent the JSON structure
+        public class PriceData
+        {
+            public string? CreatedAt { get; set; }
+            public List<PriceGuide>? PriceGuides { get; set; }
+        }
+        public class PriceGuide
+        {
+            public int IdProduct { get; set; }
+            public decimal? Avg { get; set; }
+            public decimal? Low { get; set; }
+            public decimal? Trend { get; set; }
+            public decimal? Avg1 { get; set; }
+            public decimal? Avg7 { get; set; }
+            public decimal? Avg30 { get; set; }
+
+            [JsonProperty("avg-foil")]
+            public decimal? AvgFoil { get; set; }
+
+            [JsonProperty("low-foil")]
+            public decimal? LowFoil { get; set; }
+
+            [JsonProperty("trend-foil")]
+            public decimal? TrendFoil { get; set; }
+
+            [JsonProperty("avg1-foil")]
+            public decimal? Avg1Foil { get; set; }
+
+            [JsonProperty("avg7-foil")]
+            public decimal? Avg7Foil { get; set; }
+
+            [JsonProperty("avg30-foil")]
+            public decimal? Avg30Foil { get; set; }
         }
 
         #region Helper methods
@@ -720,7 +699,6 @@ namespace CollectaMundo
                         COMMIT;";
                     using var copyCommand = new SQLiteCommand(copyQuery, DBAccess.connection);
                     await copyCommand.ExecuteNonQueryAsync();
-                    Debug.WriteLine($"Copied all rows from {sourceTable}, column {sourceColumn} to {targetTable}, {targetColumn}");
                 }
                 else
                 {
@@ -733,7 +711,6 @@ namespace CollectaMundo
                     {
                         await command.ExecuteNonQueryAsync();
                     }
-                    Debug.WriteLine($"Updated missing rows in {targetTable}");
                 }
             }
             catch (Exception ex)
@@ -1071,19 +1048,16 @@ namespace CollectaMundo
                 using (var command = new SQLiteCommand(createCardTokenViewQuery, DBAccess.connection))
                 {
                     await command.ExecuteNonQueryAsync();
-                    Debug.WriteLine("Created view view_cardToken.");
                 }
 
                 using (var command = new SQLiteCommand(createAllCardsViewQuery, DBAccess.connection))
                 {
                     await command.ExecuteNonQueryAsync();
-                    Debug.WriteLine("Created view view_allCards.");
                 }
 
                 using (var command = new SQLiteCommand(createMyCollectionViewQuery, DBAccess.connection))
                 {
                     await command.ExecuteNonQueryAsync();
-                    Debug.WriteLine("Created view view_myCollection.");
                 }
 
             }

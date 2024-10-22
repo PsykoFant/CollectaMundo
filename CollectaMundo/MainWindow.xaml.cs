@@ -30,8 +30,6 @@ namespace CollectaMundo
 
         // Temporary price download location 
         public readonly static string priceDownloadsPath = Path.Combine(downloadEnvPath, "Downloads", "prices.json");
-
-
         public string? ImageSourceUrl
         {
             get => _imageSourceUrl;

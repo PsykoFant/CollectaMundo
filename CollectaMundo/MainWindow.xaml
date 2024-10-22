@@ -23,7 +23,7 @@
             <GradientStop Color="White" Offset="1"/>
         </LinearGradientBrush>
     </Window.Background>
-    <Grid Style="{StaticResource MPlantin}" VerticalAlignment="Top">
+    <Grid Style="{StaticResource MPlantin}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="250"/>
             <ColumnDefinition Width="*"/>
