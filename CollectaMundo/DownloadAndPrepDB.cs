@@ -20,7 +20,7 @@ namespace CollectaMundo
     {
         public static event Action<string>? StatusMessageUpdated;
         private static readonly string databasePath = Path.Combine(DBAccess.SqlitePath, "AllPrintings.sqlite");
-        private static readonly System.Net.Http.HttpClient _httpClient = new System.Net.Http.HttpClient
+        private static readonly System.Net.Http.HttpClient _httpClient = new()
         {
             DefaultRequestHeaders =
             {
@@ -29,13 +29,10 @@ namespace CollectaMundo
             }
         };
 
-
         // Check if the card database exists in the location specified by appsettings.json. 
         // If it doesn't exist, download it and populate it with custom data, including image data for mana symbols and set images
         public static async Task SystemIntegrityCheckAsync()
         {
-            await PrepareDownloadedCardDatabase();
-            /*
             bool redownloadDB = false;
             string downloadMessage = string.Empty;
 
@@ -102,8 +99,6 @@ namespace CollectaMundo
             {
                 MainWindow.CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
             }
-            */
-
         }
         public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessageBig, string downloadFile, bool showStatusBar)
         {
@@ -185,21 +180,22 @@ namespace CollectaMundo
 
             await CreateCustomTables();
 
-            StatusMessageUpdated?.Invoke("Generating mana symbol images ...");
+            StatusMessageUpdated?.Invoke("Generating mana symbols ...");
             await GenerateManaSymbolsFromSvgAsync();
 
             StatusMessageUpdated?.Invoke("Generating mana cost images ...");
-            await Task.Delay(10); // For UI to update
+            await Task.Run(GenerateManaCostImagesAsync);
 
-            await GenerateManaCostImagesAsync();
-
-            StatusMessageUpdated?.Invoke("Generating set icon images ...");
+            StatusMessageUpdated?.Invoke("Generating Set icons ...");
             await GenerateSetKeyruneFromSvgAsync();
 
-            StatusMessageUpdated?.Invoke("5. Importing prices...");
+            StatusMessageUpdated?.Invoke("Updating card prices ...");
             await ImportPricesFromJsonAsync(2000);
 
-            StatusMessageUpdated?.Invoke("6. Generating views and indices ...");
+            // update uuid in cardPrices
+            // opdater appsettings
+
+
             var generateIndices = CreateIndices();
             var generateViews = CreateViews();
             await Task.WhenAll(generateIndices, generateViews);
@@ -378,8 +374,7 @@ namespace CollectaMundo
                 // Comment out the UpdateAppSettings
                 //await UpdateAppSettings(jsonData.CreatedAt);
 
-                // Comment out the deletion of the JSON file
-                //File.Delete(jsonFilePath);
+                File.Delete(jsonFilePath);
             }
             catch (Exception ex)
             {
@@ -458,26 +453,6 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during insertion of keyRuneImages: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-        private static async Task<(string SetCode, byte[] PngData)> ProcessSetSvgAsync(string setCode, JArray? data)
-        {
-            try
-            {
-                var matchingSet = data?.FirstOrDefault(x => x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
-                string svgUri = matchingSet?["icon_svg_uri"]?.ToString() ?? "https://svgs.scryfall.io/sets/default.svg";
-                byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync(svgUri);
-                return (SetCode: setCode, PngData: pngData);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to process SVG for set: {setCode} - {ex.Message}");
-                return (SetCode: setCode, PngData: Array.Empty<byte>());
-            }
-        }
-
-
-
-
         private static void UpdateAppSettings(string createdAt)
         {
             try
@@ -642,6 +617,21 @@ namespace CollectaMundo
 
             // Return an empty array failure
             return [];
+        }
+        private static async Task<(string SetCode, byte[] PngData)> ProcessSetSvgAsync(string setCode, JArray? data)
+        {
+            try
+            {
+                var matchingSet = data?.FirstOrDefault(x => x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
+                string svgUri = matchingSet?["icon_svg_uri"]?.ToString() ?? "https://svgs.scryfall.io/sets/default.svg";
+                byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync(svgUri);
+                return (SetCode: setCode, PngData: pngData);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to process SVG for set: {setCode} - {ex.Message}");
+                return (SetCode: setCode, PngData: Array.Empty<byte>());
+            }
         }
         public static async Task<byte[]> ConvertSvgToByteArraySharpVectorsAsync(string svgUrl)
         {
