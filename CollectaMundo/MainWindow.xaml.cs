@@ -21,10 +21,6 @@ namespace CollectaMundo
         private string? _imageSourceUrl = string.Empty;
         private string? _imageSourceUrl2nd = string.Empty;
 
-        // Download urls 
-        public readonly static string cardDbDownloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
-        public readonly static string pricesDownloadUrl = "https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_1.json";
-
         // Location of user's "Downloads" folder
         public readonly static string downloadEnvPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
@@ -127,6 +123,8 @@ namespace CollectaMundo
         }
         public async Task LoadDataIntoUiElements()
         {
+            await ShowStatusWindowAsync(true);
+
             await DownloadAndPrepDB.SystemIntegrityCheckAsync();
 
             await DBAccess.OpenConnectionAsync();

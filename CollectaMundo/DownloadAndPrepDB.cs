@@ -1,4 +1,3 @@
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
@@ -29,10 +28,16 @@ namespace CollectaMundo
             }
         };
 
+        // Download urls 
+        public readonly static string cardDbDownloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
+        private readonly static string pricesDownloadUrl = "https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_1.json";
+
         // Check if the card database exists in the location specified by appsettings.json. 
         // If it doesn't exist, download it and populate it with custom data, including image data for mana symbols and set images
         public static async Task SystemIntegrityCheckAsync()
         {
+            await PrepareDownloadedCardDatabase();
+            /*
             bool redownloadDB = false;
             string downloadMessage = string.Empty;
 
@@ -56,8 +61,8 @@ namespace CollectaMundo
 
             if (redownloadDB)
             {
-                var downloadDatabaseTask = DownloadResourceFileIfNotExistAsync(databasePath, MainWindow.cardDbDownloadUrl, downloadMessage, "card database", true);
-                var downloadPricesTask = DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, MainWindow.pricesDownloadUrl, downloadMessage, "", false);
+                var downloadDatabaseTask = DownloadResourceFileIfNotExistAsync(databasePath, cardDbDownloadUrl, downloadMessage, "card database", true);
+                var downloadPricesTask = DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, pricesDownloadUrl, downloadMessage, "", false);
 
                 // Wait for both tasks to complete using Task.WhenAll
                 bool[] results = await Task.WhenAll(downloadDatabaseTask, downloadPricesTask);
@@ -67,7 +72,7 @@ namespace CollectaMundo
                 {
                     // Redownload card database if the first download failed
                     Debug.WriteLine("Retrying card database download...");
-                    bool redownloadCardDb = await DownloadResourceFileIfNotExistAsync(databasePath, MainWindow.cardDbDownloadUrl, downloadMessage, "card database", true);
+                    bool redownloadCardDb = await DownloadResourceFileIfNotExistAsync(databasePath, cardDbDownloadUrl, downloadMessage, "card database", true);
                     if (!redownloadCardDb)
                     {
                         // Handle persistent failure
@@ -81,7 +86,7 @@ namespace CollectaMundo
                 {
                     // Redownload prices database if the second download failed
                     Debug.WriteLine("Retrying prices download...");
-                    bool redownloadPrices = await DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, MainWindow.pricesDownloadUrl, downloadMessage, "", false);
+                    bool redownloadPrices = await DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, pricesDownloadUrl, downloadMessage, "", false);
                     if (!redownloadPrices)
                     {
                         // Handle persistent failure
@@ -99,6 +104,7 @@ namespace CollectaMundo
             {
                 MainWindow.CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
             }
+            */
         }
         public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessageBig, string downloadFile, bool showStatusBar)
         {
@@ -191,11 +197,9 @@ namespace CollectaMundo
 
             StatusMessageUpdated?.Invoke("Updating card prices ...");
             await ImportPricesFromJsonAsync(2000);
+            await UpdateCardPricesWithUuidAsync();
 
-            // knapper disabled på status skærm
             // update uuid in cardPrices
-            // opdater appsettings
-
 
             var generateIndices = CreateIndices();
             var generateViews = CreateViews();
@@ -303,11 +307,16 @@ namespace CollectaMundo
                     throw new InvalidOperationException("Database connection is not initialized.");
                 }
 
-                string jsonContent = await File.ReadAllTextAsync(jsonFilePath);
+                // Read the JSON content
+                var jsonContent = await File.ReadAllTextAsync(jsonFilePath);
 
-                // Deserialize JSON content into C# objects
-                var jsonData = JsonConvert.DeserializeObject<PriceData>(jsonContent);
-                if (jsonData == null || jsonData.PriceGuides == null || jsonData.PriceGuides.Count == 0)
+                // Parse the createdAt field separately from priceGuides
+                var jsonObject = JObject.Parse(jsonContent);
+                string createdAt = jsonObject["createdAt"]?.ToString() ?? throw new InvalidOperationException("CreatedAt not found in JSON.");
+
+                // Deserialize priceGuides directly into a list of PriceGuide objects
+                var priceGuides = jsonObject["priceGuides"]?.ToObject<List<PriceGuide>>() ?? [];
+                if (priceGuides.Count == 0)
                 {
                     throw new InvalidOperationException("No price data found in the JSON file.");
                 }
@@ -338,7 +347,7 @@ namespace CollectaMundo
 
                     int counter = 0;
 
-                    foreach (var priceGuide in jsonData.PriceGuides)
+                    foreach (var priceGuide in priceGuides)
                     {
                         command.Parameters["@mcmId"].Value = priceGuide.IdProduct;
                         command.Parameters["@Avg"].Value = priceGuide.Avg;
@@ -360,8 +369,8 @@ namespace CollectaMundo
                         if (++counter % batchSize == 0)
                         {
                             await transaction.CommitAsync();
-                            transaction.Dispose();  // Manually dispose of the old transaction
-                            transaction = DBAccess.connection.BeginTransaction();  // Start a new transaction after commit
+                            transaction.Dispose();
+                            transaction = DBAccess.connection.BeginTransaction();
                         }
                     }
 
@@ -370,18 +379,17 @@ namespace CollectaMundo
                 }
                 catch (Exception)
                 {
-                    await transaction.RollbackAsync();  // Rollback in case of an exception
+                    await transaction.RollbackAsync();
                     throw;
                 }
                 finally
                 {
-                    transaction.Dispose();  // Ensure the transaction is disposed
+                    transaction.Dispose();
                 }
 
-                // Comment out the UpdateAppSettings
-                //await UpdateAppSettings(jsonData.CreatedAt);
+                ConfigurationManager.UpdatePriceInfo(createdAt);
 
-                File.Delete(jsonFilePath);
+                //File.Delete(jsonFilePath);
             }
             catch (Exception ex)
             {
@@ -467,44 +475,6 @@ namespace CollectaMundo
             }
         }
 
-        // Model to represent the JSON structure
-        public class PriceData
-        {
-            public string? CreatedAt { get; set; }
-            public List<PriceGuide>? PriceGuides { get; set; }
-        }
-        /*
-        private static void UpdateAppSettings(string createdAt)
-        {
-            try
-            {
-                string appSettingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
-
-                // Load the existing appsettings.json content
-                var config = JsonConvert.DeserializeObject<Dictionary<string, object>>(File.ReadAllText(appSettingsFile));
-
-                // Check if PricesUpdated field exists, and update or create it
-                if (config.ContainsKey("PricesUpdated"))
-                {
-                    var pricesUpdated = JsonConvert.DeserializeObject<Dictionary<string, string>>(config["PricesUpdated"].ToString());
-                    pricesUpdated["PricesUpdatedDate"] = createdAt;
-                    config["PricesUpdated"] = pricesUpdated;
-                }
-                else
-                {
-                    config["PricesUpdated"] = new Dictionary<string, string> { { "PricesUpdatedDate", createdAt } };
-                }
-
-                // Save the updated configuration back to appsettings.json
-                File.WriteAllText(appSettingsFile, JsonConvert.SerializeObject(config, Formatting.Indented));
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error updating appsettings.json: {ex.Message}");
-                MessageBox.Show($"Error updating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-        */
         #region Helper methods
         private static async Task<byte[]> ProcessManaCostInputAsync(string manaCostInput)
         {
@@ -772,6 +742,116 @@ namespace CollectaMundo
 
             return uniqueValues;
         }
+        public static async Task UpdateCardPricesWithUuidAsync(int batchSize = 10000)
+        {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            try
+            {
+                // Step 1: Ensure indexes are created for both tables
+                await CreateIndexesIfNotExistsAsync();
+
+                // Step 2: Prepare the update command
+                string updateSql = @"
+            UPDATE cardPrices
+            SET uuid = (
+                SELECT cardIdentifiers.uuid
+                FROM cardIdentifiers
+                WHERE cardIdentifiers.mcmId = cardPrices.mcmId
+            )
+            WHERE uuid IS NULL AND EXISTS (
+                SELECT 1
+                FROM cardIdentifiers
+                WHERE cardIdentifiers.mcmId = cardPrices.mcmId
+            );";
+
+                // Start a transaction
+                var transaction = DBAccess.connection.BeginTransaction();
+
+                try
+                {
+                    using var command = new SQLiteCommand(updateSql, DBAccess.connection);
+                    command.Transaction = transaction;
+
+                    int counter = 0;
+                    int totalUpdatedRows = 0;
+
+                    // Fetch the records that need updating in batches to reduce memory load
+                    while (true)
+                    {
+                        // Limit the number of rows fetched in each iteration for better memory management
+                        string selectSql = $"SELECT mcmId FROM cardPrices WHERE uuid IS NULL LIMIT {batchSize};";
+                        using var selectCommand = new SQLiteCommand(selectSql, DBAccess.connection);
+                        using var reader = await selectCommand.ExecuteReaderAsync();
+
+                        // If no more rows to update, break
+                        if (!reader.HasRows)
+                        {
+                            break;
+                        }
+
+                        // Execute the batch update command
+                        int updatedRows = await command.ExecuteNonQueryAsync();
+                        totalUpdatedRows += updatedRows;
+
+                        // Commit the batch transaction
+                        await transaction.CommitAsync();
+                        transaction.Dispose();
+                        transaction = DBAccess.connection.BeginTransaction();
+
+                        Debug.WriteLine($"Batch update completed with {updatedRows} rows updated.");
+                        counter++;
+                    }
+
+                    Debug.WriteLine($"Update completed. Total rows updated: {totalUpdatedRows}.");
+
+                    // Commit the final transaction
+                    await transaction.CommitAsync();
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+                finally
+                {
+                    transaction.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error updating UUIDs in cardPrices table: {ex.Message}");
+                MessageBox.Show($"Error updating UUIDs in cardPrices table: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                stopwatch.Stop();
+                Debug.WriteLine($"UpdateCardPricesWithUuidAsync executed in {stopwatch.Elapsed.TotalSeconds} seconds.");
+            }
+        }
+
+        private static async Task CreateIndexesIfNotExistsAsync()
+        {
+            try
+            {
+                string indexSql = @"
+            CREATE INDEX IF NOT EXISTS idx_cardIdentifiers_mcmId ON cardIdentifiers (mcmId);
+            CREATE INDEX IF NOT EXISTS idx_cardPrices_mcmId ON cardPrices (mcmId);";
+
+                using var command = new SQLiteCommand(indexSql, DBAccess.connection);
+                await command.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error creating indexes: {ex.Message}");
+                MessageBox.Show($"Error creating indexes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+
+
+
         public static async Task CreateIndices()
         {
             Dictionary<string, string> indices = new()

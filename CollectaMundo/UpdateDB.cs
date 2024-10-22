@@ -66,7 +66,7 @@ namespace CollectaMundo
                 // Disable buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
 
-                if (await DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(newDatabasePath, MainWindow.cardDbDownloadUrl, "Downloading fresh card database and updating...", "updated card database", true))
+                if (await DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(newDatabasePath, DownloadAndPrepDB.cardDbDownloadUrl, "Downloading fresh card database and updating...", "updated card database", true))
                 {
                     // Copy tables from new card database
                     if (await CopyTablesAsync())
