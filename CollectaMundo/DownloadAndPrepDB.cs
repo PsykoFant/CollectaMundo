@@ -290,6 +290,18 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during creation or insertion of uniqueManaSymbols: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+        // Ok, vi har en plan:
+
+        /* Ok, vi har en plan:
+         * 1. Når vi opretter cardPrices, så kopierer vi alle uuid'er kolonnen som har mcmId'er med det samme
+         * 2. Når vi importerer priser, opretter vi to objekter in-memory:
+         *      1. Et objekt med alle værdier fra mcmId og uuid kolonnen fra cardPrices
+         *      2. Et object med alle værdier fra json-filen
+         * 3. Så løber vi igennem alle mcmId'er fra objekt 1 og slår mcmId op i objekt 2. Vi tilføjer priselementer fra objekt 2 til objekt 1
+         * Så tilføjer vi transaktionelt alle priser
+         
+         */
         public static async Task ImportPricesFromJsonAsync(int batchSize)
         {
             try
@@ -321,49 +333,87 @@ namespace CollectaMundo
                     throw new InvalidOperationException("No price data found in the JSON file.");
                 }
 
-                // Begin inserting the parsed data into the 'cardPrices' table within a transaction
-                string insertSql = @"INSERT OR REPLACE INTO cardPrices (mcmId, Avg, Low, Trend, Avg1, Avg7, Avg30, AvgFoil, LowFoil, TrendFoil, Avg1Foil, Avg7Foil, Avg30Foil)
-                    VALUES (@mcmId, @Avg, @Low, @Trend, @Avg1, @Avg7, @Avg30, @AvgFoil, @LowFoil, @TrendFoil, @Avg1Foil, @Avg7Foil, @Avg30Foil);";
+                // Step 1: Load McmId-UUID mapping into a dictionary
+                var uuidMap = new Dictionary<int, string>();
+                string loadUuidMapSql = "SELECT mcmId, uuid FROM cardIdentifiers WHERE mcmId IS NOT NULL;";
+                using (var command = new SQLiteCommand(loadUuidMapSql, DBAccess.connection))
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        try
+                        {
+                            // Ensure that the column data types match expectations
+                            int mcmId = reader.IsDBNull(0) ? throw new InvalidOperationException("mcmId cannot be NULL") : reader.GetInt32(0); // Read mcmId, throw if NULL
+                            string? uuid = !reader.IsDBNull(1) ? reader.GetString(1) : null; // Read uuid, default to null if NULL
+
+                            // Log details if uuid is null
+                            if (uuid == null)
+                            {
+                                Debug.WriteLine($"Warning: Null UUID for mcmId: {mcmId}");
+                            }
+
+                            uuidMap[mcmId] = uuid;
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error processing row: {ex.Message}. Row details: mcmId={reader[0]}, uuid={(reader.IsDBNull(1) ? "NULL" : reader[1].ToString())}");
+                            throw; // Re-throw the exception after logging details
+                        }
+                    }
+                }
+
+                // Step 2: Begin inserting the parsed data into the 'cardPrices' table within a transaction
+                string insertSql = @"INSERT OR REPLACE INTO cardPrices (uuid, mcmId, Avg, Low, Trend, Avg1, Avg7, Avg30, AvgFoil, LowFoil, TrendFoil, Avg1Foil, Avg7Foil, Avg30Foil)
+            VALUES (@uuid, @mcmId, @Avg, @Low, @Trend, @Avg1, @Avg7, @Avg30, @AvgFoil, @LowFoil, @TrendFoil, @Avg1Foil, @Avg7Foil, @Avg30Foil);";
 
                 var transaction = DBAccess.connection.BeginTransaction();
                 try
                 {
-                    using var command = new SQLiteCommand(insertSql, DBAccess.connection);
+                    using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
+                    insertCommand.Transaction = transaction;
 
                     // Use a prepared statement to reuse the command for each insert
-                    command.Parameters.Add(new SQLiteParameter("@mcmId"));
-                    command.Parameters.Add(new SQLiteParameter("@Avg"));
-                    command.Parameters.Add(new SQLiteParameter("@Low"));
-                    command.Parameters.Add(new SQLiteParameter("@Trend"));
-                    command.Parameters.Add(new SQLiteParameter("@Avg1"));
-                    command.Parameters.Add(new SQLiteParameter("@Avg7"));
-                    command.Parameters.Add(new SQLiteParameter("@Avg30"));
-                    command.Parameters.Add(new SQLiteParameter("@AvgFoil"));
-                    command.Parameters.Add(new SQLiteParameter("@LowFoil"));
-                    command.Parameters.Add(new SQLiteParameter("@TrendFoil"));
-                    command.Parameters.Add(new SQLiteParameter("@Avg1Foil"));
-                    command.Parameters.Add(new SQLiteParameter("@Avg7Foil"));
-                    command.Parameters.Add(new SQLiteParameter("@Avg30Foil"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@uuid"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@mcmId"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Low"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Trend"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg1"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg7"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg30"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@AvgFoil"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@LowFoil"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@TrendFoil"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg1Foil"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg7Foil"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg30Foil"));
 
                     int counter = 0;
 
                     foreach (var priceGuide in priceGuides)
                     {
-                        command.Parameters["@mcmId"].Value = priceGuide.IdProduct;
-                        command.Parameters["@Avg"].Value = priceGuide.Avg;
-                        command.Parameters["@Low"].Value = priceGuide.Low;
-                        command.Parameters["@Trend"].Value = priceGuide.Trend;
-                        command.Parameters["@Avg1"].Value = priceGuide.Avg1;
-                        command.Parameters["@Avg7"].Value = priceGuide.Avg7;
-                        command.Parameters["@Avg30"].Value = priceGuide.Avg30;
-                        command.Parameters["@AvgFoil"].Value = priceGuide.AvgFoil;
-                        command.Parameters["@LowFoil"].Value = priceGuide.LowFoil;
-                        command.Parameters["@TrendFoil"].Value = priceGuide.TrendFoil;
-                        command.Parameters["@Avg1Foil"].Value = priceGuide.Avg1Foil;
-                        command.Parameters["@Avg7Foil"].Value = priceGuide.Avg7Foil;
-                        command.Parameters["@Avg30Foil"].Value = priceGuide.Avg30Foil;
+                        // Look up the UUID from the in-memory dictionary
+                        uuidMap.TryGetValue(priceGuide.IdProduct, out string? uuid);
 
-                        await command.ExecuteNonQueryAsync();
+                        // Prepare the command parameters, converting nullable decimals and strings to DBNull.Value if null
+                        insertCommand.Parameters["@uuid"].Value = uuid != null ? uuid : DBNull.Value;
+                        insertCommand.Parameters["@mcmId"].Value = priceGuide.IdProduct;
+                        insertCommand.Parameters["@Avg"].Value = priceGuide.Avg.HasValue ? (object)priceGuide.Avg.Value : DBNull.Value;
+                        insertCommand.Parameters["@Low"].Value = priceGuide.Low.HasValue ? (object)priceGuide.Low.Value : DBNull.Value;
+                        insertCommand.Parameters["@Trend"].Value = priceGuide.Trend.HasValue ? (object)priceGuide.Trend.Value : DBNull.Value;
+                        insertCommand.Parameters["@Avg1"].Value = priceGuide.Avg1.HasValue ? (object)priceGuide.Avg1.Value : DBNull.Value;
+                        insertCommand.Parameters["@Avg7"].Value = priceGuide.Avg7.HasValue ? (object)priceGuide.Avg7.Value : DBNull.Value;
+                        insertCommand.Parameters["@Avg30"].Value = priceGuide.Avg30.HasValue ? (object)priceGuide.Avg30.Value : DBNull.Value;
+                        insertCommand.Parameters["@AvgFoil"].Value = priceGuide.AvgFoil.HasValue ? (object)priceGuide.AvgFoil.Value : DBNull.Value;
+                        insertCommand.Parameters["@LowFoil"].Value = priceGuide.LowFoil.HasValue ? (object)priceGuide.LowFoil.Value : DBNull.Value;
+                        insertCommand.Parameters["@TrendFoil"].Value = priceGuide.TrendFoil.HasValue ? (object)priceGuide.TrendFoil.Value : DBNull.Value;
+                        insertCommand.Parameters["@Avg1Foil"].Value = priceGuide.Avg1Foil.HasValue ? (object)priceGuide.Avg1Foil.Value : DBNull.Value;
+                        insertCommand.Parameters["@Avg7Foil"].Value = priceGuide.Avg7Foil.HasValue ? (object)priceGuide.Avg7Foil.Value : DBNull.Value;
+                        insertCommand.Parameters["@Avg30Foil"].Value = priceGuide.Avg30Foil.HasValue ? (object)priceGuide.Avg30Foil.Value : DBNull.Value;
+
+                        // Execute the insert command
+                        await insertCommand.ExecuteNonQueryAsync();
 
                         // Batch commit every 1000 inserts for performance
                         if (++counter % batchSize == 0)
@@ -373,6 +423,8 @@ namespace CollectaMundo
                             transaction = DBAccess.connection.BeginTransaction();
                         }
                     }
+
+
 
                     // Commit any remaining inserts
                     await transaction.CommitAsync();
@@ -387,9 +439,10 @@ namespace CollectaMundo
                     transaction.Dispose();
                 }
 
+                // Update the PricesUpdatedDate in appsettings.json
                 ConfigurationManager.UpdatePriceInfo(createdAt);
 
-                //File.Delete(jsonFilePath);
+                // File.Delete(jsonFilePath); // Uncomment this if you want to delete the file after processing
             }
             catch (Exception ex)
             {
@@ -397,6 +450,7 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during price import: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         public static async Task GenerateManaCostImagesAsync()
         {
             try
