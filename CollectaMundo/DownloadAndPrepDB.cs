@@ -1,4 +1,5 @@
 using Newtonsoft.Json.Linq;
+using ServiceStack;
 using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
 using System.Data.SQLite;
@@ -36,8 +37,6 @@ namespace CollectaMundo
         // If it doesn't exist, download it and populate it with custom data, including image data for mana symbols and set images
         public static async Task SystemIntegrityCheckAsync()
         {
-            await PrepareDownloadedCardDatabase();
-            /*
             bool redownloadDB = false;
             string downloadMessage = string.Empty;
 
@@ -104,7 +103,6 @@ namespace CollectaMundo
             {
                 MainWindow.CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
             }
-            */
         }
         public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessageBig, string downloadFile, bool showStatusBar)
         {
@@ -181,29 +179,23 @@ namespace CollectaMundo
         {
             await DBAccess.OpenConnectionAsync();
 
-            //var stopwatch = new Stopwatch();
-            //stopwatch.Start();
-
-            await CreateCustomTables();
-
             StatusMessageUpdated?.Invoke("Generating mana symbols ...");
+            await CreateCustomTables();
             await GenerateManaSymbolsFromSvgAsync();
 
             StatusMessageUpdated?.Invoke("Generating mana cost images ...");
             await Task.Run(GenerateManaCostImagesAsync);
 
             StatusMessageUpdated?.Invoke("Generating Set icons ...");
-            await GenerateSetKeyruneFromSvgAsync();
+            await Task.Run(GenerateSetKeyruneFromSvgAsync);
 
             StatusMessageUpdated?.Invoke("Updating card prices ...");
-            await ImportPricesFromJsonAsync(2000);
+            await Task.Run(() => ImportPricesFromJsonAsync(32000));
 
+            StatusMessageUpdated?.Invoke("Finalizing ...");
             var generateIndices = CreateIndices();
             var generateViews = CreateViews();
             await Task.WhenAll(generateIndices, generateViews);
-
-            //stopwatch.Stop();
-            //Debug.WriteLine($"PrepareDownloadedCardDatabase completed in {stopwatch.Elapsed.TotalSeconds} seconds.");
 
             DBAccess.CloseConnection();
         }
@@ -366,9 +358,6 @@ namespace CollectaMundo
         }
         public static async Task ImportPricesFromJsonAsync(int batchSize)
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             await CopyNonNullMcmIdsToCardPricesAsync();
 
             try
@@ -494,9 +483,7 @@ namespace CollectaMundo
                 // Update the PricesUpdatedDate in appsettings.json
                 ConfigurationManager.UpdatePriceInfo(createdAt);
 
-                // File.Delete(jsonFilePath); // Uncomment this if you want to delete the file after processing
-                stopwatch.Stop();
-                Debug.WriteLine($"Price import completed in {stopwatch.Elapsed.TotalSeconds} seconds.");
+                File.Delete(jsonFilePath);
             }
             catch (Exception ex)
             {
@@ -504,9 +491,6 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during price import: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-
-
         public static async Task CreateIndices()
         {
             Dictionary<string, string> indices = new()
@@ -1038,7 +1022,7 @@ namespace CollectaMundo
 
             return uniqueValues;
         }
-        public static async Task CopyNonNullMcmIdsToCardPricesAsync()
+        private static async Task CopyNonNullMcmIdsToCardPricesAsync()
         {
             try
             {
@@ -1050,11 +1034,8 @@ namespace CollectaMundo
                     WHERE mcmId IS NOT NULL;";
 
                 // Step 2: Execute the SQL statement
-                using (var command = new SQLiteCommand(copySql, DBAccess.connection))
-                {
-                    int rowsCopied = await command.ExecuteNonQueryAsync();
-                    Debug.WriteLine($"Successfully copied {rowsCopied} rows from cardIdentifiers to cardPrices.");
-                }
+                using var command = new SQLiteCommand(copySql, DBAccess.connection);
+                int rowsCopied = await command.ExecuteNonQueryAsync();
             }
             catch (Exception ex)
             {
@@ -1062,8 +1043,6 @@ namespace CollectaMundo
                 MessageBox.Show($"Error copying data from cardIdentifiers to cardPrices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-
 
         #endregion
     }
