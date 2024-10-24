@@ -1,6 +1,8 @@
 
         /*TO DO 
-         * PRISER!!!
+         * Læs priser ind
+         * Skift mellem priser
+         * Opdater Update
          * 
          */
 

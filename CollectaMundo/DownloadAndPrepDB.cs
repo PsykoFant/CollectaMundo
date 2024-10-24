@@ -34,7 +34,7 @@ namespace CollectaMundo
         private readonly static string pricesDownloadUrl = "https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_1.json";
 
         // Check if the card database exists in the location specified by appsettings.json. 
-        // If it doesn't exist, download it and populate it with custom data, including image data for mana symbols and set images
+        // If it doesn't exist, download it and populate it with custom data, including image data for mana symbols and set images as well as card prices
         public static async Task SystemIntegrityCheckAsync()
         {
             bool redownloadDB = false;
@@ -97,11 +97,6 @@ namespace CollectaMundo
 
                 // If both downloads (or re-downloads) succeeded, proceed
                 await PrepareDownloadedCardDatabase();
-            }
-
-            else
-            {
-                MainWindow.CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
             }
         }
         public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessageBig, string downloadFile, bool showStatusBar)
@@ -177,8 +172,6 @@ namespace CollectaMundo
         }
         public static async Task PrepareDownloadedCardDatabase()
         {
-            await DBAccess.OpenConnectionAsync();
-
             StatusMessageUpdated?.Invoke("Generating mana symbols ...");
             await CreateCustomTables();
             await GenerateManaSymbolsFromSvgAsync();
@@ -196,8 +189,6 @@ namespace CollectaMundo
             var generateIndices = CreateIndices();
             var generateViews = CreateViews();
             await Task.WhenAll(generateIndices, generateViews);
-
-            DBAccess.CloseConnection();
         }
         private static async Task CreateCustomTables()
         {
