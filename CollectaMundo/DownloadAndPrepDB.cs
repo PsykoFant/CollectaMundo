@@ -181,8 +181,8 @@ namespace CollectaMundo
         {
             await DBAccess.OpenConnectionAsync();
 
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
+            //var stopwatch = new Stopwatch();
+            //stopwatch.Start();
 
             await CreateCustomTables();
 
@@ -197,16 +197,13 @@ namespace CollectaMundo
 
             StatusMessageUpdated?.Invoke("Updating card prices ...");
             await ImportPricesFromJsonAsync(2000);
-            await UpdateCardPricesWithUuidAsync();
-
-            // update uuid in cardPrices
 
             var generateIndices = CreateIndices();
             var generateViews = CreateViews();
             await Task.WhenAll(generateIndices, generateViews);
-            stopwatch.Stop();
 
-            Debug.WriteLine($"PrepareDownloadedCardDatabase completed in {stopwatch.Elapsed.TotalSeconds} seconds.");
+            //stopwatch.Stop();
+            //Debug.WriteLine($"PrepareDownloadedCardDatabase completed in {stopwatch.Elapsed.TotalSeconds} seconds.");
 
             DBAccess.CloseConnection();
         }
@@ -222,7 +219,7 @@ namespace CollectaMundo
                     {"keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB);"},
                     {"AggregatedCardKeywords", "CREATE TABLE IF NOT EXISTS AggregatedCardKeywords (uuid TEXT PRIMARY KEY, aggregatedKeywords TEXT);"},
                     {"myCollection", "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid TEXT, count INTEGER, trade INTEGER, condition TEXT, language TEXT, finish TEXT);"},
-                    {"cardPrices", @"CREATE TABLE IF NOT EXISTS cardPrices (uuid TEXT UNIQUE, mcmId INTEGER PRIMARY KEY, avg DECIMAL(10, 2), low DECIMAL(10, 2), trend DECIMAL(10, 2), avg1 DECIMAL(10, 2), avg7 DECIMAL(10, 2), avg30 DECIMAL(10, 2), avgFoil DECIMAL(10, 2), lowFoil DECIMAL(10, 2), trendFoil DECIMAL(10, 2), avg1Foil DECIMAL(10, 2), avg7Foil DECIMAL(10, 2), avg30Foil DECIMAL(10, 2));"}
+                    {"cardPrices", @"CREATE TABLE IF NOT EXISTS cardPrices (uuid TEXT UNIQUE PRIMARY KEY, mcmId INTEGER, avg DECIMAL(10, 2), low DECIMAL(10, 2), trend DECIMAL(10, 2), avg1 DECIMAL(10, 2), avg7 DECIMAL(10, 2), avg30 DECIMAL(10, 2), avgFoil DECIMAL(10, 2), lowFoil DECIMAL(10, 2), trendFoil DECIMAL(10, 2), avg1Foil DECIMAL(10, 2), avg7Foil DECIMAL(10, 2), avg30Foil DECIMAL(10, 2));"}
                 };
 
                 // Create the tables asynchronously
@@ -290,167 +287,6 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during creation or insertion of uniqueManaSymbols: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-        // Ok, vi har en plan:
-
-        /* Ok, vi har en plan:
-         * 1. Når vi opretter cardPrices, så kopierer vi alle uuid'er kolonnen som har mcmId'er med det samme
-         * 2. Når vi importerer priser, opretter vi to objekter in-memory:
-         *      1. Et objekt med alle værdier fra mcmId og uuid kolonnen fra cardPrices
-         *      2. Et object med alle værdier fra json-filen
-         * 3. Så løber vi igennem alle mcmId'er fra objekt 1 og slår mcmId op i objekt 2. Vi tilføjer priselementer fra objekt 2 til objekt 1
-         * Så tilføjer vi transaktionelt alle priser
-         
-         */
-        public static async Task ImportPricesFromJsonAsync(int batchSize)
-        {
-            try
-            {
-                // Read the JSON file from the priceDownloadsPath
-                string jsonFilePath = MainWindow.priceDownloadsPath;
-                if (!File.Exists(jsonFilePath))
-                {
-                    throw new FileNotFoundException($"Price JSON file not found at: {jsonFilePath}");
-                }
-
-                // Check if the database connection is open
-                if (DBAccess.connection == null)
-                {
-                    throw new InvalidOperationException("Database connection is not initialized.");
-                }
-
-                // Read the JSON content
-                var jsonContent = await File.ReadAllTextAsync(jsonFilePath);
-
-                // Parse the createdAt field separately from priceGuides
-                var jsonObject = JObject.Parse(jsonContent);
-                string createdAt = jsonObject["createdAt"]?.ToString() ?? throw new InvalidOperationException("CreatedAt not found in JSON.");
-
-                // Deserialize priceGuides directly into a list of PriceGuide objects
-                var priceGuides = jsonObject["priceGuides"]?.ToObject<List<PriceGuide>>() ?? [];
-                if (priceGuides.Count == 0)
-                {
-                    throw new InvalidOperationException("No price data found in the JSON file.");
-                }
-
-                // Step 1: Load McmId-UUID mapping into a dictionary
-                var uuidMap = new Dictionary<int, string>();
-                string loadUuidMapSql = "SELECT mcmId, uuid FROM cardIdentifiers WHERE mcmId IS NOT NULL;";
-                using (var command = new SQLiteCommand(loadUuidMapSql, DBAccess.connection))
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    while (await reader.ReadAsync())
-                    {
-                        try
-                        {
-                            // Ensure that the column data types match expectations
-                            int mcmId = reader.IsDBNull(0) ? throw new InvalidOperationException("mcmId cannot be NULL") : reader.GetInt32(0); // Read mcmId, throw if NULL
-                            string? uuid = !reader.IsDBNull(1) ? reader.GetString(1) : null; // Read uuid, default to null if NULL
-
-                            // Log details if uuid is null
-                            if (uuid == null)
-                            {
-                                Debug.WriteLine($"Warning: Null UUID for mcmId: {mcmId}");
-                            }
-
-                            uuidMap[mcmId] = uuid;
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"Error processing row: {ex.Message}. Row details: mcmId={reader[0]}, uuid={(reader.IsDBNull(1) ? "NULL" : reader[1].ToString())}");
-                            throw; // Re-throw the exception after logging details
-                        }
-                    }
-                }
-
-                // Step 2: Begin inserting the parsed data into the 'cardPrices' table within a transaction
-                string insertSql = @"INSERT OR REPLACE INTO cardPrices (uuid, mcmId, Avg, Low, Trend, Avg1, Avg7, Avg30, AvgFoil, LowFoil, TrendFoil, Avg1Foil, Avg7Foil, Avg30Foil)
-            VALUES (@uuid, @mcmId, @Avg, @Low, @Trend, @Avg1, @Avg7, @Avg30, @AvgFoil, @LowFoil, @TrendFoil, @Avg1Foil, @Avg7Foil, @Avg30Foil);";
-
-                var transaction = DBAccess.connection.BeginTransaction();
-                try
-                {
-                    using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
-                    insertCommand.Transaction = transaction;
-
-                    // Use a prepared statement to reuse the command for each insert
-                    insertCommand.Parameters.Add(new SQLiteParameter("@uuid"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@mcmId"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Low"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Trend"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg1"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg7"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg30"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@AvgFoil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@LowFoil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@TrendFoil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg1Foil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg7Foil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg30Foil"));
-
-                    int counter = 0;
-
-                    foreach (var priceGuide in priceGuides)
-                    {
-                        // Look up the UUID from the in-memory dictionary
-                        uuidMap.TryGetValue(priceGuide.IdProduct, out string? uuid);
-
-                        // Prepare the command parameters, converting nullable decimals and strings to DBNull.Value if null
-                        insertCommand.Parameters["@uuid"].Value = uuid != null ? uuid : DBNull.Value;
-                        insertCommand.Parameters["@mcmId"].Value = priceGuide.IdProduct;
-                        insertCommand.Parameters["@Avg"].Value = priceGuide.Avg.HasValue ? (object)priceGuide.Avg.Value : DBNull.Value;
-                        insertCommand.Parameters["@Low"].Value = priceGuide.Low.HasValue ? (object)priceGuide.Low.Value : DBNull.Value;
-                        insertCommand.Parameters["@Trend"].Value = priceGuide.Trend.HasValue ? (object)priceGuide.Trend.Value : DBNull.Value;
-                        insertCommand.Parameters["@Avg1"].Value = priceGuide.Avg1.HasValue ? (object)priceGuide.Avg1.Value : DBNull.Value;
-                        insertCommand.Parameters["@Avg7"].Value = priceGuide.Avg7.HasValue ? (object)priceGuide.Avg7.Value : DBNull.Value;
-                        insertCommand.Parameters["@Avg30"].Value = priceGuide.Avg30.HasValue ? (object)priceGuide.Avg30.Value : DBNull.Value;
-                        insertCommand.Parameters["@AvgFoil"].Value = priceGuide.AvgFoil.HasValue ? (object)priceGuide.AvgFoil.Value : DBNull.Value;
-                        insertCommand.Parameters["@LowFoil"].Value = priceGuide.LowFoil.HasValue ? (object)priceGuide.LowFoil.Value : DBNull.Value;
-                        insertCommand.Parameters["@TrendFoil"].Value = priceGuide.TrendFoil.HasValue ? (object)priceGuide.TrendFoil.Value : DBNull.Value;
-                        insertCommand.Parameters["@Avg1Foil"].Value = priceGuide.Avg1Foil.HasValue ? (object)priceGuide.Avg1Foil.Value : DBNull.Value;
-                        insertCommand.Parameters["@Avg7Foil"].Value = priceGuide.Avg7Foil.HasValue ? (object)priceGuide.Avg7Foil.Value : DBNull.Value;
-                        insertCommand.Parameters["@Avg30Foil"].Value = priceGuide.Avg30Foil.HasValue ? (object)priceGuide.Avg30Foil.Value : DBNull.Value;
-
-                        // Execute the insert command
-                        await insertCommand.ExecuteNonQueryAsync();
-
-                        // Batch commit every 1000 inserts for performance
-                        if (++counter % batchSize == 0)
-                        {
-                            await transaction.CommitAsync();
-                            transaction.Dispose();
-                            transaction = DBAccess.connection.BeginTransaction();
-                        }
-                    }
-
-
-
-                    // Commit any remaining inserts
-                    await transaction.CommitAsync();
-                }
-                catch (Exception)
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-                finally
-                {
-                    transaction.Dispose();
-                }
-
-                // Update the PricesUpdatedDate in appsettings.json
-                ConfigurationManager.UpdatePriceInfo(createdAt);
-
-                // File.Delete(jsonFilePath); // Uncomment this if you want to delete the file after processing
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error during price import: {ex.Message}");
-                MessageBox.Show($"Error during price import: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
         public static async Task GenerateManaCostImagesAsync()
         {
             try
@@ -526,6 +362,412 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"Error during insertion of keyRuneImages: {ex.Message}");
                 MessageBox.Show($"Error during insertion of keyRuneImages: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        public static async Task ImportPricesFromJsonAsync(int batchSize)
+        {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            await CopyNonNullMcmIdsToCardPricesAsync();
+
+            try
+            {
+                // Read the JSON file from the priceDownloadsPath
+                string jsonFilePath = MainWindow.priceDownloadsPath;
+                if (!File.Exists(jsonFilePath))
+                {
+                    throw new FileNotFoundException($"Price JSON file not found at: {jsonFilePath}");
+                }
+
+                // Check if the database connection is open
+                if (DBAccess.connection == null)
+                {
+                    throw new InvalidOperationException("Database connection is not initialized.");
+                }
+
+                // Read the JSON content
+                var jsonContent = await File.ReadAllTextAsync(jsonFilePath);
+
+                // Parse the createdAt field separately from priceGuides
+                var jsonObject = JObject.Parse(jsonContent);
+                string createdAt = jsonObject["createdAt"]?.ToString() ?? throw new InvalidOperationException("CreatedAt not found in JSON.");
+
+                // Deserialize priceGuides directly into a list of PriceGuide objects
+                var priceGuides = jsonObject["priceGuides"]?.ToObject<List<PriceGuide>>() ?? new List<PriceGuide>();
+                if (priceGuides.Count == 0)
+                {
+                    throw new InvalidOperationException("No price data found in the JSON file.");
+                }
+
+                // Step 1: Load McmId-UUID mapping into a dictionary (Object 1)
+                var cardPricesMap = new Dictionary<int, (string uuid, PriceGuide prices)>();
+                string loadUuidMapSql = "SELECT mcmId, uuid FROM cardPrices WHERE mcmId IS NOT NULL;";
+                using (var command = new SQLiteCommand(loadUuidMapSql, DBAccess.connection))
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        int mcmId = reader.GetInt32(0);
+                        string uuid = reader.GetString(1);
+                        cardPricesMap[mcmId] = (uuid, new PriceGuide());
+                    }
+                }
+
+                // Step 2: Update Object 1 with prices from JSON (Object 2)
+                foreach (var priceGuide in priceGuides)
+                {
+                    if (cardPricesMap.TryGetValue(priceGuide.IdProduct, out var existingData))
+                    {
+                        // Update prices within Object 1
+                        cardPricesMap[priceGuide.IdProduct] = (existingData.uuid, priceGuide);
+                    }
+                }
+
+                // Step 3: Insert updated prices into the 'cardPrices' table within a transaction
+                string insertSql = @"INSERT OR REPLACE INTO cardPrices (uuid, mcmId, Avg, Low, Trend, Avg1, Avg7, Avg30, AvgFoil, LowFoil, TrendFoil, Avg1Foil, Avg7Foil, Avg30Foil)
+                            VALUES (@uuid, @mcmId, @Avg, @Low, @Trend, @Avg1, @Avg7, @Avg30, @AvgFoil, @LowFoil, @TrendFoil, @Avg1Foil, @Avg7Foil, @Avg30Foil);";
+
+                var transaction = DBAccess.connection.BeginTransaction();
+                try
+                {
+                    using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
+                    insertCommand.Transaction = transaction;
+
+                    // Prepare reusable command parameters
+                    insertCommand.Parameters.Add(new SQLiteParameter("@uuid"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@mcmId"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Low"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Trend"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg1"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg7"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg30"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@AvgFoil"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@LowFoil"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@TrendFoil"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg1Foil"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg7Foil"));
+                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg30Foil"));
+
+                    int counter = 0;
+
+                    foreach (var (mcmId, (uuid, prices)) in cardPricesMap)
+                    {
+                        insertCommand.Parameters["@uuid"].Value = uuid;
+                        insertCommand.Parameters["@mcmId"].Value = mcmId;
+                        insertCommand.Parameters["@Avg"].Value = prices.Avg ?? (object)DBNull.Value;
+                        insertCommand.Parameters["@Low"].Value = prices.Low ?? (object)DBNull.Value;
+                        insertCommand.Parameters["@Trend"].Value = prices.Trend ?? (object)DBNull.Value;
+                        insertCommand.Parameters["@Avg1"].Value = prices.Avg1 ?? (object)DBNull.Value;
+                        insertCommand.Parameters["@Avg7"].Value = prices.Avg7 ?? (object)DBNull.Value;
+                        insertCommand.Parameters["@Avg30"].Value = prices.Avg30 ?? (object)DBNull.Value;
+                        insertCommand.Parameters["@AvgFoil"].Value = prices.AvgFoil ?? (object)DBNull.Value;
+                        insertCommand.Parameters["@LowFoil"].Value = prices.LowFoil ?? (object)DBNull.Value;
+                        insertCommand.Parameters["@TrendFoil"].Value = prices.TrendFoil ?? (object)DBNull.Value;
+                        insertCommand.Parameters["@Avg1Foil"].Value = prices.Avg1Foil ?? (object)DBNull.Value;
+                        insertCommand.Parameters["@Avg7Foil"].Value = prices.Avg7Foil ?? (object)DBNull.Value;
+                        insertCommand.Parameters["@Avg30Foil"].Value = prices.Avg30Foil ?? (object)DBNull.Value;
+
+                        await insertCommand.ExecuteNonQueryAsync();
+
+                        if (++counter % batchSize == 0)
+                        {
+                            await transaction.CommitAsync();
+                            transaction.Dispose();
+                            transaction = DBAccess.connection.BeginTransaction();
+                        }
+                    }
+
+                    await transaction.CommitAsync();
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+                finally
+                {
+                    transaction.Dispose();
+                }
+
+                // Update the PricesUpdatedDate in appsettings.json
+                ConfigurationManager.UpdatePriceInfo(createdAt);
+
+                // File.Delete(jsonFilePath); // Uncomment this if you want to delete the file after processing
+                stopwatch.Stop();
+                Debug.WriteLine($"Price import completed in {stopwatch.Elapsed.TotalSeconds} seconds.");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error during price import: {ex.Message}");
+                MessageBox.Show($"Error during price import: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+
+
+        public static async Task CreateIndices()
+        {
+            Dictionary<string, string> indices = new()
+            {
+                {"uniqueManaSymbols", "CREATE INDEX IF NOT EXISTS uniqueManaSymbols_uniqueManaSymbol ON uniqueManaSymbols(uniqueManaSymbol);"},
+                {"uniqueManaCostImages", "CREATE INDEX IF NOT EXISTS uniqueManaCostImages_uniqueManaCost ON uniqueManaCostImages(uniqueManaCost);"},
+                {"keyruneImages", "CREATE INDEX IF NOT EXISTS keyruneImages_setCode ON keyruneImages(setCode);"},
+                {"cardPrices_mcmId", "CREATE INDEX IF NOT EXISTS cardPrices_mcmId ON cardPrices(mcmId);"},
+                {"cardPrices_uuid", "CREATE INDEX IF NOT EXISTS cardPrices_uuid ON cardPrices(uuid);"},
+                {"cardIdentifiers_uuid", "CREATE INDEX IF NOT EXISTS cardIdentifiers_uuid ON cardIdentifiers(uuid);"},
+                {"cardIdentifiers_mcmId", "CREATE INDEX IF NOT EXISTS cardIdentifiers_mcmId ON cardIdentifiers(mcmId);"},
+                {"cardForeignData_uuid", "CREATE INDEX IF NOT EXISTS cardForeignData_uuid ON cardForeignData(uuid);"},
+                {"cardLegalities_uuid", "CREATE INDEX IF NOT EXISTS cardLegalities_uuid ON cardLegalities(uuid);"},
+                {"cards_uuid", "CREATE INDEX IF NOT EXISTS cards_uuid ON cards(uuid);"},
+                {"cards_name", "CREATE INDEX IF NOT EXISTS cards_name ON cards(name);"},
+                {"cards_setCode", "CREATE INDEX IF NOT EXISTS cards_setCode ON cards(setCode);"},
+                {"cards_side", "CREATE INDEX IF NOT EXISTS cards_side ON cards(side);"},
+                {"cards_keywords", "CREATE INDEX IF NOT EXISTS cards_keywords ON cards(keywords);"},
+                {"sets_code", "CREATE INDEX IF NOT EXISTS sets_code ON sets(code);"},
+                {"sets_tokenSetCode", "CREATE INDEX IF NOT EXISTS sets_tokenSetCode ON sets(tokenSetCode);"},
+                {"tokenIdentifiers_uuid", "CREATE INDEX IF NOT EXISTS tokenIdentifiers_uuid ON tokenIdentifiers(uuid);"},
+                {"tokens_uuid", "CREATE INDEX IF NOT EXISTS tokens_uuid ON tokens(uuid);"},
+                {"tokens_name", "CREATE INDEX IF NOT EXISTS tokens_name ON tokens(name);"},
+                {"tokens_setCode", "CREATE INDEX IF NOT EXISTS tokens_setCode ON tokens(setCode);"},
+                {"tokens_faceName", "CREATE INDEX IF NOT EXISTS tokens_faceName ON tokens(faceName);"},
+                {"myCollection_uuid", "CREATE INDEX IF NOT EXISTS myCollection_uuid ON myCollection(uuid);"}
+            };
+
+            try
+            {
+                foreach (var item in indices)
+                {
+                    using var command = new SQLiteCommand(item.Value, DBAccess.connection);
+                    await command.ExecuteNonQueryAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error during creation of indices: {ex.Message}");
+                MessageBox.Show($"Error during creation of indices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        public static async Task CreateViews()
+        {
+            try
+            {
+                string createCardTokenViewQuery = @"
+                    CREATE VIEW IF NOT EXISTS view_cardToken AS
+                    SELECT 
+                        c.uuid,
+                        c.name,
+                        s.name AS setName,
+                        c.setCode,
+                        NULL AS tokenSetCode,
+                        NULL AS faceName
+                    FROM 
+                        cards c
+                    JOIN 
+                        sets s ON c.setCode = s.code
+                    WHERE 
+                        c.side IS NULL OR c.side = 'a'
+                    UNION ALL
+                    SELECT 
+                        t.uuid,
+                        t.name,
+                        s.name AS setName,
+                        s.code AS setCode,
+                        s.tokenSetCode,
+                        t.faceName
+                    FROM 
+                        tokens t
+                    JOIN 
+                        sets s ON t.setCode = s.tokenSetCode
+                    WHERE 
+                        t.side IS NULL OR t.side = 'a';
+                    ";
+                string createAllCardsViewQuery = @"
+                    CREATE VIEW IF NOT EXISTS view_allCards AS
+                    SELECT * FROM (
+                        SELECT 
+                            c.name AS Name, 
+                            s.name AS SetName, 
+                            s.releaseDate AS ReleaseDate,
+                            k.keyruneImage AS KeyRuneImage, 
+                            c.manaCost AS ManaCost, 
+                            u.manaCostImage AS ManaCostImage, 
+                            c.types AS Types, 
+                            c.colors AS Colors,
+                            c.supertypes AS SuperTypes, 
+                            c.subtypes AS SubTypes, 
+                            c.type AS Type, 
+                            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+                            c.text AS RulesText, 
+                            c.manaValue AS ManaValue, 
+                            c.language AS Language,
+                            c.uuid AS Uuid, 
+                            c.finishes AS Finishes, 
+                            c.side AS Side 
+                        FROM cards c
+                        JOIN sets s ON c.setCode = s.code
+                        LEFT JOIN keyruneImages k ON c.setCode = k.setCode
+                        LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                        LEFT JOIN (
+                            SELECT 
+                                cc.SetCode, 
+                                cc.Name, 
+                                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                            FROM cards cc
+                            GROUP BY cc.SetCode, cc.Name
+                        ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+                        WHERE c.side IS NULL OR c.side = 'a'
+
+                        UNION ALL
+
+                        SELECT 
+                            t.name AS Name, 
+                            s.name AS SetName, 
+                            s.releaseDate AS ReleaseDate,
+                            k.keyruneImage AS KeyRuneImage, 
+                            t.manaCost AS ManaCost, 
+                            u.manaCostImage AS ManaCostImage, 
+                            t.types AS Types, 
+                            t.colors AS Colors,
+                            t.supertypes AS SuperTypes, 
+                            t.subtypes AS SubTypes, 
+                            t.type AS Type, 
+                            t.keywords AS Keywords, 
+                            t.text AS RulesText, 
+                            NULL AS ManaValue, 
+                            t.language AS Language,
+                            t.uuid AS Uuid, 
+                            t.finishes AS Finishes, 
+                            t.side AS Side 
+                        FROM tokens t 
+                        JOIN sets s ON t.setCode = s.tokenSetCode 
+                        LEFT JOIN keyruneImages k ON t.setCode = k.setCode
+                        LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+                        WHERE t.side IS NULL OR t.side = 'a'
+                    ) ORDER BY ReleaseDate DESC, SetName, Types,
+                        CASE Colors
+                            WHEN 'W' THEN 1
+                            WHEN 'U' THEN 2
+                            WHEN 'B' THEN 3
+                            WHEN 'R' THEN 4
+                            WHEN 'G' THEN 5
+                            WHEN 'U' THEN 6
+                            ELSE 7
+                        END;
+                    ";
+                string createMyCollectionViewQuery = @"
+                    CREATE VIEW IF NOT EXISTS view_myCollection AS
+                    SELECT * FROM (
+                        SELECT                        
+                            c.name AS Name,
+                            s.name AS SetName,
+                            s.releaseDate AS ReleaseDate,
+                            k.keyruneImage AS KeyRuneImage,
+                            c.manaCost AS ManaCost,
+                            u.manaCostImage AS ManaCostImage,
+                            c.types AS Types,
+                            c.colors AS Colors,
+                            c.supertypes AS SuperTypes,
+                            c.subtypes AS SubTypes,
+                            c.type AS Type,
+                            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+                            c.text AS RulesText,
+                            c.manaValue AS ManaValue,
+						    c.finishes AS Finishes,
+                            c.uuid AS Uuid,
+                            m.id AS CardId,
+                            m.count AS CardsOwned,
+                            m.trade AS CardsForTrade,
+                            m.condition AS Condition,
+                            m.language AS Language,
+                            m.finish AS Finish,
+                            c.side AS Side
+                        FROM
+                            myCollection m
+                        JOIN
+                            cards c ON m.uuid = c.uuid
+                        LEFT JOIN 
+                            sets s ON c.setCode = s.code
+                        LEFT JOIN 
+                            keyruneImages k ON c.setCode = k.setCode
+                        LEFT JOIN 
+                            uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                        LEFT JOIN (
+                            SELECT 
+                                cc.SetCode, 
+                                cc.Name, 
+                                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                            FROM cards cc
+                            GROUP BY cc.SetCode, cc.Name
+                        ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+                        WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
+                        UNION ALL
+                        SELECT
+                            t.name AS Name,
+                            s.name AS SetName,
+                            s.releaseDate AS ReleaseDate,
+                            k.keyruneImage AS KeyRuneImage,
+                            t.manaCost AS ManaCost,
+                            u.manaCostImage AS ManaCostImage,
+                            t.types AS Types,
+                            t.colors AS Colors,
+                            t.supertypes AS SuperTypes,
+                            t.subtypes AS SubTypes,
+                            t.type AS Type,
+                            t.keywords AS Keywords,
+                            t.text AS RulesText,
+                            NULL AS ManaValue,  -- Tokens do not have manaValue
+						    t.finishes AS Finishes,
+                            t.uuid AS Uuid,
+                            m.id AS CardId,
+                            m.count AS CardsOwned,
+                            m.trade AS CardsForTrade,
+                            m.condition AS Condition,
+                            m.language AS Language,
+                            m.finish AS Finish,
+                            t.side AS Side
+                        FROM
+                            myCollection m
+                        JOIN
+                            tokens t ON m.uuid = t.uuid
+                        LEFT JOIN 
+                            sets s ON t.setCode = s.tokenSetCode
+                        LEFT JOIN 
+                            keyruneImages k ON t.setCode = k.setCode
+                        LEFT JOIN 
+                            uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+                        WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
+                    ) ORDER BY ReleaseDate DESC, SetName, Types,
+                        CASE Colors
+                            WHEN 'W' THEN 1
+                            WHEN 'U' THEN 2
+                            WHEN 'B' THEN 3
+                            WHEN 'R' THEN 4
+                            WHEN 'G' THEN 5
+                            ELSE 6
+                        END";
+
+                using (var command = new SQLiteCommand(createCardTokenViewQuery, DBAccess.connection))
+                {
+                    await command.ExecuteNonQueryAsync();
+                }
+
+                using (var command = new SQLiteCommand(createAllCardsViewQuery, DBAccess.connection))
+                {
+                    await command.ExecuteNonQueryAsync();
+                }
+
+                using (var command = new SQLiteCommand(createMyCollectionViewQuery, DBAccess.connection))
+                {
+                    await command.ExecuteNonQueryAsync();
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error during creation of views: {ex.Message}");
+                MessageBox.Show($"Error during creation of views: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -796,378 +1038,32 @@ namespace CollectaMundo
 
             return uniqueValues;
         }
-        public static async Task UpdateCardPricesWithUuidAsync(int batchSize = 10000)
+        public static async Task CopyNonNullMcmIdsToCardPricesAsync()
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             try
             {
-                // Step 1: Ensure indexes are created for both tables
-                await CreateIndexesIfNotExistsAsync();
+                // Step 1: Define the SQL statement for copying data
+                string copySql = @"
+                    INSERT OR IGNORE INTO cardPrices (uuid, mcmId)
+                    SELECT uuid, mcmId
+                    FROM cardIdentifiers
+                    WHERE mcmId IS NOT NULL;";
 
-                // Step 2: Prepare the update command
-                string updateSql = @"
-            UPDATE cardPrices
-            SET uuid = (
-                SELECT cardIdentifiers.uuid
-                FROM cardIdentifiers
-                WHERE cardIdentifiers.mcmId = cardPrices.mcmId
-            )
-            WHERE uuid IS NULL AND EXISTS (
-                SELECT 1
-                FROM cardIdentifiers
-                WHERE cardIdentifiers.mcmId = cardPrices.mcmId
-            );";
-
-                // Start a transaction
-                var transaction = DBAccess.connection.BeginTransaction();
-
-                try
+                // Step 2: Execute the SQL statement
+                using (var command = new SQLiteCommand(copySql, DBAccess.connection))
                 {
-                    using var command = new SQLiteCommand(updateSql, DBAccess.connection);
-                    command.Transaction = transaction;
-
-                    int counter = 0;
-                    int totalUpdatedRows = 0;
-
-                    // Fetch the records that need updating in batches to reduce memory load
-                    while (true)
-                    {
-                        // Limit the number of rows fetched in each iteration for better memory management
-                        string selectSql = $"SELECT mcmId FROM cardPrices WHERE uuid IS NULL LIMIT {batchSize};";
-                        using var selectCommand = new SQLiteCommand(selectSql, DBAccess.connection);
-                        using var reader = await selectCommand.ExecuteReaderAsync();
-
-                        // If no more rows to update, break
-                        if (!reader.HasRows)
-                        {
-                            break;
-                        }
-
-                        // Execute the batch update command
-                        int updatedRows = await command.ExecuteNonQueryAsync();
-                        totalUpdatedRows += updatedRows;
-
-                        // Commit the batch transaction
-                        await transaction.CommitAsync();
-                        transaction.Dispose();
-                        transaction = DBAccess.connection.BeginTransaction();
-
-                        Debug.WriteLine($"Batch update completed with {updatedRows} rows updated.");
-                        counter++;
-                    }
-
-                    Debug.WriteLine($"Update completed. Total rows updated: {totalUpdatedRows}.");
-
-                    // Commit the final transaction
-                    await transaction.CommitAsync();
-                }
-                catch (Exception)
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-                finally
-                {
-                    transaction.Dispose();
+                    int rowsCopied = await command.ExecuteNonQueryAsync();
+                    Debug.WriteLine($"Successfully copied {rowsCopied} rows from cardIdentifiers to cardPrices.");
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error updating UUIDs in cardPrices table: {ex.Message}");
-                MessageBox.Show($"Error updating UUIDs in cardPrices table: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                stopwatch.Stop();
-                Debug.WriteLine($"UpdateCardPricesWithUuidAsync executed in {stopwatch.Elapsed.TotalSeconds} seconds.");
-            }
-        }
-
-        private static async Task CreateIndexesIfNotExistsAsync()
-        {
-            try
-            {
-                string indexSql = @"
-            CREATE INDEX IF NOT EXISTS idx_cardIdentifiers_mcmId ON cardIdentifiers (mcmId);
-            CREATE INDEX IF NOT EXISTS idx_cardPrices_mcmId ON cardPrices (mcmId);";
-
-                using var command = new SQLiteCommand(indexSql, DBAccess.connection);
-                await command.ExecuteNonQueryAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error creating indexes: {ex.Message}");
-                MessageBox.Show($"Error creating indexes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error copying data from cardIdentifiers to cardPrices: {ex.Message}");
+                MessageBox.Show($"Error copying data from cardIdentifiers to cardPrices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
 
-
-
-        public static async Task CreateIndices()
-        {
-            Dictionary<string, string> indices = new()
-            {
-                {"uniqueManaSymbols", "CREATE INDEX IF NOT EXISTS uniqueManaSymbols_uniqueManaSymbol ON uniqueManaSymbols(uniqueManaSymbol);"},
-                {"uniqueManaCostImages", "CREATE INDEX IF NOT EXISTS uniqueManaCostImages_uniqueManaCost ON uniqueManaCostImages(uniqueManaCost);"},
-                {"keyruneImages", "CREATE INDEX IF NOT EXISTS keyruneImages_setCode ON keyruneImages(setCode);"},
-                {"cardForeignData", "CREATE INDEX IF NOT EXISTS cardForeignData_uuid ON cardForeignData(uuid);"},
-                {"cardIdentifiers", "CREATE INDEX IF NOT EXISTS cardIdentifiers_uuid ON cardIdentifiers(uuid);"},
-                {"cardLegalities", "CREATE INDEX IF NOT EXISTS cardLegalities_uuid ON cardLegalities(uuid);"},
-                {"cardPurchaseUrls", "CREATE INDEX IF NOT EXISTS cardPurchaseUrls_uuid ON cardPurchaseUrls(uuid);"},
-                {"cardRulings", "CREATE INDEX IF NOT EXISTS cardRulings_uuid ON cardRulings(uuid);"},
-                {"cards_uuid", "CREATE INDEX IF NOT EXISTS cards_uuid ON cards(uuid);"},
-                {"cards_name", "CREATE INDEX IF NOT EXISTS cards_name ON cards(name);"},
-                {"cards_setCode", "CREATE INDEX IF NOT EXISTS cards_setCode ON cards(setCode);"},
-                {"cards_side", "CREATE INDEX IF NOT EXISTS cards_side ON cards(side);"},
-                {"cards_keywords", "CREATE INDEX IF NOT EXISTS cards_keywords ON cards(keywords);"},
-                {"sets_code", "CREATE INDEX IF NOT EXISTS sets_code ON sets(code);"},
-                {"sets_tokenSetCode", "CREATE INDEX IF NOT EXISTS sets_tokenSetCode ON sets(tokenSetCode);"},
-                {"tokenIdentifiers", "CREATE INDEX IF NOT EXISTS tokenIdentifiers_uuid ON tokenIdentifiers(uuid);"},
-                {"tokens_uuid", "CREATE INDEX IF NOT EXISTS tokens_uuid ON tokens(uuid);"},
-                {"tokens_name", "CREATE INDEX IF NOT EXISTS tokens_name ON tokens(name);"},
-                {"tokens_setCode", "CREATE INDEX IF NOT EXISTS tokens_setCode ON tokens(setCode);"},
-                {"tokens_faceName", "CREATE INDEX IF NOT EXISTS tokens_faceName ON tokens(faceName);"},
-                {"myCollection", "CREATE INDEX IF NOT EXISTS myCollection_uuid ON myCollection(uuid);"}
-            };
-
-            try
-            {
-                foreach (var item in indices)
-                {
-                    using var command = new SQLiteCommand(item.Value, DBAccess.connection);
-                    await command.ExecuteNonQueryAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error during creation of indices: {ex.Message}");
-                MessageBox.Show($"Error during creation of indices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-        public static async Task CreateViews()
-        {
-            try
-            {
-                string createCardTokenViewQuery = @"
-                    CREATE VIEW IF NOT EXISTS view_cardToken AS
-                    SELECT 
-                        c.uuid,
-                        c.name,
-                        s.name AS setName,
-                        c.setCode,
-                        NULL AS tokenSetCode,
-                        NULL AS faceName
-                    FROM 
-                        cards c
-                    JOIN 
-                        sets s ON c.setCode = s.code
-                    WHERE 
-                        c.side IS NULL OR c.side = 'a'
-                    UNION ALL
-                    SELECT 
-                        t.uuid,
-                        t.name,
-                        s.name AS setName,
-                        s.code AS setCode,
-                        s.tokenSetCode,
-                        t.faceName
-                    FROM 
-                        tokens t
-                    JOIN 
-                        sets s ON t.setCode = s.tokenSetCode
-                    WHERE 
-                        t.side IS NULL OR t.side = 'a';
-                    ";
-                string createAllCardsViewQuery = @"
-                    CREATE VIEW IF NOT EXISTS view_allCards AS
-                    SELECT * FROM (
-                        SELECT 
-                            c.name AS Name, 
-                            s.name AS SetName, 
-                            s.releaseDate AS ReleaseDate,
-                            k.keyruneImage AS KeyRuneImage, 
-                            c.manaCost AS ManaCost, 
-                            u.manaCostImage AS ManaCostImage, 
-                            c.types AS Types, 
-                            c.colors AS Colors,
-                            c.supertypes AS SuperTypes, 
-                            c.subtypes AS SubTypes, 
-                            c.type AS Type, 
-                            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
-                            c.text AS RulesText, 
-                            c.manaValue AS ManaValue, 
-                            c.language AS Language,
-                            c.uuid AS Uuid, 
-                            c.finishes AS Finishes, 
-                            c.side AS Side 
-                        FROM cards c
-                        JOIN sets s ON c.setCode = s.code
-                        LEFT JOIN keyruneImages k ON c.setCode = k.setCode
-                        LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                        LEFT JOIN (
-                            SELECT 
-                                cc.SetCode, 
-                                cc.Name, 
-                                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                            FROM cards cc
-                            GROUP BY cc.SetCode, cc.Name
-                        ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
-                        WHERE c.side IS NULL OR c.side = 'a'
-
-                        UNION ALL
-
-                        SELECT 
-                            t.name AS Name, 
-                            s.name AS SetName, 
-                            s.releaseDate AS ReleaseDate,
-                            k.keyruneImage AS KeyRuneImage, 
-                            t.manaCost AS ManaCost, 
-                            u.manaCostImage AS ManaCostImage, 
-                            t.types AS Types, 
-                            t.colors AS Colors,
-                            t.supertypes AS SuperTypes, 
-                            t.subtypes AS SubTypes, 
-                            t.type AS Type, 
-                            t.keywords AS Keywords, 
-                            t.text AS RulesText, 
-                            NULL AS ManaValue, 
-                            t.language AS Language,
-                            t.uuid AS Uuid, 
-                            t.finishes AS Finishes, 
-                            t.side AS Side 
-                        FROM tokens t 
-                        JOIN sets s ON t.setCode = s.tokenSetCode 
-                        LEFT JOIN keyruneImages k ON t.setCode = k.setCode
-                        LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-                        WHERE t.side IS NULL OR t.side = 'a'
-                    ) ORDER BY ReleaseDate DESC, SetName, Types,
-                        CASE Colors
-                            WHEN 'W' THEN 1
-                            WHEN 'U' THEN 2
-                            WHEN 'B' THEN 3
-                            WHEN 'R' THEN 4
-                            WHEN 'G' THEN 5
-                            WHEN 'U' THEN 6
-                            ELSE 7
-                        END;
-                    ";
-                string createMyCollectionViewQuery = @"
-                    CREATE VIEW IF NOT EXISTS view_myCollection AS
-                    SELECT * FROM (
-                        SELECT                        
-                            c.name AS Name,
-                            s.name AS SetName,
-                            s.releaseDate AS ReleaseDate,
-                            k.keyruneImage AS KeyRuneImage,
-                            c.manaCost AS ManaCost,
-                            u.manaCostImage AS ManaCostImage,
-                            c.types AS Types,
-                            c.colors AS Colors,
-                            c.supertypes AS SuperTypes,
-                            c.subtypes AS SubTypes,
-                            c.type AS Type,
-                            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
-                            c.text AS RulesText,
-                            c.manaValue AS ManaValue,
-						    c.finishes AS Finishes,
-                            c.uuid AS Uuid,
-                            m.id AS CardId,
-                            m.count AS CardsOwned,
-                            m.trade AS CardsForTrade,
-                            m.condition AS Condition,
-                            m.language AS Language,
-                            m.finish AS Finish,
-                            c.side AS Side
-                        FROM
-                            myCollection m
-                        JOIN
-                            cards c ON m.uuid = c.uuid
-                        LEFT JOIN 
-                            sets s ON c.setCode = s.code
-                        LEFT JOIN 
-                            keyruneImages k ON c.setCode = k.setCode
-                        LEFT JOIN 
-                            uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                        LEFT JOIN (
-                            SELECT 
-                                cc.SetCode, 
-                                cc.Name, 
-                                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                            FROM cards cc
-                            GROUP BY cc.SetCode, cc.Name
-                        ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
-                        WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
-                        UNION ALL
-                        SELECT
-                            t.name AS Name,
-                            s.name AS SetName,
-                            s.releaseDate AS ReleaseDate,
-                            k.keyruneImage AS KeyRuneImage,
-                            t.manaCost AS ManaCost,
-                            u.manaCostImage AS ManaCostImage,
-                            t.types AS Types,
-                            t.colors AS Colors,
-                            t.supertypes AS SuperTypes,
-                            t.subtypes AS SubTypes,
-                            t.type AS Type,
-                            t.keywords AS Keywords,
-                            t.text AS RulesText,
-                            NULL AS ManaValue,  -- Tokens do not have manaValue
-						    t.finishes AS Finishes,
-                            t.uuid AS Uuid,
-                            m.id AS CardId,
-                            m.count AS CardsOwned,
-                            m.trade AS CardsForTrade,
-                            m.condition AS Condition,
-                            m.language AS Language,
-                            m.finish AS Finish,
-                            t.side AS Side
-                        FROM
-                            myCollection m
-                        JOIN
-                            tokens t ON m.uuid = t.uuid
-                        LEFT JOIN 
-                            sets s ON t.setCode = s.tokenSetCode
-                        LEFT JOIN 
-                            keyruneImages k ON t.setCode = k.setCode
-                        LEFT JOIN 
-                            uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-                        WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
-                    ) ORDER BY ReleaseDate DESC, SetName, Types,
-                        CASE Colors
-                            WHEN 'W' THEN 1
-                            WHEN 'U' THEN 2
-                            WHEN 'B' THEN 3
-                            WHEN 'R' THEN 4
-                            WHEN 'G' THEN 5
-                            ELSE 6
-                        END";
-
-                using (var command = new SQLiteCommand(createCardTokenViewQuery, DBAccess.connection))
-                {
-                    await command.ExecuteNonQueryAsync();
-                }
-
-                using (var command = new SQLiteCommand(createAllCardsViewQuery, DBAccess.connection))
-                {
-                    await command.ExecuteNonQueryAsync();
-                }
-
-                using (var command = new SQLiteCommand(createMyCollectionViewQuery, DBAccess.connection))
-                {
-                    await command.ExecuteNonQueryAsync();
-                }
-
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error during creation of views: {ex.Message}");
-                MessageBox.Show($"Error during creation of views: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
 
         #endregion
     }
