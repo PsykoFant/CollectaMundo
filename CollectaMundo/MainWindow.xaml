@@ -23,7 +23,7 @@
             <GradientStop Color="White" Offset="1"/>
         </LinearGradientBrush>
     </Window.Background>
-    <Grid Style="{StaticResource MPlantin}">
+    <Grid x:Name="AppWindow" Style="{StaticResource MPlantin}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="250"/>
             <ColumnDefinition Width="*"/>
@@ -33,13 +33,20 @@
             <RowDefinition Height="40"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Grid x:Name="GridTopMenu" Grid.Row="0" Grid.ColumnSpan="3" VerticalAlignment="Top" Height="40">
+        <Grid x:Name="GridTopMenu" Grid.Row="0" Grid.ColumnSpan="3" VerticalAlignment="Top" Height="40" IsEnabled="False">
             <Button x:Name="MenuSearchAndFilterButton" Content="Search and Filter" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="160" Click="MenuSearchAndFilter_Click" Height="20"/>
             <Button x:Name="MenuMyCollectionButton" Content="My Collection" HorizontalAlignment="Left" Margin="175,10,0,0" VerticalAlignment="Top" Width="160" Click="MenuMyCollection_Click" Height="20"/>
             <Button x:Name="MenuDecksButton" Content="Decks" HorizontalAlignment="Left" Margin="340,10,0,0" VerticalAlignment="Top" Width="160" Height="20"/>
             <Button x:Name="MenuUtilsButton" Content="Utilities" HorizontalAlignment="Left" Margin="505,10,0,0" VerticalAlignment="Top" Width="160" Click="MenuUtilsButton_Click" Height="20"/>
         </Grid>
-        <Grid x:Name="GridSideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="Collapsed">
+        <Grid x:Name="GridStatus" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,40,0,0" VerticalAlignment="Top">
+            <Image Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="500" Width="500" Margin="0,76,0,0" />
+            <Label Content="CollectaMundo" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
+            <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Center" Height="15" Margin="0,650,0,0" VerticalAlignment="Top" Width="500" BorderBrush="Black" Visibility="Collapsed"/>
+            <Label x:Name="StatusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top"/>
+            <Label x:Name="FirstTimeSetupLabel" Content="" HorizontalAlignment="Center" Margin="0,582,0,0" VerticalAlignment="Top" FontSize="18"/>
+        </Grid>
+        <Grid x:Name="GridSideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="Hidden">
             <Grid x:Name="GridFiltering">
                 <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="90" Click="ClearFiltersButton_Click" Height="20"/>
 
@@ -429,7 +436,7 @@
                 <Button x:Name="ImportCollectionButton" Content="The Import Wizard" HorizontalAlignment="Left" Margin="10,30,0,0" VerticalAlignment="Top" Click="ImportCollectionButton_Click" Width="170" Height="20"/>
             </Grid>
         </Grid>
-        <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="Collapsed">
+        <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="Hidden">
             <Image x:Name="LogoSmall" Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="170" Width="170" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" />
             <ScrollViewer HorizontalAlignment="Left" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <TextBlock x:Name="FilterSummaryTextBlock" HorizontalAlignment="Left" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
@@ -1308,13 +1315,6 @@
                    Source="{Binding ImageSourceUrl2nd, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Top" Margin="0,461,10,0"/>
-        </Grid>
-        <Grid x:Name="GridStatus" Grid.Row="1" Grid.Column="1" Margin="0,40,0,0" VerticalAlignment="Top" d:IsHidden="True">
-            <Image Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="500" Width="500" Margin="0,76,0,0" />
-            <Label Content="CollectaMundo" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
-            <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Center" Height="15" Margin="0,650,0,0" VerticalAlignment="Top" Width="500" BorderBrush="Black" Visibility="Collapsed"/>
-            <Label x:Name="StatusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top"/>
-            <Label x:Name="FirstTimeSetupLabel" Content="" HorizontalAlignment="Center" Margin="0,582,0,0" VerticalAlignment="Top" FontSize="18"/>
         </Grid>
     </Grid>
 </Window>

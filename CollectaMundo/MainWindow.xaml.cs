@@ -135,7 +135,6 @@ namespace CollectaMundo
             stopwatch.Stop();
             Debug.WriteLine($"All cards loaded in {stopwatch.Elapsed.TotalSeconds} seconds.");
 
-
             //await PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
             await LoadColorIcons(ColorIcons, colourQuery);
 
@@ -147,12 +146,9 @@ namespace CollectaMundo
             await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons);
             */
 
-
-
-            GridFiltering.Visibility = Visibility.Visible;
-            await PopulateFilterUiElements();
-
             DBAccess.CloseConnection();
+
+            await CurrentInstance.PopulateFilterUiElements();
 
             CardsToAddListView.ItemsSource = addToCollectionManager.CardItemsToAdd;
             CardsToEditListView.ItemsSource = addToCollectionManager.CardItemsToEdit;
@@ -165,7 +161,6 @@ namespace CollectaMundo
             GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
 
             await ShowStatusWindowAsync(false);
-
         }
 
         #region Load data and populate UI elements
@@ -257,13 +252,27 @@ namespace CollectaMundo
                 card.ManaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
 
                 // Set the Avg property
-                if (reader["AvgPrice"] != DBNull.Value && decimal.TryParse(reader["AvgPrice"]?.ToString(), out decimal avgPrice))
+
+                card.Avg = decimal.TryParse(reader["AvgPrice"]?.ToString(), out decimal avgPrice) ? avgPrice : null;
+
+
+                //if (reader["AvgPrice"] != DBNull.Value && decimal.TryParse(reader["AvgPrice"]?.ToString(), out decimal avgPrice))
+                //{
+                //    card.Avg = avgPrice;
+                //}
+                //else
+                //{
+                //    card.Avg = null;
+                //}
+
+                // Set the Avg property
+                if (reader["AvgFoilPrice"] != DBNull.Value && decimal.TryParse(reader["AvgFoilPrice"]?.ToString(), out decimal avgFoilPrice))
                 {
-                    card.Avg = avgPrice;
+                    card.AvgFoil = avgFoilPrice;
                 }
                 else
                 {
-                    card.Avg = null;
+                    card.AvgFoil = null;
                 }
 
                 if (card is CardItem cardItem)
@@ -283,7 +292,6 @@ namespace CollectaMundo
                 throw;
             }
         }
-
         private static string ProcessManaCost(string manaCostRaw)
         {
             char[] separator = ['{', '}'];
@@ -1371,7 +1379,7 @@ namespace CollectaMundo
         {
             if (CurrentInstance != null)
             {
-                await CurrentInstance.Dispatcher.InvokeAsync(() =>
+                await CurrentInstance.Dispatcher.InvokeAsync(async () =>
                 {
                     if (visible)
                     {
@@ -1391,7 +1399,6 @@ namespace CollectaMundo
                         CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
                         CurrentInstance.GridSideMenu.Visibility = Visibility.Visible;
                         CurrentInstance.GridCardImages.Visibility = Visibility.Visible;
-
                     }
                 });
             }
