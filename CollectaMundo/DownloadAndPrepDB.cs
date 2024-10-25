@@ -498,6 +498,8 @@ namespace CollectaMundo
                 {"cards_uuid", "CREATE INDEX IF NOT EXISTS cards_uuid ON cards(uuid);"},
                 {"cards_name", "CREATE INDEX IF NOT EXISTS cards_name ON cards(name);"},
                 {"cards_setCode", "CREATE INDEX IF NOT EXISTS cards_setCode ON cards(setCode);"},
+                {"cards_setCode_name", "CREATE INDEX IF NOT EXISTS cards_setCode_name ON cards (setCode, name);"},
+                {"tokens_setCode_name", "CREATE INDEX IF NOT EXISTS tokens_setCode_name ON tokens (setCode, name);"},
                 {"cards_side", "CREATE INDEX IF NOT EXISTS cards_side ON cards(side);"},
                 {"cards_keywords", "CREATE INDEX IF NOT EXISTS cards_keywords ON cards(keywords);"},
                 {"sets_code", "CREATE INDEX IF NOT EXISTS sets_code ON sets(code);"},
@@ -579,11 +581,14 @@ namespace CollectaMundo
                             c.language AS Language,
                             c.uuid AS Uuid, 
                             c.finishes AS Finishes, 
-                            c.side AS Side 
+                            c.side AS Side,
+                            p.avg AS AvgPrice,
+                            p.avgFoil AS AvgFoilPrice
                         FROM cards c
                         JOIN sets s ON c.setCode = s.code
                         LEFT JOIN keyruneImages k ON c.setCode = k.setCode
                         LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                        LEFT JOIN cardPrices p ON c.uuid = p.uuid
                         LEFT JOIN (
                             SELECT 
                                 cc.SetCode, 
@@ -614,13 +619,17 @@ namespace CollectaMundo
                             t.language AS Language,
                             t.uuid AS Uuid, 
                             t.finishes AS Finishes, 
-                            t.side AS Side 
+                            t.side AS Side,
+                            p.avg AS AvgPrice,
+                            p.avgFoil AS AvgFoilPrice
                         FROM tokens t 
                         JOIN sets s ON t.setCode = s.tokenSetCode 
                         LEFT JOIN keyruneImages k ON t.setCode = k.setCode
                         LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+                        LEFT JOIN cardPrices p ON t.uuid = p.uuid
                         WHERE t.side IS NULL OR t.side = 'a'
-                    ) ORDER BY ReleaseDate DESC, SetName, Types,
+                    ) 
+                    ORDER BY ReleaseDate DESC, SetName, Types,
                         CASE Colors
                             WHEN 'W' THEN 1
                             WHEN 'U' THEN 2

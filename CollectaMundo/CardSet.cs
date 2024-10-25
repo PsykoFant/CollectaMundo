@@ -63,6 +63,8 @@ namespace CollectaMundo
         public string? Type { get; set; }
         public string? Types { get; set; }
         public string? Uuid { get; set; }
+        public decimal? Avg { get; set; }
+        public decimal? AvgFoil { get; set; }
 
         private ImageSource? _setIcon;
         public ImageSource? SetIcon

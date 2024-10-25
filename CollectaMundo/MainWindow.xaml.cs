@@ -136,7 +136,7 @@ namespace CollectaMundo
             Debug.WriteLine($"All cards loaded in {stopwatch.Elapsed.TotalSeconds} seconds.");
 
 
-            await PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
+            //await PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
             await LoadColorIcons(ColorIcons, colourQuery);
 
             /*
@@ -256,6 +256,16 @@ namespace CollectaMundo
                 card.ManaCostImageBytes = reader["ManaCostImage"] as byte[];
                 card.ManaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
 
+                // Set the Avg property
+                if (reader["AvgPrice"] != DBNull.Value && decimal.TryParse(reader["AvgPrice"]?.ToString(), out decimal avgPrice))
+                {
+                    card.Avg = avgPrice;
+                }
+                else
+                {
+                    card.Avg = null;
+                }
+
                 if (card is CardItem cardItem)
                 {
                     cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
@@ -273,6 +283,7 @@ namespace CollectaMundo
                 throw;
             }
         }
+
         private static string ProcessManaCost(string manaCostRaw)
         {
             char[] separator = ['{', '}'];
@@ -403,7 +414,6 @@ namespace CollectaMundo
             }
             return Task.CompletedTask;
         }
-
         public static List<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
         {
             List<T> children = [];
