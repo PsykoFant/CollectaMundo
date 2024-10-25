@@ -1,9 +1,11 @@
+TO DO 
+ - Læs priser ind
 
-        /*TO DO 
-         * Læs priser ind
-         * Skift mellem priser
-         * Opdater Update
-         * 
-         */
+Vi sætter en standard pris, som er defineret i views. Default er Avg/FoilAvg.
+Standardpris er sat i i appsettings.json
+Skift af standardpris kræver opdatering af view, appsettings.json og indlæs hele baduljen
 
 
+
+ - Skift mellem priser
+ - Opdater Update
