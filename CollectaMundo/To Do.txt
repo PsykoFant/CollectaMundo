@@ -1,9 +1,8 @@
 TO DO 
  - Læs priser ind
+ - Undersøg tiden, det tager at loade når et priselement bliver tilføjet til view
+  - En pris af gangen
 
-Vi sætter en standard pris, som er defineret i views. Default er Avg/FoilAvg.
-Standardpris er sat i i appsettings.json
-Skift af standardpris kræver opdatering af view, appsettings.json og indlæs hele baduljen
 
 
 
