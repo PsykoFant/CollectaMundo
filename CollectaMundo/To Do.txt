@@ -1,10 +1,5 @@
 TO DO 
- - Læs priser ind
- - Undersøg tiden, det tager at loade når et priselement bliver tilføjet til view
-  - En pris af gangen
-
-
-
 
  - Skift mellem priser
+ - Bug - token set ikon igen broken
  - Opdater Update

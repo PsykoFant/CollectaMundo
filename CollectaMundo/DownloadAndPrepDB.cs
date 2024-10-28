@@ -561,7 +561,7 @@ namespace CollectaMundo
                         t.side IS NULL OR t.side = 'a';
                     ";
                 string createAllCardsViewQuery = @"
-                    CREATE VIEW IF NOT EXISTS view_allCards AS
+                    CREATE VIEW view_allCards AS
                     SELECT * FROM (
                         SELECT 
                             c.name AS Name, 
@@ -583,7 +583,17 @@ namespace CollectaMundo
                             c.finishes AS Finishes, 
                             c.side AS Side,
                             p.avg AS AvgPrice,
-                            p.avgFoil AS AvgFoilPrice
+                            p.avgFoil AS AvgFoilPrice,
+							p.low AS LowPrice,
+							p.lowFoil AS LowFoilPrice,
+							p.trend AS TrendPrice,
+							p.trendFoil AS TrendFoilPrice,
+							p.avg1 AS Avg1Price,
+							p.avg1Foil AS Avg1FoilPrice,
+							p.avg7 AS Avg7Price,
+							p.avg7Foil AS Avg7FoilPrice,
+							p.avg30 AS Avg30Price,
+							p.avg30Foil AS Avg30FoilPrice
                         FROM cards c
                         JOIN sets s ON c.setCode = s.code
                         LEFT JOIN keyruneImages k ON c.setCode = k.setCode
@@ -621,7 +631,17 @@ namespace CollectaMundo
                             t.finishes AS Finishes, 
                             t.side AS Side,
                             p.avg AS AvgPrice,
-                            p.avgFoil AS AvgFoilPrice
+                            p.avgFoil AS AvgFoilPrice,
+							p.low AS LowPrice,
+							p.lowFoil AS LowFoilPrice,
+							p.trend AS TrendPrice,
+							p.trendFoil AS TrendFoilPrice,
+							p.avg1 AS Avg1Price,
+							p.avg1Foil AS Avg1FoilPrice,
+							p.avg7 AS Avg7Price,
+							p.avg7Foil AS Avg7FoilPrice,
+							p.avg30 AS Avg30Price,
+							p.avg30Foil AS Avg30FoilPrice
                         FROM tokens t 
                         JOIN sets s ON t.setCode = s.tokenSetCode 
                         LEFT JOIN keyruneImages k ON t.setCode = k.setCode

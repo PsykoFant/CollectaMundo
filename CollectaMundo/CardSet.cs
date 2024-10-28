@@ -65,6 +65,16 @@ namespace CollectaMundo
         public string? Uuid { get; set; }
         public decimal? Avg { get; set; }
         public decimal? AvgFoil { get; set; }
+        public decimal? Low { get; set; }
+        public decimal? LowFoil { get; set; }
+        public decimal? Trend { get; set; }
+        public decimal? TrendFoil { get; set; }
+        public decimal? Avg1 { get; set; }
+        public decimal? Avg1Foil { get; set; }
+        public decimal? Avg7 { get; set; }
+        public decimal? Avg7Foil { get; set; }
+        public decimal? Avg30 { get; set; }
+        public decimal? Avg30Foil { get; set; }
 
         private ImageSource? _setIcon;
         public ImageSource? SetIcon

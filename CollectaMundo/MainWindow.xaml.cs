@@ -251,29 +251,19 @@ namespace CollectaMundo
                 card.ManaCostImageBytes = reader["ManaCostImage"] as byte[];
                 card.ManaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
 
-                // Set the Avg property
-
+                // Set prices
                 card.Avg = decimal.TryParse(reader["AvgPrice"]?.ToString(), out decimal avgPrice) ? avgPrice : null;
-
-
-                //if (reader["AvgPrice"] != DBNull.Value && decimal.TryParse(reader["AvgPrice"]?.ToString(), out decimal avgPrice))
-                //{
-                //    card.Avg = avgPrice;
-                //}
-                //else
-                //{
-                //    card.Avg = null;
-                //}
-
-                // Set the Avg property
-                if (reader["AvgFoilPrice"] != DBNull.Value && decimal.TryParse(reader["AvgFoilPrice"]?.ToString(), out decimal avgFoilPrice))
-                {
-                    card.AvgFoil = avgFoilPrice;
-                }
-                else
-                {
-                    card.AvgFoil = null;
-                }
+                card.AvgFoil = decimal.TryParse(reader["AvgFoilPrice"]?.ToString(), out decimal avgFoilPrice) ? avgFoilPrice : null;
+                card.Low = decimal.TryParse(reader["LowPrice"]?.ToString(), out decimal lowPrice) ? lowPrice : null;
+                card.LowFoil = decimal.TryParse(reader["LowFoilPrice"]?.ToString(), out decimal lowFoilPrice) ? lowFoilPrice : null;
+                card.Trend = decimal.TryParse(reader["TrendPrice"]?.ToString(), out decimal trendPrice) ? trendPrice : null;
+                card.TrendFoil = decimal.TryParse(reader["TrendFoilPrice"]?.ToString(), out decimal trendFoilPrice) ? trendFoilPrice : null;
+                card.Avg1 = decimal.TryParse(reader["Avg1Price"]?.ToString(), out decimal avg1Price) ? avg1Price : null;
+                card.Avg1Foil = decimal.TryParse(reader["Avg1FoilPrice"]?.ToString(), out decimal avg1FoilPrice) ? avg1FoilPrice : null;
+                card.Avg7 = decimal.TryParse(reader["Avg7Price"]?.ToString(), out decimal avg7Price) ? avg7Price : null;
+                card.Avg7Foil = decimal.TryParse(reader["Avg7FoilPrice"]?.ToString(), out decimal avg7FoilPrice) ? avg7FoilPrice : null;
+                card.Avg30 = decimal.TryParse(reader["Avg30Price"]?.ToString(), out decimal avg30Price) ? avg30Price : null;
+                card.Avg30Foil = decimal.TryParse(reader["Avg30FoilPrice"]?.ToString(), out decimal avg30FoilPrice) ? avg30FoilPrice : null;
 
                 if (card is CardItem cardItem)
                 {
