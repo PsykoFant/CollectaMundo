@@ -425,6 +425,14 @@
                 <CheckBox x:Name="CheckBoxCardsForTrade" Margin="10,515,0,0" Content="Filter on cards for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
                 <CheckBox x:Name="CheckBoxCardsNotForTrade" Margin="10,535,0,0" Content="Filter on cards NOT for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
 
+                <ComboBox x:Name="PriceSelector" Width="100" SelectionChanged="PriceSelector_SelectionChanged" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,557,0,0">
+                    <ComboBoxItem Content="Avg" />
+                    <ComboBoxItem Content="Avg1" />
+                    <ComboBoxItem Content="Avg7" />
+                    <ComboBoxItem Content="Avg30" />
+                    <ComboBoxItem Content="Low" />
+                    <ComboBoxItem Content="Trend" />
+                </ComboBox>
 
 
             </Grid>
@@ -691,27 +699,21 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Finishes" Width="*">
+                        <DataGridTemplateColumn Header="Price" Width="*" SortMemberPath="SelectedPrice">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Finishes}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding SelectedPrice}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Price" Width="*" SortMemberPath="Avg">
+                        <DataGridTemplateColumn Header="Foil Price" Width="*" SortMemberPath="SelectedFoilPrice">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Avg}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding SelectedFoilPrice}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Foil Price" Width="*" SortMemberPath="AvgFoil">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding AvgFoil}" TextWrapping="Wrap" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>

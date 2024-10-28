@@ -75,6 +75,8 @@ namespace CollectaMundo
         public decimal? Avg7Foil { get; set; }
         public decimal? Avg30 { get; set; }
         public decimal? Avg30Foil { get; set; }
+        public decimal? SelectedPrice { get; set; }
+        public decimal? SelectedFoilPrice { get; set; }
 
         private ImageSource? _setIcon;
         public ImageSource? SetIcon

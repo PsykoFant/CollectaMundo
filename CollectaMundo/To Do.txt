@@ -2,4 +2,5 @@ TO DO
 
  - Skift mellem priser
  - Bug - token set ikon igen broken
+ - Fix og opdater indices
  - Opdater Update
