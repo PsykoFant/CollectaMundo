@@ -1,6 +1,7 @@
 TO DO 
 
- - Skift mellem priser
+ - Dfc - priser bug
+ - Tokens - ingen priser?
  - Bug - token set ikon igen broken
  - Fix og opdater indices
  - Opdater Update

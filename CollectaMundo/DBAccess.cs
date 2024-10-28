@@ -85,8 +85,6 @@ namespace CollectaMundo
         {
             try
             {
-                await OpenConnectionAsync();
-
                 if (connection != null && connection.State == System.Data.ConnectionState.Open)
                 {
                     // Define a list of all required tables and views
@@ -142,10 +140,6 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"Unexpected error during database integrity check: {ex.Message}");
                 return false;
-            }
-            finally
-            {
-                CloseConnection();
             }
         }
         public static async Task<bool> DatabaseHasTablesAndViewsAsync(List<string> expectedObjects)

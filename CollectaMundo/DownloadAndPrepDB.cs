@@ -61,7 +61,7 @@ namespace CollectaMundo
             if (redownloadDB)
             {
                 var downloadDatabaseTask = DownloadResourceFileIfNotExistAsync(databasePath, cardDbDownloadUrl, downloadMessage, "card database", true);
-                var downloadPricesTask = DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, pricesDownloadUrl, downloadMessage, "", false);
+                var downloadPricesTask = DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, pricesDownloadUrl, downloadMessage, "card database", false);
 
                 // Wait for both tasks to complete using Task.WhenAll
                 bool[] results = await Task.WhenAll(downloadDatabaseTask, downloadPricesTask);
@@ -349,7 +349,7 @@ namespace CollectaMundo
         }
         public static async Task ImportPricesFromJsonAsync(int batchSize)
         {
-            await CopyNonNullMcmIdsToCardPricesAsync();
+            CopyNonNullMcmIdsToCardPrices();
 
             try
             {
@@ -1042,25 +1042,32 @@ namespace CollectaMundo
 
             return uniqueValues;
         }
-        private static async Task CopyNonNullMcmIdsToCardPricesAsync()
+        private static void CopyNonNullMcmIdsToCardPrices()
         {
             try
             {
                 // Step 1: Define the SQL statement for copying data
                 string copySql = @"
                     INSERT OR IGNORE INTO cardPrices (uuid, mcmId)
-                    SELECT uuid, mcmId
-                    FROM cardIdentifiers
-                    WHERE mcmId IS NOT NULL;";
+                    SELECT ci.uuid, ci.mcmId
+                    FROM cardIdentifiers ci
+                    JOIN cards c ON ci.uuid = c.uuid
+                    WHERE ci.mcmId IS NOT NULL AND (c.side IS NULL OR c.side = 'a')
+
+                    UNION
+
+                    SELECT ti.uuid, ti.mcmId
+                    FROM tokenIdentifiers ti
+                    JOIN tokens t ON ti.uuid = t.uuid
+                    WHERE ti.mcmId IS NOT NULL AND (t.side IS NULL OR t.side = 'a');";
 
                 // Step 2: Execute the SQL statement
                 using var command = new SQLiteCommand(copySql, DBAccess.connection);
-                int rowsCopied = await command.ExecuteNonQueryAsync();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error copying data from cardIdentifiers to cardPrices: {ex.Message}");
-                MessageBox.Show($"Error copying data from cardIdentifiers to cardPrices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error copying data from cardIdentifiers and tokenIdentifiers to cardPrices: {ex.Message}");
+                MessageBox.Show($"Error copying data from cardIdentifiers and tokenIdentifiers to cardPrices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
