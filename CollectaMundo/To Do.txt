@@ -1,7 +1,11 @@
 TO DO 
 
- - Dfc - priser bug
- - Tokens - ingen priser?
- - Bug - token set ikon igen broken
+
+ - Default priser
+ - Priser med filter
+ - Ændre default priser
+ - Opdater priser i utilities
+ - Priser i myCollection
  - Fix og opdater indices
+ - Pragma optimize
  - Opdater Update

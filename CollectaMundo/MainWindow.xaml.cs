@@ -125,9 +125,9 @@ namespace CollectaMundo
         {
             await ShowStatusWindowAsync(true);
 
-            await DBAccess.OpenConnectionAsync();
-
             await DownloadAndPrepDB.SystemIntegrityCheckAsync();
+
+            await DBAccess.OpenConnectionAsync();
 
             var stopwatch = new Stopwatch();
             stopwatch.Start();

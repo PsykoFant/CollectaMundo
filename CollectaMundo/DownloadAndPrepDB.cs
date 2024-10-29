@@ -61,10 +61,10 @@ namespace CollectaMundo
             if (redownloadDB)
             {
                 var downloadDatabaseTask = DownloadResourceFileIfNotExistAsync(databasePath, cardDbDownloadUrl, downloadMessage, "card database", true);
-                var downloadPricesTask = DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, pricesDownloadUrl, downloadMessage, "card database", false);
+                var downloadPricesTask = DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, pricesDownloadUrl, downloadMessage, "", false);
 
                 // Wait for both tasks to complete using Task.WhenAll
-                bool[] results = await Task.WhenAll(downloadDatabaseTask, downloadPricesTask);
+                bool[] results = await Task.WhenAll(downloadPricesTask, downloadDatabaseTask);
 
                 // Check each result and retry if necessary
                 if (!results[0])
@@ -172,6 +172,8 @@ namespace CollectaMundo
         }
         public static async Task PrepareDownloadedCardDatabase()
         {
+            await DBAccess.OpenConnectionAsync();
+
             StatusMessageUpdated?.Invoke("Generating mana symbols ...");
             await CreateCustomTables();
             await GenerateManaSymbolsFromSvgAsync();
@@ -189,6 +191,8 @@ namespace CollectaMundo
             var generateIndices = CreateIndices();
             var generateViews = CreateViews();
             await Task.WhenAll(generateIndices, generateViews);
+
+            DBAccess.CloseConnection();
         }
         private static async Task CreateCustomTables()
         {
@@ -335,9 +339,9 @@ namespace CollectaMundo
 
                 // Step 5: Perform batch updates to the database inside a single transaction
                 using var transaction = DBAccess.connection.BeginTransaction();
-                foreach (var result in results.Where(r => r.PngData.Length != 0))
+                foreach (var (SetCode, PngData) in results.Where(r => r.PngData.Length != 0))
                 {
-                    await UpdateImageInTableAsync(result.SetCode, "keyruneImages", "keyruneImage", "setCode", result.PngData);
+                    await UpdateImageInTableAsync(SetCode, "keyruneImages", "keyruneImage", "setCode", PngData);
                 }
                 transaction.Commit();
             }
@@ -349,7 +353,7 @@ namespace CollectaMundo
         }
         public static async Task ImportPricesFromJsonAsync(int batchSize)
         {
-            CopyNonNullMcmIdsToCardPrices();
+            await CopyNonNullMcmIdsToCardPricesAsync();
 
             try
             {
@@ -886,7 +890,7 @@ namespace CollectaMundo
             catch (Exception ex)
             {
                 Debug.WriteLine($"Failed to process SVG for set: {setCode} - {ex.Message}");
-                return (SetCode: setCode, PngData: Array.Empty<byte>());
+                return (SetCode: setCode, PngData: []);
             }
         }
         public static async Task<byte[]> ConvertSvgToByteArraySharpVectorsAsync(string svgUrl)
@@ -927,8 +931,7 @@ namespace CollectaMundo
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error converting SVG to byte array: {ex.Message}");
-                MessageBox.Show($"Error converting SVG to byte array: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error converting SVG to byte array for url {svgUrl}: {ex.Message}");
                 return [];
             }
         }
@@ -936,26 +939,25 @@ namespace CollectaMundo
         {
             try
             {
-                string checkQuery = $"SELECT COUNT(*) FROM {targetTable} WHERE {targetColumn} IS NOT NULL AND {targetColumn} != '';";
-                using var checkCommand = new SQLiteCommand(checkQuery, DBAccess.connection);
-                int result = Convert.ToInt32(await checkCommand.ExecuteScalarAsync());
+                // Check if there are any missing rows between source and target
+                string copyQuery = $@"
+                    INSERT INTO {targetTable} ({targetColumn})
+                    SELECT DISTINCT {sourceColumn}
+                    FROM {sourceTable} 
+                    WHERE {sourceColumn} IS NOT NULL 
+                      AND {sourceColumn} != '' 
+                      AND {sourceColumn} NOT IN (SELECT DISTINCT {targetColumn} FROM {targetTable} WHERE {targetColumn} IS NOT NULL AND {targetColumn} != '');";
 
-                if (result == 0)
-                {
-                    // Directly copy all missing rows into the target table if it is empty
-                    string copyQuery = $@"
-                        BEGIN TRANSACTION;
-                        INSERT OR IGNORE INTO {targetTable} ({targetColumn})
-                        SELECT DISTINCT {sourceColumn} FROM {sourceTable};
-                        COMMIT;";
-                    using var copyCommand = new SQLiteCommand(copyQuery, DBAccess.connection);
-                    await copyCommand.ExecuteNonQueryAsync();
-                }
+                // Execute the query to copy missing rows
+                using var copyCommand = new SQLiteCommand(copyQuery, DBAccess.connection);
+                int rowsCopied = await copyCommand.ExecuteNonQueryAsync();
+
+                Debug.WriteLine($"Copied {rowsCopied} missing rows from {sourceTable}.{sourceColumn} to {targetTable}.{targetColumn}");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("An error occurred while copying empty or missing rows: " + ex.Message);
-                MessageBox.Show($"An error occurred while copying empty or missing rows: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine("An error occurred while copying missing rows: " + ex.Message);
+                MessageBox.Show($"An error occurred while copying missing rows: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         private static async Task UpdateImageInTableAsync(string imageToUpdate, string tableName, string columnToUpdate, string columnToReference, byte[] imageData)
@@ -1042,7 +1044,7 @@ namespace CollectaMundo
 
             return uniqueValues;
         }
-        private static void CopyNonNullMcmIdsToCardPrices()
+        private static async Task CopyNonNullMcmIdsToCardPricesAsync()
         {
             try
             {
@@ -1063,6 +1065,9 @@ namespace CollectaMundo
 
                 // Step 2: Execute the SQL statement
                 using var command = new SQLiteCommand(copySql, DBAccess.connection);
+                int rowsCopied = await command.ExecuteNonQueryAsync();
+
+                Debug.WriteLine($"{rowsCopied} rows copied from cardIdentifiers and tokenIdentifiers to cardPrices.");
             }
             catch (Exception ex)
             {
@@ -1070,6 +1075,7 @@ namespace CollectaMundo
                 MessageBox.Show($"Error copying data from cardIdentifiers and tokenIdentifiers to cardPrices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
 
         #endregion
     }
