@@ -129,11 +129,16 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
+            //var stopwatch = new Stopwatch();
+            //stopwatch.Start();
+
+
             await PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false, true);
-            stopwatch.Stop();
-            Debug.WriteLine($"All cards loaded in {stopwatch.Elapsed.TotalSeconds} seconds.");
+            await PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
+
+
+            //stopwatch.Stop();
+            //Debug.WriteLine($"All cards loaded in {stopwatch.Elapsed.TotalSeconds} seconds.");
 
             //await PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
             await LoadColorIcons(ColorIcons, colourQuery);

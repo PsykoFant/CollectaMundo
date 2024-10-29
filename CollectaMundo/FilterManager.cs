@@ -187,6 +187,7 @@ namespace CollectaMundo
         }
         public static void SetSelectedPrice(string selectedPriceType)
         {
+            // Update allCards with selected price type
             foreach (var card in MainWindow.CurrentInstance.allCards)
             {
                 switch (selectedPriceType)
@@ -221,7 +222,33 @@ namespace CollectaMundo
                         break;
                 }
             }
+
+            // Update myCards with selected price type based on SelectedFinish
+            foreach (var card in MainWindow.CurrentInstance.myCards)
+            {
+                // Cast card as CardItem once at the start of the loop
+                var cardItem = card as CardItem;
+
+                card.SelectedPrice = selectedPriceType switch
+                {
+                    "Avg" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg :
+                                                                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.AvgFoil : null,
+                    "Avg1" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg1 :
+                                                                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg1Foil : null,
+                    "Avg7" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg7 :
+                                                                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg7Foil : null,
+                    "Avg30" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg30 :
+                                                                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg30Foil : null,
+                    "Low" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Low :
+                                                                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.LowFoil : null,
+                    "Trend" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Trend :
+                                                                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.TrendFoil : null,
+                    _ => null,
+                };
+            }
+
         }
+
 
 
         #endregion

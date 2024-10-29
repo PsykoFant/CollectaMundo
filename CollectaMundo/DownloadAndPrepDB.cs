@@ -682,7 +682,7 @@ namespace CollectaMundo
                             COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
                             c.text AS RulesText,
                             c.manaValue AS ManaValue,
-						    c.finishes AS Finishes,
+				                        c.finishes AS Finishes,
                             c.uuid AS Uuid,
                             m.id AS CardId,
                             m.count AS CardsOwned,
@@ -690,7 +690,19 @@ namespace CollectaMundo
                             m.condition AS Condition,
                             m.language AS Language,
                             m.finish AS Finish,
-                            c.side AS Side
+                            c.side AS Side,
+		                    p.avg AS AvgPrice,
+		                    p.avgFoil AS AvgFoilPrice,
+		                    p.low AS LowPrice,
+		                    p.lowFoil AS LowFoilPrice,
+		                    p.trend AS TrendPrice,
+		                    p.trendFoil AS TrendFoilPrice,
+		                    p.avg1 AS Avg1Price,
+		                    p.avg1Foil AS Avg1FoilPrice,
+		                    p.avg7 AS Avg7Price,
+		                    p.avg7Foil AS Avg7FoilPrice,
+		                    p.avg30 AS Avg30Price,
+		                    p.avg30Foil AS Avg30FoilPrice
                         FROM
                             myCollection m
                         JOIN
@@ -701,6 +713,8 @@ namespace CollectaMundo
                             keyruneImages k ON c.setCode = k.setCode
                         LEFT JOIN 
                             uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+	                    LEFT JOIN 
+		                    cardPrices p ON m.uuid = p.uuid	
                         LEFT JOIN (
                             SELECT 
                                 cc.SetCode, 
@@ -726,7 +740,7 @@ namespace CollectaMundo
                             t.keywords AS Keywords,
                             t.text AS RulesText,
                             NULL AS ManaValue,  -- Tokens do not have manaValue
-						    t.finishes AS Finishes,
+				                        t.finishes AS Finishes,
                             t.uuid AS Uuid,
                             m.id AS CardId,
                             m.count AS CardsOwned,
@@ -734,7 +748,19 @@ namespace CollectaMundo
                             m.condition AS Condition,
                             m.language AS Language,
                             m.finish AS Finish,
-                            t.side AS Side
+                            t.side AS Side,
+		                    p.avg AS AvgPrice,
+		                    p.avgFoil AS AvgFoilPrice,
+		                    p.low AS LowPrice,
+		                    p.lowFoil AS LowFoilPrice,
+		                    p.trend AS TrendPrice,
+		                    p.trendFoil AS TrendFoilPrice,
+		                    p.avg1 AS Avg1Price,
+		                    p.avg1Foil AS Avg1FoilPrice,
+		                    p.avg7 AS Avg7Price,
+		                    p.avg7Foil AS Avg7FoilPrice,
+		                    p.avg30 AS Avg30Price,
+		                    p.avg30Foil AS Avg30FoilPrice
                         FROM
                             myCollection m
                         JOIN
@@ -745,6 +771,8 @@ namespace CollectaMundo
                             keyruneImages k ON t.setCode = k.setCode
                         LEFT JOIN 
                             uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+	                    LEFT JOIN 
+		                    cardPrices p ON m.uuid = p.uuid
                         WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
                     ) ORDER BY ReleaseDate DESC, SetName, Types,
                         CASE Colors
@@ -754,7 +782,8 @@ namespace CollectaMundo
                             WHEN 'R' THEN 4
                             WHEN 'G' THEN 5
                             ELSE 6
-                        END";
+                        END;
+                    ";
 
                 using (var command = new SQLiteCommand(createCardTokenViewQuery, DBAccess.connection))
                 {
