@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Windows;
 
 namespace CollectaMundo
@@ -90,6 +91,31 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"Error saving appsettings.json: {ex.Message}");
                 MessageBox.Show($"Error saving appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        public static object? GetSetting(string settingPath)
+        {
+            try
+            {
+                string[] pathParts = settingPath.Split(':');
+                object? current = CurrentSettings;
+
+                foreach (var part in pathParts)
+                {
+                    if (current == null) return null;
+
+                    PropertyInfo? property = current.GetType().GetProperty(part);
+                    if (property == null) return null;
+
+                    current = property.GetValue(current, null);
+                }
+
+                return current;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error getting setting '{settingPath}': {ex.Message}");
+                return null;
             }
         }
     }

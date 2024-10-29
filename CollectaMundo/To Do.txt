@@ -1,11 +1,8 @@
 TO DO 
 
 
- - Default priser
- - Priser med filter
- - Ændre default priser
- - Opdater priser i utilities
  - Priser i myCollection
+ - Ændre default priser i utilities
  - Fix og opdater indices
  - Pragma optimize
  - Opdater Update

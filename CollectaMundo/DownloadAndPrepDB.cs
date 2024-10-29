@@ -1076,7 +1076,6 @@ namespace CollectaMundo
             }
         }
 
-
         #endregion
     }
 }

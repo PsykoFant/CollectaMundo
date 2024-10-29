@@ -185,6 +185,44 @@ namespace CollectaMundo
                 return cards;
             }
         }
+        public static void SetSelectedPrice(string selectedPriceType)
+        {
+            foreach (var card in MainWindow.CurrentInstance.allCards)
+            {
+                switch (selectedPriceType)
+                {
+                    case "Avg":
+                        card.SelectedPrice = card.Avg;
+                        card.SelectedFoilPrice = card.AvgFoil;
+                        break;
+                    case "Avg1":
+                        card.SelectedPrice = card.Avg1;
+                        card.SelectedFoilPrice = card.Avg1Foil;
+                        break;
+                    case "Avg7":
+                        card.SelectedPrice = card.Avg7;
+                        card.SelectedFoilPrice = card.Avg7Foil;
+                        break;
+                    case "Avg30":
+                        card.SelectedPrice = card.Avg30;
+                        card.SelectedFoilPrice = card.Avg30Foil;
+                        break;
+                    case "Low":
+                        card.SelectedPrice = card.Low;
+                        card.SelectedFoilPrice = card.LowFoil;
+                        break;
+                    case "Trend":
+                        card.SelectedPrice = card.Trend;
+                        card.SelectedFoilPrice = card.TrendFoil;
+                        break;
+                    default:
+                        card.SelectedPrice = null;
+                        card.SelectedFoilPrice = null;
+                        break;
+                }
+            }
+        }
+
 
         #endregion
 

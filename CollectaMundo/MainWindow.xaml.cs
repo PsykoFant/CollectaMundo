@@ -148,6 +148,13 @@ namespace CollectaMundo
 
             DBAccess.CloseConnection();
 
+            // Read default prices based on appsettings.json
+            string? defaultPrice = ConfigurationManager.GetSetting("PriceInfo:DefaultPrice") as string;
+            if (!string.IsNullOrEmpty(defaultPrice))
+            {
+                FilterManager.SetSelectedPrice(defaultPrice);
+            }
+
             await CurrentInstance.PopulateFilterUiElements();
 
             CardsToAddListView.ItemsSource = addToCollectionManager.CardItemsToAdd;
@@ -720,51 +727,13 @@ namespace CollectaMundo
         }
         private void PriceSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (PriceSelector.SelectedItem is ComboBoxItem selectedItem)
+            if (PriceSelector.SelectedItem is ComboBoxItem selectedItem && selectedItem.Content != null)
             {
-                string selectedPriceType = selectedItem.Content.ToString();
-                foreach (var card in allCards)
-                {
-                    switch (selectedPriceType)
-                    {
-                        case "Avg":
-                            card.SelectedPrice = card.Avg;
-                            card.SelectedFoilPrice = card.AvgFoil;
-                            break;
-                        case "Avg1":
-                            card.SelectedPrice = card.Avg1;
-                            card.SelectedFoilPrice = card.Avg1Foil;
-                            break;
-                        case "Avg7":
-                            card.SelectedPrice = card.Avg7;
-                            card.SelectedFoilPrice = card.Avg7Foil;
-                            break;
-                        case "Avg30":
-                            card.SelectedPrice = card.Avg30;
-                            card.SelectedFoilPrice = card.Avg30Foil;
-                            break;
-                        case "Low":
-                            card.SelectedPrice = card.Low;
-                            card.SelectedFoilPrice = card.LowFoil;
-                            break;
-                        case "Trend":
-                            card.SelectedPrice = card.Trend;
-                            card.SelectedFoilPrice = card.TrendFoil;
-                            break;
-                        default:
-                            card.SelectedPrice = null;
-                            card.SelectedFoilPrice = null;
-                            break;
-                    }
-                }
-
-                // Refresh the DataGrid binding to show the updated prices
-                AllCardsDataGrid.ItemsSource = null;
-                AllCardsDataGrid.ItemsSource = allCards;
+                string selectedPriceType = selectedItem.Content.ToString() ?? string.Empty;
+                FilterManager.SetSelectedPrice(selectedPriceType);
+                ApplyFilterSelection();
             }
         }
-
-
 
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -1410,12 +1379,11 @@ namespace CollectaMundo
             ApplyFilterSelection();
         }
         #endregion
-
         public static async Task ShowStatusWindowAsync(bool visible)
         {
             if (CurrentInstance != null)
             {
-                await CurrentInstance.Dispatcher.InvokeAsync(async () =>
+                await CurrentInstance.Dispatcher.InvokeAsync(() =>
                 {
                     if (visible)
                     {
