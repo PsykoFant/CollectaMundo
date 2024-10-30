@@ -170,5 +170,21 @@ namespace CollectaMundo
             }
             return true; // If all checks pass
         }
+        public static async Task OptimizeDb()
+        {
+            List<string> optimizeCommands = new()
+            {
+                "VACUUM;",
+                "ANALYZE;",
+                "PRAGMA optimize;"
+            };
+
+            // Execute each command asynchronously
+            foreach (var item in optimizeCommands)
+            {
+                using var command = new SQLiteCommand(item, DBAccess.connection);
+                await command.ExecuteNonQueryAsync();
+            }
+        }
     }
 }

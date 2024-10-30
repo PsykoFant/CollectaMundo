@@ -193,21 +193,7 @@ namespace CollectaMundo
             await Task.WhenAll(generateIndices, generateViews);
 
             // Perform database maintenance tasks for optimization
-            StatusMessageUpdated?.Invoke("Performing database optimization ...");
-
-            List<string> optimizeCommands = new()
-            {
-                "VACUUM;",
-                "ANALYZE;",
-                "PRAGMA optimize;"
-            };
-
-            // Execute each command asynchronously
-            foreach (var item in optimizeCommands)
-            {
-                using var command = new SQLiteCommand(item, DBAccess.connection);
-                await command.ExecuteNonQueryAsync();
-            }
+            await DBAccess.OptimizeDb();
 
             DBAccess.CloseConnection();
         }
