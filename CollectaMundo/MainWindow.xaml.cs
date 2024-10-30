@@ -379,9 +379,6 @@ namespace CollectaMundo
                     {
                         // Set the selected item of the ComboBox
                         PriceSelector.SelectedItem = comboBoxItem;
-
-                        // Update the selected price in FilterManager
-                        FilterManager.SetSelectedPrice(defaultPrice);
                     }
                 }
 
@@ -728,12 +725,7 @@ namespace CollectaMundo
         }
         private void PriceSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (PriceSelector.SelectedItem is ComboBoxItem selectedItem && selectedItem.Content != null)
-            {
-                string selectedPriceType = selectedItem.Content.ToString() ?? string.Empty;
-                FilterManager.SetSelectedPrice(selectedPriceType);
-                ApplyFilterSelection();
-            }
+            ApplyFilterSelection();
         }
 
         // When combobox textboxes get focus/defocus        
@@ -953,9 +945,18 @@ namespace CollectaMundo
             IEnumerable<CardSet> filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
             IEnumerable<CardSet> filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
 
-            AllCardsDataGrid.ItemsSource = filteredAllCards;
-            MyCollectionDataGrid.ItemsSource = filteredMyCards;
+            // Save and restore sort descriptions for both DataGrids
+            FilterManager.SaveAndRestoreSort(AllCardsDataGrid, () =>
+            {
+                AllCardsDataGrid.ItemsSource = filteredAllCards;
+            });
+
+            FilterManager.SaveAndRestoreSort(MyCollectionDataGrid, () =>
+            {
+                MyCollectionDataGrid.ItemsSource = filteredMyCards;
+            });
         }
+
 
         // Reset filter elements
         public void ClearFiltersButton_Click(object sender, RoutedEventArgs e)

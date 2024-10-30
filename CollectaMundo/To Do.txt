@@ -1,6 +1,4 @@
 TO DO 
- - Prisdropdown sættes ved opstart
- - Ui updates
  - Ændre default priser i utilities
  - Fix og opdater indices
  - Pragma optimize

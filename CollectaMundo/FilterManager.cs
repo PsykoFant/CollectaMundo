@@ -20,6 +20,14 @@ namespace CollectaMundo
             {
                 var filteredCards = cards.AsEnumerable();
 
+
+                // Set card prices
+                if (MainWindow.CurrentInstance.PriceSelector.SelectedItem is ComboBoxItem selectedItem && selectedItem.Content != null)
+                {
+                    string selectedPriceType = selectedItem.Content.ToString() ?? string.Empty;
+                    SetSelectedPrice(selectedPriceType);
+                }
+
                 // Find all ComboBoxes and then find the specific ones by their tags
                 var headerComboBoxesAllCards = MainWindow.FindVisualChildren<ComboBox>(MainWindow.CurrentInstance.AllCardsDataGrid);
                 ComboBox? nameComboBoxAllCards = headerComboBoxesAllCards.FirstOrDefault(cb => cb.Tag?.ToString() == "AllCardsName");
@@ -185,69 +193,6 @@ namespace CollectaMundo
                 return cards;
             }
         }
-        public static void SetSelectedPrice(string selectedPriceType)
-        {
-            // Update allCards with selected price type
-            foreach (var card in MainWindow.CurrentInstance.allCards)
-            {
-                switch (selectedPriceType)
-                {
-                    case "Avg":
-                        card.SelectedPrice = card.Avg;
-                        card.SelectedFoilPrice = card.AvgFoil;
-                        break;
-                    case "Avg1":
-                        card.SelectedPrice = card.Avg1;
-                        card.SelectedFoilPrice = card.Avg1Foil;
-                        break;
-                    case "Avg7":
-                        card.SelectedPrice = card.Avg7;
-                        card.SelectedFoilPrice = card.Avg7Foil;
-                        break;
-                    case "Avg30":
-                        card.SelectedPrice = card.Avg30;
-                        card.SelectedFoilPrice = card.Avg30Foil;
-                        break;
-                    case "Low":
-                        card.SelectedPrice = card.Low;
-                        card.SelectedFoilPrice = card.LowFoil;
-                        break;
-                    case "Trend":
-                        card.SelectedPrice = card.Trend;
-                        card.SelectedFoilPrice = card.TrendFoil;
-                        break;
-                    default:
-                        card.SelectedPrice = null;
-                        card.SelectedFoilPrice = null;
-                        break;
-                }
-            }
-
-            // Update myCards with selected price type based on SelectedFinish
-            foreach (var card in MainWindow.CurrentInstance.myCards)
-            {
-                // Cast card as CardItem once at the start of the loop
-                var cardItem = card as CardItem;
-
-                card.SelectedPrice = selectedPriceType switch
-                {
-                    "Avg" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg :
-                                                                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.AvgFoil : null,
-                    "Avg1" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg1 :
-                                                                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg1Foil : null,
-                    "Avg7" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg7 :
-                                                                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg7Foil : null,
-                    "Avg30" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg30 :
-                                                                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg30Foil : null,
-                    "Low" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Low :
-                                                                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.LowFoil : null,
-                    "Trend" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Trend :
-                                                                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.TrendFoil : null,
-                    _ => null,
-                };
-            }
-
-        }
 
         #endregion
 
@@ -319,6 +264,119 @@ namespace CollectaMundo
                 {
                     MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][colIndex] = newWidth;
                 }
+            }
+        }
+
+        // Update prices
+        private static void SetSelectedPrice(string selectedPriceType)
+        {
+            // Update allCards with selected price type
+            foreach (var card in MainWindow.CurrentInstance.allCards)
+            {
+                switch (selectedPriceType)
+                {
+                    case "Avg":
+                        card.SelectedPrice = card.Avg;
+                        card.SelectedFoilPrice = card.AvgFoil;
+                        break;
+                    case "Avg1":
+                        card.SelectedPrice = card.Avg1;
+                        card.SelectedFoilPrice = card.Avg1Foil;
+                        break;
+                    case "Avg7":
+                        card.SelectedPrice = card.Avg7;
+                        card.SelectedFoilPrice = card.Avg7Foil;
+                        break;
+                    case "Avg30":
+                        card.SelectedPrice = card.Avg30;
+                        card.SelectedFoilPrice = card.Avg30Foil;
+                        break;
+                    case "Low":
+                        card.SelectedPrice = card.Low;
+                        card.SelectedFoilPrice = card.LowFoil;
+                        break;
+                    case "Trend":
+                        card.SelectedPrice = card.Trend;
+                        card.SelectedFoilPrice = card.TrendFoil;
+                        break;
+                    default:
+                        card.SelectedPrice = null;
+                        card.SelectedFoilPrice = null;
+                        break;
+                }
+            }
+
+            // Update myCards with selected price type based on SelectedFinish
+            foreach (var card in MainWindow.CurrentInstance.myCards)
+            {
+                // Cast card as CardItem once at the start of the loop
+                var cardItem = card as CardItem;
+
+                card.SelectedPrice = selectedPriceType switch
+                {
+                    "Avg" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg :
+                             (cardItem?.SelectedFinish is "foil" or "etched") ? card.AvgFoil : null,
+                    "Avg1" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg1 :
+                             (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg1Foil : null,
+                    "Avg7" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg7 :
+                             (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg7Foil : null,
+                    "Avg30" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg30 :
+                             (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg30Foil : null,
+                    "Low" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Low :
+                             (cardItem?.SelectedFinish is "foil" or "etched") ? card.LowFoil : null,
+                    "Trend" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Trend :
+                             (cardItem?.SelectedFinish is "foil" or "etched") ? card.TrendFoil : null,
+                    _ => null,
+                };
+            }
+
+            // Update DataGrid column headers with the selected price type
+            UpdateDataGridHeaders(MainWindow.CurrentInstance.AllCardsDataGrid, selectedPriceType);
+            UpdateDataGridHeaders(MainWindow.CurrentInstance.MyCollectionDataGrid, selectedPriceType);
+        }
+        private static void UpdateDataGridHeaders(DataGrid dataGrid, string selectedPriceType)
+        {
+            // Find and update the column headers for "Price" and "Foil Price"
+            foreach (var column in dataGrid.Columns)
+            {
+                // Check if the header is not null and is a string
+                if (column.Header is string headerText && headerText.Contains("Price"))
+                {
+                    if (headerText.StartsWith("Price"))
+                    {
+                        column.Header = $"Price ({selectedPriceType})";
+                    }
+                    else if (headerText.StartsWith("Foil Price"))
+                    {
+                        column.Header = $"Foil Price ({selectedPriceType})";
+                    }
+                }
+            }
+        }
+
+        // Save column sort selections
+        public static void SaveAndRestoreSort(DataGrid dataGrid, Action updateItemsSource)
+        {
+            // Step 1: Save current sort descriptions
+            var sortDescriptions = dataGrid.Items.SortDescriptions.ToList();
+            var sortedColumns = dataGrid.Columns
+                .Where(column => column.SortDirection.HasValue)
+                .ToDictionary(column => column, column => column.SortDirection);
+
+            // Step 2: Perform the update (reset ItemsSource)
+            updateItemsSource?.Invoke();
+
+            // Step 3: Restore sort descriptions
+            dataGrid.Items.SortDescriptions.Clear();
+            foreach (var sortDescription in sortDescriptions)
+            {
+                dataGrid.Items.SortDescriptions.Add(sortDescription);
+            }
+
+            // Restore column sort directions
+            foreach (var column in sortedColumns)
+            {
+                column.Key.SortDirection = column.Value;
             }
         }
 

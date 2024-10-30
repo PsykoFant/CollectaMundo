@@ -48,7 +48,8 @@
         </Grid>
         <Grid x:Name="GridSideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="Hidden">
             <Grid x:Name="GridFiltering">
-                <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="90" Click="ClearFiltersButton_Click" Height="20"/>
+
+                <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="90" Height="20" Click="ClearFiltersButton_Click" />
 
                 <!--Color filtering-->
                 <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Right" Margin="0,35,0,0" VerticalAlignment="Top"/>
@@ -84,7 +85,7 @@
                 </ListBox>
 
                 <!--Mana value filtering-->
-                <Label x:Name="ManaValueLabel" Content="Mana value is: " HorizontalAlignment="Left" Margin="0,170,0,0" VerticalAlignment="Top"  Style="{StaticResource BelerenBold}"/>
+                <Label x:Name="ManaValueLabel" Content="Mana value is: " HorizontalAlignment="Left" Margin="0,170,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
                 <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="10,195,0,0" VerticalAlignment="Top" Height="20"/>
                 <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="125,195,0,0" VerticalAlignment="Top" Height="20"/>
 
@@ -333,8 +334,18 @@
                 <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="10,375,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="240" Height="45" Background="White"/>
                 <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,425,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
 
+                <Label Content="Select prices (MCM):" HorizontalAlignment="Left" Margin="10,455,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
+                <ComboBox x:Name="PriceSelector" Width="65" SelectionChanged="PriceSelector_SelectionChanged" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="130,455,0,0">
+                    <ComboBoxItem Content="Avg" />
+                    <ComboBoxItem Content="Avg1" />
+                    <ComboBoxItem Content="Avg7" />
+                    <ComboBoxItem Content="Avg30" />
+                    <ComboBoxItem Content="Low" />
+                    <ComboBoxItem Content="Trend" />
+                </ComboBox>
+                
                 <!--Languages filtering-->
-                <ComboBox x:Name="LanguagesComboBox" HorizontalAlignment="Left" Margin="10,455,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="LanguagesComboBox" HorizontalAlignment="Left" Margin="10,485,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -378,7 +389,7 @@
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
 
-                <ComboBox x:Name="ConditionsComboBox" HorizontalAlignment="Left" Margin="10,485,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="ConditionsComboBox" HorizontalAlignment="Left" Margin="10,515,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -422,18 +433,8 @@
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
 
-                <CheckBox x:Name="CheckBoxCardsForTrade" Margin="10,515,0,0" Content="Filter on cards for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
-                <CheckBox x:Name="CheckBoxCardsNotForTrade" Margin="10,535,0,0" Content="Filter on cards NOT for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
-
-                <ComboBox x:Name="PriceSelector" Width="100" SelectionChanged="PriceSelector_SelectionChanged" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,557,0,0">
-                    <ComboBoxItem Content="Avg" />
-                    <ComboBoxItem Content="Avg1" />
-                    <ComboBoxItem Content="Avg7" />
-                    <ComboBoxItem Content="Avg30" />
-                    <ComboBoxItem Content="Low" />
-                    <ComboBoxItem Content="Trend" />
-                </ComboBox>
-
+                <CheckBox x:Name="CheckBoxCardsForTrade" Margin="10,540,0,0" Content="Filter on cards for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
+                <CheckBox x:Name="CheckBoxCardsNotForTrade" Margin="10,560,0,0" Content="Filter on cards NOT for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
 
             </Grid>
             <Grid x:Name="GridUtilsMenu" Visibility="Collapsed" d:IsHidden="True">
@@ -451,7 +452,7 @@
             </ScrollViewer>
             <Grid x:Name="GridSearchAndFilterAllCards">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
+                <Label x:Name="AllCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30"/>
                 <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonSubmitCardsToMyCollection_Click"/>
                 <Button x:Name="ButtonClearCardsToAdd" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonClearCardsToAdd_Click"/>
                 <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Right" Margin="0,250,0,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonAddCardsToMyCollection_Click"/>
@@ -720,13 +721,12 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
             <Grid x:Name="GridMyCollection">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,3,0,0" VerticalAlignment="Top" Height="30"/>
+                <Label x:Name="MyCardsCountLabel" Content="" HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30"/>
                 <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
                 <Button x:Name="ButtonClearCardsToEdit" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonClearCardsToEdit_Click"/>
                 <Button x:Name="ButtonEditCardsInMyCollection" Content="Edit selected cards" HorizontalAlignment="Right" Margin="0,250,0,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="{Binding ElementName=MyCollectionDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonEditCardsInCollection_Click"/>
