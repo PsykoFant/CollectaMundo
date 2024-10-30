@@ -129,38 +129,15 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            //var stopwatch = new Stopwatch();
-            //stopwatch.Start();
-
-
-            await PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false, true);
-            await PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
-
-
-            //stopwatch.Stop();
-            //Debug.WriteLine($"All cards loaded in {stopwatch.Elapsed.TotalSeconds} seconds.");
-
-            //await PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
-            await LoadColorIcons(ColorIcons, colourQuery);
-
-            /*
             Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false, true);
             Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
             Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
 
             await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons);
-            */
 
             DBAccess.CloseConnection();
 
-            // Read default prices based on appsettings.json
-            string? defaultPrice = ConfigurationManager.GetSetting("PriceInfo:DefaultPrice") as string;
-            if (!string.IsNullOrEmpty(defaultPrice))
-            {
-                FilterManager.SetSelectedPrice(defaultPrice);
-            }
-
-            await CurrentInstance.PopulateFilterUiElements();
+            await PopulateFilterUiElements();
 
             CardsToAddListView.ItemsSource = addToCollectionManager.CardItemsToAdd;
             CardsToEditListView.ItemsSource = addToCollectionManager.CardItemsToEdit;
@@ -388,6 +365,25 @@ namespace CollectaMundo
                 filterContext.AllFinishes.AddRange(CleanAndFilter(allCards.Select(card => card.Finishes)));
                 filterContext.AllLanguages.AddRange(CleanAndFilter(myCards.Select(card => card.Language)));
                 filterContext.AllConditions.AddRange(CleanAndFilter(myCards.OfType<CardItem>().Select(card => card.SelectedCondition)));
+
+                // Read default prices based on appsettings.json
+                string? defaultPrice = ConfigurationManager.GetSetting("PriceInfo:DefaultPrice") as string;
+                if (!string.IsNullOrEmpty(defaultPrice))
+                {
+                    // Find the ComboBoxItem with the content that matches the default price
+                    var comboBoxItem = PriceSelector.Items
+                        .OfType<ComboBoxItem>()
+                        .FirstOrDefault(item => item.Content?.ToString() == defaultPrice);
+
+                    if (comboBoxItem != null)
+                    {
+                        // Set the selected item of the ComboBox
+                        PriceSelector.SelectedItem = comboBoxItem;
+
+                        // Update the selected price in FilterManager
+                        FilterManager.SetSelectedPrice(defaultPrice);
+                    }
+                }
 
                 Dispatcher.Invoke(() =>
                 {

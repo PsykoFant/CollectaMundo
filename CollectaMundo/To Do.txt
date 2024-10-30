@@ -1,8 +1,4 @@
 TO DO 
-
-
- - Fjern "Signed" som mulighed for SelectedFinish
- - Hvis "etched" kan vælges, fjern "foil" som mulighed for SelectedFinish
  - Prisdropdown sættes ved opstart
  - Ui updates
  - Ændre default priser i utilities

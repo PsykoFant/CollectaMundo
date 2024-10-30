@@ -249,8 +249,6 @@ namespace CollectaMundo
 
         }
 
-
-
         #endregion
 
         #region Filter UI updates

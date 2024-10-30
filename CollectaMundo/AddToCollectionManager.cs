@@ -307,20 +307,33 @@ namespace CollectaMundo
         {
             var finishes = new List<string>();
             string query = @"SELECT finishes FROM cards WHERE uuid = @uuid UNION SELECT finishes FROM tokens WHERE uuid = @uuid";
+
             using (var command = new SQLiteCommand(query, DBAccess.connection))
             {
                 command.Parameters.AddWithValue("@uuid", uuid);
                 using var reader = await command.ExecuteReaderAsync();
-                while (reader.Read())
+
+                while (await reader.ReadAsync())
                 {
-                    var finish = reader["Finishes"].ToString();
+                    var finish = reader["Finishes"]?.ToString();
                     if (!string.IsNullOrEmpty(finish))
                     {
                         finishes.AddRange(finish.Split(',').Select(f => f.Trim()));
                     }
                 }
             }
-            return finishes.Distinct().ToList();
+
+            // Remove "signed" if it exists
+            finishes = finishes.Distinct().Where(f => !f.Equals("signed", StringComparison.OrdinalIgnoreCase)).ToList();
+
+            // Check if both "foil" and "etched" are present
+            if (finishes.Contains("foil", StringComparer.OrdinalIgnoreCase) && finishes.Contains("etched", StringComparer.OrdinalIgnoreCase))
+            {
+                // If both "foil" and "etched" are present, return only "etched"
+                finishes = finishes.Where(f => !f.Equals("foil", StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            return finishes;
         }
 
         // Submit new or edited cards to collection
