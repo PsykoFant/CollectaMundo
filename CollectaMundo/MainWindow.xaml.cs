@@ -129,25 +129,11 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
+            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false, true);
+            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
+            Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
 
-
-            await PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false, true);
-            //await PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
-
-
-            stopwatch.Stop();
-            Debug.WriteLine($"All cards loaded in {stopwatch.Elapsed.TotalSeconds} seconds.");
-
-            await LoadColorIcons(ColorIcons, colourQuery);
-
-
-            //Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false, true);
-            //Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
-            //Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
-
-            //await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons);
+            await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons);
 
             DBAccess.CloseConnection();
 
