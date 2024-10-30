@@ -192,6 +192,23 @@ namespace CollectaMundo
             var generateViews = CreateViews();
             await Task.WhenAll(generateIndices, generateViews);
 
+            // Perform database maintenance tasks for optimization
+            StatusMessageUpdated?.Invoke("Performing database optimization ...");
+
+            List<string> optimizeCommands = new()
+            {
+                "VACUUM;",
+                "ANALYZE;",
+                "PRAGMA optimize;"
+            };
+
+            // Execute each command asynchronously
+            foreach (var item in optimizeCommands)
+            {
+                using var command = new SQLiteCommand(item, DBAccess.connection);
+                await command.ExecuteNonQueryAsync();
+            }
+
             DBAccess.CloseConnection();
         }
         private static async Task CreateCustomTables()
@@ -513,8 +530,7 @@ namespace CollectaMundo
                 {"idx_tokens_side_uuid", "CREATE INDEX IF NOT EXISTS idx_tokens_side_uuid ON tokens(side, uuid);"},
                 {"idx_sets_code_tokensetcode", "CREATE INDEX IF NOT EXISTS idx_sets_code_tokensetcode ON sets(code, tokenSetCode);"},
                 {"idx_cards_setcode_name_type", "CREATE INDEX IF NOT EXISTS idx_cards_setcode_name_type ON cards(setCode, name, type);"},
-                {"idx_tokens_setcode_name_type", "CREATE INDEX IF NOT EXISTS idx_tokens_setcode_name_type ON tokens(setCode, name, type);"},
-                {"idx_cards_setcode_name", "CREATE INDEX IF NOT EXISTS idx_cards_setcode_name ON cards(setCode, name);"}
+                {"idx_tokens_setcode_name_type", "CREATE INDEX IF NOT EXISTS idx_tokens_setcode_name_type ON tokens(setCode, name, type);"}
             };
 
             try
