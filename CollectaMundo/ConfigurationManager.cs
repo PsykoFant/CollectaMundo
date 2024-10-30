@@ -62,13 +62,19 @@ namespace CollectaMundo
                 MessageBox.Show($"Error creating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        public static void UpdatePriceInfo(string updatedDate, string defaultPrice = "Avg")
+        public static void UpdatePriceInfo(string? updatedDate, string? defaultPrice)
         {
             try
             {
                 // Update the PriceInfo fields
-                CurrentSettings.PriceInfo.PricesUpdatedDate = updatedDate;
-                CurrentSettings.PriceInfo.DefaultPrice = defaultPrice;
+                if (updatedDate != null)
+                {
+                    CurrentSettings.PriceInfo.PricesUpdatedDate = updatedDate;
+                }
+                if (defaultPrice != null)
+                {
+                    CurrentSettings.PriceInfo.DefaultPrice = defaultPrice;
+                }
 
                 // Save the updated settings to appsettings.json
                 SaveSettings();
@@ -136,7 +142,7 @@ namespace CollectaMundo
     public class PriceInfo
     {
         public string PricesUpdatedDate { get; set; } = string.Empty;
-        public string DefaultPrice { get; set; } = "Avg";
+        public string DefaultPrice { get; set; } = "Trend";
     }
 
 }

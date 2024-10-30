@@ -476,7 +476,7 @@ namespace CollectaMundo
                 }
 
                 // Update the PricesUpdatedDate in appsettings.json
-                ConfigurationManager.UpdatePriceInfo(createdAt);
+                ConfigurationManager.UpdatePriceInfo(createdAt, null);
 
                 File.Delete(jsonFilePath);
             }

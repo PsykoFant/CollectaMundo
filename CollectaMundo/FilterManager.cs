@@ -333,6 +333,9 @@ namespace CollectaMundo
             // Update DataGrid column headers with the selected price type
             UpdateDataGridHeaders(MainWindow.CurrentInstance.AllCardsDataGrid, selectedPriceType);
             UpdateDataGridHeaders(MainWindow.CurrentInstance.MyCollectionDataGrid, selectedPriceType);
+
+            ConfigurationManager.UpdatePriceInfo(null, selectedPriceType);
+
         }
         private static void UpdateDataGridHeaders(DataGrid dataGrid, string selectedPriceType)
         {

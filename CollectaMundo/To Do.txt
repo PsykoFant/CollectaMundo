@@ -1,5 +1,4 @@
 TO DO 
- - Ændre default priser i utilities
  - Fix og opdater indices
  - Pragma optimize
  - Opdater Update
