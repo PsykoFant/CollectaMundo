@@ -39,15 +39,15 @@
             <Button x:Name="MenuDecksButton" Content="Decks" HorizontalAlignment="Left" Margin="340,10,0,0" VerticalAlignment="Top" Width="160" Height="20"/>
             <Button x:Name="MenuUtilsButton" Content="Utilities" HorizontalAlignment="Left" Margin="505,10,0,0" VerticalAlignment="Top" Width="160" Click="MenuUtilsButton_Click" Height="20"/>
         </Grid>
-        <Grid x:Name="GridStatus" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,40,0,0" VerticalAlignment="Top">
+        <Grid x:Name="GridStatus" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,40,0,0" VerticalAlignment="Top" d:IsHidden="True">
             <Image Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="500" Width="500" Margin="0,76,0,0" />
             <Label Content="CollectaMundo" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
             <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Center" Height="15" Margin="0,650,0,0" VerticalAlignment="Top" Width="500" BorderBrush="Black" Visibility="Collapsed"/>
             <Label x:Name="StatusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top"/>
             <Label x:Name="FirstTimeSetupLabel" Content="" HorizontalAlignment="Center" Margin="0,582,0,0" VerticalAlignment="Top" FontSize="18"/>
         </Grid>
-        <Grid x:Name="GridSideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="Hidden">
-            <Grid x:Name="GridFiltering">
+        <Grid x:Name="GridSideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="Visible">
+            <Grid x:Name="GridFiltering" d:IsHidden="True">
 
                 <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="90" Height="20" Click="ClearFiltersButton_Click" />
 
@@ -437,12 +437,14 @@
                 <CheckBox x:Name="CheckBoxCardsNotForTrade" Margin="10,560,0,0" Content="Filter on cards NOT for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
 
             </Grid>
-            <Grid x:Name="GridUtilsMenu" Visibility="Collapsed" d:IsHidden="True">
+            <Grid x:Name="GridUtilsMenu" Visibility="Visible">
+                <Button x:Name="CreateBackupButton" Content="Create backup of my collection" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Click="CreateBackupButton_Click" Height="20" Width="170"/>
+                <Button x:Name="ImportCollectionButton" Content="The Import Wizard" HorizontalAlignment="Left" Margin="10,30,0,0" VerticalAlignment="Top" Click="ImportCollectionButton_Click" Width="170" Height="20"/>
                 <Button x:Name="CheckForUpdatesButton" Content="Check for updates" HorizontalAlignment="Left" VerticalAlignment="Top" Width="170" Margin="10,60,0,0" Click="CheckForUpdatesButton_Click" Height="20"/>
                 <Label x:Name="UtilsInfoLabel" Content="" HorizontalAlignment="Left" Margin="10,119.7,0,0" VerticalAlignment="Top" Width="182" Height="30"/>
                 <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Left" Margin="10,90,0,0" VerticalAlignment="Top" Width="170" Click="UpdateDbButton_Click" Visibility="Collapsed" Height="20"/>
-                <Button x:Name="CreateBackupButton" Content="Create backup of my collection" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Click="CreateBackupButton_Click" Height="20" Width="170"/>
-                <Button x:Name="ImportCollectionButton" Content="The Import Wizard" HorizontalAlignment="Left" Margin="10,30,0,0" VerticalAlignment="Top" Click="ImportCollectionButton_Click" Width="170" Height="20"/>
+
+
             </Grid>
         </Grid>
         <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="Hidden">
