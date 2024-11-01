@@ -103,6 +103,9 @@ namespace CollectaMundo
         {
             try
             {
+                // Refresh the CurrentSettings object
+                LoadOrCreateAppSettings();
+
                 string[] pathParts = settingPath.Split(':');
                 object? current = CurrentSettings;
 

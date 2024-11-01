@@ -31,14 +31,12 @@ namespace CollectaMundo
 
         // Download urls 
         public readonly static string cardDbDownloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
-        private readonly static string pricesDownloadUrl = "https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_1.json";
+        public readonly static string pricesDownloadUrl = "https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_1.json";
 
         // Check if the card database exists in the location specified by appsettings.json. 
         // If it doesn't exist, download it and populate it with custom data, including image data for mana symbols and set images as well as card prices
         public static async Task SystemIntegrityCheckAsync()
         {
-            await PrepareDownloadedCardDatabase();
-            /*
             bool redownloadDB = false;
             string downloadMessage = string.Empty;
 
@@ -100,7 +98,6 @@ namespace CollectaMundo
                 // If both downloads (or re-downloads) succeeded, proceed
                 await PrepareDownloadedCardDatabase();
             }
-            */
         }
         public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessageBig, string downloadFile, bool showStatusBar)
         {
@@ -188,6 +185,7 @@ namespace CollectaMundo
             await Task.Run(GenerateSetKeyruneFromSvgAsync);
 
             StatusMessageUpdated?.Invoke("Updating card prices ...");
+            await Task.Run(CopyNonNullMcmIdsToCardPricesAsync);
             await Task.Run(() => ImportPricesFromJsonAsync(32000));
 
             StatusMessageUpdated?.Invoke("Finalizing ...");
@@ -359,8 +357,6 @@ namespace CollectaMundo
         }
         public static async Task ImportPricesFromJsonAsync(int batchSize)
         {
-            await CopyNonNullMcmIdsToCardPricesAsync();
-
             try
             {
                 // Read the JSON file from the priceDownloadsPath

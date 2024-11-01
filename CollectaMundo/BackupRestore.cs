@@ -175,7 +175,7 @@ namespace CollectaMundo
                         }
                     }
 
-                    MessageBox.Show($"Backup created successfully at {backupFilePath}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"Backup created successfully at {backupFilePath}", "A backup of your collection has been created!", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             catch (Exception ex)

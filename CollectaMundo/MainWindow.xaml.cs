@@ -1208,9 +1208,27 @@ namespace CollectaMundo
         #endregion
 
         #region UI elements for utilities
+        private async void CreateBackupButton_Click(object sender, RoutedEventArgs e)
+        {
+            ResetUtilsMenu();
+            await CreateCsvBackupAsync();
+        }
+        private void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
+        {
+            Inspiredtinkering.Visibility = Visibility.Collapsed;
+            UtilsInfoLabel.Content = string.Empty;
+            GridImportWizard.Visibility = Visibility.Visible;
+            GridImportStartScreen.Visibility = Visibility.Visible;
+        }
+        private async void UpdatePricesButton_Click(object sender, RoutedEventArgs e)
+        {
+            ResetUtilsMenu();
+            await UpdateDB.UpdatePricesAsync();
+        }
         private async void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)
         {
-            await UpdateDB.CheckForUpdatesAsync();
+            ResetUtilsMenu();
+            await UpdateDB.CheckForDbUpdatesAsync();
         }
         private async void UpdateDbButton_Click(object sender, RoutedEventArgs e)
         {
@@ -1224,20 +1242,16 @@ namespace CollectaMundo
                 StatusLabel.Content = message;
             });
         }
-        private async void CreateBackupButton_Click(object sender, RoutedEventArgs e)
+        private void ResetUtilsMenu()
         {
-            await CreateCsvBackupAsync();
+            GridImportWizard.Visibility = Visibility.Collapsed;
+            Inspiredtinkering.Visibility = Visibility.Visible;
+            UtilsInfoLabel.Content = string.Empty;
         }
 
         #region Import wizard
 
         // Import wizard different steps button methods
-        private void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
-        {
-            Inspiredtinkering.Visibility = Visibility.Collapsed;
-            GridImportWizard.Visibility = Visibility.Visible;
-            GridImportStartScreen.Visibility = Visibility.Visible;
-        }
         private async void BeginImportButton_Click(object sender, RoutedEventArgs e)
         {
             await BeginImportButton();
