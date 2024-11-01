@@ -1,3 +1,4 @@
+using CollectaMundo.Models;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
@@ -10,7 +11,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using static CollectaMundo.BackupRestore;
-using static CollectaMundo.CardSet;
+using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo
 {
@@ -1223,7 +1224,7 @@ namespace CollectaMundo
         private async void UpdatePricesButton_Click(object sender, RoutedEventArgs e)
         {
             ResetUtilsMenu();
-            await UpdateDB.UpdatePricesAsync();
+            await CardPriceUtilities.UpdatePricesAsync();
         }
         private async void CheckForUpdatesButton_Click(object sender, RoutedEventArgs e)
         {

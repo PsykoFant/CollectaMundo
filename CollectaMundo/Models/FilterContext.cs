@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo
+﻿namespace CollectaMundo.Models
 {
     public class FilterContext
     {

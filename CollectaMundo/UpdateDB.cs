@@ -32,7 +32,7 @@ namespace CollectaMundo
 
                 // Read updated date from card db
                 await DBAccess.OpenConnectionAsync();
-                int numberOfSetsInDb = (await DownloadAndPrepDB.GetUniqueValuesAsync("sets", "code")).Count;
+                int numberOfSetsInDb = (await DBAccess.GetUniqueValuesAsync("sets", "code")).Count;
                 Debug.WriteLine(numberOfSetsInDb.ToString());
                 DBAccess.CloseConnection();
 
@@ -57,63 +57,6 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"An error occurred checking for updates: {ex.Message}");
                 MessageBox.Show($"An error occurred checking for updates: {ex.Message}", "Update Check Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
-        }
-        public static async Task UpdatePricesAsync()
-        {
-            try
-            {
-                MainWindow.CurrentInstance.GridTopMenu.IsEnabled = false;
-                MainWindow.CurrentInstance.GridSideMenu.IsEnabled = false;
-
-                string? dateString = ConfigurationManager.GetSetting("PriceInfo:PricesUpdatedDate") as string;
-
-                if (DateTime.TryParse(dateString, out DateTime priceInfoDate))
-                {
-                    if (priceInfoDate < DateTime.Today)
-                    {
-                        Debug.WriteLine($"The date in appsettings ({priceInfoDate}) is older than today ({DateTime.Today})");
-                        await MainWindow.ShowStatusWindowAsync(true);
-
-                        if (await DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, DownloadAndPrepDB.pricesDownloadUrl, "Updating card prices - please wait...", "Downloading price file...", true))
-                        {
-                            StatusMessageUpdated?.Invoke("Updating card prices ...");
-                            await DBAccess.OpenConnectionAsync();
-
-                            await DownloadAndPrepDB.ImportPricesFromJsonAsync(32000);
-
-                            MainWindow.CurrentInstance.UtilsInfoLabel.Content = "Card prices have been updated ...";
-                        }
-                        else
-                        {
-                            MainWindow.CurrentInstance.UtilsInfoLabel.Content = "Something went wrong downloading new prices :-( ...";
-                        }
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"Date in appsettings: {priceInfoDate}");
-
-                        MainWindow.CurrentInstance.UtilsInfoLabel.Content = "Your card prices are already up to date.";
-                    }
-                }
-                else
-                {
-                    Debug.WriteLine("Failed to parse the date from appsettings.");
-                    throw new FormatException("Invalid date format in appsettings.json for 'PriceInfo:PricesUpdatedDate'.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"An error occurred updating card prices: {ex.Message}");
-                MessageBox.Show($"An error occurred updating card prices: {ex.Message}", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                DBAccess.CloseConnection();
-                MainWindow.CurrentInstance.GridTopMenu.IsEnabled = true;
-                MainWindow.CurrentInstance.GridSideMenu.IsEnabled = true;
-                await MainWindow.ShowStatusWindowAsync(false);
             }
 
         }

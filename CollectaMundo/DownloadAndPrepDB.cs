@@ -174,9 +174,12 @@ namespace CollectaMundo
         {
             await DBAccess.OpenConnectionAsync();
 
+            StatusMessageUpdated?.Invoke("Creating custom tables ...");
+            await Task.Run(CreateCustomTables);
+            await Task.Run(CopyNonNullMcmIdsToCardPricesAsync);
+
             StatusMessageUpdated?.Invoke("Generating mana symbols ...");
-            await CreateCustomTables();
-            await GenerateManaSymbolsFromSvgAsync();
+            await Task.Run(GenerateManaSymbolsFromSvgAsync);
 
             StatusMessageUpdated?.Invoke("Generating mana cost images ...");
             await Task.Run(GenerateManaCostImagesAsync);
@@ -185,8 +188,7 @@ namespace CollectaMundo
             await Task.Run(GenerateSetKeyruneFromSvgAsync);
 
             StatusMessageUpdated?.Invoke("Updating card prices ...");
-            await Task.Run(CopyNonNullMcmIdsToCardPricesAsync);
-            await Task.Run(() => ImportPricesFromJsonAsync(32000));
+            await Task.Run(() => CardPriceUtilities.ImportPricesFromJsonAsync(32000));
 
             StatusMessageUpdated?.Invoke("Finalizing ...");
             var generateIndices = CreateIndices();
@@ -198,6 +200,8 @@ namespace CollectaMundo
 
             DBAccess.CloseConnection();
         }
+
+        #region Custom Table Operations
         private static async Task CreateCustomTables()
         {
             try
@@ -226,11 +230,47 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during creation of tables: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        public static async Task GenerateManaSymbolsFromSvgAsync()
+        private static async Task CopyNonNullMcmIdsToCardPricesAsync()
         {
             try
             {
-                List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
+                // Step 1: Define the SQL statement for copying data
+                string copySql = @"
+                    INSERT OR IGNORE INTO cardPrices (uuid, mcmId)
+                    SELECT ci.uuid, ci.mcmId
+                    FROM cardIdentifiers ci
+                    JOIN cards c ON ci.uuid = c.uuid
+                    WHERE ci.mcmId IS NOT NULL AND (c.side IS NULL OR c.side = 'a')
+
+                    UNION
+
+                    SELECT ti.uuid, ti.mcmId
+                    FROM tokenIdentifiers ti
+                    JOIN tokens t ON ti.uuid = t.uuid
+                    WHERE ti.mcmId IS NOT NULL AND (t.side IS NULL OR t.side = 'a');
+                    ";
+
+                // Step 2: Execute the SQL statement
+                using var command = new SQLiteCommand(copySql, DBAccess.connection);
+                int rowsCopied = await command.ExecuteNonQueryAsync();
+
+                Debug.WriteLine($"{rowsCopied} rows copied from cardIdentifiers and tokenIdentifiers to cardPrices.");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error copying data from cardIdentifiers and tokenIdentifiers to cardPrices: {ex.Message}");
+                MessageBox.Show($"Error copying data from cardIdentifiers and tokenIdentifiers to cardPrices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        #endregion
+
+        #region Mana symbol and mana cost generation
+        private static async Task GenerateManaSymbolsFromSvgAsync()
+        {
+            try
+            {
+                List<string> uniqueManaCosts = await DBAccess.GetUniqueValuesAsync("cards", "manaCost");
                 HashSet<string> uniqueSymbols = [];
 
                 // Extract unique symbols in parallel
@@ -278,11 +318,11 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during creation or insertion of uniqueManaSymbols: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        public static async Task GenerateManaCostImagesAsync()
+        private static async Task GenerateManaCostImagesAsync()
         {
             try
             {
-                List<string> uniqueManaCosts = await GetUniqueValuesAsync("cards", "manaCost");
+                List<string> uniqueManaCosts = await DBAccess.GetUniqueValuesAsync("cards", "manaCost");
 
                 // Insert unique symbols into the 'uniqueManaSymbols' table if it's not already there
                 var insertTasks = uniqueManaCosts.Select(manaCost =>
@@ -308,7 +348,131 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during generation of mana cost images: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        public static async Task GenerateSetKeyruneFromSvgAsync()
+        private static async Task InsertValueInTableAsync(string value, string tableName, string columnName)
+        {
+            try
+            {
+                using var selectCommand = new SQLiteCommand($"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @value", DBAccess.connection);
+                selectCommand.Parameters.AddWithValue("@value", value);
+                var count = Convert.ToInt32(await selectCommand.ExecuteScalarAsync());
+
+                if (count == 0)
+                {
+                    using var insertCommand = new SQLiteCommand(
+                        $"INSERT INTO {tableName} ({columnName}) VALUES (@value)", DBAccess.connection);
+                    insertCommand.Parameters.AddWithValue("@value", value);
+                    await insertCommand.ExecuteNonQueryAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error during insertion of values into table: {ex.Message}");
+                MessageBox.Show($"Error during insertion of values into table: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        private static async Task<byte[]> ProcessManaCostInputAsync(string manaCostInput)
+        {
+            List<Bitmap> manaSymbolImage = [];
+
+            try
+            {
+                string[] manaSymbols = manaCostInput.Trim(['{', '}']).Split(new string[] { "}{" }, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (string symbol in manaSymbols)
+                {
+                    using SQLiteCommand command = new(
+                            $"SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol",
+                            DBAccess.connection);
+                    command.Parameters.AddWithValue("@symbol", symbol);
+
+                    using var reader = await command.ExecuteReaderAsync();
+                    if (await reader.ReadAsync())
+                    {
+                        byte[] imageBytes = (byte[])reader["manaSymbolImage"];
+                        using MemoryStream ms = new(imageBytes);
+                        Bitmap bitmap = new(ms); // Bitmap and SkiaSharp operations are not async
+                        manaSymbolImage.Add(bitmap);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"An error occurred while processing mana cost input: {ex.Message}");
+                MessageBox.Show($"An error occurred while processing mana cost input: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            return await CombineImagesAsync(manaSymbolImage);
+        }
+        private static async Task<byte[]> CombineImagesAsync(List<Bitmap> images)
+        {
+            return await Task.Run(() => CombineImages(images));
+        }
+        private static byte[] CombineImages(List<Bitmap> images)
+        {
+            try
+            {
+                if (images == null || images.Count == 0)
+                {
+                    throw new ArgumentException("Images list is null or empty");
+                }
+
+                int totalWidth = 0;
+                int maxHeight = 0;
+
+                // Calculate total width and maximum height
+                foreach (var image in images)
+                {
+                    totalWidth += image.Width;
+                    if (image.Height > maxHeight)
+                    {
+                        maxHeight = image.Height;
+                    }
+                }
+
+                // Check if there's at least one image to reference DPI and pixel format
+                if (images.Count > 0)
+                {
+                    var firstImage = images[0];
+                    // Create a new bitmap with matching DPI and pixel format
+                    using var combinedImage = new Bitmap(totalWidth, maxHeight, firstImage.PixelFormat);
+                    combinedImage.SetResolution(firstImage.HorizontalResolution, firstImage.VerticalResolution);
+
+                    using (var g = Graphics.FromImage(combinedImage))
+                    {
+                        // Set high-quality rendering options
+                        g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+
+                        // Draw each image side by side
+                        int offset = 0;
+                        foreach (var image in images)
+                        {
+                            g.DrawImage(image, new System.Drawing.Point(offset, 0));
+                            offset += image.Width;
+                        }
+                    }
+
+                    // Convert the combined image to a byte array
+                    using var ms = new MemoryStream();
+                    combinedImage.Save(ms, ImageFormat.Png);
+                    return ms.ToArray();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"An error occurred while combining mana cost images: {ex.Message}");
+                MessageBox.Show($"An error occurred while combining mana cost images: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // Return an empty array failure
+            return [];
+        }
+
+        #endregion
+
+        #region Set icon generation
+        private static async Task GenerateSetKeyruneFromSvgAsync()
         {
             try
             {
@@ -355,140 +519,92 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during insertion of keyRuneImages: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        public static async Task ImportPricesFromJsonAsync(int batchSize)
+        private static async Task<(string SetCode, byte[] PngData)> ProcessSetSvgAsync(string setCode, JArray? data)
         {
             try
             {
-                // Read the JSON file from the priceDownloadsPath
-                string jsonFilePath = MainWindow.priceDownloadsPath;
-                if (!File.Exists(jsonFilePath))
-                {
-                    throw new FileNotFoundException($"Price JSON file not found at: {jsonFilePath}");
-                }
-
-                // Check if the database connection is open
-                if (DBAccess.connection == null)
-                {
-                    throw new InvalidOperationException("Database connection is not initialized.");
-                }
-
-                // Read the JSON content
-                var jsonContent = await File.ReadAllTextAsync(jsonFilePath);
-
-                // Parse the createdAt field separately from priceGuides
-                var jsonObject = JObject.Parse(jsonContent);
-                string createdAt = jsonObject["createdAt"]?.ToString() ?? throw new InvalidOperationException("CreatedAt not found in JSON.");
-
-                // Deserialize priceGuides directly into a list of PriceGuide objects
-                var priceGuides = jsonObject["priceGuides"]?.ToObject<List<PriceGuide>>() ?? new List<PriceGuide>();
-                if (priceGuides.Count == 0)
-                {
-                    throw new InvalidOperationException("No price data found in the JSON file.");
-                }
-
-                // Step 1: Load McmId-UUID mapping into a dictionary (Object 1)
-                var cardPricesMap = new Dictionary<int, (string uuid, PriceGuide prices)>();
-                string loadUuidMapSql = "SELECT mcmId, uuid FROM cardPrices WHERE mcmId IS NOT NULL;";
-                using (var command = new SQLiteCommand(loadUuidMapSql, DBAccess.connection))
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    while (await reader.ReadAsync())
-                    {
-                        int mcmId = reader.GetInt32(0);
-                        string uuid = reader.GetString(1);
-                        cardPricesMap[mcmId] = (uuid, new PriceGuide());
-                    }
-                }
-
-                // Step 2: Update Object 1 with prices from JSON (Object 2)
-                foreach (var priceGuide in priceGuides)
-                {
-                    if (cardPricesMap.TryGetValue(priceGuide.IdProduct, out var existingData))
-                    {
-                        // Update prices within Object 1
-                        cardPricesMap[priceGuide.IdProduct] = (existingData.uuid, priceGuide);
-                    }
-                }
-
-                // Step 3: Insert updated prices into the 'cardPrices' table within a transaction
-                string insertSql = @"INSERT OR REPLACE INTO cardPrices (uuid, mcmId, Avg, Low, Trend, Avg1, Avg7, Avg30, AvgFoil, LowFoil, TrendFoil, Avg1Foil, Avg7Foil, Avg30Foil)
-                            VALUES (@uuid, @mcmId, @Avg, @Low, @Trend, @Avg1, @Avg7, @Avg30, @AvgFoil, @LowFoil, @TrendFoil, @Avg1Foil, @Avg7Foil, @Avg30Foil);";
-
-                var transaction = DBAccess.connection.BeginTransaction();
-                try
-                {
-                    using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
-                    insertCommand.Transaction = transaction;
-
-                    // Prepare reusable command parameters
-                    insertCommand.Parameters.Add(new SQLiteParameter("@uuid"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@mcmId"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Low"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Trend"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg1"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg7"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg30"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@AvgFoil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@LowFoil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@TrendFoil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg1Foil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg7Foil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@Avg30Foil"));
-
-                    int counter = 0;
-
-                    foreach (var (mcmId, (uuid, prices)) in cardPricesMap)
-                    {
-                        insertCommand.Parameters["@uuid"].Value = uuid;
-                        insertCommand.Parameters["@mcmId"].Value = mcmId;
-                        insertCommand.Parameters["@Avg"].Value = prices.Avg ?? (object)DBNull.Value;
-                        insertCommand.Parameters["@Low"].Value = prices.Low ?? (object)DBNull.Value;
-                        insertCommand.Parameters["@Trend"].Value = prices.Trend ?? (object)DBNull.Value;
-                        insertCommand.Parameters["@Avg1"].Value = prices.Avg1 ?? (object)DBNull.Value;
-                        insertCommand.Parameters["@Avg7"].Value = prices.Avg7 ?? (object)DBNull.Value;
-                        insertCommand.Parameters["@Avg30"].Value = prices.Avg30 ?? (object)DBNull.Value;
-                        insertCommand.Parameters["@AvgFoil"].Value = prices.AvgFoil ?? (object)DBNull.Value;
-                        insertCommand.Parameters["@LowFoil"].Value = prices.LowFoil ?? (object)DBNull.Value;
-                        insertCommand.Parameters["@TrendFoil"].Value = prices.TrendFoil ?? (object)DBNull.Value;
-                        insertCommand.Parameters["@Avg1Foil"].Value = prices.Avg1Foil ?? (object)DBNull.Value;
-                        insertCommand.Parameters["@Avg7Foil"].Value = prices.Avg7Foil ?? (object)DBNull.Value;
-                        insertCommand.Parameters["@Avg30Foil"].Value = prices.Avg30Foil ?? (object)DBNull.Value;
-
-                        await insertCommand.ExecuteNonQueryAsync();
-
-                        if (++counter % batchSize == 0)
-                        {
-                            await transaction.CommitAsync();
-                            transaction.Dispose();
-                            transaction = DBAccess.connection.BeginTransaction();
-                        }
-                    }
-
-                    await transaction.CommitAsync();
-                }
-                catch (Exception)
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
-                finally
-                {
-                    transaction.Dispose();
-                }
-
-                // Update the PricesUpdatedDate in appsettings.json
-                ConfigurationManager.UpdatePriceInfo(createdAt, null);
-
-                File.Delete(jsonFilePath);
+                var matchingSet = data?.FirstOrDefault(x => x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
+                string svgUri = matchingSet?["icon_svg_uri"]?.ToString() ?? "https://svgs.scryfall.io/sets/default.svg";
+                byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync(svgUri);
+                return (SetCode: setCode, PngData: pngData);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error during price import: {ex.Message}");
-                MessageBox.Show($"Error during price import: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Failed to process SVG for set: {setCode} - {ex.Message}");
+                return (SetCode: setCode, PngData: []);
             }
         }
-        public static async Task CreateIndices()
+        private static async Task<byte[]> ConvertSvgToByteArraySharpVectorsAsync(string svgUrl)
+        {
+            try
+            {
+                using var httpClient = new HttpClient();
+                var svgData = await httpClient.GetStringAsync(svgUrl);
+                var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgData));
+                var settings = new WpfDrawingSettings
+                {
+                    IncludeRuntime = false,
+                    TextAsGeometry = false,
+                    OptimizePath = true,
+                };
+                var reader = new FileSvgReader(settings);
+                var drawing = reader.Read(svgStream);
+
+                DrawingImage drawingImage = new(drawing);
+                var drawingVisual = new DrawingVisual();
+                double aspectRatio = drawingImage.Width / drawingImage.Height;
+                int newHeight = 20;
+                int newWidth = (int)(newHeight * aspectRatio);
+
+                using (var drawingContext = drawingVisual.RenderOpen())
+                {
+                    drawingContext.DrawImage(drawingImage, new Rect(0, 0, newWidth, newHeight));
+                }
+                RenderTargetBitmap renderTargetBitmap = new(newWidth, newHeight, 96, 96, PixelFormats.Pbgra32);
+                renderTargetBitmap.Render(drawingVisual);
+
+                System.Windows.Media.Imaging.BitmapEncoder encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(renderTargetBitmap));
+
+                using MemoryStream memoryStream = new();
+                encoder.Save(memoryStream);
+                return memoryStream.ToArray();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error converting SVG to byte array for url {svgUrl}: {ex.Message}");
+                return [];
+            }
+        }
+        private static async Task CopyColumnIfEmptyOrAddMissingRowsAsync(string targetTable, string targetColumn, string sourceTable, string sourceColumn)
+        {
+            try
+            {
+                // Check if there are any missing rows between source and target
+                string copyQuery = $@"
+                    INSERT INTO {targetTable} ({targetColumn})
+                    SELECT DISTINCT {sourceColumn}
+                    FROM {sourceTable} 
+                    WHERE {sourceColumn} IS NOT NULL 
+                      AND {sourceColumn} != '' 
+                      AND {sourceColumn} NOT IN (SELECT DISTINCT {targetColumn} FROM {targetTable} WHERE {targetColumn} IS NOT NULL AND {targetColumn} != '');";
+
+                // Execute the query to copy missing rows
+                using var copyCommand = new SQLiteCommand(copyQuery, DBAccess.connection);
+                int rowsCopied = await copyCommand.ExecuteNonQueryAsync();
+
+                Debug.WriteLine($"Copied {rowsCopied} missing rows from {sourceTable}.{sourceColumn} to {targetTable}.{targetColumn}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("An error occurred while copying missing rows: " + ex.Message);
+                MessageBox.Show($"An error occurred while copying missing rows: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        #endregion
+
+        #region Indices and views generation
+        private static async Task CreateIndices()
         {
             Dictionary<string, string> indices = new()
 {
@@ -532,7 +648,7 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during creation of indices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        public static async Task CreateViews()
+        private static async Task CreateViews()
         {
             try
             {
@@ -810,187 +926,9 @@ namespace CollectaMundo
             }
         }
 
-        #region Helper methods
-        private static async Task<byte[]> ProcessManaCostInputAsync(string manaCostInput)
-        {
-            List<Bitmap> manaSymbolImage = [];
+        #endregion
 
-            try
-            {
-                string[] manaSymbols = manaCostInput.Trim(new char[] { '{', '}' }).Split(new string[] { "}{" }, StringSplitOptions.RemoveEmptyEntries);
-
-                foreach (string symbol in manaSymbols)
-                {
-                    using SQLiteCommand command = new(
-                            $"SELECT manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol = @symbol",
-                            DBAccess.connection);
-                    command.Parameters.AddWithValue("@symbol", symbol);
-
-                    using var reader = await command.ExecuteReaderAsync();
-                    if (await reader.ReadAsync())
-                    {
-                        byte[] imageBytes = (byte[])reader["manaSymbolImage"];
-                        using MemoryStream ms = new(imageBytes);
-                        Bitmap bitmap = new(ms); // Bitmap and SkiaSharp operations are not async
-                        manaSymbolImage.Add(bitmap);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"An error occurred while processing mana cost input: {ex.Message}");
-                MessageBox.Show($"An error occurred while processing mana cost input: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
-            return await CombineImagesAsync(manaSymbolImage);
-        }
-        private static async Task<byte[]> CombineImagesAsync(List<Bitmap> images)
-        {
-            return await Task.Run(() => CombineImages(images));
-        }
-        public static byte[] CombineImages(List<Bitmap> images)
-        {
-            try
-            {
-                if (images == null || images.Count == 0)
-                {
-                    throw new ArgumentException("Images list is null or empty");
-                }
-
-                int totalWidth = 0;
-                int maxHeight = 0;
-
-                // Calculate total width and maximum height
-                foreach (var image in images)
-                {
-                    totalWidth += image.Width;
-                    if (image.Height > maxHeight)
-                    {
-                        maxHeight = image.Height;
-                    }
-                }
-
-                // Check if there's at least one image to reference DPI and pixel format
-                if (images.Count > 0)
-                {
-                    var firstImage = images[0];
-                    // Create a new bitmap with matching DPI and pixel format
-                    using var combinedImage = new Bitmap(totalWidth, maxHeight, firstImage.PixelFormat);
-                    combinedImage.SetResolution(firstImage.HorizontalResolution, firstImage.VerticalResolution);
-
-                    using (var g = Graphics.FromImage(combinedImage))
-                    {
-                        // Set high-quality rendering options
-                        g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-                        g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-
-                        // Draw each image side by side
-                        int offset = 0;
-                        foreach (var image in images)
-                        {
-                            g.DrawImage(image, new System.Drawing.Point(offset, 0));
-                            offset += image.Width;
-                        }
-                    }
-
-                    // Convert the combined image to a byte array
-                    using var ms = new MemoryStream();
-                    combinedImage.Save(ms, ImageFormat.Png);
-                    return ms.ToArray();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"An error occurred while combining mana cost images: {ex.Message}");
-                MessageBox.Show($"An error occurred while combining mana cost images: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
-            // Return an empty array failure
-            return [];
-        }
-        private static async Task<(string SetCode, byte[] PngData)> ProcessSetSvgAsync(string setCode, JArray? data)
-        {
-            try
-            {
-                var matchingSet = data?.FirstOrDefault(x => x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
-                string svgUri = matchingSet?["icon_svg_uri"]?.ToString() ?? "https://svgs.scryfall.io/sets/default.svg";
-                byte[] pngData = await ConvertSvgToByteArraySharpVectorsAsync(svgUri);
-                return (SetCode: setCode, PngData: pngData);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to process SVG for set: {setCode} - {ex.Message}");
-                return (SetCode: setCode, PngData: []);
-            }
-        }
-        public static async Task<byte[]> ConvertSvgToByteArraySharpVectorsAsync(string svgUrl)
-        {
-            try
-            {
-                using var httpClient = new HttpClient();
-                var svgData = await httpClient.GetStringAsync(svgUrl);
-                var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgData));
-                var settings = new WpfDrawingSettings
-                {
-                    IncludeRuntime = false,
-                    TextAsGeometry = false,
-                    OptimizePath = true,
-                };
-                var reader = new FileSvgReader(settings);
-                var drawing = reader.Read(svgStream);
-
-                DrawingImage drawingImage = new(drawing);
-                var drawingVisual = new DrawingVisual();
-                double aspectRatio = drawingImage.Width / drawingImage.Height;
-                int newHeight = 20;
-                int newWidth = (int)(newHeight * aspectRatio);
-
-                using (var drawingContext = drawingVisual.RenderOpen())
-                {
-                    drawingContext.DrawImage(drawingImage, new Rect(0, 0, newWidth, newHeight));
-                }
-                RenderTargetBitmap renderTargetBitmap = new(newWidth, newHeight, 96, 96, PixelFormats.Pbgra32);
-                renderTargetBitmap.Render(drawingVisual);
-
-                System.Windows.Media.Imaging.BitmapEncoder encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
-                encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(renderTargetBitmap));
-
-                using MemoryStream memoryStream = new();
-                encoder.Save(memoryStream);
-                return memoryStream.ToArray();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error converting SVG to byte array for url {svgUrl}: {ex.Message}");
-                return [];
-            }
-        }
-        private static async Task CopyColumnIfEmptyOrAddMissingRowsAsync(string targetTable, string targetColumn, string sourceTable, string sourceColumn)
-        {
-            try
-            {
-                // Check if there are any missing rows between source and target
-                string copyQuery = $@"
-                    INSERT INTO {targetTable} ({targetColumn})
-                    SELECT DISTINCT {sourceColumn}
-                    FROM {sourceTable} 
-                    WHERE {sourceColumn} IS NOT NULL 
-                      AND {sourceColumn} != '' 
-                      AND {sourceColumn} NOT IN (SELECT DISTINCT {targetColumn} FROM {targetTable} WHERE {targetColumn} IS NOT NULL AND {targetColumn} != '');";
-
-                // Execute the query to copy missing rows
-                using var copyCommand = new SQLiteCommand(copyQuery, DBAccess.connection);
-                int rowsCopied = await copyCommand.ExecuteNonQueryAsync();
-
-                Debug.WriteLine($"Copied {rowsCopied} missing rows from {sourceTable}.{sourceColumn} to {targetTable}.{targetColumn}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("An error occurred while copying missing rows: " + ex.Message);
-                MessageBox.Show($"An error occurred while copying missing rows: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
+        #region Shared helper methods
         private static async Task UpdateImageInTableAsync(string imageToUpdate, string tableName, string columnToUpdate, string columnToReference, byte[] imageData)
         {
             try
@@ -1004,28 +942,6 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"Error while updating image in table: {ex.Message}");
                 MessageBox.Show($"Error while updating image in table: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-        private static async Task InsertValueInTableAsync(string value, string tableName, string columnName)
-        {
-            try
-            {
-                using var selectCommand = new SQLiteCommand($"SELECT COUNT(*) FROM {tableName} WHERE {columnName} = @value", DBAccess.connection);
-                selectCommand.Parameters.AddWithValue("@value", value);
-                var count = Convert.ToInt32(await selectCommand.ExecuteScalarAsync());
-
-                if (count == 0)
-                {
-                    using var insertCommand = new SQLiteCommand(
-                        $"INSERT INTO {tableName} ({columnName}) VALUES (@value)", DBAccess.connection);
-                    insertCommand.Parameters.AddWithValue("@value", value);
-                    await insertCommand.ExecuteNonQueryAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error during insertion of values into table: {ex.Message}");
-                MessageBox.Show($"Error during insertion of values into table: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         private static async Task<List<string>> GetValuesWithNullAsync(string tableName, string returnColumnName, string searchColumnName)
@@ -1048,65 +964,7 @@ namespace CollectaMundo
             }
             return valuesWithNull;
         }
-        public static async Task<List<string>> GetUniqueValuesAsync(string tableName, string columnName)
-        {
-            List<string> uniqueValues = [];
 
-            try
-            {
-                string query = $"SELECT DISTINCT {columnName} FROM {tableName};";
-
-                using var command = new SQLiteCommand(query, DBAccess.connection);
-                using var reader = await command.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    string value = reader[columnName]?.ToString() ?? string.Empty;
-                    if (!string.IsNullOrEmpty(value))
-                    {
-                        uniqueValues.Add(value);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"An error occurred while fetching unique values: {ex.Message}");
-                MessageBox.Show($"An error occurred while fetching unique values: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
-            return uniqueValues;
-        }
-        public static async Task CopyNonNullMcmIdsToCardPricesAsync()
-        {
-            try
-            {
-                // Step 1: Define the SQL statement for copying data
-                string copySql = @"
-                    INSERT OR IGNORE INTO cardPrices (uuid, mcmId)
-                    SELECT ci.uuid, ci.mcmId
-                    FROM cardIdentifiers ci
-                    JOIN cards c ON ci.uuid = c.uuid
-                    WHERE ci.mcmId IS NOT NULL AND (c.side IS NULL OR c.side = 'a')
-
-                    UNION
-
-                    SELECT ti.uuid, ti.mcmId
-                    FROM tokenIdentifiers ti
-                    JOIN tokens t ON ti.uuid = t.uuid
-                    WHERE ti.mcmId IS NOT NULL AND (t.side IS NULL OR t.side = 'a');
-                    ";
-
-                // Step 2: Execute the SQL statement
-                using var command = new SQLiteCommand(copySql, DBAccess.connection);
-                int rowsCopied = await command.ExecuteNonQueryAsync();
-
-                Debug.WriteLine($"{rowsCopied} rows copied from cardIdentifiers and tokenIdentifiers to cardPrices.");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error copying data from cardIdentifiers and tokenIdentifiers to cardPrices: {ex.Message}");
-                MessageBox.Show($"Error copying data from cardIdentifiers and tokenIdentifiers to cardPrices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
 
         #endregion
     }

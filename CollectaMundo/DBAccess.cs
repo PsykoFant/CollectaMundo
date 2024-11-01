@@ -7,7 +7,6 @@ namespace CollectaMundo
     public class DBAccess
     {
         private static string _sqlitePath = string.Empty;
-
         public static SQLiteConnection? connection; // Instantiate SQLite connection for db access
         public static SQLiteConnection? tempDbConnection; // Instantiate SQLite connection for temporary db access when updating
 
@@ -33,7 +32,6 @@ namespace CollectaMundo
                 ConfigurationManager.LoadOrCreateAppSettings();
             }
         }
-
         public static async Task OpenConnectionAsync()
         {
             try
@@ -85,7 +83,7 @@ namespace CollectaMundo
         {
             try
             {
-                await DBAccess.OpenConnectionAsync();
+                await OpenConnectionAsync();
 
                 if (connection != null && connection.State == System.Data.ConnectionState.Open)
                 {
@@ -145,10 +143,10 @@ namespace CollectaMundo
             }
             finally
             {
-                DBAccess.CloseConnection();
+                CloseConnection();
             }
         }
-        public static async Task<bool> DatabaseHasTablesAndViewsAsync(List<string> expectedObjects)
+        private static async Task<bool> DatabaseHasTablesAndViewsAsync(List<string> expectedObjects)
         {
             if (connection == null || connection.State != System.Data.ConnectionState.Open)
             {
@@ -185,6 +183,35 @@ namespace CollectaMundo
                 using var command = new SQLiteCommand(item, DBAccess.connection);
                 await command.ExecuteNonQueryAsync();
             }
+        }
+
+
+        public static async Task<List<string>> GetUniqueValuesAsync(string tableName, string columnName)
+        {
+            List<string> uniqueValues = [];
+
+            try
+            {
+                string query = $"SELECT DISTINCT {columnName} FROM {tableName};";
+
+                using var command = new SQLiteCommand(query, DBAccess.connection);
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    string value = reader[columnName]?.ToString() ?? string.Empty;
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        uniqueValues.Add(value);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"An error occurred while fetching unique values: {ex.Message}");
+                MessageBox.Show($"An error occurred while fetching unique values: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            return uniqueValues;
         }
     }
 }

@@ -1,9 +1,10 @@
-﻿using ServiceStack;
+﻿using CollectaMundo.Models;
+using ServiceStack;
 using System.Diagnostics;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using static CollectaMundo.CardSet;
+using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo
 {
@@ -72,7 +73,6 @@ namespace CollectaMundo
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.SuperTypesAndOrCheckBox.IsChecked ?? false, card => card.SuperTypes);
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, card => card.SubTypes);
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, card => card.Keywords);
-                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, card => card.Finishes);
 
                 if (listName == "myCards")
                 {
@@ -101,6 +101,13 @@ namespace CollectaMundo
                             cardItem.SelectedCondition != null && filterContext.SelectedConditions.Contains(cardItem.SelectedCondition));
                     }
 
+                    // Apply filter for SelectedFinish property
+                    if (filterContext.SelectedFinishes.Count != 0)
+                    {
+                        filteredCardItems = filteredCardItems.Where(cardItem =>
+                            cardItem.SelectedFinish != null && filterContext.SelectedFinishes.Contains(cardItem.SelectedFinish));
+                    }
+
                     // Apply language filter, then cast the result back to IEnumerable<CardItem>
                     var languageFilteredItems = FilterByCardProperty(filteredCardItems.Cast<CardSet>(), filterContext.SelectedLanguages, false, card => card.Language);
 
@@ -109,6 +116,10 @@ namespace CollectaMundo
 
                     // Cast back to CardSet after all filtering
                     filteredCards = filteredCardItems.Cast<CardSet>();
+                }
+                else
+                {
+                    filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, card => card.Finishes);
                 }
 
                 var finalFilteredCards = filteredCards.ToList();

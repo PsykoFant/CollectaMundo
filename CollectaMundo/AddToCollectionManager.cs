@@ -1,10 +1,11 @@
-﻿using ServiceStack;
+﻿using CollectaMundo.Models;
+using ServiceStack;
 using System.Collections.ObjectModel;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using static CollectaMundo.CardSet;
+using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo
 {
