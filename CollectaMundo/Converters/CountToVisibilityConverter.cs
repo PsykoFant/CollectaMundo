@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Windows.Data;
 
-namespace CollectaMundo
+namespace CollectaMundo.Converters
 {
     public class CountToVisibilityConverter : IValueConverter
     {
