@@ -1782,6 +1782,7 @@ namespace CollectaMundo
             finally
             {
                 // Ensure the database connection is closed
+                await DBAccess.OptimizeDb();
                 DBAccess.CloseConnection();
                 MainWindow.CurrentInstance.GridImportConfirm.Visibility = Visibility.Collapsed;
                 MainWindow.CurrentInstance.CrunchingDataLabel.Visibility = Visibility.Collapsed;

@@ -80,6 +80,7 @@ namespace CollectaMundo
                         {
                             StatusMessageUpdated?.Invoke("Updating card prices ...");
                             await DBAccess.OpenConnectionAsync();
+
                             await DownloadAndPrepDB.ImportPricesFromJsonAsync(32000);
 
                             MainWindow.CurrentInstance.UtilsInfoLabel.Content = "Card prices have been updated ...";
@@ -123,36 +124,49 @@ namespace CollectaMundo
                 // First, create a backup
                 await BackupRestore.CreateCsvBackupAsync();
 
-                // Disable buttons while updating
                 await MainWindow.ShowStatusWindowAsync(true);
 
-                if (await DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(newDatabasePath, DownloadAndPrepDB.cardDbDownloadUrl, "Downloading fresh card database and updating...", "updated card database", true))
+                var downloadDatabaseTask = DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(newDatabasePath, DownloadAndPrepDB.cardDbDownloadUrl, "Downloading fresh card database and updating...", "card database", true);
+                var downloadPricesTask = DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, DownloadAndPrepDB.pricesDownloadUrl, "", "", false);
+
+                // Wait for both tasks to complete using Task.WhenAll
+                bool[] downloadResults = await Task.WhenAll(downloadPricesTask, downloadDatabaseTask);
+
+                if (downloadResults[0] && downloadResults[1])
                 {
                     // Copy tables from new card database
-                    if (await CopyTablesAsync())
+                    if (await CopyTablesFromTempNewDbAsync())
                     {
                         await DownloadAndPrepDB.PrepareDownloadedCardDatabase();
+
+                        StatusMessageUpdated?.Invoke("Card database has been updated!");
+                        await Task.Delay(1000); // Leave the message for a few seconds
+
+                        StatusMessageUpdated?.Invoke("Reloading card database...");
+                        await Task.Delay(1000); // Leave the message for a few seconds
+
+                        MainWindow.CurrentInstance.UpdateDbButton.Visibility = Visibility.Collapsed;
+                        await MainWindow.CurrentInstance.LoadDataIntoUiElements();
+
+                        await MainWindow.ShowStatusWindowAsync(false);
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Oops, something went wrong trying to update new card database", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
-
-                StatusMessageUpdated?.Invoke("Card database has been updated!");
-                await Task.Delay(1000); // Leave the message for a few seconds
-
-                StatusMessageUpdated?.Invoke("Reloading card database...");
-                await Task.Delay(1000); // Leave the message for a few seconds
+                else
+                {
+                    MessageBox.Show($"Oops, something went wrong trying to download new card database", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error updating card database: {ex.Message}");
                 MessageBox.Show($"An error occurred updating the card database: {ex.Message}", "Update Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally
-            {
-                MainWindow.CurrentInstance.UpdateDbButton.Visibility = Visibility.Collapsed;
-                await MainWindow.CurrentInstance.LoadDataIntoUiElements();
-            }
         }
-        private static async Task<bool> CopyTablesAsync()
+        private static async Task<bool> CopyTablesFromTempNewDbAsync()
         {
             try
             {
@@ -206,15 +220,10 @@ namespace CollectaMundo
 
                 // Copy table from tempDb to regularDb
                 string detachDb = "DETACH DATABASE tempDb;";
-                using (var detachCommand = new SQLiteCommand(detachDb, DBAccess.connection))
-                {
-                    await detachCommand.ExecuteNonQueryAsync();
-                    Debug.WriteLine($"Detached tempDb...");
-                }
+                using var detachCommand = new SQLiteCommand(detachDb, DBAccess.connection);
+                await detachCommand.ExecuteNonQueryAsync();
+                Debug.WriteLine($"Detached tempDb...");
 
-                // Recreate indices and views after copying tables
-                await DownloadAndPrepDB.CreateIndices();
-                await DownloadAndPrepDB.CreateViews();
                 return true;
             }
             catch (SQLiteException ex)
@@ -232,15 +241,13 @@ namespace CollectaMundo
         {
             try
             {
-                using (var httpClient = new HttpClient())
-                {
-                    var response = await httpClient.GetStringAsync("https://mtgjson.com/api/v5/SetList.json");
-                    var json = JObject.Parse(response);
-                    var sets = json["data"] as JArray;
-                    int count = sets?.Count ?? 0;
-                    Debug.WriteLine($"Number of sets fetched: {count}");
-                    return count;
-                }
+                using var httpClient = new HttpClient();
+                var response = await httpClient.GetStringAsync("https://mtgjson.com/api/v5/SetList.json");
+                var json = JObject.Parse(response);
+                var sets = json["data"] as JArray;
+                int count = sets?.Count ?? 0;
+                Debug.WriteLine($"Number of sets fetched: {count}");
+                return count;
             }
             catch (HttpRequestException httpEx)
             {

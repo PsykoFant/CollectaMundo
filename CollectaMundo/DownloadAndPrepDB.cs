@@ -567,7 +567,7 @@ namespace CollectaMundo
                         t.side IS NULL OR t.side = 'a';
                     ";
                 string createAllCardsViewQuery = @"
-                    CREATE VIEW view_allCards AS
+                    CREATE VIEW IF NOT EXISTS view_allCards AS
                     SELECT * FROM (
                         SELECT 
                             c.name AS Name, 
@@ -1075,7 +1075,7 @@ namespace CollectaMundo
 
             return uniqueValues;
         }
-        private static async Task CopyNonNullMcmIdsToCardPricesAsync()
+        public static async Task CopyNonNullMcmIdsToCardPricesAsync()
         {
             try
             {
@@ -1092,7 +1092,8 @@ namespace CollectaMundo
                     SELECT ti.uuid, ti.mcmId
                     FROM tokenIdentifiers ti
                     JOIN tokens t ON ti.uuid = t.uuid
-                    WHERE ti.mcmId IS NOT NULL AND (t.side IS NULL OR t.side = 'a');";
+                    WHERE ti.mcmId IS NOT NULL AND (t.side IS NULL OR t.side = 'a');
+                    ";
 
                 // Step 2: Execute the SQL statement
                 using var command = new SQLiteCommand(copySql, DBAccess.connection);
