@@ -11,14 +11,13 @@
             <Setter Property="Foreground" Value="Black"/>
             <Setter Property="BorderBrush" Value="#FF707070"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <!--<Setter Property="FontFamily" Value="/Resources/Fonts/#Beleren Bold"/>-->
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ButtonBase}">
                         <Border x:Name="border" 
-                        Background="{TemplateBinding Background}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}">
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -39,6 +38,11 @@
         <Style TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}"/>
 
         <Style TargetType="{x:Type ToggleButton}" BasedOn="{StaticResource BaseButtonStyle}"/>
+
+        <Style x:Key="TopMenuButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="FontFamily" Value="/Resources/Fonts/#Beleren Bold"/>
+            <Setter Property="FontSize" Value="16"/>
+        </Style>
 
         <Style TargetType="{x:Type TextBox}">
             <Setter Property="Background" Value="#FFDDDDDD"/>

@@ -35,14 +35,26 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid x:Name="GridTopMenu" Grid.Row="0" Grid.ColumnSpan="3" VerticalAlignment="Top" HorizontalAlignment="Center" Height="40" IsEnabled="False">
-            <Button x:Name="MenuSearchAndFilterButton" Content="Search and Filter" HorizontalAlignment="Left" Margin="10,5,0,0" VerticalAlignment="Top" Width="160" Click="MenuSearchAndFilter_Click" Height="30" BorderThickness="1,1,1,1">
+            <Button x:Name="MenuSearchAndFilterButton" Content="All Cards" HorizontalAlignment="Center" Margin="0,5,510,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}" Click="MenuSearchAndFilter_Click">
                 <Button.Effect>
-                    <DropShadowEffect/>
+                    <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
                 </Button.Effect>
             </Button>
-            <Button x:Name="MenuMyCollectionButton" Content="My Collection" HorizontalAlignment="Left" Margin="175,10,0,0" VerticalAlignment="Top" Width="160" Click="MenuMyCollection_Click" Height="20"/>
-            <Button x:Name="MenuDecksButton" Content="Decks" HorizontalAlignment="Left" Margin="340,10,0,0" VerticalAlignment="Top" Width="160" Height="20"/>
-            <Button x:Name="MenuUtilsButton" Content="Utilities" HorizontalAlignment="Left" Margin="505,10,0,0" VerticalAlignment="Top" Width="160" Click="MenuUtilsButton_Click" Height="20"/>
+            <Button x:Name="MenuMyCollectionButton" Content="My Collection" HorizontalAlignment="Center" Margin="0,5,170,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}" Click="MenuMyCollection_Click">
+                <Button.Effect>
+                    <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
+                </Button.Effect>
+            </Button>
+            <Button x:Name="MenuDecksButton" Content="Decks" HorizontalAlignment="Center" Margin="170,5,0,0" VerticalAlignment="Top" Width="160"  Height="30" Style="{StaticResource TopMenuButtonStyle}" IsEnabled="False">
+                <Button.Effect>
+                    <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
+                </Button.Effect>
+            </Button>
+            <Button x:Name="MenuUtilsButton" Content="Utilities" HorizontalAlignment="Left" Margin="510,5,0,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}" Click="MenuUtilsButton_Click">
+                <Button.Effect>
+                    <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
+                </Button.Effect>
+            </Button>
         </Grid>
         <Grid x:Name="GridStatus" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,40,0,0" VerticalAlignment="Top" d:IsHidden="True">
             <Image Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="500" Width="500" Margin="0,76,0,0" />
