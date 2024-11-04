@@ -70,7 +70,7 @@ namespace CollectaMundo
                 await MainWindow.ShowStatusWindowAsync(true);
 
                 var downloadDatabaseTask = DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(newDatabasePath, DownloadAndPrepDB.cardDbDownloadUrl, "Downloading fresh card database and updating...", "card database", true);
-                var downloadPricesTask = DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, DownloadAndPrepDB.pricesDownloadUrl, "", "", false);
+                var downloadPricesTask = DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(CardPriceUtilities.pricesDownloadsPath, DownloadAndPrepDB.pricesDownloadUrl, "", "", false);
 
                 // Wait for both tasks to complete using Task.WhenAll
                 bool[] downloadResults = await Task.WhenAll(downloadPricesTask, downloadDatabaseTask);

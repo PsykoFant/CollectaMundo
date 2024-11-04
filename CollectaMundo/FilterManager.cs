@@ -282,70 +282,70 @@ namespace CollectaMundo
         private static void SetSelectedPrice(string selectedPriceType)
         {
             // Update allCards with selected price type
-            foreach (var card in MainWindow.CurrentInstance.allCards)
-            {
-                switch (selectedPriceType)
-                {
-                    case "Avg":
-                        card.SelectedPrice = card.Avg;
-                        card.SelectedFoilPrice = card.AvgFoil;
-                        break;
-                    case "Avg1":
-                        card.SelectedPrice = card.Avg1;
-                        card.SelectedFoilPrice = card.Avg1Foil;
-                        break;
-                    case "Avg7":
-                        card.SelectedPrice = card.Avg7;
-                        card.SelectedFoilPrice = card.Avg7Foil;
-                        break;
-                    case "Avg30":
-                        card.SelectedPrice = card.Avg30;
-                        card.SelectedFoilPrice = card.Avg30Foil;
-                        break;
-                    case "Low":
-                        card.SelectedPrice = card.Low;
-                        card.SelectedFoilPrice = card.LowFoil;
-                        break;
-                    case "Trend":
-                        card.SelectedPrice = card.Trend;
-                        card.SelectedFoilPrice = card.TrendFoil;
-                        break;
-                    default:
-                        card.SelectedPrice = null;
-                        card.SelectedFoilPrice = null;
-                        break;
-                }
-            }
+            //foreach (var card in MainWindow.CurrentInstance.allCards)
+            //{
+            //    switch (selectedPriceType)
+            //    {
+            //        case "Avg":
+            //            card.SelectedPrice = card.Avg;
+            //            card.SelectedFoilPrice = card.AvgFoil;
+            //            break;
+            //        case "Avg1":
+            //            card.SelectedPrice = card.Avg1;
+            //            card.SelectedFoilPrice = card.Avg1Foil;
+            //            break;
+            //        case "Avg7":
+            //            card.SelectedPrice = card.Avg7;
+            //            card.SelectedFoilPrice = card.Avg7Foil;
+            //            break;
+            //        case "Avg30":
+            //            card.SelectedPrice = card.Avg30;
+            //            card.SelectedFoilPrice = card.Avg30Foil;
+            //            break;
+            //        case "Low":
+            //            card.SelectedPrice = card.Low;
+            //            card.SelectedFoilPrice = card.LowFoil;
+            //            break;
+            //        case "Trend":
+            //            card.SelectedPrice = card.Trend;
+            //            card.SelectedFoilPrice = card.TrendFoil;
+            //            break;
+            //        default:
+            //            card.SelectedPrice = null;
+            //            card.SelectedFoilPrice = null;
+            //            break;
+            //    }
+            //}
 
-            // Update myCards with selected price type based on SelectedFinish
-            foreach (var card in MainWindow.CurrentInstance.myCards)
-            {
-                // Cast card as CardItem once at the start of the loop
-                var cardItem = card as CardItem;
+            //// Update myCards with selected price type based on SelectedFinish
+            //foreach (var card in MainWindow.CurrentInstance.myCards)
+            //{
+            //    // Cast card as CardItem once at the start of the loop
+            //    var cardItem = card as CardItem;
 
-                card.SelectedPrice = selectedPriceType switch
-                {
-                    "Avg" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg :
-                             (cardItem?.SelectedFinish is "foil" or "etched") ? card.AvgFoil : null,
-                    "Avg1" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg1 :
-                             (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg1Foil : null,
-                    "Avg7" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg7 :
-                             (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg7Foil : null,
-                    "Avg30" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg30 :
-                             (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg30Foil : null,
-                    "Low" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Low :
-                             (cardItem?.SelectedFinish is "foil" or "etched") ? card.LowFoil : null,
-                    "Trend" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Trend :
-                             (cardItem?.SelectedFinish is "foil" or "etched") ? card.TrendFoil : null,
-                    _ => null,
-                };
-            }
+            //    card.SelectedPrice = selectedPriceType switch
+            //    {
+            //        "Avg" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg :
+            //                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.AvgFoil : null,
+            //        "Avg1" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg1 :
+            //                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg1Foil : null,
+            //        "Avg7" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg7 :
+            //                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg7Foil : null,
+            //        "Avg30" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Avg30 :
+            //                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.Avg30Foil : null,
+            //        "Low" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Low :
+            //                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.LowFoil : null,
+            //        "Trend" => (cardItem != null && cardItem.SelectedFinish == "nonfoil") ? card.Trend :
+            //                 (cardItem?.SelectedFinish is "foil" or "etched") ? card.TrendFoil : null,
+            //        _ => null,
+            //    };
+            //}
 
-            // Update DataGrid column headers with the selected price type
-            UpdateDataGridHeaders(MainWindow.CurrentInstance.AllCardsDataGrid, selectedPriceType);
-            UpdateDataGridHeaders(MainWindow.CurrentInstance.MyCollectionDataGrid, selectedPriceType);
+            //// Update DataGrid column headers with the selected price type
+            //UpdateDataGridHeaders(MainWindow.CurrentInstance.AllCardsDataGrid, selectedPriceType);
+            //UpdateDataGridHeaders(MainWindow.CurrentInstance.MyCollectionDataGrid, selectedPriceType);
 
-            ConfigurationManager.UpdatePriceInfo(null, selectedPriceType);
+            //ConfigurationManager.UpdatePriceInfo(null, selectedPriceType);
 
         }
         private static void UpdateDataGridHeaders(DataGrid dataGrid, string selectedPriceType)

@@ -176,7 +176,6 @@ namespace CollectaMundo
 
             StatusMessageUpdated?.Invoke("Creating custom tables ...");
             await Task.Run(CreateCustomTables);
-            await Task.Run(CopyNonNullMcmIdsToCardPricesAsync);
 
             StatusMessageUpdated?.Invoke("Generating mana symbols ...");
             await Task.Run(GenerateManaSymbolsFromSvgAsync);
@@ -187,8 +186,8 @@ namespace CollectaMundo
             StatusMessageUpdated?.Invoke("Generating Set icons ...");
             await Task.Run(GenerateSetKeyruneFromSvgAsync);
 
-            StatusMessageUpdated?.Invoke("Updating card prices ...");
-            await Task.Run(() => CardPriceUtilities.ImportPricesFromJsonAsync(32000));
+            //StatusMessageUpdated?.Invoke("Updating card prices ...");
+            //await Task.Run(() => CardPriceUtilities.ImportPricesFromJsonAsync(32000));
 
             StatusMessageUpdated?.Invoke("Finalizing ...");
             var generateIndices = CreateIndices();
@@ -214,7 +213,7 @@ namespace CollectaMundo
                     {"keyruneImages", "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB);"},
                     {"AggregatedCardKeywords", "CREATE TABLE IF NOT EXISTS AggregatedCardKeywords (uuid TEXT PRIMARY KEY, aggregatedKeywords TEXT);"},
                     {"myCollection", "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid TEXT, count INTEGER, trade INTEGER, condition TEXT, language TEXT, finish TEXT);"},
-                    {"cardPrices", @"CREATE TABLE IF NOT EXISTS cardPrices (uuid TEXT UNIQUE PRIMARY KEY, mcmId INTEGER, avg DECIMAL(10, 2), low DECIMAL(10, 2), trend DECIMAL(10, 2), avg1 DECIMAL(10, 2), avg7 DECIMAL(10, 2), avg30 DECIMAL(10, 2), avgFoil DECIMAL(10, 2), lowFoil DECIMAL(10, 2), trendFoil DECIMAL(10, 2), avg1Foil DECIMAL(10, 2), avg7Foil DECIMAL(10, 2), avg30Foil DECIMAL(10, 2));"}
+                    {"cardPrices", @"CREATE TABLE IF NOT EXISTS cardPrices (uuid TEXT UNIQUE PRIMARY KEY, cardhoarderNormal DECIMAL(10, 2), cardhoarderFoil DECIMAL(10, 2), cardhoarderEtched DECIMAL(10, 2), cardkingdomNormal DECIMAL(10, 2), cardkingdomFoil DECIMAL(10, 2), cardkingdomEtched DECIMAL(10, 2), cardmarketNormal DECIMAL(10, 2), cardmarketFoil DECIMAL(10, 2), cardmarketEtched DECIMAL(10, 2), cardsphereNormal DECIMAL(10, 2), cardsphereFoil DECIMAL(10, 2), cardsphereEtched DECIMAL(10, 2), tcgplayerNormal DECIMAL(10, 2), tcgplayerFoil DECIMAL(10, 2), tcgplayerEtched DECIMAL(10, 2));"}
                 };
 
                 // Create the tables asynchronously
@@ -228,38 +227,6 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"Error during creation of tables: {ex.Message}");
                 MessageBox.Show($"Error during creation of tables: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-        private static async Task CopyNonNullMcmIdsToCardPricesAsync()
-        {
-            try
-            {
-                // Step 1: Define the SQL statement for copying data
-                string copySql = @"
-                    INSERT OR IGNORE INTO cardPrices (uuid, mcmId)
-                    SELECT ci.uuid, ci.mcmId
-                    FROM cardIdentifiers ci
-                    JOIN cards c ON ci.uuid = c.uuid
-                    WHERE ci.mcmId IS NOT NULL AND (c.side IS NULL OR c.side = 'a')
-
-                    UNION
-
-                    SELECT ti.uuid, ti.mcmId
-                    FROM tokenIdentifiers ti
-                    JOIN tokens t ON ti.uuid = t.uuid
-                    WHERE ti.mcmId IS NOT NULL AND (t.side IS NULL OR t.side = 'a');
-                    ";
-
-                // Step 2: Execute the SQL statement
-                using var command = new SQLiteCommand(copySql, DBAccess.connection);
-                int rowsCopied = await command.ExecuteNonQueryAsync();
-
-                Debug.WriteLine($"{rowsCopied} rows copied from cardIdentifiers and tokenIdentifiers to cardPrices.");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error copying data from cardIdentifiers and tokenIdentifiers to cardPrices: {ex.Message}");
-                MessageBox.Show($"Error copying data from cardIdentifiers and tokenIdentifiers to cardPrices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -611,10 +578,8 @@ namespace CollectaMundo
                 {"idx_uniquemanasymbols_uniquemanasymbol", "CREATE INDEX IF NOT EXISTS idx_uniquemanasymbols_uniquemanasymbol ON uniqueManaSymbols(uniqueManaSymbol);"},
                 {"idx_uniquemanaCostimages_uniquemanaCost", "CREATE INDEX IF NOT EXISTS idx_uniquemanaCostimages_uniquemanaCost ON uniqueManaCostImages(uniqueManaCost);"},
                 {"idx_keyruneimages_setcode", "CREATE INDEX IF NOT EXISTS idx_keyruneimages_setcode ON keyruneImages(setCode);"},
-                {"idx_cardprices_mcmid", "CREATE INDEX IF NOT EXISTS idx_cardprices_mcmid ON cardPrices(mcmId);"},
                 {"idx_cardprices_uuid", "CREATE INDEX IF NOT EXISTS idx_cardprices_uuid ON cardPrices(uuid);"},
                 {"idx_cardidentifiers_uuid", "CREATE INDEX IF NOT EXISTS idx_cardidentifiers_uuid ON cardIdentifiers(uuid);"},
-                {"idx_cardidentifiers_mcmid", "CREATE INDEX IF NOT EXISTS idx_cardidentifiers_mcmid ON cardIdentifiers(mcmId);"},
                 {"idx_cardforeigndata_uuid", "CREATE INDEX IF NOT EXISTS idx_cardforeigndata_uuid ON cardForeignData(uuid);"},
                 {"idx_cardlegalities_uuid", "CREATE INDEX IF NOT EXISTS idx_cardlegalities_uuid ON cardLegalities(uuid);"},
                 {"idx_cards_uuid", "CREATE INDEX IF NOT EXISTS idx_cards_uuid ON cards(uuid);"},
@@ -704,18 +669,9 @@ namespace CollectaMundo
                             c.uuid AS Uuid, 
                             c.finishes AS Finishes, 
                             c.side AS Side,
-                            p.avg AS AvgPrice,
-                            p.avgFoil AS AvgFoilPrice,
-							p.low AS LowPrice,
-							p.lowFoil AS LowFoilPrice,
-							p.trend AS TrendPrice,
-							p.trendFoil AS TrendFoilPrice,
-							p.avg1 AS Avg1Price,
-							p.avg1Foil AS Avg1FoilPrice,
-							p.avg7 AS Avg7Price,
-							p.avg7Foil AS Avg7FoilPrice,
-							p.avg30 AS Avg30Price,
-							p.avg30Foil AS Avg30FoilPrice
+                            p.cardmarketNormal AS NormalPrice,
+                            p.cardmarketFoil AS FoilPrice,
+							p.cardmarketEtched AS EtchedPrice
                         FROM cards c
                         JOIN sets s ON c.setCode = s.code
                         LEFT JOIN keyruneImages k ON c.setCode = k.setCode
@@ -752,18 +708,9 @@ namespace CollectaMundo
                             t.uuid AS Uuid, 
                             t.finishes AS Finishes, 
                             t.side AS Side,
-                            p.avg AS AvgPrice,
-                            p.avgFoil AS AvgFoilPrice,
-							p.low AS LowPrice,
-							p.lowFoil AS LowFoilPrice,
-							p.trend AS TrendPrice,
-							p.trendFoil AS TrendFoilPrice,
-							p.avg1 AS Avg1Price,
-							p.avg1Foil AS Avg1FoilPrice,
-							p.avg7 AS Avg7Price,
-							p.avg7Foil AS Avg7FoilPrice,
-							p.avg30 AS Avg30Price,
-							p.avg30Foil AS Avg30FoilPrice
+                            p.cardmarketNormal AS NormalPrice,
+                            p.cardmarketFoil AS FoilPrice,
+							p.cardmarketEtched AS EtchedPrice
                         FROM tokens t 
                         JOIN sets s ON t.setCode = s.tokenSetCode 
                         LEFT JOIN keyruneImages k ON t.setCode = k.setCode
@@ -800,7 +747,7 @@ namespace CollectaMundo
                             COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
                             c.text AS RulesText,
                             c.manaValue AS ManaValue,
-				                        c.finishes AS Finishes,
+                            c.finishes AS Finishes,
                             c.uuid AS Uuid,
                             m.id AS CardId,
                             m.count AS CardsOwned,
@@ -809,18 +756,9 @@ namespace CollectaMundo
                             m.language AS Language,
                             m.finish AS Finish,
                             c.side AS Side,
-		                    p.avg AS AvgPrice,
-		                    p.avgFoil AS AvgFoilPrice,
-		                    p.low AS LowPrice,
-		                    p.lowFoil AS LowFoilPrice,
-		                    p.trend AS TrendPrice,
-		                    p.trendFoil AS TrendFoilPrice,
-		                    p.avg1 AS Avg1Price,
-		                    p.avg1Foil AS Avg1FoilPrice,
-		                    p.avg7 AS Avg7Price,
-		                    p.avg7Foil AS Avg7FoilPrice,
-		                    p.avg30 AS Avg30Price,
-		                    p.avg30Foil AS Avg30FoilPrice
+		                    p.cardmarketNormal AS NormalPrice,
+                            p.cardmarketFoil AS FoilPrice,
+							p.cardmarketEtched AS EtchedPrice
                         FROM
                             myCollection m
                         JOIN
@@ -858,7 +796,7 @@ namespace CollectaMundo
                             t.keywords AS Keywords,
                             t.text AS RulesText,
                             NULL AS ManaValue,  -- Tokens do not have manaValue
-				                        t.finishes AS Finishes,
+                            t.finishes AS Finishes,
                             t.uuid AS Uuid,
                             m.id AS CardId,
                             m.count AS CardsOwned,
@@ -867,18 +805,9 @@ namespace CollectaMundo
                             m.language AS Language,
                             m.finish AS Finish,
                             t.side AS Side,
-		                    p.avg AS AvgPrice,
-		                    p.avgFoil AS AvgFoilPrice,
-		                    p.low AS LowPrice,
-		                    p.lowFoil AS LowFoilPrice,
-		                    p.trend AS TrendPrice,
-		                    p.trendFoil AS TrendFoilPrice,
-		                    p.avg1 AS Avg1Price,
-		                    p.avg1Foil AS Avg1FoilPrice,
-		                    p.avg7 AS Avg7Price,
-		                    p.avg7Foil AS Avg7FoilPrice,
-		                    p.avg30 AS Avg30Price,
-		                    p.avg30Foil AS Avg30FoilPrice
+		                    p.cardmarketNormal AS NormalPrice,
+                            p.cardmarketFoil AS FoilPrice,
+							p.cardmarketEtched AS EtchedPrice
                         FROM
                             myCollection m
                         JOIN
