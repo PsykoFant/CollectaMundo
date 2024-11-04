@@ -1,4 +1,17 @@
 TO DO 
- - Fix og opdater indices
- - Pragma optimize
- - Opdater Update
+'cardhoarder'
+'cardkingdom'
+'cardmarket'
+'cardsphere'
+'tcgplayer'
+
+etched
+foil
+normal
+
+etched og foil mutual exclusive?
+Opret ny pristabel
+
+Genbesøg query plan
+appsettings - hvilken provider
+ - (Opdater view og genindlæs)
