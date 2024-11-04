@@ -5,7 +5,6 @@ using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -23,10 +22,7 @@ namespace CollectaMundo
         private string? _imageSourceUrl2nd = string.Empty;
 
         // Location of user's "Downloads" folder
-        public readonly static string downloadEnvPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-        // Temporary price download location 
-        public readonly static string priceDownloadsPath = Path.Combine(downloadEnvPath, "Downloads", "prices.json");
+        public readonly static string currentUserFolders = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         public string? ImageSourceUrl
         {
             get => _imageSourceUrl;

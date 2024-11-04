@@ -10,6 +10,8 @@ namespace CollectaMundo
     public class CardPriceUtilities
     {
         public static event Action<string>? StatusMessageUpdated;
+        // Temporary price download location 
+        public readonly static string pricesDownloadsPath = Path.Combine(MainWindow.currentUserFolders, "Downloads", "prices.json");
         public static async Task UpdatePricesAsync()
         {
             try
@@ -26,7 +28,7 @@ namespace CollectaMundo
                         Debug.WriteLine($"The date in appsettings ({priceInfoDate}) is older than today ({DateTime.Today})");
                         await MainWindow.ShowStatusWindowAsync(true);
 
-                        if (await DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, DownloadAndPrepDB.pricesDownloadUrl, "Updating card prices - please wait...", "Downloading price file...", true))
+                        if (await DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(pricesDownloadsPath, DownloadAndPrepDB.pricesDownloadUrl, "Updating card prices - please wait...", "Downloading price file...", true))
                         {
                             StatusMessageUpdated?.Invoke("Updating card prices ...");
                             await DBAccess.OpenConnectionAsync();
@@ -71,8 +73,8 @@ namespace CollectaMundo
         {
             try
             {
-                // Read the JSON file from the priceDownloadsPath
-                string jsonFilePath = MainWindow.priceDownloadsPath;
+                // Read the JSON file from the pricesDownloadsPath
+                string jsonFilePath = pricesDownloadsPath;
                 if (!File.Exists(jsonFilePath))
                 {
                     throw new FileNotFoundException($"Price JSON file not found at: {jsonFilePath}");

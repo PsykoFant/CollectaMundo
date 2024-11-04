@@ -31,7 +31,7 @@ namespace CollectaMundo
 
         // Download urls 
         public readonly static string cardDbDownloadUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
-        public readonly static string pricesDownloadUrl = "https://downloads.s3.cardmarket.com/productCatalog/priceGuide/price_guide_1.json";
+        public readonly static string pricesDownloadUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
 
         // Check if the card database exists in the location specified by appsettings.json. 
         // If it doesn't exist, download it and populate it with custom data, including image data for mana symbols and set images as well as card prices
@@ -61,7 +61,7 @@ namespace CollectaMundo
             if (redownloadDB)
             {
                 var downloadDatabaseTask = DownloadResourceFileIfNotExistAsync(databasePath, cardDbDownloadUrl, downloadMessage, "card database", true);
-                var downloadPricesTask = DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, pricesDownloadUrl, downloadMessage, "", false);
+                var downloadPricesTask = DownloadResourceFileIfNotExistAsync(CardPriceUtilities.pricesDownloadsPath, pricesDownloadUrl, downloadMessage, "", false);
 
                 // Wait for both tasks to complete using Task.WhenAll
                 bool[] results = await Task.WhenAll(downloadPricesTask, downloadDatabaseTask);
@@ -85,7 +85,7 @@ namespace CollectaMundo
                 {
                     // Redownload prices database if the second download failed
                     Debug.WriteLine("Retrying prices download...");
-                    bool redownloadPrices = await DownloadResourceFileIfNotExistAsync(MainWindow.priceDownloadsPath, pricesDownloadUrl, downloadMessage, "", false);
+                    bool redownloadPrices = await DownloadResourceFileIfNotExistAsync(CardPriceUtilities.pricesDownloadsPath, pricesDownloadUrl, downloadMessage, "", false);
                     if (!redownloadPrices)
                     {
                         // Handle persistent failure

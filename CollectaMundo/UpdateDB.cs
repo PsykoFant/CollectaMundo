@@ -17,7 +17,7 @@ namespace CollectaMundo
         /// Then create any new set icons, mana symbols or mana cost images that might need to be created from any new cards added to AllPrintings
         /// </summary>
 
-        private static readonly string newDatabasePath = Path.Combine(MainWindow.downloadEnvPath, "AllPrintings.sqlite");
+        private static readonly string newDatabasePath = Path.Combine(MainWindow.currentUserFolders, "AllPrintings.sqlite");
 
         // For updating statuswindow
         public static event Action<string>? StatusMessageUpdated;
