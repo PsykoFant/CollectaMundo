@@ -203,33 +203,25 @@ namespace CollectaMundo
             }
         }
     }
-    public class PriceGuide
+
+    public class PriceList
     {
-        public int IdProduct { get; set; }
-        public decimal? Avg { get; set; }
-        public decimal? Low { get; set; }
-        public decimal? Trend { get; set; }
-        public decimal? Avg1 { get; set; }
-        public decimal? Avg7 { get; set; }
-        public decimal? Avg30 { get; set; }
-
-        [JsonProperty("avg-foil")]
-        public decimal? AvgFoil { get; set; }
-
-        [JsonProperty("low-foil")]
-        public decimal? LowFoil { get; set; }
-
-        [JsonProperty("trend-foil")]
-        public decimal? TrendFoil { get; set; }
-
-        [JsonProperty("avg1-foil")]
-        public decimal? Avg1Foil { get; set; }
-
-        [JsonProperty("avg7-foil")]
-        public decimal? Avg7Foil { get; set; }
-
-        [JsonProperty("avg30-foil")]
-        public decimal? Avg30Foil { get; set; }
+        public string? Uuid { get; set; }
+        public decimal? cardhoarderNormal { get; set; }
+		public decimal? cardhoarderFoil { get; set; }
+		public decimal? cardhoarderEtched { get; set; }
+		public decimal? cardkingdomNormal { get; set; }
+		public decimal? cardkingdomFoil { get; set; }
+		public decimal? cardkingdomEtched { get; set; }
+		public decimal? cardmarketNormal { get; set; }
+		public decimal? cardmarketFoil { get; set; }
+		public decimal? cardmarketEtched { get; set; }
+		public decimal? cardsphereNormal { get; set; }
+		public decimal? cardsphereFoil { get; set; }
+		public decimal? cardsphereEtched { get; set; }
+		public decimal? tcgplayerNormal { get; set; }
+		public decimal? tcgplayerFoil { get; set; }
+		public decimal? tcgplayerEtched { get; set; }
     }
 
 }
