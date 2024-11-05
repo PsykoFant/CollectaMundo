@@ -66,9 +66,6 @@ namespace CollectaMundo.Models
         public decimal? NormalPrice { get; set; }
         public decimal? FoilPrice { get; set; }
         public decimal? EtchedPrice { get; set; }
-        public decimal? SelectedNormalPrice { get; set; }
-        public decimal? SelectedFoilPrice { get; set; }
-        public decimal? SelectedEtchedPrice { get; set; }
 
         private ImageSource? _setIcon;
         public ImageSource? SetIcon
@@ -183,6 +180,7 @@ namespace CollectaMundo.Models
             }
             public List<string> AvailableFinishes { get; set; } = new List<string>();
             public string? SelectedFinish { get; set; }
+            public decimal? CardItemPrice { get; set; }
         }
     }
 }

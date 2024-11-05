@@ -186,7 +186,7 @@ namespace CollectaMundo
                 ConfigurationManager.UpdatePriceInfo(createdAt, null);
 
                 // Clean up the JSON file after processing
-                File.Delete(jsonFilePath);
+                //File.Delete(jsonFilePath);
             }
             catch (Exception ex)
             {

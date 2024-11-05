@@ -56,7 +56,7 @@
                 </Button.Effect>
             </Button>
         </Grid>
-        <Grid x:Name="GridStatus" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,40,0,0" VerticalAlignment="Top" d:IsHidden="True">
+        <Grid x:Name="GridStatus" Grid.Row="1" Grid.ColumnSpan="3" Margin="0,40,0,0" VerticalAlignment="Top">
             <Image Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="500" Width="500" Margin="0,76,0,0" />
             <Label Content="CollectaMundo" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
             <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Center" Height="15" Margin="0,650,0,0" VerticalAlignment="Top" Width="500" BorderBrush="Black" Visibility="Collapsed"/>
@@ -983,10 +983,10 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Price" Width="*" SortMemberPath="SelectedPrice">
+                        <DataGridTemplateColumn Header="Price" Width="*" SortMemberPath="CardItemPrice">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding SelectedPrice}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding CardItemPrice}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

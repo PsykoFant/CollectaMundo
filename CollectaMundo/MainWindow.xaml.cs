@@ -73,8 +73,8 @@ namespace CollectaMundo
         private readonly AddToCollectionManager addToCollectionManager = new();
         public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } =
         [
-            [100, 100], // Defaults for AllCardsDataGrid
-            [100, 100]  // Defaults for MyCollectionDataGrid
+            [50, 50], // Defaults for AllCardsDataGrid
+            [50, 50]  // Defaults for MyCollectionDataGrid
         ];
 
         #endregion
@@ -237,11 +237,6 @@ namespace CollectaMundo
                 card.ManaCostImageBytes = reader["ManaCostImage"] as byte[];
                 card.ManaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
 
-                // Set prices
-                card.NormalPrice = decimal.TryParse(reader["NormalPrice"]?.ToString(), out decimal normalPrice) ? normalPrice : null;
-                card.FoilPrice = decimal.TryParse(reader["FoilPrice"]?.ToString(), out decimal foilPrice) ? foilPrice : null;
-                card.EtchedPrice = decimal.TryParse(reader["EtchedPrice"]?.ToString(), out decimal etchedPrice) ? etchedPrice : null;
-
                 if (card is CardItem cardItem)
                 {
                     cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
@@ -249,6 +244,25 @@ namespace CollectaMundo
                     cardItem.CardsForTrade = Convert.ToInt32(reader["CardsForTrade"]);
                     cardItem.SelectedCondition = reader["Condition"]?.ToString();
                     cardItem.SelectedFinish = reader["Finish"]?.ToString();
+
+                    if (cardItem.SelectedFinish == "foil")
+                    {
+                        cardItem.CardItemPrice = decimal.TryParse(reader["FoilPrice"]?.ToString(), out decimal foilPrice) ? foilPrice : null;
+                    }
+                    else if (cardItem.SelectedFinish == "etched")
+                    {
+                        cardItem.CardItemPrice = decimal.TryParse(reader["EtchedPrice"]?.ToString(), out decimal etchedPrice) ? etchedPrice : null;
+                    }
+                    else
+                    {
+                        cardItem.CardItemPrice = decimal.TryParse(reader["NormalPrice"]?.ToString(), out decimal normalPrice) ? normalPrice : null;
+                    }
+                }
+                else
+                {
+                    card.NormalPrice = decimal.TryParse(reader["NormalPrice"]?.ToString(), out decimal normalPrice) ? normalPrice : null;
+                    card.FoilPrice = decimal.TryParse(reader["FoilPrice"]?.ToString(), out decimal foilPrice) ? foilPrice : null;
+                    card.EtchedPrice = decimal.TryParse(reader["EtchedPrice"]?.ToString(), out decimal etchedPrice) ? etchedPrice : null;
                 }
 
                 return card;
