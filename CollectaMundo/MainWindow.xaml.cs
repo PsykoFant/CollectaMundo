@@ -238,9 +238,9 @@ namespace CollectaMundo
                 card.ManaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
 
                 // Set prices
-                card.NormalPrice = decimal.TryParse(reader["NormalPrice"]?.ToString(), out decimal avgPrice) ? avgPrice : null;
-                card.FoilPrice = decimal.TryParse(reader["FoilPrice"]?.ToString(), out decimal avgFoilPrice) ? avgFoilPrice : null;
-                card.EtchedPrice = decimal.TryParse(reader["EtchedPrice"]?.ToString(), out decimal lowPrice) ? lowPrice : null;
+                card.NormalPrice = decimal.TryParse(reader["NormalPrice"]?.ToString(), out decimal normalPrice) ? normalPrice : null;
+                card.FoilPrice = decimal.TryParse(reader["FoilPrice"]?.ToString(), out decimal foilPrice) ? foilPrice : null;
+                card.EtchedPrice = decimal.TryParse(reader["EtchedPrice"]?.ToString(), out decimal etchedPrice) ? etchedPrice : null;
 
                 if (card is CardItem cardItem)
                 {
@@ -353,22 +353,6 @@ namespace CollectaMundo
                 filterContext.AllFinishes.AddRange(CleanAndFilter(allCards.Select(card => card.Finishes)));
                 filterContext.AllLanguages.AddRange(CleanAndFilter(myCards.Select(card => card.Language)));
                 filterContext.AllConditions.AddRange(CleanAndFilter(myCards.OfType<CardItem>().Select(card => card.SelectedCondition)));
-
-                // Read default prices based on appsettings.json
-                string? defaultPrice = ConfigurationManager.GetSetting("PriceInfo:DefaultPrice") as string;
-                if (!string.IsNullOrEmpty(defaultPrice))
-                {
-                    // Find the ComboBoxItem with the content that matches the default price
-                    var comboBoxItem = PriceSelector.Items
-                        .OfType<ComboBoxItem>()
-                        .FirstOrDefault(item => item.Content?.ToString() == defaultPrice);
-
-                    if (comboBoxItem != null)
-                    {
-                        // Set the selected item of the ComboBox
-                        PriceSelector.SelectedItem = comboBoxItem;
-                    }
-                }
 
                 Dispatcher.Invoke(() =>
                 {
@@ -710,10 +694,6 @@ namespace CollectaMundo
                 CheckBoxCardsNotForTrade.Checked += AndOrCheckBox_Toggled;
                 CheckBoxCardsNotForTrade.Unchecked += AndOrCheckBox_Toggled;
             }
-        }
-        private void PriceSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            ApplyFilterSelection();
         }
 
         // When combobox textboxes get focus/defocus        

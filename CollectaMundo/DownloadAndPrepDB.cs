@@ -187,7 +187,7 @@ namespace CollectaMundo
             await Task.Run(GenerateSetKeyruneFromSvgAsync);
 
             //StatusMessageUpdated?.Invoke("Updating card prices ...");
-            //await Task.Run(() => CardPriceUtilities.ImportPricesFromJsonAsync(32000));
+            await Task.Run(() => CardPriceUtilities.ImportPricesFromJsonAsync(32000));
 
             StatusMessageUpdated?.Invoke("Finalizing ...");
             var generateIndices = CreateIndices();

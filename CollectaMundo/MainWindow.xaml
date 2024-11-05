@@ -350,16 +350,6 @@
                 <!--Rulestext filtering-->
                 <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="10,375,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="240" Height="45" Background="White"/>
                 <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,425,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
-
-                <Label Content="Select prices (MCM):" HorizontalAlignment="Left" Margin="10,455,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
-                <ComboBox x:Name="PriceSelector" Width="65" SelectionChanged="PriceSelector_SelectionChanged" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="130,455,0,0">
-                    <ComboBoxItem Content="Avg" />
-                    <ComboBoxItem Content="Avg1" />
-                    <ComboBoxItem Content="Avg7" />
-                    <ComboBoxItem Content="Avg30" />
-                    <ComboBoxItem Content="Low" />
-                    <ComboBoxItem Content="Trend" />
-                </ComboBox>
                 
                 <!--Languages filtering-->
                 <ComboBox x:Name="LanguagesComboBox" HorizontalAlignment="Left" Margin="10,485,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
@@ -724,17 +714,24 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Price" Width="*" SortMemberPath="SelectedPrice">
+                        <DataGridTemplateColumn Header="Price" Width="*" SortMemberPath="NormalPrice">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding SelectedPrice}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding NormalPrice}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Foil Price" Width="*" SortMemberPath="SelectedFoilPrice">
+                        <DataGridTemplateColumn Header="Foil Price" Width="*" SortMemberPath="FoilPrice">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding SelectedFoilPrice}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding FoilPrice}" TextWrapping="Wrap" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Etched Price" Width="*" SortMemberPath="EtchedPrice">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding EtchedPrice}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

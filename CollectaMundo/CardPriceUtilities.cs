@@ -101,12 +101,12 @@ namespace CollectaMundo
 
                 // Prepare SQL statement for batch insertion
                 string insertSql = @"
-            INSERT OR REPLACE INTO cardPrices (uuid, cardhoarderNormal, cardhoarderFoil, cardhoarderEtched, 
-                cardkingdomNormal, cardkingdomFoil, cardkingdomEtched, cardmarketNormal, cardmarketFoil, cardmarketEtched, 
-                cardsphereNormal, cardsphereFoil, cardsphereEtched, tcgplayerNormal, tcgplayerFoil, tcgplayerEtched)
-            VALUES (@uuid, @cardhoarderNormal, @cardhoarderFoil, @cardhoarderEtched, 
-                @cardkingdomNormal, @cardkingdomFoil, @cardkingdomEtched, @cardmarketNormal, @cardmarketFoil, @cardmarketEtched, 
-                @cardsphereNormal, @cardsphereFoil, @cardsphereEtched, @tcgplayerNormal, @tcgplayerFoil, @tcgplayerEtched);";
+                    INSERT OR REPLACE INTO cardPrices (uuid, cardhoarderNormal, cardhoarderFoil, cardhoarderEtched, 
+                        cardkingdomNormal, cardkingdomFoil, cardkingdomEtched, cardmarketNormal, cardmarketFoil, cardmarketEtched, 
+                        cardsphereNormal, cardsphereFoil, cardsphereEtched, tcgplayerNormal, tcgplayerFoil, tcgplayerEtched)
+                    VALUES (@uuid, @cardhoarderNormal, @cardhoarderFoil, @cardhoarderEtched, 
+                        @cardkingdomNormal, @cardkingdomFoil, @cardkingdomEtched, @cardmarketNormal, @cardmarketFoil, @cardmarketEtched, 
+                        @cardsphereNormal, @cardsphereFoil, @cardsphereEtched, @tcgplayerNormal, @tcgplayerFoil, @tcgplayerEtched);";
 
                 var transaction = DBAccess.connection.BeginTransaction();
                 try
