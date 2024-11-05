@@ -1230,6 +1230,10 @@ namespace CollectaMundo
             Inspiredtinkering.Visibility = Visibility.Visible;
             UtilsInfoLabel.Content = string.Empty;
         }
+        private void RetailSelector_SelectionChanged(object sender, RoutedEventArgs e)
+        {
+
+        }
 
         #region Import wizard
 

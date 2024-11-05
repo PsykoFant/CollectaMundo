@@ -241,7 +241,6 @@ namespace CollectaMundo
         }
 
     }
-
     public class PriceList
     {
         public string? Uuid { get; set; }

@@ -5,13 +5,9 @@ TO DO
 'cardsphere'
 'tcgplayer'
 
-etched
-foil
-normal
 
-etched og foil mutual exclusive?
-Opret ny pristabel
+Opdater create views metode:
 
-Genbesøg query plan
-appsettings - hvilken provider
- - (Opdater view og genindlæs)
+Create a new method to update a database view:
+It should get retailer from appsettings.json using this method call:
+ConfigurationManager.GetSetting("PriceInfo:Retailer")

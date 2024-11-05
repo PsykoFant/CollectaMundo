@@ -448,8 +448,16 @@
                 <Button x:Name="CreateBackupButton" Content="Create backup of my collection" HorizontalAlignment="Left" Margin="10,0,0,0" Height="20" Width="180" VerticalAlignment="Top" Click="CreateBackupButton_Click"/>
                 <Button x:Name="ImportCollectionButton" Content="The Import Wizard" HorizontalAlignment="Left" Margin="10,30,0,0" Width="180" Height="20" VerticalAlignment="Top" Click="ImportCollectionButton_Click"/>
                 <Button x:Name="UpdatePricesButton" Content="Update card prices" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,60,0,0" Width="180" Height="20" Click="UpdatePricesButton_Click"/>
-                <Button x:Name="CheckForUpdatesButton" Content="Check for card database updates" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,90,0,0" Width="180" Height="20" Click="CheckForUpdatesButton_Click"/>
-                <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Left" Width="180" Height="20" Margin="10,120,0,0" VerticalAlignment="Top" Visibility="Collapsed" Click="UpdateDbButton_Click"/>
+                <Label Content="Show prices from:" Margin="10,90,0,0"/>
+                <ComboBox x:Name="RetailSelector" SelectionChanged="RetailSelector_SelectionChanged" Width="180" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,120,0,0">
+                    <ComboBoxItem Content="Cardmarket" />
+                    <ComboBoxItem Content="Card Kingdom" />
+                    <ComboBoxItem Content="Cardsphere" />
+                    <ComboBoxItem Content="TCG Player" />
+                    <ComboBoxItem Content="Cardhoarder" />
+                </ComboBox>
+                <Button x:Name="CheckForUpdatesButton" Content="Check for card database updates" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,150,0,0" Width="180" Height="20" Click="CheckForUpdatesButton_Click"/>
+                <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Left" Width="180" Height="20" Margin="10,180,0,0" VerticalAlignment="Top" Visibility="Collapsed" Click="UpdateDbButton_Click"/>
             </Grid>
         </Grid>
         <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="Hidden">
