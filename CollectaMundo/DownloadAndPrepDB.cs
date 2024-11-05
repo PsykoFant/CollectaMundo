@@ -37,9 +37,6 @@ namespace CollectaMundo
         // If it doesn't exist, download it and populate it with custom data, including image data for mana symbols and set images as well as card prices
         public static async Task SystemIntegrityCheckAsync()
         {
-            await PrepareDownloadedCardDatabase();
-
-            /*
             bool redownloadDB = false;
             string downloadMessage = string.Empty;
 
@@ -74,7 +71,7 @@ namespace CollectaMundo
                 {
                     // Redownload card database if the first download failed
                     Debug.WriteLine("Retrying card database download...");
-                    bool redownloadCardDb = await DownloadResourceFileIfNotExistAsync(databasePath, cardDbDownloadUrl, downloadMessage, "card database", true);
+                    bool redownloadCardDb = await DownloadResourceFileIfNotExistAsync(databasePath, cardDbDownloadUrl, downloadMessage, "card database", true, true);
                     if (!redownloadCardDb)
                     {
                         // Handle persistent failure
@@ -88,7 +85,7 @@ namespace CollectaMundo
                 {
                     // Redownload prices database if the second download failed
                     Debug.WriteLine("Retrying prices download...");
-                    bool redownloadPrices = await DownloadResourceFileIfNotExistAsync(CardPriceUtilities.pricesDownloadsPath, pricesDownloadUrl, downloadMessage, "", false);
+                    bool redownloadPrices = await DownloadResourceFileIfNotExistAsync(CardPriceUtilities.pricesDownloadsPath, pricesDownloadUrl, downloadMessage, "card prices", false);
                     if (!redownloadPrices)
                     {
                         // Handle persistent failure
@@ -101,7 +98,6 @@ namespace CollectaMundo
                 // If both downloads (or re-downloads) succeeded, proceed
                 await PrepareDownloadedCardDatabase();
             }
-            */
         }
         public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessageBig, string fileToDownloadForMessage, bool showStatusBar, bool forceMessageUpdate = false)
         {
@@ -145,8 +141,11 @@ namespace CollectaMundo
                 using var contentStream = await response.Content.ReadAsStreamAsync();
                 using var fileStream = new FileStream(downloadTargetPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
 
-                var megabytes = string.Format("{0:0.0} MB", totalBytes / 1000000.0);
-                StatusMessageUpdated?.Invoke($"Downloading {fileToDownloadForMessage} ({megabytes})");
+                if (forceMessageUpdate || !string.IsNullOrEmpty(fileToDownloadForMessage))
+                {
+                    var megabytes = string.Format("{0:0.0} MB", totalBytes / 1000000.0);
+                    StatusMessageUpdated?.Invoke($"Downloading {fileToDownloadForMessage} ({megabytes})");
+                }
 
                 var bytesRead = 0;
                 while ((bytesRead = await contentStream.ReadAsync(buffer)) != 0)
@@ -178,7 +177,6 @@ namespace CollectaMundo
                 }
             }
         }
-
         public static async Task PrepareDownloadedCardDatabase()
         {
             await DBAccess.OpenConnectionAsync();
@@ -195,14 +193,8 @@ namespace CollectaMundo
             StatusMessageUpdated?.Invoke("Generating Set icons ...");
             await Task.Run(GenerateSetKeyruneFromSvgAsync);
 
-
-
             StatusMessageUpdated?.Invoke("Updating card prices ...");
-
-            Stopwatch sw = Stopwatch.StartNew();
             await Task.Run(() => CardPriceUtilities.ImportPricesFromJsonAsync(20000));
-            sw.Stop();
-            Debug.WriteLine($"Importprices took {sw.ElapsedMilliseconds} ms");
 
             StatusMessageUpdated?.Invoke("Finalizing ...");
             var generateIndices = CreateIndices();

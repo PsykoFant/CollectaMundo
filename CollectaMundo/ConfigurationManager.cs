@@ -62,7 +62,7 @@ namespace CollectaMundo
                 MessageBox.Show($"Error creating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        public static void UpdatePriceInfo(string? updatedDate, string? defaultPrice)
+        public static void UpdatePriceInfo(string? updatedDate, string? retailer)
         {
             try
             {
@@ -71,9 +71,9 @@ namespace CollectaMundo
                 {
                     CurrentSettings.PriceInfo.PricesUpdatedDate = updatedDate;
                 }
-                if (defaultPrice != null)
+                if (retailer != null)
                 {
-                    CurrentSettings.PriceInfo.DefaultPrice = defaultPrice;
+                    CurrentSettings.PriceInfo.Retailer = retailer;
                 }
 
                 // Save the updated settings to appsettings.json
@@ -111,10 +111,16 @@ namespace CollectaMundo
 
                 foreach (var part in pathParts)
                 {
-                    if (current == null) return null;
+                    if (current == null)
+                    {
+                        return null;
+                    }
 
                     PropertyInfo? property = current.GetType().GetProperty(part);
-                    if (property == null) return null;
+                    if (property == null)
+                    {
+                        return null;
+                    }
 
                     current = property.GetValue(current, null);
                 }
@@ -145,7 +151,7 @@ namespace CollectaMundo
     public class PriceInfo
     {
         public string PricesUpdatedDate { get; set; } = string.Empty;
-        public string DefaultPrice { get; set; } = "Trend";
+        public string Retailer { get; set; } = "cardmarket";
     }
 
 }

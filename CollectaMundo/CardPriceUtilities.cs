@@ -27,12 +27,12 @@ namespace CollectaMundo
                         Debug.WriteLine($"The date in appsettings ({priceInfoDate}) is older than today ({DateTime.Today})");
                         await MainWindow.ShowStatusWindowAsync(true);
 
-                        if (await DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(pricesDownloadsPath, DownloadAndPrepDB.pricesDownloadUrl, "Updating card prices - please wait...", "Downloading price file...", true))
+                        if (await DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(pricesDownloadsPath, DownloadAndPrepDB.pricesDownloadUrl, "Updating card prices - please wait...", "price file...", true, true))
                         {
                             StatusMessageUpdated?.Invoke("Updating card prices ...");
                             await DBAccess.OpenConnectionAsync();
 
-                            await ImportPricesFromJsonAsync(32000);
+                            await Task.Run(() => ImportPricesFromJsonAsync(20000));
 
                             MainWindow.CurrentInstance.UtilsInfoLabel.Content = "Card prices have been updated ...";
                         }
@@ -138,34 +138,37 @@ namespace CollectaMundo
                     foreach (var token in priceData)
                     {
                         string uuid = token.Key;
-                        var priceList = ParsePriceList(token.Value);
-
-                        if (priceList != null)
+                        if (token.Value != null)
                         {
-                            insertCommand.Parameters["@uuid"].Value = uuid;
-                            insertCommand.Parameters["@cardhoarderNormal"].Value = priceList.CardhoarderNormal ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardhoarderFoil"].Value = priceList.CardhoarderFoil ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardhoarderEtched"].Value = priceList.CardhoarderEtched ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardkingdomNormal"].Value = priceList.CardkingdomNormal ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardkingdomFoil"].Value = priceList.CardkingdomFoil ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardkingdomEtched"].Value = priceList.CardkingdomEtched ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardmarketNormal"].Value = priceList.CardmarketNormal ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardmarketFoil"].Value = priceList.CardmarketFoil ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardmarketEtched"].Value = priceList.CardmarketEtched ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardsphereNormal"].Value = priceList.CardsphereNormal ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardsphereFoil"].Value = priceList.CardsphereFoil ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardsphereEtched"].Value = priceList.CardsphereEtched ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@tcgplayerNormal"].Value = priceList.TcgplayerNormal ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@tcgplayerFoil"].Value = priceList.TcgplayerFoil ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@tcgplayerEtched"].Value = priceList.TcgplayerEtched ?? (object)DBNull.Value;
+                            var priceList = ParsePriceList(token.Value);
 
-                            await insertCommand.ExecuteNonQueryAsync();
-
-                            if (++counter % batchSize == 0)
+                            if (priceList != null)
                             {
-                                await transaction.CommitAsync();
-                                transaction.Dispose();
-                                transaction = DBAccess.connection.BeginTransaction();
+                                insertCommand.Parameters["@uuid"].Value = uuid;
+                                insertCommand.Parameters["@cardhoarderNormal"].Value = priceList.CardhoarderNormal ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardhoarderFoil"].Value = priceList.CardhoarderFoil ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardhoarderEtched"].Value = priceList.CardhoarderEtched ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardkingdomNormal"].Value = priceList.CardkingdomNormal ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardkingdomFoil"].Value = priceList.CardkingdomFoil ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardkingdomEtched"].Value = priceList.CardkingdomEtched ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardmarketNormal"].Value = priceList.CardmarketNormal ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardmarketFoil"].Value = priceList.CardmarketFoil ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardmarketEtched"].Value = priceList.CardmarketEtched ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardsphereNormal"].Value = priceList.CardsphereNormal ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardsphereFoil"].Value = priceList.CardsphereFoil ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardsphereEtched"].Value = priceList.CardsphereEtched ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@tcgplayerNormal"].Value = priceList.TcgplayerNormal ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@tcgplayerFoil"].Value = priceList.TcgplayerFoil ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@tcgplayerEtched"].Value = priceList.TcgplayerEtched ?? (object)DBNull.Value;
+
+                                await insertCommand.ExecuteNonQueryAsync();
+
+                                if (++counter % batchSize == 0)
+                                {
+                                    await transaction.CommitAsync();
+                                    transaction.Dispose();
+                                    transaction = DBAccess.connection.BeginTransaction();
+                                }
                             }
                         }
                     }
@@ -195,9 +198,7 @@ namespace CollectaMundo
             }
         }
 
-        /// <summary>
-        /// Parses the price information for a given uuid from both "paper" and "mtgo" formats.
-        /// </summary>
+        // Parses the price information for a given uuid from both "paper" and "mtgo" formats.
         private static PriceList? ParsePriceList(JToken priceDataToken)
         {
             var priceList = new PriceList();
