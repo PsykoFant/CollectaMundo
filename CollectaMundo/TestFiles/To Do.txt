@@ -8,6 +8,3 @@ TO DO
 
 Opdater create views metode:
 
-Create a new method to update a database view:
-It should get retailer from appsettings.json using this method call:
-ConfigurationManager.GetSetting("PriceInfo:Retailer")

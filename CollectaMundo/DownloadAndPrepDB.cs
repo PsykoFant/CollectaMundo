@@ -37,6 +37,8 @@ namespace CollectaMundo
         // If it doesn't exist, download it and populate it with custom data, including image data for mana symbols and set images as well as card prices
         public static async Task SystemIntegrityCheckAsync()
         {
+            await PrepareDownloadedCardDatabase();
+            /*
             bool redownloadDB = false;
             string downloadMessage = string.Empty;
 
@@ -98,6 +100,7 @@ namespace CollectaMundo
                 // If both downloads (or re-downloads) succeeded, proceed
                 await PrepareDownloadedCardDatabase();
             }
+            */
         }
         public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessageBig, string fileToDownloadForMessage, bool showStatusBar, bool forceMessageUpdate = false)
         {
@@ -624,6 +627,19 @@ namespace CollectaMundo
         {
             try
             {
+                // Get retailer setting from appsettings.json
+                string? retailer = ConfigurationManager.GetSetting("PriceInfo:Retailer") as string;
+
+                // Build the retailer-specific price column names based on the retailer setting
+                string normalPriceColumn = $"p.{retailer}Normal AS NormalPrice";
+                string foilPriceColumn = $"p.{retailer}Foil AS FoilPrice";
+                string etchedPriceColumn = $"p.{retailer}Etched AS EtchedPrice";
+
+                // Drop existing views if they exist
+                string dropAllCardsViewQuery = "DROP VIEW IF EXISTS view_allCards;";
+                string dropMyCollectionViewQuery = "DROP VIEW IF EXISTS view_myCollection;";
+
+                // Create the views
                 string createCardTokenViewQuery = @"
                     CREATE VIEW IF NOT EXISTS view_cardToken AS
                     SELECT 
@@ -654,8 +670,8 @@ namespace CollectaMundo
                     WHERE 
                         t.side IS NULL OR t.side = 'a';
                     ";
-                string createAllCardsViewQuery = @"
-                    CREATE VIEW IF NOT EXISTS view_allCards AS
+                string createAllCardsViewQuery = $@"
+                    CREATE VIEW view_allCards AS
                     SELECT * FROM (
                         SELECT 
                             c.name AS Name, 
@@ -676,9 +692,9 @@ namespace CollectaMundo
                             c.uuid AS Uuid, 
                             c.finishes AS Finishes, 
                             c.side AS Side,
-                            p.cardmarketNormal AS NormalPrice,
-                            p.cardmarketFoil AS FoilPrice,
-							p.cardmarketEtched AS EtchedPrice
+                            {normalPriceColumn},
+                            {foilPriceColumn},
+                            {etchedPriceColumn}
                         FROM cards c
                         JOIN sets s ON c.setCode = s.code
                         LEFT JOIN keyruneImages k ON c.setCode = k.setCode
@@ -715,9 +731,9 @@ namespace CollectaMundo
                             t.uuid AS Uuid, 
                             t.finishes AS Finishes, 
                             t.side AS Side,
-                            p.cardmarketNormal AS NormalPrice,
-                            p.cardmarketFoil AS FoilPrice,
-							p.cardmarketEtched AS EtchedPrice
+                            {normalPriceColumn},
+                            {foilPriceColumn},
+                            {etchedPriceColumn}
                         FROM tokens t 
                         JOIN sets s ON t.setCode = s.tokenSetCode 
                         LEFT JOIN keyruneImages k ON t.setCode = k.setCode
@@ -732,12 +748,11 @@ namespace CollectaMundo
                             WHEN 'B' THEN 3
                             WHEN 'R' THEN 4
                             WHEN 'G' THEN 5
-                            WHEN 'U' THEN 6
                             ELSE 7
                         END;
                     ";
-                string createMyCollectionViewQuery = @"
-                    CREATE VIEW IF NOT EXISTS view_myCollection AS
+                string createMyCollectionViewQuery = $@"
+                    CREATE VIEW view_myCollection AS
                     SELECT * FROM (
                         SELECT                        
                             c.name AS Name,
@@ -763,9 +778,9 @@ namespace CollectaMundo
                             m.language AS Language,
                             m.finish AS Finish,
                             c.side AS Side,
-		                    p.cardmarketNormal AS NormalPrice,
-                            p.cardmarketFoil AS FoilPrice,
-							p.cardmarketEtched AS EtchedPrice
+                            {normalPriceColumn},
+                            {foilPriceColumn},
+                            {etchedPriceColumn}
                         FROM
                             myCollection m
                         JOIN
@@ -776,8 +791,8 @@ namespace CollectaMundo
                             keyruneImages k ON c.setCode = k.setCode
                         LEFT JOIN 
                             uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-	                    LEFT JOIN 
-		                    cardPrices p ON m.uuid = p.uuid	
+                        LEFT JOIN 
+                            cardPrices p ON m.uuid = p.uuid	
                         LEFT JOIN (
                             SELECT 
                                 cc.SetCode, 
@@ -802,7 +817,7 @@ namespace CollectaMundo
                             t.type AS Type,
                             t.keywords AS Keywords,
                             t.text AS RulesText,
-                            NULL AS ManaValue,  -- Tokens do not have manaValue
+                            NULL AS ManaValue,
                             t.finishes AS Finishes,
                             t.uuid AS Uuid,
                             m.id AS CardId,
@@ -812,9 +827,9 @@ namespace CollectaMundo
                             m.language AS Language,
                             m.finish AS Finish,
                             t.side AS Side,
-		                    p.cardmarketNormal AS NormalPrice,
-                            p.cardmarketFoil AS FoilPrice,
-							p.cardmarketEtched AS EtchedPrice
+                            {normalPriceColumn},
+                            {foilPriceColumn},
+                            {etchedPriceColumn}
                         FROM
                             myCollection m
                         JOIN
@@ -825,8 +840,8 @@ namespace CollectaMundo
                             keyruneImages k ON t.setCode = k.setCode
                         LEFT JOIN 
                             uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-	                    LEFT JOIN 
-		                    cardPrices p ON m.uuid = p.uuid
+                        LEFT JOIN 
+                            cardPrices p ON m.uuid = p.uuid
                         WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
                     ) ORDER BY ReleaseDate DESC, SetName, Types,
                         CASE Colors
@@ -844,16 +859,23 @@ namespace CollectaMundo
                     await command.ExecuteNonQueryAsync();
                 }
 
+                using (var command = new SQLiteCommand(dropAllCardsViewQuery, DBAccess.connection))
+                {
+                    await command.ExecuteNonQueryAsync();
+                }
                 using (var command = new SQLiteCommand(createAllCardsViewQuery, DBAccess.connection))
                 {
                     await command.ExecuteNonQueryAsync();
                 }
 
+                using (var command = new SQLiteCommand(dropMyCollectionViewQuery, DBAccess.connection))
+                {
+                    await command.ExecuteNonQueryAsync();
+                }
                 using (var command = new SQLiteCommand(createMyCollectionViewQuery, DBAccess.connection))
                 {
                     await command.ExecuteNonQueryAsync();
                 }
-
             }
             catch (Exception ex)
             {
