@@ -1230,9 +1230,25 @@ namespace CollectaMundo
             Inspiredtinkering.Visibility = Visibility.Visible;
             UtilsInfoLabel.Content = string.Empty;
         }
-        private void RetailSelector_SelectionChanged(object sender, RoutedEventArgs e)
+        private async void RetailSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (RetailSelector.SelectedItem is ComboBoxItem selectedItem)
+            {
+                // Determine the selected retailer based on the ComboBoxItem content
+                string retailer = selectedItem.Content switch
+                {
+                    "Cardmarket" => "cardmarket",
+                    "Card Kingdom" => "cardkingdom",
+                    "Cardsphere" => "cardsphere",
+                    "TCG Player" => "tcgplayer",
+                    "Cardhoarder" => "cardhoarder",
+                    _ => throw new NotImplementedException()
+                };
 
+                // Update the retailer in appsettings
+                ConfigurationManager.UpdatePriceInfo(null, retailer);
+            }
+            await DownloadAndPrepDB.CreateViews();
         }
 
         #region Import wizard

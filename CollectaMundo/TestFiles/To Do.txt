@@ -1,10 +1,5 @@
 TO DO 
-'cardhoarder'
-'cardkingdom'
-'cardmarket'
-'cardsphere'
-'tcgplayer'
-
-
-Opdater create views metode:
+ - Opdater kolonneoverskrifter
+ - Opdater update
+ - Test test test
 

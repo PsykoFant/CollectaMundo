@@ -620,7 +620,7 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during creation of indices: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        private static async Task CreateViews()
+        public static async Task CreateViews()
         {
             try
             {
