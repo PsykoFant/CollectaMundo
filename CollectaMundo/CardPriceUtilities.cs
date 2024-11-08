@@ -25,7 +25,7 @@ namespace CollectaMundo
                     if (priceInfoDate < DateTime.Today)
                     {
                         Debug.WriteLine($"The date in appsettings ({priceInfoDate}) is older than today ({DateTime.Today})");
-                        await MainWindow.ShowStatusWindowAsync(true);
+                        await MainWindow.ShowStatusWindowAsync(true, null, true);
 
                         if (await DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(pricesDownloadsPath, DownloadAndPrepDB.pricesDownloadUrl, "Updating card prices - please wait...", "price file...", true, true))
                         {
@@ -33,6 +33,11 @@ namespace CollectaMundo
                             await DBAccess.OpenConnectionAsync();
 
                             await Task.Run(() => ImportPricesFromJsonAsync(20000));
+
+                            // Reload cards to get updated prices
+                            Task loadAllCards = MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.allCards, MainWindow.CurrentInstance.allCardsQuery, MainWindow.CurrentInstance.AllCardsDataGrid, false);
+                            Task loadMyCollection = MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true);
+                            await Task.WhenAll(loadAllCards, loadMyCollection);
 
                             MainWindow.CurrentInstance.UtilsInfoLabel.Content = "Card prices have been updated ...";
                         }

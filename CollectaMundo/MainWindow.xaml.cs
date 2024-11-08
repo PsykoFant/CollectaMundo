@@ -56,7 +56,7 @@ namespace CollectaMundo
         private static MainWindow? _currentInstance;
 
         // Query strings to load cards into datagrids
-        private readonly string allCardsQuery = "SELECT * FROM view_allCards";
+        public readonly string allCardsQuery = "SELECT * FROM view_allCards";
         public readonly string myCollectionQuery = "SELECT * FROM view_myCollection";
         private readonly string colourQuery = "SELECT* FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ('W', 'U', 'B', 'R', 'G', 'C', 'X') ORDER BY CASE uniqueManaSymbol WHEN 'W' THEN 1 WHEN 'U' THEN 2 WHEN 'B' THEN 3 WHEN 'R' THEN 4 WHEN 'G' THEN 5 WHEN 'C' THEN 6 WHEN 'X' THEN 7 END;";
 
@@ -128,12 +128,12 @@ namespace CollectaMundo
         }
         public async Task LoadDataIntoUiElements()
         {
-            await ShowStatusWindowAsync(true);
+            await ShowStatusWindowAsync(true, "Loading ALL the cards ...");
 
             await DBAccess.OpenConnectionAsync();
 
-            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false, true);
-            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, true);
+            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
+            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true);
             Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
 
             await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons);
@@ -156,19 +156,10 @@ namespace CollectaMundo
         }
 
         #region Load data and populate UI elements
-        public async Task PopulateCardDataGridAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem, bool showLoadScreen)
+        public static async Task PopulateCardDataGridAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
         {
             try
             {
-                if (showLoadScreen)
-                {
-                    await ShowStatusWindowAsync(true);  // Show loading message                
-                    CurrentInstance.StatusLabel.Content = "Loading ALL the cards ... ";
-                    CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed; // Progressbar is for download only
-                    // Force the UI to update
-                    Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
-                }
-
                 cardList.Clear();
 
                 List<CardSet> tempCardList = [];
@@ -196,16 +187,6 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"Error while loading cards: {ex.Message}");
                 MessageBox.Show($"Error while loading cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            finally
-            {
-                CurrentInstance.StatusLabel.Content = string.Empty;
-
-                if (showLoadScreen)
-                {
-                    await ShowStatusWindowAsync(false);
-                    CurrentInstance.ProgressBar.Visibility = Visibility.Visible;
-                }
             }
         }
         private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
@@ -1242,6 +1223,10 @@ namespace CollectaMundo
         {
             if (_isStartup) return;
 
+            await ShowStatusWindowAsync(true, "Reloading cards prices from selected retailer ... ");
+
+            await Task.Delay(100);
+
             await DBAccess.OpenConnectionAsync();
 
             if (RetailSelector.SelectedItem is ComboBoxItem selectedItem)
@@ -1265,15 +1250,14 @@ namespace CollectaMundo
             // Update the db views to load prices from the selected retailer
             await DownloadAndPrepDB.CreateViews();
 
-            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false, false);
-            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, false);
+            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
+            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true);
 
             await Task.WhenAll(loadAllCards, loadMyCollection);
 
-
             DBAccess.CloseConnection();
 
-            await LoadDataIntoUiElements();
+            await ShowStatusWindowAsync(false);
         }
         public void PriceRetailerUiUpdates()
         {
@@ -1445,7 +1429,7 @@ namespace CollectaMundo
             ApplyFilterSelection();
         }
         #endregion
-        public static async Task ShowStatusWindowAsync(bool statusScreenIsVisible)
+        public static async Task ShowStatusWindowAsync(bool statusScreenIsVisible, string? statusLabelContent = null, bool progressBarVisible = false)
         {
             if (CurrentInstance != null)
             {
@@ -1461,6 +1445,17 @@ namespace CollectaMundo
                         CurrentInstance.GridSideMenu.Visibility = Visibility.Collapsed;
                         CurrentInstance.GridCardImages.Visibility = Visibility.Collapsed;
                         CurrentInstance.GridStatus.Visibility = Visibility.Visible;
+
+                        if (progressBarVisible)
+                        {
+                            CurrentInstance.ProgressBar.Visibility = Visibility.Visible;
+                        }
+                        else
+                        {
+                            CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
+                        }
+
+                        CurrentInstance.StatusLabel.Content = statusLabelContent;
                     }
                     else
                     {
@@ -1471,6 +1466,7 @@ namespace CollectaMundo
                         CurrentInstance.GridCardImages.Visibility = Visibility.Visible;
                     }
                 });
+                CurrentInstance.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
             }
         }
     }
