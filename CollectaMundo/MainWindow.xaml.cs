@@ -1232,6 +1232,8 @@ namespace CollectaMundo
         }
         private async void RetailSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            await DBAccess.OpenConnectionAsync();
+
             if (RetailSelector.SelectedItem is ComboBoxItem selectedItem)
             {
                 // Determine the selected retailer based on the ComboBoxItem content
@@ -1249,6 +1251,10 @@ namespace CollectaMundo
                 ConfigurationManager.UpdatePriceInfo(null, retailer);
             }
             await DownloadAndPrepDB.CreateViews();
+
+            DBAccess.CloseConnection();
+
+            await LoadDataIntoUiElements();
         }
 
         #region Import wizard
