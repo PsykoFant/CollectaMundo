@@ -624,13 +624,10 @@ namespace CollectaMundo
         {
             try
             {
-                // Get retailer setting from appsettings.json
-                string? retailer = ConfigurationManager.GetSetting("PriceInfo:Retailer") as string;
-
                 // Build the retailer-specific price column names based on the retailer setting
-                string normalPriceColumn = $"p.{retailer}Normal AS NormalPrice";
-                string foilPriceColumn = $"p.{retailer}Foil AS FoilPrice";
-                string etchedPriceColumn = $"p.{retailer}Etched AS EtchedPrice";
+                string normalPriceColumn = $"p.{MainWindow.CurrentInstance.appsettingsRetailer}Normal AS NormalPrice";
+                string foilPriceColumn = $"p.{MainWindow.CurrentInstance.appsettingsRetailer}Foil AS FoilPrice";
+                string etchedPriceColumn = $"p.{MainWindow.CurrentInstance.appsettingsRetailer}Etched AS EtchedPrice";
 
                 // Drop existing views if they exist
                 string dropAllCardsViewQuery = "DROP VIEW IF EXISTS view_allCards;";

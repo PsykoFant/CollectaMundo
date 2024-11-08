@@ -60,6 +60,9 @@ namespace CollectaMundo
         public readonly string myCollectionQuery = "SELECT * FROM view_myCollection";
         private readonly string colourQuery = "SELECT* FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ('W', 'U', 'B', 'R', 'G', 'C', 'X') ORDER BY CASE uniqueManaSymbol WHEN 'W' THEN 1 WHEN 'U' THEN 2 WHEN 'B' THEN 3 WHEN 'R' THEN 4 WHEN 'G' THEN 5 WHEN 'C' THEN 6 WHEN 'X' THEN 7 END;";
 
+        // Flag to track startup phase
+        private bool _isStartup = true;
+
         // The CardSet object which holds all the cards read from db
         public readonly List<CardSet> allCards = [];
         public List<CardSet> myCards = [];
@@ -76,6 +79,9 @@ namespace CollectaMundo
             [50, 50], // Defaults for AllCardsDataGrid
             [50, 50]  // Defaults for MyCollectionDataGrid
         ];
+
+        // Read the price retailer from appsettings.json
+        public string? appsettingsRetailer = ConfigurationManager.GetSetting("PriceInfo:Retailer") as string;
 
         #endregion
 
@@ -101,7 +107,9 @@ namespace CollectaMundo
             // Set up system
             Loaded += async (sender, args) =>
             {
+                await DownloadAndPrepDB.SystemIntegrityCheckAsync();
                 await LoadDataIntoUiElements();
+                _isStartup = false; // Set flag to false after initial load
             };
 
             // Subscribe to column width changes
@@ -121,8 +129,6 @@ namespace CollectaMundo
         public async Task LoadDataIntoUiElements()
         {
             await ShowStatusWindowAsync(true);
-
-            await DownloadAndPrepDB.SystemIntegrityCheckAsync();
 
             await DBAccess.OpenConnectionAsync();
 
@@ -394,6 +400,8 @@ namespace CollectaMundo
                     SetDefaultTextInComboBox(FinishesComboBox, "FilterFinishesTextBox", filterContext.FinishesDefaultText);
                     SetDefaultTextInComboBox(LanguagesComboBox, "FilterLanguagesTextBox", filterContext.LanguagesDefaultText);
                     SetDefaultTextInComboBox(ConditionsComboBox, "FilterConditionsTextBox", filterContext.ConditionsDefaultText);
+
+                    PriceRetailerUiUpdates();
                 });
             }
             catch (Exception ex)
@@ -1232,6 +1240,8 @@ namespace CollectaMundo
         }
         private async void RetailSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (_isStartup) return;
+
             await DBAccess.OpenConnectionAsync();
 
             if (RetailSelector.SelectedItem is ComboBoxItem selectedItem)
@@ -1249,12 +1259,44 @@ namespace CollectaMundo
 
                 // Update the retailer in appsettings
                 ConfigurationManager.UpdatePriceInfo(null, retailer);
+                appsettingsRetailer = retailer;
             }
+
+            // Update the db views to load prices from the selected retailer
             await DownloadAndPrepDB.CreateViews();
+
+            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false, false);
+            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, false);
+
+            await Task.WhenAll(loadAllCards, loadMyCollection);
+
 
             DBAccess.CloseConnection();
 
             await LoadDataIntoUiElements();
+        }
+        public void PriceRetailerUiUpdates()
+        {
+            string retailer = appsettingsRetailer switch
+            {
+                "cardmarket" => "Cardmarket",
+                "cardkingdom" => "Card Kingdom",
+                "cardsphere" => "Cardsphere",
+                "tcgplayer" => "TCG Player",
+                "cardhoarder" => "Cardhoarder",
+                _ => throw new NotImplementedException()
+            };
+
+            // Find the ComboBoxItem with the matching content
+            var itemToSelect = RetailSelector.Items
+                .OfType<ComboBoxItem>()
+                .FirstOrDefault(item => item.Content.ToString() == retailer);
+
+            // If we found the item, set it as the selected item
+            if (itemToSelect != null)
+            {
+                RetailSelector.SelectedItem = itemToSelect;
+            }
         }
 
         #region Import wizard
@@ -1403,13 +1445,13 @@ namespace CollectaMundo
             ApplyFilterSelection();
         }
         #endregion
-        public static async Task ShowStatusWindowAsync(bool visible)
+        public static async Task ShowStatusWindowAsync(bool statusScreenIsVisible)
         {
             if (CurrentInstance != null)
             {
                 await CurrentInstance.Dispatcher.InvokeAsync(() =>
                 {
-                    if (visible)
+                    if (statusScreenIsVisible)
                     {
                         // Disable top menu buttons
                         CurrentInstance.GridTopMenu.IsEnabled = false;
