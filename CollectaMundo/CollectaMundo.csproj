@@ -10,6 +10,7 @@
 	<Prefer32Bit>false</Prefer32Bit>
 	<GenerateBootstrapperOnBuild>true</GenerateBootstrapperOnBuild>
 	<BootstrapperVariant>GUI</BootstrapperVariant>
+	<RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
@@ -66,9 +67,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="AddToCollectionManager.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
     <Compile Update="Properties\Settings.Designer.cs">
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <AutoGen>True</AutoGen>
