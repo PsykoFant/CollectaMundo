@@ -142,6 +142,9 @@ namespace CollectaMundo
 
             await PopulateFilterUiElements();
 
+            CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
+            CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
+
             CardsToAddListView.ItemsSource = addToCollectionManager.CardItemsToAdd;
             CardsToEditListView.ItemsSource = addToCollectionManager.CardItemsToEdit;
 
@@ -1254,6 +1257,9 @@ namespace CollectaMundo
             Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true);
 
             await Task.WhenAll(loadAllCards, loadMyCollection);
+
+            CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
+            CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
 
             DBAccess.CloseConnection();
 

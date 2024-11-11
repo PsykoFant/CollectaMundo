@@ -3,6 +3,7 @@ using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace CollectaMundo
 {
@@ -246,6 +247,41 @@ namespace CollectaMundo
 
             return priceList;
         }
+
+        // Update column headers 
+        public static void UpdateDataGridHeaders(DataGrid dataGrid)
+        {
+            string currency;
+
+            if (MainWindow.CurrentInstance.appsettingsRetailer == "cardmarket")
+            {
+                currency = "EUR";
+            }
+            else
+            {
+                currency = "USD";
+            }
+
+            // Find and update the column headers for "Price" and "Foil Price"
+            foreach (var column in dataGrid.Columns)
+            {
+                // Check if the header is not null and is a string
+                if (column.Header is string priceHeaderText && priceHeaderText.StartsWith("Price"))
+                {
+                    column.Header = $"Price ({currency})";
+                }
+                else if (column.Header is string foilPriceHeaderText && foilPriceHeaderText.StartsWith("Foil Price"))
+                {
+                    column.Header = $"Foil Price ({currency})";
+                }
+                else if (column.Header is string etchedPriceHeaderText && etchedPriceHeaderText.StartsWith("Etched Price"))
+                {
+                    column.Header = $"Etched Price ({currency})";
+                }
+
+            }
+        }
+
     }
     public class PriceList
     {
