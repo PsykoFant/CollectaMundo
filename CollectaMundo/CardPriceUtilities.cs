@@ -34,6 +34,8 @@ namespace CollectaMundo
 
                             await Task.Run(() => ImportPricesFromJsonAsync(20000));
 
+                            StatusMessageUpdated?.Invoke("Processing new prices and reloading card database ...");
+
                             // Reload cards to get updated prices
                             Task loadAllCards = MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.allCards, MainWindow.CurrentInstance.allCardsQuery, MainWindow.CurrentInstance.AllCardsDataGrid, false);
                             Task loadMyCollection = MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true);
