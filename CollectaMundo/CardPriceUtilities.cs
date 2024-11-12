@@ -33,7 +33,7 @@ namespace CollectaMundo
                             StatusMessageUpdated?.Invoke("Updating card prices ...");
                             await DBAccess.OpenConnectionAsync();
 
-                            await Task.Run(() => ImportPricesFromJsonAsync(20000));
+                            await Task.Run(() => ImportPricesFromJsonAsync());
 
                             StatusMessageUpdated?.Invoke("Processing new prices and reloading card database ...");
 
@@ -77,7 +77,7 @@ namespace CollectaMundo
 
         }
 
-        public static async Task ImportPricesFromJsonAsync(int batchSize)
+        public static async Task ImportPricesFromJsonAsync()
         {
             var totalWatch = Stopwatch.StartNew();
             var stopwatch = new Stopwatch();
@@ -96,14 +96,13 @@ namespace CollectaMundo
                 stopwatch.Stop();
                 Debug.WriteLine($"Time to read JSON file: {stopwatch.ElapsedMilliseconds} ms");
 
-                // Measure the time to parse JSON content with JsonDocument
+                // Measure the time to parse JSON content
                 stopwatch.Restart();
-                using var jsonDocument = JsonDocument.Parse(jsonContent);
-                var root = jsonDocument.RootElement;
+                using JsonDocument doc = JsonDocument.Parse(jsonContent);
+                JsonElement root = doc.RootElement;
 
-                // Extract the createdAt date
                 string createdAt = root.GetProperty("meta").GetProperty("date").GetString()
-                                  ?? throw new InvalidOperationException("Meta:date not found in JSON.");
+                                   ?? throw new InvalidOperationException("Meta:date not found in JSON.");
 
                 var priceData = root.GetProperty("data");
                 stopwatch.Stop();
@@ -122,8 +121,6 @@ namespace CollectaMundo
                 var transaction = DBAccess.connection.BeginTransaction();
                 stopwatch.Stop();
                 Debug.WriteLine($"Time to start transaction and prepare SQL: {stopwatch.ElapsedMilliseconds} ms");
-
-                int counter = 0;
 
                 try
                 {
@@ -150,11 +147,11 @@ namespace CollectaMundo
                     insertCommand.Parameters.Add(new SQLiteParameter("@tcgplayerFoil"));
                     insertCommand.Parameters.Add(new SQLiteParameter("@tcgplayerEtched"));
 
-                    // Iterate through the price data in the JSON using JsonDocument
-                    foreach (var priceToken in priceData.EnumerateObject())
+                    // Iterate through the price data in the JSON
+                    foreach (var item in priceData.EnumerateObject())
                     {
-                        string uuid = priceToken.Name;
-                        var priceList = ParsePriceList(priceToken.Value);
+                        string uuid = item.Name;
+                        var priceList = ParsePriceList(item.Value);
 
                         if (priceList != null)
                         {
@@ -176,22 +173,6 @@ namespace CollectaMundo
                             insertCommand.Parameters["@tcgplayerEtched"].Value = priceList.TcgplayerEtched ?? (object)DBNull.Value;
 
                             await insertCommand.ExecuteNonQueryAsync();
-
-                            // Measure batch commit times
-                            if (++counter % batchSize == 0)
-                            {
-                                stopwatch.Stop();
-                                Debug.WriteLine($"Batch insertion time for {batchSize} records: {stopwatch.ElapsedMilliseconds} ms");
-
-                                stopwatch.Restart();
-                                await transaction.CommitAsync();
-                                transaction.Dispose();
-                                transaction = DBAccess.connection.BeginTransaction();
-                                stopwatch.Stop();
-                                Debug.WriteLine($"Time to commit transaction: {stopwatch.ElapsedMilliseconds} ms");
-
-                                stopwatch.Restart();
-                            }
                         }
                     }
 
@@ -225,6 +206,7 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during price import: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
 
         // Parses the price information for a given uuid from both "paper" and "mtgo" formats.
         private static PriceList? ParsePriceList(JsonElement priceDataToken)

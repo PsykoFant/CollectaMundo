@@ -201,7 +201,7 @@ namespace CollectaMundo
             //stopwatch.Start();
 
             StatusMessageUpdated?.Invoke("Updating card prices ...");
-            await Task.Run(() => CardPriceUtilities.ImportPricesFromJsonAsync(32000));
+            await Task.Run(() => CardPriceUtilities.ImportPricesFromJsonAsync());
 
             //stopwatch.Stop();
             //Debug.WriteLine($"Import prices tog: {stopwatch.ElapsedMilliseconds} ms");
