@@ -11,7 +11,8 @@
         mc:Ignorable="d"
         Title="CollectaMundo"
         Icon="/Resources/Images/Icon.ico" 
-        Width="1920">
+        Width="1920"
+        Height="960">
 
     <!-- Define resources accessible by all elements in this Window -->
     <Window.Resources>
@@ -64,9 +65,9 @@
             <Label x:Name="FirstTimeSetupLabel" Content="" HorizontalAlignment="Center" Margin="0,582,0,0" VerticalAlignment="Top" FontSize="18"/>
         </Grid>
         <Grid x:Name="GridSideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="Hidden">
-            <Grid x:Name="GridFiltering" d:IsHidden="True">
+            <Grid x:Name="GridFiltering">
 
-                <Button x:Name="ClearFiltersButton" Content="Clear filters" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" Width="90" Height="20" Click="ClearFiltersButton_Click" />
+                <Button x:Name="ClearFiltersButton" Content="Clear filters" Margin="10,0,0,0" VerticalAlignment="Top" Height="20" Click="ClearFiltersButton_Click" />
 
                 <!--Color filtering-->
                 <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Right" Margin="0,35,0,0" VerticalAlignment="Top"/>
