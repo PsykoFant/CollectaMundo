@@ -197,14 +197,14 @@ namespace CollectaMundo
             StatusMessageUpdated?.Invoke("Generating Set icons ...");
             await Task.Run(GenerateSetKeyruneFromSvgAsync);
 
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
+            //Stopwatch stopwatch = new();
+            //stopwatch.Start();
 
             StatusMessageUpdated?.Invoke("Updating card prices ...");
-            await Task.Run(() => CardPriceUtilities.ImportPricesFromJsonAsync(16000));
+            await Task.Run(() => CardPriceUtilities.ImportPricesFromJsonAsync(32000));
 
-            stopwatch.Stop();
-            Debug.WriteLine($"Import prices tog: {stopwatch.ElapsedMilliseconds} ms");
+            //stopwatch.Stop();
+            //Debug.WriteLine($"Import prices tog: {stopwatch.ElapsedMilliseconds} ms");
 
             StatusMessageUpdated?.Invoke("Finalizing ...");
             var generateIndices = CreateIndices();
