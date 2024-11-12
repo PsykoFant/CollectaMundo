@@ -20,7 +20,7 @@ PrivilegesRequired=lowest
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
-OutputBaseFilename=CollectaMundoSetup
+OutputBaseFilename=CollectaMundoInstaller
 SetupIconFile=.\CollectaMundo\Resources\Images\Icon.ico
 
 [Languages]
