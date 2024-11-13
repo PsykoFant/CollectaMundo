@@ -188,7 +188,6 @@ namespace CollectaMundo
                     stopwatch.Stop();
                     Debug.WriteLine($"Total insertion time: {stopwatch.ElapsedMilliseconds} ms");
                     await transaction.CommitAsync();
-                    Debug.WriteLine($"Final transaction commit. Total rows inserted: {totalRowsInserted}");
                 }
                 catch (Exception ex)
                 {
