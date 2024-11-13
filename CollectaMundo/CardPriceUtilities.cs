@@ -33,7 +33,7 @@ namespace CollectaMundo
                             StatusMessageUpdated?.Invoke("Updating card prices ...");
                             await DBAccess.OpenConnectionAsync();
 
-                            await Task.Run(() => ImportPricesFromJsonAsync());
+                            await Task.Run(() => ImportPricesFromJsonAsync(32000));
 
                             StatusMessageUpdated?.Invoke("Processing new prices and reloading card database ...");
 
@@ -77,10 +77,11 @@ namespace CollectaMundo
 
         }
 
-        public static async Task ImportPricesFromJsonAsync()
+        public static async Task ImportPricesFromJsonAsync(int batchSize)
         {
             var totalWatch = Stopwatch.StartNew();
             var stopwatch = new Stopwatch();
+            int totalRowsInserted = 0;
 
             try
             {
@@ -96,13 +97,14 @@ namespace CollectaMundo
                 stopwatch.Stop();
                 Debug.WriteLine($"Time to read JSON file: {stopwatch.ElapsedMilliseconds} ms");
 
-                // Measure the time to parse JSON content
+                // Measure the time to parse JSON content with JsonDocument
                 stopwatch.Restart();
-                using JsonDocument doc = JsonDocument.Parse(jsonContent);
-                JsonElement root = doc.RootElement;
+                using var jsonDocument = JsonDocument.Parse(jsonContent);
+                var root = jsonDocument.RootElement;
 
+                // Extract the createdAt date
                 string createdAt = root.GetProperty("meta").GetProperty("date").GetString()
-                                   ?? throw new InvalidOperationException("Meta:date not found in JSON.");
+                                  ?? throw new InvalidOperationException("Meta:date not found in JSON.");
 
                 var priceData = root.GetProperty("data");
                 stopwatch.Stop();
@@ -121,6 +123,8 @@ namespace CollectaMundo
                 var transaction = DBAccess.connection.BeginTransaction();
                 stopwatch.Stop();
                 Debug.WriteLine($"Time to start transaction and prepare SQL: {stopwatch.ElapsedMilliseconds} ms");
+
+                int counter = 0;
 
                 try
                 {
@@ -147,11 +151,11 @@ namespace CollectaMundo
                     insertCommand.Parameters.Add(new SQLiteParameter("@tcgplayerFoil"));
                     insertCommand.Parameters.Add(new SQLiteParameter("@tcgplayerEtched"));
 
-                    // Iterate through the price data in the JSON
-                    foreach (var item in priceData.EnumerateObject())
+                    // Iterate through the price data in the JSON using JsonDocument
+                    foreach (var priceToken in priceData.EnumerateObject())
                     {
-                        string uuid = item.Name;
-                        var priceList = ParsePriceList(item.Value);
+                        string uuid = priceToken.Name;
+                        var priceList = ParsePriceList(priceToken.Value);
 
                         if (priceList != null)
                         {
@@ -172,18 +176,24 @@ namespace CollectaMundo
                             insertCommand.Parameters["@tcgplayerFoil"].Value = priceList.TcgplayerFoil ?? (object)DBNull.Value;
                             insertCommand.Parameters["@tcgplayerEtched"].Value = priceList.TcgplayerEtched ?? (object)DBNull.Value;
 
-                            await insertCommand.ExecuteNonQueryAsync();
+                            int rowsAffected = await insertCommand.ExecuteNonQueryAsync();
+                            totalRowsInserted += rowsAffected;
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"PriceList is null for UUID {uuid}. Skipping.");
                         }
                     }
 
                     stopwatch.Stop();
                     Debug.WriteLine($"Total insertion time: {stopwatch.ElapsedMilliseconds} ms");
-
                     await transaction.CommitAsync();
+                    Debug.WriteLine($"Final transaction commit. Total rows inserted: {totalRowsInserted}");
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
+                    Debug.WriteLine($"Error during batch insertion: {ex.Message}");
                     throw;
                 }
                 finally
@@ -206,9 +216,6 @@ namespace CollectaMundo
                 MessageBox.Show($"Error during price import: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-
-        // Parses the price information for a given uuid from both "paper" and "mtgo" formats.
         private static PriceList? ParsePriceList(JsonElement priceDataToken)
         {
             var priceList = new PriceList();
@@ -253,15 +260,20 @@ namespace CollectaMundo
         {
             if (root.TryGetProperty(retailer, out JsonElement retailerElement) &&
                 retailerElement.TryGetProperty("retail", out JsonElement retailElement) &&
-                retailElement.TryGetProperty(finishType, out JsonElement finishElement) &&
-                finishElement.ValueKind == JsonValueKind.Number &&
-                finishElement.TryGetDecimal(out decimal result))
+                retailElement.TryGetProperty(finishType, out JsonElement finishElement))
             {
-                return result;
+                // Retrieve the first available value from the date-based dictionary
+                foreach (var dateProperty in finishElement.EnumerateObject())
+                {
+                    if (dateProperty.Value.ValueKind == JsonValueKind.Number && dateProperty.Value.TryGetDecimal(out decimal result))
+                    {
+                        return result;
+                    }
+                }
             }
-
             return null;
         }
+
 
 
         // Update column headers 
