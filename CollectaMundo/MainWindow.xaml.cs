@@ -108,6 +108,7 @@ namespace CollectaMundo
             Loaded += async (sender, args) =>
             {
                 await DownloadAndPrepDB.SystemIntegrityCheckAsync();
+                await Task.Delay(100);
                 await LoadDataIntoUiElements();
                 _isStartup = false; // Set flag to false after initial load
             };

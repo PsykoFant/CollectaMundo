@@ -33,7 +33,7 @@ namespace CollectaMundo
                             StatusMessageUpdated?.Invoke("Updating card prices ...");
                             await DBAccess.OpenConnectionAsync();
 
-                            await Task.Run(() => ImportPricesFromJsonAsync(32000));
+                            await Task.Run(() => ImportPricesFromJsonAsync(64000));
 
                             StatusMessageUpdated?.Invoke("Processing new prices and reloading card database ...");
 
@@ -79,135 +79,123 @@ namespace CollectaMundo
 
         public static async Task ImportPricesFromJsonAsync(int batchSize)
         {
-            var totalWatch = Stopwatch.StartNew();
-            var stopwatch = new Stopwatch();
-            int totalRowsInserted = 0;
-
             try
             {
-                // Measure the time to read the JSON file
-                stopwatch.Start();
+                // Measure the time to read and parse the JSON file
                 string jsonFilePath = pricesDownloadsPath;
                 if (!File.Exists(jsonFilePath))
                 {
                     throw new FileNotFoundException($"Price JSON file not found at: {jsonFilePath}");
                 }
 
-                var jsonContent = await File.ReadAllTextAsync(jsonFilePath);
-                stopwatch.Stop();
-                Debug.WriteLine($"Time to read JSON file: {stopwatch.ElapsedMilliseconds} ms");
-
-                // Measure the time to parse JSON content with JsonDocument
-                stopwatch.Restart();
-                using var jsonDocument = JsonDocument.Parse(jsonContent);
-                var root = jsonDocument.RootElement;
+                using var fileStream = new FileStream(jsonFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
+                using var jsonDocument = await JsonDocument.ParseAsync(fileStream);
 
                 // Extract the createdAt date
+                var root = jsonDocument.RootElement;
                 string createdAt = root.GetProperty("meta").GetProperty("date").GetString()
                                   ?? throw new InvalidOperationException("Meta:date not found in JSON.");
-
                 var priceData = root.GetProperty("data");
-                stopwatch.Stop();
-                Debug.WriteLine($"Time to parse JSON content: {stopwatch.ElapsedMilliseconds} ms");
 
                 // Prepare SQL statement and start transaction for batch insertion
-                stopwatch.Restart();
                 string insertSql = @"
-            INSERT OR REPLACE INTO cardPrices (uuid, cardhoarderNormal, cardhoarderFoil, cardhoarderEtched, 
-                cardkingdomNormal, cardkingdomFoil, cardkingdomEtched, cardmarketNormal, cardmarketFoil, cardmarketEtched, 
-                cardsphereNormal, cardsphereFoil, cardsphereEtched, tcgplayerNormal, tcgplayerFoil, tcgplayerEtched)
-            VALUES (@uuid, @cardhoarderNormal, @cardhoarderFoil, @cardhoarderEtched, 
-                @cardkingdomNormal, @cardkingdomFoil, @cardkingdomEtched, @cardmarketNormal, @cardmarketFoil, @cardmarketEtched, 
-                @cardsphereNormal, @cardsphereFoil, @cardsphereEtched, @tcgplayerNormal, @tcgplayerFoil, @tcgplayerEtched);";
+                    INSERT OR REPLACE INTO cardPrices (uuid, cardhoarderNormal, cardhoarderFoil, cardhoarderEtched, 
+                        cardkingdomNormal, cardkingdomFoil, cardkingdomEtched, cardmarketNormal, cardmarketFoil, cardmarketEtched, 
+                        cardsphereNormal, cardsphereFoil, cardsphereEtched, tcgplayerNormal, tcgplayerFoil, tcgplayerEtched)
+                    VALUES (@uuid, @cardhoarderNormal, @cardhoarderFoil, @cardhoarderEtched, 
+                        @cardkingdomNormal, @cardkingdomFoil, @cardkingdomEtched, @cardmarketNormal, @cardmarketFoil, @cardmarketEtched, 
+                        @cardsphereNormal, @cardsphereFoil, @cardsphereEtched, @tcgplayerNormal, @tcgplayerFoil, @tcgplayerEtched);";
 
-                var transaction = DBAccess.connection.BeginTransaction();
-                stopwatch.Stop();
-                Debug.WriteLine($"Time to start transaction and prepare SQL: {stopwatch.ElapsedMilliseconds} ms");
-
-                int counter = 0;
-
-                try
+                if (DBAccess.connection != null)
                 {
-                    // Begin timing for the database insertions
-                    stopwatch.Restart();
-                    using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
-                    insertCommand.Transaction = transaction;
+                    var transaction = DBAccess.connection.BeginTransaction();
 
-                    // Prepare reusable command parameters
-                    insertCommand.Parameters.Add(new SQLiteParameter("@uuid"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@cardhoarderNormal"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@cardhoarderFoil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@cardhoarderEtched"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@cardkingdomNormal"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@cardkingdomFoil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@cardkingdomEtched"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@cardmarketNormal"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@cardmarketFoil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@cardmarketEtched"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@cardsphereNormal"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@cardsphereFoil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@cardsphereEtched"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@tcgplayerNormal"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@tcgplayerFoil"));
-                    insertCommand.Parameters.Add(new SQLiteParameter("@tcgplayerEtched"));
+                    int counter = 0;
 
-                    // Iterate through the price data in the JSON using JsonDocument
-                    foreach (var priceToken in priceData.EnumerateObject())
+                    try
                     {
-                        string uuid = priceToken.Name;
-                        var priceList = ParsePriceList(priceToken.Value);
+                        // Begin timing for the database insertions
+                        using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
+                        insertCommand.Transaction = transaction;
 
-                        if (priceList != null)
-                        {
-                            insertCommand.Parameters["@uuid"].Value = uuid;
-                            insertCommand.Parameters["@cardhoarderNormal"].Value = priceList.CardhoarderNormal ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardhoarderFoil"].Value = priceList.CardhoarderFoil ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardhoarderEtched"].Value = priceList.CardhoarderEtched ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardkingdomNormal"].Value = priceList.CardkingdomNormal ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardkingdomFoil"].Value = priceList.CardkingdomFoil ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardkingdomEtched"].Value = priceList.CardkingdomEtched ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardmarketNormal"].Value = priceList.CardmarketNormal ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardmarketFoil"].Value = priceList.CardmarketFoil ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardmarketEtched"].Value = priceList.CardmarketEtched ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardsphereNormal"].Value = priceList.CardsphereNormal ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardsphereFoil"].Value = priceList.CardsphereFoil ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@cardsphereEtched"].Value = priceList.CardsphereEtched ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@tcgplayerNormal"].Value = priceList.TcgplayerNormal ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@tcgplayerFoil"].Value = priceList.TcgplayerFoil ?? (object)DBNull.Value;
-                            insertCommand.Parameters["@tcgplayerEtched"].Value = priceList.TcgplayerEtched ?? (object)DBNull.Value;
+                        // Prepare reusable command parameters
+                        insertCommand.Parameters.Add(new SQLiteParameter("@uuid"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@cardhoarderNormal"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@cardhoarderFoil"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@cardhoarderEtched"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@cardkingdomNormal"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@cardkingdomFoil"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@cardkingdomEtched"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@cardmarketNormal"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@cardmarketFoil"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@cardmarketEtched"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@cardsphereNormal"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@cardsphereFoil"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@cardsphereEtched"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@tcgplayerNormal"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@tcgplayerFoil"));
+                        insertCommand.Parameters.Add(new SQLiteParameter("@tcgplayerEtched"));
 
-                            int rowsAffected = await insertCommand.ExecuteNonQueryAsync();
-                            totalRowsInserted += rowsAffected;
-                        }
-                        else
+                        // Iterate through the price data in the JSON using JsonDocument
+                        foreach (var priceToken in priceData.EnumerateObject())
                         {
-                            Debug.WriteLine($"PriceList is null for UUID {uuid}. Skipping.");
+                            string uuid = priceToken.Name;
+                            var priceList = ParsePriceList(priceToken.Value);
+
+                            if (priceList != null)
+                            {
+                                insertCommand.Parameters["@uuid"].Value = uuid;
+                                insertCommand.Parameters["@cardhoarderNormal"].Value = priceList.CardhoarderNormal ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardhoarderFoil"].Value = priceList.CardhoarderFoil ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardhoarderEtched"].Value = priceList.CardhoarderEtched ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardkingdomNormal"].Value = priceList.CardkingdomNormal ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardkingdomFoil"].Value = priceList.CardkingdomFoil ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardkingdomEtched"].Value = priceList.CardkingdomEtched ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardmarketNormal"].Value = priceList.CardmarketNormal ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardmarketFoil"].Value = priceList.CardmarketFoil ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardmarketEtched"].Value = priceList.CardmarketEtched ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardsphereNormal"].Value = priceList.CardsphereNormal ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardsphereFoil"].Value = priceList.CardsphereFoil ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@cardsphereEtched"].Value = priceList.CardsphereEtched ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@tcgplayerNormal"].Value = priceList.TcgplayerNormal ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@tcgplayerFoil"].Value = priceList.TcgplayerFoil ?? (object)DBNull.Value;
+                                insertCommand.Parameters["@tcgplayerEtched"].Value = priceList.TcgplayerEtched ?? (object)DBNull.Value;
+
+                                await insertCommand.ExecuteNonQueryAsync();
+                            }
+                            else
+                            {
+                                Debug.WriteLine($"PriceList is null for UUID {uuid}. Skipping.");
+                            }
+
+                            // Batch commit
+                            if (++counter % batchSize == 0)
+                            {
+                                await transaction.CommitAsync();
+                                transaction.Dispose();
+                                transaction = DBAccess.connection.BeginTransaction();
+                            }
                         }
+
+                        await transaction.CommitAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync();
+                        Debug.WriteLine($"Error during batch insertion: {ex.Message}");
+                        throw;
+                    }
+                    finally
+                    {
+                        transaction.Dispose();
                     }
 
-                    stopwatch.Stop();
-                    Debug.WriteLine($"Total insertion time: {stopwatch.ElapsedMilliseconds} ms");
-                    await transaction.CommitAsync();
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync();
-                    Debug.WriteLine($"Error during batch insertion: {ex.Message}");
-                    throw;
-                }
-                finally
-                {
-                    transaction.Dispose();
-                }
+                    // Time to update settings
+                    ConfigurationManager.UpdatePriceInfo(createdAt, null);
 
-                // Time to update settings
-                stopwatch.Restart();
-                ConfigurationManager.UpdatePriceInfo(createdAt, null);
-                stopwatch.Stop();
-                Debug.WriteLine($"Time to update settings: {stopwatch.ElapsedMilliseconds} ms");
-
-                totalWatch.Stop();
-                Debug.WriteLine($"Total time for ImportPricesFromJsonAsync: {totalWatch.ElapsedMilliseconds} ms");
+                    // Clean up the JSON file after processing
+                    File.Delete(jsonFilePath);
+                }
             }
             catch (Exception ex)
             {
@@ -272,8 +260,6 @@ namespace CollectaMundo
             }
             return null;
         }
-
-
 
         // Update column headers 
         public static void UpdateDataGridHeaders(DataGrid dataGrid)

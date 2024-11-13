@@ -16,7 +16,7 @@ using System.Windows.Media.Imaging;
 
 namespace CollectaMundo
 {
-    public class DownloadAndPrepDB
+    public partial class DownloadAndPrepDB
     {
         public static event Action<string>? StatusMessageUpdated;
         private static readonly string databasePath = Path.Combine(DBAccess.SqlitePath, "AllPrintings.sqlite");
@@ -37,9 +37,6 @@ namespace CollectaMundo
         // If it doesn't exist, download it and populate it with custom data, including image data for mana symbols and set images as well as card prices
         public static async Task SystemIntegrityCheckAsync()
         {
-            await PrepareDownloadedCardDatabase();
-
-            /*
             bool redownloadDB = false;
             string downloadMessage = string.Empty;
 
@@ -101,7 +98,6 @@ namespace CollectaMundo
                 // If both downloads (or re-downloads) succeeded, proceed
                 await PrepareDownloadedCardDatabase();
             }
-            */
         }
         public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessageBig, string fileToDownloadForMessage, bool showStatusBar, bool forceMessageUpdate = false)
         {
@@ -197,14 +193,8 @@ namespace CollectaMundo
             StatusMessageUpdated?.Invoke("Generating Set icons ...");
             await Task.Run(GenerateSetKeyruneFromSvgAsync);
 
-            //Stopwatch stopwatch = new();
-            //stopwatch.Start();
-
             StatusMessageUpdated?.Invoke("Updating card prices ...");
-            await Task.Run(() => CardPriceUtilities.ImportPricesFromJsonAsync(32000));
-
-            //stopwatch.Stop();
-            //Debug.WriteLine($"Import prices tog: {stopwatch.ElapsedMilliseconds} ms");
+            await Task.Run(() => CardPriceUtilities.ImportPricesFromJsonAsync(64000));
 
             StatusMessageUpdated?.Invoke("Finalizing ...");
             var generateIndices = CreateIndices();
@@ -260,7 +250,7 @@ namespace CollectaMundo
                 // Extract unique symbols in parallel
                 uniqueManaCosts.AsParallel().ForAll(manaCost =>
                 {
-                    MatchCollection matches = Regex.Matches(manaCost, @"\{(.*?)\}");
+                    MatchCollection matches = MyRegex().Matches(manaCost);
                     foreach (Match match in matches)
                     {
                         string value = match.Groups[1].Value;
@@ -374,7 +364,7 @@ namespace CollectaMundo
                     {
                         byte[] imageBytes = (byte[])reader["manaSymbolImage"];
                         using MemoryStream ms = new(imageBytes);
-                        Bitmap bitmap = new(ms); // Bitmap and SkiaSharp operations are not async
+                        Bitmap bitmap = new(ms);
                         manaSymbolImage.Add(bitmap);
                     }
                 }
@@ -926,6 +916,9 @@ namespace CollectaMundo
             }
             return valuesWithNull;
         }
+
+        [GeneratedRegex(@"\{(.*?)\}")]
+        private static partial Regex MyRegex();
 
 
         #endregion
