@@ -76,19 +76,17 @@ namespace CollectaMundo
             }
 
         }
-
         public static async Task ImportPricesFromJsonAsync(int batchSize)
         {
             try
             {
                 // Measure the time to read and parse the JSON file
-                string jsonFilePath = pricesDownloadsPath;
-                if (!File.Exists(jsonFilePath))
+                if (!File.Exists(pricesDownloadsPath))
                 {
-                    throw new FileNotFoundException($"Price JSON file not found at: {jsonFilePath}");
+                    throw new FileNotFoundException($"Price JSON file not found at: {pricesDownloadsPath}");
                 }
 
-                using var fileStream = new FileStream(jsonFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
+                using var fileStream = new FileStream(pricesDownloadsPath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
                 using var jsonDocument = await JsonDocument.ParseAsync(fileStream);
 
                 // Extract the createdAt date
@@ -190,18 +188,24 @@ namespace CollectaMundo
                         transaction.Dispose();
                     }
 
-                    // Time to update settings
-                    ConfigurationManager.UpdatePriceInfo(createdAt, null);
-
-                    // Clean up the JSON file after processing
-                    File.Delete(jsonFilePath);
                 }
+
+                // Time to update settings
+                ConfigurationManager.UpdatePriceInfo(createdAt, null);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error during price import: {ex.Message}");
                 MessageBox.Show($"Error during price import: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+            finally
+            {
+                // Clean up the JSON file after processing
+                File.Delete(pricesDownloadsPath);
+            }
+
+
+
         }
         private static PriceList? ParsePriceList(JsonElement priceDataToken)
         {

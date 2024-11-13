@@ -37,6 +37,8 @@ namespace CollectaMundo
         // If it doesn't exist, download it and populate it with custom data, including image data for mana symbols and set images as well as card prices
         public static async Task SystemIntegrityCheckAsync()
         {
+            await PrepareDownloadedCardDatabase();
+            /*
             bool redownloadDB = false;
             string downloadMessage = string.Empty;
 
@@ -98,6 +100,7 @@ namespace CollectaMundo
                 // If both downloads (or re-downloads) succeeded, proceed
                 await PrepareDownloadedCardDatabase();
             }
+            */
         }
         public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessageBig, string fileToDownloadForMessage, bool showStatusBar, bool forceMessageUpdate = false)
         {
@@ -184,17 +187,22 @@ namespace CollectaMundo
             StatusMessageUpdated?.Invoke("Creating custom tables ...");
             await Task.Run(CreateCustomTables);
 
+
             StatusMessageUpdated?.Invoke("Generating mana symbols ...");
+            Stopwatch sw = Stopwatch.StartNew();
             await Task.Run(GenerateManaSymbolsFromSvgAsync);
 
-            StatusMessageUpdated?.Invoke("Generating mana cost images ...");
-            await Task.Run(GenerateManaCostImagesAsync);
+            sw.Stop();
+            Debug.WriteLine($"time: {sw.ElapsedMilliseconds} ms");
 
-            StatusMessageUpdated?.Invoke("Generating Set icons ...");
-            await Task.Run(GenerateSetKeyruneFromSvgAsync);
+            //StatusMessageUpdated?.Invoke("Generating mana cost images ...");
+            //await Task.Run(GenerateManaCostImagesAsync);
 
-            StatusMessageUpdated?.Invoke("Updating card prices ...");
-            await Task.Run(() => CardPriceUtilities.ImportPricesFromJsonAsync(64000));
+            //StatusMessageUpdated?.Invoke("Generating Set icons ...");
+            //await Task.Run(GenerateSetKeyruneFromSvgAsync);
+
+            //StatusMessageUpdated?.Invoke("Updating card prices ...");
+            //await Task.Run(() => CardPriceUtilities.ImportPricesFromJsonAsync(64000));
 
             StatusMessageUpdated?.Invoke("Finalizing ...");
             var generateIndices = CreateIndices();
@@ -512,9 +520,13 @@ namespace CollectaMundo
         {
             try
             {
+                // Retrieve SVG data
                 using var httpClient = new HttpClient();
                 var svgData = await httpClient.GetStringAsync(svgUrl);
+
+                // Convert SVG data to stream
                 var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgData));
+
                 var settings = new WpfDrawingSettings
                 {
                     IncludeRuntime = false,
@@ -522,34 +534,51 @@ namespace CollectaMundo
                     OptimizePath = true,
                 };
                 var reader = new FileSvgReader(settings);
+
+                // Attempt to read the SVG into a drawing object
                 var drawing = reader.Read(svgStream);
+
+                // Check for valid drawing object
+                if (drawing == null)
+                {
+                    Debug.WriteLine($"Warning: Drawing object is null for URL: {svgUrl}");
+                    return Array.Empty<byte>();
+                }
 
                 DrawingImage drawingImage = new(drawing);
                 var drawingVisual = new DrawingVisual();
+
+                // Calculate aspect ratio and new dimensions
                 double aspectRatio = drawingImage.Width / drawingImage.Height;
                 int newHeight = 20;
                 int newWidth = (int)(newHeight * aspectRatio);
 
+                // Render the image
                 using (var drawingContext = drawingVisual.RenderOpen())
                 {
                     drawingContext.DrawImage(drawingImage, new Rect(0, 0, newWidth, newHeight));
                 }
+
                 RenderTargetBitmap renderTargetBitmap = new(newWidth, newHeight, 96, 96, PixelFormats.Pbgra32);
                 renderTargetBitmap.Render(drawingVisual);
 
+                // Encode as PNG
                 System.Windows.Media.Imaging.BitmapEncoder encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
                 encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(renderTargetBitmap));
 
                 using MemoryStream memoryStream = new();
                 encoder.Save(memoryStream);
+
                 return memoryStream.ToArray();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error converting SVG to byte array for url {svgUrl}: {ex.Message}");
-                return [];
+                Debug.WriteLine($"Exception details: {ex}");
+                return Array.Empty<byte>();
             }
         }
+
         private static async Task CopyColumnIfEmptyOrAddMissingRowsAsync(string targetTable, string targetColumn, string sourceTable, string sourceColumn)
         {
             try
