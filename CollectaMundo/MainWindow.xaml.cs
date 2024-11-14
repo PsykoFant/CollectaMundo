@@ -57,7 +57,8 @@ namespace CollectaMundo
 
         // Query strings to load cards into datagrids
         public readonly string allCardsQuery = "SELECT * FROM view_allCards";
-        public readonly string myCollectionQuery = "SELECT * FROM view_myCollection";
+        //public readonly string allCardsQuery = "SELECT * FROM view_allCards where Name = 'Balefire Liege'";
+        public readonly string myCollectionQuery = "SELECT * FROM view_myCollection;";
         private readonly string colourQuery = "SELECT* FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ('W', 'U', 'B', 'R', 'G', 'C', 'X') ORDER BY CASE uniqueManaSymbol WHEN 'W' THEN 1 WHEN 'U' THEN 2 WHEN 'B' THEN 3 WHEN 'R' THEN 4 WHEN 'G' THEN 5 WHEN 'C' THEN 6 WHEN 'X' THEN 7 END;";
 
         // Flag to track startup phase
@@ -107,9 +108,17 @@ namespace CollectaMundo
             // Set up system
             Loaded += async (sender, args) =>
             {
+                Stopwatch sw = Stopwatch.StartNew();
+                await ShowStatusWindowAsync(true, "Just a quick system integrity check ...");
                 await DownloadAndPrepDB.SystemIntegrityCheckAsync();
-                await Task.Delay(100);
+                sw.Stop();
+                Debug.WriteLine($"System integrity check: {sw.ElapsedMilliseconds}");
+
+                sw.Restart();
                 await LoadDataIntoUiElements();
+                sw.Stop();
+                Debug.WriteLine($"Load data into UI: {sw.ElapsedMilliseconds}");
+
                 _isStartup = false; // Set flag to false after initial load
             };
 
@@ -347,7 +356,7 @@ namespace CollectaMundo
                 }
 
                 // Set up unwanted types and subtypes
-                HashSet<string> typesToRemove = ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant"];
+                HashSet<string> typesToRemove = ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards"];
                 HashSet<string> subTypesToRemove = ["(creature", "and/or", "type)|Judge", "The"];
 
                 // Populate the filtered data into context
