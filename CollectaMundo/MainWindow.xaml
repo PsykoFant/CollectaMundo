@@ -64,7 +64,7 @@
             <Label x:Name="StatusLabel" Content="" HorizontalAlignment="Center" Margin="0,621,0,0" VerticalAlignment="Top"/>
             <Label x:Name="FirstTimeSetupLabel" Content="" HorizontalAlignment="Center" Margin="0,582,0,0" VerticalAlignment="Top" FontSize="18"/>
         </Grid>
-        <Grid x:Name="GridSideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="Hidden">
+        <Grid x:Name="GridSideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="Visible">
             <Grid x:Name="GridFiltering">
 
                 <Button x:Name="ClearFiltersButton" Content="Clear filters" Margin="10,0,0,0" VerticalAlignment="Top" Height="20" Click="ClearFiltersButton_Click" />
@@ -107,8 +107,55 @@
                 <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="10,195,0,0" VerticalAlignment="Top" Height="20"/>
                 <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="125,195,0,0" VerticalAlignment="Top" Height="20"/>
 
+                <ComboBox x:Name="RarityComboBox" HorizontalAlignment="Left" Margin="10,225,0,0" VerticalAlignment="Top" Width="190" Height="20" DropDownOpened="ComboBox_DropDownOpened">
+                    <ComboBox.Template>
+                        <ControlTemplate TargetType="{x:Type ComboBox}">
+                            <Grid>
+                                <TextBox x:Name="FilterRarityTextBox"
+                                         Background="Transparent"
+                                         TextChanged="FilterTextBox_TextChanged"
+                                         GotFocus="TextBox_GotFocus"
+                                         LostFocus="TextBox_LostFocus"
+                                         Foreground="{TemplateBinding Foreground}"
+                                         Padding="3,3,0,0"
+                                         Margin="0,0,0,0"/>
+                                <ToggleButton x:Name="ToggleButtonRarity"
+                                              Content="Rarities" 
+                                              Focusable="false"
+                                              ClickMode="Press"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+                                              HorizontalAlignment="Right"
+                                              Width="70"/>
+                                <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
+                                    <Border Background="White" BorderThickness="1" BorderBrush="Black">
+                                        <ListBox x:Name="FilterRarityListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
+                                            <ListBox.Resources>
+                                                <Style TargetType="{x:Type ListBoxItem}">
+                                                    <Setter Property="SnapsToDevicePixels" Value="true"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                                <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded" Tag="Rarity">
+                                                                    <ContentPresenter/>
+                                                                </CheckBox>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked"/>
+                                                    <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked"/>
+                                                </Style>
+                                            </ListBox.Resources>
+                                        </ListBox>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </ControlTemplate>
+                    </ComboBox.Template>
+                    <sys:String>&gt;</sys:String>
+                </ComboBox>
+
                 <!--Supertype listbox and filtering-->
-                <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,225,0,0" VerticalAlignment="Top" Width="190" Height="20" DropDownOpened="ComboBox_DropDownOpened">
+                <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,255,0,0" VerticalAlignment="Top" Width="190" Height="20" DropDownOpened="ComboBox_DropDownOpened">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -154,10 +201,10 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <CheckBox x:Name="SuperTypesAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,225,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
+                <CheckBox x:Name="SuperTypesAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
 
                 <!--Card type listbox and filtering-->
-                <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,255,0,0" VerticalAlignment="Top" Width="190" Height="20" DropDownOpened="ComboBox_DropDownOpened">
+                <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,285,0,0" VerticalAlignment="Top" Width="190" Height="20" DropDownOpened="ComboBox_DropDownOpened">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -203,10 +250,10 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <CheckBox x:Name="TypesAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
+                <CheckBox x:Name="TypesAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,285,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
 
                 <!--Subtype listbox and filtering-->
-                <ComboBox x:Name="SubTypesComboBox" HorizontalAlignment="Left" Margin="10,285,0,0" VerticalAlignment="Top" Width="190" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="SubTypesComboBox" HorizontalAlignment="Left" Margin="10,315,0,0" VerticalAlignment="Top" Width="190" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -252,10 +299,10 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <CheckBox x:Name="SubTypesAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,285,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
+                <CheckBox x:Name="SubTypesAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,315,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
 
                 <!--Keywords listbox and filtering-->
-                <ComboBox x:Name="KeywordsComboBox" HorizontalAlignment="Left" Margin="9,315,0,0" VerticalAlignment="Top" Width="190" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="KeywordsComboBox" HorizontalAlignment="Left" Margin="9,345,0,0" VerticalAlignment="Top" Width="190" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -299,10 +346,10 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <CheckBox x:Name="KeywordsAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,315,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
+                <CheckBox x:Name="KeywordsAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,345,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
 
                 <!--Finishes listbox and filtering-->
-                <ComboBox x:Name="FinishesComboBox" HorizontalAlignment="Left" Margin="10,345,0,0" VerticalAlignment="Top" Width="190" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="FinishesComboBox" HorizontalAlignment="Left" Margin="10,375,0,0" VerticalAlignment="Top" Width="190" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -346,14 +393,14 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <CheckBox x:Name="FinishesAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,345,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
+                <CheckBox x:Name="FinishesAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,375,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
 
                 <!--Rulestext filtering-->
-                <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="10,375,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="240" Height="45" Background="White"/>
-                <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,425,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
-                
+                <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="10,405,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="240" Height="45" Background="White"/>
+                <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,450,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
+
                 <!--Languages filtering-->
-                <ComboBox x:Name="LanguagesComboBox" HorizontalAlignment="Left" Margin="10,485,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="LanguagesComboBox" HorizontalAlignment="Left" Margin="10,515,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -397,7 +444,7 @@
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
 
-                <ComboBox x:Name="ConditionsComboBox" HorizontalAlignment="Left" Margin="10,515,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="ConditionsComboBox" HorizontalAlignment="Left" Margin="10,545,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -441,8 +488,8 @@
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
 
-                <CheckBox x:Name="CheckBoxCardsForTrade" Margin="10,540,0,0" Content="Filter on cards for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
-                <CheckBox x:Name="CheckBoxCardsNotForTrade" Margin="10,560,0,0" Content="Filter on cards NOT for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
+                <CheckBox x:Name="CheckBoxCardsForTrade" Margin="10,570,0,0" Content="Filter on cards for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
+                <CheckBox x:Name="CheckBoxCardsNotForTrade" Margin="10,590,0,0" Content="Filter on cards NOT for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
 
             </Grid>
             <Grid x:Name="GridUtilsMenu" Visibility="Collapsed">
@@ -463,7 +510,7 @@
         </Grid>
         <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="Hidden">
             <Image x:Name="LogoSmall" Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="170" Width="170" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" />
-            <ScrollViewer HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+            <ScrollViewer x:Name="FilterSummaryScrollViewer" HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <TextBlock x:Name="FilterSummaryTextBlock" HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
             </ScrollViewer>
             <Grid x:Name="GridSearchAndFilterAllCards">
@@ -1005,7 +1052,7 @@
             <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top">
                 <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="UtilsInfoLabel" Content="" HorizontalAlignment="Center" Margin="8,150,0,0" VerticalAlignment="Top" FontSize="16"/>
-                <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Resources/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698"/>                
+                <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Resources/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698"/>
                 <Grid x:Name="GridImportWizard" Visibility="Collapsed">
                     <Label x:Name="ImportStartLabel" Content="The Import Wizard" HorizontalAlignment="Center" Margin="0,45,0,0" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
                     <Button x:Name="ButtonCancelImport" Content="Cancel Import" HorizontalAlignment="Center" Margin="0,350,410,0" VerticalAlignment="Top" Width="90" Height="20" Visibility="Collapsed" Click="CancelImport_Click"/>

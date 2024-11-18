@@ -1,5 +1,3 @@
 TO DO 
- - Opdater kolonneoverskrifter
- - Opdater update
- - Test test test
+ - Bug - tekst ved first time download
 

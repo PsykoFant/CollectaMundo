@@ -65,6 +65,7 @@ namespace CollectaMundo
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.SuperTypesAndOrCheckBox.IsChecked ?? false, card => card.SuperTypes);
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, card => card.SubTypes);
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, card => card.Keywords);
+                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedRarity, false, card => card.Rarity);
 
                 if (listName == "myCards")
                 {
@@ -152,22 +153,15 @@ namespace CollectaMundo
             }
             return filteredCards;
         }
-        private static IEnumerable<CardSet> FilterByCardProperty(
-            IEnumerable<CardSet>? cards,
-            HashSet<string>? selectedCriteria,
-            bool useAnd,
-            Func<CardSet, string?> propertySelector,
-            bool exclude = false)
+        private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string>? selectedCriteria, bool useAnd, Func<CardSet, string?> propertySelector, bool exclude = false)
         {
             if (cards == null || propertySelector == null)
             {
-                //Debug.WriteLine("Cards or propertySelector is null. Returning empty result.");
-                return Array.Empty<CardSet>();
+                return [];
             }
 
             if (selectedCriteria == null || selectedCriteria.Count == 0)
             {
-                //Debug.WriteLine("SelectedCriteria is null or empty. Returning all cards.");
                 return cards;
             }
 
@@ -176,20 +170,13 @@ namespace CollectaMundo
                 var propertyValue = propertySelector(card) ?? string.Empty;  // Avoid nulls in property values
                 var criteria = propertyValue.Split(separator, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
 
-                //Debug.WriteLine($"Card Property Value: {propertyValue}");
-                //Debug.WriteLine($"Criteria: {string.Join(", ", criteria)}");
-                //Debug.WriteLine($"SelectedCriteria: {string.Join(", ", selectedCriteria)}");
-
                 // Modify match logic to check for substring matches in each criterion
                 bool match = useAnd
                     ? selectedCriteria.All(c => criteria.Any(crit => crit.Contains(c)))
                     : selectedCriteria.Any(c => criteria.Any(crit => crit.Contains(c)));
 
-                //Debug.WriteLine($"Match: {match} | Exclude: {exclude} | Final Inclusion: {(!exclude ? match : !match)}");
-
                 return exclude ? !match : match;
             });
-
         }
 
         private static IEnumerable<CardSet> FilterByManaValue(IEnumerable<CardSet> cards, string compareOperator, double manaValueCompare)
@@ -236,6 +223,7 @@ namespace CollectaMundo
             AppendFilterContent(filterContext.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, "Card subtypes", filterSummary);
             AppendFilterContent(filterContext.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, "Keywords", filterSummary);
             AppendFilterContent(filterContext.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, "Finishes", filterSummary);
+            //AppendFilterContent(filterContext.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, "Finishes", filterSummary);
             AppendFilterContent(filterContext.SelectedLanguages, false, "Languages", filterSummary);
             AppendFilterContent(filterContext.SelectedConditions, false, "Conditions", filterSummary);
 

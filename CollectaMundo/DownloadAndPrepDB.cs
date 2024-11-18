@@ -647,6 +647,7 @@ namespace CollectaMundo
                             c.uuid AS Uuid, 
                             c.finishes AS Finishes, 
                             c.side AS Side,
+                            c.rarity AS Rarity,
                             {normalPriceColumn},
                             {foilPriceColumn},
                             {etchedPriceColumn}
@@ -686,6 +687,7 @@ namespace CollectaMundo
                             t.uuid AS Uuid, 
                             t.finishes AS Finishes, 
                             t.side AS Side,
+                            NULL AS Rarity,
                             {normalPriceColumn},
                             {foilPriceColumn},
                             {etchedPriceColumn}
@@ -733,6 +735,7 @@ namespace CollectaMundo
                             m.language AS Language,
                             m.finish AS Finish,
                             c.side AS Side,
+                            c.rarity AS Rarity,
                             {normalPriceColumn},
                             {foilPriceColumn},
                             {etchedPriceColumn}
@@ -782,6 +785,7 @@ namespace CollectaMundo
                             m.language AS Language,
                             m.finish AS Finish,
                             t.side AS Side,
+                            NULL AS Rarity,
                             {normalPriceColumn},
                             {foilPriceColumn},
                             {etchedPriceColumn}
