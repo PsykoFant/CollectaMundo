@@ -62,7 +62,7 @@ namespace CollectaMundo
         private readonly string colourQuery = "SELECT* FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ('W', 'U', 'B', 'R', 'G', 'C', 'X') ORDER BY CASE uniqueManaSymbol WHEN 'W' THEN 1 WHEN 'U' THEN 2 WHEN 'B' THEN 3 WHEN 'R' THEN 4 WHEN 'G' THEN 5 WHEN 'C' THEN 6 WHEN 'X' THEN 7 END;";
 
         // Flag to track startup phase
-        private bool _isStartup = true;
+        public bool _isStartup = true;
 
         // The CardSet object which holds all the cards read from db
         public readonly List<CardSet> allCards = [];
@@ -107,39 +107,27 @@ namespace CollectaMundo
             // Set up system
             Loaded += async (sender, args) =>
             {
-                Stopwatch sw = Stopwatch.StartNew();
-                //await ShowStatusWindowAsync(true, "Just a quick system integrity check ...");
+                await ShowStatusWindowAsync(true, "Just a quick system integrity check ...");
                 await DownloadAndPrepDB.SystemIntegrityCheckAsync();
-                sw.Stop();
-                Debug.WriteLine($"System integrity check: {sw.ElapsedMilliseconds}");
-
-                sw.Restart();
                 await LoadDataIntoUiElements();
-                sw.Stop();
-                Debug.WriteLine($"Load data into UI: {sw.ElapsedMilliseconds}");
-
                 _isStartup = false; // Set flag to false after initial load
-
-                InitializeEventSubscriptions();  // Subscribe to events after startup
             };
-        }
-
-        #region Load data and populate UI elements
-        private void InitializeEventSubscriptions()
-        {
-            // Subscribe to column width changes
-            AllCardsDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(0);
-            MyCollectionDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(1);
 
             // Update the statusbox with messages from methods in DownloadAndPrepareDB and UpdateDB
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
+
+            // Subscribe to column width changes
+            AllCardsDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(0);
+            MyCollectionDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(1);
 
             // Pick up filtering combobox changes
             AllOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
         }
+
+        #region Load data and populate UI elements
         public async Task LoadDataIntoUiElements()
         {
             await ShowStatusWindowAsync(true, "Loading ALL the cards ...");

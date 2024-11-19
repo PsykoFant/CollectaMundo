@@ -19,6 +19,11 @@ namespace CollectaMundo
         {
             try
             {
+                if (MainWindow.CurrentInstance._isStartup)
+                {
+                    return cards;
+                }
+
                 var filteredCards = cards.AsEnumerable();
 
                 // Find all ComboBoxes and then find the specific ones by their tags
