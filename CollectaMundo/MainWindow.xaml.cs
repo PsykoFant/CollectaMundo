@@ -85,7 +85,6 @@ namespace CollectaMundo
         public string? appsettingsRetailer = ConfigurationManager.GetSetting("PriceInfo:Retailer") as string;
 
         #endregion
-
         public static MainWindow CurrentInstance
         {
             get
@@ -109,7 +108,7 @@ namespace CollectaMundo
             Loaded += async (sender, args) =>
             {
                 Stopwatch sw = Stopwatch.StartNew();
-                await ShowStatusWindowAsync(true, "Just a quick system integrity check ...");
+                //await ShowStatusWindowAsync(true, "Just a quick system integrity check ...");
                 await DownloadAndPrepDB.SystemIntegrityCheckAsync();
                 sw.Stop();
                 Debug.WriteLine($"System integrity check: {sw.ElapsedMilliseconds}");

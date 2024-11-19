@@ -178,7 +178,6 @@ namespace CollectaMundo
                 return exclude ? !match : match;
             });
         }
-
         private static IEnumerable<CardSet> FilterByManaValue(IEnumerable<CardSet> cards, string compareOperator, double manaValueCompare)
         {
             if (MainWindow.CurrentInstance.ManaValueComboBox.SelectedIndex != -1 && MainWindow.CurrentInstance.ManaValueOperatorComboBox.SelectedIndex != -1)
@@ -223,7 +222,7 @@ namespace CollectaMundo
             AppendFilterContent(filterContext.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, "Card subtypes", filterSummary);
             AppendFilterContent(filterContext.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, "Keywords", filterSummary);
             AppendFilterContent(filterContext.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, "Finishes", filterSummary);
-            //AppendFilterContent(filterContext.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, "Finishes", filterSummary);
+            AppendFilterContent(filterContext.SelectedRarity, false, "Rarities", filterSummary);
             AppendFilterContent(filterContext.SelectedLanguages, false, "Languages", filterSummary);
             AppendFilterContent(filterContext.SelectedConditions, false, "Conditions", filterSummary);
 
