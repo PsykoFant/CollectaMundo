@@ -656,14 +656,13 @@ namespace CollectaMundo
                         LEFT JOIN keyruneImages k ON c.setCode = k.setCode
                         LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
                         LEFT JOIN cardPrices p ON c.uuid = p.uuid
-                        LEFT JOIN (
-                            SELECT 
-                                cc.SetCode, 
-                                cc.Name, 
-                                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                            FROM cards cc
-                            GROUP BY cc.SetCode, cc.Name
-                        ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+                            LEFT JOIN (
+                                SELECT 
+                                    cc.Name, 
+                                    GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                                FROM cards cc
+                                GROUP BY cc.Name
+                            ) cg ON c.Name = cg.Name
                         WHERE c.side IS NULL OR c.side = 'a'
 
                         UNION ALL
@@ -752,13 +751,12 @@ namespace CollectaMundo
                         LEFT JOIN 
                             cardPrices p ON m.uuid = p.uuid	
                         LEFT JOIN (
-                            SELECT 
-                                cc.SetCode, 
+                             SELECT 
                                 cc.Name, 
                                 GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                            FROM cards cc
-                            GROUP BY cc.SetCode, cc.Name
-                        ) cg ON c.SetCode = cg.SetCode AND c.Name = cg.Name
+                             FROM cards cc
+                             GROUP BY cc.Name
+                            ) cg ON c.Name = cg.Name
                         WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
                         UNION ALL
                         SELECT
@@ -812,8 +810,51 @@ namespace CollectaMundo
                             ELSE 6
                         END;
                     ";
+                string createAllCardsForDecksViewQuery = $@"
+                    CREATE VIEW view_allCardsForDecks AS
+                    SELECT * FROM (
+                        SELECT 
+                            DISTINCT c.name AS Name, 
+                            c.manaCost AS ManaCost, 
+                            u.manaCostImage AS ManaCostImage, 
+                            c.types AS Types, 
+                            c.colors AS Colors,
+                            c.supertypes AS SuperTypes, 
+                            c.subtypes AS SubTypes, 
+                            c.type AS Type, 
+                            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+                            c.text AS RulesText, 
+                            c.manaValue AS ManaValue, 
+                            c.side AS Side
+                        FROM cards c
+                        JOIN sets s ON c.setCode = s.code
+                        LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                        LEFT JOIN (
+                             SELECT 
+                                cc.Name, 
+                                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                             FROM cards cc
+                             GROUP BY cc.Name
+                            ) cg ON c.Name = cg.Name
+                        WHERE c.side IS NULL OR c.side = 'a'
+                    ) 
+                    ORDER BY Types,
+                        CASE Colors
+                            WHEN 'W' THEN 1
+                            WHEN 'U' THEN 2
+                            WHEN 'B' THEN 3
+                            WHEN 'R' THEN 4
+                            WHEN 'G' THEN 5
+                            ELSE 7
+                        END;
+                    ";
 
                 using (var command = new SQLiteCommand(createCardTokenViewQuery, DBAccess.connection))
+                {
+                    await command.ExecuteNonQueryAsync();
+                }
+
+                using (var command = new SQLiteCommand(createAllCardsForDecksViewQuery, DBAccess.connection))
                 {
                     await command.ExecuteNonQueryAsync();
                 }

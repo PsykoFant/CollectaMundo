@@ -1420,6 +1420,16 @@ namespace CollectaMundo
 
             AddToCollectionManager.AdjustColumnWidths();
         }
+        private void MenuDecks_Click(object sender, RoutedEventArgs e)
+        {
+            ResetGrids();
+            MenuDecksButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
+            LogoSmall.Visibility = Visibility.Visible;
+            GridFiltering.Visibility = Visibility.Visible;
+            GridDecks.Visibility = Visibility.Visible;
+
+            AddToCollectionManager.AdjustColumnWidths();
+        }
         private void MenuUtilsButton_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
@@ -1431,6 +1441,7 @@ namespace CollectaMundo
         {
             MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
             MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
+            MenuDecksButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
             MenuUtilsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
 
             EditStatusTextBlock.Text = string.Empty;
@@ -1439,6 +1450,7 @@ namespace CollectaMundo
             FilterSummaryScrollViewer.Visibility = Visibility.Collapsed;
             GridSearchAndFilterAllCards.Visibility = Visibility.Collapsed;
             GridMyCollection.Visibility = Visibility.Collapsed;
+            GridDecks.Visibility = Visibility.Collapsed;
             GridUtilitiesSection.Visibility = Visibility.Collapsed;
             LanguagesComboBox.Visibility = Visibility.Collapsed;
             ConditionsComboBox.Visibility = Visibility.Collapsed;
