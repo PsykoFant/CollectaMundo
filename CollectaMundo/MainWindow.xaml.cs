@@ -73,6 +73,9 @@ namespace CollectaMundo
         private readonly FilterContext filterContext = new();
         private readonly FilterManager filterManager;
 
+        // The Decks object which holds all the decks read from db
+        public readonly List<Deck> allDecks = [];
+
         // Object of AddToCollectionManager class to access that functionality
         private readonly AddToCollectionManager addToCollectionManager = new();
         public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } =
@@ -137,8 +140,9 @@ namespace CollectaMundo
             Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
             Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true);
             Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
+            Task loadDecks = LoadAllDecksAsync();
 
-            await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons);
+            await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, loadDecks);
 
             DBAccess.CloseConnection();
 
@@ -270,7 +274,7 @@ namespace CollectaMundo
             char[] separator = ['{', '}'];
             return string.Join(",", manaCostRaw.Split(separator, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
         }
-        public async Task LoadColorIcons(List<CardSet> cardList, string query)
+        private async Task LoadColorIcons(List<CardSet> cardList, string query)
         {
             try
             {
@@ -310,6 +314,44 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"Error in CreateColorIcon: {ex.Message}");
                 throw;
+            }
+        }
+        private async Task LoadAllDecksAsync()
+        {
+            try
+            {
+                // SQL query to fetch all decks
+                string query = "SELECT id, deckName, deckDescription, targetFormat FROM myDecks";
+
+                using var command = new SQLiteCommand(query, DBAccess.connection); // Use your database connection
+                using var reader = await command.ExecuteReaderAsync();
+
+                // Clear existing decks to avoid duplicates
+                allDecks.Clear();
+
+                while (await reader.ReadAsync())
+                {
+                    // Map the database row to the Deck object
+                    var deck = new Deck
+                    {
+                        DeckId = reader.GetInt32(0),
+                        DeckName = reader.IsDBNull(1) ? null : reader.GetString(1),
+                        Description = reader.IsDBNull(2) ? null : reader.GetString(2),
+                        TargetFormat = reader.IsDBNull(3) ? null : reader.GetString(3)
+                    };
+
+                    // Add the deck to the allDecks list
+                    allDecks.Add(deck);
+                }
+
+                // Bind the list to the ListView
+                MyDecksListView.ItemsSource = null; // Reset the source to force update
+                MyDecksListView.ItemsSource = allDecks;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error loading decks: {ex.Message}");
+                MessageBox.Show($"Error loading decks: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         public Task PopulateFilterUiElements()
