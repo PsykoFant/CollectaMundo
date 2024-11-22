@@ -1,4 +1,5 @@
 using CollectaMundo.Models;
+using ServiceStack;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
@@ -57,7 +58,6 @@ namespace CollectaMundo
 
         // Query strings to load cards into datagrids
         public readonly string allCardsQuery = "SELECT * FROM view_allCards";
-        //public readonly string allCardsQuery = "SELECT * FROM view_allCards where Name = 'Balefire Liege'";
         public readonly string myCollectionQuery = "SELECT * FROM view_myCollection;";
         private readonly string colourQuery = "SELECT* FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ('W', 'U', 'B', 'R', 'G', 'C', 'X') ORDER BY CASE uniqueManaSymbol WHEN 'W' THEN 1 WHEN 'U' THEN 2 WHEN 'B' THEN 3 WHEN 'R' THEN 4 WHEN 'G' THEN 5 WHEN 'C' THEN 6 WHEN 'X' THEN 7 END;";
 
@@ -75,6 +75,7 @@ namespace CollectaMundo
 
         // The Decks object which holds all the decks read from db
         public readonly List<Deck> allDecks = [];
+        public List<string> allFormats = [];
 
         // Object of AddToCollectionManager class to access that functionality
         private readonly AddToCollectionManager addToCollectionManager = new();
@@ -141,8 +142,9 @@ namespace CollectaMundo
             Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true);
             Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
             Task loadDecks = LoadAllDecksAsync();
+            Task populateAllFormatsList = PopulateAllFormatsListAsync();
 
-            await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, loadDecks);
+            await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, loadDecks, populateAllFormatsList);
 
             DBAccess.CloseConnection();
 
@@ -354,6 +356,48 @@ namespace CollectaMundo
                 MessageBox.Show($"Error loading decks: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        private async Task PopulateAllFormatsListAsync()
+        {
+            try
+            {
+                // Query to fetch column names, excluding 'uuid'
+                string query = @"PRAGMA table_info(cardLegalities);";
+
+                using SQLiteCommand command = new(query, DBAccess.connection);
+                using var reader = (SQLiteDataReader)await command.ExecuteReaderAsync();
+                var columnNames = new List<string>();
+
+                while (await reader.ReadAsync())
+                {
+                    string columnName = reader["name"]?.ToString() ?? string.Empty;
+
+                    // Exclude 'uuid' column
+                    if (!string.Equals(columnName, "uuid", StringComparison.OrdinalIgnoreCase))
+                    {
+                        columnNames.Add(columnName);
+                    }
+                }
+
+                // Assign to allFormats as an array and change first letter to capital
+                allFormats = [.. columnNames];
+                allFormats = allFormats.Select(s => char.ToUpper(s[0]) + s.Substring(1)).ToList();
+                allFormats.Insert(0, "Casual/kitchen table");
+
+                // Update ComboBox ItemsSource on the UI thread
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    NewDeckFormatComboBox.ItemsSource = allFormats;
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error populating formats list: {ex.Message}");
+            }
+        }
+
+
+
+
         public Task PopulateFilterUiElements()
         {
             try
@@ -1466,11 +1510,7 @@ namespace CollectaMundo
         {
             ResetGrids();
             MenuDecksButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
-            LogoSmall.Visibility = Visibility.Visible;
-            GridFiltering.Visibility = Visibility.Visible;
             GridDecks.Visibility = Visibility.Visible;
-
-            AddToCollectionManager.AdjustColumnWidths();
         }
         private void MenuUtilsButton_Click(object sender, RoutedEventArgs e)
         {

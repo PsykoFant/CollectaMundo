@@ -1051,7 +1051,7 @@
             </Grid>
             <Grid x:Name="GridDecks" VerticalAlignment="Top">
                 <Label x:Name="HeadlineDecks" Content="Decks" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <ListView x:Name="MyDecksListView" HorizontalAlignment="Center" VerticalAlignment="Stretch" Margin="0,70,0,0" SelectionMode="Single" Width="600">
+                <ListView x:Name="MyDecksListView" HorizontalAlignment="Center" Margin="0,258,0,-188" SelectionMode="Single" Width="600">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -1083,8 +1083,10 @@
                         </GridView>
                     </ListView.View>
                 </ListView>
-
-
+                <Button x:Name="AddDeckButton" Width="100" Content="Add a new deck" Height="20" Margin="426,72,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                <TextBox x:Name="AddDeckNameTextBox" Width="200" Height="20" Margin="559,72,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Background="White" />
+                <TextBox x:Name="AddDeckDescriptionTextBox" Width="200" Height="100" Margin="559,97,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Background="White" />
+                <ComboBox x:Name="NewDeckFormatComboBox" Width="200" Margin="559,202,0,0" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" />
             </Grid>
             <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top" d:IsHidden="True">
                 <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
