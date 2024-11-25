@@ -509,7 +509,7 @@
             </Grid>
         </Grid>
         <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="Visible">
-            <Image x:Name="LogoSmall" Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="170" Width="170" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" />
+            <Image x:Name="LogoSmall" Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="170" Width="170" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" d:IsHidden="True" />
             <ScrollViewer x:Name="FilterSummaryScrollViewer" HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <TextBlock x:Name="FilterSummaryTextBlock" HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
             </ScrollViewer>
@@ -1050,8 +1050,19 @@
                 </DataGrid>
             </Grid>
             <Grid x:Name="GridDecks" VerticalAlignment="Top">
-                <Label x:Name="HeadlineDecks" Content="Decks" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <ListView x:Name="MyDecksListView" HorizontalAlignment="Center" Margin="0,258,0,-188" SelectionMode="Single" Width="600">
+                <Label x:Name="HeadlineDecks" Content="Deck Management" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
+                <Button x:Name="AddDeckButton" Width="100" Content="Add a new deck" Height="20" Margin="405,135,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="AddDeckButton_Click" d:IsHidden="True" />
+                <Grid x:Name="GridAddNewDeckForm" VerticalAlignment="Top" HorizontalAlignment="Center" Width="600" Margin="0,40,0,0" Visibility="Visible">
+                    <Label HorizontalAlignment="Left" VerticalAlignment="Top" Content="Deck Name:" Height="25" />
+                    <TextBox x:Name="AddDeckNameTextBox" Width="305" Height="20" Margin="160,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Background="White" />
+                    <Label HorizontalAlignment="Left" VerticalAlignment="Top" Content="Deck Desciption (optional):" Margin="0,30,0,0" Height="25" />
+                    <TextBox x:Name="AddDeckDescriptionTextBox" Width="305" Height="40" Margin="160,30,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Background="White" />
+                    <Label HorizontalAlignment="Left" VerticalAlignment="Top" Content="Select a format (optional):" Margin="0,80,0,0" Height="25" />
+                    <ComboBox x:Name="NewDeckFormatComboBox" Width="200" Margin="160,80,0,0" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                    <Button x:Name="SubmitNewDeckButton" Width="100" Content="Submit new deck" Height="20" Margin="365,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="SubmitNewDeckButton_Click" />
+                    <Button x:Name="CancelNewDeckButton" Content="Cancel" Height="20" Margin="470,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="45" Click="CancelNewDeckButton_Click"/>
+                </Grid>
+                <ListView x:Name="MyDecksListView" HorizontalAlignment="Center" Margin="0,160,0,0" SelectionMode="Single" Width="600">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -1083,10 +1094,6 @@
                         </GridView>
                     </ListView.View>
                 </ListView>
-                <Button x:Name="AddDeckButton" Width="100" Content="Add a new deck" Height="20" Margin="426,72,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                <TextBox x:Name="AddDeckNameTextBox" Width="200" Height="20" Margin="559,72,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Background="White" />
-                <TextBox x:Name="AddDeckDescriptionTextBox" Width="200" Height="100" Margin="559,97,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Background="White" />
-                <ComboBox x:Name="NewDeckFormatComboBox" Width="200" Margin="559,202,0,0" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" />
             </Grid>
             <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top" d:IsHidden="True">
                 <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
