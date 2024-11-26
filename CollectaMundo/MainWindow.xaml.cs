@@ -318,7 +318,7 @@ namespace CollectaMundo
                 throw;
             }
         }
-        private async Task LoadAllDecksAsync()
+        public async Task LoadAllDecksAsync()
         {
             try
             {
@@ -1290,51 +1290,7 @@ namespace CollectaMundo
         }
         private async void SubmitNewDeckButton_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                // Get values from UI elements
-                string deckName = AddDeckNameTextBox.Text?.Trim() ?? string.Empty;
-                string deckDescription = AddDeckDescriptionTextBox.Text?.Trim() ?? string.Empty;
-                string targetFormat = NewDeckFormatComboBox.SelectedItem?.ToString() ?? string.Empty;
-
-                // Validate input
-                if (string.IsNullOrWhiteSpace(deckName))
-                {
-                    MessageBox.Show("Your deck must have a name. ", "Oopsie", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                // SQL to insert into myDecks table
-                string insertSql = @"INSERT INTO myDecks (deckName, deckDescription, targetFormat) VALUES (@deckName, @deckDescription, @targetFormat);";
-
-                await DBAccess.OpenConnectionAsync();
-
-                using SQLiteCommand command = new(insertSql, DBAccess.connection);
-
-                // Bind parameters
-                command.Parameters.AddWithValue("@deckName", deckName);
-                command.Parameters.AddWithValue("@deckDescription", deckDescription);
-                command.Parameters.AddWithValue("@targetFormat", targetFormat);
-
-                // Execute the command
-                await command.ExecuteNonQueryAsync();
-
-                // Clear input fields after successful insertion
-                AddDeckNameTextBox.Text = string.Empty;
-                AddDeckDescriptionTextBox.Text = string.Empty;
-                NewDeckFormatComboBox.SelectedIndex = -1;
-
-                await LoadAllDecksAsync();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"An error occurred while adding the deck: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                Debug.WriteLine($"Error in SubmitNewDeckButton_Click: {ex}");
-            }
-            finally
-            {
-                DBAccess.CloseConnection();
-            }
+            await DeckManager.SubmitNewDeck();
         }
         private void CancelNewDeckButton_Click(object sender, RoutedEventArgs e)
         {

@@ -1050,50 +1050,81 @@
                 </DataGrid>
             </Grid>
             <Grid x:Name="GridDecks" VerticalAlignment="Top">
-                <Label x:Name="HeadlineDecks" Content="Deck Management" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <Button x:Name="AddDeckButton" Width="100" Content="Add a new deck" Height="20" Margin="405,135,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="AddDeckButton_Click" d:IsHidden="True" />
-                <Grid x:Name="GridAddNewDeckForm" VerticalAlignment="Top" HorizontalAlignment="Center" Width="600" Margin="0,40,0,0" Visibility="Visible">
-                    <Label HorizontalAlignment="Left" VerticalAlignment="Top" Content="Deck Name:" Height="25" />
-                    <TextBox x:Name="AddDeckNameTextBox" Width="305" Height="20" Margin="160,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Background="White" />
-                    <Label HorizontalAlignment="Left" VerticalAlignment="Top" Content="Deck Desciption (optional):" Margin="0,30,0,0" Height="25" />
-                    <TextBox x:Name="AddDeckDescriptionTextBox" Width="305" Height="40" Margin="160,30,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Background="White" />
-                    <Label HorizontalAlignment="Left" VerticalAlignment="Top" Content="Select a format (optional):" Margin="0,80,0,0" Height="25" />
-                    <ComboBox x:Name="NewDeckFormatComboBox" Width="200" Margin="160,80,0,0" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                    <Button x:Name="SubmitNewDeckButton" Width="100" Content="Submit new deck" Height="20" Margin="365,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="SubmitNewDeckButton_Click" />
-                    <Button x:Name="CancelNewDeckButton" Content="Cancel" Height="20" Margin="470,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="45" Click="CancelNewDeckButton_Click"/>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="40"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" VerticalAlignment="Top" HorizontalAlignment="Center">
+                    <Label x:Name="HeadlineDecks" Content="Deck Management" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 </Grid>
-                <ListView x:Name="MyDecksListView" HorizontalAlignment="Center" Margin="0,160,0,0" SelectionMode="Single" Width="600">
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                        </Style>
-                    </ListView.ItemContainerStyle>
-                    <ListView.View>
-                        <GridView>
-                            <GridViewColumn Header="Deck Name" Width="150">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding DeckName}" TextWrapping="Wrap"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="Description" Width="300">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Description}" TextWrapping="Wrap"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="Target Format" Width="150">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding TargetFormat}"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                        </GridView>
-                    </ListView.View>
-                </ListView>
+                <Grid x:Name="GridDecksOverview" Grid.Row="1" VerticalAlignment="Top" d:IsHidden="True">                    
+                    <Button x:Name="AddDeckButton" Width="100" Content="Add a new deck" Height="20" Margin="0,95,500,0" HorizontalAlignment="Center" VerticalAlignment="Top" Click="AddDeckButton_Click" d:IsHidden="True" />
+                    <Grid x:Name="GridAddNewDeckForm" VerticalAlignment="Top" HorizontalAlignment="Center" Width="600" Margin="0,00,0,0" Visibility="Collapsed">
+                        <Label HorizontalAlignment="Left" VerticalAlignment="Top" Content="Deck Name:" Height="25" />
+                        <TextBox x:Name="AddDeckNameTextBox" Width="305" Height="20" Margin="160,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Background="White" />
+                        <Label HorizontalAlignment="Left" VerticalAlignment="Top" Content="Deck Desciption (optional):" Margin="0,30,0,0" Height="25" />
+                        <TextBox x:Name="AddDeckDescriptionTextBox" Width="305" Height="40" Margin="160,30,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Background="White" TextWrapping="Wrap" />
+                        <Label HorizontalAlignment="Left" VerticalAlignment="Top" Content="Select a format (optional):" Margin="0,80,0,0" Height="25" />
+                        <ComboBox x:Name="NewDeckFormatComboBox" Width="200" Margin="160,80,0,0" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                        <Button x:Name="SubmitNewDeckButton" Width="100" Content="Submit new deck" Height="20" Margin="365,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="SubmitNewDeckButton_Click" />
+                        <Button x:Name="CancelNewDeckButton" Content="Cancel" Height="20" Margin="470,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="45" Click="CancelNewDeckButton_Click"/>
+                    </Grid>
+                    <ListView x:Name="MyDecksListView" HorizontalAlignment="Center" Margin="0,120,0,0" SelectionMode="Single" Width="600">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Deck Name" Width="150">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DeckName}" TextWrapping="Wrap"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="Description" Width="300">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Description}" TextWrapping="Wrap"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="Target Format" Width="140">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding TargetFormat}"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Grid>
+                <Grid x:Name="GridDeckEditor" Grid.Row="1" VerticalAlignment="Top" Visibility="Visible">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="100"/>
+                        <RowDefinition Height="150"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" HorizontalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,300,0" VerticalAlignment="Top" >
+                            <TextBox x:Name="DeckNameTextBox" TextWrapping="Wrap" Text="Deck navn" Width="300" FontSize="18" Background="{x:Null}" BorderBrush="{x:Null}" Height="20" IsReadOnly="True"/>
+                            <Button Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit" VerticalAlignment="Center" FontSize="10" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,25,300,0" VerticalAlignment="Top" >
+                            <TextBox x:Name="DeckDescriptionTextBox" TextWrapping="Wrap" Text="Deck beskrivelse " VerticalAlignment="Top" Width="300" Background="{x:Null}" BorderBrush="{x:Null}" IsReadOnly="True"/>
+                            <Button Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit" VerticalAlignment="Center" FontSize="10" />
+                        </StackPanel>                        
+                    </Grid>
+                    <Grid Grid.Row="1">
+                        <Button Content="&#xE104;" FontFamily="Segoe Fluent Icons" ToolTip="Edit" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Button Content="&#x270E;" FontFamily="Segoe UI Symbol" ToolTip="Edit" />
+                    </Grid>                    
+                </Grid>                
             </Grid>
             <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top" d:IsHidden="True">
                 <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
