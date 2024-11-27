@@ -1102,7 +1102,7 @@
                         </ListView.View>
                     </ListView>
                 </Grid>
-                <Grid x:Name="GridDeckEditor" Grid.Row="1" VerticalAlignment="Top" Visibility="Visible">
+                <Grid x:Name="GridDeckEditor" Grid.Row="1" VerticalAlignment="Top" Visibility="Collapsed">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="100"/>
                         <RowDefinition Height="150"/>
@@ -1110,12 +1110,17 @@
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0" HorizontalAlignment="Center">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,300,0" VerticalAlignment="Top" >
-                            <TextBox x:Name="DeckNameTextBox" TextWrapping="Wrap" Text="Deck navn" Width="300" FontSize="18" Background="{x:Null}" BorderBrush="{x:Null}" Height="20" IsReadOnly="True"/>
-                            <Button Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit" VerticalAlignment="Center" FontSize="10" />
+                            <TextBox x:Name="DeckNameTextBox" TextWrapping="Wrap" Text="Deck navn" Width="300" FontSize="18" Background="{x:Null}" BorderBrush="{x:Null}" Height="25" IsReadOnly="True"/>
+                            <Button x:Name="EditDeckNameButton" Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck name" VerticalAlignment="Center" HorizontalAlignment="Center" Click="EditDeckNameButton_Click" />
+                            <Button x:Name="SaveDeckNameButton" Content="&#xE105;" FontFamily="Segoe MDL2 Assets" ToolTip="Save deck name" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="SaveDeckNameButton_Click" />
+                            <Button x:Name="CancelDeckNameEditButton" Content="&#xE10A;" FontFamily="Segoe MDL2 Assets" ToolTip="Cancel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="CancelDeckNameEditButton_Click" />
+                            
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,25,300,0" VerticalAlignment="Top" >
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,30,300,0" VerticalAlignment="Top" >
                             <TextBox x:Name="DeckDescriptionTextBox" TextWrapping="Wrap" Text="Deck beskrivelse " VerticalAlignment="Top" Width="300" Background="{x:Null}" BorderBrush="{x:Null}" IsReadOnly="True"/>
-                            <Button Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit" VerticalAlignment="Center" FontSize="10" />
+                            <Button x:Name="EditDeckDescriptionButton" Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck description" VerticalAlignment="Center" />
+                            <Button x:Name="SaveDeckDescriptionButton" Content="&#xE105;" FontFamily="Segoe MDL2 Assets" ToolTip="Save deck description" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden"/>
+                            <Button x:Name="CancelDeckDescriptionEditButton" Content="&#xE10A;" FontFamily="Segoe MDL2 Assets" ToolTip="Cancel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden"/>
                         </StackPanel>                        
                     </Grid>
                     <Grid Grid.Row="1">

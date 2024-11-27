@@ -75,6 +75,8 @@ namespace CollectaMundo
 
         // The Decks object which holds all the decks read from db
         public readonly List<Deck> allDecks = [];
+        public Deck CurrentDeck { get; set; } = new Deck();
+
         public List<string> allFormats = [];
 
         // Object of AddToCollectionManager class to access that functionality
@@ -1299,6 +1301,34 @@ namespace CollectaMundo
             NewDeckFormatComboBox.SelectedIndex = -1;
             AddDeckButton.Visibility = Visibility.Visible;
             GridAddNewDeckForm.Visibility = Visibility.Collapsed;
+        }
+        private void EditDeckNameButton_Click(object sender, RoutedEventArgs e)
+        {
+            DeckNameTextBox.IsReadOnly = false;
+            DeckNameTextBox.Background = new SolidColorBrush(Colors.White);
+            EditDeckNameButton.Visibility = Visibility.Hidden;
+            SaveDeckNameButton.Visibility = Visibility.Visible;
+            CancelDeckNameEditButton.Visibility = Visibility.Visible;
+        }
+        private async void SaveDeckNameButton_Click(object sender, RoutedEventArgs e)
+        {
+            await DeckManager.UpdateDeckName();
+
+            DeckNameTextBox.IsReadOnly = true;
+            DeckNameTextBox.Background = null;
+            EditDeckNameButton.Visibility = Visibility.Visible;
+            SaveDeckNameButton.Visibility = Visibility.Hidden;
+            CancelDeckNameEditButton.Visibility = Visibility.Hidden;
+        }
+
+        private void CancelDeckNameEditButton_Click(object sender, RoutedEventArgs e)
+        {
+            DeckNameTextBox.IsReadOnly = true;
+            DeckNameTextBox.Background = null;
+            EditDeckNameButton.Visibility = Visibility.Visible;
+            SaveDeckNameButton.Visibility = Visibility.Hidden;
+            CancelDeckNameEditButton.Visibility = Visibility.Hidden;
+            DeckNameTextBox.Text = CurrentDeck.DeckName;
         }
 
         #endregion
