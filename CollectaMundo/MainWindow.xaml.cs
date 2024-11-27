@@ -1306,13 +1306,15 @@ namespace CollectaMundo
         {
             DeckNameTextBox.IsReadOnly = false;
             DeckNameTextBox.Background = new SolidColorBrush(Colors.White);
+            DeckNameTextBox.Focus();
             EditDeckNameButton.Visibility = Visibility.Hidden;
             SaveDeckNameButton.Visibility = Visibility.Visible;
             CancelDeckNameEditButton.Visibility = Visibility.Visible;
         }
         private async void SaveDeckNameButton_Click(object sender, RoutedEventArgs e)
         {
-            await DeckManager.UpdateDeckName();
+            await DeckManager.UpdateDeckName("deckName", DeckNameTextBox.Text?.Trim() ?? String.Empty);
+            CurrentDeck.DeckName = DeckNameTextBox.Text;
 
             DeckNameTextBox.IsReadOnly = true;
             DeckNameTextBox.Background = null;

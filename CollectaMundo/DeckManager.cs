@@ -95,21 +95,19 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
-        public static async Task UpdateDeckName()
+        public static async Task UpdateDeckName(string columnToUpdate, string valueToUpdate)
         {
             try
             {
-                // Get values from UI elements
-                string deckName = MainWindow.CurrentInstance.DeckNameTextBox.Text?.Trim() ?? string.Empty;
-
                 // Validate input
-                if (string.IsNullOrWhiteSpace(deckName))
+                if (string.IsNullOrWhiteSpace(valueToUpdate) && columnToUpdate == "deckName")
                 {
                     MessageBox.Show("Your deck must have a name. ", "Oopsie", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MainWindow.CurrentInstance.DeckNameTextBox.Text = MainWindow.CurrentInstance.CurrentDeck.DeckName;
                     return;
                 }
 
-                string updateQuery = "UPDATE myDecks SET deckName = @deckName WHERE id = @deckId;";
+                string updateQuery = $"UPDATE myDecks SET {columnToUpdate} = @value WHERE id = @deckId;";
 
                 await DBAccess.OpenConnectionAsync();
 
@@ -125,14 +123,12 @@ namespace CollectaMundo
                     using SQLiteCommand insertCommand = new(updateQuery, DBAccess.connection, transaction);
 
                     // Bind parameters
-                    insertCommand.Parameters.AddWithValue("@deckName", deckName);
+                    insertCommand.Parameters.AddWithValue("@value", valueToUpdate);
                     insertCommand.Parameters.AddWithValue("@deckId", MainWindow.CurrentInstance.CurrentDeck.DeckId);
 
                     // Execute the command
                     await insertCommand.ExecuteNonQueryAsync();
 
-                    // Update the currentDeck object
-                    MainWindow.CurrentInstance.CurrentDeck.DeckName = deckName;
                     transaction.Commit();
                 }
                 catch (Exception ex)
