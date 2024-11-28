@@ -508,7 +508,7 @@
                 <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Left" Width="180" Height="20" Margin="10,180,0,0" VerticalAlignment="Top" Visibility="Collapsed" Click="UpdateDbButton_Click"/>
             </Grid>
         </Grid>
-        <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="Visible">
+        <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="Collapsed">
             <Image x:Name="LogoSmall" Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="170" Width="170" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" d:IsHidden="True" />
             <ScrollViewer x:Name="FilterSummaryScrollViewer" HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <TextBlock x:Name="FilterSummaryTextBlock" HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
@@ -620,7 +620,7 @@
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"
-                          MouseDoubleClick="DataGrid_MouseDoubleClick"
+                          MouseDoubleClick="AddCardsToListView"
                           ScrollViewer.CanContentScroll="True"
                           EnableColumnVirtualization="True"
                           VirtualizingPanel.IsVirtualizing="True"
@@ -901,7 +901,7 @@
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"
-                          MouseDoubleClick="DataGrid_MouseDoubleClick"
+                          MouseDoubleClick="AddCardsToListView"
                           ScrollViewer.CanContentScroll="True"
                           EnableColumnVirtualization="True"
                           VirtualizingPanel.IsVirtualizing="True"
@@ -1069,7 +1069,7 @@
                         <Button x:Name="SubmitNewDeckButton" Width="100" Content="Submit new deck" Height="20" Margin="365,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="SubmitNewDeckButton_Click" />
                         <Button x:Name="CancelNewDeckButton" Content="Cancel" Height="20" Margin="470,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="45" Click="CancelNewDeckButton_Click"/>
                     </Grid>
-                    <ListView x:Name="MyDecksListView" HorizontalAlignment="Center" Margin="0,120,0,0" SelectionMode="Single" Width="600">
+                    <ListView x:Name="MyDecksListView" HorizontalAlignment="Center" Margin="0,120,0,0" SelectionMode="Single" Width="600" MouseDoubleClick="EditDeck">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -1110,8 +1110,8 @@
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0" HorizontalAlignment="Center">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,300,0" VerticalAlignment="Top" >
-                            <TextBox x:Name="DeckNameTextBox" TextWrapping="Wrap" Text="Deck navn" Width="300" FontSize="18" Background="{x:Null}" BorderBrush="{x:Null}" Height="25" IsReadOnly="True"/>
-                            <Button x:Name="EditDeckNameButton" Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck name" VerticalAlignment="Center" HorizontalAlignment="Center" Click="EditDeckNameButton_Click" />
+                            <TextBox x:Name="DeckNameTextBox" TextWrapping="Wrap" Width="300" FontSize="18" Background="{x:Null}" BorderBrush="{x:Null}" Height="25" IsReadOnly="True" MouseDoubleClick="EditDeckInfoButton_Click" KeyDown="DeckNameTextBox_KeyDown"/>
+                            <Button x:Name="EditDeckNameButton" Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck name" VerticalAlignment="Center" HorizontalAlignment="Center" Click="EditDeckInfoButton_Click" />
                             <Button x:Name="SaveDeckNameButton" Content="&#xE105;" FontFamily="Segoe MDL2 Assets" ToolTip="Save deck name" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="SaveDeckNameButton_Click" />
                             <Button x:Name="CancelDeckNameEditButton" Content="&#xE10A;" FontFamily="Segoe MDL2 Assets" ToolTip="Cancel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="CancelDeckNameEditButton_Click" />
                             
@@ -1121,7 +1121,8 @@
                             <Button x:Name="EditDeckDescriptionButton" Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck description" VerticalAlignment="Center" />
                             <Button x:Name="SaveDeckDescriptionButton" Content="&#xE105;" FontFamily="Segoe MDL2 Assets" ToolTip="Save deck description" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden"/>
                             <Button x:Name="CancelDeckDescriptionEditButton" Content="&#xE10A;" FontFamily="Segoe MDL2 Assets" ToolTip="Cancel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden"/>
-                        </StackPanel>                        
+                        </StackPanel>
+                        <Button x:Name="BackToDeckOverviewButton" Content="Back" HorizontalAlignment="Right" VerticalAlignment="Top" Click="BackToDeckOverviewButton_Click" />
                     </Grid>
                     <Grid Grid.Row="1">
                         <Button Content="&#xE104;" FontFamily="Segoe Fluent Icons" ToolTip="Edit" HorizontalAlignment="Center" VerticalAlignment="Center" />

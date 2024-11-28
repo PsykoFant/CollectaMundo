@@ -56,17 +56,13 @@ namespace CollectaMundo
         {
             string query = "SELECT scryfallId FROM cardIdentifiers WHERE uuid = @uuid UNION ALL SELECT scryfallId FROM tokenIdentifiers WHERE uuid = @uuid";
 
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@uuid", uuid);
+            using var command = new SQLiteCommand(query, DBAccess.connection);
+            command.Parameters.AddWithValue("@uuid", uuid);
 
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    if (await reader.ReadAsync())
-                    {
-                        return reader["scryfallId"].ToString();
-                    }
-                }
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return reader["scryfallId"].ToString();
             }
             return null;
         }
@@ -74,20 +70,16 @@ namespace CollectaMundo
         {
             string query = "SELECT promoTypes FROM cards WHERE uuid = @uuid UNION ALL SELECT promoTypes FROM tokens WHERE uuid = @uuid";
 
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@uuid", uuid);
+            using var command = new SQLiteCommand(query, DBAccess.connection);
+            command.Parameters.AddWithValue("@uuid", uuid);
 
-                using (var reader = await command.ExecuteReaderAsync())
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                var promoTypes = reader["promoTypes"]?.ToString();
+                if (!string.IsNullOrEmpty(promoTypes))
                 {
-                    if (await reader.ReadAsync())
-                    {
-                        var promoTypes = reader["promoTypes"]?.ToString();
-                        if (!string.IsNullOrEmpty(promoTypes))
-                        {
-                            return "Promo type: " + promoTypes;
-                        }
-                    }
+                    return "Promo type: " + promoTypes;
                 }
             }
             return null;
@@ -98,20 +90,16 @@ namespace CollectaMundo
                "UNION ALL " +
                "SELECT s.name FROM sets s JOIN tokens t ON s.tokenSetCode = t.setCode WHERE t.uuid = @uuid;";
 
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@uuid", uuid);
+            using var command = new SQLiteCommand(query, DBAccess.connection);
+            command.Parameters.AddWithValue("@uuid", uuid);
 
-                using (var reader = await command.ExecuteReaderAsync())
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                var imageSet = reader["name"]?.ToString();
+                if (!string.IsNullOrEmpty(imageSet))
                 {
-                    if (await reader.ReadAsync())
-                    {
-                        var imageSet = reader["name"]?.ToString();
-                        if (!string.IsNullOrEmpty(imageSet))
-                        {
-                            return imageSet;
-                        }
-                    }
+                    return imageSet;
                 }
             }
             return null;
@@ -119,17 +107,13 @@ namespace CollectaMundo
         private static async Task<bool> IsDoubleSidedCardAsync(string uuid)
         {
             string query = "SELECT side FROM cards WHERE uuid = @uuid UNION ALL SELECT side FROM tokens WHERE uuid = @uuid";
-            using (var command = new SQLiteCommand(query, DBAccess.connection))
-            {
-                command.Parameters.AddWithValue("@uuid", uuid);
+            using var command = new SQLiteCommand(query, DBAccess.connection);
+            command.Parameters.AddWithValue("@uuid", uuid);
 
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    if (await reader.ReadAsync())
-                    {
-                        return reader["side"].ToString() == "a";
-                    }
-                }
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return reader["side"].ToString() == "a";
             }
             return false;
         }

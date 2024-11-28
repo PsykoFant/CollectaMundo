@@ -7,11 +7,64 @@ namespace CollectaMundo
 {
     public class DeckManager
     {
+        public static async Task LoadDeck(int deckId)
+        {
+            try
+            {
+                string loadDeckQuery = @"SELECT deckName, deckDescription, targetFormat FROM myDecks WHERE id = @id;";
+
+                await DBAccess.OpenConnectionAsync();
+
+                using var command = new SQLiteCommand(loadDeckQuery, DBAccess.connection);
+                command.Parameters.AddWithValue("@id", deckId);
+                using var reader = await command.ExecuteReaderAsync();
+
+                if (await reader.ReadAsync()) // Ensure there's a row to read
+                {
+                    string deckName = reader["deckName"]?.ToString() ?? string.Empty;
+                    string deckDescription = reader["deckDescription"]?.ToString() ?? string.Empty;
+                    string targetFormat = reader["targetFormat"]?.ToString() ?? string.Empty;
+
+                    Debug.WriteLine($"Deck Name: {deckName}, Description: {deckDescription}, Target Format: {targetFormat}");
+
+                    // Update the currentDeck object
+                    MainWindow.CurrentInstance.CurrentDeck = new Deck
+                    {
+                        DeckId = deckId,
+                        DeckName = deckName,
+                        Description = deckDescription,
+                        TargetFormat = targetFormat
+                    };
+
+                    // Go to deck Editor to edit new deck
+                    MainWindow.CurrentInstance.GridDecksOverview.Visibility = Visibility.Collapsed;
+                    MainWindow.CurrentInstance.HeadlineDecks.Content = "Deck Editor";
+                    MainWindow.CurrentInstance.DeckNameTextBox.Text = deckName;
+                    MainWindow.CurrentInstance.DeckDescriptionTextBox.Text = deckDescription;
+                    MainWindow.CurrentInstance.GridDeckEditor.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    Debug.WriteLine($"No deck found with ID: {deckId}");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading deck: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error loading deck: {ex}");
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
+
+        }
         public static async Task SubmitNewDeck()
         {
             try
             {
                 // Get values from UI elements
+                int deckId = 0;
                 string deckName = MainWindow.CurrentInstance.AddDeckNameTextBox.Text?.Trim() ?? string.Empty;
                 string deckDescription = MainWindow.CurrentInstance.AddDeckDescriptionTextBox.Text?.Trim() ?? string.Empty;
                 string targetFormat = MainWindow.CurrentInstance.NewDeckFormatComboBox.SelectedItem?.ToString() ?? string.Empty;
@@ -52,12 +105,12 @@ namespace CollectaMundo
 
                     // Get the last inserted DeckId
                     using SQLiteCommand getIdCommand = new(getIdSql, DBAccess.connection, transaction);
-                    int newDeckId = Convert.ToInt32(await getIdCommand.ExecuteScalarAsync());
+                    deckId = Convert.ToInt32(await getIdCommand.ExecuteScalarAsync());
 
                     // Update the currentDeck object
                     MainWindow.CurrentInstance.CurrentDeck = new Deck
                     {
-                        DeckId = newDeckId,
+                        DeckId = deckId,
                         DeckName = deckName,
                         Description = deckDescription,
                         TargetFormat = targetFormat
@@ -79,11 +132,7 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.GridAddNewDeckForm.Visibility = Visibility.Collapsed;
 
                 // Go to deck Editor to edit new deck
-                MainWindow.CurrentInstance.GridDecksOverview.Visibility = Visibility.Collapsed;
-                MainWindow.CurrentInstance.HeadlineDecks.Content = "Deck Editor";
-                MainWindow.CurrentInstance.DeckNameTextBox.Text = deckName;
-                MainWindow.CurrentInstance.DeckDescriptionTextBox.Text = deckDescription;
-                MainWindow.CurrentInstance.GridDeckEditor.Visibility = Visibility.Visible;
+                await LoadDeck(deckId);
             }
             catch (Exception ex)
             {
@@ -95,7 +144,7 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
-        public static async Task UpdateDeckName(string columnToUpdate, string valueToUpdate)
+        public static async Task UpdateDeckInfo(string columnToUpdate, string valueToUpdate)
         {
             try
             {

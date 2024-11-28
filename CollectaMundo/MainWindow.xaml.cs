@@ -1205,7 +1205,7 @@ namespace CollectaMundo
 
 
         // Add cards to add or edit listview
-        private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void AddCardsToListView(object sender, MouseButtonEventArgs e)
         {
             // Check if the sender is a DataGrid and has a selected item
             if (sender is DataGrid grid && grid.SelectedItem != null)
@@ -1285,6 +1285,17 @@ namespace CollectaMundo
         #endregion
 
         #region Deck Management
+        private async void EditDeck(object sender, MouseButtonEventArgs e)
+        {
+            // Check if the sender is a listview and has a selected item
+            if (sender is ListView grid && grid.SelectedItem is Deck selectedDeck)
+            {
+                await DeckManager.LoadDeck(selectedDeck.DeckId);
+                grid.UnselectAll();
+            }
+        }
+
+        // Adding new deck
         private void AddDeckButton_Click(object sender, RoutedEventArgs e)
         {
             AddDeckButton.Visibility = Visibility.Collapsed;
@@ -1302,35 +1313,77 @@ namespace CollectaMundo
             AddDeckButton.Visibility = Visibility.Visible;
             GridAddNewDeckForm.Visibility = Visibility.Collapsed;
         }
-        private void EditDeckNameButton_Click(object sender, RoutedEventArgs e)
+
+        // Edit deck name
+        private void EditDeckInfoButton_Click(object sender, RoutedEventArgs e)
         {
-            DeckNameTextBox.IsReadOnly = false;
-            DeckNameTextBox.Background = new SolidColorBrush(Colors.White);
-            DeckNameTextBox.Focus();
-            EditDeckNameButton.Visibility = Visibility.Hidden;
-            SaveDeckNameButton.Visibility = Visibility.Visible;
-            CancelDeckNameEditButton.Visibility = Visibility.Visible;
+            TextBox textBoxToEdit = new();
+            Button editButton = new();
+            Button saveButton = new();
+            Button cancelButton = new();
+
+            if (sender is TextBox textBox)
+            {
+                textBoxToEdit = textBox;
+
+                if (textBox.Name == "DeckNameTextBox")
+                {
+                    editButton = EditDeckNameButton;
+                    saveButton = SaveDeckNameButton;
+                    cancelButton = CancelDeckNameEditButton;
+                }
+
+            }
+            else if (sender is Button button)
+            {
+                editButton = button;
+
+                if (button.Name == "EditDeckNameButton")
+                {
+                    textBoxToEdit = DeckNameTextBox;
+                    saveButton = SaveDeckNameButton;
+                    cancelButton = CancelDeckNameEditButton;
+                }
+            }
+
+            textBoxToEdit.IsReadOnly = false;
+            textBoxToEdit.Background = new SolidColorBrush(Colors.White);
+            textBoxToEdit.Focus();
+            textBoxToEdit.SelectAll();
+            editButton.Visibility = Visibility.Hidden;
+            saveButton.Visibility = Visibility.Visible;
+            cancelButton.Visibility = Visibility.Visible;
         }
         private async void SaveDeckNameButton_Click(object sender, RoutedEventArgs e)
         {
-            await DeckManager.UpdateDeckName("deckName", DeckNameTextBox.Text?.Trim() ?? String.Empty);
+            await DeckManager.UpdateDeckInfo("deckName", DeckNameTextBox.Text?.Trim() ?? String.Empty);
             CurrentDeck.DeckName = DeckNameTextBox.Text;
 
-            DeckNameTextBox.IsReadOnly = true;
-            DeckNameTextBox.Background = null;
-            EditDeckNameButton.Visibility = Visibility.Visible;
-            SaveDeckNameButton.Visibility = Visibility.Hidden;
-            CancelDeckNameEditButton.Visibility = Visibility.Hidden;
+            HideDeckEditTextBox(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton);
         }
-
+        private async void DeckNameTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter) // Check if the pressed key is Enter
+            {
+                await DeckManager.UpdateDeckInfo("deckName", DeckNameTextBox.Text?.Trim() ?? String.Empty);
+                CurrentDeck.DeckName = DeckNameTextBox.Text;
+                HideDeckEditTextBox(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton);
+            }
+        }
         private void CancelDeckNameEditButton_Click(object sender, RoutedEventArgs e)
         {
-            DeckNameTextBox.IsReadOnly = true;
-            DeckNameTextBox.Background = null;
-            EditDeckNameButton.Visibility = Visibility.Visible;
-            SaveDeckNameButton.Visibility = Visibility.Hidden;
-            CancelDeckNameEditButton.Visibility = Visibility.Hidden;
+            HideDeckEditTextBox(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton);
             DeckNameTextBox.Text = CurrentDeck.DeckName;
+        }
+        // Edit deck description
+
+        private static void HideDeckEditTextBox(TextBox textBox, Button editButton, Button saveButton, Button cancelButton)
+        {
+            textBox.IsReadOnly = true;
+            textBox.Background = null;
+            editButton.Visibility = Visibility.Visible;
+            saveButton.Visibility = Visibility.Hidden;
+            cancelButton.Visibility = Visibility.Hidden;
         }
 
         #endregion
@@ -1642,6 +1695,14 @@ namespace CollectaMundo
             }
         }
 
+        private async void BackToDeckOverviewButton_Click(object sender, RoutedEventArgs e)
+        {
+            await DBAccess.OpenConnectionAsync();
+            await LoadAllDecksAsync();
+            DBAccess.CloseConnection();
 
+            GridDeckEditor.Visibility = Visibility.Collapsed;
+            GridDecksOverview.Visibility = Visibility.Visible;
+        }
     }
 }
