@@ -73,11 +73,17 @@ namespace CollectaMundo
         private readonly FilterContext filterContext = new();
         private readonly FilterManager filterManager;
 
-        // The Decks object which holds all the decks read from db
+        // Objects for deck management
         public readonly List<Deck> allDecks = [];
         public Deck CurrentDeck { get; set; } = new Deck();
-
         public List<string> allFormats = [];
+
+        // Common variables used for deck edits
+        TextBox textBoxToEdit = new();
+        Button editButton = new();
+        Button saveButton = new();
+        Button cancelButton = new();
+        string columnToEdit = string.Empty;
 
         // Object of AddToCollectionManager class to access that functionality
         private readonly AddToCollectionManager addToCollectionManager = new();
@@ -1317,11 +1323,95 @@ namespace CollectaMundo
         // Edit deck name
         private void EditDeckInfoButton_Click(object sender, RoutedEventArgs e)
         {
-            TextBox textBoxToEdit = new();
-            Button editButton = new();
-            Button saveButton = new();
-            Button cancelButton = new();
+            void HandleEditing(TextBox currentTextBox, Button currentEditButton, Button currentSaveButton, Button currentCancelButton,
+                               TextBox otherTextBox, Button otherEditButton, Button otherSaveButton, Button otherCancelButton, string? otherValue)
+            {
+                textBoxToEdit = currentTextBox;
+                editButton = currentEditButton;
+                saveButton = currentSaveButton;
+                cancelButton = currentCancelButton;
 
+                // If the other text box is being edited, cancel it
+                if (!otherTextBox.IsReadOnly)
+                {
+                    CancelDeckEdit(otherTextBox, otherEditButton, otherSaveButton, otherCancelButton, otherValue);
+                }
+            }
+
+            if (sender is TextBox textBox)
+            {
+                if (textBox.Name == "DeckNameTextBox")
+                {
+                    HandleEditing(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton,
+                                  DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton,
+                                  CurrentDeck.Description);
+                }
+                else if (textBox.Name == "DeckDescriptionTextBox")
+                {
+                    HandleEditing(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton,
+                                  DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton,
+                                  CurrentDeck.DeckName);
+                }
+            }
+            else if (sender is Button button)
+            {
+                if (button.Name == "EditDeckNameButton")
+                {
+                    HandleEditing(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton,
+                                  DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton,
+                                  CurrentDeck.Description);
+                }
+                else if (button.Name == "EditDeckDescriptionButton")
+                {
+                    HandleEditing(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton,
+                                  DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton,
+                                  CurrentDeck.DeckName);
+                }
+            }
+
+            // Enable editing for the selected text box
+            textBoxToEdit.IsReadOnly = false;
+            textBoxToEdit.Background = new SolidColorBrush(Colors.White);
+            textBoxToEdit.Focus();
+            textBoxToEdit.SelectAll();
+
+            // Adjust visibility of buttons
+            editButton.Visibility = Visibility.Hidden;
+            saveButton.Visibility = Visibility.Visible;
+            cancelButton.Visibility = Visibility.Visible;
+        }
+
+        private async void SaveDeckInfoButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button)
+            {
+                saveButton = button;
+
+                if (button.Name == "SaveDeckNameButton")
+                {
+                    textBoxToEdit = DeckNameTextBox;
+                    editButton = EditDeckNameButton;
+                    cancelButton = CancelDeckNameEditButton;
+                    columnToEdit = "deckName";
+
+                    CurrentDeck.DeckName = DeckNameTextBox.Text;
+                }
+                else if (button.Name == "SaveDeckDescriptionButton")
+                {
+                    textBoxToEdit = DeckDescriptionTextBox;
+                    editButton = EditDeckDescriptionButton;
+                    cancelButton = CancelDeckDescriptionEditButton;
+                    columnToEdit = "deckDescription";
+
+                    CurrentDeck.Description = DeckDescriptionTextBox.Text;
+                }
+            }
+
+            await DeckManager.UpdateDeckInfo(columnToEdit, textBoxToEdit.Text?.Trim() ?? String.Empty);
+            HideDeckEditTextBox(textBoxToEdit, editButton, saveButton, cancelButton);
+        }
+        private async void DeckInfoTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
             if (sender is TextBox textBox)
             {
                 textBoxToEdit = textBox;
@@ -1331,56 +1421,74 @@ namespace CollectaMundo
                     editButton = EditDeckNameButton;
                     saveButton = SaveDeckNameButton;
                     cancelButton = CancelDeckNameEditButton;
+                    columnToEdit = "deckName";
                 }
-
+                else if (textBox.Name == "DeckDescriptionTextBox")
+                {
+                    editButton = EditDeckDescriptionButton;
+                    saveButton = SaveDeckDescriptionButton;
+                    cancelButton = CancelDeckDescriptionEditButton;
+                    columnToEdit = "deckDescription";
+                }
             }
-            else if (sender is Button button)
-            {
-                editButton = button;
 
-                if (button.Name == "EditDeckNameButton")
+            // Save by pressing enter
+            if (e.Key == Key.Enter)
+            {
+                if (textBoxToEdit.Name == "DeckNameTextBox") { CurrentDeck.DeckName = textBoxToEdit.Text; }
+                if (textBoxToEdit.Name == "DeckDescriptionTextBox") { CurrentDeck.Description = textBoxToEdit.Text; }
+
+                await DeckManager.UpdateDeckInfo(columnToEdit, textBoxToEdit.Text?.Trim() ?? String.Empty);
+                HideDeckEditTextBox(textBoxToEdit, editButton, saveButton, cancelButton);
+            }
+
+            // Cancel by pressing escape
+            else if (e.Key == Key.Escape)
+            {
+                string? originalTextBoxValue = textBoxToEdit.Name == "DeckNameTextBox"
+                    ? CurrentDeck.DeckName
+                    : CurrentDeck.Description;
+
+                CancelDeckEdit(textBoxToEdit, editButton, saveButton, cancelButton, originalTextBoxValue);
+            }
+        }
+        private void CancelDeckEditButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button)
+            {
+                cancelButton = button;
+
+                if (button.Name == "CancelDeckNameEditButton")
                 {
                     textBoxToEdit = DeckNameTextBox;
+                    editButton = EditDeckNameButton;
                     saveButton = SaveDeckNameButton;
-                    cancelButton = CancelDeckNameEditButton;
+                    CancelDeckEdit(textBoxToEdit, editButton, saveButton, cancelButton, CurrentDeck.DeckName);
+                }
+                else if (button.Name == "CancelDeckDescriptionEditButton")
+                {
+                    textBoxToEdit = DeckDescriptionTextBox;
+                    editButton = EditDeckDescriptionButton;
+                    saveButton = SaveDeckDescriptionButton;
+                    CancelDeckEdit(textBoxToEdit, editButton, saveButton, cancelButton, CurrentDeck.Description);
                 }
             }
+        }
 
-            textBoxToEdit.IsReadOnly = false;
-            textBoxToEdit.Background = new SolidColorBrush(Colors.White);
-            textBoxToEdit.Focus();
-            textBoxToEdit.SelectAll();
-            editButton.Visibility = Visibility.Hidden;
-            saveButton.Visibility = Visibility.Visible;
-            cancelButton.Visibility = Visibility.Visible;
-        }
-        private async void SaveDeckNameButton_Click(object sender, RoutedEventArgs e)
-        {
-            await DeckManager.UpdateDeckInfo("deckName", DeckNameTextBox.Text?.Trim() ?? String.Empty);
-            CurrentDeck.DeckName = DeckNameTextBox.Text;
 
-            HideDeckEditTextBox(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton);
-        }
-        private async void DeckNameTextBox_KeyDown(object sender, KeyEventArgs e)
+        private static void CancelDeckEdit(TextBox textBoxToEdit, Button editButton, Button saveButton, Button cancelButton, string? originalValue)
         {
-            if (e.Key == Key.Enter) // Check if the pressed key is Enter
-            {
-                await DeckManager.UpdateDeckInfo("deckName", DeckNameTextBox.Text?.Trim() ?? String.Empty);
-                CurrentDeck.DeckName = DeckNameTextBox.Text;
-                HideDeckEditTextBox(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton);
-            }
-        }
-        private void CancelDeckNameEditButton_Click(object sender, RoutedEventArgs e)
-        {
-            HideDeckEditTextBox(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton);
-            DeckNameTextBox.Text = CurrentDeck.DeckName;
-        }
-        // Edit deck description
+            // Reset the TextBox value to its original value
+            textBoxToEdit.Text = originalValue;
 
+            // Restore UI state
+            HideDeckEditTextBox(textBoxToEdit, editButton, saveButton, cancelButton);
+        }
         private static void HideDeckEditTextBox(TextBox textBox, Button editButton, Button saveButton, Button cancelButton)
         {
             textBox.IsReadOnly = true;
             textBox.Background = null;
+            Keyboard.ClearFocus();
             editButton.Visibility = Visibility.Visible;
             saveButton.Visibility = Visibility.Hidden;
             cancelButton.Visibility = Visibility.Hidden;

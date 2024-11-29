@@ -25,8 +25,6 @@ namespace CollectaMundo
                     string deckDescription = reader["deckDescription"]?.ToString() ?? string.Empty;
                     string targetFormat = reader["targetFormat"]?.ToString() ?? string.Empty;
 
-                    Debug.WriteLine($"Deck Name: {deckName}, Description: {deckDescription}, Target Format: {targetFormat}");
-
                     // Update the currentDeck object
                     MainWindow.CurrentInstance.CurrentDeck = new Deck
                     {

@@ -1,6 +1,3 @@
 TO DO 
-deckCards									
-deckId	cardName	count	mainDeck			
-
-decks
-deckId	deckName	deckDescription	targetFormat
+- Cancel når klikker udenfor textbox
+- Rediger target format

@@ -1110,17 +1110,17 @@
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0" HorizontalAlignment="Center">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,300,0" VerticalAlignment="Top" >
-                            <TextBox x:Name="DeckNameTextBox" TextWrapping="Wrap" Width="300" FontSize="18" Background="{x:Null}" BorderBrush="{x:Null}" Height="25" IsReadOnly="True" MouseDoubleClick="EditDeckInfoButton_Click" KeyDown="DeckNameTextBox_KeyDown"/>
-                            <Button x:Name="EditDeckNameButton" Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck name" VerticalAlignment="Center" HorizontalAlignment="Center" Click="EditDeckInfoButton_Click" />
-                            <Button x:Name="SaveDeckNameButton" Content="&#xE105;" FontFamily="Segoe MDL2 Assets" ToolTip="Save deck name" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="SaveDeckNameButton_Click" />
-                            <Button x:Name="CancelDeckNameEditButton" Content="&#xE10A;" FontFamily="Segoe MDL2 Assets" ToolTip="Cancel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="CancelDeckNameEditButton_Click" />
+                            <TextBox x:Name="DeckNameTextBox" TextWrapping="Wrap" Width="300" FontSize="18" Background="{x:Null}" BorderBrush="{x:Null}" Height="25" IsReadOnly="True" MouseDoubleClick="EditDeckInfoButton_Click" KeyDown="DeckInfoTextBox_KeyDown"/>
+                            <Button x:Name="EditDeckNameButton" Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck name" VerticalAlignment="Center" HorizontalAlignment="Center" Click="EditDeckInfoButton_Click"/>
+                            <Button x:Name="SaveDeckNameButton" Content="&#xE105;" FontFamily="Segoe MDL2 Assets" ToolTip="Save deck name" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="SaveDeckInfoButton_Click"/>
+                            <Button x:Name="CancelDeckNameEditButton" Content="&#xE10A;" FontFamily="Segoe MDL2 Assets" ToolTip="Cancel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="CancelDeckEditButton_Click"/>
                             
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,30,300,0" VerticalAlignment="Top" >
-                            <TextBox x:Name="DeckDescriptionTextBox" TextWrapping="Wrap" Text="Deck beskrivelse " VerticalAlignment="Top" Width="300" Background="{x:Null}" BorderBrush="{x:Null}" IsReadOnly="True"/>
-                            <Button x:Name="EditDeckDescriptionButton" Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck description" VerticalAlignment="Center" />
-                            <Button x:Name="SaveDeckDescriptionButton" Content="&#xE105;" FontFamily="Segoe MDL2 Assets" ToolTip="Save deck description" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden"/>
-                            <Button x:Name="CancelDeckDescriptionEditButton" Content="&#xE10A;" FontFamily="Segoe MDL2 Assets" ToolTip="Cancel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden"/>
+                            <TextBox x:Name="DeckDescriptionTextBox" TextWrapping="Wrap" Text="Deck beskrivelse " VerticalAlignment="Top" Width="300" Background="{x:Null}" BorderBrush="{x:Null}" IsReadOnly="True" MouseDoubleClick="EditDeckInfoButton_Click" KeyDown="DeckInfoTextBox_KeyDown"/>
+                            <Button x:Name="EditDeckDescriptionButton" Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck description" VerticalAlignment="Center" Click="EditDeckInfoButton_Click"/>
+                            <Button x:Name="SaveDeckDescriptionButton" Content="&#xE105;" FontFamily="Segoe MDL2 Assets" ToolTip="Save deck description" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="SaveDeckInfoButton_Click"/>
+                            <Button x:Name="CancelDeckDescriptionEditButton" Content="&#xE10A;" FontFamily="Segoe MDL2 Assets" ToolTip="Cancel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="CancelDeckEditButton_Click"/>
                         </StackPanel>
                         <Button x:Name="BackToDeckOverviewButton" Content="Back" HorizontalAlignment="Right" VerticalAlignment="Top" Click="BackToDeckOverviewButton_Click" />
                     </Grid>
