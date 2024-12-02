@@ -1291,16 +1291,6 @@ namespace CollectaMundo
         #endregion
 
         #region Deck Management
-        private async void EditDeck(object sender, MouseButtonEventArgs e)
-        {
-            // Check if the sender is a listview and has a selected item
-            if (sender is ListView grid && grid.SelectedItem is Deck selectedDeck)
-            {
-                await DeckManager.LoadDeck(selectedDeck.DeckId);
-                grid.UnselectAll();
-            }
-        }
-
         // Adding new deck
         private void AddDeckButton_Click(object sender, RoutedEventArgs e)
         {
@@ -1320,52 +1310,65 @@ namespace CollectaMundo
             GridAddNewDeckForm.Visibility = Visibility.Collapsed;
         }
 
-        // Edit deck name
+        // Open deck editor window
+        private async void OpenAndEditDeck(object sender, MouseButtonEventArgs e)
+        {
+            // Check if the sender is a listview and has a selected item
+            if (sender is ListView grid && grid.SelectedItem is Deck selectedDeck)
+            {
+                await DeckManager.LoadDeck(selectedDeck.DeckId);
+                grid.UnselectAll();
+            }
+        }
+
+        // Deck Editor Methods
+
+        // Cancel edits by clicking outside edited element
+        private void Window_PreviewMouseDown_CancelEdits(object sender, MouseButtonEventArgs e)
+        {
+            // Check if the click happened outside the DeckNameTextBox or DeckDescriptionTextBox 
+            if (!DeckNameTextBox.IsMouseOver && !SaveDeckNameButton.IsMouseOver)
+            {
+                CancelDeckEdit(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton, CurrentDeck.DeckName);
+            }
+            if (!DeckDescriptionTextBox.IsMouseOver && !SaveDeckDescriptionButton.IsMouseOver)
+            {
+                CancelDeckEdit(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton, CurrentDeck.Description);
+            }
+
+        }
+
+        // Turn on element to edit
         private void EditDeckInfoButton_Click(object sender, RoutedEventArgs e)
         {
-            void HandleEditing(TextBox currentTextBox, Button currentEditButton, Button currentSaveButton, Button currentCancelButton,
-                               TextBox otherTextBox, Button otherEditButton, Button otherSaveButton, Button otherCancelButton, string? otherValue)
+            void HandleEditing(TextBox currentTextBox, Button currentEditButton, Button currentSaveButton, Button currentCancelButton)
             {
                 textBoxToEdit = currentTextBox;
                 editButton = currentEditButton;
                 saveButton = currentSaveButton;
                 cancelButton = currentCancelButton;
-
-                // If the other text box is being edited, cancel it
-                if (!otherTextBox.IsReadOnly)
-                {
-                    CancelDeckEdit(otherTextBox, otherEditButton, otherSaveButton, otherCancelButton, otherValue);
-                }
             }
 
             if (sender is TextBox textBox)
             {
                 if (textBox.Name == "DeckNameTextBox")
                 {
-                    HandleEditing(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton,
-                                  DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton,
-                                  CurrentDeck.Description);
+                    HandleEditing(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton);
                 }
                 else if (textBox.Name == "DeckDescriptionTextBox")
                 {
-                    HandleEditing(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton,
-                                  DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton,
-                                  CurrentDeck.DeckName);
+                    HandleEditing(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton);
                 }
             }
             else if (sender is Button button)
             {
                 if (button.Name == "EditDeckNameButton")
                 {
-                    HandleEditing(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton,
-                                  DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton,
-                                  CurrentDeck.Description);
+                    HandleEditing(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton);
                 }
                 else if (button.Name == "EditDeckDescriptionButton")
                 {
-                    HandleEditing(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton,
-                                  DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton,
-                                  CurrentDeck.DeckName);
+                    HandleEditing(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton);
                 }
             }
 
@@ -1381,6 +1384,7 @@ namespace CollectaMundo
             cancelButton.Visibility = Visibility.Visible;
         }
 
+        // Pick up icon events
         private async void SaveDeckInfoButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button)
@@ -1410,6 +1414,22 @@ namespace CollectaMundo
             await DeckManager.UpdateDeckInfo(columnToEdit, textBoxToEdit.Text?.Trim() ?? String.Empty);
             HideDeckEditTextBox(textBoxToEdit, editButton, saveButton, cancelButton);
         }
+        private void CancelDeckEditButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button)
+            {
+                if (button.Name == "CancelDeckNameEditButton")
+                {
+                    CancelDeckEdit(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, button, CurrentDeck.DeckName);
+                }
+                else if (button.Name == "CancelDeckDescriptionEditButton")
+                {
+                    CancelDeckEdit(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, button, CurrentDeck.Description);
+                }
+            }
+        }
+
+        // When a textbox has focus, pick up keystrokes like "Enter" and "Escape"
         private async void DeckInfoTextBox_KeyDown(object sender, KeyEventArgs e)
         {
             if (sender is TextBox textBox)
@@ -1452,30 +1472,8 @@ namespace CollectaMundo
                 CancelDeckEdit(textBoxToEdit, editButton, saveButton, cancelButton, originalTextBoxValue);
             }
         }
-        private void CancelDeckEditButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button)
-            {
-                cancelButton = button;
 
-                if (button.Name == "CancelDeckNameEditButton")
-                {
-                    textBoxToEdit = DeckNameTextBox;
-                    editButton = EditDeckNameButton;
-                    saveButton = SaveDeckNameButton;
-                    CancelDeckEdit(textBoxToEdit, editButton, saveButton, cancelButton, CurrentDeck.DeckName);
-                }
-                else if (button.Name == "CancelDeckDescriptionEditButton")
-                {
-                    textBoxToEdit = DeckDescriptionTextBox;
-                    editButton = EditDeckDescriptionButton;
-                    saveButton = SaveDeckDescriptionButton;
-                    CancelDeckEdit(textBoxToEdit, editButton, saveButton, cancelButton, CurrentDeck.Description);
-                }
-            }
-        }
-
-
+        // Shared methods
         private static void CancelDeckEdit(TextBox textBoxToEdit, Button editButton, Button saveButton, Button cancelButton, string? originalValue)
         {
             // Reset the TextBox value to its original value

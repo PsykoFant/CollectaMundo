@@ -12,7 +12,8 @@
         Title="CollectaMundo"
         Icon="/Resources/Images/Icon.ico" 
         Width="1920"
-        Height="960">
+        Height="960"
+        PreviewMouseDown="Window_PreviewMouseDown_CancelEdits">
 
     <!-- Define resources accessible by all elements in this Window -->
     <Window.Resources>
@@ -1069,7 +1070,7 @@
                         <Button x:Name="SubmitNewDeckButton" Width="100" Content="Submit new deck" Height="20" Margin="365,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="SubmitNewDeckButton_Click" />
                         <Button x:Name="CancelNewDeckButton" Content="Cancel" Height="20" Margin="470,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="45" Click="CancelNewDeckButton_Click"/>
                     </Grid>
-                    <ListView x:Name="MyDecksListView" HorizontalAlignment="Center" Margin="0,120,0,0" SelectionMode="Single" Width="600" MouseDoubleClick="EditDeck">
+                    <ListView x:Name="MyDecksListView" HorizontalAlignment="Center" Margin="0,120,0,0" SelectionMode="Single" Width="600" MouseDoubleClick="OpenAndEditDeck">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
