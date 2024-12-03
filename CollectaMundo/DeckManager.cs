@@ -142,7 +142,7 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
-        public static async Task UpdateDeckInfo(string columnToUpdate, string valueToUpdate)
+        public static async Task<bool> UpdateDeckInfo(string columnToUpdate, string valueToUpdate)
         {
             try
             {
@@ -151,7 +151,7 @@ namespace CollectaMundo
                 {
                     MessageBox.Show("Your deck must have a name. ", "Oopsie", MessageBoxButton.OK, MessageBoxImage.Warning);
                     MainWindow.CurrentInstance.DeckNameTextBox.Text = MainWindow.CurrentInstance.CurrentDeck.DeckName;
-                    return;
+                    return false;
                 }
 
                 string updateQuery = $"UPDATE myDecks SET {columnToUpdate} = @value WHERE id = @deckId;";
@@ -177,6 +177,7 @@ namespace CollectaMundo
                     await insertCommand.ExecuteNonQueryAsync();
 
                     transaction.Commit();
+                    return true;
                 }
                 catch (Exception ex)
                 {
@@ -188,6 +189,7 @@ namespace CollectaMundo
             {
                 MessageBox.Show($"An error occurred while adding the deck: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Debug.WriteLine($"Error in SubmitNewDeckButton_Click: {ex}");
+                return false;
             }
             finally
             {

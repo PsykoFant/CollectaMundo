@@ -1327,11 +1327,11 @@ namespace CollectaMundo
         private void Window_PreviewMouseDown_CancelEdits(object sender, MouseButtonEventArgs e)
         {
             // Check if the click happened outside the DeckNameTextBox or DeckDescriptionTextBox 
-            if (!DeckNameTextBox.IsMouseOver && !SaveDeckNameButton.IsMouseOver)
+            if (DeckNameTextBox.IsVisible && !DeckNameTextBox.IsMouseOver && !SaveDeckNameButton.IsMouseOver)
             {
                 CancelDeckEdit(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton, CurrentDeck.DeckName);
             }
-            if (!DeckDescriptionTextBox.IsMouseOver && !SaveDeckDescriptionButton.IsMouseOver)
+            if (DeckDescriptionTextBox.IsVisible && !DeckDescriptionTextBox.IsMouseOver && !SaveDeckDescriptionButton.IsMouseOver)
             {
                 CancelDeckEdit(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton, CurrentDeck.Description);
             }
@@ -1397,8 +1397,6 @@ namespace CollectaMundo
                     editButton = EditDeckNameButton;
                     cancelButton = CancelDeckNameEditButton;
                     columnToEdit = "deckName";
-
-                    CurrentDeck.DeckName = DeckNameTextBox.Text;
                 }
                 else if (button.Name == "SaveDeckDescriptionButton")
                 {
@@ -1406,13 +1404,16 @@ namespace CollectaMundo
                     editButton = EditDeckDescriptionButton;
                     cancelButton = CancelDeckDescriptionEditButton;
                     columnToEdit = "deckDescription";
-
-                    CurrentDeck.Description = DeckDescriptionTextBox.Text;
                 }
             }
 
-            await DeckManager.UpdateDeckInfo(columnToEdit, textBoxToEdit.Text?.Trim() ?? String.Empty);
-            HideDeckEditTextBox(textBoxToEdit, editButton, saveButton, cancelButton);
+            if (await DeckManager.UpdateDeckInfo(columnToEdit, textBoxToEdit.Text?.Trim() ?? String.Empty))
+            {
+                CurrentDeck.DeckName = DeckNameTextBox.Text;
+                CurrentDeck.Description = DeckDescriptionTextBox.Text;
+                HideDeckEditTextBox(textBoxToEdit, editButton, saveButton, cancelButton);
+            }
+
         }
         private void CancelDeckEditButton_Click(object sender, RoutedEventArgs e)
         {
@@ -1455,11 +1456,12 @@ namespace CollectaMundo
             // Save by pressing enter
             if (e.Key == Key.Enter)
             {
-                if (textBoxToEdit.Name == "DeckNameTextBox") { CurrentDeck.DeckName = textBoxToEdit.Text; }
-                if (textBoxToEdit.Name == "DeckDescriptionTextBox") { CurrentDeck.Description = textBoxToEdit.Text; }
-
-                await DeckManager.UpdateDeckInfo(columnToEdit, textBoxToEdit.Text?.Trim() ?? String.Empty);
-                HideDeckEditTextBox(textBoxToEdit, editButton, saveButton, cancelButton);
+                if (await DeckManager.UpdateDeckInfo(columnToEdit, textBoxToEdit.Text?.Trim() ?? String.Empty))
+                {
+                    CurrentDeck.DeckName = DeckNameTextBox.Text;
+                    CurrentDeck.Description = DeckDescriptionTextBox.Text;
+                    HideDeckEditTextBox(textBoxToEdit, editButton, saveButton, cancelButton);
+                }
             }
 
             // Cancel by pressing escape
