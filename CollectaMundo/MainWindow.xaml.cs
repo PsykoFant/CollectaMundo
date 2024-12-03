@@ -209,6 +209,12 @@ namespace CollectaMundo
         }
         private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
         {
+            static string ProcessManaCost(string manaCostRaw)
+            {
+                char[] separator = ['{', '}'];
+                return string.Join(",", manaCostRaw.Split(separator, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
+            }
+
             try
             {
                 CardSet card = isCardItem ? (CardSet)new CardItem() : new CardSet();
@@ -278,11 +284,6 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error in CreateCardFromReader: {ex.Message}");
                 throw;
             }
-        }
-        private static string ProcessManaCost(string manaCostRaw)
-        {
-            char[] separator = ['{', '}'];
-            return string.Join(",", manaCostRaw.Split(separator, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
         }
         private async Task LoadColorIcons(List<CardSet> cardList, string query)
         {
@@ -395,6 +396,7 @@ namespace CollectaMundo
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     NewDeckFormatComboBox.ItemsSource = allFormats;
+                    ExistingDeckFormatComboBox.ItemsSource = allFormats;
                 });
             }
             catch (Exception ex)
