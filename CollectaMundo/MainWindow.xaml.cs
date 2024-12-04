@@ -80,6 +80,7 @@ namespace CollectaMundo
 
         // Common variables used for deck edits
         TextBox textBoxToEdit = new();
+        ComboBox comboBoxToEdit = new();
         Button editButton = new();
         Button saveButton = new();
         Button cancelButton = new();
@@ -1322,6 +1323,15 @@ namespace CollectaMundo
                 grid.UnselectAll();
             }
         }
+        private async void BackToDeckOverviewButton_Click(object sender, RoutedEventArgs e)
+        {
+            await DBAccess.OpenConnectionAsync();
+            await LoadAllDecksAsync();
+            DBAccess.CloseConnection();
+
+            GridDeckEditor.Visibility = Visibility.Collapsed;
+            GridDecksOverview.Visibility = Visibility.Visible;
+        }
 
         // Deck Editor Methods
 
@@ -1329,13 +1339,52 @@ namespace CollectaMundo
         private void Window_PreviewMouseDown_CancelEdits(object sender, MouseButtonEventArgs e)
         {
             // Check if the click happened outside the DeckNameTextBox or DeckDescriptionTextBox 
-            if (DeckNameTextBox.IsVisible && !DeckNameTextBox.IsMouseOver && !SaveDeckNameButton.IsMouseOver)
+
+
+            //if (ExistingDeckFormatComboBox.IsMouseOver)
+            //{
+            //    Debug.WriteLine("Vi har klikket på format dropdown!");
+            //}
+
+
+            bool anEditTextBoxHasFocus = false;
+            bool weAreClickingDeckNameElements = false;
+            bool weAreEditingDeckDescription = false;
+            bool weAreEditingDeckFormat = false;
+
+            if (DeckNameTextBox.IsFocused || DeckDescriptionTextBox.IsFocused || DeckFormatTextBox.Visibility == Visibility.Collapsed)
             {
-                CancelDeckEdit(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton, CurrentDeck.DeckName);
+                anEditTextBoxHasFocus = true;
             }
-            if (DeckDescriptionTextBox.IsVisible && !DeckDescriptionTextBox.IsMouseOver && !SaveDeckDescriptionButton.IsMouseOver)
+            if (DeckNameTextBox.IsMouseOver || SaveDeckNameButton.IsMouseOver)
             {
-                CancelDeckEdit(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton, CurrentDeck.Description);
+                weAreClickingDeckNameElements = true;
+            }
+            if (DeckDescriptionTextBox.IsMouseOver || SaveDeckDescriptionButton.IsMouseOver)
+            {
+                weAreEditingDeckDescription = true;
+            }
+            if (ExistingDeckFormatComboBox.IsMouseOver || SaveDeckFormatButton.IsMouseOver)
+            {
+                weAreEditingDeckFormat = true;
+            }
+
+            if (anEditTextBoxHasFocus)
+            {
+                // med mindre vi trykker på boksen eller save knappen, sluk for hele lortet
+
+                if (!weAreClickingDeckNameElements && !ExistingDeckFormatComboBox.IsMouseOver)
+                {
+                    CancelDeckEdit(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton, CurrentDeck.DeckName);
+                }
+                if (!weAreEditingDeckDescription && !ExistingDeckFormatComboBox.IsMouseOver)
+                {
+                    CancelDeckEdit(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton, CurrentDeck.Description);
+                }
+                if (!weAreEditingDeckFormat)
+                {
+                    CancelDeckEdit(DeckFormatTextBox, EditDeckFormatButton, SaveDeckFormatButton, CancelDeckFormatEditButton, $"Target format: {CurrentDeck.TargetFormat}");
+                }
             }
 
         }
@@ -1361,6 +1410,10 @@ namespace CollectaMundo
                 {
                     HandleEditing(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton);
                 }
+                else if (textBox.Name == "DeckFormatTextBox")
+                {
+                    HandleEditing(DeckFormatTextBox, EditDeckFormatButton, SaveDeckFormatButton, CancelDeckFormatEditButton);
+                }
             }
             else if (sender is Button button)
             {
@@ -1372,13 +1425,25 @@ namespace CollectaMundo
                 {
                     HandleEditing(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton);
                 }
+                else if (button.Name == "EditDeckFormatButton")
+                {
+                    HandleEditing(DeckFormatTextBox, EditDeckFormatButton, SaveDeckFormatButton, CancelDeckFormatEditButton);
+                }
             }
 
             // Enable editing for the selected text box
-            textBoxToEdit.IsReadOnly = false;
-            textBoxToEdit.Background = new SolidColorBrush(Colors.White);
-            textBoxToEdit.Focus();
-            textBoxToEdit.SelectAll();
+            if (textBoxToEdit.Name == "DeckFormatTextBox")
+            {
+                textBoxToEdit.Visibility = Visibility.Collapsed;
+                ExistingDeckFormatComboBox.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                textBoxToEdit.IsReadOnly = false;
+                textBoxToEdit.Background = new SolidColorBrush(Colors.White);
+                textBoxToEdit.Focus();
+                textBoxToEdit.SelectAll();
+            }
 
             // Adjust visibility of buttons
             editButton.Visibility = Visibility.Hidden;
@@ -1428,6 +1493,10 @@ namespace CollectaMundo
                 else if (button.Name == "CancelDeckDescriptionEditButton")
                 {
                     CancelDeckEdit(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, button, CurrentDeck.Description);
+                }
+                else if (button.Name == "CancelDeckFormatEditButton")
+                {
+                    CancelDeckEdit(DeckFormatTextBox, EditDeckFormatButton, SaveDeckFormatButton, button, $"Target format: {CurrentDeck.TargetFormat}");
                 }
             }
         }
@@ -1481,9 +1550,12 @@ namespace CollectaMundo
         private static void CancelDeckEdit(TextBox textBoxToEdit, Button editButton, Button saveButton, Button cancelButton, string? originalValue)
         {
             // Reset the TextBox value to its original value
+            if (textBoxToEdit.Name == "DeckFormatTextBox")
+            {
+                CurrentInstance.ExistingDeckFormatComboBox.Visibility = Visibility.Collapsed;
+                textBoxToEdit.Visibility = Visibility.Visible;
+            }
             textBoxToEdit.Text = originalValue;
-
-            // Restore UI state
             HideDeckEditTextBox(textBoxToEdit, editButton, saveButton, cancelButton);
         }
         private static void HideDeckEditTextBox(TextBox textBox, Button editButton, Button saveButton, Button cancelButton)
@@ -1803,16 +1875,6 @@ namespace CollectaMundo
                 });
                 CurrentInstance.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
             }
-        }
-
-        private async void BackToDeckOverviewButton_Click(object sender, RoutedEventArgs e)
-        {
-            await DBAccess.OpenConnectionAsync();
-            await LoadAllDecksAsync();
-            DBAccess.CloseConnection();
-
-            GridDeckEditor.Visibility = Visibility.Collapsed;
-            GridDecksOverview.Visibility = Visibility.Visible;
         }
     }
 }

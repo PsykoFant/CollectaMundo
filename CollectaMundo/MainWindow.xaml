@@ -1123,7 +1123,8 @@
                             <Button x:Name="CancelDeckDescriptionEditButton" Content="&#xE10A;" FontFamily="Segoe MDL2 Assets" ToolTip="Cancel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="CancelDeckEditButton_Click"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,60,300,0" VerticalAlignment="Top" >
-                            <ComboBox x:Name="ExistingDeckFormatComboBox" Height="20" VerticalAlignment="Top" Width="300" />
+                            <TextBox x:Name="DeckFormatTextBox" TextWrapping="Wrap" Text="Deck format" VerticalAlignment="Top" Width="300" Background="{x:Null}" BorderBrush="{x:Null}" IsReadOnly="True" MouseDoubleClick="EditDeckInfoButton_Click"/>
+                            <ComboBox x:Name="ExistingDeckFormatComboBox" Height="20" VerticalAlignment="Top" Width="300" Visibility="Collapsed"/>
                             <Button x:Name="EditDeckFormatButton" Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit target format" VerticalAlignment="Center" Click="EditDeckInfoButton_Click"/>
                             <Button x:Name="SaveDeckFormatButton" Content="&#xE105;" FontFamily="Segoe MDL2 Assets" ToolTip="Save target format" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="SaveDeckInfoButton_Click"/>
                             <Button x:Name="CancelDeckFormatEditButton" Content="&#xE10A;" FontFamily="Segoe MDL2 Assets" ToolTip="Cancel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="CancelDeckEditButton_Click"/>

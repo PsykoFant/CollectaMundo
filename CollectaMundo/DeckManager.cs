@@ -39,6 +39,7 @@ namespace CollectaMundo
                     MainWindow.CurrentInstance.HeadlineDecks.Content = "Deck Editor";
                     MainWindow.CurrentInstance.DeckNameTextBox.Text = deckName;
                     MainWindow.CurrentInstance.DeckDescriptionTextBox.Text = deckDescription;
+                    MainWindow.CurrentInstance.DeckFormatTextBox.Text = $"Target format: {targetFormat}";
                     MainWindow.CurrentInstance.ExistingDeckFormatComboBox.SelectedItem = targetFormat;
                     MainWindow.CurrentInstance.GridDeckEditor.Visibility = Visibility.Visible;
                 }
