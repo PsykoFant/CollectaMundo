@@ -1314,21 +1314,36 @@ namespace CollectaMundo
         }
 
         // Open deck editor window
-        private async void OpenAndEditDeck(object sender, MouseButtonEventArgs e)
+        private async void OpenAndEditDeck(object sender, RoutedEventArgs e)
         {
-            // Check if the sender is a listview and has a selected item
-            if (sender is ListView grid && grid.SelectedItem is Deck selectedDeck)
+            Deck? selectedDeck = null;
+
+            // If the user double-clicks on a deck
+            if (sender is ListView grid && grid.SelectedItem is Deck deckFromListView)
             {
-                await DeckManager.LoadDeck(selectedDeck.DeckId);
+                selectedDeck = deckFromListView;
                 grid.UnselectAll();
             }
+
+            // If the user clicks the edit button for a deck
+            else if (sender is Button button && button.DataContext is Deck deckFromButton)
+            {
+                selectedDeck = deckFromButton;
+            }
+
+            if (selectedDeck != null)
+            {
+                await DeckManager.LoadDeck(selectedDeck.DeckId);
+            }
         }
+
         private async void BackToDeckOverviewButton_Click(object sender, RoutedEventArgs e)
         {
             await DBAccess.OpenConnectionAsync();
             await LoadAllDecksAsync();
             DBAccess.CloseConnection();
 
+            HeadlineDecks.Content = "Deck Management";
             GridDeckEditor.Visibility = Visibility.Collapsed;
             GridDecksOverview.Visibility = Visibility.Visible;
         }
@@ -1338,41 +1353,21 @@ namespace CollectaMundo
         // Cancel edits by clicking outside edited element
         private void Window_PreviewMouseDown_CancelEdits(object sender, MouseButtonEventArgs e)
         {
-            // Check if the click happened outside the DeckNameTextBox or DeckDescriptionTextBox 
-
-
-            //if (ExistingDeckFormatComboBox.IsMouseOver)
-            //{
-            //    Debug.WriteLine("Vi har klikket på format dropdown!");
-            //}
-
-
             bool anEditTextBoxHasFocus = false;
             bool weAreClickingDeckNameElements = false;
             bool weAreEditingDeckDescription = false;
             bool weAreEditingDeckFormat = false;
 
-            if (DeckNameTextBox.IsFocused || DeckDescriptionTextBox.IsFocused || DeckFormatTextBox.Visibility == Visibility.Collapsed)
-            {
-                anEditTextBoxHasFocus = true;
-            }
-            if (DeckNameTextBox.IsMouseOver || SaveDeckNameButton.IsMouseOver)
-            {
-                weAreClickingDeckNameElements = true;
-            }
-            if (DeckDescriptionTextBox.IsMouseOver || SaveDeckDescriptionButton.IsMouseOver)
-            {
-                weAreEditingDeckDescription = true;
-            }
-            if (ExistingDeckFormatComboBox.IsMouseOver || SaveDeckFormatButton.IsMouseOver)
-            {
-                weAreEditingDeckFormat = true;
-            }
+            // Check if we are editing something
+            if (DeckNameTextBox.IsFocused || DeckDescriptionTextBox.IsFocused || DeckFormatTextBox.Visibility == Visibility.Collapsed) { anEditTextBoxHasFocus = true; }
+
+            // Determine what we are editing
+            if (DeckNameTextBox.IsMouseOver || SaveDeckNameButton.IsMouseOver) { weAreClickingDeckNameElements = true; }
+            if (DeckDescriptionTextBox.IsMouseOver || SaveDeckDescriptionButton.IsMouseOver) { weAreEditingDeckDescription = true; }
+            if (ExistingDeckFormatComboBox.IsMouseOver || SaveDeckFormatButton.IsMouseOver) { weAreEditingDeckFormat = true; }
 
             if (anEditTextBoxHasFocus)
             {
-                // med mindre vi trykker på boksen eller save knappen, sluk for hele lortet
-
                 if (!weAreClickingDeckNameElements && !ExistingDeckFormatComboBox.IsMouseOver)
                 {
                     CancelDeckEdit(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton, CurrentDeck.DeckName);
@@ -1454,12 +1449,15 @@ namespace CollectaMundo
         // Pick up icon events
         private async void SaveDeckInfoButton_Click(object sender, RoutedEventArgs e)
         {
+            string? textToUpdate = string.Empty;
+
             if (sender is Button button)
             {
                 saveButton = button;
 
                 if (button.Name == "SaveDeckNameButton")
                 {
+                    textToUpdate = DeckNameTextBox.Text;
                     textBoxToEdit = DeckNameTextBox;
                     editButton = EditDeckNameButton;
                     cancelButton = CancelDeckNameEditButton;
@@ -1467,17 +1465,27 @@ namespace CollectaMundo
                 }
                 else if (button.Name == "SaveDeckDescriptionButton")
                 {
+                    textToUpdate = DeckDescriptionTextBox.Text;
                     textBoxToEdit = DeckDescriptionTextBox;
                     editButton = EditDeckDescriptionButton;
                     cancelButton = CancelDeckDescriptionEditButton;
                     columnToEdit = "deckDescription";
                 }
+                else if (button.Name == "SaveDeckFormatButton")
+                {
+                    textToUpdate = ExistingDeckFormatComboBox.SelectedItem.ToString();
+                    textBoxToEdit = DeckFormatTextBox;
+                    editButton = EditDeckFormatButton;
+                    cancelButton = CancelDeckFormatEditButton;
+                    columnToEdit = "targetFormat";
+                }
             }
 
-            if (await DeckManager.UpdateDeckInfo(columnToEdit, textBoxToEdit.Text?.Trim() ?? String.Empty))
+            if (await DeckManager.UpdateDeckInfo(columnToEdit, textToUpdate?.Trim() ?? String.Empty))
             {
                 CurrentDeck.DeckName = DeckNameTextBox.Text;
                 CurrentDeck.Description = DeckDescriptionTextBox.Text;
+                CurrentDeck.TargetFormat = ExistingDeckFormatComboBox.SelectedItem.ToString();
                 HideDeckEditTextBox(textBoxToEdit, editButton, saveButton, cancelButton);
             }
 
@@ -1549,17 +1557,20 @@ namespace CollectaMundo
         // Shared methods
         private static void CancelDeckEdit(TextBox textBoxToEdit, Button editButton, Button saveButton, Button cancelButton, string? originalValue)
         {
-            // Reset the TextBox value to its original value
-            if (textBoxToEdit.Name == "DeckFormatTextBox")
-            {
-                CurrentInstance.ExistingDeckFormatComboBox.Visibility = Visibility.Collapsed;
-                textBoxToEdit.Visibility = Visibility.Visible;
-            }
             textBoxToEdit.Text = originalValue;
             HideDeckEditTextBox(textBoxToEdit, editButton, saveButton, cancelButton);
         }
         private static void HideDeckEditTextBox(TextBox textBox, Button editButton, Button saveButton, Button cancelButton)
         {
+
+            // Reset the TextBox value to its original value
+            if (textBox.Name == "DeckFormatTextBox")
+            {
+                CurrentInstance.ExistingDeckFormatComboBox.Visibility = Visibility.Collapsed;
+                textBox.Visibility = Visibility.Visible;
+                textBox.Text = $"Target format: {CurrentInstance.CurrentDeck.TargetFormat}";
+            }
+
             textBox.IsReadOnly = true;
             textBox.Background = null;
             Keyboard.ClearFocus();
@@ -1876,5 +1887,6 @@ namespace CollectaMundo
                 CurrentInstance.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
             }
         }
+
     }
 }

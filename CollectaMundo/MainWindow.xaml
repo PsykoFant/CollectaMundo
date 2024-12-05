@@ -509,7 +509,7 @@
                 <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Left" Width="180" Height="20" Margin="10,180,0,0" VerticalAlignment="Top" Visibility="Collapsed" Click="UpdateDbButton_Click"/>
             </Grid>
         </Grid>
-        <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="Visible">
+        <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="Hidden">
             <Image x:Name="LogoSmall" Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="170" Width="170" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" d:IsHidden="True" />
             <ScrollViewer x:Name="FilterSummaryScrollViewer" HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <TextBlock x:Name="FilterSummaryTextBlock" HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
@@ -1058,7 +1058,7 @@
                 <Grid Grid.Row="0" VerticalAlignment="Top" HorizontalAlignment="Center">
                     <Label x:Name="HeadlineDecks" Content="Deck Management" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 </Grid>
-                <Grid x:Name="GridDecksOverview" Grid.Row="1" VerticalAlignment="Top" d:IsHidden="True">                    
+                <Grid x:Name="GridDecksOverview" Grid.Row="1" VerticalAlignment="Top">                    
                     <Button x:Name="AddDeckButton" Width="100" Content="Add a new deck" Height="20" Margin="0,95,500,0" HorizontalAlignment="Center" VerticalAlignment="Top" Click="AddDeckButton_Click" d:IsHidden="True" />
                     <Grid x:Name="GridAddNewDeckForm" VerticalAlignment="Top" HorizontalAlignment="Center" Width="600" Margin="0,00,0,0" Visibility="Collapsed">
                         <Label HorizontalAlignment="Left" VerticalAlignment="Top" Content="Deck Name:" Height="25" />
@@ -1099,11 +1099,18 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
+                                <GridViewColumn Header="Action">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck" VerticalAlignment="Center" HorizontalAlignment="Center" Click="OpenAndEditDeck"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
                             </GridView>
                         </ListView.View>
                     </ListView>
                 </Grid>
-                <Grid x:Name="GridDeckEditor" Grid.Row="1" VerticalAlignment="Top" Visibility="Visible">
+                <Grid x:Name="GridDeckEditor" Grid.Row="1" VerticalAlignment="Top" Visibility="Collapsed">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="100"/>
                         <RowDefinition Height="150"/>
@@ -1111,13 +1118,15 @@
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0" HorizontalAlignment="Center">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,300,0" VerticalAlignment="Top" >
-                            <TextBox x:Name="DeckNameTextBox" TextWrapping="Wrap" Text="Deck navn" Width="300" FontSize="18" Background="{x:Null}" BorderBrush="{x:Null}" Height="25" IsReadOnly="True" MouseDoubleClick="EditDeckInfoButton_Click" KeyDown="DeckInfoTextBox_KeyDown"/>
+                            <TextBox x:Name="DeckNameTextBox" TextWrapping="Wrap" Text="Deck name" Width="300" FontSize="18" Background="{x:Null}" BorderBrush="{x:Null}" Height="25" IsReadOnly="True" MouseDoubleClick="EditDeckInfoButton_Click" KeyDown="DeckInfoTextBox_KeyDown"/>
                             <Button x:Name="EditDeckNameButton" Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck name" VerticalAlignment="Center" HorizontalAlignment="Center" Click="EditDeckInfoButton_Click"/>
                             <Button x:Name="SaveDeckNameButton" Content="&#xE105;" FontFamily="Segoe MDL2 Assets" ToolTip="Save deck name" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="SaveDeckInfoButton_Click"/>
                             <Button x:Name="CancelDeckNameEditButton" Content="&#xE10A;" FontFamily="Segoe MDL2 Assets" ToolTip="Cancel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="CancelDeckEditButton_Click"/>                            
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,30,300,0" VerticalAlignment="Top" >
-                            <TextBox x:Name="DeckDescriptionTextBox" TextWrapping="Wrap" Text="Deck beskrivelse" VerticalAlignment="Top" Width="300" Background="{x:Null}" BorderBrush="{x:Null}" IsReadOnly="True" MouseDoubleClick="EditDeckInfoButton_Click" KeyDown="DeckInfoTextBox_KeyDown"/>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Height="30" Width="300" HorizontalAlignment="Left">
+                                <TextBox x:Name="DeckDescriptionTextBox" TextWrapping="Wrap" Text="Deck description" VerticalAlignment="Top" Width="280" Background="{x:Null}" BorderBrush="{x:Null}" IsReadOnly="True" MouseDoubleClick="EditDeckInfoButton_Click" KeyDown="DeckInfoTextBox_KeyDown" HorizontalAlignment="Left"/>
+                            </ScrollViewer>
                             <Button x:Name="EditDeckDescriptionButton" Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck description" VerticalAlignment="Center" Click="EditDeckInfoButton_Click"/>
                             <Button x:Name="SaveDeckDescriptionButton" Content="&#xE105;" FontFamily="Segoe MDL2 Assets" ToolTip="Save deck description" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="SaveDeckInfoButton_Click"/>
                             <Button x:Name="CancelDeckDescriptionEditButton" Content="&#xE10A;" FontFamily="Segoe MDL2 Assets" ToolTip="Cancel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden" Click="CancelDeckEditButton_Click"/>
