@@ -59,6 +59,7 @@ namespace CollectaMundo
         // Query strings to load cards into datagrids
         public readonly string allCardsQuery = "SELECT * FROM view_allCards";
         public readonly string myCollectionQuery = "SELECT * FROM view_myCollection;";
+        public readonly string allCardsForDecksQuery = "SELECT * FROM view_allCardsForDecks;";
         private readonly string colourQuery = "SELECT* FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ('W', 'U', 'B', 'R', 'G', 'C', 'X') ORDER BY CASE uniqueManaSymbol WHEN 'W' THEN 1 WHEN 'U' THEN 2 WHEN 'B' THEN 3 WHEN 'R' THEN 4 WHEN 'G' THEN 5 WHEN 'C' THEN 6 WHEN 'X' THEN 7 END;";
 
         // Flag to track startup phase
@@ -66,7 +67,8 @@ namespace CollectaMundo
 
         // The CardSet object which holds all the cards read from db
         public readonly List<CardSet> allCards = [];
-        public List<CardSet> myCards = [];
+        public readonly List<CardSet> myCards = [];
+        public readonly List<CardSet> allCardsForDecks = [];
         private readonly List<CardSet> ColorIcons = [];
 
         // The filter object from the FilterContext class
@@ -80,7 +82,6 @@ namespace CollectaMundo
 
         // Common variables used for deck edits
         TextBox textBoxToEdit = new();
-        ComboBox comboBoxToEdit = new();
         Button editButton = new();
         Button saveButton = new();
         Button cancelButton = new();
@@ -147,13 +148,21 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
-            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true);
-            Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
-            Task loadDecks = LoadAllDecksAsync();
-            Task populateAllFormatsList = PopulateAllFormatsListAsync();
+            //Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
+            //Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true);
+            //Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
+            //Task loadDecks = LoadAllDecksAsync();
+            //Task populateAllFormatsList = PopulateAllFormatsListAsync();
 
-            await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, loadDecks, populateAllFormatsList);
+            //await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, loadDecks, populateAllFormatsList);
+
+
+
+            await LoadAllDecksAsync();
+            await PopulateAllFormatsListAsync();
+            await PopulateCardDataGridAsync(allCardsForDecks, allCardsForDecksQuery, AllCardsForDecksDataGrid, false);
+
+            Debug.WriteLine(allCardsForDecks[0].Name);
 
             DBAccess.CloseConnection();
 
@@ -222,61 +231,61 @@ namespace CollectaMundo
 
                 // Populate common properties
                 card.Name = reader["Name"]?.ToString() ?? string.Empty;
-                card.SetName = reader["SetName"]?.ToString() ?? string.Empty;
+                //card.SetName = reader["SetName"]?.ToString() ?? string.Empty;
                 card.Types = reader["Types"]?.ToString() ?? string.Empty;
                 card.ManaCost = ProcessManaCost(reader["ManaCost"]?.ToString() ?? string.Empty);
                 card.SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty;
                 card.SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty;
                 card.Type = reader["Type"]?.ToString() ?? string.Empty;
                 card.Keywords = reader["Keywords"]?.ToString() ?? string.Empty;
-                card.Text = reader["RulesText"]?.ToString() ?? string.Empty;
-                card.ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0;
-                card.Language = reader["Language"]?.ToString() ?? string.Empty;
-                card.Uuid = reader["Uuid"]?.ToString() ?? string.Empty;
-                card.Side = reader["Side"]?.ToString() ?? string.Empty;
-                card.Rarity = reader["Rarity"]?.ToString() ?? string.Empty;
-                card.Finishes = reader["Finishes"]?.ToString();
-                if (DateTime.TryParse(reader["ReleaseDate"]?.ToString(), out DateTime releaseDate))
-                {
-                    card.ReleaseDate = releaseDate;
-                }
-                else
-                {
-                    card.ReleaseDate = null;
-                }
+                //card.Text = reader["RulesText"]?.ToString() ?? string.Empty;
+                //card.ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0;
+                //card.Language = reader["Language"]?.ToString() ?? string.Empty;
+                //card.Uuid = reader["Uuid"]?.ToString() ?? string.Empty;
+                //card.Side = reader["Side"]?.ToString() ?? string.Empty;
+                ////card.Rarity = reader["Rarity"]?.ToString() ?? string.Empty;
+                ////card.Finishes = reader["Finishes"]?.ToString();
+                ////if (DateTime.TryParse(reader["ReleaseDate"]?.ToString(), out DateTime releaseDate))
+                ////{
+                ////    card.ReleaseDate = releaseDate;
+                ////}
+                ////else
+                ////{
+                ////    card.ReleaseDate = null;
+                ////}
 
-                // Populate raw data fields for parallel processing
-                card.SetIconBytes = reader["KeyRuneImage"] as byte[];
-                card.ManaCostImageBytes = reader["ManaCostImage"] as byte[];
-                card.ManaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
+                //// Populate raw data fields for parallel processing
+                //card.SetIconBytes = reader["KeyRuneImage"] as byte[];
+                //card.ManaCostImageBytes = reader["ManaCostImage"] as byte[];
+                //card.ManaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
 
-                if (card is CardItem cardItem)
-                {
-                    cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
-                    cardItem.CardsOwned = Convert.ToInt32(reader["CardsOwned"]);
-                    cardItem.CardsForTrade = Convert.ToInt32(reader["CardsForTrade"]);
-                    cardItem.SelectedCondition = reader["Condition"]?.ToString();
-                    cardItem.SelectedFinish = reader["Finish"]?.ToString();
+                //if (card is CardItem cardItem)
+                //{
+                //    cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
+                //    cardItem.CardsOwned = Convert.ToInt32(reader["CardsOwned"]);
+                //    cardItem.CardsForTrade = Convert.ToInt32(reader["CardsForTrade"]);
+                //    cardItem.SelectedCondition = reader["Condition"]?.ToString();
+                //    cardItem.SelectedFinish = reader["Finish"]?.ToString();
 
-                    if (cardItem.SelectedFinish == "foil")
-                    {
-                        cardItem.CardItemPrice = decimal.TryParse(reader["FoilPrice"]?.ToString(), out decimal foilPrice) ? foilPrice : null;
-                    }
-                    else if (cardItem.SelectedFinish == "etched")
-                    {
-                        cardItem.CardItemPrice = decimal.TryParse(reader["EtchedPrice"]?.ToString(), out decimal etchedPrice) ? etchedPrice : null;
-                    }
-                    else
-                    {
-                        cardItem.CardItemPrice = decimal.TryParse(reader["NormalPrice"]?.ToString(), out decimal normalPrice) ? normalPrice : null;
-                    }
-                }
-                else
-                {
-                    card.NormalPrice = decimal.TryParse(reader["NormalPrice"]?.ToString(), out decimal normalPrice) ? normalPrice : null;
-                    card.FoilPrice = decimal.TryParse(reader["FoilPrice"]?.ToString(), out decimal foilPrice) ? foilPrice : null;
-                    card.EtchedPrice = decimal.TryParse(reader["EtchedPrice"]?.ToString(), out decimal etchedPrice) ? etchedPrice : null;
-                }
+                //    if (cardItem.SelectedFinish == "foil")
+                //    {
+                //        cardItem.CardItemPrice = decimal.TryParse(reader["FoilPrice"]?.ToString(), out decimal foilPrice) ? foilPrice : null;
+                //    }
+                //    else if (cardItem.SelectedFinish == "etched")
+                //    {
+                //        cardItem.CardItemPrice = decimal.TryParse(reader["EtchedPrice"]?.ToString(), out decimal etchedPrice) ? etchedPrice : null;
+                //    }
+                //    else
+                //    {
+                //        cardItem.CardItemPrice = decimal.TryParse(reader["NormalPrice"]?.ToString(), out decimal normalPrice) ? normalPrice : null;
+                //    }
+                //}
+                //else
+                //{
+                //    card.NormalPrice = decimal.TryParse(reader["NormalPrice"]?.ToString(), out decimal normalPrice) ? normalPrice : null;
+                //    card.FoilPrice = decimal.TryParse(reader["FoilPrice"]?.ToString(), out decimal foilPrice) ? foilPrice : null;
+                //    card.EtchedPrice = decimal.TryParse(reader["EtchedPrice"]?.ToString(), out decimal etchedPrice) ? etchedPrice : null;
+                //}
 
                 return card;
             }
@@ -1312,6 +1321,29 @@ namespace CollectaMundo
             AddDeckButton.Visibility = Visibility.Visible;
             GridAddNewDeckForm.Visibility = Visibility.Collapsed;
         }
+        private async void DeleteDeckButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.DataContext is Deck deckFromButton)
+            {
+                // Show a confirmation dialog
+                MessageBoxResult result = MessageBox.Show(
+                    $"Are you sure you want to delete the deck '{deckFromButton.DeckName}'?",
+                    "Confirm Delete",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    await DeckManager.DeleteDeck(deckFromButton.DeckId);
+
+                    // Reload deck list
+                    await DBAccess.OpenConnectionAsync();
+                    await LoadAllDecksAsync();
+                    DBAccess.CloseConnection();
+                }
+            }
+        }
+
 
         // Open deck editor window
         private async void OpenAndEditDeck(object sender, RoutedEventArgs e)
@@ -1336,7 +1368,6 @@ namespace CollectaMundo
                 await DeckManager.LoadDeck(selectedDeck.DeckId);
             }
         }
-
         private async void BackToDeckOverviewButton_Click(object sender, RoutedEventArgs e)
         {
             await DBAccess.OpenConnectionAsync();

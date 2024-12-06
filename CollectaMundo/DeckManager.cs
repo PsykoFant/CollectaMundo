@@ -144,6 +144,30 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
+        public static async Task DeleteDeck(int deckId)
+        {
+            try
+            {
+                string deleteDeckQuery = @"DELETE from myDecks WHERE id = @id;";
+
+                await DBAccess.OpenConnectionAsync();
+
+                using var command = new SQLiteCommand(deleteDeckQuery, DBAccess.connection);
+                command.Parameters.AddWithValue("@id", deckId);
+                using var reader = await command.ExecuteReaderAsync();
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error deleting deck: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error deleting deck: {ex}");
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
+
+        }
         public static async Task<bool> UpdateDeckInfo(string columnToUpdate, string valueToUpdate)
         {
             try

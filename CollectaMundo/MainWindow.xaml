@@ -1070,7 +1070,7 @@
                         <Button x:Name="SubmitNewDeckButton" Width="100" Content="Submit new deck" Height="20" Margin="365,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Click="SubmitNewDeckButton_Click" />
                         <Button x:Name="CancelNewDeckButton" Content="Cancel" Height="20" Margin="470,80,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="45" Click="CancelNewDeckButton_Click"/>
                     </Grid>
-                    <ListView x:Name="MyDecksListView" HorizontalAlignment="Center" Margin="0,120,0,0" SelectionMode="Single" Width="600" MouseDoubleClick="OpenAndEditDeck">
+                    <ListView x:Name="MyDecksListView" HorizontalAlignment="Center" Margin="0,120,0,0" SelectionMode="Single" Width="600" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="OpenAndEditDeck">
                         <ListView.ItemContainerStyle>
                             <Style TargetType="ListViewItem">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -1085,7 +1085,7 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Description" Width="300">
+                                <GridViewColumn Header="Description" Width="240">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding Description}" TextWrapping="Wrap"/>
@@ -1099,10 +1099,13 @@
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
-                                <GridViewColumn Header="Action">
+                                <GridViewColumn Header="Action" Width="45">
                                     <GridViewColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck" VerticalAlignment="Center" HorizontalAlignment="Center" Click="OpenAndEditDeck"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck" Margin="0,0,4,0" VerticalAlignment="Center" HorizontalAlignment="Center" Click="OpenAndEditDeck"/>
+                                                <Button Content="&#xE107;" FontFamily="Segoe MDL2 Assets" ToolTip="Delete" VerticalAlignment="Center" HorizontalAlignment="Center" Click="DeleteDeckButton_Click"/>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </GridViewColumn.CellTemplate>
                                 </GridViewColumn>
@@ -1142,7 +1145,73 @@
                         <Button x:Name="BackToDeckOverviewButton" Content="Back" HorizontalAlignment="Right" VerticalAlignment="Top" Click="BackToDeckOverviewButton_Click" />
                     </Grid>
                     <Grid Grid.Row="1">
-                        <Button Content="&#xE104;" FontFamily="Segoe Fluent Icons" ToolTip="Edit" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <DataGrid x:Name="AllCardsForDecksDataGrid"
+                                  AutoGenerateColumns="False"
+                                  SelectionChanged="CardImageSelectionChangedHandler"
+                                  ScrollViewer.CanContentScroll="True"
+                                  EnableColumnVirtualization="True"
+                                  VirtualizingPanel.IsVirtualizing="True"
+                                  CanUserAddRows="False"
+                                  CanUserSortColumns="True"
+                                  HorizontalAlignment="Stretch"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
+                                    <DataGridTemplateColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Label Content="Name" VerticalAlignment="Center" Grid.Column="0"/>
+                                                <ComboBox x:Name="AllCardsNameComboBox"
+                                                          IsTextSearchEnabled="True" 
+                                                          Grid.Column="1"
+                                                          HorizontalAlignment="Stretch"
+                                                          Height="20"
+                                                          IsEditable="True"
+                                                          Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                          Tag="AllCardsName"
+                                                          SelectionChanged="ComboBox_SelectionChanged">
+                                                    <ComboBox.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <VirtualizingStackPanel />
+                                                        </ItemsPanelTemplate>
+                                                    </ComboBox.ItemsPanel>
+                                                </ComboBox>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.HeaderTemplate>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Icon" IsReadOnly="True" Width="Auto" SortMemberPath="ReleaseDate">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Image Source="{Binding SetIcon}" Width="20" Height="20" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Mana Cost" IsReadOnly="True" Width="Auto" SortMemberPath="ManaValue">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Card Types" Width="*" SortMemberPath="Types">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Types}" TextWrapping="Wrap" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </Grid>
                     <Grid Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <Button Content="&#x270E;" FontFamily="Segoe UI Symbol" ToolTip="Edit" />
