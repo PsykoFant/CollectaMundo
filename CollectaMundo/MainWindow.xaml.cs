@@ -148,21 +148,14 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            //Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
-            //Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true);
-            //Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
-            //Task loadDecks = LoadAllDecksAsync();
-            //Task populateAllFormatsList = PopulateAllFormatsListAsync();
+            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false, false);
+            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, false);
+            Task loadCardsForDecks = PopulateCardDataGridAsync(allCardsForDecks, allCardsForDecksQuery, AllCardsForDecksDataGrid, false, true);
+            Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
+            Task loadDecks = LoadAllDecksAsync();
+            Task populateAllFormatsList = PopulateAllFormatsListAsync();
 
-            //await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, loadDecks, populateAllFormatsList);
-
-
-
-            await LoadAllDecksAsync();
-            await PopulateAllFormatsListAsync();
-            await PopulateCardDataGridAsync(allCardsForDecks, allCardsForDecksQuery, AllCardsForDecksDataGrid, false);
-
-            Debug.WriteLine(allCardsForDecks[0].Name);
+            await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, loadDecks, populateAllFormatsList, loadCardsForDecks);
 
             DBAccess.CloseConnection();
 
@@ -184,7 +177,7 @@ namespace CollectaMundo
 
             await ShowStatusWindowAsync(false);
         }
-        public static async Task PopulateCardDataGridAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem)
+        public static async Task PopulateCardDataGridAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem, bool isAllCardsItem)
         {
             try
             {
@@ -198,7 +191,7 @@ namespace CollectaMundo
                 {
                     try
                     {
-                        CardSet card = CreateCardFromReader(reader, isCardItem);
+                        CardSet card = CreateCardFromReader(reader, isCardItem, isAllCardsItem);
                         tempCardList.Add(card);
                     }
                     catch (Exception ex)
@@ -217,80 +210,104 @@ namespace CollectaMundo
                 MessageBox.Show($"Error while loading cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem)
+        private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem, bool isAllCardsItem)
         {
+            // Utility to process ManaCost string
             static string ProcessManaCost(string manaCostRaw)
             {
                 char[] separator = ['{', '}'];
                 return string.Join(",", manaCostRaw.Split(separator, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
             }
 
+            // Utility to safely retrieve field values
+            static T? GetFieldValue<T>(DbDataReader reader, string columnName)
+            {
+                if (reader[columnName] == DBNull.Value) return default;
+
+                object value = reader[columnName];
+
+                // Explicit conversion for specific cases
+                if (typeof(T) == typeof(int?) && value is long longValue)
+                {
+                    return (T)(object)(int?)longValue;
+                }
+
+                return (T)value;
+            }
+
+            // Utility to parse nullable decimal price fields
+            static decimal? ParsePrice(string priceColumn, DbDataReader reader)
+            {
+                return decimal.TryParse(reader[priceColumn]?.ToString(), out decimal price) ? price : null;
+            }
+
+            // Utility to parse nullable DateTime fields
+            static DateTime? ParseDate(string? dateRaw)
+            {
+                return DateTime.TryParse(dateRaw, out DateTime parsedDate) ? parsedDate : null;
+            }
+
             try
             {
-                CardSet card = isCardItem ? (CardSet)new CardItem() : new CardSet();
+                // Instantiate appropriate type
+                CardSet card = isCardItem ? new CardItem() : new CardSet();
 
                 // Populate common properties
-                card.Name = reader["Name"]?.ToString() ?? string.Empty;
-                //card.SetName = reader["SetName"]?.ToString() ?? string.Empty;
-                card.Types = reader["Types"]?.ToString() ?? string.Empty;
-                card.ManaCost = ProcessManaCost(reader["ManaCost"]?.ToString() ?? string.Empty);
-                card.SuperTypes = reader["SuperTypes"]?.ToString() ?? string.Empty;
-                card.SubTypes = reader["SubTypes"]?.ToString() ?? string.Empty;
-                card.Type = reader["Type"]?.ToString() ?? string.Empty;
-                card.Keywords = reader["Keywords"]?.ToString() ?? string.Empty;
-                //card.Text = reader["RulesText"]?.ToString() ?? string.Empty;
-                //card.ManaValue = double.TryParse(reader["ManaValue"]?.ToString(), out double manaValue) ? manaValue : 0;
-                //card.Language = reader["Language"]?.ToString() ?? string.Empty;
-                //card.Uuid = reader["Uuid"]?.ToString() ?? string.Empty;
-                //card.Side = reader["Side"]?.ToString() ?? string.Empty;
-                ////card.Rarity = reader["Rarity"]?.ToString() ?? string.Empty;
-                ////card.Finishes = reader["Finishes"]?.ToString();
-                ////if (DateTime.TryParse(reader["ReleaseDate"]?.ToString(), out DateTime releaseDate))
-                ////{
-                ////    card.ReleaseDate = releaseDate;
-                ////}
-                ////else
-                ////{
-                ////    card.ReleaseDate = null;
-                ////}
+                card.Name = GetFieldValue<string>(reader, "Name") ?? string.Empty;
+                card.Types = GetFieldValue<string>(reader, "Types") ?? string.Empty;
+                card.ManaCost = ProcessManaCost(GetFieldValue<string>(reader, "ManaCost") ?? string.Empty);
+                card.SuperTypes = GetFieldValue<string>(reader, "SuperTypes") ?? string.Empty;
+                card.SubTypes = GetFieldValue<string>(reader, "SubTypes") ?? string.Empty;
+                card.Type = GetFieldValue<string>(reader, "Type") ?? string.Empty;
+                card.Keywords = GetFieldValue<string>(reader, "Keywords") ?? string.Empty;
+                card.Text = GetFieldValue<string>(reader, "RulesText") ?? string.Empty;
+                card.ManaValue = GetFieldValue<double?>(reader, "ManaValue") ?? 0;
+                card.Side = GetFieldValue<string>(reader, "Side") ?? string.Empty;
+                card.ManaCostImageBytes = GetFieldValue<byte[]>(reader, "ManaCostImage");
+                card.ManaCostRaw = GetFieldValue<string>(reader, "ManaCost") ?? string.Empty;
 
-                //// Populate raw data fields for parallel processing
-                //card.SetIconBytes = reader["KeyRuneImage"] as byte[];
-                //card.ManaCostImageBytes = reader["ManaCostImage"] as byte[];
-                //card.ManaCostRaw = reader["ManaCost"]?.ToString() ?? string.Empty;
+                if (!isAllCardsItem)
+                {
+                    card.Language = GetFieldValue<string>(reader, "Language") ?? string.Empty;
+                    card.Uuid = GetFieldValue<string>(reader, "Uuid") ?? string.Empty;
+                    card.SetName = GetFieldValue<string>(reader, "SetName") ?? string.Empty;
+                    card.Rarity = GetFieldValue<string>(reader, "Rarity") ?? string.Empty;
+                    card.Finishes = GetFieldValue<string>(reader, "Finishes");
+                    card.ReleaseDate = ParseDate(GetFieldValue<string>(reader, "ReleaseDate"));
 
-                //if (card is CardItem cardItem)
-                //{
-                //    cardItem.CardId = reader["CardId"] != DBNull.Value ? Convert.ToInt32(reader["CardId"]) : (int?)null;
-                //    cardItem.CardsOwned = Convert.ToInt32(reader["CardsOwned"]);
-                //    cardItem.CardsForTrade = Convert.ToInt32(reader["CardsForTrade"]);
-                //    cardItem.SelectedCondition = reader["Condition"]?.ToString();
-                //    cardItem.SelectedFinish = reader["Finish"]?.ToString();
+                    // Populate raw data fields for parallel processing
+                    card.SetIconBytes = GetFieldValue<byte[]>(reader, "KeyRuneImage");
+                }
 
-                //    if (cardItem.SelectedFinish == "foil")
-                //    {
-                //        cardItem.CardItemPrice = decimal.TryParse(reader["FoilPrice"]?.ToString(), out decimal foilPrice) ? foilPrice : null;
-                //    }
-                //    else if (cardItem.SelectedFinish == "etched")
-                //    {
-                //        cardItem.CardItemPrice = decimal.TryParse(reader["EtchedPrice"]?.ToString(), out decimal etchedPrice) ? etchedPrice : null;
-                //    }
-                //    else
-                //    {
-                //        cardItem.CardItemPrice = decimal.TryParse(reader["NormalPrice"]?.ToString(), out decimal normalPrice) ? normalPrice : null;
-                //    }
-                //}
-                //else
-                //{
-                //    card.NormalPrice = decimal.TryParse(reader["NormalPrice"]?.ToString(), out decimal normalPrice) ? normalPrice : null;
-                //    card.FoilPrice = decimal.TryParse(reader["FoilPrice"]?.ToString(), out decimal foilPrice) ? foilPrice : null;
-                //    card.EtchedPrice = decimal.TryParse(reader["EtchedPrice"]?.ToString(), out decimal etchedPrice) ? etchedPrice : null;
-                //}
+                // Populate CardItem-specific properties
+                if (card is CardItem cardItem)
+                {
+                    cardItem.CardId = GetFieldValue<int?>(reader, "CardId");
+                    cardItem.CardsOwned = GetFieldValue<int?>(reader, "CardsOwned") ?? 0;
+                    cardItem.CardsForTrade = GetFieldValue<int?>(reader, "CardsForTrade") ?? 0;
+                    cardItem.SelectedCondition = GetFieldValue<string>(reader, "Condition");
+                    cardItem.SelectedFinish = GetFieldValue<string>(reader, "Finish");
+
+                    cardItem.CardItemPrice = cardItem.SelectedFinish switch
+                    {
+                        "foil" => ParsePrice("FoilPrice", reader),
+                        "etched" => ParsePrice("EtchedPrice", reader),
+                        _ => ParsePrice("NormalPrice", reader)
+                    };
+                }
+                else if (!isAllCardsItem)
+                {
+                    // Populate price fields for non-all-cards items
+                    card.NormalPrice = ParsePrice("NormalPrice", reader);
+                    card.FoilPrice = ParsePrice("FoilPrice", reader);
+                    card.EtchedPrice = ParsePrice("EtchedPrice", reader);
+                }
 
                 return card;
             }
             catch (Exception ex)
             {
+                MessageBox.Show($"Error in CreateCardFromReader: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Debug.WriteLine($"Error in CreateCardFromReader: {ex.Message}");
                 throw;
             }
@@ -471,6 +488,7 @@ namespace CollectaMundo
                     UpdateComboBoxSource(AllCardsDataGrid, "AllCardsSet", allCards.Select(card => card.SetName).Distinct().ToList());
                     UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionName", allCards.Select(card => card.Name).Distinct().ToList());
                     UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionSet", allCards.Select(card => card.SetName).Distinct().ToList());
+                    UpdateComboBoxSource(AllCardsForDecksDataGrid, "AllCardsForDecksName", allCardsForDecks.Select(card => card.Name).Distinct().ToList());
 
                     // Set Filter Options
                     FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
@@ -552,6 +570,7 @@ namespace CollectaMundo
 
             if (sender is ComboBox comboBox)
             {
+                // If a selection is made in a header dropdown in AllCardsDataGrid, reset selections made in header dropdowns in MyCollectionDataGrid and AllCardsForDecksDataGrid
                 if (comboBox.Name == "AllCardsNameComboBox" || comboBox.Name == "AllCardsSetComboBox")
                 {
                     filterManager.WhichDropdown = "AllCards";
@@ -560,14 +579,42 @@ namespace CollectaMundo
                     {
                         headerComboBox.SelectedIndex = -1;
                     }
+
+                    var headerComboBoxesAllCardsForDecks = FindVisualChildren<ComboBox>(AllCardsForDecksDataGrid);
+                    foreach (ComboBox headerComboBox in headerComboBoxesAllCardsForDecks)
+                    {
+                        headerComboBox.SelectedIndex = -1;
+                    }
                 }
+
+                // If a selection is made in a header dropdown in MyCollectionDataGrid, reset selections made in header dropdowns in AllCardsDataGrid and AllCardsForDecksDataGrid
                 if (comboBox.Name == "MyCollectionNameComboBox" || comboBox.Name == "MyCollectionSetComboBox")
                 {
                     filterManager.WhichDropdown = "MyCollection";
-
-                    // Clear the selections in the other datagrid
                     var headerComboBoxesAllCards = FindVisualChildren<ComboBox>(AllCardsDataGrid);
                     foreach (ComboBox headerComboBox in headerComboBoxesAllCards)
+                    {
+                        headerComboBox.SelectedIndex = -1;
+                    }
+
+                    var headerComboBoxesAllCardsForDecks = FindVisualChildren<ComboBox>(AllCardsForDecksDataGrid);
+                    foreach (ComboBox headerComboBox in headerComboBoxesAllCardsForDecks)
+                    {
+                        headerComboBox.SelectedIndex = -1;
+                    }
+                }
+
+                // If a selection is made in a header dropdown in AllCardsForDecksDataGrid, reset selections made in header dropdowns in AllCardsDataGrid and MyCollectionDataGrid
+                if (comboBox.Name == "AllCardsForDecksNameComboBox")
+                {
+                    filterManager.WhichDropdown = "AllCardsForDecks";
+                    var headerComboBoxesAllCards = FindVisualChildren<ComboBox>(AllCardsDataGrid);
+                    foreach (ComboBox headerComboBox in headerComboBoxesAllCards)
+                    {
+                        headerComboBox.SelectedIndex = -1;
+                    }
+                    var headerComboBoxesMyCollection = FindVisualChildren<ComboBox>(MyCollectionDataGrid);
+                    foreach (ComboBox headerComboBox in headerComboBoxesMyCollection)
                     {
                         headerComboBox.SelectedIndex = -1;
                     }
@@ -576,9 +623,11 @@ namespace CollectaMundo
 
             IEnumerable<CardSet> filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
             IEnumerable<CardSet> filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
+            IEnumerable<CardSet> filteredAllCardsForDecks = filterManager.ApplyFilter(allCardsForDecks, "allCardsForDecks");
 
             AllCardsDataGrid.ItemsSource = filteredAllCards;
             MyCollectionDataGrid.ItemsSource = filteredMyCards;
+            AllCardsForDecksDataGrid.ItemsSource = filteredAllCardsForDecks;
         }
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
@@ -1685,8 +1734,8 @@ namespace CollectaMundo
             // Update the db views to load prices from the selected retailer
             await DownloadAndPrepDB.CreateViews();
 
-            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false);
-            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true);
+            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false, false);
+            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, false);
 
             await Task.WhenAll(loadAllCards, loadMyCollection);
 

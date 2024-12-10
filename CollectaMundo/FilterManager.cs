@@ -35,6 +35,9 @@ namespace CollectaMundo
                 ComboBox? nameComboBoxMyCollection = headerComboBoxesMyCollection.FirstOrDefault(cb => cb.Tag?.ToString() == "MyCollectionName");
                 ComboBox? setComboBoxMyCollection = headerComboBoxesMyCollection.FirstOrDefault(cb => cb.Tag?.ToString() == "MyCollectionSet");
 
+                var headerComboBoxesAllCardsForDecks = MainWindow.FindVisualChildren<ComboBox>(MainWindow.CurrentInstance.AllCardsForDecksDataGrid);
+                ComboBox? nameComboBoxAllCardsForDecks = headerComboBoxesAllCardsForDecks.FirstOrDefault(cb => cb.Tag?.ToString() == "AllCardsForDecksName");
+
                 string cardFilter = string.Empty;
                 string setFilter = string.Empty;
 
@@ -48,6 +51,11 @@ namespace CollectaMundo
                 {
                     cardFilter = nameComboBoxMyCollection?.SelectedItem?.ToString() ?? string.Empty;
                     setFilter = setComboBoxMyCollection?.SelectedItem?.ToString() ?? string.Empty;
+                }
+
+                if (WhichDropdown == "AllCardsForDecks")
+                {
+                    cardFilter = nameComboBoxAllCardsForDecks?.SelectedItem?.ToString() ?? string.Empty;
                 }
 
                 string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
@@ -115,7 +123,7 @@ namespace CollectaMundo
                     // Cast back to CardSet after all filtering
                     filteredCards = filteredCardItems.Cast<CardSet>();
                 }
-                else
+                else if (listName == "allCards")
                 {
                     filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, card => card.Finishes);
                 }
@@ -127,7 +135,7 @@ namespace CollectaMundo
                 {
                     MainWindow.CurrentInstance.AllCardsCountLabel.Content = $"Showing: {finalFilteredCards.Count} cards out of total {MainWindow.CurrentInstance.allCards.Count} cards.";
                 }
-                else
+                else if (listName == "myCards")
                 {
                     MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {finalFilteredCards.Count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
                 }

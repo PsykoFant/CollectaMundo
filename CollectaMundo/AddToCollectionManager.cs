@@ -405,7 +405,7 @@ namespace CollectaMundo
 
                 // Reload my collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
-                await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true);
+                await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
                 await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 DBAccess.connection.Close();
@@ -496,7 +496,7 @@ namespace CollectaMundo
 
                 // Reload my collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
-                await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true);
+                await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
                 await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 MainWindow.CurrentInstance.ApplyFilterSelection();
@@ -607,7 +607,7 @@ namespace CollectaMundo
 
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
-                await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true);
+                await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
                 await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 DBAccess.connection.Close();
@@ -661,7 +661,7 @@ namespace CollectaMundo
 
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
-                await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true);
+                await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
                 await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 DBAccess.connection.Close();
@@ -726,7 +726,7 @@ namespace CollectaMundo
 
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
-                await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true);
+                await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
 
                 DBAccess.connection.Close();
 

@@ -1165,14 +1165,14 @@
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
                                                 <Label Content="Name" VerticalAlignment="Center" Grid.Column="0"/>
-                                                <ComboBox x:Name="AllCardsNameComboBox"
+                                                <ComboBox x:Name="AllCardsForDecksNameComboBox"
                                                           IsTextSearchEnabled="True" 
                                                           Grid.Column="1"
                                                           HorizontalAlignment="Stretch"
                                                           Height="20"
                                                           IsEditable="True"
                                                           Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}" 
-                                                          Tag="AllCardsName"
+                                                          Tag="AllCardsForDecksName"
                                                           SelectionChanged="ComboBox_SelectionChanged">
                                                     <ComboBox.ItemsPanel>
                                                         <ItemsPanelTemplate>
@@ -1189,13 +1189,6 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Icon" IsReadOnly="True" Width="Auto" SortMemberPath="ReleaseDate">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Image Source="{Binding SetIcon}" Width="20" Height="20" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
                                 <DataGridTemplateColumn Header="Mana Cost" IsReadOnly="True" Width="Auto" SortMemberPath="ManaValue">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -1203,10 +1196,24 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Card Supertypes" Width="*" SortMemberPath="SuperTypes">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding SuperTypes}" TextWrapping="Wrap" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                                 <DataGridTemplateColumn Header="Card Types" Width="*" SortMemberPath="Types">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding Types}" TextWrapping="Wrap" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Card Subtypes" Width="*" SortMemberPath="SubTypes">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding SubTypes}" TextWrapping="Wrap" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
