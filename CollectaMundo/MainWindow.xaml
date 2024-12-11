@@ -1171,7 +1171,7 @@
                                                           HorizontalAlignment="Stretch"
                                                           Height="20"
                                                           IsEditable="True"
-                                                          Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                          Width="{Binding ColumnWidths[2][0], RelativeSource={RelativeSource AncestorType=Window}}" 
                                                           Tag="AllCardsForDecksName"
                                                           SelectionChanged="ComboBox_SelectionChanged">
                                                     <ComboBox.ItemsPanel>

@@ -266,10 +266,32 @@ namespace CollectaMundo
                 return; // Protect against out-of-range errors
             }
 
-            // Define paddings for each column. Ensure this list matches the number of columns you have.
-            int[] paddings = [65, 50];
+            // Define paddings for each datagrid. Ensure this list matches the number of columns for each DataGrid.
+            List<int[]> paddingsList = new()
+            {
+                [65, 50], // Paddings for AllCardsDataGrid
+                [65, 50], // Paddings for MyCollectionDataGrid
+                [65]      // Padding for AllCardsForDecksDataGrid (only one column to adjust)
+    };
 
-            var currentDataGrid = dataGridIndex == 0 ? MainWindow.CurrentInstance.AllCardsDataGrid : MainWindow.CurrentInstance.MyCollectionDataGrid;
+            if (dataGridIndex >= paddingsList.Count)
+            {
+                return; // Protect against out-of-range errors when accessing paddingsList
+            }
+
+            var paddings = paddingsList[dataGridIndex];
+            DataGrid currentDataGrid = dataGridIndex switch
+            {
+                0 => MainWindow.CurrentInstance.AllCardsDataGrid,
+                1 => MainWindow.CurrentInstance.MyCollectionDataGrid,
+                2 => MainWindow.CurrentInstance.AllCardsForDecksDataGrid,
+                _ => null
+            };
+
+            if (currentDataGrid == null)
+            {
+                return;
+            }
 
             for (int colIndex = 0; colIndex < paddings.Length; colIndex++)
             {
@@ -288,6 +310,7 @@ namespace CollectaMundo
                 }
             }
         }
+
 
         // Save column sort selections
         public static void SaveAndRestoreSort(DataGrid dataGrid, Action updateItemsSource)

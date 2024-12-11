@@ -92,7 +92,7 @@ namespace CollectaMundo
         public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } =
         [
             [50, 50], // Defaults for AllCardsDataGrid
-            [50, 50]  // Defaults for MyCollectionDataGrid
+            [50, 50],  // Defaults for MyCollectionDataGrid
         ];
 
         // Read the price retailer from appsettings.json
@@ -134,6 +134,7 @@ namespace CollectaMundo
             // Subscribe to column width changes
             AllCardsDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(0);
             MyCollectionDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(1);
+            AllCardsForDecksDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(2);
 
             // Pick up filtering combobox changes
             AllOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
@@ -222,7 +223,10 @@ namespace CollectaMundo
             // Utility to safely retrieve field values
             static T? GetFieldValue<T>(DbDataReader reader, string columnName)
             {
-                if (reader[columnName] == DBNull.Value) return default;
+                if (reader[columnName] == DBNull.Value)
+                {
+                    return default;
+                }
 
                 object value = reader[columnName];
 
@@ -1707,7 +1711,10 @@ namespace CollectaMundo
         }
         private async void RetailSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_isStartup) return;
+            if (_isStartup)
+            {
+                return;
+            }
 
             await ShowStatusWindowAsync(true, "Reloading cards prices from selected retailer ... ");
 
