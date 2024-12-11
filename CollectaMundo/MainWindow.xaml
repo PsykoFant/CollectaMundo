@@ -1113,7 +1113,7 @@
                         </ListView.View>
                     </ListView>
                 </Grid>
-                <Grid x:Name="GridDeckEditor" Grid.Row="1" VerticalAlignment="Top" Visibility="Collapsed">
+                <Grid x:Name="GridDeckEditor" Grid.Row="1" VerticalAlignment="Top" Visibility="Hidden">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="100"/>
                         <RowDefinition Height="150"/>

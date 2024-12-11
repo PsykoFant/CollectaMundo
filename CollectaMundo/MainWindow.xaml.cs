@@ -540,6 +540,7 @@ namespace CollectaMundo
                     }
                 }
             }
+
             return children;
         }
         private static void UpdateComboBoxSource(DataGrid dataGrid, string tag, List<string?> dataSource)
@@ -567,67 +568,54 @@ namespace CollectaMundo
         #region Filter elements handling        
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-
-            if (sender is ComboBox comboBox)
+            void ResetOtherComboBoxSelections(string currentCategory)
             {
-                // If a selection is made in a header dropdown in AllCardsDataGrid, reset selections made in header dropdowns in MyCollectionDataGrid and AllCardsForDecksDataGrid
-                if (comboBox.Name == "AllCardsNameComboBox" || comboBox.Name == "AllCardsSetComboBox")
+                var categoryComboBoxMappings = new Dictionary<string, DataGrid>
+            {
+                { "AllCards", AllCardsDataGrid },
+                { "MyCollection", MyCollectionDataGrid },
+                { "AllCardsForDecks", AllCardsForDecksDataGrid }
+            };
+
+                foreach (var category in categoryComboBoxMappings)
                 {
-                    filterManager.WhichDropdown = "AllCards";
-                    var headerComboBoxesMyCollection = FindVisualChildren<ComboBox>(MyCollectionDataGrid);
-                    foreach (ComboBox headerComboBox in headerComboBoxesMyCollection)
+                    if (category.Key != currentCategory)
                     {
-                        headerComboBox.SelectedIndex = -1;
-                    }
-
-                    var headerComboBoxesAllCardsForDecks = FindVisualChildren<ComboBox>(AllCardsForDecksDataGrid);
-                    foreach (ComboBox headerComboBox in headerComboBoxesAllCardsForDecks)
-                    {
-                        headerComboBox.SelectedIndex = -1;
-                    }
-                }
-
-                // If a selection is made in a header dropdown in MyCollectionDataGrid, reset selections made in header dropdowns in AllCardsDataGrid and AllCardsForDecksDataGrid
-                if (comboBox.Name == "MyCollectionNameComboBox" || comboBox.Name == "MyCollectionSetComboBox")
-                {
-                    filterManager.WhichDropdown = "MyCollection";
-                    var headerComboBoxesAllCards = FindVisualChildren<ComboBox>(AllCardsDataGrid);
-                    foreach (ComboBox headerComboBox in headerComboBoxesAllCards)
-                    {
-                        headerComboBox.SelectedIndex = -1;
-                    }
-
-                    var headerComboBoxesAllCardsForDecks = FindVisualChildren<ComboBox>(AllCardsForDecksDataGrid);
-                    foreach (ComboBox headerComboBox in headerComboBoxesAllCardsForDecks)
-                    {
-                        headerComboBox.SelectedIndex = -1;
-                    }
-                }
-
-                // If a selection is made in a header dropdown in AllCardsForDecksDataGrid, reset selections made in header dropdowns in AllCardsDataGrid and MyCollectionDataGrid
-                if (comboBox.Name == "AllCardsForDecksNameComboBox")
-                {
-                    filterManager.WhichDropdown = "AllCardsForDecks";
-                    var headerComboBoxesAllCards = FindVisualChildren<ComboBox>(AllCardsDataGrid);
-                    foreach (ComboBox headerComboBox in headerComboBoxesAllCards)
-                    {
-                        headerComboBox.SelectedIndex = -1;
-                    }
-                    var headerComboBoxesMyCollection = FindVisualChildren<ComboBox>(MyCollectionDataGrid);
-                    foreach (ComboBox headerComboBox in headerComboBoxesMyCollection)
-                    {
-                        headerComboBox.SelectedIndex = -1;
+                        var headerComboBoxes = FindVisualChildren<ComboBox>(category.Value);
+                        foreach (ComboBox headerComboBox in headerComboBoxes)
+                        {
+                            headerComboBox.SelectedIndex = -1;
+                        }
                     }
                 }
             }
 
-            IEnumerable<CardSet> filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
-            IEnumerable<CardSet> filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
-            IEnumerable<CardSet> filteredAllCardsForDecks = filterManager.ApplyFilter(allCardsForDecks, "allCardsForDecks");
+            if (sender is ComboBox comboBox)
+            {
+                // Map ComboBox names to filter categories
+                var comboBoxCategoryMap = new Dictionary<string, string>
+                {
+                    { "AllCardsNameComboBox", "AllCards" },
+                    { "AllCardsSetComboBox", "AllCards" },
+                    { "MyCollectionNameComboBox", "MyCollection" },
+                    { "MyCollectionSetComboBox", "MyCollection" },
+                    { "AllCardsForDecksNameComboBox", "AllCardsForDecks" }
+                };
 
-            AllCardsDataGrid.ItemsSource = filteredAllCards;
-            MyCollectionDataGrid.ItemsSource = filteredMyCards;
-            AllCardsForDecksDataGrid.ItemsSource = filteredAllCardsForDecks;
+                // Identify category and reset other ComboBox selections
+                if (comboBoxCategoryMap.TryGetValue(comboBox.Name, out string category))
+                {
+                    filterManager.WhichDropdown = category;
+
+                    // Reset selections in unrelated categories
+                    ResetOtherComboBoxSelections(category);
+                }
+            }
+
+            // Apply filters and update data sources
+            AllCardsDataGrid.ItemsSource = filterManager.ApplyFilter(allCards, "allCards");
+            MyCollectionDataGrid.ItemsSource = filterManager.ApplyFilter(myCards, "myCards");
+            AllCardsForDecksDataGrid.ItemsSource = filterManager.ApplyFilter(allCardsForDecks, "allCardsForDecks");
         }
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
@@ -1086,16 +1074,20 @@ namespace CollectaMundo
         {
             IEnumerable<CardSet> filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
             IEnumerable<CardSet> filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
+            IEnumerable<CardSet> filteredAllCardsForDecks = filterManager.ApplyFilter(allCardsForDecks, "allCardsForDecks");
 
             // Save and restore sort descriptions for both DataGrids
             FilterManager.SaveAndRestoreSort(AllCardsDataGrid, () =>
             {
                 AllCardsDataGrid.ItemsSource = filteredAllCards;
             });
-
             FilterManager.SaveAndRestoreSort(MyCollectionDataGrid, () =>
             {
                 MyCollectionDataGrid.ItemsSource = filteredMyCards;
+            });
+            FilterManager.SaveAndRestoreSort(AllCardsForDecksDataGrid, () =>
+            {
+                AllCardsForDecksDataGrid.ItemsSource = filteredAllCardsForDecks;
             });
         }
 
@@ -1126,6 +1118,11 @@ namespace CollectaMundo
             }
             var headerComboBoxesMyCollection = FindVisualChildren<ComboBox>(MyCollectionDataGrid);
             foreach (ComboBox headerComboBox in headerComboBoxesMyCollection)
+            {
+                headerComboBox.SelectedIndex = -1;
+            }
+            var headerComboBoxesAllCardsForDecks = FindVisualChildren<ComboBox>(AllCardsForDecksDataGrid);
+            foreach (ComboBox headerComboBox in headerComboBoxesAllCardsForDecks)
             {
                 headerComboBox.SelectedIndex = -1;
             }
@@ -1415,6 +1412,9 @@ namespace CollectaMundo
             if (selectedDeck != null)
             {
                 await DeckManager.LoadDeck(selectedDeck.DeckId);
+                GridFiltering.Visibility = Visibility.Visible;
+                GridCardImages.Visibility = Visibility.Visible;
+
             }
         }
         private async void BackToDeckOverviewButton_Click(object sender, RoutedEventArgs e)
@@ -1426,6 +1426,8 @@ namespace CollectaMundo
             HeadlineDecks.Content = "Deck Management";
             GridDeckEditor.Visibility = Visibility.Collapsed;
             GridDecksOverview.Visibility = Visibility.Visible;
+            GridFiltering.Visibility = Visibility.Collapsed;
+            GridCardImages.Visibility = Visibility.Collapsed;
         }
 
         // Deck Editor Methods
