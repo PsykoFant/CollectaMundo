@@ -35,12 +35,16 @@ namespace CollectaMundo
                     };
 
                     // Go to deck Editor to edit new deck
-                    MainWindow.CurrentInstance.GridDecksOverview.Visibility = Visibility.Collapsed;
-                    MainWindow.CurrentInstance.HeadlineDecks.Content = "Deck Editor";
                     MainWindow.CurrentInstance.DeckNameTextBox.Text = deckName;
                     MainWindow.CurrentInstance.DeckDescriptionTextBox.Text = deckDescription;
                     MainWindow.CurrentInstance.DeckFormatTextBox.Text = $"Target format: {targetFormat}";
                     MainWindow.CurrentInstance.ExistingDeckFormatComboBox.SelectedItem = targetFormat;
+
+                    MainWindow.CurrentInstance.GridDecksOverview.Visibility = Visibility.Collapsed;
+                    MainWindow.CurrentInstance.HeadlineDecks.Content = "Deck Editor";
+                    MainWindow.CurrentInstance.GridTopMenu.IsEnabled = false;
+                    MainWindow.CurrentInstance.GridFiltering.Visibility = Visibility.Visible;
+                    MainWindow.CurrentInstance.GridCardImages.Visibility = Visibility.Visible;
                     MainWindow.CurrentInstance.GridDeckEditor.Visibility = Visibility.Visible;
                 }
                 else

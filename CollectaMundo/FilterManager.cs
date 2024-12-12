@@ -267,12 +267,12 @@ namespace CollectaMundo
             }
 
             // Define paddings for each datagrid. Ensure this list matches the number of columns for each DataGrid.
-            List<int[]> paddingsList = new()
-            {
+            List<int[]> paddingsList =
+            [
                 [65, 50], // Paddings for AllCardsDataGrid
                 [65, 50], // Paddings for MyCollectionDataGrid
                 [65]      // Padding for AllCardsForDecksDataGrid (only one column to adjust)
-    };
+            ];
 
             if (dataGridIndex >= paddingsList.Count)
             {
@@ -285,7 +285,7 @@ namespace CollectaMundo
                 0 => MainWindow.CurrentInstance.AllCardsDataGrid,
                 1 => MainWindow.CurrentInstance.MyCollectionDataGrid,
                 2 => MainWindow.CurrentInstance.AllCardsForDecksDataGrid,
-                _ => null
+                _ => throw new ArgumentOutOfRangeException(nameof(dataGridIndex), "Invalid DataGrid index.")
             };
 
             if (currentDataGrid == null)

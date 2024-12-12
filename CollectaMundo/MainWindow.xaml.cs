@@ -89,11 +89,7 @@ namespace CollectaMundo
 
         // Object of AddToCollectionManager class to access that functionality
         private readonly AddToCollectionManager addToCollectionManager = new();
-        public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } =
-        [
-            [50, 50], // Defaults for AllCardsDataGrid
-            [50, 50],  // Defaults for MyCollectionDataGrid
-        ];
+        public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [[50, 50], [50, 50], [50]];
 
         // Read the price retailer from appsettings.json
         public string? appsettingsRetailer = ConfigurationManager.GetSetting("PriceInfo:Retailer") as string;
@@ -607,7 +603,7 @@ namespace CollectaMundo
                 };
 
                 // Identify category and reset other ComboBox selections
-                if (comboBoxCategoryMap.TryGetValue(comboBox.Name, out string category))
+                if (comboBoxCategoryMap.TryGetValue(comboBox.Name, out string? category))
                 {
                     filterManager.WhichDropdown = category;
 
@@ -1095,7 +1091,6 @@ namespace CollectaMundo
             });
         }
 
-
         // Reset filter elements
         public void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
@@ -1195,13 +1190,21 @@ namespace CollectaMundo
         // Show the card image for the highlighted DataGrid row
         private async void CardImageSelectionChangedHandler(object sender, SelectionChangedEventArgs e)
         {
+
+            // Show image from a highlighted row in a datagrid
             if (sender is DataGrid dataGrid && dataGrid.SelectedItem is CardSet selectedCard)
             {
                 if (selectedCard.Uuid != null)
                 {
-                    await ShowCardImage.ShowImage(selectedCard.Uuid, selectedCard.Types);
+                    await ShowCardImage.ShowImage(selectedCard.Uuid);
+                }
+                else if (selectedCard.Name != null)
+                {
+                    await ShowCardImage.ShowImage(null, selectedCard.Name);
                 }
             }
+
+            // Show image from import wizards (choose between versions)
             else if (sender is ComboBox comboBox && comboBox.SelectedItem is UuidVersion selectedVersion && !string.IsNullOrEmpty(selectedVersion.Uuid))
             {
                 await ShowCardImage.ShowImage(selectedVersion.Uuid);
@@ -1394,7 +1397,6 @@ namespace CollectaMundo
             }
         }
 
-
         // Open deck editor window
         private async void OpenAndEditDeck(object sender, RoutedEventArgs e)
         {
@@ -1416,22 +1418,27 @@ namespace CollectaMundo
             if (selectedDeck != null)
             {
                 await DeckManager.LoadDeck(selectedDeck.DeckId);
-                GridFiltering.Visibility = Visibility.Visible;
-                GridCardImages.Visibility = Visibility.Visible;
-
             }
         }
         private async void BackToDeckOverviewButton_Click(object sender, RoutedEventArgs e)
         {
+            // Cancel all edits if there are some
+            CancelDeckEdit(DeckNameTextBox, EditDeckNameButton, SaveDeckNameButton, CancelDeckNameEditButton, CurrentDeck.DeckName);
+            CancelDeckEdit(DeckDescriptionTextBox, EditDeckDescriptionButton, SaveDeckDescriptionButton, CancelDeckDescriptionEditButton, CurrentDeck.Description);
+            CancelDeckEdit(DeckFormatTextBox, EditDeckFormatButton, SaveDeckFormatButton, CancelDeckFormatEditButton, $"Target format: {CurrentDeck.TargetFormat}");
+
+            // Reload deck list
             await DBAccess.OpenConnectionAsync();
             await LoadAllDecksAsync();
             DBAccess.CloseConnection();
 
+            // Reset UI elements
             HeadlineDecks.Content = "Deck Management";
             GridDeckEditor.Visibility = Visibility.Collapsed;
-            GridDecksOverview.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Collapsed;
             GridCardImages.Visibility = Visibility.Collapsed;
+            GridTopMenu.IsEnabled = true;
+            GridDecksOverview.Visibility = Visibility.Visible;
         }
 
         // Deck Editor Methods
