@@ -123,6 +123,7 @@ namespace CollectaMundo
                     Debug.WriteLine("No valid release dates found for the specified card name.");
                     return null;
                 }
+                Debug.WriteLine($"The oldest setcode for {cardName} is {oldestSetCode}.");
 
                 // Step 3: Fetch the uuid for the card with the oldest setCode
                 string fetchUuidQuery = "SELECT uuid FROM cards WHERE name = @cardName AND setCode = @setCode;";
