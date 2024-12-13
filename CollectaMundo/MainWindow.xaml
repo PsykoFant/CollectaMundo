@@ -1220,7 +1220,40 @@
                         </DataGrid>
                     </Grid>
                     <Grid Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Button Content="&#x270E;" FontFamily="Segoe UI Symbol" ToolTip="Edit" />
+                        <DataGrid x:Name="DeckDataGrid"
+                                  AutoGenerateColumns="False"
+                                  SelectionChanged="CardImageSelectionChangedHandler"
+                                  ScrollViewer.CanContentScroll="True"
+                                  EnableColumnVirtualization="True"
+                                  VirtualizingPanel.IsVirtualizing="True"
+                                  CanUserAddRows="False"
+                                  CanUserSortColumns="True"
+                                  HorizontalAlignment="Stretch"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="Card Name" Width="*" SortMemberPath="Name">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Mana Cost" IsReadOnly="True" Width="Auto" SortMemberPath="ManaValue">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Card Types" Width="*" SortMemberPath="Types">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Types}" TextWrapping="Wrap" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
                     </Grid>                    
                 </Grid>                
             </Grid>

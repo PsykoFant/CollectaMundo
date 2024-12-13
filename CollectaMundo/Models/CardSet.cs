@@ -43,7 +43,7 @@ namespace CollectaMundo.Models
         public string? Life { get; set; }
         public string? Loyalty { get; set; }
         public string? ManaCost { get; set; }
-        public double? ManaValue { get; set; }
+        public double ManaValue { get; set; }
         public string? Name { get; set; }
         public string? Number { get; set; }
         public List<string>? OtherFaceIds { get; set; }

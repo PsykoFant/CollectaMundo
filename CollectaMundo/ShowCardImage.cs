@@ -87,43 +87,49 @@ namespace CollectaMundo
                     }
                 }
 
+                // Remove "PRM" from the list if it exists. Otherwise Magic Online Promos will always be the oldest set. 
+                setCodes.Remove("PRM");
+
                 if (setCodes.Count == 0)
                 {
-                    Debug.WriteLine("No sets found for the specified card name.");
+                    Debug.WriteLine($"No sets found for the specified card name: {cardName}");
                     return null;
                 }
 
-                // Step 2: Find the oldest setCode by releaseDate
+                // Step 2: Find the oldest setCode using a single query
+                string fetchOldestSetCodeQuery = @"
+                    SELECT code 
+                    FROM sets
+                    WHERE code IN ({0})
+                    ORDER BY releaseDate ASC
+                    LIMIT 1;";
+
+                // Dynamically construct the IN clause
+                string inClause = string.Join(", ", setCodes.Select((_, i) => $"@setCode{i}"));
+                fetchOldestSetCodeQuery = string.Format(fetchOldestSetCodeQuery, inClause);
+
                 string? oldestSetCode = null;
-                DateTime oldestDate = DateTime.MaxValue;
 
-                string fetchReleaseDateQuery = "SELECT releaseDate FROM sets WHERE code = @setCode;";
-
-                using (SQLiteCommand fetchReleaseDateCommand = new(fetchReleaseDateQuery, DBAccess.connection))
+                using (SQLiteCommand fetchOldestSetCodeCommand = new(fetchOldestSetCodeQuery, DBAccess.connection))
                 {
-                    foreach (string setCode in setCodes)
+                    // Add parameters for the IN clause
+                    for (int i = 0; i < setCodes.Count; i++)
                     {
-                        fetchReleaseDateCommand.Parameters.Clear();
-                        fetchReleaseDateCommand.Parameters.AddWithValue("@setCode", setCode);
+                        fetchOldestSetCodeCommand.Parameters.AddWithValue($"@setCode{i}", setCodes[i]);
+                    }
 
-                        using SQLiteDataReader reader = fetchReleaseDateCommand.ExecuteReader();
-                        if (reader.Read() && DateTime.TryParse(reader["releaseDate"].ToString(), out DateTime releaseDate))
-                        {
-                            if (releaseDate < oldestDate)
-                            {
-                                oldestDate = releaseDate;
-                                oldestSetCode = setCode;
-                            }
-                        }
+                    using SQLiteDataReader reader = fetchOldestSetCodeCommand.ExecuteReader();
+                    if (reader.Read())
+                    {
+                        oldestSetCode = reader["code"].ToString();
                     }
                 }
 
                 if (string.IsNullOrEmpty(oldestSetCode))
                 {
-                    Debug.WriteLine("No valid release dates found for the specified card name.");
+                    Debug.WriteLine($"No valid oldest set code found for card: {cardName}");
                     return null;
                 }
-                Debug.WriteLine($"The oldest setcode for {cardName} is {oldestSetCode}.");
 
                 // Step 3: Fetch the uuid for the card with the oldest setCode
                 string fetchUuidQuery = "SELECT uuid FROM cards WHERE name = @cardName AND setCode = @setCode;";
@@ -140,7 +146,7 @@ namespace CollectaMundo
                     }
                 }
 
-                Debug.WriteLine("No uuid found for the specified card name and oldest set code.");
+                Debug.WriteLine($"No uuid found for card: {cardName} in the oldest set code: {oldestSetCode}.");
                 return null;
             }
             catch (Exception ex)
