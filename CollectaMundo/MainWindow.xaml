@@ -1147,6 +1147,7 @@
                         <DataGrid x:Name="AllCardsForDecksDataGrid"
                                   AutoGenerateColumns="False"
                                   SelectionChanged="CardImageSelectionChangedHandler"
+                                  MouseDoubleClick="AddCardToDeck"
                                   ScrollViewer.CanContentScroll="True"
                                   EnableColumnVirtualization="True"
                                   VirtualizingPanel.IsVirtualizing="True"
@@ -1222,7 +1223,7 @@
                     <Grid Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <DataGrid x:Name="DeckDataGrid"
                                   AutoGenerateColumns="False"
-                                  SelectionChanged="CardImageSelectionChangedHandler"
+                                  SelectionChanged="CardImageSelectionChangedHandler"                                  
                                   ScrollViewer.CanContentScroll="True"
                                   EnableColumnVirtualization="True"
                                   VirtualizingPanel.IsVirtualizing="True"
@@ -1245,10 +1246,10 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Card Types" Width="*" SortMemberPath="Types">
+                                <DataGridTemplateColumn Header="Card Type" Width="*" SortMemberPath="Type">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Types}" TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding Type}" TextWrapping="Wrap" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

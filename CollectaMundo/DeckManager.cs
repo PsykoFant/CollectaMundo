@@ -226,5 +226,50 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
+        public static async Task SubmitCardToDeck(string cardName, int deckId)
+        {
+            try
+            {
+                await DBAccess.OpenConnectionAsync();
+
+                // Check if the card already exists in the deck
+                string checkQuery = @"SELECT count FROM cardsInDecks WHERE deckId = @deckId AND name = @name;";
+                string updateQuery = @"UPDATE cardsInDecks SET count = count + 1 WHERE deckId = @deckId AND name = @name;";
+                string insertQuery = @"INSERT INTO cardsInDecks (deckId, name, count) VALUES (@deckId, @name, 1);";
+
+                using var checkCommand = new SQLiteCommand(checkQuery, DBAccess.connection);
+                checkCommand.Parameters.AddWithValue("@deckId", deckId);
+                checkCommand.Parameters.AddWithValue("@name", cardName);
+
+                object result = await checkCommand.ExecuteScalarAsync();
+
+                if (result != null) // Card exists, update count
+                {
+                    using var updateCommand = new SQLiteCommand(updateQuery, DBAccess.connection);
+                    updateCommand.Parameters.AddWithValue("@deckId", deckId);
+                    updateCommand.Parameters.AddWithValue("@name", cardName);
+                    await updateCommand.ExecuteNonQueryAsync();
+                }
+                else // Card does not exist, insert new row
+                {
+                    using var insertCommand = new SQLiteCommand(insertQuery, DBAccess.connection);
+                    insertCommand.Parameters.AddWithValue("@deckId", deckId);
+                    insertCommand.Parameters.AddWithValue("@name", cardName);
+                    await insertCommand.ExecuteNonQueryAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error adding card to deck: {ex.Message}");
+                MessageBox.Show($"Error adding card to deck: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
+        }
+
+
+
     }
 }

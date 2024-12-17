@@ -1,3 +1,5 @@
 TO DO 
-- Mere test
-- Rediger target format
+- Refaktorer PopulateCardDataGridAsync og CreateCardFromReader
+ - Tag som input til CreateCardFromReader navn på datagrid
+ - Baseret på navn, vælg felter
+

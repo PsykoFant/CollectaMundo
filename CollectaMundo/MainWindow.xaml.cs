@@ -1647,6 +1647,16 @@ namespace CollectaMundo
             }
         }
 
+        // Add a card to a deck
+        private async void AddCardToDeck(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not DataGrid { SelectedItem: CardSet cardSetCard } || CurrentDeck == null || string.IsNullOrWhiteSpace(cardSetCard.Name))
+                return;
+
+            await DeckManager.SubmitCardToDeck(cardSetCard.Name, CurrentDeck.DeckId);
+        }
+
+
         // Shared methods
         private static void CancelDeckEdit(TextBox textBoxToEdit, Button editButton, Button saveButton, Button cancelButton, string? originalValue)
         {
