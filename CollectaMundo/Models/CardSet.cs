@@ -156,8 +156,8 @@ namespace CollectaMundo.Models
             }
 
             private string? _selectedCondition;
-            public List<string> Conditions { get; } = new List<string>
-                {
+            public List<string> Conditions { get; } =
+                [
                     "Mint",
                     "Near Mint",
                     "Excellent",
@@ -165,7 +165,7 @@ namespace CollectaMundo.Models
                     "Light Played",
                     "Played",
                     "Poor"
-                };
+                ];
             public string? SelectedCondition
             {
                 get => _selectedCondition;
@@ -178,7 +178,7 @@ namespace CollectaMundo.Models
                     }
                 }
             }
-            public List<string> AvailableFinishes { get; set; } = new List<string>();
+            public List<string> AvailableFinishes { get; set; } = [];
             public string? SelectedFinish { get; set; }
             public decimal? CardItemPrice { get; set; }
         }

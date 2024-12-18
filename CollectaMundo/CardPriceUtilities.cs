@@ -38,8 +38,8 @@ namespace CollectaMundo
                             StatusMessageUpdated?.Invoke("Processing new prices and reloading card database ...");
 
                             // Reload cards to get updated prices
-                            Task loadAllCards = MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.allCards, MainWindow.CurrentInstance.allCardsQuery, MainWindow.CurrentInstance.AllCardsDataGrid, false, false);
-                            Task loadMyCollection = MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid, true, false);
+                            Task loadAllCards = MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.allCards, MainWindow.CurrentInstance.allCardsQuery, MainWindow.CurrentInstance.AllCardsDataGrid);
+                            Task loadMyCollection = MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.CurrentInstance.MyCollectionDataGrid);
                             await Task.WhenAll(loadAllCards, loadMyCollection);
 
                             MainWindow.CurrentInstance.UtilsInfoLabel.Content = "Card prices have been updated ...";

@@ -145,9 +145,9 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false, false);
-            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, false);
-            Task loadCardsForDecks = PopulateCardDataGridAsync(allCardsForDecks, allCardsForDecksQuery, AllCardsForDecksDataGrid, false, true);
+            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid);
+            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid);
+            Task loadCardsForDecks = PopulateCardDataGridAsync(allCardsForDecks, allCardsForDecksQuery, AllCardsForDecksDataGrid);
             Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
             Task loadDecks = LoadAllDecksAsync();
             Task populateAllFormatsList = PopulateAllFormatsListAsync();
@@ -174,11 +174,13 @@ namespace CollectaMundo
 
             await ShowStatusWindowAsync(false);
         }
-        public static async Task PopulateCardDataGridAsync(List<CardSet> cardList, string query, DataGrid dataGrid, bool isCardItem, bool isAllCardsItem)
+        public static async Task PopulateCardDataGridAsync(List<CardSet> cardList, string query, DataGrid dataGrid)
         {
             try
             {
                 cardList.Clear();
+
+                Debug.WriteLine($"Populating {dataGrid.Name} ...");
 
                 List<CardSet> tempCardList = [];
                 using SQLiteCommand command = new(query, DBAccess.connection);
@@ -188,7 +190,7 @@ namespace CollectaMundo
                 {
                     try
                     {
-                        CardSet card = CreateCardFromReader(reader, isCardItem, isAllCardsItem);
+                        CardSet card = CreateCardFromReader(reader, dataGrid.Name);
                         tempCardList.Add(card);
                     }
                     catch (Exception ex)
@@ -207,7 +209,7 @@ namespace CollectaMundo
                 MessageBox.Show($"Error while loading cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        private static CardSet CreateCardFromReader(DbDataReader reader, bool isCardItem, bool isAllCardsItem)
+        private static CardSet CreateCardFromReader(DbDataReader reader, string dataGridName)
         {
             // Utility to process ManaCost string
             static string ProcessManaCost(string manaCostRaw)
@@ -250,9 +252,8 @@ namespace CollectaMundo
             try
             {
                 // Instantiate appropriate type
-                CardSet card = isCardItem ? new CardItem() : new CardSet();
+                CardSet card = dataGridName == "MyCollectionDataGrid" ? new CardItem() : new CardSet();
 
-                // Populate common properties
                 card.Name = GetFieldValue<string>(reader, "Name") ?? string.Empty;
                 card.Types = GetFieldValue<string>(reader, "Types") ?? string.Empty;
                 card.ManaCost = ProcessManaCost(GetFieldValue<string>(reader, "ManaCost") ?? string.Empty);
@@ -266,7 +267,8 @@ namespace CollectaMundo
                 card.ManaCostImageBytes = GetFieldValue<byte[]>(reader, "ManaCostImage");
                 card.ManaCostRaw = GetFieldValue<string>(reader, "ManaCost") ?? string.Empty;
 
-                if (!isAllCardsItem)
+                // for all CardSet lists except allCardsForDecks
+                if (dataGridName != "AllCardsForDecksDataGrid")
                 {
                     card.Language = GetFieldValue<string>(reader, "Language") ?? string.Empty;
                     card.Uuid = GetFieldValue<string>(reader, "Uuid") ?? string.Empty;
@@ -279,7 +281,16 @@ namespace CollectaMundo
                     card.SetIconBytes = GetFieldValue<byte[]>(reader, "KeyRuneImage");
                 }
 
-                // Populate CardItem-specific properties
+                // Only for allCards list
+                if (dataGridName == "AllCardsDataGrid")
+                {
+                    // Populate price fields for non-all-cards items
+                    card.NormalPrice = ParsePrice("NormalPrice", reader);
+                    card.FoilPrice = ParsePrice("FoilPrice", reader);
+                    card.EtchedPrice = ParsePrice("EtchedPrice", reader);
+                }
+
+                // Populate CardItem-specific properties for myCards list
                 if (card is CardItem cardItem)
                 {
                     cardItem.CardId = GetFieldValue<int?>(reader, "CardId");
@@ -295,13 +306,7 @@ namespace CollectaMundo
                         _ => ParsePrice("NormalPrice", reader)
                     };
                 }
-                else if (!isAllCardsItem)
-                {
-                    // Populate price fields for non-all-cards items
-                    card.NormalPrice = ParsePrice("NormalPrice", reader);
-                    card.FoilPrice = ParsePrice("FoilPrice", reader);
-                    card.EtchedPrice = ParsePrice("EtchedPrice", reader);
-                }
+
 
                 return card;
             }
@@ -1760,8 +1765,8 @@ namespace CollectaMundo
             // Update the db views to load prices from the selected retailer
             await DownloadAndPrepDB.CreateViews();
 
-            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid, false, false);
-            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid, true, false);
+            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, AllCardsDataGrid);
+            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, MyCollectionDataGrid);
 
             await Task.WhenAll(loadAllCards, loadMyCollection);
 
