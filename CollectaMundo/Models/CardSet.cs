@@ -119,9 +119,12 @@ namespace CollectaMundo.Models
                 return null;
             }
         }
-        public class CardItem : CardSet, INotifyPropertyChanged
+
+        public int? CardId { get; set; }
+        public int Count { get; set; }
+
+        public class CardInCollection : CardSet, INotifyPropertyChanged
         {
-            public int? CardId { get; set; }
             public event PropertyChangedEventHandler? PropertyChanged;
             protected virtual void OnPropertyChanged(string propertyName)
             {
@@ -180,7 +183,7 @@ namespace CollectaMundo.Models
             }
             public List<string> AvailableFinishes { get; set; } = [];
             public string? SelectedFinish { get; set; }
-            public decimal? CardItemPrice { get; set; }
+            public decimal? CardInCollectionPrice { get; set; }
         }
     }
 }

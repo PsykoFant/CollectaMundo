@@ -1,24 +1,4 @@
 TO DO 
-- start på view til kort i decks
-
-SELECT 
-    cardsInDecks.id AS Id,
-    cardsInDecks.name AS Name,
-    cardsInDecks.deckId AS DeckId,
-    cardsInDecks.uuid AS Uuid,
-    cardsInDecks.count AS Count,
-    c.manaCost AS ManaCost,
-	c.colors AS Colors,
-	c.manaValue AS ManaValue, 
-	u.manaCostImage AS ManaCostImage, 
-	c.type AS Type
-FROM 
-    cardsInDecks
-LEFT JOIN 
-    (
-        SELECT name, colors, manaCost, manaValue, type
-        FROM cards
-        GROUP BY name
-    ) c
-	ON cardsInDecks.name = c.name
-LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost;
+- Filtrer på colors?
+- Colorless filtrering
+- Kig på allCardsForDecks view

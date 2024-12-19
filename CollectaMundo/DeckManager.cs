@@ -34,6 +34,11 @@ namespace CollectaMundo
                         TargetFormat = targetFormat
                     };
 
+                    //Fill deck datagrid with cards
+                    string loadDeckCardsQuery = $"SELECT * FROM view_cardsInDecks WHERE DeckId = {deckId};";
+                    await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.cardsInDecks, loadDeckCardsQuery, MainWindow.CurrentInstance.DeckDataGrid);
+
+
                     // Go to deck Editor to edit new deck
                     MainWindow.CurrentInstance.DeckNameTextBox.Text = deckName;
                     MainWindow.CurrentInstance.DeckDescriptionTextBox.Text = deckDescription;

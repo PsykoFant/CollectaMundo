@@ -1043,7 +1043,7 @@
                         <DataGridTemplateColumn Header="Price" Width="*" SortMemberPath="CardItemPrice">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding CardItemPrice}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding CardInCollectionPrice}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

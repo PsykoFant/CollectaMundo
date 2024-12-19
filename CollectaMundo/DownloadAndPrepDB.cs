@@ -850,13 +850,40 @@ namespace CollectaMundo
                             ELSE 7
                         END;
                     ";
+                string createCardsInDecksViewQuery = $@"
+                    CREATE VIEW view_cardsInDecks AS
+                        SELECT 
+                            cardsInDecks.id AS CardId,
+                            cardsInDecks.name AS Name,
+                            cardsInDecks.deckId AS DeckId,
+                            cardsInDecks.uuid AS Uuid,
+                            cardsInDecks.count AS Count,
+                            c.manaCost AS ManaCost,
+	                        c.colors AS Colors,
+	                        c.manaValue AS ManaValue, 
+	                        u.manaCostImage AS ManaCostImage, 
+	                        c.type AS Type
+                        FROM 
+                            cardsInDecks
+                        LEFT JOIN 
+                            (
+                                SELECT name, colors, manaCost, manaValue, type
+                                FROM cards
+                                GROUP BY name
+                            ) c
+	                        ON cardsInDecks.name = c.name
+                        LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost;
+                    ";
 
                 using (var command = new SQLiteCommand(createCardTokenViewQuery, DBAccess.connection))
                 {
                     await command.ExecuteNonQueryAsync();
                 }
-
                 using (var command = new SQLiteCommand(createAllCardsForDecksViewQuery, DBAccess.connection))
+                {
+                    await command.ExecuteNonQueryAsync();
+                }
+                using (var command = new SQLiteCommand(createCardsInDecksViewQuery, DBAccess.connection))
                 {
                     await command.ExecuteNonQueryAsync();
                 }

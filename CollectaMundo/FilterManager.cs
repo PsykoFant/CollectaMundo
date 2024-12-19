@@ -86,7 +86,7 @@ namespace CollectaMundo
                     bool showForTrade = MainWindow.CurrentInstance.CheckBoxCardsForTrade.IsChecked ?? false;
                     bool showNotForTrade = MainWindow.CurrentInstance.CheckBoxCardsNotForTrade.IsChecked ?? false;
 
-                    var filteredCardItems = filteredCards.OfType<CardItem>();
+                    var filteredCardItems = filteredCards.OfType<CardInCollection>();
 
                     // If "Cards for Trade" is checked, filter for cards with CardsForTrade > 0
                     if (showForTrade)
@@ -114,11 +114,11 @@ namespace CollectaMundo
                             cardItem.SelectedFinish != null && filterContext.SelectedFinishes.Contains(cardItem.SelectedFinish));
                     }
 
-                    // Apply language filter, then cast the result back to IEnumerable<CardItem>
+                    // Apply language filter, then cast the result back to IEnumerable<CardInCollection>
                     var languageFilteredItems = FilterByCardProperty(filteredCardItems.Cast<CardSet>(), filterContext.SelectedLanguages, false, card => card.Language);
 
-                    // Cast back to CardItem after language filtering
-                    filteredCardItems = languageFilteredItems.OfType<CardItem>();
+                    // Cast back to CardInCollection after language filtering
+                    filteredCardItems = languageFilteredItems.OfType<CardInCollection>();
 
                     // Cast back to CardSet after all filtering
                     filteredCards = filteredCardItems.Cast<CardSet>();
