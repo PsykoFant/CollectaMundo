@@ -202,7 +202,8 @@ namespace CollectaMundo
                 }
 
                 cardList.AddRange(tempCardList);
-                dataGrid.ItemsSource = cardList;
+                dataGrid.ItemsSource = null; // Clear any current binding
+                dataGrid.ItemsSource = cardList; // Bind/rebind
             }
             catch (Exception ex)
             {
@@ -1422,24 +1423,32 @@ namespace CollectaMundo
         // Open deck editor window
         private async void OpenAndEditDeck(object sender, RoutedEventArgs e)
         {
-            Deck? selectedDeck = null;
-
-            // If the user double-clicks on a deck
-            if (sender is ListView grid && grid.SelectedItem is Deck deckFromListView)
+            try
             {
-                selectedDeck = deckFromListView;
-                grid.UnselectAll();
+                Deck? selectedDeck = null;
+
+                // If the user double-clicks on a deck
+                if (sender is ListView grid && grid.SelectedItem is Deck deckFromListView)
+                {
+                    selectedDeck = deckFromListView;
+                    grid.UnselectAll();
+                }
+
+                // If the user clicks the edit button for a deck
+                else if (sender is Button button && button.DataContext is Deck deckFromButton)
+                {
+                    selectedDeck = deckFromButton;
+                }
+
+                if (selectedDeck != null)
+                {
+                    await DeckManager.LoadDeck(selectedDeck.DeckId);
+                }
             }
-
-            // If the user clicks the edit button for a deck
-            else if (sender is Button button && button.DataContext is Deck deckFromButton)
+            catch (Exception ex)
             {
-                selectedDeck = deckFromButton;
-            }
-
-            if (selectedDeck != null)
-            {
-                await DeckManager.LoadDeck(selectedDeck.DeckId);
+                Debug.WriteLine($"Error in open and edit deck: {ex}");
+                MessageBox.Show($"Error in open and edit deck: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         private async void BackToDeckOverviewButton_Click(object sender, RoutedEventArgs e)

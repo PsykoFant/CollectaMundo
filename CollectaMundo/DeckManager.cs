@@ -7,6 +7,7 @@ namespace CollectaMundo
 {
     public class DeckManager
     {
+        private static readonly string loadDeckCardsQuery = $"SELECT * FROM view_cardsInDecks WHERE DeckId = {MainWindow.CurrentInstance.CurrentDeck.DeckId};";
         public static async Task LoadDeck(int deckId)
         {
             try
@@ -34,10 +35,9 @@ namespace CollectaMundo
                         TargetFormat = targetFormat
                     };
 
-                    //Fill deck datagrid with cards
-                    string loadDeckCardsQuery = $"SELECT * FROM view_cardsInDecks WHERE DeckId = {deckId};";
+                    //Fill deck datagrid with cards                    
+                    Debug.WriteLine(loadDeckCardsQuery);
                     await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.cardsInDecks, loadDeckCardsQuery, MainWindow.CurrentInstance.DeckDataGrid);
-
 
                     // Go to deck Editor to edit new deck
                     MainWindow.CurrentInstance.DeckNameTextBox.Text = deckName;
@@ -262,6 +262,12 @@ namespace CollectaMundo
                     insertCommand.Parameters.AddWithValue("@name", cardName);
                     await insertCommand.ExecuteNonQueryAsync();
                 }
+
+                // Refresh deck datagrid
+                Debug.WriteLine(loadDeckCardsQuery);
+                await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.cardsInDecks, loadDeckCardsQuery, MainWindow.CurrentInstance.DeckDataGrid);
+
+
             }
             catch (Exception ex)
             {
@@ -273,8 +279,5 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
-
-
-
     }
 }

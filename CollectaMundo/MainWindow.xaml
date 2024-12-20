@@ -1058,7 +1058,7 @@
                 <Grid Grid.Row="0" VerticalAlignment="Top" HorizontalAlignment="Center">
                     <Label x:Name="HeadlineDecks" Content="Deck Management" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 </Grid>
-                <Grid x:Name="GridDecksOverview" Grid.Row="1" VerticalAlignment="Top">                    
+                <Grid x:Name="GridDecksOverview" Grid.Row="1" VerticalAlignment="Top" d:IsHidden="True">                    
                     <Button x:Name="AddDeckButton" Width="100" Content="Add a new deck" Height="20" Margin="0,95,500,0" HorizontalAlignment="Center" VerticalAlignment="Top" Click="AddDeckButton_Click" d:IsHidden="True" />
                     <Grid x:Name="GridAddNewDeckForm" VerticalAlignment="Top" HorizontalAlignment="Center" Width="600" Margin="0,00,0,0" Visibility="Collapsed">
                         <Label HorizontalAlignment="Left" VerticalAlignment="Top" Content="Deck Name:" Height="25" />
@@ -1119,7 +1119,7 @@
                         <RowDefinition Height="150"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <Grid Grid.Row="0" HorizontalAlignment="Center">
+                    <Grid Grid.Row="0" HorizontalAlignment="Center" Margin="0,-2,0,0">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,300,0" VerticalAlignment="Top" >
                             <TextBox x:Name="DeckNameTextBox" TextWrapping="Wrap" Text="Deck name" Width="300" FontSize="18" Background="{x:Null}" BorderBrush="{x:Null}" Height="25" IsReadOnly="True" MouseDoubleClick="EditDeckInfoButton_Click" KeyDown="DeckInfoTextBox_KeyDown"/>
                             <Button x:Name="EditDeckNameButton" Content="&#xE104;" FontFamily="Segoe MDL2 Assets" ToolTip="Edit deck name" VerticalAlignment="Center" HorizontalAlignment="Center" Click="EditDeckInfoButton_Click"/>
@@ -1220,7 +1220,7 @@
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
-                    <Grid Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Grid Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,14,0,0">
                         <DataGrid x:Name="DeckDataGrid"
                                   AutoGenerateColumns="False"
                                   SelectionChanged="CardImageSelectionChangedHandler"                                  
@@ -1250,6 +1250,13 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBlock Text="{Binding Type}" TextWrapping="Wrap" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Count" Width="*" SortMemberPath="Count">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Count}" TextWrapping="Wrap" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
