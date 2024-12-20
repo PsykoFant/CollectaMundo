@@ -63,9 +63,6 @@ namespace CollectaMundo.Models
         public string? Type { get; set; }
         public string? Types { get; set; }
         public string? Uuid { get; set; }
-        public decimal? NormalPrice { get; set; }
-        public decimal? FoilPrice { get; set; }
-        public decimal? EtchedPrice { get; set; }
 
         private ImageSource? _setIcon;
         public ImageSource? SetIcon
@@ -121,8 +118,6 @@ namespace CollectaMundo.Models
         }
 
         public int? CardId { get; set; }
-        public int Count { get; set; }
-
         public class CardInCollection : CardSet, INotifyPropertyChanged
         {
             public event PropertyChangedEventHandler? PropertyChanged;
@@ -185,5 +180,16 @@ namespace CollectaMundo.Models
             public string? SelectedFinish { get; set; }
             public decimal? CardInCollectionPrice { get; set; }
         }
+        public class PricedCardSet : CardSet
+        {
+            public decimal? NormalPrice { get; set; }
+            public decimal? FoilPrice { get; set; }
+            public decimal? EtchedPrice { get; set; }
+        }
+        public class CardInDeck : CardSet
+        {
+            public int Count { get; set; }
+        }
+
     }
 }
