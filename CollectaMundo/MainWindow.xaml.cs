@@ -71,6 +71,7 @@ namespace CollectaMundo
         public readonly List<CardSet> allCardsForDecks = [];
         public readonly List<CardSet> cardsInDecks = [];
         private readonly List<CardSet> ColorIcons = [];
+
         public enum DataGridContext
         {
             AllCards,
@@ -1712,7 +1713,9 @@ namespace CollectaMundo
         private async void AddCardToDeck(object sender, MouseButtonEventArgs e)
         {
             if (sender is not DataGrid { SelectedItem: CardSet cardSetCard } || CurrentDeck == null || string.IsNullOrWhiteSpace(cardSetCard.Name))
+            {
                 return;
+            }
 
             await DeckManager.SubmitCardToDeck(cardSetCard.Name, CurrentDeck.DeckId);
         }

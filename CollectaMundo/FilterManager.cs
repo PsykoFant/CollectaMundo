@@ -26,49 +26,22 @@ namespace CollectaMundo
 
                 var filteredCards = cards.AsEnumerable();
 
-                // Find all ComboBoxes and then find the specific ones by their tags
-                var headerComboBoxesAllCards = MainWindow.FindVisualChildren<ComboBox>(MainWindow.CurrentInstance.AllCardsDataGrid);
-                ComboBox? nameComboBoxAllCards = headerComboBoxesAllCards.FirstOrDefault(cb => cb.Tag?.ToString() == "AllCardsName");
-                ComboBox? setComboBoxAllCards = headerComboBoxesAllCards.FirstOrDefault(cb => cb.Tag?.ToString() == "AllCardsSet");
-
-                var headerComboBoxesMyCollection = MainWindow.FindVisualChildren<ComboBox>(MainWindow.CurrentInstance.MyCollectionDataGrid);
-                ComboBox? nameComboBoxMyCollection = headerComboBoxesMyCollection.FirstOrDefault(cb => cb.Tag?.ToString() == "MyCollectionName");
-                ComboBox? setComboBoxMyCollection = headerComboBoxesMyCollection.FirstOrDefault(cb => cb.Tag?.ToString() == "MyCollectionSet");
-
-                var headerComboBoxesAllCardsForDecks = MainWindow.FindVisualChildren<ComboBox>(MainWindow.CurrentInstance.AllCardsForDecksDataGrid);
-                ComboBox? nameComboBoxAllCardsForDecks = headerComboBoxesAllCardsForDecks.FirstOrDefault(cb => cb.Tag?.ToString() == "AllCardsForDecksName");
-
-                string cardFilter = string.Empty;
-                string setFilter = string.Empty;
-
-                if (WhichDropdown == "AllCards")
-                {
-                    cardFilter = nameComboBoxAllCards?.SelectedItem?.ToString() ?? string.Empty;
-                    setFilter = setComboBoxAllCards?.SelectedItem?.ToString() ?? string.Empty;
-
-                }
-                if (WhichDropdown == "MyCollection")
-                {
-                    cardFilter = nameComboBoxMyCollection?.SelectedItem?.ToString() ?? string.Empty;
-                    setFilter = setComboBoxMyCollection?.SelectedItem?.ToString() ?? string.Empty;
-                }
-
-                if (WhichDropdown == "AllCardsForDecks")
-                {
-                    cardFilter = nameComboBoxAllCardsForDecks?.SelectedItem?.ToString() ?? string.Empty;
-                }
-
+                var (cardFilter, setFilter) = GetDropdownFilters(WhichDropdown);
                 string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
-                bool useAnd = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
-                bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
-                string compareOperator = MainWindow.CurrentInstance.ManaValueOperatorComboBox.SelectedItem?.ToString() ?? string.Empty;
-                _ = double.TryParse(MainWindow.CurrentInstance.ManaValueComboBox.SelectedItem?.ToString(), out double manaValueCompare);
-
-                // Filter by mana value
-                filteredCards = FilterByManaValue(filteredCards, compareOperator, manaValueCompare);
 
                 // Filtering by card name, set name, and rules text
                 filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter);
+
+
+                // Extract mana value filter parameters
+                var manaValueFilterParams = GetManaValueFilterParameters();
+
+                // Apply mana value filter
+                filteredCards = FilterByManaValue(filteredCards, manaValueFilterParams);
+
+
+                bool useAnd = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
+                bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
 
                 // Filter by colors
                 filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedColors, useAnd, card => card.ManaCost, exclude);
@@ -149,6 +122,15 @@ namespace CollectaMundo
                 return [];
             }
         }
+
+        /// <summary>
+        /// Helper methods for filtering by text
+        /// </summary>
+        /// <param name="cards"></param>
+        /// <param name="cardFilter"></param>
+        /// <param name="setFilter"></param>
+        /// <param name="rulesTextFilter"></param>
+        /// <returns></returns>
         private IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
         {
             var filteredCards = cards;
@@ -166,6 +148,76 @@ namespace CollectaMundo
             }
             return filteredCards;
         }
+        private static (string cardFilter, string setFilter) GetDropdownFilters(string whichDropdown)
+        {
+            string cardFilter = string.Empty;
+            string setFilter = string.Empty;
+
+            if (whichDropdown == "AllCards")
+            {
+                cardFilter = GetComboBoxByTag(MainWindow.CurrentInstance.AllCardsDataGrid, "AllCardsName")?.SelectedItem?.ToString() ?? string.Empty;
+                setFilter = GetComboBoxByTag(MainWindow.CurrentInstance.AllCardsDataGrid, "AllCardsSet")?.SelectedItem?.ToString() ?? string.Empty;
+            }
+            else if (whichDropdown == "MyCollection")
+            {
+                cardFilter = GetComboBoxByTag(MainWindow.CurrentInstance.MyCollectionDataGrid, "MyCollectionName")?.SelectedItem?.ToString() ?? string.Empty;
+                setFilter = GetComboBoxByTag(MainWindow.CurrentInstance.MyCollectionDataGrid, "MyCollectionSet")?.SelectedItem?.ToString() ?? string.Empty;
+            }
+            else if (whichDropdown == "AllCardsForDecks")
+            {
+                cardFilter = GetComboBoxByTag(MainWindow.CurrentInstance.AllCardsForDecksDataGrid, "AllCardsForDecksName")?.SelectedItem?.ToString() ?? string.Empty;
+            }
+
+            return (cardFilter, setFilter);
+        }
+        private static ComboBox? GetComboBoxByTag(DataGrid dataGrid, string tagName)
+        {
+            return MainWindow.FindVisualChildren<ComboBox>(dataGrid)
+                             .FirstOrDefault(cb => cb.Tag?.ToString() == tagName);
+        }
+
+        /// <summary>
+        /// Filter by mana value
+        /// </summary>
+        /// <param name="cards"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        private static IEnumerable<CardSet> FilterByManaValue(IEnumerable<CardSet> cards, (string compareOperator, double manaValueCompare) parameters)
+        {
+            var (compareOperator, manaValueCompare) = parameters;
+
+            if (string.IsNullOrEmpty(compareOperator))
+            {
+                return cards; // No filtering if operator is not specified
+            }
+
+            return cards.Where(card => CompareManaValue(card.ManaValue, compareOperator, manaValueCompare));
+        }
+        private static (string compareOperator, double manaValueCompare) GetManaValueFilterParameters()
+        {
+            string compareOperator = MainWindow.CurrentInstance.ManaValueOperatorComboBox.SelectedItem?.ToString() ?? string.Empty;
+
+            if (!double.TryParse(MainWindow.CurrentInstance.ManaValueComboBox.SelectedItem?.ToString(), out double manaValueCompare))
+            {
+                Debug.WriteLine("Invalid mana value comparison value. Defaulting to 0.");
+            }
+
+            return (compareOperator, manaValueCompare);
+        }
+        private static bool CompareManaValue(double cardManaValue, string compareOperator, double manaValueCompare)
+        {
+            return compareOperator switch
+            {
+                "less than" => cardManaValue < manaValueCompare,
+                "greater than" => cardManaValue > manaValueCompare,
+                "less than/eq" => cardManaValue <= manaValueCompare,
+                "greater than/eq" => cardManaValue >= manaValueCompare,
+                "equal to" => cardManaValue == manaValueCompare,
+                _ => true, // Default: no filtering
+            };
+        }
+
+
         private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string>? selectedCriteria, bool useAnd, Func<CardSet, string?> propertySelector, bool exclude = false)
         {
             if (cards == null || propertySelector == null)
@@ -191,29 +243,7 @@ namespace CollectaMundo
                 return exclude ? !match : match;
             });
         }
-        private static IEnumerable<CardSet> FilterByManaValue(IEnumerable<CardSet> cards, string compareOperator, double manaValueCompare)
-        {
-            if (MainWindow.CurrentInstance.ManaValueComboBox.SelectedIndex != -1 && MainWindow.CurrentInstance.ManaValueOperatorComboBox.SelectedIndex != -1)
-            {
-                return cards.Where(card =>
-                {
-                    return compareOperator switch
-                    {
-                        "less than" => card.ManaValue < manaValueCompare,
-                        "greater than" => card.ManaValue > manaValueCompare,
-                        "less than/eq" => card.ManaValue <= manaValueCompare,
-                        "greater than/eq" => card.ManaValue >= manaValueCompare,
-                        "equal to" => card.ManaValue == manaValueCompare,
-                        _ => true,  // If no valid operator is selected, don't filter on ManaValue
-                    };
-                });
-            }
-            else
-            {
-                // If conditions for filtering are not met, return all cards unfiltered.
-                return cards;
-            }
-        }
+
 
         #endregion
 
