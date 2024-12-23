@@ -548,11 +548,16 @@ namespace CollectaMundo
                     FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
                     FilterColorsListBox.ItemsSource = filterContext.AllColors;
                     AllOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
-                    AllOrNoneComboBox.SelectedIndex = 0;
                     ManaValueComboBox.ItemsSource = manaValueOptions;
-                    ManaValueComboBox.SelectedIndex = -1;
                     ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
-                    ManaValueOperatorComboBox.SelectedIndex = -1;
+
+                    // Set default values for comboboxes on startup
+                    if (_isStartup)
+                    {
+                        AllOrNoneComboBox.SelectedIndex = 0;
+                        ManaValueOperatorComboBox.SelectedIndex = 3;
+                        ManaValueComboBox.SelectedIndex = 0;
+                    }
 
                     // Set default text for other comboboxes
                     SetDefaultTextInComboBox(SuperTypesComboBox, "FilterSuperTypesTextBox", filterContext.SuperTypesDefaultText);
@@ -666,13 +671,7 @@ namespace CollectaMundo
                 }
             }
 
-            // Apply filters and update data sources
-
-            // ??? Hvorfor ikke kalde ApplyFilterSelection() i MainWindow class?
-
-            AllCardsDataGrid.ItemsSource = filterManager.ApplyFilter(allCards, "allCards");
-            MyCollectionDataGrid.ItemsSource = filterManager.ApplyFilter(myCards, "myCards");
-            AllCardsForDecksDataGrid.ItemsSource = filterManager.ApplyFilter(allCardsForDecks, "allCardsForDecks");
+            ApplyFilterSelection();
         }
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
