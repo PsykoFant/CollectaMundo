@@ -1,4 +1,5 @@
 TO DO 
 - Filtrer på colors?
 - Colorless filtrering
+- Color en del af views?
 - Kig på allCardsForDecks view
