@@ -39,79 +39,25 @@ namespace CollectaMundo
                 // Apply mana value filter
                 filteredCards = FilterByManaValue(filteredCards, manaValueFilterParams);
 
-
+                // Apply shared property filters
                 bool useAnd = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
                 bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
 
-                // Filter by colors
-                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedColors, useAnd, card => card.ManaCost, exclude);
+                filteredCards = ApplySharedPropertyFilters(filteredCards, useAnd, exclude);
 
-                // Filter by listbox selections
-                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedTypes, MainWindow.CurrentInstance.TypesAndOrCheckBox.IsChecked ?? false, card => card.Types);
-                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.SuperTypesAndOrCheckBox.IsChecked ?? false, card => card.SuperTypes);
-                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, card => card.SubTypes);
-                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, card => card.Keywords);
-                filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedRarity, false, card => card.Rarity);
-
-                if (listName == "myCards")
+                // Apply specific filters for list contexts
+                filteredCards = listName switch
                 {
-                    // Filter by CardsForTrade if relevant checkboxes are checked
-                    bool showForTrade = MainWindow.CurrentInstance.CheckBoxCardsForTrade.IsChecked ?? false;
-                    bool showNotForTrade = MainWindow.CurrentInstance.CheckBoxCardsNotForTrade.IsChecked ?? false;
-
-                    var filteredCardItems = filteredCards.OfType<CardInCollection>();
-
-                    // If "Cards for Trade" is checked, filter for cards with CardsForTrade > 0
-                    if (showForTrade)
-                    {
-                        filteredCardItems = filteredCardItems.Where(cardItem => cardItem.CardsForTrade > 0);
-                    }
-
-                    // If "Cards Not for Trade" is checked, filter for cards with CardsForTrade == 0
-                    if (showNotForTrade)
-                    {
-                        filteredCardItems = filteredCardItems.Where(cardItem => cardItem.CardsForTrade == 0);
-                    }
-
-                    // Apply filter for SelectedCondition property
-                    if (filterContext.SelectedConditions.Count != 0)
-                    {
-                        filteredCardItems = filteredCardItems.Where(cardItem =>
-                            cardItem.SelectedCondition != null && filterContext.SelectedConditions.Contains(cardItem.SelectedCondition));
-                    }
-
-                    // Apply filter for SelectedFinish property
-                    if (filterContext.SelectedFinishes.Count != 0)
-                    {
-                        filteredCardItems = filteredCardItems.Where(cardItem =>
-                            cardItem.SelectedFinish != null && filterContext.SelectedFinishes.Contains(cardItem.SelectedFinish));
-                    }
-
-                    // Apply language filter, then cast the result back to IEnumerable<CardInCollection>
-                    var languageFilteredItems = FilterByCardProperty(filteredCardItems.Cast<CardSet>(), filterContext.SelectedLanguages, false, card => card.Language);
-
-                    // Cast back to CardInCollection after language filtering
-                    filteredCardItems = languageFilteredItems.OfType<CardInCollection>();
-
-                    // Cast back to CardSet after all filtering
-                    filteredCards = filteredCardItems.Cast<CardSet>();
-                }
-                else if (listName == "allCards")
-                {
-                    filteredCards = FilterByCardProperty(filteredCards, filterContext.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, card => card.Finishes);
-                }
+                    "myCards" => ApplyMyCardsSpecificFilters(filteredCards),
+                    "allCards" => ApplyAllCardsSpecificFilters(filteredCards),
+                    _ => filteredCards
+                };
 
                 var finalFilteredCards = filteredCards.ToList();
-                UpdateFilterSummary();
 
-                if (listName == "allCards")
-                {
-                    MainWindow.CurrentInstance.AllCardsCountLabel.Content = $"Showing: {finalFilteredCards.Count} cards out of total {MainWindow.CurrentInstance.allCards.Count} cards.";
-                }
-                else if (listName == "myCards")
-                {
-                    MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {finalFilteredCards.Count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
-                }
+
+                UpdateCardCount(listName, finalFilteredCards.Count);
+                UpdateFilterSummary();
 
                 return finalFilteredCards;
             }
@@ -122,6 +68,81 @@ namespace CollectaMundo
                 return [];
             }
         }
+
+        private IEnumerable<CardSet> ApplySharedPropertyFilters(IEnumerable<CardSet> cards, bool useAnd, bool exclude)
+        {
+            var filterMap = new Dictionary<Func<CardSet, string?>, HashSet<string>>
+                {
+                    { card => card.ManaCost, filterContext.SelectedColors },
+                    { card => card.Types, filterContext.SelectedTypes },
+                    { card => card.SuperTypes, filterContext.SelectedSuperTypes },
+                    { card => card.SubTypes, filterContext.SelectedSubTypes },
+                    { card => card.Keywords, filterContext.SelectedKeywords },
+                    { card => card.Rarity, filterContext.SelectedRarity }
+                };
+
+            foreach (var (propertySelector, selectedCriteria) in filterMap)
+            {
+                cards = FilterByCardProperty(cards, selectedCriteria, useAnd, propertySelector, exclude);
+            }
+
+            return cards;
+        }
+        private IEnumerable<CardSet> ApplyMyCardsSpecificFilters(IEnumerable<CardSet> cards)
+        {
+            var filteredCardItems = cards.OfType<CardInCollection>();
+
+            // Handle "Cards for Trade" and "Cards Not for Trade"
+            bool showForTrade = MainWindow.CurrentInstance.CheckBoxCardsForTrade.IsChecked ?? false;
+            bool showNotForTrade = MainWindow.CurrentInstance.CheckBoxCardsNotForTrade.IsChecked ?? false;
+
+            if (showForTrade)
+            {
+                filteredCardItems = filteredCardItems.Where(card => card.CardsForTrade > 0);
+            }
+
+            if (showNotForTrade)
+            {
+                filteredCardItems = filteredCardItems.Where(card => card.CardsForTrade == 0);
+            }
+
+            // Apply filters for specific properties
+            if (filterContext.SelectedConditions.Count > 0)
+            {
+                filteredCardItems = filteredCardItems.Where(card =>
+                    card.SelectedCondition != null && filterContext.SelectedConditions.Contains(card.SelectedCondition));
+            }
+
+            if (filterContext.SelectedFinishes.Count > 0)
+            {
+                filteredCardItems = filteredCardItems.Where(card =>
+                    card.SelectedFinish != null && filterContext.SelectedFinishes.Contains(card.SelectedFinish));
+            }
+
+            // Apply language filter
+            var languageFilteredItems = FilterByCardProperty(filteredCardItems.Cast<CardSet>(), filterContext.SelectedLanguages, false, card => card.Language);
+
+            return languageFilteredItems.OfType<CardInCollection>().Cast<CardSet>();
+        }
+        private IEnumerable<CardSet> ApplyAllCardsSpecificFilters(IEnumerable<CardSet> cards)
+        {
+            return FilterByCardProperty(cards, filterContext.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, card => card.Finishes);
+        }
+        private static void UpdateCardCount(string listName, int count)
+        {
+            if (listName == "allCards")
+            {
+                MainWindow.CurrentInstance.AllCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.allCards.Count} cards.";
+            }
+            else if (listName == "myCards")
+            {
+                MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
+            }
+        }
+
+
+
+
 
         /// <summary>
         /// Helper methods for filtering by text
@@ -216,6 +237,8 @@ namespace CollectaMundo
                 _ => true, // Default: no filtering
             };
         }
+
+
 
 
         private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string>? selectedCriteria, bool useAnd, Func<CardSet, string?> propertySelector, bool exclude = false)
