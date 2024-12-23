@@ -20,6 +20,15 @@
         public HashSet<string> SelectedLanguages { get; set; } = [];
         public HashSet<string> SelectedConditions { get; set; } = [];
         public HashSet<string> SelectedRarity { get; set; } = [];
+        public Dictionary<string, bool> AndOrSettings { get; set; } = new()
+        {
+            { "Colors", false },
+            { "Types", false },
+            { "SuperTypes", false },
+            { "SubTypes", false },
+            { "Keywords", false },
+            { "Finishes", false }
+        };
 
         // Filter defaults
         public string RulesTextDefaultText { get; } = "Filter rulestext ...";

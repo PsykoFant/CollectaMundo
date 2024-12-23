@@ -141,7 +141,7 @@ namespace CollectaMundo
             MyCollectionDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(1);
             AllCardsForDecksDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(2);
 
-            // Pick up filtering combobox changes
+            // Pick up filtering combobox changes            
             AllOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
@@ -667,6 +667,9 @@ namespace CollectaMundo
             }
 
             // Apply filters and update data sources
+
+            // ??? Hvorfor ikke kalde ApplyFilterSelection() i MainWindow class?
+
             AllCardsDataGrid.ItemsSource = filterManager.ApplyFilter(allCards, "allCards");
             MyCollectionDataGrid.ItemsSource = filterManager.ApplyFilter(myCards, "myCards");
             AllCardsForDecksDataGrid.ItemsSource = filterManager.ApplyFilter(allCardsForDecks, "allCardsForDecks");
@@ -865,7 +868,7 @@ namespace CollectaMundo
         }
         private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)
         {
-            // Unsubscribe from Checked/Unchecked events to avoid recursive triggering
+            // Avoid recursive triggering
             CheckBoxCardsForTrade.Checked -= AndOrCheckBox_Toggled;
             CheckBoxCardsForTrade.Unchecked -= AndOrCheckBox_Toggled;
             CheckBoxCardsNotForTrade.Checked -= AndOrCheckBox_Toggled;
@@ -873,22 +876,44 @@ namespace CollectaMundo
 
             try
             {
-                // If 'CheckBoxCardsForTrade' is toggled
-                if (sender == CheckBoxCardsForTrade)
+                if (sender is CheckBox toggledCheckBox)
                 {
-                    // If 'CheckBoxCardsNotForTrade' is checked, uncheck it
-                    if (CheckBoxCardsNotForTrade.IsChecked == true)
+                    // Identify which property to update in AndOrSettings
+                    string propertyName = toggledCheckBox.Name switch
                     {
-                        CheckBoxCardsNotForTrade.IsChecked = false;
+                        "SuperTypesAndOrCheckBox" => "SuperTypes",
+                        "TypesAndOrCheckBox" => "Types",
+                        "SubTypesAndOrCheckBox" => "SubTypes",
+                        "KeywordsAndOrCheckBox" => "Keywords",
+                        "FinishesAndOrCheckBox" => "Finishes",
+                        "CheckBoxCardsForTrade" => "CardsForTrade",
+                        "CheckBoxCardsNotForTrade" => "CardsNotForTrade",
+                        _ => string.Empty
+                    };
+
+                    if (!string.IsNullOrEmpty(propertyName))
+                    {
+                        // Update AndOrSettings with the current state of the checkbox
+                        filterContext.AndOrSettings[propertyName] = toggledCheckBox.IsChecked == true;
                     }
-                }
-                // If 'CheckBoxCardsNotForTrade' is toggled
-                else if (sender == CheckBoxCardsNotForTrade)
-                {
-                    // If 'CheckBoxCardsForTrade' is checked, uncheck it
-                    if (CheckBoxCardsForTrade.IsChecked == true)
+
+                    // If 'CheckBoxCardsForTrade' is toggled
+                    if (toggledCheckBox == CheckBoxCardsForTrade)
                     {
-                        CheckBoxCardsForTrade.IsChecked = false;
+                        // If 'CheckBoxCardsNotForTrade' is checked, uncheck it
+                        if (CheckBoxCardsNotForTrade.IsChecked == true)
+                        {
+                            CheckBoxCardsNotForTrade.IsChecked = false;
+                        }
+                    }
+                    // If 'CheckBoxCardsNotForTrade' is toggled
+                    else if (toggledCheckBox == CheckBoxCardsNotForTrade)
+                    {
+                        // If 'CheckBoxCardsForTrade' is checked, uncheck it
+                        if (CheckBoxCardsForTrade.IsChecked == true)
+                        {
+                            CheckBoxCardsForTrade.IsChecked = false;
+                        }
                     }
                 }
 
@@ -904,6 +929,7 @@ namespace CollectaMundo
                 CheckBoxCardsNotForTrade.Unchecked += AndOrCheckBox_Toggled;
             }
         }
+
 
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)

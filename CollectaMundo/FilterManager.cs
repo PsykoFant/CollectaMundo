@@ -39,11 +39,13 @@ namespace CollectaMundo
                 // Apply mana value filter
                 filteredCards = FilterByManaValue(filteredCards, manaValueFilterParams);
 
-                // Apply shared property filters
-                bool useAnd = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
+
+                // Determine values of color compare combobox
+                filterContext.AndOrSettings["Colors"] = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
                 bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
 
-                filteredCards = ApplySharedPropertyFilters(filteredCards, useAnd, exclude);
+                // Apply shared property filters
+                filteredCards = ApplySharedPropertyFilters(filteredCards, exclude);
 
                 // Apply specific filters for list contexts
                 filteredCards = listName switch
@@ -68,26 +70,53 @@ namespace CollectaMundo
                 return [];
             }
         }
-
-        private IEnumerable<CardSet> ApplySharedPropertyFilters(IEnumerable<CardSet> cards, bool useAnd, bool exclude)
+        private IEnumerable<CardSet> ApplySharedPropertyFilters(IEnumerable<CardSet> cards, bool exclude)
         {
-            var filterMap = new Dictionary<Func<CardSet, string?>, HashSet<string>>
-                {
-                    { card => card.ManaCost, filterContext.SelectedColors },
-                    { card => card.Types, filterContext.SelectedTypes },
-                    { card => card.SuperTypes, filterContext.SelectedSuperTypes },
-                    { card => card.SubTypes, filterContext.SelectedSubTypes },
-                    { card => card.Keywords, filterContext.SelectedKeywords },
-                    { card => card.Rarity, filterContext.SelectedRarity }
-                };
-
-            foreach (var (propertySelector, selectedCriteria) in filterMap)
+            var filterMap = new Dictionary<Func<CardSet, string?>, (HashSet<string>, string)>
             {
+                { card => card.ManaCost, (filterContext.SelectedColors, "Colors") },
+                { card => card.Types, (filterContext.SelectedTypes, "Types") },
+                { card => card.SuperTypes, (filterContext.SelectedSuperTypes, "SuperTypes") },
+                { card => card.SubTypes, (filterContext.SelectedSubTypes, "SubTypes") },
+                { card => card.Keywords, (filterContext.SelectedKeywords, "Keywords") },
+                { card => card.Rarity, (filterContext.SelectedRarity, "Rarity") }
+            };
+
+            foreach (var (propertySelector, (selectedCriteria, propertyKey)) in filterMap)
+            {
+                bool useAnd = filterContext.AndOrSettings.TryGetValue(propertyKey, out bool andOrValue) && andOrValue;
                 cards = FilterByCardProperty(cards, selectedCriteria, useAnd, propertySelector, exclude);
             }
 
             return cards;
         }
+
+        private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string>? selectedCriteria, bool useAnd, Func<CardSet, string?> propertySelector, bool exclude = false)
+        {
+            if (cards == null || propertySelector == null)
+            {
+                return [];
+            }
+
+            if (selectedCriteria == null || selectedCriteria.Count == 0)
+            {
+                return cards;
+            }
+
+            return cards.Where(card =>
+            {
+                var propertyValue = propertySelector(card) ?? string.Empty;  // Avoid nulls in property values
+                var criteria = propertyValue.Split(separator, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
+
+                // Modify match logic to check for substring matches in each criterion
+                bool match = useAnd
+                    ? selectedCriteria.All(c => criteria.Any(crit => crit.Contains(c)))
+                    : selectedCriteria.Any(c => criteria.Any(crit => crit.Contains(c)));
+
+                return exclude ? !match : match;
+            });
+        }
+
         private IEnumerable<CardSet> ApplyMyCardsSpecificFilters(IEnumerable<CardSet> cards)
         {
             var filteredCardItems = cards.OfType<CardInCollection>();
@@ -241,31 +270,7 @@ namespace CollectaMundo
 
 
 
-        private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string>? selectedCriteria, bool useAnd, Func<CardSet, string?> propertySelector, bool exclude = false)
-        {
-            if (cards == null || propertySelector == null)
-            {
-                return [];
-            }
 
-            if (selectedCriteria == null || selectedCriteria.Count == 0)
-            {
-                return cards;
-            }
-
-            return cards.Where(card =>
-            {
-                var propertyValue = propertySelector(card) ?? string.Empty;  // Avoid nulls in property values
-                var criteria = propertyValue.Split(separator, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
-
-                // Modify match logic to check for substring matches in each criterion
-                bool match = useAnd
-                    ? selectedCriteria.All(c => criteria.Any(crit => crit.Contains(c)))
-                    : selectedCriteria.Any(c => criteria.Any(crit => crit.Contains(c)));
-
-                return exclude ? !match : match;
-            });
-        }
 
 
         #endregion
