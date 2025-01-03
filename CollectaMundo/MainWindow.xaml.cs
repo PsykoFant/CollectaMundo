@@ -501,8 +501,8 @@ namespace CollectaMundo
                 filterContext.AllRarities.Clear();
 
                 // Setup common lists
-                filterContext.AllColors.AddRange(["W", "U", "B", "R", "G", "C", "X"]);
-                List<string> allOrNoneColorsOption = ["Cards with any of these colors", "Cards with all of these colors", "Cards with none of these colors"];
+                filterContext.AllColors.AddRange(["W", "U", "B", "R", "G", "C", "X", "Colorless"]);
+                List<string> allOrNoneColorsOption = ["Contains ANY of these", "Contains ONLY these", "Contains NONE of these"];
                 List<int> manaValueOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000];
                 List<string> manaValueCompareOptions = ["less than", "less than/eq", "greater than", "greater than/eq", "equal to"];
 
@@ -1185,8 +1185,8 @@ namespace CollectaMundo
 
             // Clear non-custom comboboxes
             AllOrNoneComboBox.SelectedIndex = 0;
-            ManaValueComboBox.SelectedIndex = -1;
-            ManaValueOperatorComboBox.SelectedIndex = -1;
+            ManaValueOperatorComboBox.SelectedIndex = 3;
+            ManaValueComboBox.SelectedIndex = 0;
 
             // Find and clear all ComboBoxes in the DataGrid header
             var headerComboBoxesAllCards = FindVisualChildren<ComboBox>(AllCardsDataGrid);
