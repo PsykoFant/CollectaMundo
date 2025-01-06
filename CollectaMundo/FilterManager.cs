@@ -148,7 +148,7 @@ namespace CollectaMundo
         {
             var filterMap = new Dictionary<Func<CardSet, string?>, (HashSet<string>, string)>
             {
-                { card => card.ManaCost, (filterContext.SelectedColors, "Colors") },
+                { card => card.Colors, (filterContext.SelectedColors, "Colors") },
                 { card => card.Types, (filterContext.SelectedTypes, "Types") },
                 { card => card.SuperTypes, (filterContext.SelectedSuperTypes, "SuperTypes") },
                 { card => card.SubTypes, (filterContext.SelectedSubTypes, "SubTypes") },
@@ -164,7 +164,16 @@ namespace CollectaMundo
 
             return cards;
         }
-        private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string>? selectedCriteria, bool useAnd, Func<CardSet, string?> propertySelector, bool exclude = false)
+
+        /// <summary>
+        /// Filters a list of cards based on selected criteria, with special handling for "Colorless" filtering on Colors == null.
+        /// </summary>
+        private static IEnumerable<CardSet> FilterByCardProperty(
+            IEnumerable<CardSet>? cards,
+            HashSet<string>? selectedCriteria,
+            bool useAnd,
+            Func<CardSet, string?> propertySelector,
+            bool exclude = false)
         {
             if (cards == null || propertySelector == null)
             {
@@ -178,13 +187,23 @@ namespace CollectaMundo
 
             return cards.Where(card =>
             {
-                var propertyValue = propertySelector(card) ?? string.Empty;  // Avoid nulls in property values
-                var criteria = propertyValue.Split(separator, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
+                var propertyValue = propertySelector(card);
 
-                // Modify match logic to check for substring matches in each criterion
+                // Special case for "Colorless" filtering on Colors == null
+                if (selectedCriteria.Contains("Colorless") && propertySelector.Method.Name == "get_Colors")
+                {
+                    bool isColorless = string.IsNullOrWhiteSpace(propertyValue);
+                    return exclude ? !isColorless : isColorless;
+                }
+
+                // Standard filtering for other properties
+                var propertyValues = (propertyValue ?? string.Empty)
+                    .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(v => v.Trim());
+
                 bool match = useAnd
-                    ? selectedCriteria.All(c => criteria.Any(crit => crit.Contains(c)))
-                    : selectedCriteria.Any(c => criteria.Any(crit => crit.Contains(c)));
+                    ? selectedCriteria.All(crit => propertyValues.Any(value => value.Contains(crit)))
+                    : selectedCriteria.Any(crit => propertyValues.Any(value => value.Contains(crit)));
 
                 return exclude ? !match : match;
             });
