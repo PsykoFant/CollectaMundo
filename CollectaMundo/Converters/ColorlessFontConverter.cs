@@ -7,26 +7,34 @@ namespace CollectaMundo.Converters
     /// <summary>
     /// Sets the font for the Colorless option in FilterColorsListBox
     /// </summary>
-
-
     public class ColorlessFontConverter : IValueConverter
     {
+        /// <summary>
+        /// Applies a different font size if the ListBoxItem content is "Colorless".
+        /// </summary>
+        /// <param name="value">The value passed from the binding (ListBoxItem).</param>
+        /// <param name="targetType">The target property type.</param>
+        /// <param name="parameter">The font size to apply if the condition is met.</param>
+        /// <param name="culture">The culture information.</param>
+        /// <returns>Modified font size based on the item's content.</returns>
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is ListBoxItem listBoxItem && listBoxItem.Content is string content)
             {
-                var listBox = ItemsControl.ItemsControlFromItemContainer(listBoxItem) as ListBox;
-                if (listBox != null && listBox.Items.Count > 0 &&
-                    content == listBox.Items[listBox.Items.Count - 1].ToString())
+                if (content.Equals("Colorless", StringComparison.OrdinalIgnoreCase))
                 {
-                    return double.TryParse(parameter?.ToString(), out double fontSize) ? fontSize : 13.90;
+                    return 13.90;  // Fixed font size
                 }
             }
-
-            return 0.01; // Default font size
+            return 0.01; // Default size for all other items
         }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotImplementedException();
+
+        /// <summary>
+        /// ConvertBack not implemented, as it's a one-way binding.
+        /// </summary>
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotImplementedException();
     }
 }
 

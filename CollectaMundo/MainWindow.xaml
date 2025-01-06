@@ -84,7 +84,7 @@
                                                   IsChecked="{TemplateBinding IsSelected}" 
                                                   Loaded="CheckBox_Loaded"
                                                   Tag="Colors"
-                                                  FontSize="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Converter={StaticResource ColorlessFontConverter}, ConverterParameter=15}">
+                                                  FontSize="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Converter={StaticResource ColorlessFontConverter}, ConverterParameter=30}">
                                             <ContentPresenter />
                                         </CheckBox>
                                     </ControlTemplate>

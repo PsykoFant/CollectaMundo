@@ -35,7 +35,6 @@ namespace CollectaMundo
                 // Apply mana value filter
                 filteredCards = FilterByManaValue(filteredCards);
 
-
                 // Determine values of color compare combobox
                 filterContext.AndOrSettings["Colors"] = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
                 bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
