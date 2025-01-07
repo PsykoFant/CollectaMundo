@@ -148,7 +148,7 @@ namespace CollectaMundo
         {
             var filterMap = new Dictionary<Func<CardSet, string?>, (HashSet<string>, string)>
             {
-                { card => card.Colors, (filterContext.SelectedColors, "Colors") },
+                { card => card.ManaCost, (filterContext.SelectedColors, "Colors") },
                 { card => card.Types, (filterContext.SelectedTypes, "Types") },
                 { card => card.SuperTypes, (filterContext.SelectedSuperTypes, "SuperTypes") },
                 { card => card.SubTypes, (filterContext.SelectedSubTypes, "SubTypes") },
@@ -166,14 +166,9 @@ namespace CollectaMundo
         }
 
         /// <summary>
-        /// Filters a list of cards based on selected criteria, with special handling for "Colorless" filtering on Colors == null.
+        /// Filters cards based on the provided criteria, including handling for "Colorless".
         /// </summary>
-        private static IEnumerable<CardSet> FilterByCardProperty(
-            IEnumerable<CardSet>? cards,
-            HashSet<string>? selectedCriteria,
-            bool useAnd,
-            Func<CardSet, string?> propertySelector,
-            bool exclude = false)
+        private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string>? selectedCriteria, bool useAnd, Func<CardSet, string?> propertySelector, bool exclude = false)
         {
             if (cards == null || propertySelector == null)
             {
@@ -187,27 +182,87 @@ namespace CollectaMundo
 
             return cards.Where(card =>
             {
-                var propertyValue = propertySelector(card);
+                var propertyValue = propertySelector(card) ?? string.Empty;  // Avoid nulls in property values
+                var criteria = propertyValue.Split(separator, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
 
-                // Special case for "Colorless" filtering on Colors == null
-                if (selectedCriteria.Contains("Colorless") && propertySelector.Method.Name == "get_Colors")
-                {
-                    bool isColorless = string.IsNullOrWhiteSpace(propertyValue);
-                    return exclude ? !isColorless : isColorless;
-                }
+                // Special case for "Colorless" filtering
+                bool colorlessFilterActive = selectedCriteria.Contains("Colorless");
 
-                // Standard filtering for other properties
-                var propertyValues = (propertyValue ?? string.Empty)
-                    .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(v => v.Trim());
+                bool matchColorless = colorlessFilterActive && string.IsNullOrWhiteSpace(card.Colors);
 
-                bool match = useAnd
-                    ? selectedCriteria.All(crit => propertyValues.Any(value => value.Contains(crit)))
-                    : selectedCriteria.Any(crit => propertyValues.Any(value => value.Contains(crit)));
+                // General property matching (if not matching "Colorless")
+                bool matchGeneral = useAnd
+                    ? selectedCriteria.All(c => criteria.Any(crit => crit.Contains(c)))
+                    : selectedCriteria.Any(c => criteria.Any(crit => crit.Contains(c)));
+
+                // Return match result (colorless check overrides if active)
+                bool match = matchColorless || matchGeneral;
 
                 return exclude ? !match : match;
             });
         }
+
+
+        /// <summary>
+        /// Debug method to count the number of cards matching a specific ManaCost and print the results.
+        /// </summary>
+        /// <param name="cards">The list of cards to search through.</param>
+        /// <param name="manaCost">The ManaCost string to match.</param>
+        public static void DebugCountCardsByManaCost(List<CardSet> cards, string manaCost)
+        {
+            if (cards == null || cards.Count == 0)
+            {
+                Debug.WriteLine("The card list is empty or null.");
+                return;
+            }
+
+            //if (string.IsNullOrEmpty(manaCost))
+            //{
+            //    Debug.WriteLine("Invalid mana cost input.");
+            //    return;
+            //}
+
+            // Count cards where ManaCost matches the specified input
+            int matchingCardsCount = cards.Count(card => card.ManaCost == manaCost);
+
+            // Output the results
+            Debug.WriteLine($"Number of cards with ManaCost '{manaCost}': {matchingCardsCount}");
+        }
+
+        /// <summary>
+        /// Debug method to print the names of cards where Colors is null or an empty string.
+        /// </summary>
+        /// <param name="cards">The list of cards to filter and debug.</param>
+        public static void DebugCardsWithEmptyOrNullColors(List<CardSet> cards)
+        {
+            if (cards == null || cards.Count == 0)
+            {
+                Debug.WriteLine("The card list is empty or null.");
+                return;
+            }
+
+            // Filter cards where Colors is null or an empty string
+            var filteredCards = cards
+                .Where(card => string.IsNullOrWhiteSpace(card.Colors))
+                .ToList();
+
+            if (filteredCards.Count == 0)
+            {
+                Debug.WriteLine("No cards found where Colors is null or empty.");
+                return;
+            }
+
+            // Output the names of the matching cards
+            Debug.WriteLine($"Cards with empty or null Colors (Total: {filteredCards.Count}):");
+            foreach (var card in filteredCards)
+            {
+                Debug.WriteLine($"- {card.Name} (Colors: '{card.Colors ?? "null"}')");
+            }
+        }
+
+
+
+
         private IEnumerable<CardSet> ApplyMyCardsSpecificFilters(IEnumerable<CardSet> cards)
         {
             var filteredCardItems = cards.OfType<CardInCollection>();

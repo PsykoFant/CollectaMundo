@@ -294,6 +294,7 @@ namespace CollectaMundo
                 // for all CardSet lists 
                 card.Name = GetFieldValue<string>(reader, "Name") ?? string.Empty;
                 card.ManaCost = ProcessManaCost(GetFieldValue<string>(reader, "ManaCost") ?? string.Empty);
+                card.Colors = GetFieldValue<string>(reader, "Colors") ?? string.Empty;
                 card.Type = GetFieldValue<string>(reader, "Type") ?? string.Empty;
                 card.ManaValue = GetFieldValue<double?>(reader, "ManaValue") ?? 0;
                 card.ManaCostImageBytes = GetFieldValue<byte[]>(reader, "ManaCostImage");
@@ -502,7 +503,7 @@ namespace CollectaMundo
 
                 // Setup common lists
                 filterContext.AllColors.AddRange(["W", "U", "B", "R", "G", "C", "X", "Colorless"]);
-                List<string> allOrNoneColorsOption = ["Contains ANY of these", "Contains ONLY these", "Contains NONE of these"];
+                List<string> allOrNoneColorsOption = ["Contains ANY of these", "Contains ALL these", "Contains NONE of these"];
                 List<int> manaValueOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000];
                 List<string> manaValueCompareOptions = ["less than", "less than/eq", "greater than", "greater than/eq", "equal to"];
 
