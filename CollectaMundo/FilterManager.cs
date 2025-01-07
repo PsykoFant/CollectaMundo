@@ -148,7 +148,6 @@ namespace CollectaMundo
         {
             var filterMap = new Dictionary<Func<CardSet, string?>, (HashSet<string>, string)>
             {
-                { card => card.ManaCost, (filterContext.SelectedColors, "Colors") },
                 { card => card.Types, (filterContext.SelectedTypes, "Types") },
                 { card => card.SuperTypes, (filterContext.SelectedSuperTypes, "SuperTypes") },
                 { card => card.SubTypes, (filterContext.SelectedSubTypes, "SubTypes") },
@@ -156,6 +155,10 @@ namespace CollectaMundo
                 { card => card.Rarity, (filterContext.SelectedRarity, "Rarity") }
             };
 
+            // Apply color filtering separately
+            cards = FilterByColor(cards, filterContext.SelectedColors, exclude);
+
+            // Apply other shared property filters
             foreach (var (propertySelector, (selectedCriteria, propertyKey)) in filterMap)
             {
                 bool useAnd = filterContext.AndOrSettings.TryGetValue(propertyKey, out bool andOrValue) && andOrValue;
@@ -166,73 +169,62 @@ namespace CollectaMundo
         }
 
         /// <summary>
-        /// Filters cards based on the provided criteria, including handling for "Colorless".
+        /// Filters cards based on color-related properties.
+        /// If "C" or "X" is selected, it filters based on ManaCost.
+        /// If "W", "U", "B", "R", "G", or "Colorless" is selected, it filters based on Colors.
         /// </summary>
-        private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string>? selectedCriteria, bool useAnd, Func<CardSet, string?> propertySelector, bool exclude = false)
+        private static IEnumerable<CardSet> FilterByColor(IEnumerable<CardSet> cards, HashSet<string> selectedColors, bool exclude)
         {
-            if (cards == null || propertySelector == null)
-            {
-                return [];
-            }
-
-            if (selectedCriteria == null || selectedCriteria.Count == 0)
+            if (cards == null || selectedColors == null || selectedColors.Count == 0)
             {
                 return cards;
             }
 
             return cards.Where(card =>
             {
-                var propertyValue = propertySelector(card) ?? string.Empty;  // Avoid nulls in property values
-                var criteria = propertyValue.Split(separator, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
+                bool match = false;
 
-                // Special case for "Colorless" filtering
-                bool colorlessFilterActive = selectedCriteria.Contains("Colorless");
+                // Filter on ManaCost if "C" or "X"
+                if (selectedColors.Contains("C") || selectedColors.Contains("X"))
+                {
+                    match = selectedColors.Any(c => card.ManaCost.Contains(c));
+                }
 
-                bool matchColorless = colorlessFilterActive && string.IsNullOrWhiteSpace(card.Colors);
-
-                // General property matching (if not matching "Colorless")
-                bool matchGeneral = useAnd
-                    ? selectedCriteria.All(c => criteria.Any(crit => crit.Contains(c)))
-                    : selectedCriteria.Any(c => criteria.Any(crit => crit.Contains(c)));
-
-                // Return match result (colorless check overrides if active)
-                bool match = matchColorless || matchGeneral;
+                // Filter on Colors for colored filtering
+                if (selectedColors.Overlaps(new[] { "W", "U", "B", "R", "G", "Colorless" }))
+                {
+                    bool colorlessMatch = selectedColors.Contains("Colorless") && string.IsNullOrWhiteSpace(card.Colors);
+                    bool colorMatch = selectedColors.Any(c => card.Colors?.Contains(c) == true);
+                    match = match || colorlessMatch || colorMatch;
+                }
 
                 return exclude ? !match : match;
             });
         }
 
-
         /// <summary>
-        /// Debug method to count the number of cards matching a specific ManaCost and print the results.
+        /// General filter method for non-color properties using criteria matching.
         /// </summary>
-        /// <param name="cards">The list of cards to search through.</param>
-        /// <param name="manaCost">The ManaCost string to match.</param>
-        public static void DebugCountCardsByManaCost(List<CardSet> cards, string manaCost)
+        private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string>? selectedCriteria, bool useAnd, Func<CardSet, string?> propertySelector, bool exclude = false)
         {
-            if (cards == null || cards.Count == 0)
+            if (cards == null || propertySelector == null || selectedCriteria == null || selectedCriteria.Count == 0)
             {
-                Debug.WriteLine("The card list is empty or null.");
-                return;
+                return cards ?? [];
             }
 
-            //if (string.IsNullOrEmpty(manaCost))
-            //{
-            //    Debug.WriteLine("Invalid mana cost input.");
-            //    return;
-            //}
+            return cards.Where(card =>
+            {
+                var propertyValue = propertySelector(card) ?? string.Empty;
+                var criteria = propertyValue.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
 
-            // Count cards where ManaCost matches the specified input
-            int matchingCardsCount = cards.Count(card => card.ManaCost == manaCost);
+                bool match = useAnd
+                    ? selectedCriteria.All(c => criteria.Any(crit => crit.Contains(c)))
+                    : selectedCriteria.Any(c => criteria.Any(crit => crit.Contains(c)));
 
-            // Output the results
-            Debug.WriteLine($"Number of cards with ManaCost '{manaCost}': {matchingCardsCount}");
+                return exclude ? !match : match;
+            });
         }
 
-        /// <summary>
-        /// Debug method to print the names of cards where Colors is null or an empty string.
-        /// </summary>
-        /// <param name="cards">The list of cards to filter and debug.</param>
         public static void DebugCardsWithEmptyOrNullColors(List<CardSet> cards)
         {
             if (cards == null || cards.Count == 0)
