@@ -205,7 +205,7 @@ namespace CollectaMundo
             RunTest(new HashSet<string> { "G", "U", "B", "X" }, 1, "Test 9: Single color and X/C / ALL", 0);
 
             // Test 10: Select Colorless / ANY
-            RunTest(new HashSet<string> { "G", "U", "B", "X" }, 0, "Test 10: Colorless / ANY", 0);
+            RunTest(new HashSet<string> { "Colorless" }, 0, "Test 10: Colorless / ANY", 0);
 
             Debug.WriteLine("Filter Tests Completed.");
         }
