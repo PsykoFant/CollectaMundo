@@ -80,9 +80,14 @@ namespace CollectaMundo
             CardsInDecks
         }
 
+
         // The filter object from the FilterContext class
         private readonly FilterContext filterContext = new();
         private readonly FilterManager filterManager;
+
+        // Test objects
+        private readonly List<CardSet> testCards = new();
+
 
         // Objects for deck management
         public readonly List<Deck> allDecks = [];
@@ -146,6 +151,92 @@ namespace CollectaMundo
             ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
             ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
         }
+
+        #region Tests
+        private void InitializeTestCards()
+        {
+            testCards.AddRange(new List<CardSet>
+        {
+            new CardSet { Name = "Black Lotus", Colors = "", ManaCost = "0" },
+            new CardSet { Name = "Sol Ring", Colors = "", ManaCost = "1" },
+            new CardSet { Name = "Lightning Bolt", Colors = "R", ManaCost = "R" },
+            new CardSet { Name = "Traben Inspector", Colors = "W", ManaCost = "W" },
+            new CardSet { Name = "Eldrazi Ravager", Colors = "", ManaCost = "5,C" },
+            new CardSet { Name = "Island", Colors = "", ManaCost = "" },
+            new CardSet { Name = "Dromoka's Command", Colors = "G, W", ManaCost = "G,W" },
+            new CardSet { Name = "Biomass Mutation", Colors = "G, U", ManaCost = "X,G/U,G/U" },
+            new CardSet { Name = "Suffer The Past", Colors = "B", ManaCost = "X,B" },
+            new CardSet { Name = "Kozilek's Command", Colors = "", ManaCost = "X,C,C" },
+        });
+        }
+
+        /// <summary>
+        /// Runs all the tests for the FilterByColor method in the FilterManager class.
+        /// </summary>
+        public void RunFilterTests()
+        {
+            Debug.WriteLine("Starting Filter Tests...");
+
+            // Test 1: Select single color / ANY
+            RunTest(new HashSet<string> { "R" }, 0, "Test 1: Single color / ANY", 1);
+
+            // Test 2: Select two colors / ANY
+            RunTest(new HashSet<string> { "W", "R" }, 0, "Test 2: Two colors / ANY", 3);
+
+            // Test 3: Select two colors / NONE
+            RunTest(new HashSet<string> { "W", "R" }, 2, "Test 3: Two colors / NONE", 7);
+
+            // Test 4: Select single color and X/C / ANY
+            RunTest(new HashSet<string> { "R", "C" }, 0, "Test 4: Single color and X/C / ANY", 3);
+
+            // Test 5: Select single color and X/C / NONE
+            RunTest(new HashSet<string> { "R", "C" }, 2, "Test 5: Single color and X/C / NONE", 7);
+
+            // Test 6: Select two colors / ALL
+            RunTest(new HashSet<string> { "G", "U" }, 1, "Test 6: Two colors / ALL", 1);
+
+            // Test 7: Select single color and X/C / ALL
+            RunTest(new HashSet<string> { "G", "X" }, 1, "Test 7: Single color and X/C / ALL", 1);
+
+            // Test 8: Select two colors and X/C / ALL
+            RunTest(new HashSet<string> { "G", "U", "X" }, 1, "Test 8: Single color and X/C / ALL", 1);
+
+            // Test 9: Select three colors and X/C / ALL
+            RunTest(new HashSet<string> { "G", "U", "B", "X" }, 1, "Test 9: Single color and X/C / ALL", 0);
+
+            // Test 10: Select Colorless / ANY
+            RunTest(new HashSet<string> { "G", "U", "B", "X" }, 0, "Test 10: Colorless / ANY", 0);
+
+            Debug.WriteLine("Filter Tests Completed.");
+        }
+
+        /// <summary>
+        /// Helper method to execute and log results for a single test case.
+        /// </summary>
+        private void RunTest(HashSet<string> selectedColors, int filterMode, string testName, int expectedCount)
+        {
+            //AllOrNoneComboBox.SelectedIndex = filterMode;
+            //filterManager.FilterContext.SelectedColors = selectedColors;
+
+            //var result = filterManager.FilterByColor(testCards, selectedColors, filterMode).ToList();
+            //Debug.WriteLine($"{testName} -> Expected: {expectedCount}, Actual: {result.Count}");
+
+            //if (result.Count == expectedCount)
+            //{
+            //    Debug.WriteLine("Test Passed!");
+            //}
+            //else
+            //{
+            //    Debug.WriteLine("Test Failed!");
+            //    foreach (var card in result)
+            //    {
+            //        Debug.WriteLine($"  - {card.Name}, Colors: {card.Colors ?? "null"}, ManaCost: {card.ManaCost}");
+            //    }
+            //}
+            //}
+        }
+
+        #endregion
 
         #region Load data and populate UI elements
         public async Task LoadDataIntoUiElements()

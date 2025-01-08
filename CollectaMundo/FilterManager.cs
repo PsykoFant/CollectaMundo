@@ -155,8 +155,8 @@ namespace CollectaMundo
                 { card => card.Rarity, (filterContext.SelectedRarity, "Rarity") }
             };
 
-            // Apply color filtering separately
-            cards = FilterByColor(cards, filterContext.SelectedColors, exclude);
+            // Apply color filtering based on combobox selection
+            cards = FilterByColor(cards, filterContext.SelectedColors, MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex);
 
             // Apply other shared property filters
             foreach (var (propertySelector, (selectedCriteria, propertyKey)) in filterMap)
@@ -169,11 +169,12 @@ namespace CollectaMundo
         }
 
         /// <summary>
-        /// Filters cards based on color-related properties.
-        /// If "C" or "X" is selected, it filters based on ManaCost.
-        /// If "W", "U", "B", "R", "G", or "Colorless" is selected, it filters based on Colors.
+        /// Filters cards based on color properties using the combo box options:
+        /// 0 - "Contains ANY of these"
+        /// 1 - "Contains ALL these"
+        /// 2 - "Contains NONE of these"
         /// </summary>
-        private static IEnumerable<CardSet> FilterByColor(IEnumerable<CardSet> cards, HashSet<string> selectedColors, bool exclude)
+        public static IEnumerable<CardSet> FilterByColor(IEnumerable<CardSet> cards, HashSet<string> selectedColors, int filterMode)
         {
             if (cards == null || selectedColors == null || selectedColors.Count == 0)
             {
@@ -182,25 +183,56 @@ namespace CollectaMundo
 
             return cards.Where(card =>
             {
-                bool match = false;
+                // Prepare match flags for ManaCost and Colors
+                bool manaCostMatch = false;
+                bool colorMatch = false;
 
-                // Filter on ManaCost if "C" or "X"
+                // Check for "C" and "X" in ManaCost
                 if (selectedColors.Contains("C") || selectedColors.Contains("X"))
                 {
-                    match = selectedColors.Any(c => card.ManaCost.Contains(c));
+                    var manaCostCriteria = selectedColors.Intersect(new[] { "C", "X" }).ToList();
+                    manaCostMatch = filterMode switch
+                    {
+                        0 => manaCostCriteria.Any(c => !string.IsNullOrWhiteSpace(card.ManaCost) && card.ManaCost.Contains(c)),  // ANY
+                        1 => manaCostCriteria.All(c => !string.IsNullOrWhiteSpace(card.ManaCost) && card.ManaCost.Contains(c)),  // ALL
+                        2 => !manaCostCriteria.Any(c => !string.IsNullOrWhiteSpace(card.ManaCost) && card.ManaCost.Contains(c)), // NONE
+                        _ => false
+                    };
                 }
 
-                // Filter on Colors for colored filtering
+                // Check for colored mana and "Colorless" in Colors
                 if (selectedColors.Overlaps(new[] { "W", "U", "B", "R", "G", "Colorless" }))
                 {
                     bool colorlessMatch = selectedColors.Contains("Colorless") && string.IsNullOrWhiteSpace(card.Colors);
-                    bool colorMatch = selectedColors.Any(c => card.Colors?.Contains(c) == true);
-                    match = match || colorlessMatch || colorMatch;
+                    bool coloredMatch = selectedColors
+                        .Where(c => c != "Colorless")
+                        .All(c => !string.IsNullOrWhiteSpace(card.Colors) && card.Colors.Contains(c));
+
+                    colorMatch = filterMode switch
+                    {
+                        0 => colorlessMatch || coloredMatch,                         // ANY
+                        1 => selectedColors.All(c => (c == "Colorless" && colorlessMatch) || (card.Colors?.Contains(c) == true)), // ALL
+                        2 => !(colorlessMatch || coloredMatch),                      // NONE
+                        _ => false
+                    };
                 }
 
-                return exclude ? !match : match;
+                // FINAL FILTERING LOGIC:
+                // - ANY: Either condition must match
+                // - ALL: Both conditions must match simultaneously
+                // - NONE: Both conditions must fail simultaneously
+                return filterMode switch
+                {
+                    0 => manaCostMatch || colorMatch,                      // ANY: Either one can match
+                    1 => (manaCostMatch || !selectedColors.Overlaps(new[] { "C", "X" })) &&
+                         (colorMatch || !selectedColors.Overlaps(new[] { "W", "U", "B", "R", "G", "Colorless" })), // ALL: Both must match if selected
+                    2 => !(manaCostMatch || colorMatch),                   // NONE: Neither condition can match
+                    _ => false
+                };
             });
         }
+
+
 
         /// <summary>
         /// General filter method for non-color properties using criteria matching.
