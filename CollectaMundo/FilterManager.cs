@@ -5,7 +5,6 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using static CollectaMundo.Models.CardSet;
-using LinqHashSet = System.Linq.Enumerable;
 
 namespace CollectaMundo
 {
@@ -181,55 +180,38 @@ namespace CollectaMundo
 
             return cards.Where(card =>
             {
-                var manaCostSymbols = LinqHashSet.ToHashSet(card.ManaCost?.Split(',')
-                    .Select(c => c.Trim()) ?? Enumerable.Empty<string>());
-
-                var colorSymbols = LinqHashSet.ToHashSet(card.Colors?.Split(',')
-                    .Select(c => c.Trim()) ?? Enumerable.Empty<string>());
+                // Prepare collections for easier matching
+                var manaCostSymbols = new HashSet<string>(card.ManaCost?.Split(',').Select(c => c.Trim()) ?? Enumerable.Empty<string>());
+                var colorSymbols = new HashSet<string>(card.Colors?.Split(',').Select(c => c.Trim()) ?? Enumerable.Empty<string>());
 
                 bool manaCostMatch = false;
                 bool colorMatch = false;
 
+                // Check for "C" and "X" in ManaCost
                 if (selectedColors.Contains("C") || selectedColors.Contains("X"))
                 {
-                    var manaCostCriteria = LinqHashSet.ToHashSet(selectedColors.Intersect(new[] { "C", "X" }));
-                    manaCostMatch = filterMode switch
-                    {
-                        0 => manaCostSymbols.Overlaps(manaCostCriteria),
-                        1 => manaCostCriteria.All(manaCostSymbols.Contains),
-                        2 => !manaCostSymbols.Overlaps(manaCostCriteria),
-                        _ => false
-                    };
+                    var manaCostCriteria = new HashSet<string>(selectedColors.Intersect(new[] { "C", "X" }));
+                    manaCostMatch = manaCostCriteria.All(manaCostSymbols.Contains);
                 }
 
+                // Check for colored mana and "Colorless" in Colors
                 if (selectedColors.Overlaps(new[] { "W", "U", "B", "R", "G", "Colorless" }))
                 {
                     bool colorlessMatch = selectedColors.Contains("Colorless") && string.IsNullOrWhiteSpace(card.Colors);
-                    var coloredCriteria = LinqHashSet.ToHashSet(selectedColors.Where(c => c != "Colorless"));
-
-                    colorMatch = filterMode switch
-                    {
-                        0 => colorSymbols.Overlaps(coloredCriteria) || colorlessMatch,
-                        1 => coloredCriteria.All(colorSymbols.Contains) && colorlessMatch,
-                        2 => !colorSymbols.Overlaps(coloredCriteria) && !colorlessMatch,
-                        _ => false
-                    };
+                    var coloredCriteria = new HashSet<string>(selectedColors.Where(c => c != "Colorless"));
+                    colorMatch = coloredCriteria.All(colorSymbols.Contains) || colorlessMatch;
                 }
 
+                // ✅ FIX: Enforcing strict simultaneous matching for "ALL" mode
                 return filterMode switch
                 {
-                    0 => manaCostMatch || colorMatch,
-                    1 => manaCostMatch && colorMatch,
-                    2 => !manaCostMatch && !colorMatch,
+                    0 => manaCostMatch || colorMatch, // ANY: Match if either field matches
+                    1 => manaCostMatch && colorMatch, // ALL: Both fields must satisfy all conditions
+                    2 => !(manaCostSymbols.Overlaps(selectedColors) || colorSymbols.Overlaps(selectedColors)), // NONE: Neither should match
                     _ => false
                 };
             });
         }
-
-
-
-
-
 
 
 

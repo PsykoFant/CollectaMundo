@@ -184,6 +184,8 @@ namespace CollectaMundo
         {
             Debug.WriteLine("Starting Filter Tests...");
 
+            // c og x test
+
             var testContext = new FilterContext();
             var testFilterManager = new FilterManager(testContext);
 
