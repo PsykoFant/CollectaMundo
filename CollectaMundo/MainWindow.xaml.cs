@@ -80,7 +80,6 @@ namespace CollectaMundo
             CardsInDecks
         }
 
-
         // The filter object from the FilterContext class
         private readonly FilterContext filterContext = new();
         private readonly FilterManager filterManager;
@@ -191,36 +190,28 @@ namespace CollectaMundo
 
             // Test 1: Select single color / ANY
             RunTest(testFilterManager, ["R"], 0, "Test 1: Single color / ANY", 1);
-
             // Test 2: Select two colors / ANY
             RunTest(testFilterManager, ["W", "R"], 0, "Test 2: Two colors / ANY", 3);
-
             // Test 3: Select two colors / NONE
             RunTest(testFilterManager, ["W", "R"], 2, "Test 3: Two colors / NONE", 7);
-
             // Test 4: Select single color and X/C / ANY
             RunTest(testFilterManager, ["R", "C"], 0, "Test 4: Single color and X/C / ANY", 3);
-
             // Test 5: Select single color and X/C / NONE
             RunTest(testFilterManager, ["R", "C"], 2, "Test 5: Single color and X/C / NONE", 7);
-
             // Test 6: Select two colors / ALL
             RunTest(testFilterManager, ["G", "U"], 1, "Test 6: Two colors / ALL", 1);
-
             // Test 7: Select single color and X/C / ALL
             RunTest(testFilterManager, ["G", "X"], 1, "Test 7: Single color and X/C / ALL", 1);
-
             // Test 8: Select two colors and X/C / ALL
             RunTest(testFilterManager, ["G", "U", "X"], 1, "Test 8: Single color and X/C / ALL", 1);
-
             // Test 9: Select three colors and X/C / ALL
             RunTest(testFilterManager, ["G", "U", "B", "X"], 1, "Test 9: 3 colors and X/C / ALL", 0);
-
             // Test 10: Select Colorless / ANY
-            RunTest(testFilterManager, ["Colorless"], 0, "Test 10: Colorless / ANY", 4);
-
-            // Test 11: Select Colorless / NONE
+            RunTest(testFilterManager, ["Colorless"], 0, "Test 10: Colorless / ANY", 5);
             RunTest(testFilterManager, ["Colorless", "X"], 2, "Test 11: Colorless and X/ NONE", 3);
+            RunTest(testFilterManager, ["Colorless", "C"], 1, "Test 12: Colorless and C/ ALL", 2);
+            RunTest(testFilterManager, ["Colorless", "R"], 1, "Test 13: Colorless and R/ ALL", 0);
+            RunTest(testFilterManager, ["Colorless", "C", "X"], 1, "Test 14: Colorless and both C and X/ ALL", 1);
 
 
             Debug.WriteLine("Filter Tests Completed.");
@@ -247,7 +238,7 @@ namespace CollectaMundo
             }
             else
             {
-                Debug.WriteLine("Test Failed!");
+                Debug.WriteLine("TEST FAILED!");
                 foreach (var card in result)
                 {
                     Debug.WriteLine($"  - {card.Name}, Colors: {card.Colors ?? "null"}, ManaCost: {card.ManaCost}");

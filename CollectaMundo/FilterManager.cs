@@ -14,7 +14,6 @@ namespace CollectaMundo
         private readonly FilterContext filterContext = context;
 
 
-
         private static readonly char[] separator = [','];
 
         #region Filtering
@@ -158,8 +157,14 @@ namespace CollectaMundo
                 { card => card.Rarity, (filterContext.SelectedRarity, "Rarity") }
             };
 
+
             // Apply color filtering based on combobox selection
+
+            Debug.WriteLine($"# selected colors: {filterContext.SelectedColors.Count}");
             cards = FilterByColor(cards, filterContext.SelectedColors, MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex);
+
+
+
 
             // Apply other shared property filters
             foreach (var (propertySelector, (selectedCriteria, propertyKey)) in filterMap)
@@ -195,23 +200,33 @@ namespace CollectaMundo
                 }
 
                 // Check for colored mana and "Colorless" in Colors
+                bool colorlessMatch = selectedColors.Contains("Colorless") && string.IsNullOrWhiteSpace(card.Colors);
                 if (selectedColors.Overlaps(new[] { "W", "U", "B", "R", "G", "Colorless" }))
                 {
-                    bool colorlessMatch = selectedColors.Contains("Colorless") && string.IsNullOrWhiteSpace(card.Colors);
                     var coloredCriteria = new HashSet<string>(selectedColors.Where(c => c != "Colorless"));
                     colorMatch = coloredCriteria.All(colorSymbols.Contains) || colorlessMatch;
                 }
 
-                // ✅ FIX: Enforcing strict simultaneous matching for "ALL" mode
+                // ✅ FIX: Stricter "ALL" logic to enforce both conditions simultaneously
                 return filterMode switch
                 {
-                    0 => manaCostMatch || colorMatch, // ANY: Match if either field matches
-                    1 => manaCostMatch && colorMatch, // ALL: Both fields must satisfy all conditions
-                    2 => !(manaCostSymbols.Overlaps(selectedColors) || colorSymbols.Overlaps(selectedColors)), // NONE: Neither should match
+                    0 => selectedColors.Any(c => manaCostSymbols.Contains(c) || colorSymbols.Contains(c) ||
+                            (c == "Colorless" && string.IsNullOrWhiteSpace(card.Colors))), // ANY
+                    1 => selectedColors.All(c =>
+                            (c == "Colorless" && string.IsNullOrWhiteSpace(card.Colors)) ||
+                            manaCostSymbols.Contains(c) ||
+                            colorSymbols.Contains(c)), // ✅ ALL: Now both conditions must be met
+                    2 => !selectedColors.Any(c => manaCostSymbols.Contains(c) || colorSymbols.Contains(c) ||
+                            (c == "Colorless" && string.IsNullOrWhiteSpace(card.Colors))), // NONE
                     _ => false
                 };
             });
         }
+
+
+
+
+
 
 
 
