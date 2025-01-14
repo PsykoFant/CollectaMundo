@@ -8,13 +8,11 @@ using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo
 {
-    public class FilterManager(FilterContext context)
+    public class FilterManager
     {
         public string WhichDropdown = string.Empty;
-        private readonly FilterContext filterContext = context;
 
-
-        private static readonly char[] separator = [','];
+        //private static readonly char[] separator = [','];
 
         #region Filtering
         public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards, string listName)
@@ -38,7 +36,7 @@ namespace CollectaMundo
                 filteredCards = FilterByManaValue(filteredCards);
 
                 // Determine values of color compare combobox
-                filterContext.AndOrSettings["Colors"] = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
+                MainWindow.CurrentInstance.filterSelections.AndOrSettings["Colors"] = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
                 bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
 
                 // Apply shared property filters
@@ -112,7 +110,7 @@ namespace CollectaMundo
             {
                 filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.Equals(setFilter, StringComparison.OrdinalIgnoreCase));
             }
-            if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != filterContext.RulesTextDefaultText)
+            if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != MainWindow.CurrentInstance.filterSelections.RulesTextDefaultText)
             {
                 filteredCards = filteredCards.Where(card => card.Text != null && card.Text.Contains(rulesTextFilter, StringComparison.OrdinalIgnoreCase));
             }
@@ -150,18 +148,18 @@ namespace CollectaMundo
         {
             var filterMap = new Dictionary<Func<CardSet, string?>, (HashSet<string>, string)>
             {
-                { card => card.Types, (filterContext.SelectedTypes, "Types") },
-                { card => card.SuperTypes, (filterContext.SelectedSuperTypes, "SuperTypes") },
-                { card => card.SubTypes, (filterContext.SelectedSubTypes, "SubTypes") },
-                { card => card.Keywords, (filterContext.SelectedKeywords, "Keywords") },
-                { card => card.Rarity, (filterContext.SelectedRarity, "Rarity") }
+                { card => card.Types, (MainWindow.CurrentInstance.filterSelections.SelectedTypes, "Types") },
+                { card => card.SuperTypes, (MainWindow.CurrentInstance.filterSelections.SelectedSuperTypes, "SuperTypes") },
+                { card => card.SubTypes, (MainWindow.CurrentInstance.filterSelections.SelectedSubTypes, "SubTypes") },
+                { card => card.Keywords, (MainWindow.CurrentInstance.filterSelections.SelectedKeywords, "Keywords") },
+                { card => card.Rarity, (MainWindow.CurrentInstance.filterSelections.SelectedRarity, "Rarity") }
             };
 
 
             // Apply color filtering based on combobox selection
 
-            Debug.WriteLine($"# selected colors: {filterContext.SelectedColors.Count}");
-            cards = FilterByColor(cards, filterContext.SelectedColors, MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex);
+            Debug.WriteLine($"# selected colors: {MainWindow.CurrentInstance.filterSelections.SelectedColors.Count}");
+            cards = FilterByColor(cards, MainWindow.CurrentInstance.filterSelections.SelectedColors, MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex);
 
 
 
@@ -169,7 +167,7 @@ namespace CollectaMundo
             // Apply other shared property filters
             foreach (var (propertySelector, (selectedCriteria, propertyKey)) in filterMap)
             {
-                bool useAnd = filterContext.AndOrSettings.TryGetValue(propertyKey, out bool andOrValue) && andOrValue;
+                bool useAnd = MainWindow.CurrentInstance.filterSelections.AndOrSettings.TryGetValue(propertyKey, out bool andOrValue) && andOrValue;
                 cards = FilterByCardProperty(cards, selectedCriteria, useAnd, propertySelector, exclude);
             }
 
@@ -180,6 +178,7 @@ namespace CollectaMundo
         {
             if (cards == null || selectedColors == null || selectedColors.Count == 0)
             {
+                Debug.WriteLine("Exiting early due to no colors selected.");
                 return cards;
             }
 
@@ -306,26 +305,26 @@ namespace CollectaMundo
             }
 
             // Apply filters for specific properties
-            if (filterContext.SelectedConditions.Count > 0)
+            if (MainWindow.CurrentInstance.filterSelections.SelectedConditions.Count > 0)
             {
                 filteredCardItems = filteredCardItems.Where(card =>
-                    card.SelectedCondition != null && filterContext.SelectedConditions.Contains(card.SelectedCondition));
+                    card.SelectedCondition != null && MainWindow.CurrentInstance.filterSelections.SelectedConditions.Contains(card.SelectedCondition));
             }
 
-            if (filterContext.SelectedFinishes.Count > 0)
+            if (MainWindow.CurrentInstance.filterSelections.SelectedFinishes.Count > 0)
             {
                 filteredCardItems = filteredCardItems.Where(card =>
-                    card.SelectedFinish != null && filterContext.SelectedFinishes.Contains(card.SelectedFinish));
+                    card.SelectedFinish != null && MainWindow.CurrentInstance.filterSelections.SelectedFinishes.Contains(card.SelectedFinish));
             }
 
             // Apply language filter
-            var languageFilteredItems = FilterByCardProperty(filteredCardItems.Cast<CardSet>(), filterContext.SelectedLanguages, false, card => card.Language);
+            var languageFilteredItems = FilterByCardProperty(filteredCardItems.Cast<CardSet>(), MainWindow.CurrentInstance.filterSelections.SelectedLanguages, false, card => card.Language);
 
             return languageFilteredItems.OfType<CardInCollection>().Cast<CardSet>();
         }
         private IEnumerable<CardSet> ApplyAllCardsSpecificFilters(IEnumerable<CardSet> cards)
         {
-            return FilterByCardProperty(cards, filterContext.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, card => card.Finishes);
+            return FilterByCardProperty(cards, MainWindow.CurrentInstance.filterSelections.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, card => card.Finishes);
         }
 
         #endregion
@@ -348,20 +347,20 @@ namespace CollectaMundo
             StringBuilder filterSummary = new();
 
             // Check and add the filter rules text
-            if (MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != filterContext.RulesTextDefaultText && MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != string.Empty)
+            if (MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != MainWindow.CurrentInstance.filterSelections.RulesTextDefaultText && MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != string.Empty)
             {
                 filterSummary.Append($"Rulestext: \"{MainWindow.CurrentInstance.FilterRulesTextTextBox.Text}\" \u2022 ");
             }
 
             // Update the summary text with selected filter options
-            AppendFilterContent(filterContext.SelectedSuperTypes, MainWindow.CurrentInstance.SuperTypesAndOrCheckBox.IsChecked ?? false, "Card supertypes", filterSummary);
-            AppendFilterContent(filterContext.SelectedTypes, MainWindow.CurrentInstance.TypesAndOrCheckBox.IsChecked ?? false, "Card types", filterSummary);
-            AppendFilterContent(filterContext.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, "Card subtypes", filterSummary);
-            AppendFilterContent(filterContext.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, "Keywords", filterSummary);
-            AppendFilterContent(filterContext.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, "Finishes", filterSummary);
-            AppendFilterContent(filterContext.SelectedRarity, false, "Rarities", filterSummary);
-            AppendFilterContent(filterContext.SelectedLanguages, false, "Languages", filterSummary);
-            AppendFilterContent(filterContext.SelectedConditions, false, "Conditions", filterSummary);
+            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedSuperTypes, MainWindow.CurrentInstance.SuperTypesAndOrCheckBox.IsChecked ?? false, "Card supertypes", filterSummary);
+            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedTypes, MainWindow.CurrentInstance.TypesAndOrCheckBox.IsChecked ?? false, "Card types", filterSummary);
+            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, "Card subtypes", filterSummary);
+            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, "Keywords", filterSummary);
+            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, "Finishes", filterSummary);
+            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedRarity, false, "Rarities", filterSummary);
+            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedLanguages, false, "Languages", filterSummary);
+            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedConditions, false, "Conditions", filterSummary);
 
             // Remove the last separator if there is any content
             if (filterSummary.Length > 0 && filterSummary.ToString().EndsWith("\u2022 "))
