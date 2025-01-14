@@ -207,7 +207,7 @@
                 <CheckBox x:Name="SuperTypesAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,275,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
 
                 <!--Card type listbox and filtering-->
-                <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,305,0,0" VerticalAlignment="Top" Width="190" Height="20" DropDownOpened="ComboBox_DropDownOpened">
+                <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,305,0,0" VerticalAlignment="Top" Width="180" Height="20" DropDownOpened="ComboBox_DropDownOpened">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -253,7 +253,11 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <CheckBox x:Name="TypesAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,305,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
+                <ComboBox x:Name="TypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,305,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"> 
+                    <ComboBoxItem Content="OR" IsSelected="True" />
+                    <ComboBoxItem Content="AND" />
+                    <ComboBoxItem Content="NOT" />
+                </ComboBox>
 
                 <!--Subtype listbox and filtering-->
                 <ComboBox x:Name="SubTypesComboBox" HorizontalAlignment="Left" Margin="10,335,0,0" VerticalAlignment="Top" Width="190" DropDownOpened="ComboBox_DropDownOpened" Height="20">

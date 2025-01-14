@@ -22,35 +22,24 @@ namespace CollectaMundo
                     return cards;
                 }
 
-                //                I want to simplify and refactor filtering class. Take a look at the attached class. This is our starting point.It works as intended.
+                // ✅ Fetch the filter mode specifically for "Types"
+                int typesFilterMode = MainWindow.CurrentInstance.TypesOperatorComboBox.SelectedIndex;
 
-                //But there are some problems with it in my opinion:
-                //- it is a bit too complex
-                //- there is some redundancy
+                // ✅ Define the filter criteria with individual operators for each property
+                var filterCriteria = new Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)>
+                {
+                    { "Types", (card => card.Types, MainWindow.CurrentInstance.filterSelections.SelectedTypes, typesFilterMode) }
+                };
 
-                //The end goal that I want to get to is:
+                // ✅ Pass the dynamic filter mode to the filtering method
+                var filteredCards = FilterByMultipleProperties(cards, filterCriteria);
 
-                //- We can have filter properties with single items
-                //	- E.g.card name, card set etc., rulestext string
-                //- We can have filter properties with multiple items
-                //	- E.g.Types, Supertypes, Keywords, Colors etc. 
+                // ny shit slut her
 
-
-                //We will start out by having two different methods for single or multiple item filter properties - we may merge them later.
-
-                //We will start with multiple items method.
-
-                //It will take as input:
-                // - the CardSet list to filter
-                // - The selected criteria which are read from the filterSelection object
-                // - An operator which can be AND, OR or NOT.The operator is read from a xaml dropdown.
-
-
-
-                var filteredCards = cards.AsEnumerable();
 
                 var (cardFilter, setFilter) = GetDropdownFilters(WhichDropdown);
                 string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
+
 
                 // Filtering by card name, set name, and rules text
                 filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter);
@@ -90,6 +79,79 @@ namespace CollectaMundo
                 return [];
             }
         }
+        public static IEnumerable<CardSet> FilterByMultipleProperties(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> filterCriteria)
+        {
+            if (cards == null || filterCriteria == null || filterCriteria.Count == 0)
+            {
+                return cards;
+            }
+
+            return cards.Where(card =>
+            {
+                // ✅ Loop through each filter with its own operator and criteria
+                bool result = true;
+
+                foreach (var (_, (propertySelector, selectedCriteria, filterMode)) in filterCriteria)
+                {
+                    bool matches = filterMode switch
+                    {
+                        0 => MatchesCriteria(card, propertySelector, selectedCriteria),         // OR Mode
+                        1 => selectedCriteria.All(c => MatchesCriteria(card, propertySelector, new HashSet<string> { c })),  // AND Mode
+                        2 => !MatchesCriteria(card, propertySelector, selectedCriteria),        // NOT Mode
+                        _ => false
+                    };
+
+                    if (!matches)
+                    {
+                        result = false;
+                        break;
+                    }
+                }
+
+                return result;
+            });
+        }
+
+        /// <summary>
+        /// Helper method to determine if a card matches the provided criteria.
+        /// </summary>
+        private static bool MatchesCriteria(CardSet card, Func<CardSet, string?> propertySelector, HashSet<string> filterValues)
+        {
+            var propertyValue = propertySelector(card) ?? string.Empty;
+
+            var propertyItems = new HashSet<string>(
+                propertyValue.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                             .Select(p => p.Trim())
+            );
+
+            return filterValues.Any(filterValue => propertyItems.Contains(filterValue));
+        }
+
+
+        private static IEnumerable<CardSet> ApplySharedPropertyFilters(IEnumerable<CardSet> cards, bool exclude)
+        {
+            var filterMap = new Dictionary<Func<CardSet, string?>, (HashSet<string>, string)>
+            {
+                { card => card.SuperTypes, (MainWindow.CurrentInstance.filterSelections.SelectedSuperTypes, "SuperTypes") },
+                { card => card.SubTypes, (MainWindow.CurrentInstance.filterSelections.SelectedSubTypes, "SubTypes") },
+                { card => card.Keywords, (MainWindow.CurrentInstance.filterSelections.SelectedKeywords, "Keywords") },
+                { card => card.Rarity, (MainWindow.CurrentInstance.filterSelections.SelectedRarity, "Rarity") }
+            };
+
+            // Apply other shared property filters
+            foreach (var (propertySelector, (selectedCriteria, propertyKey)) in filterMap)
+            {
+                bool useAnd = MainWindow.CurrentInstance.filterSelections.AndOrSettings.TryGetValue(propertyKey, out bool andOrValue) && andOrValue;
+                cards = FilterByCardProperty(cards, selectedCriteria, useAnd, propertySelector, exclude);
+            }
+
+            return cards;
+        }
+
+
+
+
+
         private static (string cardFilter, string setFilter) GetDropdownFilters(string whichDropdown)
         {
             // Helper function to find a ComboBox by its tag in the specified DataGrid
@@ -169,26 +231,7 @@ namespace CollectaMundo
                 _ => true // Default: no filtering
             });
         }
-        private static IEnumerable<CardSet> ApplySharedPropertyFilters(IEnumerable<CardSet> cards, bool exclude)
-        {
-            var filterMap = new Dictionary<Func<CardSet, string?>, (HashSet<string>, string)>
-            {
-                { card => card.Types, (MainWindow.CurrentInstance.filterSelections.SelectedTypes, "Types") },
-                { card => card.SuperTypes, (MainWindow.CurrentInstance.filterSelections.SelectedSuperTypes, "SuperTypes") },
-                { card => card.SubTypes, (MainWindow.CurrentInstance.filterSelections.SelectedSubTypes, "SubTypes") },
-                { card => card.Keywords, (MainWindow.CurrentInstance.filterSelections.SelectedKeywords, "Keywords") },
-                { card => card.Rarity, (MainWindow.CurrentInstance.filterSelections.SelectedRarity, "Rarity") }
-            };
 
-            // Apply other shared property filters
-            foreach (var (propertySelector, (selectedCriteria, propertyKey)) in filterMap)
-            {
-                bool useAnd = MainWindow.CurrentInstance.filterSelections.AndOrSettings.TryGetValue(propertyKey, out bool andOrValue) && andOrValue;
-                cards = FilterByCardProperty(cards, selectedCriteria, useAnd, propertySelector, exclude);
-            }
-
-            return cards;
-        }
         public static IEnumerable<CardSet> FilterByColor(IEnumerable<CardSet> cards, HashSet<string> selectedColors, int filterMode)
         {
             if (cards == null)
@@ -199,7 +242,6 @@ namespace CollectaMundo
 
             if (selectedColors == null || selectedColors.Count == 0)
             {
-                Debug.WriteLine("Exiting early due to no colors selected.");
                 return cards; // Cards are returned unfiltered when no colors are selected
             }
 
@@ -333,7 +375,7 @@ namespace CollectaMundo
 
             // Update the summary text with selected filter options
             AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedSuperTypes, MainWindow.CurrentInstance.SuperTypesAndOrCheckBox.IsChecked ?? false, "Card supertypes", filterSummary);
-            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedTypes, MainWindow.CurrentInstance.TypesAndOrCheckBox.IsChecked ?? false, "Card types", filterSummary);
+            //AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedTypes, MainWindow.CurrentInstance.TypesAndOrCheckBox.IsChecked ?? false, "Card types", filterSummary);
             AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, "Card subtypes", filterSummary);
             AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, "Keywords", filterSummary);
             AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, "Finishes", filterSummary);

@@ -1333,7 +1333,7 @@ namespace CollectaMundo
             FilterRulesTextTextBox.Foreground = new SolidColorBrush(Colors.Gray);
 
             // Uncheck CheckBoxes if necessary
-            TypesAndOrCheckBox.IsChecked = false;
+            //TypesAndOrCheckBox.IsChecked = false;
             SuperTypesAndOrCheckBox.IsChecked = false;
             SubTypesAndOrCheckBox.IsChecked = false;
             KeywordsAndOrCheckBox.IsChecked = false;
