@@ -158,7 +158,7 @@
                 </ComboBox>
 
                 <!--Supertype listbox and filtering-->
-                <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,275,0,0" VerticalAlignment="Top" Width="190" Height="20" DropDownOpened="ComboBox_DropDownOpened">
+                <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,275,0,0" VerticalAlignment="Top" Width="180" Height="20" DropDownOpened="ComboBox_DropDownOpened">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -203,8 +203,12 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
+                </ComboBox>                
+                <ComboBox x:Name="SuperTypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,275,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged">
+                    <ComboBoxItem Content="OR" IsSelected="True" />
+                    <ComboBoxItem Content="AND" />
+                    <ComboBoxItem Content="NOT" />
                 </ComboBox>
-                <CheckBox x:Name="SuperTypesAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,275,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>
 
                 <!--Card type listbox and filtering-->
                 <ComboBox x:Name="TypesComboBox" HorizontalAlignment="Left" Margin="10,305,0,0" VerticalAlignment="Top" Width="180" Height="20" DropDownOpened="ComboBox_DropDownOpened">
@@ -253,14 +257,14 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <ComboBox x:Name="TypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,305,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"> 
+                <ComboBox x:Name="TypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,305,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged"> 
                     <ComboBoxItem Content="OR" IsSelected="True" />
                     <ComboBoxItem Content="AND" />
                     <ComboBoxItem Content="NOT" />
                 </ComboBox>
 
                 <!--Subtype listbox and filtering-->
-                <ComboBox x:Name="SubTypesComboBox" HorizontalAlignment="Left" Margin="10,335,0,0" VerticalAlignment="Top" Width="190" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="SubTypesComboBox" HorizontalAlignment="Left" Margin="10,335,0,0" VerticalAlignment="Top" Width="180" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -306,10 +310,14 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <CheckBox x:Name="SubTypesAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,335,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
+                <ComboBox x:Name="SubTypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,335,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged">
+                    <ComboBoxItem Content="OR" IsSelected="True" />
+                    <ComboBoxItem Content="AND" />
+                    <ComboBoxItem Content="NOT" />
+                </ComboBox>
 
                 <!--Keywords listbox and filtering-->
-                <ComboBox x:Name="KeywordsComboBox" HorizontalAlignment="Left" Margin="9,365,0,0" VerticalAlignment="Top" Width="190" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="KeywordsComboBox" HorizontalAlignment="Left" Margin="9,365,0,0" VerticalAlignment="Top" Width="180" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -353,7 +361,11 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <CheckBox x:Name="KeywordsAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,365,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
+                <ComboBox x:Name="KeywordsOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,365,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged">
+                    <ComboBoxItem Content="OR" IsSelected="True" />
+                    <ComboBoxItem Content="AND" />
+                    <ComboBoxItem Content="NOT" />
+                </ComboBox>
 
                 <!--Finishes listbox and filtering-->
                 <ComboBox x:Name="FinishesComboBox" HorizontalAlignment="Left" Margin="10,395,0,0" VerticalAlignment="Top" Width="190" DropDownOpened="ComboBox_DropDownOpened" Height="20">
@@ -777,10 +789,10 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Card Types" Width="*" SortMemberPath="Types">
+                        <DataGridTemplateColumn Header="Card Types" Width="*" SortMemberPath="Type">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Types}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding Type}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

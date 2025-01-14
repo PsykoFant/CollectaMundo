@@ -22,16 +22,17 @@ namespace CollectaMundo
                     return cards;
                 }
 
-                // ✅ Fetch the filter mode specifically for "Types"
-                int typesFilterMode = MainWindow.CurrentInstance.TypesOperatorComboBox.SelectedIndex;
-
                 // ✅ Define the filter criteria with individual operators for each property
                 var filterCriteria = new Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)>
                 {
-                    { "Types", (card => card.Types, MainWindow.CurrentInstance.filterSelections.SelectedTypes, typesFilterMode) }
+                    { "SuperTypes", (card => card.SuperTypes, MainWindow.CurrentInstance.filterSelections.SelectedSuperTypes, MainWindow.CurrentInstance.SuperTypesOperatorComboBox.SelectedIndex) },
+                    { "Types", (card => card.Types, MainWindow.CurrentInstance.filterSelections.SelectedTypes, MainWindow.CurrentInstance.TypesOperatorComboBox.SelectedIndex) },
+                    { "SubTypes", (card => card.SubTypes, MainWindow.CurrentInstance.filterSelections.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesOperatorComboBox.SelectedIndex) },
+                    { "Keywords", (card => card.Keywords, MainWindow.CurrentInstance.filterSelections.SelectedKeywords, MainWindow.CurrentInstance.KeywordsOperatorComboBox.SelectedIndex) },
+                    { "Rarities", (card => card.Rarity, MainWindow.CurrentInstance.filterSelections.SelectedRarity, 0) }
                 };
 
-                // ✅ Pass the dynamic filter mode to the filtering method
+                // Pass the dynamic filter mode to the filtering method
                 var filteredCards = FilterByMultipleProperties(cards, filterCriteria);
 
                 // ny shit slut her
@@ -68,7 +69,7 @@ namespace CollectaMundo
 
 
                 UpdateCardCount(listName, finalFilteredCards.Count);
-                UpdateFilterSummary();
+                UpdateFilterSummary(filterCriteria);
 
                 return finalFilteredCards;
             }
@@ -88,19 +89,26 @@ namespace CollectaMundo
 
             return cards.Where(card =>
             {
-                // ✅ Loop through each filter with its own operator and criteria
                 bool result = true;
 
                 foreach (var (_, (propertySelector, selectedCriteria, filterMode)) in filterCriteria)
                 {
+                    // ✅ Skip filters with no selected criteria
+                    if (selectedCriteria == null || selectedCriteria.Count == 0)
+                    {
+                        continue; // Skip this filter, do not affect filtering
+                    }
+
+                    // ✅ Apply filtering only when criteria are present
                     bool matches = filterMode switch
                     {
                         0 => MatchesCriteria(card, propertySelector, selectedCriteria),         // OR Mode
-                        1 => selectedCriteria.All(c => MatchesCriteria(card, propertySelector, new HashSet<string> { c })),  // AND Mode
+                        1 => selectedCriteria.All(c => MatchesCriteria(card, propertySelector, new HashSet<string> { c })), // AND Mode
                         2 => !MatchesCriteria(card, propertySelector, selectedCriteria),        // NOT Mode
                         _ => false
                     };
 
+                    // ✅ If any filter fails in AND mode, exclude the card
                     if (!matches)
                     {
                         result = false;
@@ -111,6 +119,7 @@ namespace CollectaMundo
                 return result;
             });
         }
+
 
         /// <summary>
         /// Helper method to determine if a card matches the provided criteria.
@@ -132,9 +141,6 @@ namespace CollectaMundo
         {
             var filterMap = new Dictionary<Func<CardSet, string?>, (HashSet<string>, string)>
             {
-                { card => card.SuperTypes, (MainWindow.CurrentInstance.filterSelections.SelectedSuperTypes, "SuperTypes") },
-                { card => card.SubTypes, (MainWindow.CurrentInstance.filterSelections.SelectedSubTypes, "SubTypes") },
-                { card => card.Keywords, (MainWindow.CurrentInstance.filterSelections.SelectedKeywords, "Keywords") },
                 { card => card.Rarity, (MainWindow.CurrentInstance.filterSelections.SelectedRarity, "Rarity") }
             };
 
@@ -231,7 +237,6 @@ namespace CollectaMundo
                 _ => true // Default: no filtering
             });
         }
-
         public static IEnumerable<CardSet> FilterByColor(IEnumerable<CardSet> cards, HashSet<string> selectedColors, int filterMode)
         {
             if (cards == null)
@@ -362,36 +367,57 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
             }
         }
-        private static void UpdateFilterSummary()
+        private static void UpdateFilterSummary(Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> filterCriteria)
         {
-            // Create a StringBuilder to build the filter summary
-            StringBuilder filterSummary = new();
-
-            // Check and add the filter rules text
-            if (MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != MainWindow.CurrentInstance.filterSelections.RulesTextDefaultText && MainWindow.CurrentInstance.FilterRulesTextTextBox.Text != string.Empty)
+            try
             {
-                filterSummary.Append($"Rulestext: \"{MainWindow.CurrentInstance.FilterRulesTextTextBox.Text}\" \u2022 ");
+                StringBuilder filterSummary = new();
+                bool isFirstGroup = true; // Track the first group to avoid prefixing with "AND"
+
+                foreach (var (filterKey, (propertySelector, selectedCriteria, filterMode)) in filterCriteria)
+                {
+                    if (selectedCriteria == null || selectedCriteria.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    // Convert filter mode to a readable operator
+                    string operatorSymbol = filterMode switch
+                    {
+                        0 => "OR",
+                        1 => "AND",
+                        2 => "NOT",
+                        _ => string.Empty
+                    };
+
+                    // Build the filter segment: Properly handle NOT
+                    string filterSegment = filterMode == 2
+                        ? string.Join(", ", selectedCriteria.Select(c => $"NOT {c}"))
+                        : string.Join($" {operatorSymbol} ", selectedCriteria);
+
+                    // ✅ Ensure AND between groups, but avoid prefixing on the first group
+                    if (!isFirstGroup)
+                    {
+                        filterSummary.Append(" AND ");
+                    }
+                    isFirstGroup = false;
+
+                    // Wrap the segment with braces for clarity
+                    filterSummary.Append($"{{{filterSegment}}}");
+                }
+
+                // Update the summary display
+                MainWindow.CurrentInstance.FilterSummaryTextBlock.Text = filterSummary.ToString();
             }
-
-            // Update the summary text with selected filter options
-            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedSuperTypes, MainWindow.CurrentInstance.SuperTypesAndOrCheckBox.IsChecked ?? false, "Card supertypes", filterSummary);
-            //AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedTypes, MainWindow.CurrentInstance.TypesAndOrCheckBox.IsChecked ?? false, "Card types", filterSummary);
-            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesAndOrCheckBox.IsChecked ?? false, "Card subtypes", filterSummary);
-            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedKeywords, MainWindow.CurrentInstance.KeywordsAndOrCheckBox.IsChecked ?? false, "Keywords", filterSummary);
-            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, "Finishes", filterSummary);
-            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedRarity, false, "Rarities", filterSummary);
-            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedLanguages, false, "Languages", filterSummary);
-            AppendFilterContent(MainWindow.CurrentInstance.filterSelections.SelectedConditions, false, "Conditions", filterSummary);
-
-            // Remove the last separator if there is any content
-            if (filterSummary.Length > 0 && filterSummary.ToString().EndsWith("\u2022 "))
+            catch (Exception ex)
             {
-                filterSummary.Remove(filterSummary.Length - 3, 3);
+                Debug.WriteLine($"Error while updating filter summary: {ex.Message}");
             }
-
-            // Set the consolidated filter summary to the FilterSummaryTextBlock
-            MainWindow.CurrentInstance.FilterSummaryTextBlock.Text = filterSummary.ToString();
         }
+
+
+
+
         private static void AppendFilterContent(HashSet<string> selectedItems, bool useAnd, string prefix, StringBuilder filterSummary)
         {
             if (selectedItems.Count > 0)

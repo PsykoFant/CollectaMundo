@@ -156,7 +156,6 @@ namespace CollectaMundo
             InitializeTestCards();
             // Inject filterSelections only for testing purposes
             var testContext = new FilterContext();
-            //filterManager = new FilterManager(testContext);
 
             RunFilterTests();
         }
@@ -736,6 +735,8 @@ namespace CollectaMundo
         #region Filter elements handling        
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            if (_isStartup) { return; }
+
             void ResetOtherComboBoxSelections(string currentCategory)
             {
                 var categoryComboBoxMappings = new Dictionary<string, DataGrid>
@@ -782,6 +783,14 @@ namespace CollectaMundo
 
             ApplyFilterSelection();
         }
+
+        private void OperatorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isStartup) { return; }
+            else { ApplyFilterSelection(); }
+        }
+
+
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
             if (sender is ComboBox comboBox)
@@ -1334,9 +1343,9 @@ namespace CollectaMundo
 
             // Uncheck CheckBoxes if necessary
             //TypesAndOrCheckBox.IsChecked = false;
-            SuperTypesAndOrCheckBox.IsChecked = false;
-            SubTypesAndOrCheckBox.IsChecked = false;
-            KeywordsAndOrCheckBox.IsChecked = false;
+            //SuperTypesAndOrCheckBox.IsChecked = false;
+            //SubTypesAndOrCheckBox.IsChecked = false;
+            //KeywordsAndOrCheckBox.IsChecked = false;
             FinishesAndOrCheckBox.IsChecked = false;
             CheckBoxCardsForTrade.IsChecked = false;
             CheckBoxCardsNotForTrade.IsChecked = false;
