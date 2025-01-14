@@ -12,8 +12,6 @@ namespace CollectaMundo
     {
         public string WhichDropdown = string.Empty;
 
-        //private static readonly char[] separator = [','];
-
         #region Filtering
         public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards, string listName)
         {
@@ -23,6 +21,31 @@ namespace CollectaMundo
                 {
                     return cards;
                 }
+
+                //                I want to simplify and refactor filtering class. Take a look at the attached class. This is our starting point.It works as intended.
+
+                //But there are some problems with it in my opinion:
+                //- it is a bit too complex
+                //- there is some redundancy
+
+                //The end goal that I want to get to is:
+
+                //- We can have filter properties with single items
+                //	- E.g.card name, card set etc., rulestext string
+                //- We can have filter properties with multiple items
+                //	- E.g.Types, Supertypes, Keywords, Colors etc. 
+
+
+                //We will start out by having two different methods for single or multiple item filter properties - we may merge them later.
+
+                //We will start with multiple items method.
+
+                //It will take as input:
+                // - the CardSet list to filter
+                // - The selected criteria which are read from the filterSelection object
+                // - An operator which can be AND, OR or NOT.The operator is read from a xaml dropdown.
+
+
 
                 var filteredCards = cards.AsEnumerable();
 
@@ -389,7 +412,6 @@ namespace CollectaMundo
                 }
             }
         }
-
 
         // Save column sort selections
         public static void SaveAndRestoreSort(DataGrid dataGrid, Action updateItemsSource)
