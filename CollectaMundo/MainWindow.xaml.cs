@@ -80,6 +80,7 @@ namespace CollectaMundo
             CardsInDecks
         }
 
+        // Object of our FilterManager class
         private readonly FilterManager filterManager;
 
         // The object which holds the filter selections
@@ -123,6 +124,8 @@ namespace CollectaMundo
         {
             InitializeComponent();
             _currentInstance = this;
+
+            // Instantiate filtering objects
             filterManager = new FilterManager();
             filterSelections = new FilterContext();
 
@@ -188,7 +191,7 @@ namespace CollectaMundo
 
             // c og x test
 
-            var testContext = new FilterContext();
+            _ = new FilterContext();
             var testFilterManager = new FilterManager();
 
             // Test 1: Select single color / ANY

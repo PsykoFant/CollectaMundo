@@ -39,6 +39,8 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.filterSelections.AndOrSettings["Colors"] = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
                 bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
 
+                filteredCards = FilterByColor(filteredCards, MainWindow.CurrentInstance.filterSelections.SelectedColors, MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex);
+
                 // Apply shared property filters
                 filteredCards = ApplySharedPropertyFilters(filteredCards, exclude);
 
@@ -99,7 +101,7 @@ namespace CollectaMundo
 
             return (cardFilter, setFilter);
         }
-        private IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
+        private static IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
         {
             var filteredCards = cards;
             if (!string.IsNullOrEmpty(cardFilter))
@@ -144,7 +146,7 @@ namespace CollectaMundo
                 _ => true // Default: no filtering
             });
         }
-        private IEnumerable<CardSet> ApplySharedPropertyFilters(IEnumerable<CardSet> cards, bool exclude)
+        private static IEnumerable<CardSet> ApplySharedPropertyFilters(IEnumerable<CardSet> cards, bool exclude)
         {
             var filterMap = new Dictionary<Func<CardSet, string?>, (HashSet<string>, string)>
             {
@@ -155,15 +157,6 @@ namespace CollectaMundo
                 { card => card.Rarity, (MainWindow.CurrentInstance.filterSelections.SelectedRarity, "Rarity") }
             };
 
-
-            // Apply color filtering based on combobox selection
-
-            Debug.WriteLine($"# selected colors: {MainWindow.CurrentInstance.filterSelections.SelectedColors.Count}");
-            cards = FilterByColor(cards, MainWindow.CurrentInstance.filterSelections.SelectedColors, MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex);
-
-
-
-
             // Apply other shared property filters
             foreach (var (propertySelector, (selectedCriteria, propertyKey)) in filterMap)
             {
@@ -173,20 +166,25 @@ namespace CollectaMundo
 
             return cards;
         }
-
         public static IEnumerable<CardSet> FilterByColor(IEnumerable<CardSet> cards, HashSet<string> selectedColors, int filterMode)
         {
-            if (cards == null || selectedColors == null || selectedColors.Count == 0)
+            if (cards == null)
+            {
+                Debug.WriteLine("Warning: Card collection is null.");
+                return []; // Return an empty collection instead of null
+            }
+
+            if (selectedColors == null || selectedColors.Count == 0)
             {
                 Debug.WriteLine("Exiting early due to no colors selected.");
-                return cards;
+                return cards; // Cards are returned unfiltered when no colors are selected
             }
 
             return cards.Where(card =>
             {
                 // Prepare collections for easier matching
-                var manaCostSymbols = new HashSet<string>(card.ManaCost?.Split(',').Select(c => c.Trim()) ?? Enumerable.Empty<string>());
-                var colorSymbols = new HashSet<string>(card.Colors?.Split(',').Select(c => c.Trim()) ?? Enumerable.Empty<string>());
+                var manaCostSymbols = new HashSet<string>(card.ManaCost?.Split(',').Select(c => c.Trim()) ?? []);
+                var colorSymbols = new HashSet<string>(card.Colors?.Split(',').Select(c => c.Trim()) ?? []);
 
                 bool manaCostMatch = false;
                 bool colorMatch = false;
@@ -194,13 +192,13 @@ namespace CollectaMundo
                 // Check for "C" and "X" in ManaCost
                 if (selectedColors.Contains("C") || selectedColors.Contains("X"))
                 {
-                    var manaCostCriteria = new HashSet<string>(selectedColors.Intersect(new[] { "C", "X" }));
+                    var manaCostCriteria = new HashSet<string>(selectedColors.Intersect(["C", "X"]));
                     manaCostMatch = manaCostCriteria.All(manaCostSymbols.Contains);
                 }
 
                 // Check for colored mana and "Colorless" in Colors
                 bool colorlessMatch = selectedColors.Contains("Colorless") && string.IsNullOrWhiteSpace(card.Colors);
-                if (selectedColors.Overlaps(new[] { "W", "U", "B", "R", "G", "Colorless" }))
+                if (selectedColors.Overlaps(["W", "U", "B", "R", "G", "Colorless"]))
                 {
                     var coloredCriteria = new HashSet<string>(selectedColors.Where(c => c != "Colorless"));
                     colorMatch = coloredCriteria.All(colorSymbols.Contains) || colorlessMatch;
@@ -214,24 +212,13 @@ namespace CollectaMundo
                     1 => selectedColors.All(c =>
                             (c == "Colorless" && string.IsNullOrWhiteSpace(card.Colors)) ||
                             manaCostSymbols.Contains(c) ||
-                            colorSymbols.Contains(c)), // ✅ ALL: Now both conditions must be met
+                            colorSymbols.Contains(c)), // ALL: Both conditions must be met
                     2 => !selectedColors.Any(c => manaCostSymbols.Contains(c) || colorSymbols.Contains(c) ||
                             (c == "Colorless" && string.IsNullOrWhiteSpace(card.Colors))), // NONE
                     _ => false
                 };
             });
         }
-
-
-
-
-
-
-
-
-
-
-
 
         /// <summary>
         /// General filter method for non-color properties using criteria matching.
@@ -246,7 +233,7 @@ namespace CollectaMundo
             return cards.Where(card =>
             {
                 var propertyValue = propertySelector(card) ?? string.Empty;
-                var criteria = propertyValue.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
+                var criteria = propertyValue.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
 
                 bool match = useAnd
                     ? selectedCriteria.All(c => criteria.Any(crit => crit.Contains(c)))
@@ -255,38 +242,7 @@ namespace CollectaMundo
                 return exclude ? !match : match;
             });
         }
-
-        public static void DebugCardsWithEmptyOrNullColors(List<CardSet> cards)
-        {
-            if (cards == null || cards.Count == 0)
-            {
-                Debug.WriteLine("The card list is empty or null.");
-                return;
-            }
-
-            // Filter cards where Colors is null or an empty string
-            var filteredCards = cards
-                .Where(card => string.IsNullOrWhiteSpace(card.Colors))
-                .ToList();
-
-            if (filteredCards.Count == 0)
-            {
-                Debug.WriteLine("No cards found where Colors is null or empty.");
-                return;
-            }
-
-            // Output the names of the matching cards
-            Debug.WriteLine($"Cards with empty or null Colors (Total: {filteredCards.Count}):");
-            foreach (var card in filteredCards)
-            {
-                Debug.WriteLine($"- {card.Name} (Colors: '{card.Colors ?? "null"}')");
-            }
-        }
-
-
-
-
-        private IEnumerable<CardSet> ApplyMyCardsSpecificFilters(IEnumerable<CardSet> cards)
+        private static IEnumerable<CardSet> ApplyMyCardsSpecificFilters(IEnumerable<CardSet> cards)
         {
             var filteredCardItems = cards.OfType<CardInCollection>();
 
@@ -322,7 +278,7 @@ namespace CollectaMundo
 
             return languageFilteredItems.OfType<CardInCollection>().Cast<CardSet>();
         }
-        private IEnumerable<CardSet> ApplyAllCardsSpecificFilters(IEnumerable<CardSet> cards)
+        private static IEnumerable<CardSet> ApplyAllCardsSpecificFilters(IEnumerable<CardSet> cards)
         {
             return FilterByCardProperty(cards, MainWindow.CurrentInstance.filterSelections.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, card => card.Finishes);
         }
@@ -341,7 +297,7 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
             }
         }
-        private void UpdateFilterSummary()
+        private static void UpdateFilterSummary()
         {
             // Create a StringBuilder to build the filter summary
             StringBuilder filterSummary = new();
