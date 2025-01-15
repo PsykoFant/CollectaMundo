@@ -54,9 +54,6 @@ namespace CollectaMundo
 
                 filteredCards = FilterByColor(filteredCards, MainWindow.CurrentInstance.filterSelections.SelectedColors, MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex);
 
-                // Apply shared property filters
-                filteredCards = ApplySharedPropertyFilters(filteredCards, exclude);
-
                 // Apply specific filters for list contexts
                 filteredCards = listName switch
                 {
@@ -135,27 +132,6 @@ namespace CollectaMundo
 
             return filterValues.Any(filterValue => propertyItems.Contains(filterValue));
         }
-
-
-        private static IEnumerable<CardSet> ApplySharedPropertyFilters(IEnumerable<CardSet> cards, bool exclude)
-        {
-            var filterMap = new Dictionary<Func<CardSet, string?>, (HashSet<string>, string)>
-            {
-                { card => card.Rarity, (MainWindow.CurrentInstance.filterSelections.SelectedRarity, "Rarity") }
-            };
-
-            // Apply other shared property filters
-            foreach (var (propertySelector, (selectedCriteria, propertyKey)) in filterMap)
-            {
-                bool useAnd = MainWindow.CurrentInstance.filterSelections.AndOrSettings.TryGetValue(propertyKey, out bool andOrValue) && andOrValue;
-                cards = FilterByCardProperty(cards, selectedCriteria, useAnd, propertySelector, exclude);
-            }
-
-            return cards;
-        }
-
-
-
 
 
         private static (string cardFilter, string setFilter) GetDropdownFilters(string whichDropdown)
