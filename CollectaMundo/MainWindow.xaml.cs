@@ -1346,7 +1346,7 @@ namespace CollectaMundo
             //SuperTypesAndOrCheckBox.IsChecked = false;
             //SubTypesAndOrCheckBox.IsChecked = false;
             //KeywordsAndOrCheckBox.IsChecked = false;
-            FinishesAndOrCheckBox.IsChecked = false;
+            //FinishesAndOrCheckBox.IsChecked = false;
             CheckBoxCardsForTrade.IsChecked = false;
             CheckBoxCardsNotForTrade.IsChecked = false;
 

@@ -368,7 +368,7 @@
                 </ComboBox>
 
                 <!--Finishes listbox and filtering-->
-                <ComboBox x:Name="FinishesComboBox" HorizontalAlignment="Left" Margin="10,395,0,0" VerticalAlignment="Top" Width="190" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="FinishesComboBox" HorizontalAlignment="Left" Margin="10,395,0,0" VerticalAlignment="Top" Width="180" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -412,7 +412,11 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <CheckBox x:Name="FinishesAndOrCheckBox" Content="AND" HorizontalAlignment="Right" Margin="0,395,0,0" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"  Style="{StaticResource BelerenBold}"/>
+                <ComboBox x:Name="FinishesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,395,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged">
+                    <ComboBoxItem Content="OR" IsSelected="True" />
+                    <ComboBoxItem Content="AND" />
+                    <ComboBoxItem Content="NOT" />
+                </ComboBox>
 
                 <!--Rulestext filtering-->
                 <TextBox x:Name="FilterRulesTextTextBox" HorizontalAlignment="Left" Margin="10,425,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="240" Height="45" Background="White"/>

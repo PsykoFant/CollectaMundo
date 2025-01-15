@@ -29,7 +29,8 @@ namespace CollectaMundo
                     { "Types", (card => card.Types, MainWindow.CurrentInstance.filterSelections.SelectedTypes, MainWindow.CurrentInstance.TypesOperatorComboBox.SelectedIndex) },
                     { "SubTypes", (card => card.SubTypes, MainWindow.CurrentInstance.filterSelections.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesOperatorComboBox.SelectedIndex) },
                     { "Keywords", (card => card.Keywords, MainWindow.CurrentInstance.filterSelections.SelectedKeywords, MainWindow.CurrentInstance.KeywordsOperatorComboBox.SelectedIndex) },
-                    { "Rarities", (card => card.Rarity, MainWindow.CurrentInstance.filterSelections.SelectedRarity, 0) }
+                    { "Rarities", (card => card.Rarity, MainWindow.CurrentInstance.filterSelections.SelectedRarity, 0) },
+                    { "Finishes", (card => card.Finishes, MainWindow.CurrentInstance.filterSelections.SelectedFinishes, MainWindow.CurrentInstance.FinishesOperatorComboBox.SelectedIndex) }
                 };
 
                 // Pass the dynamic filter mode to the filtering method
@@ -58,7 +59,6 @@ namespace CollectaMundo
                 filteredCards = listName switch
                 {
                     "myCards" => ApplyMyCardsSpecificFilters(filteredCards),
-                    "allCards" => ApplyAllCardsSpecificFilters(filteredCards),
                     _ => filteredCards
                 };
 
@@ -313,20 +313,10 @@ namespace CollectaMundo
                     card.SelectedCondition != null && MainWindow.CurrentInstance.filterSelections.SelectedConditions.Contains(card.SelectedCondition));
             }
 
-            if (MainWindow.CurrentInstance.filterSelections.SelectedFinishes.Count > 0)
-            {
-                filteredCardItems = filteredCardItems.Where(card =>
-                    card.SelectedFinish != null && MainWindow.CurrentInstance.filterSelections.SelectedFinishes.Contains(card.SelectedFinish));
-            }
-
             // Apply language filter
             var languageFilteredItems = FilterByCardProperty(filteredCardItems.Cast<CardSet>(), MainWindow.CurrentInstance.filterSelections.SelectedLanguages, false, card => card.Language);
 
             return languageFilteredItems.OfType<CardInCollection>().Cast<CardSet>();
-        }
-        private static IEnumerable<CardSet> ApplyAllCardsSpecificFilters(IEnumerable<CardSet> cards)
-        {
-            return FilterByCardProperty(cards, MainWindow.CurrentInstance.filterSelections.SelectedFinishes, MainWindow.CurrentInstance.FinishesAndOrCheckBox.IsChecked ?? false, card => card.Finishes);
         }
 
         #endregion
