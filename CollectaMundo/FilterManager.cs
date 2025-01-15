@@ -23,7 +23,7 @@ namespace CollectaMundo
                 }
 
                 // ✅ Define the filter criteria with individual operators for each property
-                var filterCriteria = new Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)>
+                var filterCriteriaMultiple = new Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)>
                 {
                     { "SuperTypes", (card => card.SuperTypes, MainWindow.CurrentInstance.filterSelections.SelectedSuperTypes, MainWindow.CurrentInstance.SuperTypesOperatorComboBox.SelectedIndex) },
                     { "Types", (card => card.Types, MainWindow.CurrentInstance.filterSelections.SelectedTypes, MainWindow.CurrentInstance.TypesOperatorComboBox.SelectedIndex) },
@@ -33,18 +33,26 @@ namespace CollectaMundo
                     { "Finishes", (card => card.Finishes, MainWindow.CurrentInstance.filterSelections.SelectedFinishes, MainWindow.CurrentInstance.FinishesOperatorComboBox.SelectedIndex) }
                 };
 
+                Debug.WriteLine(MainWindow.CurrentInstance.filterSelections.SelectedName);
+
                 // Pass the dynamic filter mode to the filtering method
-                var filteredCards = FilterByMultipleProperties(cards, filterCriteria);
-
-                // ny shit slut her
+                var filteredCards = FilterByMultipleProperties(cards, filterCriteriaMultiple);
 
 
-                var (cardFilter, setFilter) = GetDropdownFilters(WhichDropdown);
+                var singleFilterCriteria = new Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)>
+                {
+                    { "Name", (card => card.Name, MainWindow.CurrentInstance.filterSelections.SelectedName) },
+                };
+
+                filteredCards = FilterBySingleProperty(filteredCards, singleFilterCriteria);
+
+
+                //var (cardFilter, setFilter) = GetDropdownFilters(WhichDropdown);
                 string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
 
 
                 // Filtering by card name, set name, and rules text
-                filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter);
+                //filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter);
 
                 // Apply mana value filter
                 filteredCards = FilterByManaValue(filteredCards);
@@ -66,7 +74,7 @@ namespace CollectaMundo
 
 
                 UpdateCardCount(listName, finalFilteredCards.Count);
-                UpdateFilterSummary(filterCriteria);
+                UpdateFilterSummary(filterCriteriaMultiple, singleFilterCriteria);
 
                 return finalFilteredCards;
             }
@@ -77,6 +85,32 @@ namespace CollectaMundo
                 return [];
             }
         }
+        public static IEnumerable<CardSet> FilterBySingleProperty(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
+        {
+            if (cards == null || singleFilterCriteria == null || singleFilterCriteria.Count == 0)
+            {
+                return cards; // Return unfiltered if no criteria
+            }
+
+            return cards.Where(card =>
+            {
+                foreach (var (_, (propertySelector, selectedValue)) in singleFilterCriteria)
+                {
+                    if (!string.IsNullOrWhiteSpace(selectedValue))
+                    {
+                        var propertyValue = propertySelector(card) ?? string.Empty;
+                        if (!propertyValue.Equals(selectedValue, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return false; // Exclude card if it doesn't match the single-value filter
+                        }
+                    }
+                }
+                return true; // Include card if all single-value filters match
+            });
+        }
+
+
+
         public static IEnumerable<CardSet> FilterByMultipleProperties(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> filterCriteria)
         {
             if (cards == null || filterCriteria == null || filterCriteria.Count == 0)
@@ -132,8 +166,6 @@ namespace CollectaMundo
 
             return filterValues.Any(filterValue => propertyItems.Contains(filterValue));
         }
-
-
         private static (string cardFilter, string setFilter) GetDropdownFilters(string whichDropdown)
         {
             // Helper function to find a ComboBox by its tag in the specified DataGrid
@@ -213,6 +245,53 @@ namespace CollectaMundo
                 _ => true // Default: no filtering
             });
         }
+
+
+        /// <summary>
+        /// General filter method for non-color properties using criteria matching.
+        /// </summary>
+        private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string>? selectedCriteria, bool useAnd, Func<CardSet, string?> propertySelector, bool exclude = false)
+        {
+            if (cards == null || propertySelector == null || selectedCriteria == null || selectedCriteria.Count == 0)
+            {
+                return cards ?? [];
+            }
+
+            return cards.Where(card =>
+            {
+                var propertyValue = propertySelector(card) ?? string.Empty;
+                var criteria = propertyValue.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
+
+                bool match = useAnd
+                    ? selectedCriteria.All(c => criteria.Any(crit => crit.Contains(c)))
+                    : selectedCriteria.Any(c => criteria.Any(crit => crit.Contains(c)));
+
+                return exclude ? !match : match;
+            });
+        }
+        private static IEnumerable<CardSet> ApplyMyCardsSpecificFilters(IEnumerable<CardSet> cards)
+        {
+            var filteredCardItems = cards.OfType<CardInCollection>();
+
+            // Handle "Cards for Trade" and "Cards Not for Trade"
+            bool showForTrade = MainWindow.CurrentInstance.CheckBoxCardsForTrade.IsChecked ?? false;
+            bool showNotForTrade = MainWindow.CurrentInstance.CheckBoxCardsNotForTrade.IsChecked ?? false;
+
+            if (showForTrade)
+            {
+                filteredCardItems = filteredCardItems.Where(card => card.CardsForTrade > 0);
+            }
+
+            if (showNotForTrade)
+            {
+                filteredCardItems = filteredCardItems.Where(card => card.CardsForTrade == 0);
+            }
+
+            // Apply language filter
+            var languageFilteredItems = FilterByCardProperty(filteredCardItems.Cast<CardSet>(), MainWindow.CurrentInstance.filterSelections.SelectedLanguages, false, card => card.Language);
+
+            return languageFilteredItems.OfType<CardInCollection>().Cast<CardSet>();
+        }
         public static IEnumerable<CardSet> FilterByColor(IEnumerable<CardSet> cards, HashSet<string> selectedColors, int filterMode)
         {
             if (cards == null)
@@ -266,59 +345,6 @@ namespace CollectaMundo
             });
         }
 
-        /// <summary>
-        /// General filter method for non-color properties using criteria matching.
-        /// </summary>
-        private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string>? selectedCriteria, bool useAnd, Func<CardSet, string?> propertySelector, bool exclude = false)
-        {
-            if (cards == null || propertySelector == null || selectedCriteria == null || selectedCriteria.Count == 0)
-            {
-                return cards ?? [];
-            }
-
-            return cards.Where(card =>
-            {
-                var propertyValue = propertySelector(card) ?? string.Empty;
-                var criteria = propertyValue.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
-
-                bool match = useAnd
-                    ? selectedCriteria.All(c => criteria.Any(crit => crit.Contains(c)))
-                    : selectedCriteria.Any(c => criteria.Any(crit => crit.Contains(c)));
-
-                return exclude ? !match : match;
-            });
-        }
-        private static IEnumerable<CardSet> ApplyMyCardsSpecificFilters(IEnumerable<CardSet> cards)
-        {
-            var filteredCardItems = cards.OfType<CardInCollection>();
-
-            // Handle "Cards for Trade" and "Cards Not for Trade"
-            bool showForTrade = MainWindow.CurrentInstance.CheckBoxCardsForTrade.IsChecked ?? false;
-            bool showNotForTrade = MainWindow.CurrentInstance.CheckBoxCardsNotForTrade.IsChecked ?? false;
-
-            if (showForTrade)
-            {
-                filteredCardItems = filteredCardItems.Where(card => card.CardsForTrade > 0);
-            }
-
-            if (showNotForTrade)
-            {
-                filteredCardItems = filteredCardItems.Where(card => card.CardsForTrade == 0);
-            }
-
-            // Apply filters for specific properties
-            if (MainWindow.CurrentInstance.filterSelections.SelectedConditions.Count > 0)
-            {
-                filteredCardItems = filteredCardItems.Where(card =>
-                    card.SelectedCondition != null && MainWindow.CurrentInstance.filterSelections.SelectedConditions.Contains(card.SelectedCondition));
-            }
-
-            // Apply language filter
-            var languageFilteredItems = FilterByCardProperty(filteredCardItems.Cast<CardSet>(), MainWindow.CurrentInstance.filterSelections.SelectedLanguages, false, card => card.Language);
-
-            return languageFilteredItems.OfType<CardInCollection>().Cast<CardSet>();
-        }
-
         #endregion
 
         #region Filter UI updates
@@ -333,21 +359,31 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
             }
         }
-        private static void UpdateFilterSummary(Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> filterCriteria)
+        private static void UpdateFilterSummary(
+    Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> multipleFilterCriteria,
+    Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
         {
             try
             {
                 StringBuilder filterSummary = new();
-                bool isFirstGroup = true; // Track the first group to avoid prefixing with "AND"
 
-                foreach (var (filterKey, (propertySelector, selectedCriteria, filterMode)) in filterCriteria)
+                // Add single property filters
+                foreach (var (key, (_, selectedValue)) in singleFilterCriteria)
+                {
+                    if (!string.IsNullOrWhiteSpace(selectedValue))
+                    {
+                        filterSummary.Append($"{key}: \"{selectedValue}\" AND ");
+                    }
+                }
+
+                // Add multiple property filters
+                foreach (var (filterKey, (propertySelector, selectedCriteria, filterMode)) in multipleFilterCriteria)
                 {
                     if (selectedCriteria == null || selectedCriteria.Count == 0)
                     {
                         continue;
                     }
 
-                    // Convert filter mode to a readable operator
                     string operatorSymbol = filterMode switch
                     {
                         0 => "OR",
@@ -356,23 +392,18 @@ namespace CollectaMundo
                         _ => string.Empty
                     };
 
-                    // Build the filter segment: Properly handle NOT
                     string filterSegment = filterMode == 2
                         ? string.Join(", ", selectedCriteria.Select(c => $"NOT {c}"))
                         : string.Join($" {operatorSymbol} ", selectedCriteria);
 
-                    // ✅ Ensure AND between groups, but avoid prefixing on the first group
-                    if (!isFirstGroup)
-                    {
-                        filterSummary.Append(" AND ");
-                    }
-                    isFirstGroup = false;
-
-                    // Wrap the segment with braces for clarity
-                    filterSummary.Append($"{{{filterSegment}}}");
+                    filterSummary.Append($"{{{filterSegment}}} AND ");
                 }
 
-                // Update the summary display
+                if (filterSummary.Length > 5)
+                {
+                    filterSummary.Remove(filterSummary.Length - 5, 5); // Remove trailing " AND "
+                }
+
                 MainWindow.CurrentInstance.FilterSummaryTextBlock.Text = filterSummary.ToString();
             }
             catch (Exception ex)
@@ -381,18 +412,6 @@ namespace CollectaMundo
             }
         }
 
-
-
-
-        private static void AppendFilterContent(HashSet<string> selectedItems, bool useAnd, string prefix, StringBuilder filterSummary)
-        {
-            if (selectedItems.Count > 0)
-            {
-                string conjunction = useAnd ? " AND " : " OR ";
-                string content = $"{prefix}: {string.Join(conjunction, selectedItems)}";
-                filterSummary.Append($"{content} \u2022 ");
-            }
-        }
 
         // Update the object to which the width of the combobox is bound
         public static void DataGrid_LayoutUpdated(int dataGridIndex)

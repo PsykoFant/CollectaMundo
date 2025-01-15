@@ -11,6 +11,9 @@
         public List<string> AllLanguages { get; set; } = [];
         public List<string> AllConditions { get; set; } = [];
         public List<string> AllRarities { get; set; } = [];
+
+        public String? SelectedName { get; set; } = null;
+
         public HashSet<string> SelectedColors { get; set; } = [];
         public HashSet<string> SelectedTypes { get; set; } = [];
         public HashSet<string> SelectedSuperTypes { get; set; } = [];
@@ -22,12 +25,7 @@
         public HashSet<string> SelectedRarity { get; set; } = [];
         public Dictionary<string, bool> AndOrSettings { get; set; } = new()
         {
-            { "Colors", false },
-            { "Types", false },
-            { "SuperTypes", false },
-            { "SubTypes", false },
-            { "Keywords", false },
-            { "Finishes", false }
+            { "Colors", false }
         };
 
         // Filter defaults

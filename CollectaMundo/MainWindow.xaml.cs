@@ -761,6 +761,17 @@ namespace CollectaMundo
 
             if (sender is ComboBox comboBox)
             {
+
+                if (comboBox.SelectedItem != null)
+                {
+                    filterSelections.SelectedName = comboBox.SelectedItem.ToString();
+                }
+                else
+                {
+                    filterSelections.SelectedName = null;
+                }
+
+
                 // Map ComboBox names to filter categories
                 var comboBoxCategoryMap = new Dictionary<string, string>
                 {
@@ -780,7 +791,6 @@ namespace CollectaMundo
                     ResetOtherComboBoxSelections(category);
                 }
             }
-
             ApplyFilterSelection();
         }
 
@@ -998,11 +1008,6 @@ namespace CollectaMundo
                     // Identify which property to update in AndOrSettings
                     string propertyName = toggledCheckBox.Name switch
                     {
-                        "SuperTypesAndOrCheckBox" => "SuperTypes",
-                        "TypesAndOrCheckBox" => "Types",
-                        "SubTypesAndOrCheckBox" => "SubTypes",
-                        "KeywordsAndOrCheckBox" => "Keywords",
-                        "FinishesAndOrCheckBox" => "Finishes",
                         "CheckBoxCardsForTrade" => "CardsForTrade",
                         "CheckBoxCardsNotForTrade" => "CardsNotForTrade",
                         _ => string.Empty
