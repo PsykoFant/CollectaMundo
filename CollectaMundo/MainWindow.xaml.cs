@@ -744,10 +744,17 @@ namespace CollectaMundo
                 if (comboBox.Name.Contains("Name", StringComparison.OrdinalIgnoreCase))
                 {
                     filterSelections.SelectedName = comboBox.SelectedItem?.ToString();
+
+                    filterManager.ApplyFilter(allCards, AllCardsDataGrid);
+                    filterManager.ApplyFilter(myCards, MyCollectionDataGrid);
+                    filterManager.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
                 }
                 else if (comboBox.Name.Contains("Set", StringComparison.OrdinalIgnoreCase))
                 {
                     filterSelections.SelectedSetName = comboBox.SelectedItem?.ToString();
+
+                    filterManager.ApplyFilter(allCards, AllCardsDataGrid);
+                    filterManager.ApplyFilter(myCards, MyCollectionDataGrid);
                 }
 
 
@@ -769,8 +776,9 @@ namespace CollectaMundo
                     // Reset selections in unrelated categories
                     ResetOtherComboBoxSelections(category);
                 }
+
             }
-            ApplyFilterSelection();
+            //ApplyFilterSelection();
 
             void ResetOtherComboBoxSelections(string currentCategory)
             {
@@ -1275,23 +1283,9 @@ namespace CollectaMundo
         }
         public void ApplyFilterSelection()
         {
-            IEnumerable<CardSet> filteredAllCards = filterManager.ApplyFilter(allCards, "allCards");
-            IEnumerable<CardSet> filteredMyCards = filterManager.ApplyFilter(myCards, "myCards");
-            IEnumerable<CardSet> filteredAllCardsForDecks = filterManager.ApplyFilter(allCardsForDecks, "allCardsForDecks");
-
-            // Save and restore sort descriptions for both DataGrids
-            FilterManager.SaveAndRestoreSort(AllCardsDataGrid, () =>
-            {
-                AllCardsDataGrid.ItemsSource = filteredAllCards;
-            });
-            FilterManager.SaveAndRestoreSort(MyCollectionDataGrid, () =>
-            {
-                MyCollectionDataGrid.ItemsSource = filteredMyCards;
-            });
-            FilterManager.SaveAndRestoreSort(AllCardsForDecksDataGrid, () =>
-            {
-                AllCardsForDecksDataGrid.ItemsSource = filteredAllCardsForDecks;
-            });
+            filterManager.ApplyFilter(allCards, AllCardsDataGrid);
+            filterManager.ApplyFilter(myCards, MyCollectionDataGrid);
+            filterManager.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
         }
 
         // Reset filter elements

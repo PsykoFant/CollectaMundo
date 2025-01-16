@@ -13,7 +13,7 @@ namespace CollectaMundo
         //public string WhichDropdown = string.Empty;
 
         #region Filtering
-        public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards, string listName)
+        public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards, DataGrid dataGrid)
         {
             try
             {
@@ -33,49 +33,57 @@ namespace CollectaMundo
                     { "Finishes", (card => card.Finishes, MainWindow.CurrentInstance.filterSelections.SelectedFinishes, MainWindow.CurrentInstance.FinishesOperatorComboBox.SelectedIndex) }
                 };
 
-                // Pass the dynamic filter mode to the filtering method
-                var filteredCards = FilterByMultipleProperties(cards, filterCriteriaMultiple);
-
-
                 var singleFilterCriteria = new Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)>
                 {
                     { "Name", (card => card.Name, MainWindow.CurrentInstance.filterSelections.SelectedName) },
                     { "Set", (card => card.SetName, MainWindow.CurrentInstance.filterSelections.SelectedSetName) },
                 };
 
+
+                var filteredCards = FilterByMultipleProperties(cards, filterCriteriaMultiple);
+
                 filteredCards = FilterBySingleProperty(filteredCards, singleFilterCriteria);
 
 
                 //var (cardFilter, setFilter) = GetDropdownFilters(WhichDropdown);
-                string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
+                //string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
 
 
-                // Filtering by card name, set name, and rules text
-                //filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter);
+                //// Filtering by card name, set name, and rules text
+                ////filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter);
 
-                // Apply mana value filter
-                filteredCards = FilterByManaValue(filteredCards);
+                //// Apply mana value filter
+                //filteredCards = FilterByManaValue(filteredCards);
 
-                // Determine values of color compare combobox
-                MainWindow.CurrentInstance.filterSelections.AndOrSettings["Colors"] = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
-                bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
+                //// Determine values of color compare combobox
+                //MainWindow.CurrentInstance.filterSelections.AndOrSettings["Colors"] = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
+                //bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
 
-                filteredCards = FilterByColor(filteredCards, MainWindow.CurrentInstance.filterSelections.SelectedColors, MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex);
+                //filteredCards = FilterByColor(filteredCards, MainWindow.CurrentInstance.filterSelections.SelectedColors, MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex);
 
                 // Apply specific filters for list contexts
-                filteredCards = listName switch
-                {
-                    "myCards" => ApplyMyCardsSpecificFilters(filteredCards),
-                    _ => filteredCards
-                };
+                //filteredCards = datagridName switch
+                //{
+                //    "myCards" => ApplyMyCardsSpecificFilters(filteredCards),
+                //    _ => filteredCards
+                //};
 
                 var finalFilteredCards = filteredCards.ToList();
 
 
-                UpdateCardCount(listName, finalFilteredCards.Count);
+                // UI stuff
+
+                // Update the sort order while updating ItemsSource
+                SaveAndRestoreSort(dataGrid, () =>
+                {
+                    dataGrid.ItemsSource = finalFilteredCards;
+                });
+
+
+                UpdateCardCount(dataGrid.Name, finalFilteredCards.Count);
                 UpdateFilterSummary(filterCriteriaMultiple, singleFilterCriteria);
 
-                return finalFilteredCards;
+                //return finalFilteredCards;
             }
             catch (Exception ex)
             {
@@ -345,13 +353,13 @@ namespace CollectaMundo
         #endregion
 
         #region Filter UI updates
-        private static void UpdateCardCount(string listName, int count)
+        private static void UpdateCardCount(string datagridName, int count)
         {
-            if (listName == "allCards")
+            if (datagridName == "AllCardsDataGrid")
             {
                 MainWindow.CurrentInstance.AllCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.allCards.Count} cards.";
             }
-            else if (listName == "myCards")
+            else if (datagridName == "MyCollectionDataGrid")
             {
                 MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
             }
