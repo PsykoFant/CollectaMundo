@@ -13,6 +13,7 @@
         public List<string> AllRarities { get; set; } = [];
 
         public String? SelectedName { get; set; } = null;
+        public String? SelectedSetName { get; set; } = null;
 
         public HashSet<string> SelectedColors { get; set; } = [];
         public HashSet<string> SelectedTypes { get; set; } = [];

@@ -737,6 +737,41 @@ namespace CollectaMundo
         {
             if (_isStartup) { return; }
 
+            if (sender is ComboBox comboBox)
+            {
+
+                // Identify which ComboBox triggered the event and update the appropriate filter
+                if (comboBox.Name.Contains("Name", StringComparison.OrdinalIgnoreCase))
+                {
+                    filterSelections.SelectedName = comboBox.SelectedItem?.ToString();
+                }
+                else if (comboBox.Name.Contains("Set", StringComparison.OrdinalIgnoreCase))
+                {
+                    filterSelections.SelectedSetName = comboBox.SelectedItem?.ToString();
+                }
+
+
+                // Map ComboBox names to filter categories
+                var comboBoxCategoryMap = new Dictionary<string, string>
+                {
+                    { "AllCardsNameComboBox", "AllCards" },
+                    { "AllCardsSetComboBox", "AllCards" },
+                    { "MyCollectionNameComboBox", "MyCollection" },
+                    { "MyCollectionSetComboBox", "MyCollection" },
+                    { "AllCardsForDecksNameComboBox", "AllCardsForDecks" }
+                };
+
+                // Identify category and reset other ComboBox selections
+                if (comboBoxCategoryMap.TryGetValue(comboBox.Name, out string? category))
+                {
+                    //filterManager.WhichDropdown = category;
+
+                    // Reset selections in unrelated categories
+                    ResetOtherComboBoxSelections(category);
+                }
+            }
+            ApplyFilterSelection();
+
             void ResetOtherComboBoxSelections(string currentCategory)
             {
                 var categoryComboBoxMappings = new Dictionary<string, DataGrid>
@@ -758,40 +793,6 @@ namespace CollectaMundo
                     }
                 }
             }
-
-            if (sender is ComboBox comboBox)
-            {
-
-                if (comboBox.SelectedItem != null)
-                {
-                    filterSelections.SelectedName = comboBox.SelectedItem.ToString();
-                }
-                else
-                {
-                    filterSelections.SelectedName = null;
-                }
-
-
-                // Map ComboBox names to filter categories
-                var comboBoxCategoryMap = new Dictionary<string, string>
-                {
-                    { "AllCardsNameComboBox", "AllCards" },
-                    { "AllCardsSetComboBox", "AllCards" },
-                    { "MyCollectionNameComboBox", "MyCollection" },
-                    { "MyCollectionSetComboBox", "MyCollection" },
-                    { "AllCardsForDecksNameComboBox", "AllCardsForDecks" }
-                };
-
-                // Identify category and reset other ComboBox selections
-                if (comboBoxCategoryMap.TryGetValue(comboBox.Name, out string? category))
-                {
-                    filterManager.WhichDropdown = category;
-
-                    // Reset selections in unrelated categories
-                    ResetOtherComboBoxSelections(category);
-                }
-            }
-            ApplyFilterSelection();
         }
 
         private void OperatorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

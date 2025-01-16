@@ -10,7 +10,7 @@ namespace CollectaMundo
 {
     public class FilterManager
     {
-        public string WhichDropdown = string.Empty;
+        //public string WhichDropdown = string.Empty;
 
         #region Filtering
         public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards, string listName)
@@ -33,8 +33,6 @@ namespace CollectaMundo
                     { "Finishes", (card => card.Finishes, MainWindow.CurrentInstance.filterSelections.SelectedFinishes, MainWindow.CurrentInstance.FinishesOperatorComboBox.SelectedIndex) }
                 };
 
-                Debug.WriteLine(MainWindow.CurrentInstance.filterSelections.SelectedName);
-
                 // Pass the dynamic filter mode to the filtering method
                 var filteredCards = FilterByMultipleProperties(cards, filterCriteriaMultiple);
 
@@ -42,6 +40,7 @@ namespace CollectaMundo
                 var singleFilterCriteria = new Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)>
                 {
                     { "Name", (card => card.Name, MainWindow.CurrentInstance.filterSelections.SelectedName) },
+                    { "Set", (card => card.SetName, MainWindow.CurrentInstance.filterSelections.SelectedSetName) },
                 };
 
                 filteredCards = FilterBySingleProperty(filteredCards, singleFilterCriteria);
@@ -108,8 +107,6 @@ namespace CollectaMundo
                 return true; // Include card if all single-value filters match
             });
         }
-
-
 
         public static IEnumerable<CardSet> FilterByMultipleProperties(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> filterCriteria)
         {
