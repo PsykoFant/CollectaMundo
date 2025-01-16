@@ -1,3 +1,3 @@
 TO DO 
-- Colorless filtrering
-- Kig på allCardsForDecks view
+- Seperat object og klasse til filterselections
+- Lav et filterobjekt, og kald ApplyFilter med det objekt som parameter

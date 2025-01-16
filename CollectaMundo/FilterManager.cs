@@ -94,7 +94,7 @@ namespace CollectaMundo
                 return;
             }
         }
-        public static IEnumerable<CardSet> FilterBySingleProperty(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
+        private static IEnumerable<CardSet> FilterBySingleProperty(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
         {
             if (cards == null || singleFilterCriteria == null || singleFilterCriteria.Count == 0)
             {
@@ -125,9 +125,7 @@ namespace CollectaMundo
                 return true; // Include card if all applicable single-value filters match
             });
         }
-
-
-        public static IEnumerable<CardSet> FilterByMultipleProperties(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> filterCriteria)
+        private static IEnumerable<CardSet> FilterByMultipleProperties(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> filterCriteria)
         {
             if (cards == null || filterCriteria == null || filterCriteria.Count == 0)
             {
@@ -166,11 +164,6 @@ namespace CollectaMundo
                 return result;
             });
         }
-
-
-        /// <summary>
-        /// Helper method to determine if a card matches the provided criteria.
-        /// </summary>
         private static bool MatchesCriteria(CardSet card, Func<CardSet, string?> propertySelector, HashSet<string> filterValues)
         {
             var propertyValue = propertySelector(card) ?? string.Empty;
