@@ -81,7 +81,7 @@ namespace CollectaMundo
         }
 
         // Object of our FilterManager class
-        private readonly FilterManager filterManager;
+        //private readonly FilterManager filterManager;
 
         // The object which holds the filter selections
         public readonly FilterContext filterSelections;
@@ -126,7 +126,7 @@ namespace CollectaMundo
             _currentInstance = this;
 
             // Instantiate filtering objects
-            filterManager = new FilterManager();
+            //filterManager = new FilterManager();
             filterSelections = new FilterContext();
 
             // Set up system
@@ -745,16 +745,17 @@ namespace CollectaMundo
                 {
                     filterSelections.SelectedName = comboBox.SelectedItem?.ToString();
 
-                    filterManager.ApplyFilter(allCards, AllCardsDataGrid);
-                    filterManager.ApplyFilter(myCards, MyCollectionDataGrid);
-                    filterManager.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
+                    FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
+                    FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
+                    FilterManager.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
                 }
                 else if (comboBox.Name.Contains("Set", StringComparison.OrdinalIgnoreCase))
                 {
+                    Debug.WriteLine(comboBox.Name);
                     filterSelections.SelectedSetName = comboBox.SelectedItem?.ToString();
 
-                    filterManager.ApplyFilter(allCards, AllCardsDataGrid);
-                    filterManager.ApplyFilter(myCards, MyCollectionDataGrid);
+                    FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
+                    FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
                 }
 
 
@@ -1283,9 +1284,9 @@ namespace CollectaMundo
         }
         public void ApplyFilterSelection()
         {
-            filterManager.ApplyFilter(allCards, AllCardsDataGrid);
-            filterManager.ApplyFilter(myCards, MyCollectionDataGrid);
-            filterManager.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
+            FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
+            FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
+            FilterManager.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
         }
 
         // Reset filter elements

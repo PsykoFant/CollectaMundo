@@ -13,13 +13,14 @@ namespace CollectaMundo
         //public string WhichDropdown = string.Empty;
 
         #region Filtering
-        public IEnumerable<CardSet> ApplyFilter(IEnumerable<CardSet> cards, DataGrid dataGrid)
+        public static void ApplyFilter(IEnumerable<CardSet> cards, DataGrid dataGrid)
         {
             try
             {
                 if (MainWindow.CurrentInstance._isStartup)
                 {
-                    return cards;
+                    //return cards;
+                    return;
                 }
 
                 // ✅ Define the filter criteria with individual operators for each property
@@ -89,7 +90,8 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
                 _ = MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return [];
+                //return [];
+                return;
             }
         }
         public static IEnumerable<CardSet> FilterBySingleProperty(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
@@ -106,15 +108,24 @@ namespace CollectaMundo
                     if (!string.IsNullOrWhiteSpace(selectedValue))
                     {
                         var propertyValue = propertySelector(card) ?? string.Empty;
+
+                        // ✅ Skip this filter if the card property is empty or null
+                        if (string.IsNullOrWhiteSpace(propertyValue))
+                        {
+                            continue; // Do not exclude the card; move to the next filter
+                        }
+
+                        // ✅ Exclude card if it doesn't match the selected value
                         if (!propertyValue.Equals(selectedValue, StringComparison.OrdinalIgnoreCase))
                         {
-                            return false; // Exclude card if it doesn't match the single-value filter
+                            return false;
                         }
                     }
                 }
-                return true; // Include card if all single-value filters match
+                return true; // Include card if all applicable single-value filters match
             });
         }
+
 
         public static IEnumerable<CardSet> FilterByMultipleProperties(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> filterCriteria)
         {
