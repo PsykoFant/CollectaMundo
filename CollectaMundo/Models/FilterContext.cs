@@ -19,9 +19,9 @@
         public string SuperTypesDefaultText { get; } = "Filter supertypes ...";
         public string SubTypesDefaultText { get; } = "Filter subtypes ...";
         public string KeywordsDefaultText { get; } = "Filter keywords ...";
-        public string FinishesDefaultText { get; } = "Filter card finishes ...";
-        public string LanguagesDefaultText { get; } = "Filter card languages ...";
-        public string ConditionsDefaultText { get; } = "Filter card conditions ...";
-        public string RarityDefaultText { get; } = "Filter card rarity ...";
+        public string FinishesDefaultText { get; } = "Filter finishes ...";
+        public string LanguagesDefaultText { get; } = "Filter languages ...";
+        public string ConditionsDefaultText { get; } = "Filter conditions ...";
+        public string RarityDefaultText { get; } = "Filter rarity ...";
     }
 }

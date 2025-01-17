@@ -25,12 +25,12 @@ namespace CollectaMundo
                 // ✅ Define the filter criteria with individual operators for each property
                 var filterCriteriaMultiple = new Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)>
                 {
-                    { "SuperTypes", (card => card.SuperTypes, MainWindow.CurrentInstance.filterSelections.SelectedSuperTypes, MainWindow.CurrentInstance.SuperTypesOperatorComboBox.SelectedIndex) },
-                    { "Types", (card => card.Types, MainWindow.CurrentInstance.filterSelections.SelectedTypes, MainWindow.CurrentInstance.TypesOperatorComboBox.SelectedIndex) },
-                    { "SubTypes", (card => card.SubTypes, MainWindow.CurrentInstance.filterSelections.SelectedSubTypes, MainWindow.CurrentInstance.SubTypesOperatorComboBox.SelectedIndex) },
-                    { "Keywords", (card => card.Keywords, MainWindow.CurrentInstance.filterSelections.SelectedKeywords, MainWindow.CurrentInstance.KeywordsOperatorComboBox.SelectedIndex) },
-                    { "Rarities", (card => card.Rarity, MainWindow.CurrentInstance.filterSelections.SelectedRarity, 0) },
-                    { "Finishes", (card => card.Finishes, MainWindow.CurrentInstance.filterSelections.SelectedFinishes, MainWindow.CurrentInstance.FinishesOperatorComboBox.SelectedIndex) }
+                    { "Rarities", (card => card.Rarity, MainWindow.CurrentInstance.filterSelections.SelectedRarity, MainWindow.CurrentInstance.filterSelections.RarityOperator) },
+                    { "SuperTypes", (card => card.SuperTypes, MainWindow.CurrentInstance.filterSelections.SelectedSuperTypes, MainWindow.CurrentInstance.filterSelections.SuperTypesOperator) },
+                    { "Types", (card => card.Types, MainWindow.CurrentInstance.filterSelections.SelectedTypes, MainWindow.CurrentInstance.filterSelections.TypesOperator) },
+                    { "SubTypes", (card => card.SubTypes, MainWindow.CurrentInstance.filterSelections.SelectedSubTypes, MainWindow.CurrentInstance.filterSelections.SubTypesOperator) },
+                    { "Keywords", (card => card.Keywords, MainWindow.CurrentInstance.filterSelections.SelectedKeywords, MainWindow.CurrentInstance.filterSelections.KeywordsOperator) },
+                    { "Finishes", (card => card.Finishes, MainWindow.CurrentInstance.filterSelections.SelectedFinishes, MainWindow.CurrentInstance.filterSelections.FinishesOperator) }
                 };
 
                 var singleFilterCriteria = new Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)>

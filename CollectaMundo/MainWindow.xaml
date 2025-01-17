@@ -110,7 +110,7 @@
                 <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="10,215,0,0" VerticalAlignment="Top" Height="20"/>
                 <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="125,215,0,0" VerticalAlignment="Top" Height="20"/>
 
-                <ComboBox x:Name="RarityComboBox" HorizontalAlignment="Left" Margin="10,245,0,0" VerticalAlignment="Top" Width="190" Height="20" DropDownOpened="ComboBox_DropDownOpened">
+                <ComboBox x:Name="RarityComboBox" HorizontalAlignment="Left" Margin="10,245,0,0" VerticalAlignment="Top" Width="180" Height="20" DropDownOpened="ComboBox_DropDownOpened">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -156,7 +156,11 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-
+                <ComboBox x:Name="RarityOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,245,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged">
+                    <ComboBoxItem Content="OR" IsSelected="True" />
+                    <ComboBoxItem Content="NOT" />
+                </ComboBox>
+                
                 <!--Supertype listbox and filtering-->
                 <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,275,0,0" VerticalAlignment="Top" Width="180" Height="20" DropDownOpened="ComboBox_DropDownOpened">
                     <ComboBox.Template>
@@ -423,7 +427,7 @@
                 <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,470,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
 
                 <!--Languages filtering-->
-                <ComboBox x:Name="LanguagesComboBox" HorizontalAlignment="Left" Margin="10,515,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="LanguagesComboBox" HorizontalAlignment="Left" Margin="10,515,0,0" VerticalAlignment="Top" Width="180" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -466,8 +470,12 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
+                <ComboBox x:Name="LanguagesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,515,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged">
+                    <ComboBoxItem Content="OR" IsSelected="True" />
+                    <ComboBoxItem Content="NOT" />
+                </ComboBox>
 
-                <ComboBox x:Name="ConditionsComboBox" HorizontalAlignment="Left" Margin="10,545,0,0" VerticalAlignment="Top" Width="240" DropDownOpened="ComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="ConditionsComboBox" HorizontalAlignment="Left" Margin="10,545,0,0" VerticalAlignment="Top" Width="180" DropDownOpened="ComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -479,10 +487,10 @@
                                          Foreground="{TemplateBinding Foreground}"
                                          Padding="3,3,0,0"
                                          Margin="0,0,0,0"/>
-                                <ToggleButton x:Name="ToggleButtonConditions" Content="Card Conditions" Focusable="false" ClickMode="Press"
+                                <ToggleButton x:Name="ToggleButtonConditions" Content="Conditions" Focusable="false" ClickMode="Press"
                                               IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
                                               HorizontalAlignment="Right"
-                                              Width="100"/>
+                                              Width="70"/>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
                                         <ListBox x:Name="FilterConditionsListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
@@ -509,6 +517,10 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
+                </ComboBox>
+                <ComboBox x:Name="ConditionsOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,545,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged">
+                    <ComboBoxItem Content="OR" IsSelected="True" />
+                    <ComboBoxItem Content="NOT" />
                 </ComboBox>
 
                 <CheckBox x:Name="CheckBoxCardsForTrade" Margin="10,570,0,0" Content="Filter on cards for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="AndOrCheckBox_Toggled" Unchecked="AndOrCheckBox_Toggled"/>

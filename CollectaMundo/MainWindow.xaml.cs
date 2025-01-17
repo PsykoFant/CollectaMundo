@@ -79,6 +79,14 @@ namespace CollectaMundo
             AllCardsForDecks,
             CardsInDecks
         }
+        public enum OperatorType
+        {
+            OR = 0,
+            AND = 1,
+            NOT = 2,
+            Unknown = -1
+        }
+
 
         // The object which holds the filter selections
         public FilterSelections filterSelections;
@@ -797,7 +805,7 @@ namespace CollectaMundo
         {
             if (_isStartup) { return; }
 
-            int operatorSelection;
+            OperatorType operatorSelection = OperatorType.Unknown;
 
             if (sender is ComboBox comboBox)
             {
@@ -805,34 +813,48 @@ namespace CollectaMundo
                 {
                     string? selectedText = selectedItem.Content.ToString();
 
-                    switch (selectedText)
+                    operatorSelection = selectedText switch
                     {
-                        case "OR":
-                            operatorSelection = 0;
-                            break;
-                        case "AND":
-                            operatorSelection = 1;
-                            break;
-                        case "NOT":
-                            operatorSelection = 2;
-                            break;
-                        default:
-                            Debug.WriteLine("Unknown selection");
-                            break;
-                    }
+                        "OR" => OperatorType.OR,
+                        "AND" => OperatorType.AND,
+                        "NOT" => OperatorType.NOT,
+                        _ => OperatorType.Unknown
+                    };
+
+                    //Debug.WriteLine(operatorSelection == OperatorType.Unknown ? "Unknown selection" : $"Selected: {operatorSelection}");
                 }
 
                 switch (comboBox.Name)
                 {
-                    case "SuperTypesOperator":
-                        filterSelections.SubTypesOperator = operatorSelection;
+                    case "ColorOperatorComboBox":
+                        filterSelections.ColorOperator = (int)operatorSelection;
+                        break;
+                    case "RarityOperatorComboBox":
+                        filterSelections.RarityOperator = (int)operatorSelection;
+                        break;
+                    case "SuperTypesOperatorComboBox":
+                        filterSelections.SuperTypesOperator = (int)operatorSelection;
+                        break;
+                    case "TypesOperatorComboBox":
+                        filterSelections.TypesOperator = (int)operatorSelection;
+                        break;
+                    case "SubTypesOperatorComboBox":
+                        filterSelections.SubTypesOperator = (int)operatorSelection;
+                        break;
+                    case "KeywordsOperatorComboBox":
+                        filterSelections.KeywordsOperator = (int)operatorSelection;
+                        break;
+                    case "FinishesOperatorComboBox":
+                        filterSelections.FinishesOperator = (int)operatorSelection;
+                        break;
+                    case "LanguagesOperatorComboBox":
+                        filterSelections.LanguagesOperator = (int)operatorSelection;
+                        break;
+                    case "ConditionsOperatorComboBox":
+                        filterSelections.ConditionsOperator = (int)operatorSelection;
                         break;
                 }
-
             }
-
-
-
 
             ApplyFilterSelection();
         }

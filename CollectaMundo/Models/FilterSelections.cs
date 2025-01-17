@@ -18,8 +18,9 @@
         public int TypesOperator { get; set; } = 0;
         public int SuperTypesOperator { get; set; } = 0;
         public int SubTypesOperator { get; set; } = 0;
-        public int KeywordsTypesOperator { get; set; } = 0;
-        public int LanguagesTypesOperator { get; set; } = 0;
+        public int KeywordsOperator { get; set; } = 0;
+        public int FinishesOperator { get; set; } = 0;
+        public int LanguagesOperator { get; set; } = 0;
         public int ConditionsOperator { get; set; } = 0;
         public int RarityOperator { get; set; } = 0;
     }
