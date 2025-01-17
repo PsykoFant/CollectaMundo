@@ -10,8 +10,6 @@ namespace CollectaMundo
 {
     public class FilterManager
     {
-        //public string WhichDropdown = string.Empty;
-
         #region Filtering
         public static void ApplyFilter(IEnumerable<CardSet> cards, DataGrid dataGrid)
         {
@@ -55,7 +53,7 @@ namespace CollectaMundo
                 //// Apply mana value filter
                 //filteredCards = FilterByManaValue(filteredCards);
 
-                filteredCards = FilterByColor(filteredCards, MainWindow.CurrentInstance.filterSelections.SelectedColors, MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex);
+                filteredCards = FilterByColor(filteredCards, MainWindow.CurrentInstance.filterSelections.SelectedColors, MainWindow.CurrentInstance.filterSelections.ColorOperator);
 
                 // Apply specific filters for list contexts
                 //filteredCards = datagridName switch
@@ -158,18 +156,20 @@ namespace CollectaMundo
 
                 return result;
             });
-        }
-        private static bool MatchesCriteria(CardSet card, Func<CardSet, string?> propertySelector, HashSet<string> filterValues)
-        {
-            var propertyValue = propertySelector(card) ?? string.Empty;
 
-            var propertyItems = new HashSet<string>(
-                propertyValue.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                             .Select(p => p.Trim())
-            );
+            static bool MatchesCriteria(CardSet card, Func<CardSet, string?> propertySelector, HashSet<string> filterValues)
+            {
+                var propertyValue = propertySelector(card) ?? string.Empty;
 
-            return filterValues.Any(filterValue => propertyItems.Contains(filterValue));
+                var propertyItems = new HashSet<string>(
+                    propertyValue.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                 .Select(p => p.Trim())
+                );
+
+                return filterValues.Any(filterValue => propertyItems.Contains(filterValue));
+            }
         }
+
         private static (string cardFilter, string setFilter) GetDropdownFilters(string whichDropdown)
         {
             // Helper function to find a ComboBox by its tag in the specified DataGrid

@@ -154,7 +154,6 @@ namespace CollectaMundo
             AllCardsForDecksDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(2);
 
             // Pick up filtering combobox changes            
-            AllOrNoneComboBox.SelectionChanged += DataGridHeaderComboBox_SelectionChanged;
             ManaValueComboBox.SelectionChanged += DataGridHeaderComboBox_SelectionChanged;
             ManaValueOperatorComboBox.SelectionChanged += DataGridHeaderComboBox_SelectionChanged;
 
@@ -233,7 +232,7 @@ namespace CollectaMundo
         /// </summary>
         private void RunTest(FilterManager testFilterManager, HashSet<string> selectedColors, int filterMode, string testName, int expectedCount)
         {
-            AllOrNoneComboBox.SelectedIndex = filterMode;
+            //AllOrNoneComboBox.SelectedIndex = filterMode;
 
             // Directly modify the test FilterContext without needing public access
             typeof(FilterManager)
@@ -608,7 +607,6 @@ namespace CollectaMundo
 
                 // Setup common lists
                 filterContext.AllColors.AddRange(["W", "U", "B", "R", "G", "C", "X", "Colorless"]);
-                List<string> allOrNoneColorsOption = ["Contains ANY of these", "Contains ALL these", "Contains NONE of these"];
                 List<int> manaValueOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000];
                 List<string> manaValueCompareOptions = ["less than", "less than/eq", "greater than", "greater than/eq", "equal to"];
 
@@ -653,14 +651,12 @@ namespace CollectaMundo
                     // Set Filter Options
                     FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
                     FilterColorsListBox.ItemsSource = filterContext.AllColors;
-                    AllOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
                     ManaValueComboBox.ItemsSource = manaValueOptions;
                     ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
 
                     // Set default values for comboboxes on startup
                     if (_isStartup)
                     {
-                        AllOrNoneComboBox.SelectedIndex = 0;
                         ManaValueOperatorComboBox.SelectedIndex = 3;
                         ManaValueComboBox.SelectedIndex = 0;
                     }
@@ -856,7 +852,9 @@ namespace CollectaMundo
                 }
             }
 
-            ApplyFilterSelection();
+            FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
+            FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
+            FilterManager.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
         }
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
@@ -1293,6 +1291,8 @@ namespace CollectaMundo
         // Reset filter elements
         public void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
+            if (_isStartup) { return; }
+
             // Reset filter TextBoxes for each ComboBox
             ResetFilterTextBox(SuperTypesComboBox, "FilterSuperTypesTextBox", filterContext.SuperTypesDefaultText);
             ResetFilterTextBox(TypesComboBox, "FilterTypesTextBox", filterContext.TypesDefaultText);
@@ -1304,7 +1304,6 @@ namespace CollectaMundo
             ResetFilterTextBox(ConditionsComboBox, "FilterConditionsTextBox", filterContext.ConditionsDefaultText);
 
             // Clear non-custom comboboxes
-            AllOrNoneComboBox.SelectedIndex = 0;
             ManaValueOperatorComboBox.SelectedIndex = 3;
             ManaValueComboBox.SelectedIndex = 0;
 
@@ -1323,6 +1322,12 @@ namespace CollectaMundo
             foreach (ComboBox headerComboBox in headerComboBoxesAllCardsForDecks)
             {
                 headerComboBox.SelectedIndex = -1;
+            }
+
+            // Reset all the operator comboboxes
+            foreach (var cb in FindAllOperatorComboBoxes())
+            {
+                cb.SelectedIndex = 0;
             }
 
             // Clear selections in the colors listbox
@@ -1346,30 +1351,58 @@ namespace CollectaMundo
             ImageSourceUrl2nd = null;
 
             // Update filter label and apply filters to refresh the DataGrid            
-            ApplyFilterSelection();
-        }
-        private static void ResetFilterTextBox(ComboBox comboBox, string textBoxName, string defaultText)
-        {
-            if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
+            FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
+            FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
+            FilterManager.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
+
+            // Local helper functions
+            static void ResetFilterTextBox(ComboBox comboBox, string textBoxName, string defaultText)
             {
-                filterTextBox.Text = defaultText;
-                filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-            }
-        }
-        private static void ClearListBoxSelections(ListBox listBox)
-        {
-            foreach (object? item in listBox.Items)
-            {
-                if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem container)
+                if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
                 {
-                    CheckBox? checkBox = FindVisualChild<CheckBox>(container);
-                    if (checkBox != null)
+                    filterTextBox.Text = defaultText;
+                    filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+                }
+            }
+            static void ClearListBoxSelections(ListBox listBox)
+            {
+                foreach (object? item in listBox.Items)
+                {
+                    if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem container)
                     {
-                        checkBox.IsChecked = false;
+                        CheckBox? checkBox = FindVisualChild<CheckBox>(container);
+                        if (checkBox != null)
+                        {
+                            checkBox.IsChecked = false;
+                        }
+                    }
+                }
+            }
+            IEnumerable<ComboBox> FindAllOperatorComboBoxes()
+            {
+                var comboBoxes = new List<ComboBox>();
+                TraverseVisualTree(this, comboBoxes);
+                return comboBoxes.Where(cb => cb.Tag?.ToString() == "OperatorComboBox");
+
+                static void TraverseVisualTree(DependencyObject parent, List<ComboBox> comboBoxes)
+                {
+                    if (parent == null) return;
+
+                    for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+                    {
+                        var child = VisualTreeHelper.GetChild(parent, i);
+
+                        if (child is ComboBox comboBox)
+                        {
+                            comboBoxes.Add(comboBox);
+                        }
+
+                        TraverseVisualTree(child, comboBoxes);
                     }
                 }
             }
         }
+
         #endregion
 
         #region Show selected card image

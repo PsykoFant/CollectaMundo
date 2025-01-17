@@ -71,8 +71,7 @@
 
                 <Button x:Name="ClearFiltersButton" Content="Clear filters" Margin="10,0,0,0" VerticalAlignment="Top" Height="20" Click="ClearFiltersButton_Click" />
 
-                <!--Color filtering-->
-                <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Right" Margin="0,35,0,0" VerticalAlignment="Top" SelectionChanged="OperatorComboBox_SelectionChanged"/>
+                <!--Color filtering-->                
                 <ListBox x:Name="FilterColorsListBox" Margin="0,30,0,0" Width="120" HorizontalAlignment="Left" ItemsSource="{Binding}" SelectionMode="Extended" Height="170" VerticalAlignment="Top" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="{x:Null}">
                     <ListBox.Resources>
                         <Style TargetType="{x:Type ListBoxItem}">
@@ -104,6 +103,11 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
+                <ComboBox x:Name="ColorOperatorComboBox" HorizontalAlignment="Right" Margin="0,35,0,0" VerticalAlignment="Top" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
+                    <ComboBoxItem Content="OR" IsSelected="True" />
+                    <ComboBoxItem Content="AND" />
+                    <ComboBoxItem Content="NOT" />
+                </ComboBox>
 
                 <!--Mana value filtering-->
                 <Label x:Name="ManaValueLabel" Content="Mana value is: " HorizontalAlignment="Left" Margin="0,190,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
@@ -156,7 +160,7 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <ComboBox x:Name="RarityOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,245,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged">
+                <ComboBox x:Name="RarityOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,245,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
                     <ComboBoxItem Content="OR" IsSelected="True" />
                     <ComboBoxItem Content="NOT" />
                 </ComboBox>
@@ -207,8 +211,8 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
-                </ComboBox>                
-                <ComboBox x:Name="SuperTypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,275,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged">
+                </ComboBox>
+                <ComboBox x:Name="SuperTypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,275,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
                     <ComboBoxItem Content="OR" IsSelected="True" />
                     <ComboBoxItem Content="AND" />
                     <ComboBoxItem Content="NOT" />
@@ -261,7 +265,7 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <ComboBox x:Name="TypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,305,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged"> 
+                <ComboBox x:Name="TypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,305,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged"> 
                     <ComboBoxItem Content="OR" IsSelected="True" />
                     <ComboBoxItem Content="AND" />
                     <ComboBoxItem Content="NOT" />
@@ -314,7 +318,7 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <ComboBox x:Name="SubTypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,335,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged">
+                <ComboBox x:Name="SubTypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,335,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
                     <ComboBoxItem Content="OR" IsSelected="True" />
                     <ComboBoxItem Content="AND" />
                     <ComboBoxItem Content="NOT" />
@@ -365,7 +369,7 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <ComboBox x:Name="KeywordsOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,365,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged">
+                <ComboBox x:Name="KeywordsOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,365,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
                     <ComboBoxItem Content="OR" IsSelected="True" />
                     <ComboBoxItem Content="AND" />
                     <ComboBoxItem Content="NOT" />
@@ -416,7 +420,7 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <ComboBox x:Name="FinishesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,395,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged">
+                <ComboBox x:Name="FinishesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,395,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
                     <ComboBoxItem Content="OR" IsSelected="True" />
                     <ComboBoxItem Content="AND" />
                     <ComboBoxItem Content="NOT" />
@@ -470,7 +474,7 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <ComboBox x:Name="LanguagesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,515,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged">
+                <ComboBox x:Name="LanguagesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,515,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
                     <ComboBoxItem Content="OR" IsSelected="True" />
                     <ComboBoxItem Content="NOT" />
                 </ComboBox>
@@ -518,7 +522,7 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <ComboBox x:Name="ConditionsOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,545,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" SelectionChanged="OperatorComboBox_SelectionChanged">
+                <ComboBox x:Name="ConditionsOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,545,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
                     <ComboBoxItem Content="OR" IsSelected="True" />
                     <ComboBoxItem Content="NOT" />
                 </ComboBox>
