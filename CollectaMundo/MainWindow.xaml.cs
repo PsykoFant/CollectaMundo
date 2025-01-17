@@ -84,7 +84,8 @@ namespace CollectaMundo
         //private readonly FilterManager filterManager;
 
         // The object which holds the filter selections
-        public readonly FilterContext filterSelections;
+        public readonly FilterSelections filterSelections;
+        public readonly FilterContext filterContext;
 
 
         // Objects for deck management
@@ -127,7 +128,8 @@ namespace CollectaMundo
 
             // Instantiate filtering objects
             //filterManager = new FilterManager();
-            filterSelections = new FilterContext();
+            filterSelections = new FilterSelections();
+            filterContext = new FilterContext();
 
             // Set up system
             Loaded += async (sender, args) =>
@@ -157,7 +159,7 @@ namespace CollectaMundo
             // Inject filterSelections only for testing purposes
             var testContext = new FilterContext();
 
-            RunFilterTests();
+            //RunFilterTests();
         }
 
         #region Tests
@@ -232,7 +234,7 @@ namespace CollectaMundo
             // Directly modify the test FilterContext without needing public access
             typeof(FilterManager)
                 .GetField("filterSelections", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                .SetValue(testFilterManager, new FilterContext { SelectedColors = selectedColors });
+                .SetValue(testFilterManager, new FilterSelections { SelectedColors = selectedColors });
 
             var result = FilterManager.FilterByColor(testCards, selectedColors, filterMode).ToList();
             Debug.WriteLine($"{testName} -> Expected: {expectedCount}, Actual: {result.Count}");
@@ -598,18 +600,10 @@ namespace CollectaMundo
             try
             {
                 // Clear existing filter context lists
-                filterSelections.AllSuperTypes.Clear();
-                filterSelections.AllTypes.Clear();
-                filterSelections.AllSubTypes.Clear();
-                filterSelections.AllColors.Clear();
-                filterSelections.AllKeywords.Clear();
-                filterSelections.AllFinishes.Clear();
-                filterSelections.AllLanguages.Clear();
-                filterSelections.AllConditions.Clear();
-                filterSelections.AllRarities.Clear();
+                filterContext.Clear();
 
                 // Setup common lists
-                filterSelections.AllColors.AddRange(["W", "U", "B", "R", "G", "C", "X", "Colorless"]);
+                filterContext.AllColors.AddRange(["W", "U", "B", "R", "G", "C", "X", "Colorless"]);
                 List<string> allOrNoneColorsOption = ["Contains ANY of these", "Contains ALL these", "Contains NONE of these"];
                 List<int> manaValueOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000];
                 List<string> manaValueCompareOptions = ["less than", "less than/eq", "greater than", "greater than/eq", "equal to"];
@@ -634,14 +628,14 @@ namespace CollectaMundo
                 HashSet<string> subTypesToRemove = ["(creature", "and/or", "type)|Judge", "The"];
 
                 // Populate the filtered data into context
-                filterSelections.AllSuperTypes.AddRange(CleanAndFilter(allCards.Select(card => card.SuperTypes)));
-                filterSelections.AllTypes.AddRange(CleanAndFilter(allCards.Select(card => card.Types), typesToRemove));
-                filterSelections.AllSubTypes.AddRange(CleanAndFilter(allCards.Select(card => card.SubTypes), subTypesToRemove));
-                filterSelections.AllKeywords.AddRange(CleanAndFilter(allCards.Select(card => card.Keywords)));
-                filterSelections.AllFinishes.AddRange(CleanAndFilter(allCards.Select(card => card.Finishes)));
-                filterSelections.AllRarities.AddRange(CleanAndFilter(allCards.Select(card => card.Rarity)));
-                filterSelections.AllLanguages.AddRange(CleanAndFilter(myCards.Select(card => card.Language)));
-                filterSelections.AllConditions.AddRange(CleanAndFilter(myCards.OfType<CardInCollection>().Select(card => card.SelectedCondition)));
+                filterContext.AllSuperTypes.AddRange(CleanAndFilter(allCards.Select(card => card.SuperTypes)));
+                filterContext.AllTypes.AddRange(CleanAndFilter(allCards.Select(card => card.Types), typesToRemove));
+                filterContext.AllSubTypes.AddRange(CleanAndFilter(allCards.Select(card => card.SubTypes), subTypesToRemove));
+                filterContext.AllKeywords.AddRange(CleanAndFilter(allCards.Select(card => card.Keywords)));
+                filterContext.AllFinishes.AddRange(CleanAndFilter(allCards.Select(card => card.Finishes)));
+                filterContext.AllRarities.AddRange(CleanAndFilter(allCards.Select(card => card.Rarity)));
+                filterContext.AllLanguages.AddRange(CleanAndFilter(myCards.Select(card => card.Language)));
+                filterContext.AllConditions.AddRange(CleanAndFilter(myCards.OfType<CardInCollection>().Select(card => card.SelectedCondition)));
 
                 Dispatcher.Invoke(() =>
                 {
@@ -653,8 +647,8 @@ namespace CollectaMundo
                     UpdateComboBoxSource(AllCardsForDecksDataGrid, "AllCardsForDecksName", allCardsForDecks.Select(card => card.Name).Distinct().ToList());
 
                     // Set Filter Options
-                    FilterRulesTextTextBox.Text = filterSelections.RulesTextDefaultText;
-                    FilterColorsListBox.ItemsSource = filterSelections.AllColors;
+                    FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
+                    FilterColorsListBox.ItemsSource = filterContext.AllColors;
                     AllOrNoneComboBox.ItemsSource = allOrNoneColorsOption;
                     ManaValueComboBox.ItemsSource = manaValueOptions;
                     ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
@@ -668,14 +662,14 @@ namespace CollectaMundo
                     }
 
                     // Set default text for other comboboxes
-                    SetDefaultTextInComboBox(SuperTypesComboBox, "FilterSuperTypesTextBox", filterSelections.SuperTypesDefaultText);
-                    SetDefaultTextInComboBox(TypesComboBox, "FilterTypesTextBox", filterSelections.TypesDefaultText);
-                    SetDefaultTextInComboBox(SubTypesComboBox, "FilterSubTypesTextBox", filterSelections.SubTypesDefaultText);
-                    SetDefaultTextInComboBox(KeywordsComboBox, "FilterKeywordsTextBox", filterSelections.KeywordsDefaultText);
-                    SetDefaultTextInComboBox(FinishesComboBox, "FilterFinishesTextBox", filterSelections.FinishesDefaultText);
-                    SetDefaultTextInComboBox(RarityComboBox, "FilterRarityTextBox", filterSelections.RarityDefaultText);
-                    SetDefaultTextInComboBox(LanguagesComboBox, "FilterLanguagesTextBox", filterSelections.LanguagesDefaultText);
-                    SetDefaultTextInComboBox(ConditionsComboBox, "FilterConditionsTextBox", filterSelections.ConditionsDefaultText);
+                    SetDefaultTextInComboBox(SuperTypesComboBox, "FilterSuperTypesTextBox", filterContext.SuperTypesDefaultText);
+                    SetDefaultTextInComboBox(TypesComboBox, "FilterTypesTextBox", filterContext.TypesDefaultText);
+                    SetDefaultTextInComboBox(SubTypesComboBox, "FilterSubTypesTextBox", filterContext.SubTypesDefaultText);
+                    SetDefaultTextInComboBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);
+                    SetDefaultTextInComboBox(FinishesComboBox, "FilterFinishesTextBox", filterContext.FinishesDefaultText);
+                    SetDefaultTextInComboBox(RarityComboBox, "FilterRarityTextBox", filterContext.RarityDefaultText);
+                    SetDefaultTextInComboBox(LanguagesComboBox, "FilterLanguagesTextBox", filterContext.LanguagesDefaultText);
+                    SetDefaultTextInComboBox(ConditionsComboBox, "FilterConditionsTextBox", filterContext.ConditionsDefaultText);
 
                     PriceRetailerUiUpdates();
                 });
@@ -809,8 +803,6 @@ namespace CollectaMundo
             if (_isStartup) { return; }
             else { ApplyFilterSelection(); }
         }
-
-
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
             if (sender is ComboBox comboBox)
@@ -870,35 +862,35 @@ namespace CollectaMundo
             switch (listBoxName)
             {
                 case "FilterSuperTypesListBox":
-                    itemsSource = filterSelections.AllSuperTypes;
+                    itemsSource = filterContext.AllSuperTypes;
                     selectedItemsSet = filterSelections.SelectedSuperTypes;
                     break;
                 case "FilterTypesListBox":
-                    itemsSource = filterSelections.AllTypes;
+                    itemsSource = filterContext.AllTypes;
                     selectedItemsSet = filterSelections.SelectedTypes;
                     break;
                 case "FilterSubTypesListBox":
-                    itemsSource = filterSelections.AllSubTypes;
+                    itemsSource = filterContext.AllSubTypes;
                     selectedItemsSet = filterSelections.SelectedSubTypes;
                     break;
                 case "FilterKeywordsListBox":
-                    itemsSource = filterSelections.AllKeywords;
+                    itemsSource = filterContext.AllKeywords;
                     selectedItemsSet = filterSelections.SelectedKeywords;
                     break;
                 case "FilterFinishesListBox":
-                    itemsSource = filterSelections.AllFinishes;
+                    itemsSource = filterContext.AllFinishes;
                     selectedItemsSet = filterSelections.SelectedFinishes;
                     break;
                 case "FilterRarityListBox":
-                    itemsSource = filterSelections.AllRarities;
+                    itemsSource = filterContext.AllRarities;
                     selectedItemsSet = filterSelections.SelectedRarity;
                     break;
                 case "FilterLanguagesListBox":
-                    itemsSource = filterSelections.AllLanguages;
+                    itemsSource = filterContext.AllLanguages;
                     selectedItemsSet = filterSelections.SelectedLanguages;
                     break;
                 case "FilterConditionsListBox":
-                    itemsSource = filterSelections.AllConditions;
+                    itemsSource = filterContext.AllConditions;
                     selectedItemsSet = filterSelections.SelectedConditions;
                     break;
                 default:
@@ -992,14 +984,14 @@ namespace CollectaMundo
         {
             return comboBoxName switch
             {
-                "SuperTypesComboBox" => (filterSelections.SuperTypesDefaultText, "FilterSuperTypesTextBox", "FilterSuperTypesListBox"),
-                "TypesComboBox" => (filterSelections.TypesDefaultText, "FilterTypesTextBox", "FilterTypesListBox"),
-                "SubTypesComboBox" => (filterSelections.SubTypesDefaultText, "FilterSubTypesTextBox", "FilterSubTypesListBox"),
-                "KeywordsComboBox" => (filterSelections.KeywordsDefaultText, "FilterKeywordsTextBox", "FilterKeywordsListBox"),
-                "FinishesComboBox" => (filterSelections.FinishesDefaultText, "FilterFinishesTextBox", "FilterFinishesListBox"),
-                "RarityComboBox" => (filterSelections.RarityDefaultText, "FilterRarityTextBox", "FilterRarityListBox"),
-                "LanguagesComboBox" => (filterSelections.LanguagesDefaultText, "FilterLanguagesTextBox", "FilterLanguagesListBox"),
-                "ConditionsComboBox" => (filterSelections.ConditionsDefaultText, "FilterConditionsTextBox", "FilterConditionsListBox"),
+                "SuperTypesComboBox" => (filterContext.SuperTypesDefaultText, "FilterSuperTypesTextBox", "FilterSuperTypesListBox"),
+                "TypesComboBox" => (filterContext.TypesDefaultText, "FilterTypesTextBox", "FilterTypesListBox"),
+                "SubTypesComboBox" => (filterContext.SubTypesDefaultText, "FilterSubTypesTextBox", "FilterSubTypesListBox"),
+                "KeywordsComboBox" => (filterContext.KeywordsDefaultText, "FilterKeywordsTextBox", "FilterKeywordsListBox"),
+                "FinishesComboBox" => (filterContext.FinishesDefaultText, "FilterFinishesTextBox", "FilterFinishesListBox"),
+                "RarityComboBox" => (filterContext.RarityDefaultText, "FilterRarityTextBox", "FilterRarityListBox"),
+                "LanguagesComboBox" => (filterContext.LanguagesDefaultText, "FilterLanguagesTextBox", "FilterLanguagesListBox"),
+                "ConditionsComboBox" => (filterContext.ConditionsDefaultText, "FilterConditionsTextBox", "FilterConditionsListBox"),
                 _ => throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}")
             };
         }
@@ -1022,12 +1014,6 @@ namespace CollectaMundo
                         "CheckBoxCardsNotForTrade" => "CardsNotForTrade",
                         _ => string.Empty
                     };
-
-                    if (!string.IsNullOrEmpty(propertyName))
-                    {
-                        // Update AndOrSettings with the current state of the checkbox
-                        filterSelections.AndOrSettings[propertyName] = toggledCheckBox.IsChecked == true;
-                    }
 
                     // If 'CheckBoxCardsForTrade' is toggled
                     if (toggledCheckBox == CheckBoxCardsForTrade)
@@ -1072,15 +1058,15 @@ namespace CollectaMundo
                 {
                     string defaultText = textBox.Name switch
                     {
-                        "FilterSuperTypesTextBox" => filterSelections.SuperTypesDefaultText,
-                        "FilterTypesTextBox" => filterSelections.TypesDefaultText,
-                        "FilterSubTypesTextBox" => filterSelections.SubTypesDefaultText,
-                        "FilterKeywordsTextBox" => filterSelections.KeywordsDefaultText,
-                        "FilterFinishesTextBox" => filterSelections.FinishesDefaultText,
-                        "FilterRarityTextBox" => filterSelections.RarityDefaultText,
-                        "FilterRulesTextTextBox" => filterSelections.RulesTextDefaultText,
-                        "FilterLanguagesTextBox" => filterSelections.LanguagesDefaultText,
-                        "FilterConditionsTextBox" => filterSelections.ConditionsDefaultText,
+                        "FilterSuperTypesTextBox" => filterContext.SuperTypesDefaultText,
+                        "FilterTypesTextBox" => filterContext.TypesDefaultText,
+                        "FilterSubTypesTextBox" => filterContext.SubTypesDefaultText,
+                        "FilterKeywordsTextBox" => filterContext.KeywordsDefaultText,
+                        "FilterFinishesTextBox" => filterContext.FinishesDefaultText,
+                        "FilterRarityTextBox" => filterContext.RarityDefaultText,
+                        "FilterRulesTextTextBox" => filterContext.RulesTextDefaultText,
+                        "FilterLanguagesTextBox" => filterContext.LanguagesDefaultText,
+                        "FilterConditionsTextBox" => filterContext.ConditionsDefaultText,
                         _ => ""
                     };
 
@@ -1104,15 +1090,15 @@ namespace CollectaMundo
                 {
                     string defaultText = textBox.Name switch
                     {
-                        "FilterSuperTypesTextBox" => filterSelections.SuperTypesDefaultText,
-                        "FilterTypesTextBox" => filterSelections.TypesDefaultText,
-                        "FilterSubTypesTextBox" => filterSelections.SubTypesDefaultText,
-                        "FilterKeywordsTextBox" => filterSelections.KeywordsDefaultText,
-                        "FilterFinishesTextBox" => filterSelections.FinishesDefaultText,
-                        "FilterRarityTextBox" => filterSelections.RarityDefaultText,
-                        "FilterRulesTextTextBox" => filterSelections.RulesTextDefaultText,
-                        "FilterLanguagesTextBox" => filterSelections.LanguagesDefaultText,
-                        "FilterConditionsTextBox" => filterSelections.ConditionsDefaultText,
+                        "FilterSuperTypesTextBox" => filterContext.SuperTypesDefaultText,
+                        "FilterTypesTextBox" => filterContext.TypesDefaultText,
+                        "FilterSubTypesTextBox" => filterContext.SubTypesDefaultText,
+                        "FilterKeywordsTextBox" => filterContext.KeywordsDefaultText,
+                        "FilterFinishesTextBox" => filterContext.FinishesDefaultText,
+                        "FilterRarityTextBox" => filterContext.RarityDefaultText,
+                        "FilterRulesTextTextBox" => filterContext.RulesTextDefaultText,
+                        "FilterLanguagesTextBox" => filterContext.LanguagesDefaultText,
+                        "FilterConditionsTextBox" => filterContext.ConditionsDefaultText,
                         _ => ""
                     };
 
@@ -1293,14 +1279,14 @@ namespace CollectaMundo
         public void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
             // Reset filter TextBoxes for each ComboBox
-            ResetFilterTextBox(SuperTypesComboBox, "FilterSuperTypesTextBox", filterSelections.SuperTypesDefaultText);
-            ResetFilterTextBox(TypesComboBox, "FilterTypesTextBox", filterSelections.TypesDefaultText);
-            ResetFilterTextBox(SubTypesComboBox, "FilterSubTypesTextBox", filterSelections.SubTypesDefaultText);
-            ResetFilterTextBox(KeywordsComboBox, "FilterKeywordsTextBox", filterSelections.KeywordsDefaultText);
-            ResetFilterTextBox(FinishesComboBox, "FilterFinishesTextBox", filterSelections.FinishesDefaultText);
-            ResetFilterTextBox(RarityComboBox, "FilterRarityTextBox", filterSelections.RarityDefaultText);
-            ResetFilterTextBox(LanguagesComboBox, "FilterLanguagesTextBox", filterSelections.LanguagesDefaultText);
-            ResetFilterTextBox(ConditionsComboBox, "FilterConditionsTextBox", filterSelections.ConditionsDefaultText);
+            ResetFilterTextBox(SuperTypesComboBox, "FilterSuperTypesTextBox", filterContext.SuperTypesDefaultText);
+            ResetFilterTextBox(TypesComboBox, "FilterTypesTextBox", filterContext.TypesDefaultText);
+            ResetFilterTextBox(SubTypesComboBox, "FilterSubTypesTextBox", filterContext.SubTypesDefaultText);
+            ResetFilterTextBox(KeywordsComboBox, "FilterKeywordsTextBox", filterContext.KeywordsDefaultText);
+            ResetFilterTextBox(FinishesComboBox, "FilterFinishesTextBox", filterContext.FinishesDefaultText);
+            ResetFilterTextBox(RarityComboBox, "FilterRarityTextBox", filterContext.RarityDefaultText);
+            ResetFilterTextBox(LanguagesComboBox, "FilterLanguagesTextBox", filterContext.LanguagesDefaultText);
+            ResetFilterTextBox(ConditionsComboBox, "FilterConditionsTextBox", filterContext.ConditionsDefaultText);
 
             // Clear non-custom comboboxes
             AllOrNoneComboBox.SelectedIndex = 0;
@@ -1339,7 +1325,7 @@ namespace CollectaMundo
             filterSelections.SelectedConditions.Clear();
 
             // Clear rulestext textbox
-            FilterRulesTextTextBox.Text = filterSelections.RulesTextDefaultText;
+            FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
             FilterRulesTextTextBox.Foreground = new SolidColorBrush(Colors.Gray);
 
             // Uncheck CheckBoxes if necessary

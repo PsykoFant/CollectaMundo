@@ -72,7 +72,7 @@
                 <Button x:Name="ClearFiltersButton" Content="Clear filters" Margin="10,0,0,0" VerticalAlignment="Top" Height="20" Click="ClearFiltersButton_Click" />
 
                 <!--Color filtering-->
-                <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Right" Margin="0,35,0,0" VerticalAlignment="Top"/>
+                <ComboBox x:Name="AllOrNoneComboBox" HorizontalAlignment="Right" Margin="0,35,0,0" VerticalAlignment="Top" SelectionChanged="OperatorComboBox_SelectionChanged"/>
                 <ListBox x:Name="FilterColorsListBox" Margin="0,30,0,0" Width="120" HorizontalAlignment="Left" ItemsSource="{Binding}" SelectionMode="Extended" Height="170" VerticalAlignment="Top" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="{x:Null}">
                     <ListBox.Resources>
                         <Style TargetType="{x:Type ListBoxItem}">

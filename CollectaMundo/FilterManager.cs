@@ -56,11 +56,7 @@ namespace CollectaMundo
                 //// Apply mana value filter
                 //filteredCards = FilterByManaValue(filteredCards);
 
-                //// Determine values of color compare combobox
-                //MainWindow.CurrentInstance.filterSelections.AndOrSettings["Colors"] = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 1;
-                //bool exclude = MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex == 2;
-
-                //filteredCards = FilterByColor(filteredCards, MainWindow.CurrentInstance.filterSelections.SelectedColors, MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex);
+                filteredCards = FilterByColor(filteredCards, MainWindow.CurrentInstance.filterSelections.SelectedColors, MainWindow.CurrentInstance.AllOrNoneComboBox.SelectedIndex);
 
                 // Apply specific filters for list contexts
                 //filteredCards = datagridName switch
@@ -209,23 +205,23 @@ namespace CollectaMundo
 
             return (cardFilter, setFilter);
         }
-        private static IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
-        {
-            var filteredCards = cards;
-            if (!string.IsNullOrEmpty(cardFilter))
-            {
-                filteredCards = filteredCards.Where(card => card.Name != null && card.Name.Contains(cardFilter, StringComparison.OrdinalIgnoreCase));
-            }
-            if (!string.IsNullOrEmpty(setFilter))
-            {
-                filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.Equals(setFilter, StringComparison.OrdinalIgnoreCase));
-            }
-            if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != MainWindow.CurrentInstance.filterSelections.RulesTextDefaultText)
-            {
-                filteredCards = filteredCards.Where(card => card.Text != null && card.Text.Contains(rulesTextFilter, StringComparison.OrdinalIgnoreCase));
-            }
-            return filteredCards;
-        }
+        //private static IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
+        //{
+        //    var filteredCards = cards;
+        //    if (!string.IsNullOrEmpty(cardFilter))
+        //    {
+        //        filteredCards = filteredCards.Where(card => card.Name != null && card.Name.Contains(cardFilter, StringComparison.OrdinalIgnoreCase));
+        //    }
+        //    if (!string.IsNullOrEmpty(setFilter))
+        //    {
+        //        filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.Equals(setFilter, StringComparison.OrdinalIgnoreCase));
+        //    }
+        //    if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != MainWindow.CurrentInstance.filterSelections.RulesTextDefaultText)
+        //    {
+        //        filteredCards = filteredCards.Where(card => card.Text != null && card.Text.Contains(rulesTextFilter, StringComparison.OrdinalIgnoreCase));
+        //    }
+        //    return filteredCards;
+        //}
         private static IEnumerable<CardSet> FilterByManaValue(IEnumerable<CardSet> cards)
         {
             // Retrieve filter parameters from the UI
