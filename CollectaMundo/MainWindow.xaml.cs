@@ -80,12 +80,9 @@ namespace CollectaMundo
             CardsInDecks
         }
 
-        // Object of our FilterManager class
-        //private readonly FilterManager filterManager;
-
         // The object which holds the filter selections
-        public readonly FilterSelections filterSelections;
-        public readonly FilterContext filterContext;
+        public FilterSelections filterSelections;
+        public FilterContext filterContext;
 
 
         // Objects for deck management
@@ -127,7 +124,6 @@ namespace CollectaMundo
             _currentInstance = this;
 
             // Instantiate filtering objects
-            //filterManager = new FilterManager();
             filterSelections = new FilterSelections();
             filterContext = new FilterContext();
 
@@ -150,9 +146,9 @@ namespace CollectaMundo
             AllCardsForDecksDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(2);
 
             // Pick up filtering combobox changes            
-            AllOrNoneComboBox.SelectionChanged += ComboBox_SelectionChanged;
-            ManaValueComboBox.SelectionChanged += ComboBox_SelectionChanged;
-            ManaValueOperatorComboBox.SelectionChanged += ComboBox_SelectionChanged;
+            AllOrNoneComboBox.SelectionChanged += DataGridHeaderComboBox_SelectionChanged;
+            ManaValueComboBox.SelectionChanged += DataGridHeaderComboBox_SelectionChanged;
+            ManaValueOperatorComboBox.SelectionChanged += DataGridHeaderComboBox_SelectionChanged;
 
             // Run some tests
             InitializeTestCards();
@@ -599,8 +595,8 @@ namespace CollectaMundo
         {
             try
             {
-                // Clear existing filter context lists
-                filterContext.Clear();
+                // Clear existing filter context lists by re-initializing it
+                filterContext = new FilterContext();
 
                 // Setup common lists
                 filterContext.AllColors.AddRange(["W", "U", "B", "R", "G", "C", "X", "Colorless"]);
@@ -727,7 +723,7 @@ namespace CollectaMundo
         #endregion
 
         #region Filter elements handling        
-        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void DataGridHeaderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_isStartup) { return; }
 
@@ -797,7 +793,6 @@ namespace CollectaMundo
                 }
             }
         }
-
         private void OperatorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_isStartup) { return; }
@@ -1052,114 +1047,74 @@ namespace CollectaMundo
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
-            try
+            if (sender is TextBox textBox)
             {
-                if (sender is TextBox textBox)
-                {
-                    string defaultText = textBox.Name switch
+                HandleTextBoxFocus(
+                    textBox,
+                    (tb, defaultText) => tb.Text == defaultText, // Condition
+                    (tb, _) =>
                     {
-                        "FilterSuperTypesTextBox" => filterContext.SuperTypesDefaultText,
-                        "FilterTypesTextBox" => filterContext.TypesDefaultText,
-                        "FilterSubTypesTextBox" => filterContext.SubTypesDefaultText,
-                        "FilterKeywordsTextBox" => filterContext.KeywordsDefaultText,
-                        "FilterFinishesTextBox" => filterContext.FinishesDefaultText,
-                        "FilterRarityTextBox" => filterContext.RarityDefaultText,
-                        "FilterRulesTextTextBox" => filterContext.RulesTextDefaultText,
-                        "FilterLanguagesTextBox" => filterContext.LanguagesDefaultText,
-                        "FilterConditionsTextBox" => filterContext.ConditionsDefaultText,
-                        _ => ""
-                    };
-
-                    if (textBox.Text == defaultText)
-                    {
-                        textBox.Text = string.Empty;
-                        textBox.Foreground = new SolidColorBrush(Colors.Black);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in TextBox_GotFocus: {ex.Message}");
+                        tb.Text = string.Empty;
+                        tb.Foreground = new SolidColorBrush(Colors.Black);
+                    } // Action
+                );
             }
         }
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)
         {
+            if (sender is TextBox textBox)
+            {
+                HandleTextBoxFocus(
+                    textBox,
+                    (tb, _) => string.IsNullOrWhiteSpace(tb.Text), // Condition
+                    (tb, defaultText) =>
+                    {
+                        tb.Text = defaultText;
+                        tb.Foreground = new SolidColorBrush(Colors.Gray);
+                    } // Action
+                );
+            }
+        }
+        private void HandleTextBoxFocus(TextBox textBox, Func<TextBox, string, bool> condition, Action<TextBox, string> action)
+        {
             try
             {
-                if (sender is TextBox textBox)
+                string defaultText = textBox.Name switch
                 {
-                    string defaultText = textBox.Name switch
-                    {
-                        "FilterSuperTypesTextBox" => filterContext.SuperTypesDefaultText,
-                        "FilterTypesTextBox" => filterContext.TypesDefaultText,
-                        "FilterSubTypesTextBox" => filterContext.SubTypesDefaultText,
-                        "FilterKeywordsTextBox" => filterContext.KeywordsDefaultText,
-                        "FilterFinishesTextBox" => filterContext.FinishesDefaultText,
-                        "FilterRarityTextBox" => filterContext.RarityDefaultText,
-                        "FilterRulesTextTextBox" => filterContext.RulesTextDefaultText,
-                        "FilterLanguagesTextBox" => filterContext.LanguagesDefaultText,
-                        "FilterConditionsTextBox" => filterContext.ConditionsDefaultText,
-                        _ => ""
-                    };
+                    "FilterSuperTypesTextBox" => filterContext.SuperTypesDefaultText,
+                    "FilterTypesTextBox" => filterContext.TypesDefaultText,
+                    "FilterSubTypesTextBox" => filterContext.SubTypesDefaultText,
+                    "FilterKeywordsTextBox" => filterContext.KeywordsDefaultText,
+                    "FilterFinishesTextBox" => filterContext.FinishesDefaultText,
+                    "FilterRarityTextBox" => filterContext.RarityDefaultText,
+                    "FilterRulesTextTextBox" => filterContext.RulesTextDefaultText,
+                    "FilterLanguagesTextBox" => filterContext.LanguagesDefaultText,
+                    "FilterConditionsTextBox" => filterContext.ConditionsDefaultText,
+                    _ => ""
+                };
 
-                    if (string.IsNullOrWhiteSpace(textBox.Text))
-                    {
-                        textBox.Text = defaultText;
-                        textBox.Foreground = new SolidColorBrush(Colors.Gray);
-                    }
+                if (condition(textBox, defaultText))
+                {
+                    action(textBox, defaultText);
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in TextBox_LostFocus: {ex.Message}");
+                Debug.WriteLine($"Error in HandleTextBoxFocus: {ex.Message}");
             }
         }
+
 
         // When a combobox checkbox item is checked or unchecked
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                if (sender is not DependencyObject dependencyObject)
-                {
-                    return; // Exit if casting failed
-                }
-
-                CheckBox? checkBox = FindVisualChild<CheckBox>(dependencyObject);
-
-                if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
-                {
-                    string? label = contentPresenter.Content as string;
-                    if (!string.IsNullOrEmpty(label))
-                    {
-                        HashSet<string>? targetCollection = checkBox.Tag switch
-                        {
-                            "Type" => filterSelections.SelectedTypes,
-                            "SuperType" => filterSelections.SelectedSuperTypes,
-                            "SubType" => filterSelections.SelectedSubTypes,
-                            "Keywords" => filterSelections.SelectedKeywords,
-                            "Finishes" => filterSelections.SelectedFinishes,
-                            "Rarity" => filterSelections.SelectedRarity,
-                            "Colors" => filterSelections.SelectedColors,
-                            "Languages" => filterSelections.SelectedLanguages,
-                            "Conditions" => filterSelections.SelectedConditions,
-                            _ => null
-                        };
-
-                        if (targetCollection != null)
-                        {
-                            targetCollection.Add(label);
-                            ApplyFilterSelection();
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"An error occurred while checking the checkbox: {ex.Message}");
-            }
+            HandleCheckBoxEvent(sender, (collection, label) => collection.Add(label));
         }
         private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            HandleCheckBoxEvent(sender, (collection, label) => collection.Remove(label));
+        }
+        private void HandleCheckBoxEvent(object sender, Action<HashSet<string>, string> action)
         {
             try
             {
@@ -1190,7 +1145,7 @@ namespace CollectaMundo
 
                         if (targetCollection != null)
                         {
-                            targetCollection.Remove(label);
+                            action(targetCollection, label);
                             ApplyFilterSelection();
                         }
                     }
@@ -1198,7 +1153,7 @@ namespace CollectaMundo
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"An error occurred while unchecking the checkbox: {ex.Message}");
+                Debug.WriteLine($"An error occurred in checkbox event handling: {ex.Message}");
             }
         }
         private void CheckBox_Loaded(object sender, RoutedEventArgs e) // Make sure combobox checkbox items are loaded
@@ -1313,27 +1268,14 @@ namespace CollectaMundo
             // Clear selections in the colors listbox
             ClearListBoxSelections(FilterColorsListBox);
 
-            // Clear the internal HashSets
-            filterSelections.SelectedTypes.Clear();
-            filterSelections.SelectedSuperTypes.Clear();
-            filterSelections.SelectedSubTypes.Clear();
-            filterSelections.SelectedKeywords.Clear();
-            filterSelections.SelectedFinishes.Clear();
-            filterSelections.SelectedRarity.Clear();
-            filterSelections.SelectedColors.Clear();
-            filterSelections.SelectedLanguages.Clear();
-            filterSelections.SelectedConditions.Clear();
+            // Clear the internal HashSets by re-initializing the object
+            filterSelections = new FilterSelections();
 
             // Clear rulestext textbox
             FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
             FilterRulesTextTextBox.Foreground = new SolidColorBrush(Colors.Gray);
 
             // Uncheck CheckBoxes if necessary
-            //TypesAndOrCheckBox.IsChecked = false;
-            //SuperTypesAndOrCheckBox.IsChecked = false;
-            //SubTypesAndOrCheckBox.IsChecked = false;
-            //KeywordsAndOrCheckBox.IsChecked = false;
-            //FinishesAndOrCheckBox.IsChecked = false;
             CheckBoxCardsForTrade.IsChecked = false;
             CheckBoxCardsNotForTrade.IsChecked = false;
 

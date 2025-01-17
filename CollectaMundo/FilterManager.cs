@@ -19,7 +19,6 @@ namespace CollectaMundo
             {
                 if (MainWindow.CurrentInstance._isStartup)
                 {
-                    //return cards;
                     return;
                 }
 

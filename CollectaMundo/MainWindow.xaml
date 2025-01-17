@@ -717,7 +717,7 @@
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}" 
                                                   Tag="AllCardsName"
-                                                  SelectionChanged="ComboBox_SelectionChanged">
+                                                  SelectionChanged="DataGridHeaderComboBox_SelectionChanged">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -749,7 +749,7 @@
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[0][1], RelativeSource={RelativeSource AncestorType=Window}}" 
                                                   Tag="AllCardsSet"
-                                                  SelectionChanged="ComboBox_SelectionChanged">
+                                                  SelectionChanged="DataGridHeaderComboBox_SelectionChanged">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -971,7 +971,7 @@
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[1][0], RelativeSource={RelativeSource AncestorType=Window}}" 
                                                   Tag="MyCollectionName"
-                                                  SelectionChanged="ComboBox_SelectionChanged">
+                                                  SelectionChanged="DataGridHeaderComboBox_SelectionChanged">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -1004,7 +1004,7 @@
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[1][1], RelativeSource={RelativeSource AncestorType=Window}}"
                                                   Tag="MyCollectionSet"
-                                                  SelectionChanged="ComboBox_SelectionChanged">
+                                                  SelectionChanged="DataGridHeaderComboBox_SelectionChanged">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -1216,7 +1216,7 @@
                                                           IsEditable="True"
                                                           Width="{Binding ColumnWidths[2][0], RelativeSource={RelativeSource AncestorType=Window}}" 
                                                           Tag="AllCardsForDecksName"
-                                                          SelectionChanged="ComboBox_SelectionChanged">
+                                                          SelectionChanged="DataGridHeaderComboBox_SelectionChanged">
                                                     <ComboBox.ItemsPanel>
                                                         <ItemsPanelTemplate>
                                                             <VirtualizingStackPanel />
