@@ -14,5 +14,13 @@
         public HashSet<string> SelectedLanguages { get; set; } = [];
         public HashSet<string> SelectedConditions { get; set; } = [];
         public HashSet<string> SelectedRarity { get; set; } = [];
+        public int ColorOperator { get; set; } = 0;
+        public int TypesOperator { get; set; } = 0;
+        public int SuperTypesOperator { get; set; } = 0;
+        public int SubTypesOperator { get; set; } = 0;
+        public int KeywordsTypesOperator { get; set; } = 0;
+        public int LanguagesTypesOperator { get; set; } = 0;
+        public int ConditionsOperator { get; set; } = 0;
+        public int RarityOperator { get; set; } = 0;
     }
 }

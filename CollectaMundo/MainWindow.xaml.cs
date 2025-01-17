@@ -153,7 +153,7 @@ namespace CollectaMundo
             // Run some tests
             InitializeTestCards();
             // Inject filterSelections only for testing purposes
-            var testContext = new FilterContext();
+            FilterContext testContext = new FilterContext();
 
             //RunFilterTests();
         }
@@ -189,7 +189,7 @@ namespace CollectaMundo
             // c og x test
 
             _ = new FilterContext();
-            var testFilterManager = new FilterManager();
+            FilterManager testFilterManager = new FilterManager();
 
             // Test 1: Select single color / ANY
             RunTest(testFilterManager, ["R"], 0, "Test 1: Single color / ANY", 1);
@@ -232,7 +232,7 @@ namespace CollectaMundo
                 .GetField("filterSelections", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
                 .SetValue(testFilterManager, new FilterSelections { SelectedColors = selectedColors });
 
-            var result = FilterManager.FilterByColor(testCards, selectedColors, filterMode).ToList();
+            List<CardSet> result = FilterManager.FilterByColor(testCards, selectedColors, filterMode).ToList();
             Debug.WriteLine($"{testName} -> Expected: {expectedCount}, Actual: {result.Count}");
 
             if (result.Count == expectedCount)
@@ -242,7 +242,7 @@ namespace CollectaMundo
             else
             {
                 Debug.WriteLine("TEST FAILED!");
-                foreach (var card in result)
+                foreach (CardSet? card in result)
                 {
                     Debug.WriteLine($"  - {card.Name}, Colors: {card.Colors ?? "null"}, ManaCost: {card.ManaCost}");
                 }
@@ -521,8 +521,8 @@ namespace CollectaMundo
                 // SQL query to fetch all decks
                 string query = "SELECT id, deckName, deckDescription, targetFormat FROM myDecks";
 
-                using var command = new SQLiteCommand(query, DBAccess.connection); // Use your database connection
-                using var reader = await command.ExecuteReaderAsync();
+                using SQLiteCommand command = new SQLiteCommand(query, DBAccess.connection); // Use your database connection
+                using DbDataReader reader = await command.ExecuteReaderAsync();
 
                 // Clear existing decks to avoid duplicates
                 allDecks.Clear();
@@ -530,7 +530,7 @@ namespace CollectaMundo
                 while (await reader.ReadAsync())
                 {
                     // Map the database row to the Deck object
-                    var deck = new Deck
+                    Deck deck = new Deck
                     {
                         DeckId = reader.GetInt32(0),
                         DeckName = reader.IsDBNull(1) ? null : reader.GetString(1),
@@ -560,8 +560,8 @@ namespace CollectaMundo
                 string query = @"PRAGMA table_info(cardLegalities);";
 
                 using SQLiteCommand command = new(query, DBAccess.connection);
-                using var reader = (SQLiteDataReader)await command.ExecuteReaderAsync();
-                var columnNames = new List<string>();
+                using SQLiteDataReader reader = (SQLiteDataReader)await command.ExecuteReaderAsync();
+                List<string> columnNames = new List<string>();
 
                 while (await reader.ReadAsync())
                 {
@@ -750,7 +750,7 @@ namespace CollectaMundo
 
 
                 // Map ComboBox names to filter categories
-                var comboBoxCategoryMap = new Dictionary<string, string>
+                Dictionary<string, string> comboBoxCategoryMap = new Dictionary<string, string>
                 {
                     { "AllCardsNameComboBox", "AllCards" },
                     { "AllCardsSetComboBox", "AllCards" },
@@ -773,18 +773,18 @@ namespace CollectaMundo
 
             void ResetOtherComboBoxSelections(string currentCategory)
             {
-                var categoryComboBoxMappings = new Dictionary<string, DataGrid>
+                Dictionary<string, DataGrid> categoryComboBoxMappings = new Dictionary<string, DataGrid>
             {
                 { "AllCards", AllCardsDataGrid },
                 { "MyCollection", MyCollectionDataGrid },
                 { "AllCardsForDecks", AllCardsForDecksDataGrid }
             };
 
-                foreach (var category in categoryComboBoxMappings)
+                foreach (KeyValuePair<string, DataGrid> category in categoryComboBoxMappings)
                 {
                     if (category.Key != currentCategory)
                     {
-                        var headerComboBoxes = FindVisualChildren<ComboBox>(category.Value);
+                        List<ComboBox> headerComboBoxes = FindVisualChildren<ComboBox>(category.Value);
                         foreach (ComboBox headerComboBox in headerComboBoxes)
                         {
                             headerComboBox.SelectedIndex = -1;
@@ -796,7 +796,45 @@ namespace CollectaMundo
         private void OperatorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_isStartup) { return; }
-            else { ApplyFilterSelection(); }
+
+            int operatorSelection;
+
+            if (sender is ComboBox comboBox)
+            {
+                if (comboBox.SelectedItem is ComboBoxItem selectedItem)
+                {
+                    string? selectedText = selectedItem.Content.ToString();
+
+                    switch (selectedText)
+                    {
+                        case "OR":
+                            operatorSelection = 0;
+                            break;
+                        case "AND":
+                            operatorSelection = 1;
+                            break;
+                        case "NOT":
+                            operatorSelection = 2;
+                            break;
+                        default:
+                            Debug.WriteLine("Unknown selection");
+                            break;
+                    }
+                }
+
+                switch (comboBox.Name)
+                {
+                    case "SuperTypesOperator":
+                        filterSelections.SubTypesOperator = operatorSelection;
+                        break;
+                }
+
+            }
+
+
+
+
+            ApplyFilterSelection();
         }
         private void ComboBox_DropDownOpened(object sender, EventArgs e)
         {
@@ -1249,17 +1287,17 @@ namespace CollectaMundo
             ManaValueComboBox.SelectedIndex = 0;
 
             // Find and clear all ComboBoxes in the DataGrid header
-            var headerComboBoxesAllCards = FindVisualChildren<ComboBox>(AllCardsDataGrid);
+            List<ComboBox> headerComboBoxesAllCards = FindVisualChildren<ComboBox>(AllCardsDataGrid);
             foreach (ComboBox headerComboBox in headerComboBoxesAllCards)
             {
                 headerComboBox.SelectedIndex = -1;
             }
-            var headerComboBoxesMyCollection = FindVisualChildren<ComboBox>(MyCollectionDataGrid);
+            List<ComboBox> headerComboBoxesMyCollection = FindVisualChildren<ComboBox>(MyCollectionDataGrid);
             foreach (ComboBox headerComboBox in headerComboBoxesMyCollection)
             {
                 headerComboBox.SelectedIndex = -1;
             }
-            var headerComboBoxesAllCardsForDecks = FindVisualChildren<ComboBox>(AllCardsForDecksDataGrid);
+            List<ComboBox> headerComboBoxesAllCardsForDecks = FindVisualChildren<ComboBox>(AllCardsForDecksDataGrid);
             foreach (ComboBox headerComboBox in headerComboBoxesAllCardsForDecks)
             {
                 headerComboBox.SelectedIndex = -1;
@@ -1921,7 +1959,7 @@ namespace CollectaMundo
             };
 
             // Find the ComboBoxItem with the matching content
-            var itemToSelect = RetailSelector.Items
+            ComboBoxItem? itemToSelect = RetailSelector.Items
                 .OfType<ComboBoxItem>()
                 .FirstOrDefault(item => item.Content.ToString() == retailer);
 
