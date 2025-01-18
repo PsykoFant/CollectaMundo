@@ -89,7 +89,7 @@ namespace CollectaMundo
 
 
         // The object which holds the filter selections
-        public FilterSelections filterSelections;
+        public List<FilterSelections> filterSelections = [];
         public FilterContext filterContext;
 
 
@@ -132,7 +132,6 @@ namespace CollectaMundo
             _currentInstance = this;
 
             // Instantiate filtering objects
-            filterSelections = new FilterSelections();
             filterContext = new FilterContext();
 
             // Set up system
@@ -189,72 +188,72 @@ namespace CollectaMundo
         /// <summary>
         /// Runs all the tests for the FilterByColor method in the FilterManager class.
         /// </summary>
-        public void RunFilterTests()
-        {
-            Debug.WriteLine("Starting Filter Tests...");
+        //public void RunFilterTests()
+        //{
+        //    Debug.WriteLine("Starting Filter Tests...");
 
-            // c og x test
+        //    // c og x test
 
-            _ = new FilterContext();
-            FilterManager testFilterManager = new FilterManager();
+        //    _ = new FilterContext();
+        //    FilterManager testFilterManager = new FilterManager();
 
-            // Test 1: Select single color / ANY
-            RunTest(testFilterManager, ["R"], 0, "Test 1: Single color / ANY", 1);
-            // Test 2: Select two colors / ANY
-            RunTest(testFilterManager, ["W", "R"], 0, "Test 2: Two colors / ANY", 3);
-            // Test 3: Select two colors / NONE
-            RunTest(testFilterManager, ["W", "R"], 2, "Test 3: Two colors / NONE", 7);
-            // Test 4: Select single color and X/C / ANY
-            RunTest(testFilterManager, ["R", "C"], 0, "Test 4: Single color and X/C / ANY", 3);
-            // Test 5: Select single color and X/C / NONE
-            RunTest(testFilterManager, ["R", "C"], 2, "Test 5: Single color and X/C / NONE", 7);
-            // Test 6: Select two colors / ALL
-            RunTest(testFilterManager, ["G", "U"], 1, "Test 6: Two colors / ALL", 1);
-            // Test 7: Select single color and X/C / ALL
-            RunTest(testFilterManager, ["G", "X"], 1, "Test 7: Single color and X/C / ALL", 1);
-            // Test 8: Select two colors and X/C / ALL
-            RunTest(testFilterManager, ["G", "U", "X"], 1, "Test 8: Single color and X/C / ALL", 1);
-            // Test 9: Select three colors and X/C / ALL
-            RunTest(testFilterManager, ["G", "U", "B", "X"], 1, "Test 9: 3 colors and X/C / ALL", 0);
-            // Test 10: Select Colorless / ANY
-            RunTest(testFilterManager, ["Colorless"], 0, "Test 10: Colorless / ANY", 5);
-            RunTest(testFilterManager, ["Colorless", "X"], 2, "Test 11: Colorless and X/ NONE", 3);
-            RunTest(testFilterManager, ["Colorless", "C"], 1, "Test 12: Colorless and C/ ALL", 2);
-            RunTest(testFilterManager, ["Colorless", "R"], 1, "Test 13: Colorless and R/ ALL", 0);
-            RunTest(testFilterManager, ["Colorless", "C", "X"], 1, "Test 14: Colorless and both C and X/ ALL", 1);
+        //    // Test 1: Select single color / ANY
+        //    RunTest(testFilterManager, ["R"], 0, "Test 1: Single color / ANY", 1);
+        //    // Test 2: Select two colors / ANY
+        //    RunTest(testFilterManager, ["W", "R"], 0, "Test 2: Two colors / ANY", 3);
+        //    // Test 3: Select two colors / NONE
+        //    RunTest(testFilterManager, ["W", "R"], 2, "Test 3: Two colors / NONE", 7);
+        //    // Test 4: Select single color and X/C / ANY
+        //    RunTest(testFilterManager, ["R", "C"], 0, "Test 4: Single color and X/C / ANY", 3);
+        //    // Test 5: Select single color and X/C / NONE
+        //    RunTest(testFilterManager, ["R", "C"], 2, "Test 5: Single color and X/C / NONE", 7);
+        //    // Test 6: Select two colors / ALL
+        //    RunTest(testFilterManager, ["G", "U"], 1, "Test 6: Two colors / ALL", 1);
+        //    // Test 7: Select single color and X/C / ALL
+        //    RunTest(testFilterManager, ["G", "X"], 1, "Test 7: Single color and X/C / ALL", 1);
+        //    // Test 8: Select two colors and X/C / ALL
+        //    RunTest(testFilterManager, ["G", "U", "X"], 1, "Test 8: Single color and X/C / ALL", 1);
+        //    // Test 9: Select three colors and X/C / ALL
+        //    RunTest(testFilterManager, ["G", "U", "B", "X"], 1, "Test 9: 3 colors and X/C / ALL", 0);
+        //    // Test 10: Select Colorless / ANY
+        //    RunTest(testFilterManager, ["Colorless"], 0, "Test 10: Colorless / ANY", 5);
+        //    RunTest(testFilterManager, ["Colorless", "X"], 2, "Test 11: Colorless and X/ NONE", 3);
+        //    RunTest(testFilterManager, ["Colorless", "C"], 1, "Test 12: Colorless and C/ ALL", 2);
+        //    RunTest(testFilterManager, ["Colorless", "R"], 1, "Test 13: Colorless and R/ ALL", 0);
+        //    RunTest(testFilterManager, ["Colorless", "C", "X"], 1, "Test 14: Colorless and both C and X/ ALL", 1);
 
 
-            Debug.WriteLine("Filter Tests Completed.");
-        }
+        //    Debug.WriteLine("Filter Tests Completed.");
+        //}
 
         /// <summary>
         /// Helper method to execute and log results for a single test case.
         /// </summary>
-        private void RunTest(FilterManager testFilterManager, HashSet<string> selectedColors, int filterMode, string testName, int expectedCount)
-        {
-            //AllOrNoneComboBox.SelectedIndex = filterMode;
+        //private void RunTest(FilterManager testFilterManager, HashSet<string> selectedColors, int filterMode, string testName, int expectedCount)
+        //{
+        //    //AllOrNoneComboBox.SelectedIndex = filterMode;
 
-            // Directly modify the test FilterContext without needing public access
-            typeof(FilterManager)
-                .GetField("filterSelections", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
-                .SetValue(testFilterManager, new FilterSelections { SelectedColors = selectedColors });
+        //    // Directly modify the test FilterContext without needing public access
+        //    typeof(FilterManager)
+        //        .GetField("filterSelections", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
+        //        .SetValue(testFilterManager, new FilterSelections { SelectedColors = selectedColors });
 
-            List<CardSet> result = FilterManager.FilterByColor(testCards, selectedColors, filterMode).ToList();
-            Debug.WriteLine($"{testName} -> Expected: {expectedCount}, Actual: {result.Count}");
+        //    List<CardSet> result = FilterManager.FilterByColor(testCards, selectedColors, filterMode).ToList();
+        //    Debug.WriteLine($"{testName} -> Expected: {expectedCount}, Actual: {result.Count}");
 
-            if (result.Count == expectedCount)
-            {
-                Debug.WriteLine("Test Passed!");
-            }
-            else
-            {
-                Debug.WriteLine("TEST FAILED!");
-                foreach (CardSet? card in result)
-                {
-                    Debug.WriteLine($"  - {card.Name}, Colors: {card.Colors ?? "null"}, ManaCost: {card.ManaCost}");
-                }
-            }
-        }
+        //    if (result.Count == expectedCount)
+        //    {
+        //        Debug.WriteLine("Test Passed!");
+        //    }
+        //    else
+        //    {
+        //        Debug.WriteLine("TEST FAILED!");
+        //        foreach (CardSet? card in result)
+        //        {
+        //            Debug.WriteLine($"  - {card.Name}, Colors: {card.Colors ?? "null"}, ManaCost: {card.ManaCost}");
+        //        }
+        //    }
+        //}
 
 
         #endregion
@@ -568,7 +567,7 @@ namespace CollectaMundo
 
                 using SQLiteCommand command = new(query, DBAccess.connection);
                 using SQLiteDataReader reader = (SQLiteDataReader)await command.ExecuteReaderAsync();
-                List<string> columnNames = new List<string>();
+                List<string> columnNames = [];
 
                 while (await reader.ReadAsync())
                 {
@@ -734,24 +733,37 @@ namespace CollectaMundo
             if (sender is ComboBox comboBox)
             {
 
-                // Identify which ComboBox triggered the event and update the appropriate filter
                 if (comboBox.Name.Contains("Name", StringComparison.OrdinalIgnoreCase))
                 {
-                    filterSelections.SelectedName = comboBox.SelectedItem?.ToString();
+                    // Retrieve or create the FilterSelections object for "Name"
+                    var nameFilterSelection = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Name");
+                    if (nameFilterSelection == null)
+                    {
+                        nameFilterSelection = new FilterSelections { CriteriaKey = "Name" };
+                        filterSelections.Add(nameFilterSelection);
+                    }
 
-                    FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
-                    FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
-                    FilterManager.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
+                    // Update the SingleCriteria field with the selected value
+                    nameFilterSelection.SingleCriteria = comboBox.SelectedItem?.ToString();
+                    // Trigger filtering
+                    ApplyFiltersToAllLists();
                 }
-                else if (comboBox.Name.Contains("Set", StringComparison.OrdinalIgnoreCase))
+                else if (comboBox.Name.Contains("SetName", StringComparison.OrdinalIgnoreCase))
                 {
-                    Debug.WriteLine(comboBox.Name);
-                    filterSelections.SelectedSetName = comboBox.SelectedItem?.ToString();
+                    // Retrieve or create the FilterSelections object for "Set"
+                    var setFilterSelection = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "SetName");
+                    if (setFilterSelection == null)
+                    {
+                        setFilterSelection = new FilterSelections { CriteriaKey = "SetName" };
+                        filterSelections.Add(setFilterSelection);
+                    }
 
+                    // Update the SingleCriteria field with the selected value
+                    setFilterSelection.SingleCriteria = comboBox.SelectedItem?.ToString();
+                    // Trigger filtering
                     FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
                     FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
                 }
-
 
                 // Map ComboBox names to filter categories
                 Dictionary<string, string> comboBoxCategoryMap = new Dictionary<string, string>
@@ -766,14 +778,11 @@ namespace CollectaMundo
                 // Identify category and reset other ComboBox selections
                 if (comboBoxCategoryMap.TryGetValue(comboBox.Name, out string? category))
                 {
-                    //filterManager.WhichDropdown = category;
-
                     // Reset selections in unrelated categories
                     ResetOtherComboBoxSelections(category);
                 }
 
             }
-            //ApplyFilterSelection();
 
             void ResetOtherComboBoxSelections(string currentCategory)
             {
@@ -805,10 +814,10 @@ namespace CollectaMundo
 
             if (sender is ComboBox comboBox)
             {
+                // Determine the selected operator
                 if (comboBox.SelectedItem is ComboBoxItem selectedItem)
                 {
                     string? selectedText = selectedItem.Content.ToString();
-
                     operatorSelection = selectedText switch
                     {
                         "OR" => OperatorType.OR,
@@ -816,47 +825,32 @@ namespace CollectaMundo
                         "NOT" => OperatorType.NOT,
                         _ => OperatorType.Unknown
                     };
-
-                    //Debug.WriteLine(operatorSelection == OperatorType.Unknown ? "Unknown selection" : $"Selected: {operatorSelection}");
                 }
 
-                switch (comboBox.Name)
+                // Derive the CriteriaKey from the ComboBox name
+                string? criteriaKey = comboBox.Name.Replace("OperatorComboBox", string.Empty);
+
+                if (!string.IsNullOrEmpty(criteriaKey))
                 {
-                    case "ColorOperatorComboBox":
-                        filterSelections.ColorOperator = (int)operatorSelection;
-                        break;
-                    case "RarityOperatorComboBox":
-                        filterSelections.RarityOperator = (int)operatorSelection;
-                        break;
-                    case "SuperTypesOperatorComboBox":
-                        filterSelections.SuperTypesOperator = (int)operatorSelection;
-                        break;
-                    case "TypesOperatorComboBox":
-                        filterSelections.TypesOperator = (int)operatorSelection;
-                        break;
-                    case "SubTypesOperatorComboBox":
-                        filterSelections.SubTypesOperator = (int)operatorSelection;
-                        break;
-                    case "KeywordsOperatorComboBox":
-                        filterSelections.KeywordsOperator = (int)operatorSelection;
-                        break;
-                    case "FinishesOperatorComboBox":
-                        filterSelections.FinishesOperator = (int)operatorSelection;
-                        break;
-                    case "LanguagesOperatorComboBox":
-                        filterSelections.LanguagesOperator = (int)operatorSelection;
-                        break;
-                    case "ConditionsOperatorComboBox":
-                        filterSelections.ConditionsOperator = (int)operatorSelection;
-                        break;
+                    // Retrieve or create the FilterSelections object for this CriteriaKey
+                    var filterSelection = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == criteriaKey);
+                    if (filterSelection == null)
+                    {
+                        filterSelection = new FilterSelections { CriteriaKey = criteriaKey };
+                        filterSelections.Add(filterSelection);
+                    }
+
+                    // Update the Operator field
+                    filterSelection.Operator = operatorSelection;
                 }
             }
 
-            FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
-            FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
-            FilterManager.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
+            ApplyFiltersToAllLists();
         }
-        private void ComboBox_DropDownOpened(object sender, EventArgs e)
+
+
+        // Every time a dynamically populated filter combobox is opened, it is populated with the correct values, including selected items
+        private void DynamicallyPopulatedComboBox_DropDownOpened(object sender, EventArgs e)
         {
             if (sender is ComboBox comboBox)
             {
@@ -872,13 +866,10 @@ namespace CollectaMundo
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"Error in ComboBox_DropDownOpened: {ex.Message}");
+                    Debug.WriteLine($"Error in DynamicallyPopulatedComboBox_DropDownOpened: {ex.Message}");
                 }
             }
-        }
-        private void PopulateListBoxWithValues(ComboBox comboBox, string listBoxName) // Make sure the embedded listbox has the right values
-        {
-            try
+            void PopulateListBoxWithValues(ComboBox comboBox, string listBoxName)
             {
                 if (comboBox.Template.FindName(listBoxName, comboBox) is ListBox listBox)
                 {
@@ -901,56 +892,8 @@ namespace CollectaMundo
                         }
                     }, System.Windows.Threading.DispatcherPriority.Loaded);
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in PopulateListBoxWithValues: {ex.Message}");
-            }
-        }
-        private (IEnumerable<string> items, HashSet<string> selectedItems) GetDataSetAndSelection(string listBoxName) // Get the data to populate the listbox with, including already selected items
-        {
-            IEnumerable<string> itemsSource;
-            HashSet<string> selectedItemsSet;
 
-            switch (listBoxName)
-            {
-                case "FilterSuperTypesListBox":
-                    itemsSource = filterContext.AllSuperTypes;
-                    selectedItemsSet = filterSelections.SelectedSuperTypes;
-                    break;
-                case "FilterTypesListBox":
-                    itemsSource = filterContext.AllTypes;
-                    selectedItemsSet = filterSelections.SelectedTypes;
-                    break;
-                case "FilterSubTypesListBox":
-                    itemsSource = filterContext.AllSubTypes;
-                    selectedItemsSet = filterSelections.SelectedSubTypes;
-                    break;
-                case "FilterKeywordsListBox":
-                    itemsSource = filterContext.AllKeywords;
-                    selectedItemsSet = filterSelections.SelectedKeywords;
-                    break;
-                case "FilterFinishesListBox":
-                    itemsSource = filterContext.AllFinishes;
-                    selectedItemsSet = filterSelections.SelectedFinishes;
-                    break;
-                case "FilterRarityListBox":
-                    itemsSource = filterContext.AllRarities;
-                    selectedItemsSet = filterSelections.SelectedRarity;
-                    break;
-                case "FilterLanguagesListBox":
-                    itemsSource = filterContext.AllLanguages;
-                    selectedItemsSet = filterSelections.SelectedLanguages;
-                    break;
-                case "FilterConditionsListBox":
-                    itemsSource = filterContext.AllConditions;
-                    selectedItemsSet = filterSelections.SelectedConditions;
-                    break;
-                default:
-                    throw new InvalidOperationException($"ListBox name not recognized: {listBoxName}");
             }
-
-            return (itemsSource.Distinct().OrderBy(type => type).ToList(), selectedItemsSet);
         }
         private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e) // Filter checkbox elements in the embedded listbox based text typed in the embedded testbox
         {
@@ -1033,6 +976,50 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error in UpdateListBoxItems: {ex.Message}");
             }
         }
+        private (IEnumerable<string> items, HashSet<string> selectedItems) GetDataSetAndSelection(string listBoxName) // Generic method for getting the data to populate the listbox with, including already selected items
+        {
+            IEnumerable<string> itemsSource;
+            HashSet<string> selectedItemsSet;
+
+            switch (listBoxName)
+            {
+                case "FilterRarityListBox":
+                    itemsSource = filterContext.AllRarities;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Rarity")?.MultipleCriteria ?? [];
+                    break;
+                case "FilterSuperTypesListBox":
+                    itemsSource = filterContext.AllSuperTypes;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "SuperTypes")?.MultipleCriteria ?? [];
+                    break;
+                case "FilterTypesListBox":
+                    itemsSource = filterContext.AllTypes;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Types")?.MultipleCriteria ?? [];
+                    break;
+                case "FilterSubTypesListBox":
+                    itemsSource = filterContext.AllSubTypes;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "SubTypes")?.MultipleCriteria ?? [];
+                    break;
+                case "FilterKeywordsListBox":
+                    itemsSource = filterContext.AllKeywords;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Keywords")?.MultipleCriteria ?? [];
+                    break;
+                case "FilterFinishesListBox":
+                    itemsSource = filterContext.AllFinishes;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Finishes")?.MultipleCriteria ?? [];
+                    break;
+                case "FilterLanguagesListBox":
+                    itemsSource = filterContext.AllLanguages;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Languages")?.MultipleCriteria ?? [];
+                    break;
+                case "FilterConditionsListBox":
+                    itemsSource = filterContext.AllConditions;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Conditions")?.MultipleCriteria ?? [];
+                    break;
+                default:
+                    throw new InvalidOperationException($"ListBox name not recognized: {listBoxName}");
+            }
+            return (itemsSource.Distinct().OrderBy(type => type).ToList(), selectedItemsSet);
+        }
         private (string defaultText, string textBoxName, string listBoxName) GetComboBoxConfig(string comboBoxName) // Generic method for getting embedded textbox and listbox elements based on the combobox
         {
             return comboBoxName switch
@@ -1048,6 +1035,7 @@ namespace CollectaMundo
                 _ => throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}")
             };
         }
+
         private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)
         {
             // Avoid recursive triggering
@@ -1089,7 +1077,7 @@ namespace CollectaMundo
                 }
 
                 // Apply filter and update label after toggling the checkbox
-                ApplyFilterSelection();
+                ApplyFiltersToAllLists();
             }
             finally
             {
@@ -1181,75 +1169,60 @@ namespace CollectaMundo
                     return; // Exit if casting failed
                 }
 
+                // Attempt to find the CheckBox and retrieve its Tag and Content
                 CheckBox? checkBox = FindVisualChild<CheckBox>(dependencyObject);
-                if (checkBox != null && checkBox.Content is ContentPresenter contentPresenter)
+                if (checkBox == null || checkBox.Tag is not string criteriaKey || checkBox.Content is not ContentPresenter contentPresenter)
                 {
-                    string? label = contentPresenter.Content as string;
-                    if (!string.IsNullOrEmpty(label))
-                    {
-                        HashSet<string>? targetCollection = checkBox.Tag switch
-                        {
-                            "Type" => filterSelections.SelectedTypes,
-                            "SuperType" => filterSelections.SelectedSuperTypes,
-                            "SubType" => filterSelections.SelectedSubTypes,
-                            "Keywords" => filterSelections.SelectedKeywords,
-                            "Finishes" => filterSelections.SelectedFinishes,
-                            "Rarity" => filterSelections.SelectedRarity,
-                            "Colors" => filterSelections.SelectedColors,
-                            "Languages" => filterSelections.SelectedLanguages,
-                            "Conditions" => filterSelections.SelectedConditions,
-                            _ => null
-                        };
-
-                        if (targetCollection != null)
-                        {
-                            action(targetCollection, label);
-                            ApplyFilterSelection();
-                        }
-                    }
+                    return; // Exit if required data is unavailable
                 }
+
+                string? label = contentPresenter.Content as string;
+                if (string.IsNullOrEmpty(label))
+                {
+                    return; // Exit if no label is present
+                }
+
+                // Ensure the FilterSelections object for this CriteriaKey exists
+                var targetFilterSelection = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == criteriaKey);
+                if (targetFilterSelection == null)
+                {
+                    targetFilterSelection = new FilterSelections { CriteriaKey = criteriaKey };
+                    filterSelections.Add(targetFilterSelection);
+                }
+
+                // Perform the action (Add/Remove) on MultipleCriteria
+                action(targetFilterSelection.MultipleCriteria, label);
+
+                // Trigger filter update
+                ApplyFiltersToAllLists();
+                //FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"An error occurred in checkbox event handling: {ex.Message}");
+                Debug.WriteLine($"Error in HandleCheckBoxEvent: {ex.Message}");
             }
         }
-        private void CheckBox_Loaded(object sender, RoutedEventArgs e) // Make sure combobox checkbox items are loaded
+        private void CheckBox_Loaded(object sender, RoutedEventArgs e)
         {
             if (sender is CheckBox checkBox && checkBox.DataContext is string dataContext)
             {
-                switch (checkBox.Tag as string)
+                // Retrieve the CriteriaKey from the CheckBox's Tag
+                string? criteriaKey = checkBox.Tag as string;
+
+                if (!string.IsNullOrEmpty(criteriaKey))
                 {
-                    case "Type":
-                        checkBox.IsChecked = filterSelections.SelectedTypes.Contains(dataContext);
-                        break;
-                    case "SuperType":
-                        checkBox.IsChecked = filterSelections.SelectedSuperTypes.Contains(dataContext);
-                        break;
-                    case "SubType":
-                        checkBox.IsChecked = filterSelections.SelectedSubTypes.Contains(dataContext);
-                        break;
-                    case "Keywords":
-                        checkBox.IsChecked = filterSelections.SelectedKeywords.Contains(dataContext);
-                        break;
-                    case "Finishes":
-                        checkBox.IsChecked = filterSelections.SelectedFinishes.Contains(dataContext);
-                        break;
-                    case "Rarity":
-                        checkBox.IsChecked = filterSelections.SelectedRarity.Contains(dataContext);
-                        break;
-                    case "Colors":
-                        checkBox.IsChecked = filterSelections.SelectedColors.Contains(dataContext);
-                        break;
-                    case "Languages":
-                        checkBox.IsChecked = filterSelections.SelectedLanguages.Contains(dataContext);
-                        break;
-                    case "Conditions":
-                        checkBox.IsChecked = filterSelections.SelectedConditions.Contains(dataContext);
-                        break;
+                    // Find the FilterSelections object corresponding to the CriteriaKey
+                    var targetFilterSelection = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == criteriaKey);
+
+                    if (targetFilterSelection != null)
+                    {
+                        // Check if the dataContext exists in the MultipleCriteria collection
+                        checkBox.IsChecked = targetFilterSelection.MultipleCriteria.Contains(dataContext);
+                    }
                 }
             }
         }
+
         public static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject // Because we use custom combobox, we need this method to find embedded elements
         {
             try
@@ -1279,9 +1252,9 @@ namespace CollectaMundo
         }
         private void FilterRulesTextButton_Click(object sender, RoutedEventArgs e) // Apply filter for rulestext freetext search
         {
-            ApplyFilterSelection();
+            ApplyFiltersToAllLists();
         }
-        public void ApplyFilterSelection()
+        public void ApplyFiltersToAllLists()
         {
             FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
             FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
@@ -1334,7 +1307,7 @@ namespace CollectaMundo
             ClearListBoxSelections(FilterColorsListBox);
 
             // Clear the internal HashSets by re-initializing the object
-            filterSelections = new FilterSelections();
+            filterSelections = [];
 
             // Clear rulestext textbox
             FilterRulesTextTextBox.Text = filterContext.RulesTextDefaultText;
@@ -1386,7 +1359,10 @@ namespace CollectaMundo
 
                 static void TraverseVisualTree(DependencyObject parent, List<ComboBox> comboBoxes)
                 {
-                    if (parent == null) return;
+                    if (parent == null)
+                    {
+                        return;
+                    }
 
                     for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
                     {
@@ -2131,7 +2107,9 @@ namespace CollectaMundo
             GridFiltering.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Visible;
             LanguagesComboBox.Visibility = Visibility.Visible;
+            LanguagesOperatorComboBox.Visibility = Visibility.Visible;
             ConditionsComboBox.Visibility = Visibility.Visible;
+            ConditionsOperatorComboBox.Visibility = Visibility.Visible;
             CheckBoxCardsForTrade.Visibility = Visibility.Visible;
             CheckBoxCardsNotForTrade.Visibility = Visibility.Visible;
 
@@ -2166,7 +2144,9 @@ namespace CollectaMundo
             GridDecks.Visibility = Visibility.Collapsed;
             GridUtilitiesSection.Visibility = Visibility.Collapsed;
             LanguagesComboBox.Visibility = Visibility.Collapsed;
+            LanguagesOperatorComboBox.Visibility = Visibility.Collapsed;
             ConditionsComboBox.Visibility = Visibility.Collapsed;
+            ConditionsOperatorComboBox.Visibility = Visibility.Collapsed;
             CheckBoxCardsForTrade.Visibility = Visibility.Collapsed;
             CheckBoxCardsNotForTrade.Visibility = Visibility.Collapsed;
 
@@ -2179,7 +2159,7 @@ namespace CollectaMundo
             GridFiltering.Visibility = Visibility.Collapsed;
             GridUtilsMenu.Visibility = Visibility.Collapsed;
 
-            ApplyFilterSelection();
+            ApplyFiltersToAllLists();
         }
         #endregion
         public static async Task ShowStatusWindowAsync(bool statusScreenIsVisible, string? statusLabelContent = null, bool progressBarVisible = false)

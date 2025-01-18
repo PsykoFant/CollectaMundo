@@ -20,50 +20,34 @@ namespace CollectaMundo
                     return;
                 }
 
-                // ✅ Define the filter criteria with individual operators for each property
-                var filterCriteriaMultiple = new Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)>
-                {
-                    { "Rarities", (card => card.Rarity, MainWindow.CurrentInstance.filterSelections.SelectedRarity, MainWindow.CurrentInstance.filterSelections.RarityOperator) },
-                    { "SuperTypes", (card => card.SuperTypes, MainWindow.CurrentInstance.filterSelections.SelectedSuperTypes, MainWindow.CurrentInstance.filterSelections.SuperTypesOperator) },
-                    { "Types", (card => card.Types, MainWindow.CurrentInstance.filterSelections.SelectedTypes, MainWindow.CurrentInstance.filterSelections.TypesOperator) },
-                    { "SubTypes", (card => card.SubTypes, MainWindow.CurrentInstance.filterSelections.SelectedSubTypes, MainWindow.CurrentInstance.filterSelections.SubTypesOperator) },
-                    { "Keywords", (card => card.Keywords, MainWindow.CurrentInstance.filterSelections.SelectedKeywords, MainWindow.CurrentInstance.filterSelections.KeywordsOperator) },
-                    { "Finishes", (card => card.Finishes, MainWindow.CurrentInstance.filterSelections.SelectedFinishes, MainWindow.CurrentInstance.filterSelections.FinishesOperator) }
-                };
+                // Dynamically build filter criteria for multiple properties
+                var filterCriteriaMultiple = MainWindow.CurrentInstance.filterSelections
+                    .Where(fs => fs.MultipleCriteria != null && fs.MultipleCriteria.Count > 0)
+                    .ToDictionary(
+                        fs => fs.CriteriaKey!,
+                        fs => (
+                            GetPropertySelector(fs.CriteriaKey!),
+                            fs.MultipleCriteria,
+                            (int)fs.Operator
+                        )
+                    );
 
-                var singleFilterCriteria = new Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)>
-                {
-                    { "Name", (card => card.Name, MainWindow.CurrentInstance.filterSelections.SelectedName) },
-                    { "Set", (card => card.SetName, MainWindow.CurrentInstance.filterSelections.SelectedSetName) },
-                };
+                // Define single property filters
+                var singleFilterCriteria = MainWindow.CurrentInstance.filterSelections
+                    .Where(fs => !string.IsNullOrWhiteSpace(fs.SingleCriteria))
+                    .ToDictionary(
+                        fs => fs.CriteriaKey!,
+                        fs => (
+                            GetPropertySelector(fs.CriteriaKey!),
+                            fs.SingleCriteria
+                        )
+                    );
 
-
+                // Apply filters
                 var filteredCards = FilterByMultipleProperties(cards, filterCriteriaMultiple);
-
                 filteredCards = FilterBySingleProperty(filteredCards, singleFilterCriteria);
 
-
-                //var (cardFilter, setFilter) = GetDropdownFilters(WhichDropdown);
-                //string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
-
-
-                //// Filtering by card name, set name, and rules text
-                ////filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter);
-
-                //// Apply mana value filter
-                //filteredCards = FilterByManaValue(filteredCards);
-
-                filteredCards = FilterByColor(filteredCards, MainWindow.CurrentInstance.filterSelections.SelectedColors, MainWindow.CurrentInstance.filterSelections.ColorOperator);
-
-                // Apply specific filters for list contexts
-                //filteredCards = datagridName switch
-                //{
-                //    "myCards" => ApplyMyCardsSpecificFilters(filteredCards),
-                //    _ => filteredCards
-                //};
-
                 var finalFilteredCards = filteredCards.ToList();
-
 
                 // UI stuff
 
@@ -86,8 +70,38 @@ namespace CollectaMundo
                 //return [];
                 return;
             }
+
+            Func<CardSet, string?> GetPropertySelector(string criteriaKey)
+            {
+                var propertyInfo = typeof(CardSet).GetProperty(criteriaKey)
+                                   ?? typeof(CardInCollection).GetProperty(criteriaKey);
+
+                if (propertyInfo == null)
+                {
+                    throw new ArgumentException($"Property '{criteriaKey}' not found on CardSet or CardInCollection.");
+                }
+
+                return card =>
+                {
+                    try
+                    {
+                        var value = propertyInfo.GetValue(card)?.ToString();
+                        return value;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error accessing property '{criteriaKey}' on type '{card.GetType()}': {ex.Message}");
+                        throw;
+                    }
+                };
+            }
         }
-        private static IEnumerable<CardSet> FilterBySingleProperty(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
+
+
+
+        private static IEnumerable<CardSet> FilterBySingleProperty(
+    IEnumerable<CardSet> cards,
+    Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
         {
             if (cards == null || singleFilterCriteria == null || singleFilterCriteria.Count == 0)
             {
@@ -102,23 +116,20 @@ namespace CollectaMundo
                     {
                         var propertyValue = propertySelector(card) ?? string.Empty;
 
-                        // ✅ Skip this filter if the card property is empty or null
-                        if (string.IsNullOrWhiteSpace(propertyValue))
-                        {
-                            continue; // Do not exclude the card; move to the next filter
-                        }
-
-                        // ✅ Exclude card if it doesn't match the selected value
                         if (!propertyValue.Equals(selectedValue, StringComparison.OrdinalIgnoreCase))
                         {
-                            return false;
+                            return false; // Exclude card if it doesn't match the single-value filter
                         }
                     }
                 }
-                return true; // Include card if all applicable single-value filters match
+
+                return true; // Include card if all single-value filters match
             });
         }
-        private static IEnumerable<CardSet> FilterByMultipleProperties(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> filterCriteria)
+
+        private static IEnumerable<CardSet> FilterByMultipleProperties(
+    IEnumerable<CardSet> cards,
+    Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> filterCriteria)
         {
             if (cards == null || filterCriteria == null || filterCriteria.Count == 0)
             {
@@ -127,17 +138,15 @@ namespace CollectaMundo
 
             return cards.Where(card =>
             {
-                bool result = true;
-
                 foreach (var (_, (propertySelector, selectedCriteria, filterMode)) in filterCriteria)
                 {
-                    // ✅ Skip filters with no selected criteria
+                    // Skip filters with no selected criteria
                     if (selectedCriteria == null || selectedCriteria.Count == 0)
                     {
-                        continue; // Skip this filter, do not affect filtering
+                        continue;
                     }
 
-                    // ✅ Apply filtering only when criteria are present
+                    // Apply filtering logic based on the mode
                     bool matches = filterMode switch
                     {
                         0 => MatchesCriteria(card, propertySelector, selectedCriteria),         // OR Mode
@@ -146,29 +155,50 @@ namespace CollectaMundo
                         _ => false
                     };
 
-                    // ✅ If any filter fails in AND mode, exclude the card
+                    // If a filter fails in AND mode, exclude the card
                     if (!matches)
                     {
-                        result = false;
-                        break;
+                        return false;
                     }
                 }
 
-                return result;
+                return true;
             });
-
-            static bool MatchesCriteria(CardSet card, Func<CardSet, string?> propertySelector, HashSet<string> filterValues)
-            {
-                var propertyValue = propertySelector(card) ?? string.Empty;
-
-                var propertyItems = new HashSet<string>(
-                    propertyValue.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                 .Select(p => p.Trim())
-                );
-
-                return filterValues.Any(filterValue => propertyItems.Contains(filterValue));
-            }
         }
+
+        private static bool MatchesCriteria(CardSet card, Func<CardSet, string?> propertySelector, HashSet<string> filterValues)
+        {
+            var propertyValue = propertySelector(card) ?? string.Empty;
+
+            var propertyItems = new HashSet<string>(
+                propertyValue.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                             .Select(p => p.Trim())
+            );
+
+            return filterValues.Any(filterValue => propertyItems.Contains(filterValue));
+        }
+
+
+        //var (cardFilter, setFilter) = GetDropdownFilters(WhichDropdown);
+        //string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
+
+
+        //// Filtering by card name, set name, and rules text
+        ////filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter);
+
+        //// Apply mana value filter
+        //filteredCards = FilterByManaValue(filteredCards);
+
+        //filteredCards = FilterByColor(filteredCards, MainWindow.CurrentInstance.filterSelections.SelectedColors, MainWindow.CurrentInstance.filterSelections.ColorOperator);
+
+        // Apply specific filters for list contexts
+        //filteredCards = datagridName switch
+        //{
+        //    "myCards" => ApplyMyCardsSpecificFilters(filteredCards),
+        //    _ => filteredCards
+        //};
+
+
 
         private static (string cardFilter, string setFilter) GetDropdownFilters(string whichDropdown)
         {
@@ -273,29 +303,29 @@ namespace CollectaMundo
                 return exclude ? !match : match;
             });
         }
-        private static IEnumerable<CardSet> ApplyMyCardsSpecificFilters(IEnumerable<CardSet> cards)
-        {
-            var filteredCardItems = cards.OfType<CardInCollection>();
+        //private static IEnumerable<CardSet> ApplyMyCardsSpecificFilters(IEnumerable<CardSet> cards)
+        //{
+        //    var filteredCardItems = cards.OfType<CardInCollection>();
 
-            // Handle "Cards for Trade" and "Cards Not for Trade"
-            bool showForTrade = MainWindow.CurrentInstance.CheckBoxCardsForTrade.IsChecked ?? false;
-            bool showNotForTrade = MainWindow.CurrentInstance.CheckBoxCardsNotForTrade.IsChecked ?? false;
+        //    // Handle "Cards for Trade" and "Cards Not for Trade"
+        //    bool showForTrade = MainWindow.CurrentInstance.CheckBoxCardsForTrade.IsChecked ?? false;
+        //    bool showNotForTrade = MainWindow.CurrentInstance.CheckBoxCardsNotForTrade.IsChecked ?? false;
 
-            if (showForTrade)
-            {
-                filteredCardItems = filteredCardItems.Where(card => card.CardsForTrade > 0);
-            }
+        //    if (showForTrade)
+        //    {
+        //        filteredCardItems = filteredCardItems.Where(card => card.CardsForTrade > 0);
+        //    }
 
-            if (showNotForTrade)
-            {
-                filteredCardItems = filteredCardItems.Where(card => card.CardsForTrade == 0);
-            }
+        //    if (showNotForTrade)
+        //    {
+        //        filteredCardItems = filteredCardItems.Where(card => card.CardsForTrade == 0);
+        //    }
 
-            // Apply language filter
-            var languageFilteredItems = FilterByCardProperty(filteredCardItems.Cast<CardSet>(), MainWindow.CurrentInstance.filterSelections.SelectedLanguages, false, card => card.Language);
+        //    // Apply language filter
+        //    var languageFilteredItems = FilterByCardProperty(filteredCardItems.Cast<CardSet>(), MainWindow.CurrentInstance.filterSelections.SelectedLanguages, false, card => card.Language);
 
-            return languageFilteredItems.OfType<CardInCollection>().Cast<CardSet>();
-        }
+        //    return languageFilteredItems.OfType<CardInCollection>().Cast<CardSet>();
+        //}
         public static IEnumerable<CardSet> FilterByColor(IEnumerable<CardSet> cards, HashSet<string> selectedColors, int filterMode)
         {
             if (cards == null)
@@ -363,9 +393,11 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
             }
         }
-        private static void UpdateFilterSummary(
-    Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> multipleFilterCriteria,
-    Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
+        private static void UpdateFilterSummary
+            (
+            Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> multipleFilterCriteria,
+            Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria
+            )
         {
             try
             {
