@@ -748,7 +748,7 @@ namespace CollectaMundo
                     // Trigger filtering
                     ApplyFiltersToAllLists();
                 }
-                else if (comboBox.Name.Contains("SetName", StringComparison.OrdinalIgnoreCase))
+                else if (comboBox.Name.Contains("Set", StringComparison.OrdinalIgnoreCase))
                 {
                     // Retrieve or create the FilterSelections object for "Set"
                     var setFilterSelection = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "SetName");
@@ -765,43 +765,45 @@ namespace CollectaMundo
                     FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
                 }
 
-                // Map ComboBox names to filter categories
-                Dictionary<string, string> comboBoxCategoryMap = new Dictionary<string, string>
-                {
-                    { "AllCardsNameComboBox", "AllCards" },
-                    { "AllCardsSetComboBox", "AllCards" },
-                    { "MyCollectionNameComboBox", "MyCollection" },
-                    { "MyCollectionSetComboBox", "MyCollection" },
-                    { "AllCardsForDecksNameComboBox", "AllCardsForDecks" }
-                };
+                // Find the parent DataGrid for the current ComboBox
+                DataGrid? parentDataGrid = FindParent<DataGrid>(comboBox);
 
-                // Identify category and reset other ComboBox selections
-                if (comboBoxCategoryMap.TryGetValue(comboBox.Name, out string? category))
+                // If a parent DataGrid is found, reset selections in other DataGrids
+                if (parentDataGrid != null)
                 {
-                    // Reset selections in unrelated categories
-                    ResetOtherComboBoxSelections(category);
+                    ResetOtherDataGridSelections(parentDataGrid);
                 }
 
             }
-
-            void ResetOtherComboBoxSelections(string currentCategory)
+            static T? FindParent<T>(DependencyObject child) where T : DependencyObject
             {
-                Dictionary<string, DataGrid> categoryComboBoxMappings = new Dictionary<string, DataGrid>
-            {
-                { "AllCards", AllCardsDataGrid },
-                { "MyCollection", MyCollectionDataGrid },
-                { "AllCardsForDecks", AllCardsForDecksDataGrid }
-            };
+                DependencyObject? parentObject = VisualTreeHelper.GetParent(child);
 
-                foreach (KeyValuePair<string, DataGrid> category in categoryComboBoxMappings)
+                while (parentObject != null && parentObject is not T)
                 {
-                    if (category.Key != currentCategory)
+                    parentObject = VisualTreeHelper.GetParent(parentObject);
+                }
+
+                return parentObject as T;
+            }
+
+            void ResetOtherDataGridSelections(DataGrid currentDataGrid)
+            {
+                // List all DataGrids
+                List<DataGrid> allDataGrids = new()
+                {
+                    AllCardsDataGrid,
+                    MyCollectionDataGrid,
+                    AllCardsForDecksDataGrid
+                };
+
+                // Iterate through other DataGrids and reset their ComboBox selections
+                foreach (DataGrid dataGrid in allDataGrids.Where(dg => dg != currentDataGrid))
+                {
+                    List<ComboBox> headerComboBoxes = FindVisualChildren<ComboBox>(dataGrid);
+                    foreach (ComboBox headerComboBox in headerComboBoxes)
                     {
-                        List<ComboBox> headerComboBoxes = FindVisualChildren<ComboBox>(category.Value);
-                        foreach (ComboBox headerComboBox in headerComboBoxes)
-                        {
-                            headerComboBox.SelectedIndex = -1;
-                        }
+                        headerComboBox.SelectedIndex = -1;
                     }
                 }
             }
@@ -848,6 +850,58 @@ namespace CollectaMundo
             ApplyFiltersToAllLists();
         }
 
+        private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)
+        {
+            // Avoid recursive triggering
+            CheckBoxCardsForTrade.Checked -= AndOrCheckBox_Toggled;
+            CheckBoxCardsForTrade.Unchecked -= AndOrCheckBox_Toggled;
+            CheckBoxCardsNotForTrade.Checked -= AndOrCheckBox_Toggled;
+            CheckBoxCardsNotForTrade.Unchecked -= AndOrCheckBox_Toggled;
+
+            try
+            {
+                if (sender is CheckBox toggledCheckBox)
+                {
+                    // Identify which property to update in AndOrSettings
+                    string propertyName = toggledCheckBox.Name switch
+                    {
+                        "CheckBoxCardsForTrade" => "CardsForTrade",
+                        "CheckBoxCardsNotForTrade" => "CardsNotForTrade",
+                        _ => string.Empty
+                    };
+
+                    // If 'CheckBoxCardsForTrade' is toggled
+                    if (toggledCheckBox == CheckBoxCardsForTrade)
+                    {
+                        // If 'CheckBoxCardsNotForTrade' is checked, uncheck it
+                        if (CheckBoxCardsNotForTrade.IsChecked == true)
+                        {
+                            CheckBoxCardsNotForTrade.IsChecked = false;
+                        }
+                    }
+                    // If 'CheckBoxCardsNotForTrade' is toggled
+                    else if (toggledCheckBox == CheckBoxCardsNotForTrade)
+                    {
+                        // If 'CheckBoxCardsForTrade' is checked, uncheck it
+                        if (CheckBoxCardsForTrade.IsChecked == true)
+                        {
+                            CheckBoxCardsForTrade.IsChecked = false;
+                        }
+                    }
+                }
+
+                // Apply filter and update label after toggling the checkbox
+                ApplyFiltersToAllLists();
+            }
+            finally
+            {
+                // Re-subscribe to Checked/Unchecked events
+                CheckBoxCardsForTrade.Checked += AndOrCheckBox_Toggled;
+                CheckBoxCardsForTrade.Unchecked += AndOrCheckBox_Toggled;
+                CheckBoxCardsNotForTrade.Checked += AndOrCheckBox_Toggled;
+                CheckBoxCardsNotForTrade.Unchecked += AndOrCheckBox_Toggled;
+            }
+        }
 
         // Every time a dynamically populated filter combobox is opened, it is populated with the correct values, including selected items
         private void DynamicallyPopulatedComboBox_DropDownOpened(object sender, EventArgs e)
@@ -1036,59 +1090,6 @@ namespace CollectaMundo
             };
         }
 
-        private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)
-        {
-            // Avoid recursive triggering
-            CheckBoxCardsForTrade.Checked -= AndOrCheckBox_Toggled;
-            CheckBoxCardsForTrade.Unchecked -= AndOrCheckBox_Toggled;
-            CheckBoxCardsNotForTrade.Checked -= AndOrCheckBox_Toggled;
-            CheckBoxCardsNotForTrade.Unchecked -= AndOrCheckBox_Toggled;
-
-            try
-            {
-                if (sender is CheckBox toggledCheckBox)
-                {
-                    // Identify which property to update in AndOrSettings
-                    string propertyName = toggledCheckBox.Name switch
-                    {
-                        "CheckBoxCardsForTrade" => "CardsForTrade",
-                        "CheckBoxCardsNotForTrade" => "CardsNotForTrade",
-                        _ => string.Empty
-                    };
-
-                    // If 'CheckBoxCardsForTrade' is toggled
-                    if (toggledCheckBox == CheckBoxCardsForTrade)
-                    {
-                        // If 'CheckBoxCardsNotForTrade' is checked, uncheck it
-                        if (CheckBoxCardsNotForTrade.IsChecked == true)
-                        {
-                            CheckBoxCardsNotForTrade.IsChecked = false;
-                        }
-                    }
-                    // If 'CheckBoxCardsNotForTrade' is toggled
-                    else if (toggledCheckBox == CheckBoxCardsNotForTrade)
-                    {
-                        // If 'CheckBoxCardsForTrade' is checked, uncheck it
-                        if (CheckBoxCardsForTrade.IsChecked == true)
-                        {
-                            CheckBoxCardsForTrade.IsChecked = false;
-                        }
-                    }
-                }
-
-                // Apply filter and update label after toggling the checkbox
-                ApplyFiltersToAllLists();
-            }
-            finally
-            {
-                // Re-subscribe to Checked/Unchecked events
-                CheckBoxCardsForTrade.Checked += AndOrCheckBox_Toggled;
-                CheckBoxCardsForTrade.Unchecked += AndOrCheckBox_Toggled;
-                CheckBoxCardsNotForTrade.Checked += AndOrCheckBox_Toggled;
-                CheckBoxCardsNotForTrade.Unchecked += AndOrCheckBox_Toggled;
-            }
-        }
-
 
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -1195,7 +1196,6 @@ namespace CollectaMundo
 
                 // Trigger filter update
                 ApplyFiltersToAllLists();
-                //FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
             }
             catch (Exception ex)
             {

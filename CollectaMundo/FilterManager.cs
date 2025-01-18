@@ -26,7 +26,7 @@ namespace CollectaMundo
                     .ToDictionary(
                         fs => fs.CriteriaKey!,
                         fs => (
-                            GetPropertySelector(fs.CriteriaKey!),
+                            ResolvePropertySelector(fs.CriteriaKey!),
                             fs.MultipleCriteria,
                             (int)fs.Operator
                         )
@@ -38,7 +38,7 @@ namespace CollectaMundo
                     .ToDictionary(
                         fs => fs.CriteriaKey!,
                         fs => (
-                            GetPropertySelector(fs.CriteriaKey!),
+                            ResolvePropertySelector(fs.CriteriaKey!),
                             fs.SingleCriteria
                         )
                     );
@@ -49,59 +49,54 @@ namespace CollectaMundo
 
                 var finalFilteredCards = filteredCards.ToList();
 
-                // UI stuff
-
-                // Update the sort order while updating ItemsSource
+                // Update the DataGrid
                 SaveAndRestoreSort(dataGrid, () =>
                 {
                     dataGrid.ItemsSource = finalFilteredCards;
                 });
 
-
                 UpdateCardCount(dataGrid.Name, finalFilteredCards.Count);
                 UpdateFilterSummary(filterCriteriaMultiple, singleFilterCriteria);
-
-                //return finalFilteredCards;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
                 _ = MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                //return [];
-                return;
             }
 
-            Func<CardSet, string?> GetPropertySelector(string criteriaKey)
+            static Func<CardSet, string?> ResolvePropertySelector(string criteriaKey)
             {
-                var propertyInfo = typeof(CardSet).GetProperty(criteriaKey)
-                                   ?? typeof(CardInCollection).GetProperty(criteriaKey);
-
-                if (propertyInfo == null)
+                // Attempt to find property in CardSet
+                var baseProperty = typeof(CardSet).GetProperty(criteriaKey);
+                if (baseProperty != null)
                 {
-                    throw new ArgumentException($"Property '{criteriaKey}' not found on CardSet or CardInCollection.");
+                    return card => baseProperty.GetValue(card)?.ToString();
                 }
 
-                return card =>
+                // Attempt to find property in CardInCollection
+                var cardInCollectionProperty = typeof(CardInCollection).GetProperty(criteriaKey);
+                if (cardInCollectionProperty != null)
                 {
-                    try
-                    {
-                        var value = propertyInfo.GetValue(card)?.ToString();
-                        return value;
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Error accessing property '{criteriaKey}' on type '{card.GetType()}': {ex.Message}");
-                        throw;
-                    }
-                };
+                    return card => card is CardInCollection cardInCollection
+                        ? cardInCollectionProperty.GetValue(cardInCollection)?.ToString()
+                        : null;
+                }
+
+                // Attempt to find property in CardInDeck
+                var cardInDeckProperty = typeof(CardInDeck).GetProperty(criteriaKey);
+                if (cardInDeckProperty != null)
+                {
+                    return card => card is CardInDeck cardInDeck
+                        ? cardInDeckProperty.GetValue(cardInDeck)?.ToString()
+                        : null;
+                }
+
+                // Log and return a no-op function for unsupported properties
+                Debug.WriteLine($"Property '{criteriaKey}' not found on any supported types.");
+                return _ => null;
             }
         }
-
-
-
-        private static IEnumerable<CardSet> FilterBySingleProperty(
-    IEnumerable<CardSet> cards,
-    Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
+        private static IEnumerable<CardSet> FilterBySingleProperty(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
         {
             if (cards == null || singleFilterCriteria == null || singleFilterCriteria.Count == 0)
             {
@@ -126,10 +121,7 @@ namespace CollectaMundo
                 return true; // Include card if all single-value filters match
             });
         }
-
-        private static IEnumerable<CardSet> FilterByMultipleProperties(
-    IEnumerable<CardSet> cards,
-    Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> filterCriteria)
+        private static IEnumerable<CardSet> FilterByMultipleProperties(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> filterCriteria)
         {
             if (cards == null || filterCriteria == null || filterCriteria.Count == 0)
             {
@@ -164,19 +156,21 @@ namespace CollectaMundo
 
                 return true;
             });
+
+            static bool MatchesCriteria(CardSet card, Func<CardSet, string?> propertySelector, HashSet<string> filterValues)
+            {
+                var propertyValue = propertySelector(card) ?? string.Empty;
+
+                var propertyItems = new HashSet<string>(
+                    propertyValue.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                 .Select(p => p.Trim())
+                );
+
+                return filterValues.Any(filterValue => propertyItems.Contains(filterValue));
+            }
         }
 
-        private static bool MatchesCriteria(CardSet card, Func<CardSet, string?> propertySelector, HashSet<string> filterValues)
-        {
-            var propertyValue = propertySelector(card) ?? string.Empty;
 
-            var propertyItems = new HashSet<string>(
-                propertyValue.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                             .Select(p => p.Trim())
-            );
-
-            return filterValues.Any(filterValue => propertyItems.Contains(filterValue));
-        }
 
 
         //var (cardFilter, setFilter) = GetDropdownFilters(WhichDropdown);
