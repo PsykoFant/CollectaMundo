@@ -1,5 +1,6 @@
 TO DO 
-- Lav et filterobjekt, og kald ApplyFilter med det objekt som parameter
+- Refakturer FilterContext, så vi kan lave objekt med liste
+- Vi kan også bruge det objekt til at lave dictionary til opslag osv. 
 
 
 Keyword dropdown performance
