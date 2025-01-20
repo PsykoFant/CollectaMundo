@@ -3,5 +3,3 @@ TO DO
 
 
 Keyword dropdown performance
-Behøver vi checkbox loaded?
-ResetOtherComboBoxSelections

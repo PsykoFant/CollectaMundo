@@ -775,17 +775,6 @@ namespace CollectaMundo
                 }
 
             }
-            static T? FindParent<T>(DependencyObject child) where T : DependencyObject
-            {
-                DependencyObject? parentObject = VisualTreeHelper.GetParent(child);
-
-                while (parentObject != null && parentObject is not T)
-                {
-                    parentObject = VisualTreeHelper.GetParent(parentObject);
-                }
-
-                return parentObject as T;
-            }
 
             void ResetOtherDataGridSelections(DataGrid currentDataGrid)
             {
@@ -901,6 +890,65 @@ namespace CollectaMundo
             }
         }
 
+        private void FilterRulesTextButton_Click(object sender, RoutedEventArgs e) // Apply filter for rulestext freetext search
+        {
+            ApplyFiltersToAllLists();
+        }
+
+
+
+        // When a combobox checkbox item is checked or unchecked
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            HandleCheckCheckOrUncheck(sender, (collection, label) => collection.Add(label));
+        }
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            HandleCheckCheckOrUncheck(sender, (collection, label) => collection.Remove(label));
+        }
+        private void HandleCheckCheckOrUncheck(object sender, Action<HashSet<string>, string> action)
+        {
+            try
+            {
+                if (sender is not DependencyObject dependencyObject)
+                {
+                    return; // Exit if casting failed
+                }
+
+                // Attempt to find the CheckBox and retrieve its Tag and Content
+                CheckBox? checkBox = FindVisualChild<CheckBox>(dependencyObject);
+                if (checkBox == null || checkBox.Tag is not string criteriaKey || checkBox.Content is not ContentPresenter contentPresenter)
+                {
+                    return; // Exit if required data is unavailable
+                }
+
+                string? label = contentPresenter.Content as string;
+                if (string.IsNullOrEmpty(label))
+                {
+                    return; // Exit if no label is present
+                }
+
+                // Ensure the FilterSelections object for this CriteriaKey exists
+                var targetFilterSelection = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == criteriaKey);
+                if (targetFilterSelection == null)
+                {
+                    targetFilterSelection = new FilterSelections { CriteriaKey = criteriaKey };
+                    filterSelections.Add(targetFilterSelection);
+                }
+
+                // Perform the action (Add/Remove) on MultipleCriteria
+                action(targetFilterSelection.MultipleCriteria, label);
+
+                // Trigger filter update
+                ApplyFiltersToAllLists();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in HandleCheckCheckOrUncheck: {ex.Message}");
+            }
+        }
+
+
         // Every time a dynamically populated filter combobox is opened, it is populated with the correct values, including selected items
         private void DynamicallyPopulatedComboBox_DropDownOpened(object sender, EventArgs e)
         {
@@ -954,11 +1002,7 @@ namespace CollectaMundo
                 try
                 {
                     // Finding the parent ComboBox by traversing up the visual tree
-                    DependencyObject parent = VisualTreeHelper.GetParent(textBox);
-                    while (parent is not null and not ComboBox)
-                    {
-                        parent = VisualTreeHelper.GetParent(parent);
-                    }
+                    var parent = FindParent<ComboBox>(textBox);
 
                     // Explicitly check for null before casting
                     if (parent is ComboBox comboBox)
@@ -995,10 +1039,8 @@ namespace CollectaMundo
                     Debug.WriteLine($"Error in FilterTextBox_TextChanged: {ex.Message}");
                 }
             }
-        }
-        private void UpdateListBoxItems(ListBox listBox, string filterText) // This method updates the listbox items based on text typed in FilterTextBox
-        {
-            try
+
+            void UpdateListBoxItems(ListBox listBox, string filterText) // This method updates the listbox items based on text typed in FilterTextBox
             {
                 (IEnumerable<string> dataSet, HashSet<string> selectedItems) = GetDataSetAndSelection(listBox.Name);
 
@@ -1023,71 +1065,27 @@ namespace CollectaMundo
                     }
                 }, System.Windows.Threading.DispatcherPriority.Loaded);
             }
-            catch (Exception ex)
+        }
+        private void CheckBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is CheckBox checkBox && checkBox.DataContext is string dataContext)
             {
-                Debug.WriteLine($"Error in UpdateListBoxItems: {ex.Message}");
+                // Retrieve the CriteriaKey from the CheckBox's Tag
+                string? criteriaKey = checkBox.Tag as string;
+
+                if (!string.IsNullOrEmpty(criteriaKey))
+                {
+                    // Find the FilterSelections object corresponding to the CriteriaKey
+                    var targetFilterSelection = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == criteriaKey);
+
+                    if (targetFilterSelection != null)
+                    {
+                        // Check if the dataContext exists in the MultipleCriteria collection
+                        checkBox.IsChecked = targetFilterSelection.MultipleCriteria.Contains(dataContext);
+                    }
+                }
             }
         }
-        private (IEnumerable<string> items, HashSet<string> selectedItems) GetDataSetAndSelection(string listBoxName) // Generic method for getting the data to populate the listbox with, including already selected items
-        {
-            IEnumerable<string> itemsSource;
-            HashSet<string> selectedItemsSet;
-
-            switch (listBoxName)
-            {
-                case "FilterRarityListBox":
-                    itemsSource = filterContext.AllRarities;
-                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Rarity")?.MultipleCriteria ?? [];
-                    break;
-                case "FilterSuperTypesListBox":
-                    itemsSource = filterContext.AllSuperTypes;
-                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "SuperTypes")?.MultipleCriteria ?? [];
-                    break;
-                case "FilterTypesListBox":
-                    itemsSource = filterContext.AllTypes;
-                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Types")?.MultipleCriteria ?? [];
-                    break;
-                case "FilterSubTypesListBox":
-                    itemsSource = filterContext.AllSubTypes;
-                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "SubTypes")?.MultipleCriteria ?? [];
-                    break;
-                case "FilterKeywordsListBox":
-                    itemsSource = filterContext.AllKeywords;
-                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Keywords")?.MultipleCriteria ?? [];
-                    break;
-                case "FilterFinishesListBox":
-                    itemsSource = filterContext.AllFinishes;
-                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Finishes")?.MultipleCriteria ?? [];
-                    break;
-                case "FilterLanguagesListBox":
-                    itemsSource = filterContext.AllLanguages;
-                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Languages")?.MultipleCriteria ?? [];
-                    break;
-                case "FilterConditionsListBox":
-                    itemsSource = filterContext.AllConditions;
-                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Conditions")?.MultipleCriteria ?? [];
-                    break;
-                default:
-                    throw new InvalidOperationException($"ListBox name not recognized: {listBoxName}");
-            }
-            return (itemsSource.Distinct().OrderBy(type => type).ToList(), selectedItemsSet);
-        }
-        private (string defaultText, string textBoxName, string listBoxName) GetComboBoxConfig(string comboBoxName) // Generic method for getting embedded textbox and listbox elements based on the combobox
-        {
-            return comboBoxName switch
-            {
-                "SuperTypesComboBox" => (filterContext.SuperTypesDefaultText, "FilterSuperTypesTextBox", "FilterSuperTypesListBox"),
-                "TypesComboBox" => (filterContext.TypesDefaultText, "FilterTypesTextBox", "FilterTypesListBox"),
-                "SubTypesComboBox" => (filterContext.SubTypesDefaultText, "FilterSubTypesTextBox", "FilterSubTypesListBox"),
-                "KeywordsComboBox" => (filterContext.KeywordsDefaultText, "FilterKeywordsTextBox", "FilterKeywordsListBox"),
-                "FinishesComboBox" => (filterContext.FinishesDefaultText, "FilterFinishesTextBox", "FilterFinishesListBox"),
-                "RarityComboBox" => (filterContext.RarityDefaultText, "FilterRarityTextBox", "FilterRarityListBox"),
-                "LanguagesComboBox" => (filterContext.LanguagesDefaultText, "FilterLanguagesTextBox", "FilterLanguagesListBox"),
-                "ConditionsComboBox" => (filterContext.ConditionsDefaultText, "FilterConditionsTextBox", "FilterConditionsListBox"),
-                _ => throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}")
-            };
-        }
-
 
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -1124,19 +1122,17 @@ namespace CollectaMundo
         {
             try
             {
-                string defaultText = textBox.Name switch
+                // Find the parent ComboBox dynamically
+                var parentComboBox = FindParent<ComboBox>(textBox);
+
+                if (parentComboBox == null)
                 {
-                    "FilterSuperTypesTextBox" => filterContext.SuperTypesDefaultText,
-                    "FilterTypesTextBox" => filterContext.TypesDefaultText,
-                    "FilterSubTypesTextBox" => filterContext.SubTypesDefaultText,
-                    "FilterKeywordsTextBox" => filterContext.KeywordsDefaultText,
-                    "FilterFinishesTextBox" => filterContext.FinishesDefaultText,
-                    "FilterRarityTextBox" => filterContext.RarityDefaultText,
-                    "FilterRulesTextTextBox" => filterContext.RulesTextDefaultText,
-                    "FilterLanguagesTextBox" => filterContext.LanguagesDefaultText,
-                    "FilterConditionsTextBox" => filterContext.ConditionsDefaultText,
-                    _ => ""
-                };
+                    throw new InvalidOperationException($"No parent ComboBox found for TextBox: {textBox.Name}");
+                }
+
+                // Get the default text dynamically using the ComboBox's name
+                var config = GetComboBoxConfig(parentComboBox.Name);
+                string defaultText = config.defaultText;
 
                 if (condition(textBox, defaultText))
                 {
@@ -1150,108 +1146,7 @@ namespace CollectaMundo
         }
 
 
-        // When a combobox checkbox item is checked or unchecked
-        private void CheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            HandleCheckBoxEvent(sender, (collection, label) => collection.Add(label));
-        }
-        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            HandleCheckBoxEvent(sender, (collection, label) => collection.Remove(label));
-        }
-        private void HandleCheckBoxEvent(object sender, Action<HashSet<string>, string> action)
-        {
-            try
-            {
-                if (sender is not DependencyObject dependencyObject)
-                {
-                    return; // Exit if casting failed
-                }
 
-                // Attempt to find the CheckBox and retrieve its Tag and Content
-                CheckBox? checkBox = FindVisualChild<CheckBox>(dependencyObject);
-                if (checkBox == null || checkBox.Tag is not string criteriaKey || checkBox.Content is not ContentPresenter contentPresenter)
-                {
-                    return; // Exit if required data is unavailable
-                }
-
-                string? label = contentPresenter.Content as string;
-                if (string.IsNullOrEmpty(label))
-                {
-                    return; // Exit if no label is present
-                }
-
-                // Ensure the FilterSelections object for this CriteriaKey exists
-                var targetFilterSelection = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == criteriaKey);
-                if (targetFilterSelection == null)
-                {
-                    targetFilterSelection = new FilterSelections { CriteriaKey = criteriaKey };
-                    filterSelections.Add(targetFilterSelection);
-                }
-
-                // Perform the action (Add/Remove) on MultipleCriteria
-                action(targetFilterSelection.MultipleCriteria, label);
-
-                // Trigger filter update
-                ApplyFiltersToAllLists();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in HandleCheckBoxEvent: {ex.Message}");
-            }
-        }
-        private void CheckBox_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (sender is CheckBox checkBox && checkBox.DataContext is string dataContext)
-            {
-                // Retrieve the CriteriaKey from the CheckBox's Tag
-                string? criteriaKey = checkBox.Tag as string;
-
-                if (!string.IsNullOrEmpty(criteriaKey))
-                {
-                    // Find the FilterSelections object corresponding to the CriteriaKey
-                    var targetFilterSelection = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == criteriaKey);
-
-                    if (targetFilterSelection != null)
-                    {
-                        // Check if the dataContext exists in the MultipleCriteria collection
-                        checkBox.IsChecked = targetFilterSelection.MultipleCriteria.Contains(dataContext);
-                    }
-                }
-            }
-        }
-
-        public static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject // Because we use custom combobox, we need this method to find embedded elements
-        {
-            try
-            {
-                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
-                {
-                    DependencyObject child = VisualTreeHelper.GetChild(obj, i);
-                    if (child is T correctChild)
-                    {
-                        return correctChild;
-                    }
-
-                    T? childOfChild = FindVisualChild<T>(child);
-                    if (childOfChild != null)
-                    {
-                        return childOfChild;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // Optionally log the exception if needed
-                Debug.WriteLine($"An error occurred while searching for visual child: {ex}");
-            }
-
-            return null;
-        }
-        private void FilterRulesTextButton_Click(object sender, RoutedEventArgs e) // Apply filter for rulestext freetext search
-        {
-            ApplyFiltersToAllLists();
-        }
         public void ApplyFiltersToAllLists()
         {
             FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
@@ -1375,6 +1270,105 @@ namespace CollectaMundo
                     }
                 }
             }
+        }
+
+        // Filtering helper methods
+        private (IEnumerable<string> items, HashSet<string> selectedItems) GetDataSetAndSelection(string listBoxName) // Generic method for getting the data to populate the listbox with, including already selected items
+        {
+            IEnumerable<string> itemsSource;
+            HashSet<string> selectedItemsSet;
+
+            switch (listBoxName)
+            {
+                case "FilterRarityListBox":
+                    itemsSource = filterContext.AllRarities;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Rarity")?.MultipleCriteria ?? [];
+                    break;
+                case "FilterSuperTypesListBox":
+                    itemsSource = filterContext.AllSuperTypes;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "SuperTypes")?.MultipleCriteria ?? [];
+                    break;
+                case "FilterTypesListBox":
+                    itemsSource = filterContext.AllTypes;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Types")?.MultipleCriteria ?? [];
+                    break;
+                case "FilterSubTypesListBox":
+                    itemsSource = filterContext.AllSubTypes;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "SubTypes")?.MultipleCriteria ?? [];
+                    break;
+                case "FilterKeywordsListBox":
+                    itemsSource = filterContext.AllKeywords;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Keywords")?.MultipleCriteria ?? [];
+                    break;
+                case "FilterFinishesListBox":
+                    itemsSource = filterContext.AllFinishes;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Finishes")?.MultipleCriteria ?? [];
+                    break;
+                case "FilterLanguagesListBox":
+                    itemsSource = filterContext.AllLanguages;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Languages")?.MultipleCriteria ?? [];
+                    break;
+                case "FilterConditionsListBox":
+                    itemsSource = filterContext.AllConditions;
+                    selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Conditions")?.MultipleCriteria ?? [];
+                    break;
+                default:
+                    throw new InvalidOperationException($"ListBox name not recognized: {listBoxName}");
+            }
+            return (itemsSource.Distinct().OrderBy(type => type).ToList(), selectedItemsSet);
+        }
+        private (string defaultText, string textBoxName, string listBoxName) GetComboBoxConfig(string comboBoxName) // Generic method for getting embedded textbox and listbox elements based on the combobox
+        {
+            return comboBoxName switch
+            {
+                "SuperTypesComboBox" => (filterContext.SuperTypesDefaultText, "FilterSuperTypesTextBox", "FilterSuperTypesListBox"),
+                "TypesComboBox" => (filterContext.TypesDefaultText, "FilterTypesTextBox", "FilterTypesListBox"),
+                "SubTypesComboBox" => (filterContext.SubTypesDefaultText, "FilterSubTypesTextBox", "FilterSubTypesListBox"),
+                "KeywordsComboBox" => (filterContext.KeywordsDefaultText, "FilterKeywordsTextBox", "FilterKeywordsListBox"),
+                "FinishesComboBox" => (filterContext.FinishesDefaultText, "FilterFinishesTextBox", "FilterFinishesListBox"),
+                "RarityComboBox" => (filterContext.RarityDefaultText, "FilterRarityTextBox", "FilterRarityListBox"),
+                "LanguagesComboBox" => (filterContext.LanguagesDefaultText, "FilterLanguagesTextBox", "FilterLanguagesListBox"),
+                "ConditionsComboBox" => (filterContext.ConditionsDefaultText, "FilterConditionsTextBox", "FilterConditionsListBox"),
+                _ => throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}")
+            };
+        }
+        private static T? FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            DependencyObject? parentObject = VisualTreeHelper.GetParent(child);
+
+            while (parentObject != null && parentObject is not T)
+            {
+                parentObject = VisualTreeHelper.GetParent(parentObject);
+            }
+
+            return parentObject as T;
+        }
+        public static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject // Because we use custom combobox, we need this method to find embedded elements
+        {
+            try
+            {
+                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+                {
+                    DependencyObject child = VisualTreeHelper.GetChild(obj, i);
+                    if (child is T correctChild)
+                    {
+                        return correctChild;
+                    }
+
+                    T? childOfChild = FindVisualChild<T>(child);
+                    if (childOfChild != null)
+                    {
+                        return childOfChild;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Optionally log the exception if needed
+                Debug.WriteLine($"An error occurred while searching for visual child: {ex}");
+            }
+
+            return null;
         }
 
         #endregion
