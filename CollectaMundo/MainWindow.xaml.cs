@@ -159,7 +159,7 @@ namespace CollectaMundo
             // Run some tests
             InitializeTestCards();
             // Inject filterSelections only for testing purposes
-            FilterContext testContext = new FilterContext();
+            FilterContext testContext = new();
 
             //RunFilterTests();
         }
@@ -846,10 +846,8 @@ namespace CollectaMundo
                     filterSelection.Operator = operatorSelection;
                 }
             }
-
             ApplyFiltersToAllLists();
         }
-
         private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)
         {
             // Avoid recursive triggering
