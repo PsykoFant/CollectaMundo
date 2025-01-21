@@ -1,4 +1,6 @@
-﻿namespace CollectaMundo.Models
+﻿using System.Windows.Controls;
+
+namespace CollectaMundo.Models
 {
     public class FilterContext
     {
@@ -11,7 +13,8 @@
         public List<string> AllLanguages { get; set; } = [];
         public List<string> AllConditions { get; set; } = [];
         public List<string> AllRarities { get; set; } = [];
-
+        public TextBox? TextBox { get; set; }
+        public ListBox? ListBox { get; set; }
 
         // Filter defaults
         public string RulesTextDefaultText { get; } = "Filter rulestext ...";
