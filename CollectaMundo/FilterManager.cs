@@ -46,7 +46,7 @@ namespace CollectaMundo
                     );
 
                 var numberCriteria = MainWindow.CurrentInstance.filterSelections
-                    .Where(fs => fs.CriteriaKey != null && fs.NumberCriteria != 0)
+                    .Where(fs => fs.CriteriaKey != null && fs.Operator != OperatorType.Unknown)
                     .ToDictionary(
                         fs => fs.CriteriaKey!,
                         fs => (
@@ -58,14 +58,14 @@ namespace CollectaMundo
 
 
 
+
                 // Apply filters
                 var filteredCards = FilterByMultipleProperties(cards, filterCriteriaMultiple);
                 filteredCards = FilterBySingleProperty(filteredCards, singleFilterCriteria);
-                Debug.WriteLine($"Number of numberCriteria: {numberCriteria.Count}");
-                foreach (var (key, (_, (value, operatorType))) in numberCriteria)
-                {
-                    Debug.WriteLine($"CriteriaKey: {key}, Value: {value}, Operator: {operatorType}");
-                }
+
+
+
+
 
                 filteredCards = FilterByNumber(filteredCards, numberCriteria);
 
@@ -240,9 +240,6 @@ namespace CollectaMundo
                 foreach (var (criteriaKey, (propertySelector, (value, operatorType))) in numberCriteria)
                 {
                     var propertyValue = propertySelector(card);
-
-                    // Debugging property values
-                    Debug.WriteLine($"Evaluating {criteriaKey}: CardValue = {propertyValue}, FilterValue = {value}, Operator = {operatorType}");
 
                     if (propertyValue == null)
                     {
