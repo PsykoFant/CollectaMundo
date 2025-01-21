@@ -350,44 +350,6 @@ namespace CollectaMundo
         }
         private static CardSet CreateCardFromReader(DbDataReader reader, DataGridContext context)
         {
-            // Utility to process ManaCost string
-            static string ProcessManaCost(string manaCostRaw)
-            {
-                char[] separator = ['{', '}'];
-                return string.Join(",", manaCostRaw.Split(separator, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
-            }
-
-            // Utility to safely retrieve field values
-            static T? GetFieldValue<T>(DbDataReader reader, string columnName)
-            {
-                if (reader[columnName] == DBNull.Value)
-                {
-                    return default;
-                }
-
-                object value = reader[columnName];
-
-                // Explicit conversion for specific cases
-                if (typeof(T) == typeof(int?) && value is long longValue)
-                {
-                    return (T)(object)(int?)longValue;
-                }
-
-                return (T)value;
-            }
-
-            // Utility to parse nullable decimal price fields
-            static decimal? ParsePrice(string priceColumn, DbDataReader reader)
-            {
-                return decimal.TryParse(reader[priceColumn]?.ToString(), out decimal price) ? price : null;
-            }
-
-            // Utility to parse nullable DateTime fields
-            static DateTime? ParseDate(string? dateRaw)
-            {
-                return DateTime.TryParse(dateRaw, out DateTime parsedDate) ? parsedDate : null;
-            }
-
             try
             {
                 // Instantiate appropriate type
@@ -473,6 +435,43 @@ namespace CollectaMundo
                 MessageBox.Show($"Error in CreateCardFromReader when trying to create lists for {context}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Debug.WriteLine($"Error in CreateCardFromReader: {ex.Message}");
                 throw;
+            }
+            // Utility to process ManaCost string
+            static string ProcessManaCost(string manaCostRaw)
+            {
+                char[] separator = ['{', '}'];
+                return string.Join(",", manaCostRaw.Split(separator, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
+            }
+
+            // Utility to safely retrieve field values
+            static T? GetFieldValue<T>(DbDataReader reader, string columnName)
+            {
+                if (reader[columnName] == DBNull.Value)
+                {
+                    return default;
+                }
+
+                object value = reader[columnName];
+
+                // Explicit conversion for specific cases
+                if (typeof(T) == typeof(int?) && value is long longValue)
+                {
+                    return (T)(object)(int?)longValue;
+                }
+
+                return (T)value;
+            }
+
+            // Utility to parse nullable decimal price fields
+            static decimal? ParsePrice(string priceColumn, DbDataReader reader)
+            {
+                return decimal.TryParse(reader[priceColumn]?.ToString(), out decimal price) ? price : null;
+            }
+
+            // Utility to parse nullable DateTime fields
+            static DateTime? ParseDate(string? dateRaw)
+            {
+                return DateTime.TryParse(dateRaw, out DateTime parsedDate) ? parsedDate : null;
             }
         }
         private async Task LoadColorIcons(List<CardSet> cardList, string query)
@@ -616,6 +615,7 @@ namespace CollectaMundo
                     "Types",
                     "SubTypes",
                     "Keywords",
+                    "Text",
                     "Finishes",
                     "Language",
                     "SelectedCondition"
@@ -657,6 +657,7 @@ namespace CollectaMundo
                         "Types" => "Filter card types ...",
                         "SubTypes" => "Filter subtypes ...",
                         "Keywords" => "Filter keywords ...",
+                        "Text" => "Filter rulestext ...",
                         "Finishes" => "Filter finishes ...",
                         "Language" => "Filter languages ...",
                         "SelectedCondition" => "Filter conditions ...",
@@ -711,7 +712,14 @@ namespace CollectaMundo
                                 filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
                             }
                         }
+                        else if (FindName(textBoxName) is TextBox textBox) // Directly locate the TextBox by name
+                        {
+                            // Set the default text and style
+                            textBox.Text = filter.DefaultText ?? $"Filter {filter.CriteriaKey} ...";
+                            textBox.Foreground = new SolidColorBrush(Colors.Gray);
+                        }
                     }
+
 
 
                     PriceRetailerUiUpdates();
@@ -920,6 +928,16 @@ namespace CollectaMundo
         }
         private void FilterRulesTextButton_Click(object sender, RoutedEventArgs e) // Apply filter for rulestext freetext search
         {
+            var filterTextEntry = filterSelections.FirstOrDefault(ft => ft.CriteriaKey == "Text");
+            if (filterTextEntry == null)
+            {
+                filterTextEntry = new FilterSelections { CriteriaKey = "Text" };
+                filterSelections.Add(filterTextEntry);
+            }
+
+            // Update the SingleCriteria field with the selected value
+            filterTextEntry.SingleCriteria = FilterTextTextBox.Text;
+
             ApplyFiltersToAllLists();
         }
 
@@ -1149,13 +1167,25 @@ namespace CollectaMundo
         {
             try
             {
-                // Find the parent ComboBox dynamically
-                var parentComboBox = FindParent<ComboBox>(textBox) ?? throw new InvalidOperationException($"No parent ComboBox found for TextBox: {textBox.Name}");
+                string defaultText;
 
-                // Get the default text dynamically using the ComboBox's name
-                var config = GetComboBoxConfig(parentComboBox.Name);
-                string defaultText = config.defaultText;
+                // Special case for FilterTextTextBox
+                if (textBox.Name == "FilterTextTextBox")
+                {
+                    var textFilter = filterDefaults.FirstOrDefault(fd => fd.CriteriaKey == "Text");
+                    defaultText = textFilter?.DefaultText ?? "Oops, something went wrong ...";
+                }
+                else
+                {
+                    // Find the parent ComboBox dynamically
+                    var parentComboBox = FindParent<ComboBox>(textBox) ?? throw new InvalidOperationException($"No parent ComboBox found for TextBox: {textBox.Name}");
 
+                    // Get the default text dynamically using the ComboBox's name
+                    var config = GetComboBoxConfig(parentComboBox.Name);
+                    defaultText = config.defaultText;
+                }
+
+                // Apply condition and action
                 if (condition(textBox, defaultText))
                 {
                     action(textBox, defaultText);
@@ -1192,7 +1222,6 @@ namespace CollectaMundo
                 }
             }
 
-
             // Clear non-custom comboboxes
             ManaValueOperatorComboBox.SelectedIndex = 3;
             ManaValueComboBox.SelectedIndex = 0;
@@ -1227,8 +1256,8 @@ namespace CollectaMundo
             filterSelections = [];
 
             // Clear rulestext textbox
-            //FilterRulesTextTextBox.Text = filterDefaults.RulesTextDefaultText;
-            FilterRulesTextTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+            FilterTextTextBox.Text = filterDefaults.FirstOrDefault(fd => fd.CriteriaKey == "Text")?.DefaultText ?? "Oops, something went wrong ...";
+            FilterTextTextBox.Foreground = new SolidColorBrush(Colors.Gray);
 
             // Uncheck CheckBoxes if necessary
             CheckBoxCardsForTrade.IsChecked = false;
@@ -1241,9 +1270,7 @@ namespace CollectaMundo
             ImageSourceUrl2nd = null;
 
             // Update filter label and apply filters to refresh the DataGrid            
-            FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
-            FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
-            FilterManager.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
+            ApplyFiltersToAllLists();
 
             // Local helper functions
             static void ResetFilterTextBox(ComboBox comboBox, string textBoxName, string defaultText)
