@@ -111,8 +111,8 @@
 
                 <!--Mana value filtering-->
                 <Label x:Name="ManaValueLabel" Content="Mana value is: " HorizontalAlignment="Left" Margin="0,190,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
-                <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="10,215,0,0" VerticalAlignment="Top" Height="20"/>
-                <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="125,215,0,0" VerticalAlignment="Top" Height="20"/>
+                <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="10,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueOperatorComboBox_SelectionChanged"/>
+                <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="125,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueComboBox_SelectionChanged"/>
 
                 <ComboBox x:Name="RarityComboBox" HorizontalAlignment="Left" Margin="10,245,0,0" VerticalAlignment="Top" Width="180" Height="20" DropDownOpened="DynamicallyPopulatedComboBox_DropDownOpened">
                     <ComboBox.Template>

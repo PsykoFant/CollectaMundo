@@ -81,11 +81,37 @@ namespace CollectaMundo
         }
         public enum OperatorType
         {
+            // Basic logical operators
             OR = 0,
             AND = 1,
             NOT = 2,
+
+            // Comparison operators
+            EQUALS = 3,
+            NOT_EQUALS = 4,
+            GREATER_THAN = 5,
+            LESS_THAN = 6,
+            GREATER_THAN_OR_EQUALS = 7,
+            LESS_THAN_OR_EQUALS = 8,
+
+            // Range operators
+            IN_RANGE = 9,
+            NOT_IN_RANGE = 10,
+
+            // String-specific operators
+            CONTAINS = 11,
+            DOES_NOT_CONTAIN = 12,
+            STARTS_WITH = 13,
+            ENDS_WITH = 14,
+
+            // Special operators
+            IS_NULL = 15,
+            IS_NOT_NULL = 16,
+
+            // Unknown or default
             Unknown = -1
         }
+
 
 
         // The object which holds the filter selections
@@ -149,9 +175,6 @@ namespace CollectaMundo
             MyCollectionDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(1);
             AllCardsForDecksDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(2);
 
-            // Pick up filtering combobox changes            
-            ManaValueComboBox.SelectionChanged += DataGridHeaderComboBox_SelectionChanged;
-            ManaValueOperatorComboBox.SelectionChanged += DataGridHeaderComboBox_SelectionChanged;
 
             // Run some tests
             //InitializeTestCards();
@@ -952,6 +975,66 @@ namespace CollectaMundo
 
             ApplyFiltersToAllLists();
         }
+
+        private void ManaValueComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            FilterByManaValue();
+        }
+
+        private void ManaValueOperatorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            FilterByManaValue();
+        }
+
+        private void FilterByManaValue()
+        {
+            // Find or create the FilterSelections object for ManaValue
+            var manaValue = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "ManaValue");
+            if (manaValue == null)
+            {
+                manaValue = new FilterSelections { CriteriaKey = "ManaValue" };
+                filterSelections.Add(manaValue);
+            }
+
+            // Parse the selected value as a double and update NumberCriteria
+            if (ManaValueComboBox.SelectedItem != null &&
+                double.TryParse(ManaValueComboBox.SelectedItem.ToString(), out double parsedValue))
+            {
+                manaValue.NumberCriteria = parsedValue;
+            }
+            else
+            {
+                Debug.WriteLine("Invalid or missing ManaValue selection.");
+            }
+
+            // Map the selected operator text to the OperatorType enum
+            if (ManaValueOperatorComboBox.SelectedItem != null)
+            {
+                string selectedOperator = ManaValueOperatorComboBox.SelectedItem.ToString()!;
+                manaValue.Operator = selectedOperator switch
+                {
+                    "less than" => OperatorType.LESS_THAN,
+                    "less than/eq" => OperatorType.LESS_THAN_OR_EQUALS,
+                    "greater than" => OperatorType.GREATER_THAN,
+                    "greater than/eq" => OperatorType.GREATER_THAN_OR_EQUALS,
+                    "equal to" => OperatorType.EQUALS,
+                    _ => OperatorType.Unknown
+                };
+            }
+            else
+            {
+                Debug.WriteLine("No operator selected.");
+                manaValue.Operator = OperatorType.Unknown;
+            }
+
+            FilterManager.DebugFilterSelections(filterSelections);
+
+            // Apply the updated filters
+            ApplyFiltersToAllLists();
+        }
+
+
+
 
 
         // When a combobox checkbox item is checked or unchecked

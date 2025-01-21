@@ -5,6 +5,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using static CollectaMundo.MainWindow;
 using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo
@@ -44,9 +45,29 @@ namespace CollectaMundo
                         )
                     );
 
+                var numberCriteria = MainWindow.CurrentInstance.filterSelections
+                    .Where(fs => fs.CriteriaKey != null && fs.NumberCriteria != 0)
+                    .ToDictionary(
+                        fs => fs.CriteriaKey!,
+                        fs => (
+                            ResolveNumericPropertySelector(fs.CriteriaKey!),
+                            (fs.NumberCriteria, fs.Operator)
+                        )
+                    );
+
+
+
+
                 // Apply filters
                 var filteredCards = FilterByMultipleProperties(cards, filterCriteriaMultiple);
                 filteredCards = FilterBySingleProperty(filteredCards, singleFilterCriteria);
+                Debug.WriteLine($"Number of numberCriteria: {numberCriteria.Count}");
+                foreach (var (key, (_, (value, operatorType))) in numberCriteria)
+                {
+                    Debug.WriteLine($"CriteriaKey: {key}, Value: {value}, Operator: {operatorType}");
+                }
+
+                filteredCards = FilterByNumber(filteredCards, numberCriteria);
 
                 var finalFilteredCards = filteredCards.ToList();
 
@@ -96,6 +117,40 @@ namespace CollectaMundo
                 Debug.WriteLine($"Property '{criteriaKey}' not found on any supported types.");
                 return _ => null;
             }
+
+            static Func<CardSet, double?> ResolveNumericPropertySelector(string criteriaKey)
+            {
+                // Attempt to find the numeric property in CardSet
+                var numericProperty = typeof(CardSet).GetProperty(criteriaKey);
+                if (numericProperty != null && numericProperty.PropertyType == typeof(double))
+                {
+                    return card => numericProperty.GetValue(card) as double?;
+                }
+
+                // Attempt to find numeric property in CardInCollection
+                var cardInCollectionProperty = typeof(CardInCollection).GetProperty(criteriaKey);
+                if (cardInCollectionProperty != null && cardInCollectionProperty.PropertyType == typeof(double))
+                {
+                    return card => card is CardInCollection cardInCollection
+                        ? cardInCollectionProperty.GetValue(cardInCollection) as double?
+                        : null;
+                }
+
+                // Attempt to find numeric property in CardInDeck
+                var cardInDeckProperty = typeof(CardInDeck).GetProperty(criteriaKey);
+                if (cardInDeckProperty != null && cardInDeckProperty.PropertyType == typeof(double))
+                {
+                    return card => card is CardInDeck cardInDeck
+                        ? cardInDeckProperty.GetValue(cardInDeck) as double?
+                        : null;
+                }
+
+                // Log and return a fallback function for unsupported properties
+                Debug.WriteLine($"Numeric property '{criteriaKey}' not found on any supported types.");
+                return _ => null;
+            }
+
+
         }
         private static IEnumerable<CardSet> FilterBySingleProperty(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
         {
@@ -170,82 +225,90 @@ namespace CollectaMundo
                 return filterValues.Any(filterValue => propertyItems.Contains(filterValue));
             }
         }
+        private static IEnumerable<CardSet> FilterByNumber(
+    IEnumerable<CardSet> cards,
+    Dictionary<string, (Func<CardSet, double?> propertySelector, (double value, OperatorType operatorType))> numberCriteria)
+        {
+            if (cards == null || numberCriteria == null || numberCriteria.Count == 0)
+            {
+                Debug.WriteLine("No criteria provided, returning unfiltered cards.");
+                return cards!; // Return unfiltered if no criteria
+            }
+
+            return cards.Where(card =>
+            {
+                foreach (var (criteriaKey, (propertySelector, (value, operatorType))) in numberCriteria)
+                {
+                    var propertyValue = propertySelector(card);
+
+                    // Debugging property values
+                    Debug.WriteLine($"Evaluating {criteriaKey}: CardValue = {propertyValue}, FilterValue = {value}, Operator = {operatorType}");
+
+                    if (propertyValue == null)
+                    {
+                        return false; // Exclude cards with null values
+                    }
+
+                    bool matches = operatorType switch
+                    {
+                        OperatorType.LESS_THAN => propertyValue < value,
+                        OperatorType.LESS_THAN_OR_EQUALS => propertyValue <= value,
+                        OperatorType.GREATER_THAN => propertyValue > value,
+                        OperatorType.GREATER_THAN_OR_EQUALS => propertyValue >= value,
+                        OperatorType.EQUALS => Math.Abs(propertyValue.Value - value) < 0.0001,
+                        OperatorType.NOT_EQUALS => Math.Abs(propertyValue.Value - value) >= 0.0001,
+                        _ => false
+                    };
+
+                    if (!matches)
+                    {
+                        return false; // Exclude card if the condition fails
+                    }
+                }
+
+                return true; // Include card if all conditions are met
+            });
+        }
 
 
 
+        public static void DebugFilterSelections(List<FilterSelections> filterSelections)
+        {
+            try
+            {
+                Debug.WriteLine("FilterSelections Debug Output:");
+                Debug.WriteLine(new string('-', 50));
 
-        //var (cardFilter, setFilter) = GetDropdownFilters(WhichDropdown);
-        //string rulesTextFilter = MainWindow.CurrentInstance.FilterRulesTextTextBox.Text ?? string.Empty;
+                foreach (var filter in filterSelections)
+                {
+                    Debug.WriteLine($"CriteriaKey: {filter.CriteriaKey}");
+                    Debug.WriteLine($"Operator: {filter.Operator}");
+                    Debug.WriteLine($"SingleCriteria: {filter.SingleCriteria ?? "null"}");
+                    Debug.WriteLine($"NumberCriteria: {filter.NumberCriteria}");
 
+                    if (filter.MultipleCriteria != null && filter.MultipleCriteria.Count > 0)
+                    {
+                        Debug.WriteLine("MultipleCriteria: " + string.Join(", ", filter.MultipleCriteria));
+                    }
+                    else
+                    {
+                        Debug.WriteLine("MultipleCriteria: Empty or null");
+                    }
 
-        //// Filtering by card name, set name, and rules text
-        ////filteredCards = FilterByText(filteredCards, cardFilter, setFilter, rulesTextFilter);
+                    Debug.WriteLine(new string('-', 50));
+                }
 
-        //// Apply mana value filter
-        //filteredCards = FilterByManaValue(filteredCards);
+                Debug.WriteLine("End of FilterSelections Debug Output");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in DebugFilterSelections: {ex.Message}");
+            }
+        }
+
 
         //filteredCards = FilterByColor(filteredCards, MainWindow.CurrentInstance.filterSelections.SelectedColors, MainWindow.CurrentInstance.filterSelections.ColorOperator);
 
-        // Apply specific filters for list contexts
-        //filteredCards = datagridName switch
-        //{
-        //    "myCards" => ApplyMyCardsSpecificFilters(filteredCards),
-        //    _ => filteredCards
-        //};
-
-
-
-        private static (string cardFilter, string setFilter) GetDropdownFilters(string whichDropdown)
-        {
-            // Helper function to find a ComboBox by its tag in the specified DataGrid
-            ComboBox? GetComboBoxByTag(DataGrid dataGrid, string tagName) =>
-                FindVisualChildren<ComboBox>(dataGrid)
-                          .FirstOrDefault(cb => cb.Tag?.ToString() == tagName);
-
-            string cardFilter = string.Empty;
-            string setFilter = string.Empty;
-
-            // Determine which dropdown to process
-            switch (whichDropdown)
-            {
-                case "AllCards":
-                    cardFilter = GetComboBoxByTag(MainWindow.CurrentInstance.AllCardsDataGrid, "AllCardsName")?.SelectedItem?.ToString() ?? string.Empty;
-                    setFilter = GetComboBoxByTag(MainWindow.CurrentInstance.AllCardsDataGrid, "AllCardsSet")?.SelectedItem?.ToString() ?? string.Empty;
-                    break;
-
-                case "MyCollection":
-                    cardFilter = GetComboBoxByTag(MainWindow.CurrentInstance.MyCollectionDataGrid, "MyCollectionName")?.SelectedItem?.ToString() ?? string.Empty;
-                    setFilter = GetComboBoxByTag(MainWindow.CurrentInstance.MyCollectionDataGrid, "MyCollectionSet")?.SelectedItem?.ToString() ?? string.Empty;
-                    break;
-
-                case "AllCardsForDecks":
-                    cardFilter = GetComboBoxByTag(MainWindow.CurrentInstance.AllCardsForDecksDataGrid, "AllCardsForDecksName")?.SelectedItem?.ToString() ?? string.Empty;
-                    break;
-
-                default:
-                    Debug.WriteLine($"Unknown dropdown type: {whichDropdown}");
-                    break;
-            }
-
-            return (cardFilter, setFilter);
-        }
-        //private static IEnumerable<CardSet> FilterByText(IEnumerable<CardSet> cards, string cardFilter, string setFilter, string rulesTextFilter)
-        //{
-        //    var filteredCards = cards;
-        //    if (!string.IsNullOrEmpty(cardFilter))
-        //    {
-        //        filteredCards = filteredCards.Where(card => card.Name != null && card.Name.Contains(cardFilter, StringComparison.OrdinalIgnoreCase));
-        //    }
-        //    if (!string.IsNullOrEmpty(setFilter))
-        //    {
-        //        filteredCards = filteredCards.Where(card => card.SetName != null && card.SetName.Equals(setFilter, StringComparison.OrdinalIgnoreCase));
-        //    }
-        //    if (!string.IsNullOrEmpty(rulesTextFilter) && rulesTextFilter != MainWindow.CurrentInstance.filterSelections.RulesTextDefaultText)
-        //    {
-        //        filteredCards = filteredCards.Where(card => card.Text != null && card.Text.Contains(rulesTextFilter, StringComparison.OrdinalIgnoreCase));
-        //    }
-        //    return filteredCards;
-        //}
         private static IEnumerable<CardSet> FilterByManaValue(IEnumerable<CardSet> cards)
         {
             // Retrieve filter parameters from the UI

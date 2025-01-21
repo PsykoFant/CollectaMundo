@@ -11,6 +11,7 @@ namespace CollectaMundo.Models
         public OperatorType Operator { get; set; } = 0;
         public String? SingleCriteria { get; set; } = null;
         public HashSet<string> MultipleCriteria { get; set; } = [];
+        public double NumberCriteria { get; set; } = 0;
     }
     public class FilterDefaults : Filters
     {
