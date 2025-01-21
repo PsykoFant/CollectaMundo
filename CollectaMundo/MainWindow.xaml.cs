@@ -749,7 +749,7 @@ namespace CollectaMundo
 
             static void UpdateComboBoxSource(DataGrid dataGrid, string tag, List<string?> dataSource)
             {
-                List<ComboBox> headerComboBoxes = FindVisualChildren<ComboBox>(dataGrid);
+                List<ComboBox> headerComboBoxes = FilterManager.FindVisualChildren<ComboBox>(dataGrid);
                 foreach (ComboBox comboBox in headerComboBoxes)
                 {
                     if (comboBox.Tag?.ToString() == tag)
@@ -803,7 +803,7 @@ namespace CollectaMundo
                 }
 
                 // Find the parent DataGrid for the current ComboBox
-                DataGrid? parentDataGrid = FindParent<DataGrid>(comboBox);
+                DataGrid? parentDataGrid = FilterManager.FindParent<DataGrid>(comboBox);
 
                 // If a parent DataGrid is found, reset selections in other DataGrids
                 if (parentDataGrid != null)
@@ -826,7 +826,7 @@ namespace CollectaMundo
                 // Iterate through other DataGrids and reset their ComboBox selections
                 foreach (DataGrid dataGrid in allDataGrids.Where(dg => dg != currentDataGrid))
                 {
-                    List<ComboBox> headerComboBoxes = FindVisualChildren<ComboBox>(dataGrid);
+                    List<ComboBox> headerComboBoxes = FilterManager.FindVisualChildren<ComboBox>(dataGrid);
                     foreach (ComboBox headerComboBox in headerComboBoxes)
                     {
                         headerComboBox.SelectedIndex = -1;
@@ -973,7 +973,7 @@ namespace CollectaMundo
                 }
 
                 // Attempt to find the CheckBox and retrieve its Tag and Content
-                CheckBox? checkBox = FindVisualChild<CheckBox>(dependencyObject);
+                CheckBox? checkBox = FilterManager.FindVisualChild<CheckBox>(dependencyObject);
                 if (checkBox == null || checkBox.Tag is not string criteriaKey || checkBox.Content is not ContentPresenter contentPresenter)
                 {
                     return; // Exit if required data is unavailable
@@ -1040,7 +1040,7 @@ namespace CollectaMundo
                         {
                             if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem listBoxItem)
                             {
-                                CheckBox? checkBox = FindVisualChild<CheckBox>(listBoxItem);
+                                CheckBox? checkBox = FilterManager.FindVisualChild<CheckBox>(listBoxItem);
                                 if (checkBox != null)
                                 {
                                     checkBox.IsChecked = selectedItems.Contains(item);
@@ -1081,7 +1081,7 @@ namespace CollectaMundo
                 try
                 {
                     // Finding the parent ComboBox by traversing up the visual tree
-                    var parent = FindParent<ComboBox>(textBox);
+                    var parent = FilterManager.FindParent<ComboBox>(textBox);
 
                     // Explicitly check for null before casting
                     if (parent is ComboBox comboBox)
@@ -1135,7 +1135,7 @@ namespace CollectaMundo
                     {
                         if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem listBoxItem) // Check if listBoxItem is not null
                         {
-                            CheckBox? checkBox = FindVisualChild<CheckBox>(listBoxItem);
+                            CheckBox? checkBox = FilterManager.FindVisualChild<CheckBox>(listBoxItem);
                             if (checkBox != null) // Check if checkBox is not null
                             {
                                 checkBox.IsChecked = selectedItems.Contains(item);
@@ -1192,7 +1192,7 @@ namespace CollectaMundo
                 else
                 {
                     // Find the parent ComboBox dynamically
-                    var parentComboBox = FindParent<ComboBox>(textBox) ?? throw new InvalidOperationException($"No parent ComboBox found for TextBox: {textBox.Name}");
+                    var parentComboBox = FilterManager.FindParent<ComboBox>(textBox) ?? throw new InvalidOperationException($"No parent ComboBox found for TextBox: {textBox.Name}");
 
                     // Get the default text dynamically using the ComboBox's name
                     var config = FilterManager.GetComboBoxConfig(parentComboBox.Name, filterDefaults);
@@ -1242,17 +1242,17 @@ namespace CollectaMundo
             ManaValueComboBox.SelectedIndex = 0;
 
             // Find and clear all ComboBoxes in the DataGrid header
-            List<ComboBox> headerComboBoxesAllCards = FindVisualChildren<ComboBox>(AllCardsDataGrid);
+            List<ComboBox> headerComboBoxesAllCards = FilterManager.FindVisualChildren<ComboBox>(AllCardsDataGrid);
             foreach (ComboBox headerComboBox in headerComboBoxesAllCards)
             {
                 headerComboBox.SelectedIndex = -1;
             }
-            List<ComboBox> headerComboBoxesMyCollection = FindVisualChildren<ComboBox>(MyCollectionDataGrid);
+            List<ComboBox> headerComboBoxesMyCollection = FilterManager.FindVisualChildren<ComboBox>(MyCollectionDataGrid);
             foreach (ComboBox headerComboBox in headerComboBoxesMyCollection)
             {
                 headerComboBox.SelectedIndex = -1;
             }
-            List<ComboBox> headerComboBoxesAllCardsForDecks = FindVisualChildren<ComboBox>(AllCardsForDecksDataGrid);
+            List<ComboBox> headerComboBoxesAllCardsForDecks = FilterManager.FindVisualChildren<ComboBox>(AllCardsForDecksDataGrid);
             foreach (ComboBox headerComboBox in headerComboBoxesAllCardsForDecks)
             {
                 headerComboBox.SelectedIndex = -1;
@@ -1302,7 +1302,7 @@ namespace CollectaMundo
                 {
                     if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem container)
                     {
-                        CheckBox? checkBox = FindVisualChild<CheckBox>(container);
+                        CheckBox? checkBox = FilterManager.FindVisualChild<CheckBox>(container);
                         if (checkBox != null)
                         {
                             checkBox.IsChecked = false;
@@ -1336,72 +1336,6 @@ namespace CollectaMundo
                     }
                 }
             }
-        }
-
-        // Filtering helper methods
-
-
-
-        private static T? FindParent<T>(DependencyObject child) where T : DependencyObject
-        {
-            DependencyObject? parentObject = VisualTreeHelper.GetParent(child);
-
-            while (parentObject != null && parentObject is not T)
-            {
-                parentObject = VisualTreeHelper.GetParent(parentObject);
-            }
-
-            return parentObject as T;
-        }
-        public static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject // Because we use custom combobox, we need this method to find embedded elements
-        {
-            try
-            {
-                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
-                {
-                    DependencyObject child = VisualTreeHelper.GetChild(obj, i);
-                    if (child is T correctChild)
-                    {
-                        return correctChild;
-                    }
-
-                    T? childOfChild = FindVisualChild<T>(child);
-                    if (childOfChild != null)
-                    {
-                        return childOfChild;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // Optionally log the exception if needed
-                Debug.WriteLine($"An error occurred while searching for visual child: {ex}");
-            }
-
-            return null;
-        }
-        public static List<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
-        {
-            List<T> children = [];
-            if (depObj != null)
-            {
-                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
-                {
-                    DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
-                    if (child != null)
-                    {
-                        if (child is T t)
-                        {
-                            children.Add(t);
-                        }
-
-                        // Recursive call only if child is not null
-                        children.AddRange(FindVisualChildren<T>(child));
-                    }
-                }
-            }
-
-            return children;
         }
 
         #endregion
