@@ -427,7 +427,7 @@
                 </ComboBox>
 
                 <!--Rulestext filtering-->
-                <TextBox x:Name="FilterTextTextBox" HorizontalAlignment="Left" Margin="10,425,0,0" TextWrapping="Wrap" Foreground="Gray" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" VerticalAlignment="Top" Width="240" Height="45" Background="White"/>
+                <TextBox x:Name="FilterTextTextBox" HorizontalAlignment="Left" Margin="10,425,0,0" TextWrapping="Wrap" Foreground="Gray" VerticalAlignment="Top" Width="240" Height="45" Background="White" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" KeyDown="FilterTextTextBox_KeyDown"/>
                 <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,470,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
 
                 <!--Languages filtering-->

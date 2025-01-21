@@ -100,7 +100,7 @@ namespace CollectaMundo
         {
             if (cards == null || singleFilterCriteria == null || singleFilterCriteria.Count == 0)
             {
-                return cards; // Return unfiltered if no criteria
+                return cards!; // Return unfiltered if no criteria
             }
 
             return cards.Where(card =>
@@ -125,7 +125,7 @@ namespace CollectaMundo
         {
             if (cards == null || filterCriteria == null || filterCriteria.Count == 0)
             {
-                return cards;
+                return cards!;
             }
 
             return cards.Where(card =>
@@ -365,11 +365,7 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
             }
         }
-        private static void UpdateFilterSummary
-            (
-            Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> multipleFilterCriteria,
-            Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria
-            )
+        private static void UpdateFilterSummary(Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> multipleFilterCriteria, Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
         {
             try
             {
@@ -498,6 +494,64 @@ namespace CollectaMundo
             {
                 column.Key.SortDirection = column.Value;
             }
+        }
+
+        #endregion
+
+        #region Filter Helper Methods
+        /// <summary>
+        /// Generic method for getting the data to populate the listbox with, including already selected items
+        /// </summary>
+        /// <param name="listBoxName"></param>
+        /// <param name="filterSelections"></param>
+        /// <param name="filterDefaults"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static (IEnumerable<string> items, HashSet<string> selectedItems) GetDataSetAndSelection(string listBoxName, List<FilterSelections> filterSelections, List<FilterDefaults> filterDefaults)
+        {
+            IEnumerable<string> itemsSource;
+            HashSet<string> selectedItemsSet;
+
+            var filterDefault = filterDefaults.FirstOrDefault(fd => $"Filter{fd.CriteriaKey}ListBox" == listBoxName);
+            if (filterDefault != null)
+            {
+                itemsSource = filterDefault.AllCriteria;
+                selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == filterDefault.CriteriaKey)?.MultipleCriteria ?? [];
+            }
+            else
+            {
+                throw new InvalidOperationException($"ListBox name not recognized: {listBoxName}");
+            }
+
+            return (itemsSource.Distinct().OrderBy(type => type).ToList(), selectedItemsSet);
+        }
+
+        /// <summary>
+        /// Get default text, textbox name and listboxname for a custom combobox
+        /// </summary>
+        /// <param name="comboBoxName"></param>
+        /// <param name="filterDefaults"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static (string defaultText, string textBoxName, string listBoxName) GetComboBoxConfig(string comboBoxName, List<FilterDefaults> filterDefaults)
+        {
+            // Extract the CriteriaKey from the ComboBox name
+            var criteriaKey = comboBoxName.Replace("ComboBox", "");
+
+            // Find the matching FilterDefaults object
+            var filterDefault = filterDefaults.FirstOrDefault(fd => fd.CriteriaKey == criteriaKey);
+
+            if (filterDefault != null)
+            {
+                // Dynamically construct TextBox and ListBox names
+                string textBoxName = $"Filter{criteriaKey}TextBox";
+                string listBoxName = $"Filter{criteriaKey}ListBox";
+                string defaultText = filterDefault.DefaultText ?? $"Filter {criteriaKey} ...";
+
+                return (defaultText, textBoxName, listBoxName);
+            }
+
+            throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}");
         }
 
         #endregion
