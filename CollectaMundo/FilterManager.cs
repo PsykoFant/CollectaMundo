@@ -111,7 +111,7 @@ namespace CollectaMundo
                     {
                         var propertyValue = propertySelector(card) ?? string.Empty;
 
-                        if (!propertyValue.Equals(selectedValue, StringComparison.OrdinalIgnoreCase))
+                        if (!propertyValue.Contains(selectedValue, StringComparison.OrdinalIgnoreCase))
                         {
                             return false; // Exclude card if it doesn't match the single-value filter
                         }
