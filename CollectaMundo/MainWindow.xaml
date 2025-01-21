@@ -431,11 +431,11 @@
                 <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,470,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
 
                 <!--Languages filtering-->
-                <ComboBox x:Name="LanguagesComboBox" HorizontalAlignment="Left" Margin="10,515,0,0" VerticalAlignment="Top" Width="180" DropDownOpened="DynamicallyPopulatedComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="LanguageComboBox" HorizontalAlignment="Left" Margin="10,515,0,0" VerticalAlignment="Top" Width="180" DropDownOpened="DynamicallyPopulatedComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox x:Name="FilterLanguagesTextBox"
+                                <TextBox x:Name="FilterLanguageTextBox"
                                          Background="Transparent"
                                          TextChanged="FilterTextBox_TextChanged"
                                          GotFocus="TextBox_GotFocus"
@@ -449,7 +449,7 @@
                                               Width="65"/>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox x:Name="FilterLanguagesListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
+                                        <ListBox x:Name="FilterLanguageListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
@@ -474,16 +474,16 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <ComboBox x:Name="LanguagesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,515,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
+                <ComboBox x:Name="LanguageOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,515,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
                     <ComboBoxItem Content="OR" IsSelected="True" />
                     <ComboBoxItem Content="NOT" />
                 </ComboBox>
 
-                <ComboBox x:Name="ConditionsComboBox" HorizontalAlignment="Left" Margin="10,545,0,0" VerticalAlignment="Top" Width="180" DropDownOpened="DynamicallyPopulatedComboBox_DropDownOpened" Height="20">
+                <ComboBox x:Name="SelectedConditionComboBox" HorizontalAlignment="Left" Margin="10,545,0,0" VerticalAlignment="Top" Width="180" DropDownOpened="DynamicallyPopulatedComboBox_DropDownOpened" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox x:Name="FilterConditionsTextBox"
+                                <TextBox x:Name="FilterSelectedConditionTextBox"
                                          Background="Transparent"
                                          TextChanged="FilterTextBox_TextChanged"
                                          GotFocus="TextBox_GotFocus"
@@ -497,7 +497,7 @@
                                               Width="70"/>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox x:Name="FilterConditionsListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
+                                        <ListBox x:Name="FilterSelectedConditionListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
@@ -522,7 +522,7 @@
                     </ComboBox.Template>
                     <sys:String>&gt;</sys:String>
                 </ComboBox>
-                <ComboBox x:Name="ConditionsOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,545,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
+                <ComboBox x:Name="SelectedConditionOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,545,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
                     <ComboBoxItem Content="OR" IsSelected="True" />
                     <ComboBoxItem Content="NOT" />
                 </ComboBox>

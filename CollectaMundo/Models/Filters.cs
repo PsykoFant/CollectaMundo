@@ -12,4 +12,9 @@ namespace CollectaMundo.Models
         public String? SingleCriteria { get; set; } = null;
         public HashSet<string> MultipleCriteria { get; set; } = [];
     }
+    public class FilterDefaults : Filters
+    {
+        public List<string> AllCriteria { get; set; } = [];
+        public string? DefaultText { get; set; } = null;
+    }
 }
