@@ -275,28 +275,6 @@ namespace CollectaMundo
         }
 
 
-        /// <summary>
-        /// General filter method for non-color properties using criteria matching.
-        /// </summary>
-        private static IEnumerable<CardSet> FilterByCardProperty(IEnumerable<CardSet>? cards, HashSet<string>? selectedCriteria, bool useAnd, Func<CardSet, string?> propertySelector, bool exclude = false)
-        {
-            if (cards == null || propertySelector == null || selectedCriteria == null || selectedCriteria.Count == 0)
-            {
-                return cards ?? [];
-            }
-
-            return cards.Where(card =>
-            {
-                var propertyValue = propertySelector(card) ?? string.Empty;
-                var criteria = propertyValue.Split([','], StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim());
-
-                bool match = useAnd
-                    ? selectedCriteria.All(c => criteria.Any(crit => crit.Contains(c)))
-                    : selectedCriteria.Any(c => criteria.Any(crit => crit.Contains(c)));
-
-                return exclude ? !match : match;
-            });
-        }
         //private static IEnumerable<CardSet> ApplyMyCardsSpecificFilters(IEnumerable<CardSet> cards)
         //{
         //    var filteredCardItems = cards.OfType<CardInCollection>();

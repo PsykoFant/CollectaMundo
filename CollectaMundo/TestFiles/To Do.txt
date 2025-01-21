@@ -1,6 +1,15 @@
 TO DO 
-- Refakturer FilterContext, så vi kan lave objekt med liste
-- Vi kan også bruge det objekt til at lave dictionary til opslag osv. 
+- Rulestext
+- Manavalue
+- For trade
+- Card in collection ui
+- debug vis filterSelections objektet
+- farver
+- unit test
+
+- deck manager
+
 
 
 Keyword dropdown performance
+startup performance igen igen

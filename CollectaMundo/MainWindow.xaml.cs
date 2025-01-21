@@ -703,17 +703,16 @@ namespace CollectaMundo
                         // Find the ComboBox by name
                         if (FindName(comboBoxName) is ComboBox comboBox)
                         {
-                            // Use the existing SetDefaultTextInComboBox method
-                            SetDefaultTextInComboBox(comboBox, textBoxName, filter.DefaultText ?? $"Filter {filter.CriteriaKey} ...");
+                            // Find the TextBox within the ComboBox template
+                            if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
+                            {
+                                // Set the default text and style
+                                filterTextBox.Text = filter.DefaultText ?? $"Filter {filter.CriteriaKey} ...";
+                                filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+                            }
                         }
-
-                        //if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
-                        //{
-                        //    filterTextBox.Text = $"Filter {filter.CriteriaKey} ...";
-                        //    filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-                        //}
-
                     }
+
 
                     PriceRetailerUiUpdates();
                 });
@@ -750,16 +749,6 @@ namespace CollectaMundo
                         comboBox.ItemsSource = dataSource.OrderBy(name => name).ToList();
                     }
                 }
-            }
-        }
-
-
-        private static void SetDefaultTextInComboBox(ComboBox comboBox, string textBoxName, string defaultText)
-        {
-            if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
-            {
-                filterTextBox.Text = defaultText;
-                filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
             }
         }
 
@@ -929,12 +918,10 @@ namespace CollectaMundo
                 CheckBoxCardsNotForTrade.Unchecked += AndOrCheckBox_Toggled;
             }
         }
-
         private void FilterRulesTextButton_Click(object sender, RoutedEventArgs e) // Apply filter for rulestext freetext search
         {
             ApplyFiltersToAllLists();
         }
-
 
 
         // When a combobox checkbox item is checked or unchecked
