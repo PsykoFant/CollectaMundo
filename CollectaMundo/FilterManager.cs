@@ -48,7 +48,7 @@ namespace CollectaMundo
                 // Build filter criteria for numeric properties only
                 var numericCriteriaKeys = new[] { "ManaValue" }; // Add all numeric CriteriaKeys here
                 var numberCriteria = MainWindow.CurrentInstance.filterSelections
-                    .Where(fs => numericCriteriaKeys.Contains(fs.CriteriaKey) && fs.NumberCriteria != 0)
+                    .Where(fs => numericCriteriaKeys.Contains(fs.CriteriaKey) && fs.Operator != OperatorType.Unknown)
                     .ToDictionary(
                         fs => fs.CriteriaKey!,
                         fs => (
@@ -56,7 +56,6 @@ namespace CollectaMundo
                             (fs.NumberCriteria, fs.Operator)
                         )
                     );
-
 
                 // Apply filters
                 var filteredCards = FilterByMultipleProperties(cards, filterCriteriaMultiple);
@@ -220,11 +219,13 @@ namespace CollectaMundo
                 {
                     var propertyValue = propertySelector(card);
 
+                    // If property value is null, it does not match
                     if (propertyValue == null)
                     {
-                        return false; // Exclude cards with null values
+                        return false;
                     }
 
+                    // Evaluate based on the operator
                     bool matches = operatorType switch
                     {
                         OperatorType.LESS_THAN => propertyValue < value,
@@ -233,7 +234,7 @@ namespace CollectaMundo
                         OperatorType.GREATER_THAN_OR_EQUALS => propertyValue >= value,
                         OperatorType.EQUALS => Math.Abs(propertyValue.Value - value) < 0.0001,
                         OperatorType.NOT_EQUALS => Math.Abs(propertyValue.Value - value) >= 0.0001,
-                        _ => false
+                        _ => false // Unsupported operator
                     };
 
                     if (!matches)
@@ -245,6 +246,7 @@ namespace CollectaMundo
                 return true; // Include card if all conditions are met
             });
         }
+
 
 
 
