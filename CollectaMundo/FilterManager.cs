@@ -46,7 +46,6 @@ namespace CollectaMundo
                     ) as Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)>;
 
                 // Build filter criteria for numeric properties only
-                //var numericCriteriaKeys = new[] { "ManaValue" }; // Add all numeric CriteriaKeys here
                 var numberCriteria = MainWindow.CurrentInstance.filterSelections
                     .Where(fs => fs.NumberCriteria != -1)
                     .ToDictionary(
@@ -85,25 +84,21 @@ namespace CollectaMundo
                               ?? typeof(CardInCollection).GetProperty(criteriaKey)
                               ?? typeof(CardInDeck).GetProperty(criteriaKey);
 
-                if (property == null)
-                {
-                    throw new InvalidOperationException($"Property '{criteriaKey}' not found on any supported types.");
-                }
-
-                return card =>
-                {
-                    try
+                return property == null
+                    ? throw new InvalidOperationException($"Property '{criteriaKey}' not found on any supported types.")
+                    : (card =>
                     {
-                        return property.GetValue(card) as string;
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Error accessing property '{criteriaKey}' on '{card.GetType()}': {ex.Message}");
-                        return null;
-                    }
-                };
+                        try
+                        {
+                            return property.GetValue(card) as string;
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error accessing property '{criteriaKey}' on '{card.GetType()}': {ex.Message}");
+                            return null;
+                        }
+                    });
             }
-
 
             static Func<CardSet, double?> ResolveNumericPropertySelector(string criteriaKey)
             {
