@@ -40,10 +40,10 @@ namespace CollectaMundo
                     .ToDictionary(
                         fs => fs.CriteriaKey!,
                         fs => (
-                            ResolveStringPropertySelector(fs.CriteriaKey!),
-                            fs.SingleCriteria!
+                            propertySelector: ResolveStringPropertySelector(fs.CriteriaKey!),
+                            selectedValue: fs.SingleCriteria!
                         )
-                    );
+                    ) as Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)>;
 
                 // Build filter criteria for numeric properties only
                 var numericCriteriaKeys = new[] { "ManaValue" }; // Add all numeric CriteriaKeys here
@@ -80,26 +80,22 @@ namespace CollectaMundo
                 _ = MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
-            static Func<CardSet, T?> ResolvePropertySelector<T>(string criteriaKey) where T : class
+            static Func<CardSet, string?> ResolveStringPropertySelector(string criteriaKey)
             {
-                // Attempt to find the property in CardSet and its subclasses
                 var property = typeof(CardSet).GetProperty(criteriaKey)
                               ?? typeof(CardInCollection).GetProperty(criteriaKey)
                               ?? typeof(CardInDeck).GetProperty(criteriaKey);
 
                 if (property == null)
                 {
-                    Debug.WriteLine($"Property '{criteriaKey}' not found on any supported types.");
-                    return _ => null; // Fallback: No property found
+                    throw new InvalidOperationException($"Property '{criteriaKey}' not found on any supported types.");
                 }
 
-                // Return a selector function with safe type casting
                 return card =>
                 {
                     try
                     {
-                        var value = property.GetValue(card);
-                        return value as T;
+                        return property.GetValue(card) as string;
                     }
                     catch (Exception ex)
                     {
@@ -109,10 +105,6 @@ namespace CollectaMundo
                 };
             }
 
-            static Func<CardSet, string?> ResolveStringPropertySelector(string criteriaKey)
-            {
-                return ResolvePropertySelector<string>(criteriaKey);
-            }
 
             static Func<CardSet, double?> ResolveNumericPropertySelector(string criteriaKey)
             {
