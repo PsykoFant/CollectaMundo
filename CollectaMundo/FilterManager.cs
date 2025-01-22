@@ -27,12 +27,9 @@ namespace CollectaMundo
                     .Where(fs => fs.MultipleCriteria != null)
                     .ToDictionary(
                         fs => fs.CriteriaKey!,
-                        fs => (
-                            ResolveStringPropertySelector(fs.CriteriaKey!),
-                            fs.MultipleCriteria!,
-                            (int)fs.Operator
-                        )
+                        fs => (ResolveStringPropertySelector(fs.CriteriaKey!), fs.MultipleCriteria!, fs.Operator)
                     );
+
 
                 // Build filter criteria for single properties
                 var singleFilterCriteria = MainWindow.CurrentInstance.filterSelections
@@ -70,7 +67,7 @@ namespace CollectaMundo
                 });
 
                 UpdateCardCount(dataGrid.Name, finalFilteredCards.Count);
-                UpdateFilterSummary(filterCriteriaMultiple, singleFilterCriteria);
+                //UpdateFilterSummary(filterCriteriaMultiple, singleFilterCriteria);
             }
             catch (Exception ex)
             {
@@ -106,7 +103,6 @@ namespace CollectaMundo
                 };
             }
 
-
             static Func<CardSet, double?> ResolveNumericPropertySelector(string criteriaKey)
             {
                 // Dynamically resolve the property for numeric fields
@@ -135,8 +131,6 @@ namespace CollectaMundo
                     }
                 };
             }
-
-
         }
         private static IEnumerable<CardSet> FilterBySingleProperty(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
         {
@@ -163,7 +157,7 @@ namespace CollectaMundo
                 return true; // Include card if all single-value filters match
             });
         }
-        private static IEnumerable<CardSet> FilterByMultipleProperties(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> filterCriteria)
+        private static IEnumerable<CardSet> FilterByMultipleProperties(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, OperatorType filterMode)> filterCriteria)
         {
             if (cards == null || filterCriteria == null || filterCriteria.Count == 0)
             {
@@ -183,34 +177,34 @@ namespace CollectaMundo
                     // Apply filtering logic based on the mode
                     bool matches = filterMode switch
                     {
-                        0 => MatchesCriteria(card, propertySelector, selectedCriteria),         // OR Mode
-                        1 => selectedCriteria.All(c => MatchesCriteria(card, propertySelector, new HashSet<string> { c })), // AND Mode
-                        2 => !MatchesCriteria(card, propertySelector, selectedCriteria),        // NOT Mode
+                        OperatorType.OR => selectedCriteria.Any(c => MatchesCriteria(card, propertySelector, new HashSet<string> { c })),
+                        OperatorType.AND => selectedCriteria.All(c => MatchesCriteria(card, propertySelector, new HashSet<string> { c })),
+                        OperatorType.NOT => !selectedCriteria.Any(c => MatchesCriteria(card, propertySelector, new HashSet<string> { c })),
                         _ => false
                     };
 
-                    // If a filter fails in AND mode, exclude the card
                     if (!matches)
                     {
-                        return false;
+                        return false; // Exclude card if the condition fails
                     }
                 }
 
-                return true;
+                return true; // Include card if all conditions are met
             });
-
-            static bool MatchesCriteria(CardSet card, Func<CardSet, string?> propertySelector, HashSet<string> filterValues)
-            {
-                var propertyValue = propertySelector(card) ?? string.Empty;
-
-                var propertyItems = new HashSet<string>(
-                    propertyValue.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                                 .Select(p => p.Trim())
-                );
-
-                return filterValues.Any(filterValue => propertyItems.Contains(filterValue));
-            }
         }
+
+        static bool MatchesCriteria(CardSet card, Func<CardSet, string?> propertySelector, HashSet<string> filterValues)
+        {
+            var propertyValue = propertySelector(card) ?? string.Empty;
+
+            var propertyItems = new HashSet<string>(
+                propertyValue.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                             .Select(p => p.Trim())
+            );
+
+            return filterValues.Any(filterValue => propertyItems.Contains(filterValue));
+        }
+
         private static IEnumerable<CardSet> FilterByNumber(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, double?> propertySelector, (double value, OperatorType operatorType))> numberCriteria)
         {
             if (cards == null || numberCriteria == null || numberCriteria.Count == 0)
