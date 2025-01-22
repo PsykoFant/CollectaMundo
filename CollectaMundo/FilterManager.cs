@@ -80,44 +80,53 @@ namespace CollectaMundo
 
             static Func<CardSet, string?> ResolveStringPropertySelector(string criteriaKey)
             {
+                // Dynamically resolve the property for string-based fields
                 var property = typeof(CardSet).GetProperty(criteriaKey)
                               ?? typeof(CardInCollection).GetProperty(criteriaKey)
                               ?? typeof(CardInDeck).GetProperty(criteriaKey);
 
-                return property == null
-                    ? throw new InvalidOperationException($"Property '{criteriaKey}' not found on any supported types.")
-                    : (card =>
-                    {
-                        try
-                        {
-                            return property.GetValue(card) as string;
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"Error accessing property '{criteriaKey}' on '{card.GetType()}': {ex.Message}");
-                            return null;
-                        }
-                    });
-            }
-
-            static Func<CardSet, double?> ResolveNumericPropertySelector(string criteriaKey)
-            {
-                // Handle numeric values, explicitly checking for valid conversion
-                var property = typeof(CardSet).GetProperty(criteriaKey)
-                              ?? typeof(CardInCollection).GetProperty(criteriaKey)
-                              ?? typeof(CardInDeck).GetProperty(criteriaKey);
-
-                if (property == null || property.PropertyType != typeof(double))
+                // Ensure the property exists, otherwise throw an exception
+                if (property == null)
                 {
-                    Debug.WriteLine($"Numeric property '{criteriaKey}' not found or not of type double.");
-                    return _ => null;
+                    throw new InvalidOperationException($"Property '{criteriaKey}' not found on any supported types.");
                 }
 
+                // Return a function to retrieve the property value
                 return card =>
                 {
                     try
                     {
-                        return property.GetValue(card) as double?;
+                        return property.GetValue(card) as string; // Safe cast to string
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error accessing property '{criteriaKey}' on '{card.GetType()}': {ex.Message}");
+                        return null;
+                    }
+                };
+            }
+
+
+            static Func<CardSet, double?> ResolveNumericPropertySelector(string criteriaKey)
+            {
+                // Dynamically resolve the property for numeric fields
+                var property = typeof(CardSet).GetProperty(criteriaKey)
+                              ?? typeof(CardInCollection).GetProperty(criteriaKey)
+                              ?? typeof(CardInDeck).GetProperty(criteriaKey);
+
+                // Ensure the property exists and is numeric
+                if (property == null || property.PropertyType != typeof(double))
+                {
+                    Debug.WriteLine($"Numeric property '{criteriaKey}' not found or not of type double.");
+                    return _ => null; // Return a no-op function for unsupported properties
+                }
+
+                // Return a function to retrieve the numeric property value
+                return card =>
+                {
+                    try
+                    {
+                        return property.GetValue(card) as double?; // Safe cast to nullable double
                     }
                     catch (Exception ex)
                     {
@@ -126,6 +135,7 @@ namespace CollectaMundo
                     }
                 };
             }
+
 
         }
         private static IEnumerable<CardSet> FilterBySingleProperty(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
