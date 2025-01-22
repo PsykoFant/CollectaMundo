@@ -980,12 +980,10 @@ namespace CollectaMundo
         {
             FilterByManaValue();
         }
-
         private void ManaValueOperatorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             FilterByManaValue();
         }
-
         private void FilterByManaValue()
         {
             // Find or create the FilterSelections object for ManaValue
@@ -1026,14 +1024,9 @@ namespace CollectaMundo
                 Debug.WriteLine("No operator selected.");
                 manaValue.Operator = OperatorType.Unknown;
             }
-
-            FilterManager.DebugFilterSelections(filterSelections);
-
             // Apply the updated filters
             ApplyFiltersToAllLists();
         }
-
-
 
 
 
@@ -1305,6 +1298,8 @@ namespace CollectaMundo
         public void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
             if (_isStartup) { return; }
+
+            FilterManager.DebugFilterSelections(filterSelections);
 
             // Reset filter TextBoxes for each ComboBox
             foreach (var filter in filterDefaults)

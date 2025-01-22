@@ -22,31 +22,33 @@ namespace CollectaMundo
                     return;
                 }
 
-                // Dynamically build filter criteria for multiple properties
+                // Build filter criteria for multiple properties
                 var filterCriteriaMultiple = MainWindow.CurrentInstance.filterSelections
                     .Where(fs => fs.MultipleCriteria != null && fs.MultipleCriteria.Count > 0)
                     .ToDictionary(
                         fs => fs.CriteriaKey!,
                         fs => (
-                            ResolvePropertySelector(fs.CriteriaKey!),
-                            fs.MultipleCriteria,
+                            ResolveStringPropertySelector(fs.CriteriaKey!),
+                            fs.MultipleCriteria!,
                             (int)fs.Operator
                         )
                     );
 
-                // Define single property filters
+                // Build filter criteria for single properties
                 var singleFilterCriteria = MainWindow.CurrentInstance.filterSelections
                     .Where(fs => !string.IsNullOrWhiteSpace(fs.SingleCriteria))
                     .ToDictionary(
                         fs => fs.CriteriaKey!,
                         fs => (
-                            ResolvePropertySelector(fs.CriteriaKey!),
-                            fs.SingleCriteria
+                            ResolveStringPropertySelector(fs.CriteriaKey!),
+                            fs.SingleCriteria!
                         )
                     );
 
+                // Build filter criteria for numeric properties only
+                var numericCriteriaKeys = new[] { "ManaValue" }; // Add all numeric CriteriaKeys here
                 var numberCriteria = MainWindow.CurrentInstance.filterSelections
-                    .Where(fs => fs.CriteriaKey != null && fs.Operator != OperatorType.Unknown)
+                    .Where(fs => numericCriteriaKeys.Contains(fs.CriteriaKey) && fs.NumberCriteria != 0)
                     .ToDictionary(
                         fs => fs.CriteriaKey!,
                         fs => (
@@ -56,17 +58,9 @@ namespace CollectaMundo
                     );
 
 
-
-
-
                 // Apply filters
                 var filteredCards = FilterByMultipleProperties(cards, filterCriteriaMultiple);
                 filteredCards = FilterBySingleProperty(filteredCards, singleFilterCriteria);
-
-
-
-
-
                 filteredCards = FilterByNumber(filteredCards, numberCriteria);
 
                 var finalFilteredCards = filteredCards.ToList();
@@ -86,70 +80,66 @@ namespace CollectaMundo
                 _ = MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
-            static Func<CardSet, string?> ResolvePropertySelector(string criteriaKey)
+            static Func<CardSet, T?> ResolvePropertySelector<T>(string criteriaKey) where T : class
             {
-                // Attempt to find property in CardSet
-                var baseProperty = typeof(CardSet).GetProperty(criteriaKey);
-                if (baseProperty != null)
+                // Attempt to find the property in CardSet and its subclasses
+                var property = typeof(CardSet).GetProperty(criteriaKey)
+                              ?? typeof(CardInCollection).GetProperty(criteriaKey)
+                              ?? typeof(CardInDeck).GetProperty(criteriaKey);
+
+                if (property == null)
                 {
-                    return card => baseProperty.GetValue(card)?.ToString();
+                    Debug.WriteLine($"Property '{criteriaKey}' not found on any supported types.");
+                    return _ => null; // Fallback: No property found
                 }
 
-                // Attempt to find property in CardInCollection
-                var cardInCollectionProperty = typeof(CardInCollection).GetProperty(criteriaKey);
-                if (cardInCollectionProperty != null)
+                // Return a selector function with safe type casting
+                return card =>
                 {
-                    return card => card is CardInCollection cardInCollection
-                        ? cardInCollectionProperty.GetValue(cardInCollection)?.ToString()
-                        : null;
-                }
+                    try
+                    {
+                        var value = property.GetValue(card);
+                        return value as T;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error accessing property '{criteriaKey}' on '{card.GetType()}': {ex.Message}");
+                        return null;
+                    }
+                };
+            }
 
-                // Attempt to find property in CardInDeck
-                var cardInDeckProperty = typeof(CardInDeck).GetProperty(criteriaKey);
-                if (cardInDeckProperty != null)
-                {
-                    return card => card is CardInDeck cardInDeck
-                        ? cardInDeckProperty.GetValue(cardInDeck)?.ToString()
-                        : null;
-                }
-
-                // Log and return a no-op function for unsupported properties
-                Debug.WriteLine($"Property '{criteriaKey}' not found on any supported types.");
-                return _ => null;
+            static Func<CardSet, string?> ResolveStringPropertySelector(string criteriaKey)
+            {
+                return ResolvePropertySelector<string>(criteriaKey);
             }
 
             static Func<CardSet, double?> ResolveNumericPropertySelector(string criteriaKey)
             {
-                // Attempt to find the numeric property in CardSet
-                var numericProperty = typeof(CardSet).GetProperty(criteriaKey);
-                if (numericProperty != null && numericProperty.PropertyType == typeof(double))
+                // Handle numeric values, explicitly checking for valid conversion
+                var property = typeof(CardSet).GetProperty(criteriaKey)
+                              ?? typeof(CardInCollection).GetProperty(criteriaKey)
+                              ?? typeof(CardInDeck).GetProperty(criteriaKey);
+
+                if (property == null || property.PropertyType != typeof(double))
                 {
-                    return card => numericProperty.GetValue(card) as double?;
+                    Debug.WriteLine($"Numeric property '{criteriaKey}' not found or not of type double.");
+                    return _ => null;
                 }
 
-                // Attempt to find numeric property in CardInCollection
-                var cardInCollectionProperty = typeof(CardInCollection).GetProperty(criteriaKey);
-                if (cardInCollectionProperty != null && cardInCollectionProperty.PropertyType == typeof(double))
+                return card =>
                 {
-                    return card => card is CardInCollection cardInCollection
-                        ? cardInCollectionProperty.GetValue(cardInCollection) as double?
-                        : null;
-                }
-
-                // Attempt to find numeric property in CardInDeck
-                var cardInDeckProperty = typeof(CardInDeck).GetProperty(criteriaKey);
-                if (cardInDeckProperty != null && cardInDeckProperty.PropertyType == typeof(double))
-                {
-                    return card => card is CardInDeck cardInDeck
-                        ? cardInDeckProperty.GetValue(cardInDeck) as double?
-                        : null;
-                }
-
-                // Log and return a fallback function for unsupported properties
-                Debug.WriteLine($"Numeric property '{criteriaKey}' not found on any supported types.");
-                return _ => null;
+                    try
+                    {
+                        return property.GetValue(card) as double?;
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error accessing numeric property '{criteriaKey}': {ex.Message}");
+                        return null;
+                    }
+                };
             }
-
 
         }
         private static IEnumerable<CardSet> FilterBySingleProperty(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
@@ -225,13 +215,10 @@ namespace CollectaMundo
                 return filterValues.Any(filterValue => propertyItems.Contains(filterValue));
             }
         }
-        private static IEnumerable<CardSet> FilterByNumber(
-    IEnumerable<CardSet> cards,
-    Dictionary<string, (Func<CardSet, double?> propertySelector, (double value, OperatorType operatorType))> numberCriteria)
+        private static IEnumerable<CardSet> FilterByNumber(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, double?> propertySelector, (double value, OperatorType operatorType))> numberCriteria)
         {
             if (cards == null || numberCriteria == null || numberCriteria.Count == 0)
             {
-                Debug.WriteLine("No criteria provided, returning unfiltered cards.");
                 return cards!; // Return unfiltered if no criteria
             }
 
