@@ -46,9 +46,9 @@ namespace CollectaMundo
                     ) as Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)>;
 
                 // Build filter criteria for numeric properties only
-                var numericCriteriaKeys = new[] { "ManaValue" }; // Add all numeric CriteriaKeys here
+                //var numericCriteriaKeys = new[] { "ManaValue" }; // Add all numeric CriteriaKeys here
                 var numberCriteria = MainWindow.CurrentInstance.filterSelections
-                    .Where(fs => numericCriteriaKeys.Contains(fs.CriteriaKey) && fs.Operator != OperatorType.Unknown)
+                    .Where(fs => fs.NumberCriteria != -1)
                     .ToDictionary(
                         fs => fs.CriteriaKey!,
                         fs => (
