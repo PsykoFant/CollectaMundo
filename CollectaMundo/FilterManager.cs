@@ -24,7 +24,7 @@ namespace CollectaMundo
 
                 // Build filter criteria for multiple properties
                 var filterCriteriaMultiple = MainWindow.CurrentInstance.filterSelections
-                    .Where(fs => fs.MultipleCriteria != null && fs.MultipleCriteria.Count > 0)
+                    .Where(fs => fs.MultipleCriteria != null)
                     .ToDictionary(
                         fs => fs.CriteriaKey!,
                         fs => (
@@ -36,7 +36,7 @@ namespace CollectaMundo
 
                 // Build filter criteria for single properties
                 var singleFilterCriteria = MainWindow.CurrentInstance.filterSelections
-                    .Where(fs => !string.IsNullOrWhiteSpace(fs.SingleCriteria))
+                    .Where(fs => fs.SingleCriteria != null)
                     .ToDictionary(
                         fs => fs.CriteriaKey!,
                         fs => (
