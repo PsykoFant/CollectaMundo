@@ -22,21 +22,8 @@ namespace CollectaMundo
                     return;
                 }
 
-                // Build the unified filter criteria dictionary
-                var filterCriteriaDictionary = MainWindow.CurrentInstance.filterSelections.ToDictionary(
-                    fs => fs.CriteriaKey!,
-                    fs => (
-                        stringPropertySelector: (Func<CardSet, string?>?)ResolveStringPropertySelector(fs.CriteriaKey!),
-                        numericPropertySelector: (Func<CardSet, double?>?)ResolveNumericPropertySelector(fs.CriteriaKey!),
-                        multipleCriteria: fs.MultipleCriteria,
-                        singleCriteria: fs.SingleCriteria,
-                        numericCriteria: fs.NumberCriteria != -1
-                            ? (fs.NumberCriteria, fs.Operator) as (double value, OperatorType operatorType)?
-                            : null,
-                        operatorType: (OperatorType?)fs.Operator
-                    )
-                );
-
+                // Create the filter criteria dictionary
+                var filterCriteriaDictionary = new FilterCriteriaDictionary(MainWindow.CurrentInstance.filterSelections);
                 // Apply filters
                 var filteredCards = FilterCardsByUnifiedCriteria(cards, filterCriteriaDictionary);
 
@@ -57,76 +44,11 @@ namespace CollectaMundo
                 _ = MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        static Func<CardSet, string?> ResolveStringPropertySelector(string criteriaKey)
-        {
-            // Dynamically resolve the property for string-based fields
-            var property = typeof(CardSet).GetProperty(criteriaKey)
-                          ?? typeof(CardInCollection).GetProperty(criteriaKey)
-                          ?? typeof(CardInDeck).GetProperty(criteriaKey);
-
-            // Ensure the property exists, otherwise throw an exception
-            if (property == null)
-            {
-                throw new InvalidOperationException($"Property '{criteriaKey}' not found on any supported types.");
-            }
-
-            // Return a function to retrieve the property value
-            return card =>
-            {
-                try
-                {
-                    return property.GetValue(card) as string; // Safe cast to string
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Error accessing property '{criteriaKey}' on '{card.GetType()}': {ex.Message}");
-                    return null;
-                }
-            };
-        }
-        static Func<CardSet, double?> ResolveNumericPropertySelector(string criteriaKey)
-        {
-            // Dynamically resolve the property for numeric fields
-            var property = typeof(CardSet).GetProperty(criteriaKey)
-                          ?? typeof(CardInCollection).GetProperty(criteriaKey)
-                          ?? typeof(CardInDeck).GetProperty(criteriaKey);
-
-            // Ensure the property exists and is numeric
-            if (property == null || property.PropertyType != typeof(double))
-            {
-                Debug.WriteLine($"Numeric property '{criteriaKey}' not found or not of type double.");
-                return _ => null; // Return a no-op function for unsupported properties
-            }
-
-            // Return a function to retrieve the numeric property value
-            return card =>
-            {
-                try
-                {
-                    return property.GetValue(card) as double?; // Safe cast to nullable double
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Error accessing numeric property '{criteriaKey}': {ex.Message}");
-                    return null;
-                }
-            };
-        }
-
-        private static IEnumerable<CardSet> FilterCardsByUnifiedCriteria(
-    IEnumerable<CardSet> cards,
-    Dictionary<string, (
-        Func<CardSet, string?>? stringPropertySelector,
-        Func<CardSet, double?>? numericPropertySelector,
-        HashSet<string>? multipleCriteria,
-        string? singleCriteria,
-        (double value, OperatorType operatorType)? numericCriteria,
-        OperatorType? operatorType
-    )> filterCriteriaDictionary)
+        private static IEnumerable<CardSet> FilterCardsByUnifiedCriteria(IEnumerable<CardSet> cards, FilterCriteriaDictionary filterCriteriaDictionary)
         {
             return cards.Where(card =>
             {
-                foreach (var (key, (stringSelector, numericSelector, multiCriteria, singleCriteria, numCriteria, operatorType)) in filterCriteriaDictionary)
+                foreach (var (key, (stringSelector, numericSelector, multiCriteria, singleCriteria, numCriteria, operatorType)) in filterCriteriaDictionary.Criteria)
                 {
                     // Apply multiple criteria
                     if (multiCriteria != null && multiCriteria.Count > 0)
@@ -311,72 +233,69 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
             }
         }
-        private static void UpdateFilterSummary(
-    Dictionary<string, (
-        Func<CardSet, string?>? stringPropertySelector,
-        Func<CardSet, double?>? numericPropertySelector,
-        HashSet<string>? multipleCriteria,
-        string? singleCriteria,
-        (double value, OperatorType operatorType)? numericCriteria,
-        OperatorType? operatorType
-    )> filterCriteriaDictionary)
+        private static void UpdateFilterSummary(FilterCriteriaDictionary filterCriteriaDictionary)
         {
-            // Build the summary from the unified dictionary
-            StringBuilder filterSummary = new();
-
-            foreach (var (key, (_, _, multipleCriteria, singleCriteria, numericCriteria, operatorType)) in filterCriteriaDictionary)
+            try
             {
-                if (multipleCriteria != null && multipleCriteria.Count > 0)
+                StringBuilder filterSummary = new();
+
+                foreach (var (key, (stringSelector, numericSelector, multiCriteria, singleCriteria, numCriteria, operatorType)) in filterCriteriaDictionary.Criteria)
                 {
-                    string operatorSymbol = operatorType switch
+                    // Add single criteria
+                    if (!string.IsNullOrWhiteSpace(singleCriteria))
                     {
-                        OperatorType.OR => "OR",
-                        OperatorType.AND => "AND",
-                        OperatorType.NOT => "NOT",
-                        _ => string.Empty
-                    };
+                        filterSummary.Append($"{key}: \"{singleCriteria}\" AND ");
+                    }
 
-                    string segment = operatorType == OperatorType.NOT
-                        ? string.Join(", ", multipleCriteria.Select(c => $"NOT {c}"))
-                        : string.Join($" {operatorSymbol} ", multipleCriteria);
-
-                    filterSummary.Append($"{{{segment}}} AND ");
-                }
-
-                if (!string.IsNullOrWhiteSpace(singleCriteria))
-                {
-                    filterSummary.Append($"{key}: \"{singleCriteria}\" AND ");
-                }
-
-                if (numericCriteria.HasValue)
-                {
-                    var (value, opType) = numericCriteria.Value;
-                    string operatorSymbol = opType switch
+                    // Add multiple criteria
+                    if (multiCriteria != null && multiCriteria.Count > 0)
                     {
-                        OperatorType.LESS_THAN => "<",
-                        OperatorType.LESS_THAN_OR_EQUALS => "<=",
-                        OperatorType.GREATER_THAN => ">",
-                        OperatorType.GREATER_THAN_OR_EQUALS => ">=",
-                        OperatorType.EQUALS => "==",
-                        OperatorType.NOT_EQUALS => "!=",
-                        _ => string.Empty
-                    };
+                        string operatorSymbol = operatorType switch
+                        {
+                            OperatorType.OR => "OR",
+                            OperatorType.AND => "AND",
+                            OperatorType.NOT => "NOT",
+                            _ => string.Empty
+                        };
 
-                    filterSummary.Append($"{key} {operatorSymbol} {value} AND ");
+                        string filterSegment = operatorType == OperatorType.NOT
+                            ? string.Join(", ", multiCriteria.Select(c => $"NOT {c}"))
+                            : string.Join($" {operatorSymbol} ", multiCriteria);
+
+                        filterSummary.Append($"{{{filterSegment}}} AND ");
+                    }
+
+                    // Add numeric criteria
+                    if (numCriteria.HasValue)
+                    {
+                        var (value, opType) = numCriteria.Value;
+                        string operatorSymbol = opType switch
+                        {
+                            OperatorType.LESS_THAN => "<",
+                            OperatorType.LESS_THAN_OR_EQUALS => "<=",
+                            OperatorType.GREATER_THAN => ">",
+                            OperatorType.GREATER_THAN_OR_EQUALS => ">=",
+                            OperatorType.EQUALS => "==",
+                            OperatorType.NOT_EQUALS => "!=",
+                            _ => string.Empty
+                        };
+
+                        filterSummary.Append($"{key} {operatorSymbol} {value} AND ");
+                    }
                 }
+
+                if (filterSummary.Length > 5)
+                {
+                    filterSummary.Remove(filterSummary.Length - 5, 5); // Remove trailing " AND "
+                }
+
+                MainWindow.CurrentInstance.FilterSummaryTextBlock.Text = filterSummary.ToString();
             }
-
-            if (filterSummary.Length > 5)
+            catch (Exception ex)
             {
-                filterSummary.Remove(filterSummary.Length - 5, 5); // Remove trailing " AND "
+                Debug.WriteLine($"Error while updating filter summary: {ex.Message}");
             }
-
-            MainWindow.CurrentInstance.FilterSummaryTextBlock.Text = filterSummary.ToString();
         }
-
-
-
-
 
         // Update the object to which the width of the combobox is bound
         public static void DataGrid_LayoutUpdated(int dataGridIndex)
@@ -598,5 +517,70 @@ namespace CollectaMundo
         }
 
         #endregion
+    }
+    public class FilterCriteriaDictionary(List<FilterSelections> filterSelections)
+    {
+        public Dictionary<string, (Func<CardSet, string?>? StringPropertySelector, Func<CardSet, double?>? NumericPropertySelector, HashSet<string>? MultipleCriteria, string? SingleCriteria, (double value, OperatorType operatorType)? NumericCriteria, OperatorType? OperatorType)> Criteria
+        { get; private set; } = filterSelections.ToDictionary(
+                fs => fs.CriteriaKey!,
+                fs => (
+                    StringPropertySelector: fs.CriteriaKey != null ? ResolveStringPropertySelector(fs.CriteriaKey!) : null,
+                    NumericPropertySelector: fs.CriteriaKey != null ? ResolveNumericPropertySelector(fs.CriteriaKey!) : null,
+                    MultipleCriteria: fs.MultipleCriteria ?? null, // Ensure nullability alignment
+                    SingleCriteria: fs.SingleCriteria ?? null,
+                    NumericCriteria: fs.NumberCriteria != -1
+                        ? (fs.NumberCriteria, fs.Operator) as (double value, OperatorType operatorType)?
+                        : null,
+                    OperatorType: fs.Operator != OperatorType.Unknown ? fs.Operator : (OperatorType?)null
+                )
+            );
+        private static Func<CardSet, string?> ResolveStringPropertySelector(string criteriaKey)
+        {
+            var property = typeof(CardSet).GetProperty(criteriaKey)
+                          ?? typeof(CardInCollection).GetProperty(criteriaKey)
+                          ?? typeof(CardInDeck).GetProperty(criteriaKey);
+
+            if (property == null)
+            {
+                throw new InvalidOperationException($"Property '{criteriaKey}' not found on any supported types.");
+            }
+
+            return card =>
+            {
+                try
+                {
+                    return property.GetValue(card) as string; // Safe cast to string
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error accessing property '{criteriaKey}' on '{card.GetType()}': {ex.Message}");
+                    return null;
+                }
+            };
+        }
+        private static Func<CardSet, double?> ResolveNumericPropertySelector(string criteriaKey)
+        {
+            var property = typeof(CardSet).GetProperty(criteriaKey)
+                          ?? typeof(CardInCollection).GetProperty(criteriaKey)
+                          ?? typeof(CardInDeck).GetProperty(criteriaKey);
+
+            if (property == null || property.PropertyType != typeof(double))
+            {
+                return _ => null;
+            }
+
+            return card =>
+            {
+                try
+                {
+                    return property.GetValue(card) as double?;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error accessing numeric property '{criteriaKey}': {ex.Message}");
+                    return null;
+                }
+            };
+        }
     }
 }
