@@ -67,7 +67,7 @@ namespace CollectaMundo
                 });
 
                 UpdateCardCount(dataGrid.Name, finalFilteredCards.Count);
-                //UpdateFilterSummary(filterCriteriaMultiple, singleFilterCriteria);
+                UpdateFilterSummary(filterCriteriaMultiple, singleFilterCriteria, numberCriteria);
             }
             catch (Exception ex)
             {
@@ -192,7 +192,6 @@ namespace CollectaMundo
                 return true; // Include card if all conditions are met
             });
         }
-
         static bool MatchesCriteria(CardSet card, Func<CardSet, string?> propertySelector, HashSet<string> filterValues)
         {
             var propertyValue = propertySelector(card) ?? string.Empty;
@@ -204,7 +203,6 @@ namespace CollectaMundo
 
             return filterValues.Any(filterValue => propertyItems.Contains(filterValue));
         }
-
         private static IEnumerable<CardSet> FilterByNumber(IEnumerable<CardSet> cards, Dictionary<string, (Func<CardSet, double?> propertySelector, (double value, OperatorType operatorType))> numberCriteria)
         {
             if (cards == null || numberCriteria == null || numberCriteria.Count == 0)
@@ -245,10 +243,6 @@ namespace CollectaMundo
                 return true; // Include card if all conditions are met
             });
         }
-
-
-
-
         public static void DebugFilterSelections(List<FilterSelections> filterSelections)
         {
             try
@@ -406,7 +400,10 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
             }
         }
-        private static void UpdateFilterSummary(Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, int filterMode)> multipleFilterCriteria, Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria)
+        private static void UpdateFilterSummary(
+    Dictionary<string, (Func<CardSet, string?> propertySelector, HashSet<string> selectedCriteria, OperatorType filterMode)> multipleFilterCriteria,
+    Dictionary<string, (Func<CardSet, string?> propertySelector, string? selectedValue)> singleFilterCriteria,
+    Dictionary<string, (Func<CardSet, double?> propertySelector, (double value, OperatorType operatorType))> numberCriteria)
         {
             try
             {
@@ -431,24 +428,43 @@ namespace CollectaMundo
 
                     string operatorSymbol = filterMode switch
                     {
-                        0 => "OR",
-                        1 => "AND",
-                        2 => "NOT",
+                        OperatorType.OR => "OR",
+                        OperatorType.AND => "AND",
+                        OperatorType.NOT => "NOT",
                         _ => string.Empty
                     };
 
-                    string filterSegment = filterMode == 2
+                    string filterSegment = filterMode == OperatorType.NOT
                         ? string.Join(", ", selectedCriteria.Select(c => $"NOT {c}"))
                         : string.Join($" {operatorSymbol} ", selectedCriteria);
 
                     filterSummary.Append($"{{{filterSegment}}} AND ");
                 }
 
+                // Add numeric property filters
+                foreach (var (key, (_, (value, operatorType))) in numberCriteria)
+                {
+                    string operatorSymbol = operatorType switch
+                    {
+                        OperatorType.LESS_THAN => "<",
+                        OperatorType.LESS_THAN_OR_EQUALS => "<=",
+                        OperatorType.GREATER_THAN => ">",
+                        OperatorType.GREATER_THAN_OR_EQUALS => ">=",
+                        OperatorType.EQUALS => "==",
+                        OperatorType.NOT_EQUALS => "!=",
+                        _ => string.Empty
+                    };
+
+                    filterSummary.Append($"{key} {operatorSymbol} {value} AND ");
+                }
+
+                // Remove trailing " AND " if the summary has content
                 if (filterSummary.Length > 5)
                 {
                     filterSummary.Remove(filterSummary.Length - 5, 5); // Remove trailing " AND "
                 }
 
+                // Update the UI with the filter summary
                 MainWindow.CurrentInstance.FilterSummaryTextBlock.Text = filterSummary.ToString();
             }
             catch (Exception ex)
@@ -456,6 +472,8 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error while updating filter summary: {ex.Message}");
             }
         }
+
+
 
 
         // Update the object to which the width of the combobox is bound
