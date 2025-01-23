@@ -277,39 +277,6 @@ namespace CollectaMundo
             }
         }
 
-
-        //filteredCards = FilterByColor(filteredCards, MainWindow.CurrentInstance.filterSelections.SelectedColors, MainWindow.CurrentInstance.filterSelections.ColorOperator);
-
-        private static IEnumerable<CardSet> FilterByManaValue(IEnumerable<CardSet> cards)
-        {
-            // Retrieve filter parameters from the UI
-            string compareOperator = MainWindow.CurrentInstance.ManaValueOperatorComboBox.SelectedItem?.ToString() ?? string.Empty;
-
-            if (!double.TryParse(MainWindow.CurrentInstance.ManaValueComboBox.SelectedItem?.ToString(), out double manaValueCompare))
-            {
-                Debug.WriteLine("Invalid mana value comparison value. Defaulting to 0.");
-                manaValueCompare = 0; // Default to 0 if parsing fails
-            }
-
-            // No filtering if the operator is not specified
-            if (string.IsNullOrEmpty(compareOperator))
-            {
-                return cards;
-            }
-
-            // Perform filtering
-            return cards.Where(card => compareOperator switch
-            {
-                "less than" => card.ManaValue < manaValueCompare,
-                "greater than" => card.ManaValue > manaValueCompare,
-                "less than/eq" => card.ManaValue <= manaValueCompare,
-                "greater than/eq" => card.ManaValue >= manaValueCompare,
-                "equal to" => card.ManaValue == manaValueCompare,
-                _ => true // Default: no filtering
-            });
-        }
-
-
         //private static IEnumerable<CardSet> ApplyMyCardsSpecificFilters(IEnumerable<CardSet> cards)
         //{
         //    var filteredCardItems = cards.OfType<CardInCollection>();
