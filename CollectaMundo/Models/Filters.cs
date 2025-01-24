@@ -1,4 +1,5 @@
-﻿using static CollectaMundo.MainWindow;
+﻿using System.Diagnostics;
+using static CollectaMundo.MainWindow;
 using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo.Models
@@ -66,12 +67,29 @@ namespace CollectaMundo.Models
                           ?? typeof(CardInCollection).GetProperty(criteriaKey)
                           ?? typeof(CardInDeck).GetProperty(criteriaKey);
 
-            if (property == null || property.PropertyType != typeof(double))
+            if (property == null || !IsNumericType(property.PropertyType))
             {
+                Debug.WriteLine($"Numeric property '{criteriaKey}' not found or not of a numeric type.");
                 return _ => null;
             }
 
-            return card => property.GetValue(card) as double?;
+            return card =>
+            {
+                try
+                {
+                    var value = property.GetValue(card);
+                    return value != null ? Convert.ToDouble(value) : null;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error accessing numeric property '{criteriaKey}': {ex.Message}");
+                    return null;
+                }
+            };
+            static bool IsNumericType(Type type)
+            {
+                return type == typeof(int) || type == typeof(double) || type == typeof(float) || type == typeof(long) || type == typeof(short);
+            }
         }
     }
 

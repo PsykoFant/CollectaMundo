@@ -641,7 +641,8 @@ namespace CollectaMundo
                     "Text",
                     "Finishes",
                     "Language",
-                    "SelectedCondition"
+                    "SelectedCondition",
+                    "CardsForTrade"
                 ];
 
                 // Clear existing filter context lists by re-initializing it
@@ -897,58 +898,6 @@ namespace CollectaMundo
             }
             ApplyFiltersToAllLists();
         }
-        private void AndOrCheckBox_Toggled(object sender, RoutedEventArgs e)
-        {
-            // Avoid recursive triggering
-            CheckBoxCardsForTrade.Checked -= AndOrCheckBox_Toggled;
-            CheckBoxCardsForTrade.Unchecked -= AndOrCheckBox_Toggled;
-            CheckBoxCardsNotForTrade.Checked -= AndOrCheckBox_Toggled;
-            CheckBoxCardsNotForTrade.Unchecked -= AndOrCheckBox_Toggled;
-
-            try
-            {
-                if (sender is CheckBox toggledCheckBox)
-                {
-                    // Identify which property to update in AndOrSettings
-                    string propertyName = toggledCheckBox.Name switch
-                    {
-                        "CheckBoxCardsForTrade" => "CardsForTrade",
-                        "CheckBoxCardsNotForTrade" => "CardsNotForTrade",
-                        _ => string.Empty
-                    };
-
-                    // If 'CheckBoxCardsForTrade' is toggled
-                    if (toggledCheckBox == CheckBoxCardsForTrade)
-                    {
-                        // If 'CheckBoxCardsNotForTrade' is checked, uncheck it
-                        if (CheckBoxCardsNotForTrade.IsChecked == true)
-                        {
-                            CheckBoxCardsNotForTrade.IsChecked = false;
-                        }
-                    }
-                    // If 'CheckBoxCardsNotForTrade' is toggled
-                    else if (toggledCheckBox == CheckBoxCardsNotForTrade)
-                    {
-                        // If 'CheckBoxCardsForTrade' is checked, uncheck it
-                        if (CheckBoxCardsForTrade.IsChecked == true)
-                        {
-                            CheckBoxCardsForTrade.IsChecked = false;
-                        }
-                    }
-                }
-
-                // Apply filter and update label after toggling the checkbox
-                ApplyFiltersToAllLists();
-            }
-            finally
-            {
-                // Re-subscribe to Checked/Unchecked events
-                CheckBoxCardsForTrade.Checked += AndOrCheckBox_Toggled;
-                CheckBoxCardsForTrade.Unchecked += AndOrCheckBox_Toggled;
-                CheckBoxCardsNotForTrade.Checked += AndOrCheckBox_Toggled;
-                CheckBoxCardsNotForTrade.Unchecked += AndOrCheckBox_Toggled;
-            }
-        }
         private void FilterRulesTextButton_Click(object sender, RoutedEventArgs e)
         {
             FilterRulesText();
@@ -1028,6 +977,22 @@ namespace CollectaMundo
             ApplyFiltersToAllLists();
         }
 
+        // Cards for trade filtering
+        private void CheckBoxCardsForTrade_Checked(object sender, RoutedEventArgs e)
+        {
+            // Find or create the FilterSelections object for CardsForTrade
+            var cardsForTrade = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "CardsForTrade");
+            if (cardsForTrade == null)
+            {
+                cardsForTrade = new FilterSelections { CriteriaKey = "CardsForTrade" };
+                filterSelections.Add(cardsForTrade);
+            }
+
+            cardsForTrade.NumberCriteria = 0;
+            cardsForTrade.Operator = OperatorType.GREATER_THAN;
+
+            FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
+        }
 
 
         // When a combobox checkbox item is checked or unchecked

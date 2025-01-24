@@ -50,29 +50,6 @@ namespace CollectaMundo
         }
 
 
-        //private static IEnumerable<CardSet> ApplyMyCardsSpecificFilters(IEnumerable<CardSet> cards)
-        //{
-        //    var filteredCardItems = cards.OfType<CardInCollection>();
-
-        //    // Handle "Cards for Trade" and "Cards Not for Trade"
-        //    bool showForTrade = MainWindow.CurrentInstance.CheckBoxCardsForTrade.IsChecked ?? false;
-        //    bool showNotForTrade = MainWindow.CurrentInstance.CheckBoxCardsNotForTrade.IsChecked ?? false;
-
-        //    if (showForTrade)
-        //    {
-        //        filteredCardItems = filteredCardItems.Where(card => card.CardsForTrade > 0);
-        //    }
-
-        //    if (showNotForTrade)
-        //    {
-        //        filteredCardItems = filteredCardItems.Where(card => card.CardsForTrade == 0);
-        //    }
-
-        //    // Apply language filter
-        //    var languageFilteredItems = FilterByCardProperty(filteredCardItems.Cast<CardSet>(), MainWindow.CurrentInstance.filterSelections.SelectedLanguages, false, card => card.Language);
-
-        //    return languageFilteredItems.OfType<CardInCollection>().Cast<CardSet>();
-        //}
         //public static IEnumerable<CardSet> FilterByColor(IEnumerable<CardSet> cards, HashSet<string> selectedColors, int filterMode)
         //{
         //    if (cards == null)
