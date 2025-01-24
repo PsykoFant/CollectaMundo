@@ -143,7 +143,7 @@ namespace CollectaMundo
                                     OperatorType.OR => "OR",
                                     OperatorType.AND => "AND",
                                     OperatorType.NOT => "NOT",
-                                    _ => "OR"
+                                    _ => ""
                                 };
 
                                 var filterSegment = stringFilter.OperatorType == OperatorType.NOT

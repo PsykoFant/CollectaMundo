@@ -1,9 +1,6 @@
 TO DO 
-- Rulestext
-- Manavalue
 - For trade
 - Card in collection ui
-- debug vis filterSelections objektet
 - farver
 - unit test
 

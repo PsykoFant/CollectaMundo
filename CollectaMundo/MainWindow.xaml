@@ -527,7 +527,7 @@
                     <ComboBoxItem Content="NOT" />
                 </ComboBox>
 
-                <CheckBox x:Name="CheckBoxCardsForTrade" Margin="10,570,0,0" Content="Filter on cards for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="CheckBoxCardsForTrade_Checked"/>
+                <CheckBox x:Name="CheckBoxCardsForTrade" Margin="10,570,0,0" Content="Filter on cards for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="CheckBoxCardsForTrade_Checked" Unchecked="CheckBoxCardsForTrade_Unchecked"/>
                 <CheckBox x:Name="CheckBoxCardsNotForTrade" Margin="10,590,0,0" Content="Filter on cards NOT for trade" HorizontalAlignment="Left" VerticalAlignment="Top"/>
 
             </Grid>

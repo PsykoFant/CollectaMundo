@@ -17,7 +17,7 @@ namespace CollectaMundo.Models
     /// </summary>
     public class FilterSelections : Filters
     {
-        public OperatorType Operator { get; set; } = OperatorType.Unknown;
+        public OperatorType Operator { get; set; } = OperatorType.OR;
         public string? SingleCriteria { get; set; } = null;
         public HashSet<string> MultipleCriteria { get; set; } = [];
         public double NumberCriteria { get; set; } = -1;
@@ -63,6 +63,7 @@ namespace CollectaMundo.Models
         }
         private static Func<CardSet, double?> ResolveNumericPropertySelector(string criteriaKey)
         {
+            // Check if the property exists on CardSet or its subclasses
             var property = typeof(CardSet).GetProperty(criteriaKey)
                           ?? typeof(CardInCollection).GetProperty(criteriaKey)
                           ?? typeof(CardInDeck).GetProperty(criteriaKey);
@@ -77,8 +78,15 @@ namespace CollectaMundo.Models
             {
                 try
                 {
-                    var value = property.GetValue(card);
-                    return value != null ? Convert.ToDouble(value) : null;
+                    // Only access the property if the object type matches
+                    if (property.DeclaringType != null && property.DeclaringType.IsInstanceOfType(card))
+                    {
+                        var value = property.GetValue(card);
+                        return value != null ? Convert.ToDouble(value) : null;
+                    }
+
+                    // Skip if the card's type doesn't match the declaring type of the property
+                    return null;
                 }
                 catch (Exception ex)
                 {
@@ -86,11 +94,13 @@ namespace CollectaMundo.Models
                     return null;
                 }
             };
+
             static bool IsNumericType(Type type)
             {
                 return type == typeof(int) || type == typeof(double) || type == typeof(float) || type == typeof(long) || type == typeof(short);
             }
         }
+
     }
 
     /// <summary>

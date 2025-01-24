@@ -980,19 +980,42 @@ namespace CollectaMundo
         // Cards for trade filtering
         private void CheckBoxCardsForTrade_Checked(object sender, RoutedEventArgs e)
         {
+
+            if (CheckBoxCardsNotForTrade.IsChecked == true)
+            {
+                CheckBoxCardsNotForTrade.IsChecked = false;
+            }
             // Find or create the FilterSelections object for CardsForTrade
             var cardsForTrade = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "CardsForTrade");
             if (cardsForTrade == null)
             {
                 cardsForTrade = new FilterSelections { CriteriaKey = "CardsForTrade" };
                 filterSelections.Add(cardsForTrade);
+                cardsForTrade.NumberCriteria = 0;
             }
 
-            cardsForTrade.NumberCriteria = 0;
             cardsForTrade.Operator = OperatorType.GREATER_THAN;
+
+            //FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
+            ApplyFiltersToAllLists();
+        }
+
+        private void CheckBoxCardsForTrade_Unchecked(object sender, RoutedEventArgs e)
+        {
+            // Find or create the FilterSelections object for CardsForTrade
+            var cardsForTrade = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "CardsForTrade");
+            if (cardsForTrade == null)
+            {
+                cardsForTrade = new FilterSelections { CriteriaKey = "CardsForTrade" };
+                filterSelections.Add(cardsForTrade);
+                cardsForTrade.NumberCriteria = 0;
+            }
+
+            cardsForTrade.Operator = OperatorType.GREATER_THAN_OR_EQUALS;
 
             FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
         }
+
 
 
         // When a combobox checkbox item is checked or unchecked
