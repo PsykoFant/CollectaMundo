@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Reflection;
 using static CollectaMundo.MainWindow;
 using static CollectaMundo.Models.CardSet;
 
@@ -28,79 +29,63 @@ namespace CollectaMundo.Models
         /// <returns>A BaseFilterCriteria object.</returns>
         public BaseFilterCriteria ToFilterCriteria()
         {
-            if (NumberCriteria != -1)
+            if (!MainWindow.CurrentInstance.CriteriaKeyToPropertyMap.TryGetValue(CriteriaKey!, out var propertyName))
+            {
+                throw new InvalidOperationException($"Property mapping for '{CriteriaKey}' not found.");
+            }
+
+            var property = GetPropertyInfo(propertyName) ?? throw new InvalidOperationException($"Property '{propertyName}' not found on any supported types.");
+            if (IsNumericType(property.PropertyType))
             {
                 return new NumericFilterCriteria
                 {
                     CriteriaKey = CriteriaKey,
-                    PropertySelector = ResolveNumericPropertySelector(CriteriaKey),
+                    PropertySelector = card =>
+                    {
+                        try
+                        {
+                            if (property.DeclaringType != null && property.DeclaringType.IsInstanceOfType(card))
+                            {
+                                var value = property.GetValue(card);
+                                return value != null ? Convert.ToDouble(value) : null;
+                            }
+                            return null;
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error accessing numeric property '{CriteriaKey}': {ex.Message}");
+                            return null;
+                        }
+                    },
                     Value = NumberCriteria,
                     OperatorType = Operator
                 };
             }
-
-            return new StringFilterCriteria
+            else
             {
-                CriteriaKey = CriteriaKey,
-                PropertySelector = ResolveStringPropertySelector(CriteriaKey),
-                SingleValue = SingleCriteria,
-                MultipleValues = MultipleCriteria,
-                OperatorType = Operator
-            };
-        }
-        private static Func<CardSet, string?> ResolveStringPropertySelector(string criteriaKey)
-        {
-            var property = typeof(CardSet).GetProperty(criteriaKey)
-                          ?? typeof(CardInCollection).GetProperty(criteriaKey)
-                          ?? typeof(CardInDeck).GetProperty(criteriaKey);
-
-            if (property == null)
-            {
-                throw new InvalidOperationException($"Property '{criteriaKey}' not found on any supported types.");
+                return new StringFilterCriteria
+                {
+                    CriteriaKey = CriteriaKey,
+                    PropertySelector = card => property.GetValue(card) as string,
+                    SingleValue = SingleCriteria,
+                    MultipleValues = MultipleCriteria,
+                    OperatorType = Operator
+                };
             }
 
-            return card => property.GetValue(card) as string;
-        }
-        private static Func<CardSet, double?> ResolveNumericPropertySelector(string criteriaKey)
-        {
-            // Check if the property exists on CardSet or its subclasses
-            var property = typeof(CardSet).GetProperty(criteriaKey)
-                          ?? typeof(CardInCollection).GetProperty(criteriaKey)
-                          ?? typeof(CardInDeck).GetProperty(criteriaKey);
-
-            if (property == null || !IsNumericType(property.PropertyType))
+            static PropertyInfo? GetPropertyInfo(string propertyName)
             {
-                Debug.WriteLine($"Numeric property '{criteriaKey}' not found or not of a numeric type.");
-                return _ => null;
+                return typeof(CardSet).GetProperty(propertyName)
+                       ?? typeof(CardInCollection).GetProperty(propertyName)
+                       ?? typeof(CardInDeck).GetProperty(propertyName);
             }
-
-            return card =>
-            {
-                try
-                {
-                    // Only access the property if the object type matches
-                    if (property.DeclaringType != null && property.DeclaringType.IsInstanceOfType(card))
-                    {
-                        var value = property.GetValue(card);
-                        return value != null ? Convert.ToDouble(value) : null;
-                    }
-
-                    // Skip if the card's type doesn't match the declaring type of the property
-                    return null;
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Error accessing numeric property '{criteriaKey}': {ex.Message}");
-                    return null;
-                }
-            };
 
             static bool IsNumericType(Type type)
             {
-                return type == typeof(int) || type == typeof(double) || type == typeof(float) || type == typeof(long) || type == typeof(short);
+                return type == typeof(int) || type == typeof(double) || type == typeof(float) ||
+                       type == typeof(long) || type == typeof(short);
             }
         }
-
     }
 
     /// <summary>

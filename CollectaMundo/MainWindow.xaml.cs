@@ -112,7 +112,22 @@ namespace CollectaMundo
             Unknown = -1
         }
 
-
+        // Define the criteria keys and their property mappings
+        public Dictionary<string, string> CriteriaKeyToPropertyMap = new()
+        {
+            { "Colors", nameof(CardSet.Colors) },
+            { "ManaValue", nameof(CardSet.ManaValue) },
+            { "Rarity", nameof(CardSet.Rarity) },
+            { "SuperTypes", nameof(CardSet.SuperTypes) },
+            { "Types", nameof(CardSet.Types) },
+            { "SubTypes", nameof(CardSet.SubTypes) },
+            { "Keywords", nameof(CardSet.Keywords) },
+            { "Text", nameof(CardSet.Text) },
+            { "Finishes", nameof(CardSet.Finishes) },
+            { "Language", nameof(CardInCollection.Language) },
+            { "SelectedCondition", nameof(CardInCollection.SelectedCondition) },
+            { "CardsForTrade", nameof(CardInCollection.CardsForTrade) }
+        };
 
         // The object which holds the filter selections
         public List<FilterSelections> filterSelections = [];
@@ -629,24 +644,10 @@ namespace CollectaMundo
                 HashSet<string> typesToRemove = ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards"];
                 HashSet<string> subTypesToRemove = ["(creature", "and/or", "type)|Judge", "The"];
 
-                // Define the criteria keys
-                List<string> criteriaKeys =
-                [
-                    "Colors",
-                    "Rarity",
-                    "SuperTypes",
-                    "Types",
-                    "SubTypes",
-                    "Keywords",
-                    "Text",
-                    "Finishes",
-                    "Language",
-                    "SelectedCondition",
-                    "CardsForTrade"
-                ];
-
                 // Clear existing filter context lists by re-initializing it
                 filterDefaults = [];
+
+                var criteriaKeys = CriteriaKeyToPropertyMap.Keys.ToList();
 
                 // Initialize the filterDefaults list dynamically
                 filterDefaults = criteriaKeys
@@ -657,36 +658,33 @@ namespace CollectaMundo
                 // Populate the filtered data dynamically
                 foreach (var filter in filterDefaults)
                 {
-                    // Determine the source data and processing logic based on CriteriaKey
-                    filter.AllCriteria = filter.CriteriaKey switch
+                    // Use reflection to dynamically get the property based on CriteriaKey
+                    var propertyInfo = typeof(CardSet).GetProperty(filter.CriteriaKey)
+                                     ?? typeof(CardInCollection).GetProperty(filter.CriteriaKey)
+                                     ?? typeof(CardInDeck).GetProperty(filter.CriteriaKey);
+
+                    if (propertyInfo == null)
                     {
-                        "Colors" => allColors,
-                        "Rarity" => CleanAndFilter(allCards.Select(card => card.Rarity)).ToList(),
-                        "SuperTypes" => CleanAndFilter(allCards.Select(card => card.SuperTypes)).ToList(),
-                        "Types" => CleanAndFilter(allCards.Select(card => card.Types), typesToRemove).ToList(),
-                        "SubTypes" => CleanAndFilter(allCards.Select(card => card.SubTypes), subTypesToRemove).ToList(),
-                        "Keywords" => CleanAndFilter(allCards.Select(card => card.Keywords)).ToList(),
-                        "Finishes" => CleanAndFilter(allCards.Select(card => card.Finishes)).ToList(),
-                        "Language" => CleanAndFilter(myCards.Select(card => card.Language)).ToList(),
-                        "SelectedCondition" => CleanAndFilter(myCards.OfType<CardInCollection>().Select(card => card.SelectedCondition)).ToList(),
-                        _ => [] // Default case if CriteriaKey is not recognized
+                        Debug.WriteLine($"Property '{filter.CriteriaKey}' not found on any supported types.");
+                        filter.AllCriteria = new List<string>(); // Fallback to an empty list
+                        continue;
+                    }
+
+                    // Dynamically retrieve unwanted items based on the CriteriaKey
+                    HashSet<string>? removeItems = filter.CriteriaKey switch
+                    {
+                        "Types" => typesToRemove,
+                        "SubTypes" => subTypesToRemove,
+                        _ => null
                     };
 
-
-                    // Optionally, set DefaultText dynamically
-                    filter.DefaultText = filter.CriteriaKey switch
-                    {
-                        "Rarity" => "Filter rarity ...",
-                        "SuperTypes" => "Filter supertypes ...",
-                        "Types" => "Filter card types ...",
-                        "SubTypes" => "Filter subtypes ...",
-                        "Keywords" => "Filter keywords ...",
-                        "Text" => "Filter rulestext ...",
-                        "Finishes" => "Filter finishes ...",
-                        "Language" => "Filter languages ...",
-                        "SelectedCondition" => "Filter conditions ...",
-                        _ => "Filter criteria ..."
-                    };
+                    // Use CleanAndFilter to process and populate AllCriteria
+                    filter.AllCriteria = CleanAndFilter(
+                        allCards
+                            .Where(card => propertyInfo.DeclaringType?.IsInstanceOfType(card) == true) // Ensure compatibility
+                            .Select(card => propertyInfo.GetValue(card)?.ToString()),
+                        removeItems
+                    ).ToList();
                 }
 
 
@@ -743,9 +741,6 @@ namespace CollectaMundo
                             textBox.Foreground = new SolidColorBrush(Colors.Gray);
                         }
                     }
-
-
-
                     PriceRetailerUiUpdates();
                 });
             }
