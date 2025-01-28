@@ -640,7 +640,7 @@ namespace CollectaMundo
                 List<int> manaValueOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000];
                 List<string> manaValueCompareOptions = ["less than", "less than/eq", "greater than", "greater than/eq", "equal to"];
 
-                // Set up unwanted types and subtypes
+                // Set up unwanted types and subtypes from unsets etc.
                 HashSet<string> typesToRemove = ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards"];
                 HashSet<string> subTypesToRemove = ["(creature", "and/or", "type)|Judge", "The"];
 
@@ -679,12 +679,22 @@ namespace CollectaMundo
                     };
 
                     // Use CleanAndFilter to process and populate AllCriteria
-                    filter.AllCriteria = CleanAndFilter(
+                    var dynamicCriteria = CleanAndFilter(
                         allCards
                             .Where(card => propertyInfo.DeclaringType?.IsInstanceOfType(card) == true) // Ensure compatibility
                             .Select(card => propertyInfo.GetValue(card)?.ToString()),
                         removeItems
-                    ).ToList();
+                    );
+
+                    // Special case for "Colors": include predefined values that may not exist in CardSet.Colors
+                    if (filter.CriteriaKey == "Colors")
+                    {
+                        filter.AllCriteria = allColors;
+                    }
+                    else
+                    {
+                        filter.AllCriteria = dynamicCriteria.ToList();
+                    }
                 }
 
 
@@ -707,38 +717,12 @@ namespace CollectaMundo
                     ManaValueComboBox.ItemsSource = manaValueOptions;
                     ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
 
-                    // Set default values for comboboxes on startup
-                    if (_isStartup)
-                    {
-                        ManaValueOperatorComboBox.SelectedIndex = 3;
-                        ManaValueComboBox.SelectedIndex = 0;
-                    }
+                    ManaValueOperatorComboBox.SelectedIndex = -1;
+                    ManaValueComboBox.SelectedIndex = -1;
 
-                    // Set default text for other comboboxes
-                    foreach (var filter in filterDefaults)
-                    {
-                        // Dynamically retrieve ComboBox and TextBox names based on CriteriaKey
-                        string comboBoxName = $"{filter.CriteriaKey}ComboBox";
-                        string textBoxName = $"Filter{filter.CriteriaKey}TextBox";
+                    // Set default text in all textboxes
+                    SetDefaultText(filterDefaults);
 
-                        // Find the ComboBox by name
-                        if (FindName(comboBoxName) is ComboBox comboBox)
-                        {
-                            // Find the TextBox within the ComboBox template
-                            if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
-                            {
-                                // Set the default text and style
-                                filterTextBox.Text = filter.DefaultText ?? $"Filter {filter.CriteriaKey} ...";
-                                filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-                            }
-                        }
-                        else if (FindName(textBoxName) is TextBox textBox) // Directly locate the TextBox by name
-                        {
-                            // Set the default text and style
-                            textBox.Text = filter.DefaultText ?? $"Filter {filter.CriteriaKey} ...";
-                            textBox.Foreground = new SolidColorBrush(Colors.Gray);
-                        }
-                    }
                     PriceRetailerUiUpdates();
                 });
             }
@@ -773,6 +757,36 @@ namespace CollectaMundo
                     {
                         comboBox.ItemsSource = dataSource.OrderBy(name => name).ToList();
                     }
+                }
+            }
+        }
+        private void SetDefaultText(List<FilterDefaults> filterDefaults)
+        {
+            foreach (var filter in filterDefaults)
+            {
+                // Dynamically retrieve ComboBox and TextBox names based on CriteriaKey
+                string comboBoxName = $"{filter.CriteriaKey}ComboBox";
+                string textBoxName = $"Filter{filter.CriteriaKey}TextBox";
+
+                // Generate the default text
+                filter.DefaultText = $"Filter {filter.CriteriaKey} ...";
+
+                // Find the ComboBox by name
+                if (FindName(comboBoxName) is ComboBox comboBox)
+                {
+                    // Find the TextBox within the ComboBox template
+                    if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
+                    {
+                        // Set the default text and style
+                        filterTextBox.Text = filter.DefaultText ?? "Whoops, something went wrong!";
+                        filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
+                    }
+                }
+                else if (FindName(textBoxName) is TextBox textBox) // Directly locate the TextBox by name
+                {
+                    // Set the default text and style
+                    textBox.Text = filter.DefaultText ?? "Whoops, something went wrong!";
+                    textBox.Foreground = new SolidColorBrush(Colors.Gray);
                 }
             }
         }
@@ -928,6 +942,12 @@ namespace CollectaMundo
         }
         private void FilterByManaValue()
         {
+            // Both ManaValue dropdowns needs to be set to trigger filtering
+            if (ManaValueOperatorComboBox.SelectedIndex == -1 || ManaValueComboBox.SelectedIndex == -1)
+            {
+                return;
+            }
+
             // Find or create the FilterSelections object for ManaValue
             var manaValue = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "ManaValue");
             if (manaValue == null)
@@ -973,27 +993,29 @@ namespace CollectaMundo
         // Cards for trade filtering
         private void CheckBoxCardsForTrade_Checked(object sender, RoutedEventArgs e)
         {
-
             if (CheckBoxCardsNotForTrade.IsChecked == true)
             {
                 CheckBoxCardsNotForTrade.IsChecked = false;
             }
-            // Find or create the FilterSelections object for CardsForTrade
-            var cardsForTrade = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "CardsForTrade");
-            if (cardsForTrade == null)
-            {
-                cardsForTrade = new FilterSelections { CriteriaKey = "CardsForTrade" };
-                filterSelections.Add(cardsForTrade);
-                cardsForTrade.NumberCriteria = 0;
-            }
-
-            cardsForTrade.Operator = OperatorType.GREATER_THAN;
-
-            //FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
-            ApplyFiltersToAllLists();
+            FilterOnCarsForTrade(OperatorType.GREATER_THAN);
         }
-
         private void CheckBoxCardsForTrade_Unchecked(object sender, RoutedEventArgs e)
+        {
+            FilterOnCarsForTrade(OperatorType.GREATER_THAN_OR_EQUALS);
+        }
+        private void CheckBoxCardsNotForTrade_Checked(object sender, RoutedEventArgs e)
+        {
+            if (CheckBoxCardsForTrade.IsChecked == true)
+            {
+                CheckBoxCardsForTrade.IsChecked = false;
+            }
+            FilterOnCarsForTrade(OperatorType.EQUALS);
+        }
+        private void CheckBoxCardsNotForTrade_Unchecked(object sender, RoutedEventArgs e)
+        {
+            FilterOnCarsForTrade(OperatorType.GREATER_THAN_OR_EQUALS);
+        }
+        private void FilterOnCarsForTrade(OperatorType @operator)
         {
             // Find or create the FilterSelections object for CardsForTrade
             var cardsForTrade = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "CardsForTrade");
@@ -1004,11 +1026,11 @@ namespace CollectaMundo
                 cardsForTrade.NumberCriteria = 0;
             }
 
-            cardsForTrade.Operator = OperatorType.GREATER_THAN_OR_EQUALS;
+            cardsForTrade.Operator = @operator;
 
-            FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
+            ApplyFiltersToAllLists();
+
         }
-
 
 
         // When a combobox checkbox item is checked or unchecked
@@ -1280,25 +1302,15 @@ namespace CollectaMundo
         {
             if (_isStartup) { return; }
 
-            FilterManager.DebugFilterSelections(filterSelections);
+            // Clear the internal HashSets by re-initializing the object
+            filterSelections = [];
 
             // Reset filter TextBoxes for each ComboBox
-            foreach (var filter in filterDefaults)
-            {
-                // Construct ComboBox and TextBox names dynamically
-                string comboBoxName = $"{filter.CriteriaKey}ComboBox";
-                string textBoxName = $"Filter{filter.CriteriaKey}TextBox";
-
-                // Find the ComboBox and reset its corresponding TextBox
-                if (FindName(comboBoxName) is ComboBox comboBox)
-                {
-                    ResetFilterTextBox(comboBox, textBoxName, filter.DefaultText ?? $"Filter {filter.CriteriaKey} ...");
-                }
-            }
+            SetDefaultText(filterDefaults);
 
             // Clear non-custom comboboxes
-            ManaValueOperatorComboBox.SelectedIndex = 3;
-            ManaValueComboBox.SelectedIndex = 0;
+            ManaValueOperatorComboBox.SelectedIndex = -1;
+            ManaValueComboBox.SelectedIndex = -1;
 
             // Find and clear all ComboBoxes in the DataGrid header
             List<ComboBox> headerComboBoxesAllCards = FilterManager.FindVisualChildren<ComboBox>(AllCardsDataGrid);
@@ -1325,13 +1337,6 @@ namespace CollectaMundo
 
             // Clear selections in the colors listbox
             ClearListBoxSelections(FilterColorsListBox);
-
-            // Clear the internal HashSets by re-initializing the object
-            filterSelections = [];
-
-            // Clear rulestext textbox
-            FilterTextTextBox.Text = filterDefaults.FirstOrDefault(fd => fd.CriteriaKey == "Text")?.DefaultText ?? "Oops, something went wrong ...";
-            FilterTextTextBox.Foreground = new SolidColorBrush(Colors.Gray);
 
             // Uncheck CheckBoxes if necessary
             CheckBoxCardsForTrade.IsChecked = false;
@@ -2220,6 +2225,7 @@ namespace CollectaMundo
                 CurrentInstance.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
             }
         }
+
 
     }
 }
