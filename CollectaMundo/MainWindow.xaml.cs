@@ -666,7 +666,7 @@ namespace CollectaMundo
                     if (propertyInfo == null)
                     {
                         Debug.WriteLine($"Property '{filter.CriteriaKey}' not found on any supported types.");
-                        filter.AllCriteria = new List<string>(); // Fallback to an empty list
+                        filter.AllCriteria = []; // Fallback to an empty list
                         continue;
                     }
 
@@ -697,8 +697,6 @@ namespace CollectaMundo
                     UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionSet", allCards.Select(card => card.SetName).Distinct().ToList());
                     UpdateComboBoxSource(AllCardsForDecksDataGrid, "AllCardsForDecksName", allCardsForDecks.Select(card => card.Name).Distinct().ToList());
 
-                    // Set Filter Options
-                    //FilterRulesTextTextBox.Text = filterDefaults.RulesTextDefaultText;
 
                     var colorsFilter = filterDefaults.FirstOrDefault(fc => fc.CriteriaKey == "Colors");
                     if (colorsFilter != null)
