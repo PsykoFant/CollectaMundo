@@ -115,6 +115,8 @@ namespace CollectaMundo
         // Define the criteria keys and their property mappings
         public Dictionary<string, string> CriteriaKeyToPropertyMap = new()
         {
+            { "Name", nameof(CardSet.Name) },
+            { "SetName", nameof(CardSet.SetName) },
             { "Colors", nameof(CardSet.Colors) },
             { "ManaValue", nameof(CardSet.ManaValue) },
             { "Rarity", nameof(CardSet.Rarity) },
@@ -1305,8 +1307,11 @@ namespace CollectaMundo
             // Clear the internal HashSets by re-initializing the object
             filterSelections = [];
 
-            // Reset filter TextBoxes for each ComboBox
+            // Reset filter TextBoxes for each ComboBox and also free-text filter textbox
             SetDefaultText(filterDefaults);
+
+            // Clear filter summary
+            FilterSummaryTextBlock.Text = string.Empty;
 
             // Clear non-custom comboboxes
             ManaValueOperatorComboBox.SelectedIndex = -1;
@@ -1352,14 +1357,6 @@ namespace CollectaMundo
             ApplyFiltersToAllLists();
 
             // Local helper functions
-            static void ResetFilterTextBox(ComboBox comboBox, string textBoxName, string defaultText)
-            {
-                if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
-                {
-                    filterTextBox.Text = defaultText;
-                    filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-                }
-            }
             static void ClearListBoxSelections(ListBox listBox)
             {
                 foreach (object? item in listBox.Items)
@@ -1639,6 +1636,7 @@ namespace CollectaMundo
                 {
                     await DeckManager.LoadDeck(selectedDeck.DeckId);
                 }
+                FilterSummaryScrollViewer.Visibility = Visibility.Visible;
             }
             catch (Exception ex)
             {
@@ -1665,6 +1663,7 @@ namespace CollectaMundo
             GridCardImages.Visibility = Visibility.Collapsed;
             GridTopMenu.IsEnabled = true;
             GridDecksOverview.Visibility = Visibility.Visible;
+            FilterSummaryScrollViewer.Visibility = Visibility.Hidden;
         }
 
         // Deck Editor Methods
