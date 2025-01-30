@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\CollectaMundoInstall.iss = ..\CollectaMundoInstall.iss
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CollectaMundo.Tests", "..\CollectaMundo.Tests\CollectaMundo.Tests.csproj", "{6FD2EC8D-F725-486C-A91B-59F94138E1AE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Any CPU = All|Any CPU
@@ -62,6 +64,38 @@ Global
 		{86FB2F77-52DD-4044-83D8-78695CCDF161}.Release|x64.Build.0 = Release|Any CPU
 		{86FB2F77-52DD-4044-83D8-78695CCDF161}.Release|x86.ActiveCfg = Release|Any CPU
 		{86FB2F77-52DD-4044-83D8-78695CCDF161}.Release|x86.Build.0 = Release|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.All|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.All|Any CPU.Build.0 = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.All|ARM64.ActiveCfg = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.All|ARM64.Build.0 = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.All|x64.ActiveCfg = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.All|x64.Build.0 = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.All|x86.ActiveCfg = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.All|x86.Build.0 = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Debug|x64.Build.0 = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Debug|x86.Build.0 = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.DefaultBuild|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.DefaultBuild|Any CPU.Build.0 = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.DefaultBuild|ARM64.ActiveCfg = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.DefaultBuild|ARM64.Build.0 = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.DefaultBuild|x64.ActiveCfg = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.DefaultBuild|x64.Build.0 = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.DefaultBuild|x86.ActiveCfg = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.DefaultBuild|x86.Build.0 = Debug|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Release|ARM64.Build.0 = Release|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Release|x64.ActiveCfg = Release|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Release|x64.Build.0 = Release|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Release|x86.ActiveCfg = Release|Any CPU
+		{6FD2EC8D-F725-486C-A91B-59F94138E1AE}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
