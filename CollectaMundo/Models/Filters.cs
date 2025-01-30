@@ -118,7 +118,6 @@ namespace CollectaMundo.Models
         public required Func<CardSet, string?> PropertySelector { get; set; }
         public string? SingleValue { get; set; }
         public HashSet<string>? MultipleValues { get; set; }
-
         public override bool Matches(CardSet card)
         {
             var propertyValue = PropertySelector(card);
@@ -159,7 +158,10 @@ namespace CollectaMundo.Models
             var propertyValue = PropertySelector(card);
 
             // Check numeric criteria based on operator type
-            if (!propertyValue.HasValue) return false;
+            if (!propertyValue.HasValue)
+            {
+                return false;
+            }
 
             return OperatorType switch
             {
