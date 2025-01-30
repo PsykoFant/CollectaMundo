@@ -1636,7 +1636,13 @@ namespace CollectaMundo
                 {
                     await DeckManager.LoadDeck(selectedDeck.DeckId);
                 }
+                HeadlineDecks.Content = "Deck Editor";
+                GridTopMenu.IsEnabled = false;
+                GridFiltering.Visibility = Visibility.Visible;
                 FilterSummaryScrollViewer.Visibility = Visibility.Visible;
+
+                GridDecksOverview.Visibility = Visibility.Collapsed;
+                GridDeckEditor.Visibility = Visibility.Visible;
             }
             catch (Exception ex)
             {
@@ -1657,13 +1663,12 @@ namespace CollectaMundo
             DBAccess.CloseConnection();
 
             // Reset UI elements
+            ResetGrids();
             HeadlineDecks.Content = "Deck Management";
-            GridDeckEditor.Visibility = Visibility.Collapsed;
-            GridFiltering.Visibility = Visibility.Collapsed;
-            GridCardImages.Visibility = Visibility.Collapsed;
             GridTopMenu.IsEnabled = true;
+            GridDecks.Visibility = Visibility.Visible;
+            GridDeckEditor.Visibility = Visibility.Collapsed;
             GridDecksOverview.Visibility = Visibility.Visible;
-            FilterSummaryScrollViewer.Visibility = Visibility.Hidden;
         }
 
         // Deck Editor Methods
@@ -2152,19 +2157,30 @@ namespace CollectaMundo
         }
         public void ResetGrids()
         {
+            // Reset top menu
             MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
             MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
             MenuDecksButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
             MenuUtilsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
 
-            EditStatusTextBlock.Text = string.Empty;
-            AddStatusTextBlock.Text = string.Empty;
-            UtilsInfoLabel.Content = "";
-            FilterSummaryScrollViewer.Visibility = Visibility.Collapsed;
+            // Reset content section UI
             GridSearchAndFilterAllCards.Visibility = Visibility.Collapsed;
             GridMyCollection.Visibility = Visibility.Collapsed;
             GridDecks.Visibility = Visibility.Collapsed;
             GridUtilitiesSection.Visibility = Visibility.Collapsed;
+
+            // Reset side menu options
+            GridFiltering.Visibility = Visibility.Collapsed;
+            GridUtilsMenu.Visibility = Visibility.Collapsed;
+
+            // Reset filtering and add/edit cards UI
+            EditStatusTextBlock.Text = string.Empty;
+            AddStatusTextBlock.Text = string.Empty;
+            UtilsInfoLabel.Content = "";
+            FilterSummaryScrollViewer.Visibility = Visibility.Collapsed;
+            LogoSmall.Visibility = Visibility.Collapsed;
+
+            // Reset filter UI specific to my collection 
             LanguageComboBox.Visibility = Visibility.Collapsed;
             LanguageOperatorComboBox.Visibility = Visibility.Collapsed;
             SelectedConditionComboBox.Visibility = Visibility.Collapsed;
@@ -2172,14 +2188,11 @@ namespace CollectaMundo
             CheckBoxCardsForTrade.Visibility = Visibility.Collapsed;
             CheckBoxCardsNotForTrade.Visibility = Visibility.Collapsed;
 
+            // Reset image UI
             ImagePromoLabel.Content = string.Empty;
             ImageSetLabel.Content = string.Empty;
             ImageSourceUrl = null;
             ImageSourceUrl2nd = null;
-
-            LogoSmall.Visibility = Visibility.Collapsed;
-            GridFiltering.Visibility = Visibility.Collapsed;
-            GridUtilsMenu.Visibility = Visibility.Collapsed;
 
             ApplyFiltersToAllLists();
         }

@@ -18,34 +18,25 @@ namespace CollectaMundo
             {
                 if (MainWindow.CurrentInstance._isStartup) return;
 
-                Debug.WriteLine($"Applying filter to DataGrid: {dataGrid.Name}, Total cards before filtering: {cards.Count()}");
-
                 // Create strongly-typed filter criteria
                 var filterCriteria = MainWindow.CurrentInstance.filterSelections
                     .Select(fs => fs.ToFilterCriteria())
                     .ToList();
-
-                Debug.WriteLine($"Total filters to apply: {filterCriteria.Count}");
 
                 // **Check if the field exists in the current list**
                 var validFilters = filterCriteria
                     .Where(filter => PropertyExistsInList(filter.CriteriaKey, cards))
                     .ToList();
 
-                Debug.WriteLine($"Valid filters remaining after property check: {validFilters.Count}");
-
                 // **If no valid filters remain, return the unfiltered list**
                 if (validFilters.Count == 0)
                 {
-                    Debug.WriteLine($"No valid filters found for DataGrid {dataGrid.Name}, returning unfiltered cards.");
                     return;
                 }
 
                 // Apply filters
                 var filteredCards = FilterCardsByUnifiedCriteria(cards, validFilters);
                 var finalFilteredCards = filteredCards.ToList();
-
-                Debug.WriteLine($"Total cards after filtering: {finalFilteredCards.Count}");
 
                 // Update DataGrid
                 SaveAndRestoreSort(dataGrid, () =>
@@ -96,18 +87,9 @@ namespace CollectaMundo
                     return value != null; // Ensures that the property is actually set on at least one object
                 });
 
-                Debug.WriteLine($"Checking property '{propertyName}' across cards in the list: Exists on at least one? {hasValidProperty}");
-
                 return hasValidProperty;
             }
-
-
-
-
         }
-
-
-
 
         //public static IEnumerable<CardSet> FilterByColor(IEnumerable<CardSet> cards, HashSet<string> selectedColors, int filterMode)
         //{

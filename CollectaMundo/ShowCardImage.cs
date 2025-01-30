@@ -49,7 +49,6 @@ namespace CollectaMundo
                     {
                         MainWindow.CurrentInstance.ImageSourceUrl2nd = null;
                     }
-                    Debug.WriteLine("Image should be showing now");
                 }
                 else
                 {
