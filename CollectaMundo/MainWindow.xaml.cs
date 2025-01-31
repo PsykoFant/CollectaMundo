@@ -18,6 +18,21 @@ namespace CollectaMundo
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
         #region Set up varibales
+        private static MainWindow? _currentInstance;
+        public static MainWindow CurrentInstance
+        {
+            get
+            {
+                if (_currentInstance == null)
+                {
+                    throw new InvalidOperationException("CurrentInstance is not initialized.");
+                }
+                return _currentInstance;
+            }
+            private set => _currentInstance = value;
+        }
+        public FilterViewModel FilterVM { get; private set; } = new();
+
         // Used for displaying images
         private string? _imageSourceUrl = string.Empty;
         private string? _imageSourceUrl2nd = string.Empty;
@@ -54,7 +69,7 @@ namespace CollectaMundo
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private static MainWindow? _currentInstance;
+
 
         // Query strings to load cards into datagrids
         public readonly string allCardsQuery = "SELECT * FROM view_allCards";
@@ -135,7 +150,6 @@ namespace CollectaMundo
         public List<FilterSelections> filterSelections = [];
         public List<FilterDefaults> filterDefaults = [];
 
-
         // Objects for deck management
         public readonly List<Deck> allDecks = [];
         public Deck CurrentDeck { get; set; } = new Deck();
@@ -156,23 +170,14 @@ namespace CollectaMundo
         public string? appsettingsRetailer = ConfigurationManager.GetSetting("PriceInfo:Retailer") as string;
 
         #endregion
-        public static MainWindow CurrentInstance
-        {
-            get
-            {
-                if (_currentInstance == null)
-                {
-                    throw new InvalidOperationException("CurrentInstance is not initialized.");
-                }
 
-                return _currentInstance;
-            }
-            private set => _currentInstance = value;
-        }
         public MainWindow()
         {
             InitializeComponent();
             _currentInstance = this;
+            DataContext = this;
+
+
 
             // Set up system
             Loaded += async (sender, args) =>

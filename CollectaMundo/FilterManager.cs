@@ -1,11 +1,9 @@
 ﻿using CollectaMundo.Models;
 using ServiceStack;
 using System.Diagnostics;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo
 {
@@ -45,11 +43,8 @@ namespace CollectaMundo
                 });
 
                 UpdateCardCount(dataGrid.Name, finalFilteredCards.Count);
-                if (filterCriteria.Count == validFilters.Count)
-                {
-                    UpdateFilterSummary(validFilters);
-                }
 
+                MainWindow.CurrentInstance.FilterVM.UpdateSummary(validFilters);
             }
             catch (Exception ex)
             {
@@ -158,82 +153,6 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
             }
         }
-        private static void UpdateFilterSummary(IEnumerable<BaseFilterCriteria> filterCriteria)
-        {
-            try
-            {
-                var filterSummary = new StringBuilder();
-
-                // Loop through each filter and add its description to the summary
-                foreach (var filter in filterCriteria)
-                {
-                    switch (filter)
-                    {
-                        case StringFilterCriteria stringFilter:
-                            // Handle single-value filters
-                            if (!string.IsNullOrWhiteSpace(stringFilter.SingleValue))
-                            {
-                                filterSummary.Append($"{filter.CriteriaKey}: \"{stringFilter.SingleValue}\" AND ");
-                            }
-
-                            // Handle multi-value filters
-                            if (stringFilter.MultipleValues != null && stringFilter.MultipleValues.Count > 0)
-                            {
-                                string operatorSymbol = stringFilter.OperatorType switch
-                                {
-                                    OperatorType.OR => "OR",
-                                    OperatorType.AND => "AND",
-                                    OperatorType.NOT => "NOT",
-                                    _ => ""
-                                };
-
-                                var filterSegment = stringFilter.OperatorType == OperatorType.NOT
-                                    ? string.Join(", ", stringFilter.MultipleValues.Select(mv => $"NOT {mv}"))
-                                    : string.Join($" {operatorSymbol} ", stringFilter.MultipleValues);
-
-                                filterSummary.Append($"{filter.CriteriaKey}: {{{filterSegment}}} AND ");
-                            }
-                            break;
-
-                        case NumericFilterCriteria numericFilter:
-                            // Handle numeric filters
-                            string numericOperatorSymbol = numericFilter.OperatorType switch
-                            {
-                                OperatorType.LESS_THAN => "<",
-                                OperatorType.LESS_THAN_OR_EQUALS => "<=",
-                                OperatorType.GREATER_THAN => ">",
-                                OperatorType.GREATER_THAN_OR_EQUALS => ">=",
-                                OperatorType.EQUALS => "==",
-                                OperatorType.NOT_EQUALS => "!=",
-                                _ => ""
-                            };
-
-                            filterSummary.Append($"{filter.CriteriaKey} {numericOperatorSymbol} {numericFilter.Value} AND ");
-                            break;
-
-                        default:
-                            Debug.WriteLine($"Unsupported filter type: {filter.GetType().Name}");
-                            break;
-                    }
-                }
-
-                // Remove trailing " AND " if present
-                if (filterSummary.Length > 5)
-                {
-                    filterSummary.Remove(filterSummary.Length - 5, 5);
-                }
-
-                // Update the UI with the constructed filter summary
-                MainWindow.CurrentInstance.FilterSummaryTextBlock.Text = filterSummary.ToString();
-                Debug.WriteLine($"Filter summary {filterSummary.ToString()}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while updating filter summary: {ex.Message}");
-            }
-        }
-
-
 
         // Update the object to which the width of the combobox is bound
         public static void DataGrid_LayoutUpdated(int dataGridIndex)
