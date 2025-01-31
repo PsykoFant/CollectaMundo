@@ -10,59 +10,28 @@ namespace CollectaMundo
     public class FilterManager
     {
         #region Filtering
-        public static void ApplyFilter(IEnumerable<CardSet> cards, DataGrid dataGrid)
+        public static void ApplyFilter(IEnumerable<CardSet> cards)
         {
             try
             {
                 if (MainWindow.CurrentInstance._isStartup) return;
 
-                Debug.WriteLine($"Applying filter to DataGrid: {dataGrid.Name}, Total cards before filtering: {cards.Count()}");
+                // ✅ Update ViewModel instead of UI
+                MainWindow.CurrentInstance.CardGridVM.ApplyFilter(cards);
 
-                // Create strongly-typed filter criteria
-                var filterCriteria = MainWindow.CurrentInstance.filterSelections
-                    .Select(fs => fs.ToFilterCriteria())
-                    .ToList();
-
-                Debug.WriteLine($"Total filters to apply: {filterCriteria.Count}");
-
-                // **Check if the field exists in the current list**
-                var validFilters = filterCriteria
-                    .Where(filter => PropertyExistsInList(filter.CriteriaKey, cards))
-                    .ToList();
-
-                Debug.WriteLine($"Valid filters remaining after property check: {validFilters.Count}");
-
-                // **If no valid filters remain, return the unfiltered list**
-                if (validFilters.Count == 0)
-                {
-                    Debug.WriteLine($"No valid filters found for DataGrid {dataGrid.Name}, returning unfiltered cards.");
-                    return;
-                }
-
-                // Apply filters
-                var filteredCards = FilterCardsByUnifiedCriteria(cards, validFilters);
-                var finalFilteredCards = filteredCards.ToList();
-
-                Debug.WriteLine($"Total cards after filtering: {finalFilteredCards.Count}");
-
-                // Update DataGrid
-                SaveAndRestoreSort(dataGrid, () =>
-                {
-                    dataGrid.ItemsSource = finalFilteredCards;
-                });
-
-                // ✅ Now uses `FilterViewModel` to update count
-                MainWindow.CurrentInstance.FilterVM.UpdateCardCount(dataGrid.Name, finalFilteredCards.Count);
-
-                // ✅ Update `FilterViewModel` instead of UI directly
-                MainWindow.CurrentInstance.FilterVM.UpdateSummary(validFilters);
+                // ✅ Convert filterSelections to BaseFilterCriteria before passing it to UpdateSummary
+                MainWindow.CurrentInstance.FilterVM.UpdateSummary(
+                    MainWindow.CurrentInstance.filterSelections.Select(fs => fs.ToFilterCriteria())
+                );
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
-                _ = MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error while filtering: {ex.Message}");
+                _ = MessageBox.Show($"Error while filtering: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
+
         private static IEnumerable<CardSet> FilterCardsByUnifiedCriteria(IEnumerable<CardSet> cards, IEnumerable<BaseFilterCriteria> filterCriteria)
         {
             return cards.Where(card => filterCriteria.All(filter => filter.Matches(card)));

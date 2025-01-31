@@ -31,7 +31,10 @@ namespace CollectaMundo
             }
             private set => _currentInstance = value;
         }
+
+        // Viewmodels
         public FilterViewModel FilterVM { get; private set; } = new();
+        public CardGridViewModel CardGridVM { get; } = new();
 
         // Used for displaying images
         private string? _imageSourceUrl = string.Empty;
@@ -348,17 +351,17 @@ namespace CollectaMundo
                         dataGrid = CurrentInstance.AllCardsDataGrid;
                         break;
 
-                    case DataGridContext.MyCollection:
-                        dataGrid = CurrentInstance.MyCollectionDataGrid;
-                        break;
+                        //case DataGridContext.MyCollection:
+                        //    dataGrid = CurrentInstance.MyCollectionDataGrid;
+                        //    break;
 
-                    case DataGridContext.AllCardsForDecks:
-                        dataGrid = CurrentInstance.AllCardsForDecksDataGrid;
-                        break;
+                        //case DataGridContext.AllCardsForDecks:
+                        //    dataGrid = CurrentInstance.AllCardsForDecksDataGrid;
+                        //    break;
 
-                    case DataGridContext.CardsInDecks:
-                        dataGrid = CurrentInstance.DeckDataGrid;
-                        break;
+                        //case DataGridContext.CardsInDecks:
+                        //    dataGrid = CurrentInstance.DeckDataGrid;
+                        //    break;
                 }
 
                 Debug.WriteLine($"Populating {dataGrid.Name} ...");
@@ -382,8 +385,9 @@ namespace CollectaMundo
                 }
 
                 cardList.AddRange(tempCardList);
-                dataGrid.ItemsSource = null; // Clear any current binding
-                dataGrid.ItemsSource = cardList; // Bind/rebind
+
+                MainWindow.CurrentInstance.CardGridVM.UpdateData(cardList);
+
             }
             catch (Exception ex)
             {
@@ -833,9 +837,9 @@ namespace CollectaMundo
 
                     // Update the SingleCriteria field with the selected value
                     setFilterSelection.SingleCriteria = comboBox.SelectedItem?.ToString();
+
                     // Trigger filtering
-                    FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
-                    FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
+                    ApplyFiltersToAllLists();
                 }
 
                 // Find the parent DataGrid for the current ComboBox
@@ -1297,10 +1301,11 @@ namespace CollectaMundo
 
         public void ApplyFiltersToAllLists()
         {
-            FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
-            FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
-            FilterManager.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
+            FilterManager.ApplyFilter(allCards);
+            //FilterManager.ApplyFilter(myCards);
+            //FilterManager.ApplyFilter(allCardsForDecks);
         }
+
 
         // Reset filter elements
         public void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
