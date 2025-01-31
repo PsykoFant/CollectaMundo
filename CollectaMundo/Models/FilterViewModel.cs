@@ -7,25 +7,55 @@ namespace CollectaMundo.Models
     public class FilterViewModel : INotifyPropertyChanged
     {
         private string _filterSummary = string.Empty;
-
+        private string _allCardsCount = string.Empty;
+        private string _myCollectionCount = string.Empty;
         public string FilterSummary
         {
             get => _filterSummary;
             set
             {
                 _filterSummary = value;
-                OnPropertyChanged(nameof(FilterSummary)); // Notify UI of changes
+                // Notify UI of changes
+                OnPropertyChanged(nameof(FilterSummary));
+            }
+        }
+        public string AllCardsCount
+        {
+            get => _allCardsCount;
+            set
+            {
+                _allCardsCount = value;
+                OnPropertyChanged(nameof(AllCardsCount));
+            }
+        }
+        public string MyCollectionCount
+        {
+            get => _myCollectionCount;
+            set
+            {
+                _myCollectionCount = value;
+                OnPropertyChanged(nameof(MyCollectionCount));
             }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+        public void UpdateCardCount(string datagridName, int count)
+        {
+            if (datagridName == "AllCardsDataGrid")
+            {
+                AllCardsCount = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.allCards.Count} cards.";
+            }
+            else if (datagridName == "MyCollectionDataGrid")
+            {
+                MyCollectionCount = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
+            }
+        }
 
-        // Ensure `UpdateSummary` updates the UI
+        // `UpdateSummary` updates the UI
         public void UpdateSummary(IEnumerable<BaseFilterCriteria> filterCriteria)
         {
             var summary = new StringBuilder();
@@ -82,6 +112,7 @@ namespace CollectaMundo.Models
             FilterSummary = summary.ToString();
         }
     }
+
 
 }
 

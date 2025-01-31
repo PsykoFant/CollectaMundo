@@ -177,8 +177,6 @@ namespace CollectaMundo
             _currentInstance = this;
             DataContext = this;
 
-
-
             // Set up system
             Loaded += async (sender, args) =>
             {

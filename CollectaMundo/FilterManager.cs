@@ -16,19 +16,26 @@ namespace CollectaMundo
             {
                 if (MainWindow.CurrentInstance._isStartup) return;
 
+                Debug.WriteLine($"Applying filter to DataGrid: {dataGrid.Name}, Total cards before filtering: {cards.Count()}");
+
                 // Create strongly-typed filter criteria
                 var filterCriteria = MainWindow.CurrentInstance.filterSelections
                     .Select(fs => fs.ToFilterCriteria())
                     .ToList();
+
+                Debug.WriteLine($"Total filters to apply: {filterCriteria.Count}");
 
                 // **Check if the field exists in the current list**
                 var validFilters = filterCriteria
                     .Where(filter => PropertyExistsInList(filter.CriteriaKey, cards))
                     .ToList();
 
+                Debug.WriteLine($"Valid filters remaining after property check: {validFilters.Count}");
+
                 // **If no valid filters remain, return the unfiltered list**
                 if (validFilters.Count == 0)
                 {
+                    Debug.WriteLine($"No valid filters found for DataGrid {dataGrid.Name}, returning unfiltered cards.");
                     return;
                 }
 
@@ -36,14 +43,18 @@ namespace CollectaMundo
                 var filteredCards = FilterCardsByUnifiedCriteria(cards, validFilters);
                 var finalFilteredCards = filteredCards.ToList();
 
+                Debug.WriteLine($"Total cards after filtering: {finalFilteredCards.Count}");
+
                 // Update DataGrid
                 SaveAndRestoreSort(dataGrid, () =>
                 {
                     dataGrid.ItemsSource = finalFilteredCards;
                 });
 
-                UpdateCardCount(dataGrid.Name, finalFilteredCards.Count);
+                // ✅ Now uses `FilterViewModel` to update count
+                MainWindow.CurrentInstance.FilterVM.UpdateCardCount(dataGrid.Name, finalFilteredCards.Count);
 
+                // ✅ Update `FilterViewModel` instead of UI directly
                 MainWindow.CurrentInstance.FilterVM.UpdateSummary(validFilters);
             }
             catch (Exception ex)
@@ -51,39 +62,37 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
                 _ = MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            static IEnumerable<CardSet> FilterCardsByUnifiedCriteria(IEnumerable<CardSet> cards, IEnumerable<BaseFilterCriteria> filterCriteria)
+        }
+        private static IEnumerable<CardSet> FilterCardsByUnifiedCriteria(IEnumerable<CardSet> cards, IEnumerable<BaseFilterCriteria> filterCriteria)
+        {
+            return cards.Where(card => filterCriteria.All(filter => filter.Matches(card)));
+        }
+        private static bool PropertyExistsInList(string? criteriaKey, IEnumerable<CardSet> cards)
+        {
+            if (string.IsNullOrEmpty(criteriaKey))
             {
-                return cards.Where(card => filterCriteria.All(filter => filter.Matches(card)));
+                Debug.WriteLine("PropertyExistsInList: criteriaKey is null or empty.");
+                return false;
             }
 
-            static bool PropertyExistsInList(string? criteriaKey, IEnumerable<CardSet> cards)
+            // Get the property mapping
+            if (!MainWindow.CurrentInstance.CriteriaKeyToPropertyMap.TryGetValue(criteriaKey, out var propertyName))
             {
-                if (string.IsNullOrEmpty(criteriaKey))
-                {
-                    Debug.WriteLine("PropertyExistsInList: criteriaKey is null or empty.");
-                    return false;
-                }
-
-                // Get the property mapping
-                if (!MainWindow.CurrentInstance.CriteriaKeyToPropertyMap.TryGetValue(criteriaKey, out var propertyName))
-                {
-                    Debug.WriteLine($"PropertyExistsInList: No property mapping found for criteriaKey: {criteriaKey}");
-                    return false;
-                }
-
-                // Check if the property exists on at least one card in the list AND has a non-null value
-                bool hasValidProperty = cards.Any(card =>
-                {
-                    var property = card.GetType().GetProperty(propertyName);
-                    if (property == null) return false; // Property does not exist on this card type
-
-                    var value = property.GetValue(card);
-                    return value != null; // Ensures that the property is actually set on at least one object
-                });
-
-                return hasValidProperty;
+                Debug.WriteLine($"PropertyExistsInList: No property mapping found for criteriaKey: {criteriaKey}");
+                return false;
             }
+
+            // Check if the property exists on at least one card in the list AND has a non-null value
+            bool hasValidProperty = cards.Any(card =>
+            {
+                var property = card.GetType().GetProperty(propertyName);
+                if (property == null) return false; // Property does not exist on this card type
+
+                var value = property.GetValue(card);
+                return value != null; // Ensures that the property is actually set on at least one object
+            });
+
+            return hasValidProperty;
         }
 
         //public static IEnumerable<CardSet> FilterByColor(IEnumerable<CardSet> cards, HashSet<string> selectedColors, int filterMode)
@@ -142,17 +151,6 @@ namespace CollectaMundo
         #endregion
 
         #region Filter UI updates
-        private static void UpdateCardCount(string datagridName, int count)
-        {
-            if (datagridName == "AllCardsDataGrid")
-            {
-                MainWindow.CurrentInstance.AllCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.allCards.Count} cards.";
-            }
-            else if (datagridName == "MyCollectionDataGrid")
-            {
-                MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
-            }
-        }
 
         // Update the object to which the width of the combobox is bound
         public static void DataGrid_LayoutUpdated(int dataGridIndex)
