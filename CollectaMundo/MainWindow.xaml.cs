@@ -1919,7 +1919,6 @@ namespace CollectaMundo
 
         #endregion
 
-
         #region UI elements for utilities
         private async void CreateBackupButton_Click(object sender, RoutedEventArgs e)
         {
