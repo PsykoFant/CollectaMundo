@@ -1,94 +1,67 @@
 ﻿using CollectaMundo.Models;
 using ServiceStack;
 using System.Diagnostics;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo
 {
     public class FilterManager
     {
         #region Filtering
-        public static void ApplyFilter(IEnumerable<CardSet> cards, DataGrid dataGrid)
+        public static void ApplyFilter(IEnumerable<CardSet> cards)
         {
             try
             {
                 if (MainWindow.CurrentInstance._isStartup) return;
 
-                // Create strongly-typed filter criteria
-                var filterCriteria = MainWindow.CurrentInstance.filterSelections
-                    .Select(fs => fs.ToFilterCriteria())
-                    .ToList();
+                // ✅ Update ViewModel instead of UI
+                MainWindow.CurrentInstance.CardGridVM.ApplyFilter(cards);
 
-                // **Check if the field exists in the current list**
-                var validFilters = filterCriteria
-                    .Where(filter => PropertyExistsInList(filter.CriteriaKey, cards))
-                    .ToList();
-
-                // **If no valid filters remain, return the unfiltered list**
-                if (validFilters.Count == 0)
-                {
-                    return;
-                }
-
-                // Apply filters
-                var filteredCards = FilterCardsByUnifiedCriteria(cards, validFilters);
-                var finalFilteredCards = filteredCards.ToList();
-
-                // Update DataGrid
-                SaveAndRestoreSort(dataGrid, () =>
-                {
-                    dataGrid.ItemsSource = finalFilteredCards;
-                });
-
-                UpdateCardCount(dataGrid.Name, finalFilteredCards.Count);
-                if (filterCriteria.Count == validFilters.Count)
-                {
-                    UpdateFilterSummary(validFilters);
-                }
-
+                // ✅ Convert filterSelections to BaseFilterCriteria before passing it to UpdateSummary
+                MainWindow.CurrentInstance.FilterVM.UpdateSummary(
+                    MainWindow.CurrentInstance.filterSelections.Select(fs => fs.ToFilterCriteria())
+                );
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error while filtering datagrid: {ex.Message}");
-                _ = MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine($"Error while filtering: {ex.Message}");
+                _ = MessageBox.Show($"Error while filtering: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
 
-            static IEnumerable<CardSet> FilterCardsByUnifiedCriteria(IEnumerable<CardSet> cards, IEnumerable<BaseFilterCriteria> filterCriteria)
+
+        private static IEnumerable<CardSet> FilterCardsByUnifiedCriteria(IEnumerable<CardSet> cards, IEnumerable<BaseFilterCriteria> filterCriteria)
+        {
+            return cards.Where(card => filterCriteria.All(filter => filter.Matches(card)));
+        }
+        private static bool PropertyExistsInList(string? criteriaKey, IEnumerable<CardSet> cards)
+        {
+            if (string.IsNullOrEmpty(criteriaKey))
             {
-                return cards.Where(card => filterCriteria.All(filter => filter.Matches(card)));
+                Debug.WriteLine("PropertyExistsInList: criteriaKey is null or empty.");
+                return false;
             }
 
-            static bool PropertyExistsInList(string? criteriaKey, IEnumerable<CardSet> cards)
+            // Get the property mapping
+            if (!MainWindow.CurrentInstance.CriteriaKeyToPropertyMap.TryGetValue(criteriaKey, out var propertyName))
             {
-                if (string.IsNullOrEmpty(criteriaKey))
-                {
-                    Debug.WriteLine("PropertyExistsInList: criteriaKey is null or empty.");
-                    return false;
-                }
-
-                // Get the property mapping
-                if (!MainWindow.CurrentInstance.CriteriaKeyToPropertyMap.TryGetValue(criteriaKey, out var propertyName))
-                {
-                    Debug.WriteLine($"PropertyExistsInList: No property mapping found for criteriaKey: {criteriaKey}");
-                    return false;
-                }
-
-                // Check if the property exists on at least one card in the list AND has a non-null value
-                bool hasValidProperty = cards.Any(card =>
-                {
-                    var property = card.GetType().GetProperty(propertyName);
-                    if (property == null) return false; // Property does not exist on this card type
-
-                    var value = property.GetValue(card);
-                    return value != null; // Ensures that the property is actually set on at least one object
-                });
-
-                return hasValidProperty;
+                Debug.WriteLine($"PropertyExistsInList: No property mapping found for criteriaKey: {criteriaKey}");
+                return false;
             }
+
+            // Check if the property exists on at least one card in the list AND has a non-null value
+            bool hasValidProperty = cards.Any(card =>
+            {
+                var property = card.GetType().GetProperty(propertyName);
+                if (property == null) return false; // Property does not exist on this card type
+
+                var value = property.GetValue(card);
+                return value != null; // Ensures that the property is actually set on at least one object
+            });
+
+            return hasValidProperty;
         }
 
         //public static IEnumerable<CardSet> FilterByColor(IEnumerable<CardSet> cards, HashSet<string> selectedColors, int filterMode)
@@ -147,93 +120,6 @@ namespace CollectaMundo
         #endregion
 
         #region Filter UI updates
-        private static void UpdateCardCount(string datagridName, int count)
-        {
-            if (datagridName == "AllCardsDataGrid")
-            {
-                MainWindow.CurrentInstance.AllCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.allCards.Count} cards.";
-            }
-            else if (datagridName == "MyCollectionDataGrid")
-            {
-                MainWindow.CurrentInstance.MyCardsCountLabel.Content = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
-            }
-        }
-        private static void UpdateFilterSummary(IEnumerable<BaseFilterCriteria> filterCriteria)
-        {
-            try
-            {
-                var filterSummary = new StringBuilder();
-
-                // Loop through each filter and add its description to the summary
-                foreach (var filter in filterCriteria)
-                {
-                    switch (filter)
-                    {
-                        case StringFilterCriteria stringFilter:
-                            // Handle single-value filters
-                            if (!string.IsNullOrWhiteSpace(stringFilter.SingleValue))
-                            {
-                                filterSummary.Append($"{filter.CriteriaKey}: \"{stringFilter.SingleValue}\" AND ");
-                            }
-
-                            // Handle multi-value filters
-                            if (stringFilter.MultipleValues != null && stringFilter.MultipleValues.Count > 0)
-                            {
-                                string operatorSymbol = stringFilter.OperatorType switch
-                                {
-                                    OperatorType.OR => "OR",
-                                    OperatorType.AND => "AND",
-                                    OperatorType.NOT => "NOT",
-                                    _ => ""
-                                };
-
-                                var filterSegment = stringFilter.OperatorType == OperatorType.NOT
-                                    ? string.Join(", ", stringFilter.MultipleValues.Select(mv => $"NOT {mv}"))
-                                    : string.Join($" {operatorSymbol} ", stringFilter.MultipleValues);
-
-                                filterSummary.Append($"{filter.CriteriaKey}: {{{filterSegment}}} AND ");
-                            }
-                            break;
-
-                        case NumericFilterCriteria numericFilter:
-                            // Handle numeric filters
-                            string numericOperatorSymbol = numericFilter.OperatorType switch
-                            {
-                                OperatorType.LESS_THAN => "<",
-                                OperatorType.LESS_THAN_OR_EQUALS => "<=",
-                                OperatorType.GREATER_THAN => ">",
-                                OperatorType.GREATER_THAN_OR_EQUALS => ">=",
-                                OperatorType.EQUALS => "==",
-                                OperatorType.NOT_EQUALS => "!=",
-                                _ => ""
-                            };
-
-                            filterSummary.Append($"{filter.CriteriaKey} {numericOperatorSymbol} {numericFilter.Value} AND ");
-                            break;
-
-                        default:
-                            Debug.WriteLine($"Unsupported filter type: {filter.GetType().Name}");
-                            break;
-                    }
-                }
-
-                // Remove trailing " AND " if present
-                if (filterSummary.Length > 5)
-                {
-                    filterSummary.Remove(filterSummary.Length - 5, 5);
-                }
-
-                // Update the UI with the constructed filter summary
-                MainWindow.CurrentInstance.FilterSummaryTextBlock.Text = filterSummary.ToString();
-                Debug.WriteLine($"Filter summary {filterSummary.ToString()}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while updating filter summary: {ex.Message}");
-            }
-        }
-
-
 
         // Update the object to which the width of the combobox is bound
         public static void DataGrid_LayoutUpdated(int dataGridIndex)

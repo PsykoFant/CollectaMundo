@@ -18,6 +18,24 @@ namespace CollectaMundo
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
         #region Set up varibales
+        private static MainWindow? _currentInstance;
+        public static MainWindow CurrentInstance
+        {
+            get
+            {
+                if (_currentInstance == null)
+                {
+                    throw new InvalidOperationException("CurrentInstance is not initialized.");
+                }
+                return _currentInstance;
+            }
+            private set => _currentInstance = value;
+        }
+
+        // Viewmodels
+        public FilterViewModel FilterVM { get; private set; } = new();
+        public CardGridViewModel CardGridVM { get; } = new();
+
         // Used for displaying images
         private string? _imageSourceUrl = string.Empty;
         private string? _imageSourceUrl2nd = string.Empty;
@@ -54,7 +72,7 @@ namespace CollectaMundo
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private static MainWindow? _currentInstance;
+
 
         // Query strings to load cards into datagrids
         public readonly string allCardsQuery = "SELECT * FROM view_allCards";
@@ -135,7 +153,6 @@ namespace CollectaMundo
         public List<FilterSelections> filterSelections = [];
         public List<FilterDefaults> filterDefaults = [];
 
-
         // Objects for deck management
         public readonly List<Deck> allDecks = [];
         public Deck CurrentDeck { get; set; } = new Deck();
@@ -156,23 +173,12 @@ namespace CollectaMundo
         public string? appsettingsRetailer = ConfigurationManager.GetSetting("PriceInfo:Retailer") as string;
 
         #endregion
-        public static MainWindow CurrentInstance
-        {
-            get
-            {
-                if (_currentInstance == null)
-                {
-                    throw new InvalidOperationException("CurrentInstance is not initialized.");
-                }
 
-                return _currentInstance;
-            }
-            private set => _currentInstance = value;
-        }
         public MainWindow()
         {
             InitializeComponent();
             _currentInstance = this;
+            DataContext = this;
 
             // Set up system
             Loaded += async (sender, args) =>
@@ -345,17 +351,17 @@ namespace CollectaMundo
                         dataGrid = CurrentInstance.AllCardsDataGrid;
                         break;
 
-                    case DataGridContext.MyCollection:
-                        dataGrid = CurrentInstance.MyCollectionDataGrid;
-                        break;
+                        //case DataGridContext.MyCollection:
+                        //    dataGrid = CurrentInstance.MyCollectionDataGrid;
+                        //    break;
 
-                    case DataGridContext.AllCardsForDecks:
-                        dataGrid = CurrentInstance.AllCardsForDecksDataGrid;
-                        break;
+                        //case DataGridContext.AllCardsForDecks:
+                        //    dataGrid = CurrentInstance.AllCardsForDecksDataGrid;
+                        //    break;
 
-                    case DataGridContext.CardsInDecks:
-                        dataGrid = CurrentInstance.DeckDataGrid;
-                        break;
+                        //case DataGridContext.CardsInDecks:
+                        //    dataGrid = CurrentInstance.DeckDataGrid;
+                        //    break;
                 }
 
                 Debug.WriteLine($"Populating {dataGrid.Name} ...");
@@ -379,8 +385,9 @@ namespace CollectaMundo
                 }
 
                 cardList.AddRange(tempCardList);
-                dataGrid.ItemsSource = null; // Clear any current binding
-                dataGrid.ItemsSource = cardList; // Bind/rebind
+
+                MainWindow.CurrentInstance.CardGridVM.UpdateData(cardList);
+
             }
             catch (Exception ex)
             {
@@ -830,9 +837,9 @@ namespace CollectaMundo
 
                     // Update the SingleCriteria field with the selected value
                     setFilterSelection.SingleCriteria = comboBox.SelectedItem?.ToString();
+
                     // Trigger filtering
-                    FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
-                    FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
+                    ApplyFiltersToAllLists();
                 }
 
                 // Find the parent DataGrid for the current ComboBox
@@ -1294,10 +1301,11 @@ namespace CollectaMundo
 
         public void ApplyFiltersToAllLists()
         {
-            FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
-            FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
-            FilterManager.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
+            FilterManager.ApplyFilter(allCards);
+            //FilterManager.ApplyFilter(myCards);
+            //FilterManager.ApplyFilter(allCardsForDecks);
         }
+
 
         // Reset filter elements
         public void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
@@ -1915,7 +1923,6 @@ namespace CollectaMundo
         }
 
         #endregion
-
 
         #region UI elements for utilities
         private async void CreateBackupButton_Click(object sender, RoutedEventArgs e)
