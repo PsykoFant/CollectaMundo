@@ -69,8 +69,6 @@ namespace CollectaMundo
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-
-
         // Query strings to load cards into datagrids
         public readonly string allCardsQuery = "SELECT * FROM view_allCards";
         public readonly string myCollectionQuery = "SELECT * FROM view_myCollection;";
