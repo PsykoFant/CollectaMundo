@@ -657,6 +657,7 @@
                 </ListView>
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
+                          ItemsSource="{Binding AllCardsView}" 
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"

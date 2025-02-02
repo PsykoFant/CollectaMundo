@@ -33,6 +33,8 @@ namespace CollectaMundo
         }
         public FilterViewModel FilterVM { get; private set; } = new();
 
+        public CardViewModel CardVM { get; } = new();
+
         // Used for displaying images
         private string? _imageSourceUrl = string.Empty;
         private string? _imageSourceUrl2nd = string.Empty;
@@ -174,6 +176,7 @@ namespace CollectaMundo
             InitializeComponent();
             _currentInstance = this;
             DataContext = this;
+            this.DataContext = CardVM;
 
             // Set up system
             Loaded += async (sender, args) =>
@@ -303,14 +306,18 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, DataGridContext.AllCards);
+            await CardVM.PopulateCardDataGridAsync(CardVM.allCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
+
+            //Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, DataGridContext.AllCards);
             Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, DataGridContext.MyCollection);
             Task loadCardsForDecks = PopulateCardDataGridAsync(allCardsForDecks, allCardsForDecksQuery, DataGridContext.AllCardsForDecks);
             Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
             Task loadDecks = LoadAllDecksAsync();
             Task populateAllFormatsList = PopulateAllFormatsListAsync();
 
-            await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, loadDecks, populateAllFormatsList, loadCardsForDecks);
+            //await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, loadDecks, populateAllFormatsList, loadCardsForDecks);
+            await Task.WhenAll(loadMyCollection, loadColorIcons, loadDecks, populateAllFormatsList, loadCardsForDecks);
+
 
             DBAccess.CloseConnection();
 
