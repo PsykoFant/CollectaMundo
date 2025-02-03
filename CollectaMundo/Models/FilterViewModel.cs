@@ -85,6 +85,7 @@ namespace CollectaMundo.Models
             {
                 Debug.WriteLine($"CriteriaKey: {filter.CriteriaKey}, DefaultText: {filter.DefaultText}");
             }
+            FilterDefaults[0].DefaultText = "TEST UPDATE!";
         }
         private IEnumerable<string> CleanAndFilter(IEnumerable<string?> input, HashSet<string>? removeItems = null)
         {

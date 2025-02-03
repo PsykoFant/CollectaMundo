@@ -116,13 +116,13 @@
                 <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="125,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueComboBox_SelectionChanged"/>
 
                 <ComboBox x:Name="RarityComboBox" 
-                          DataContext="{Binding FilterVM.FilterDefaults[5]}"
+                          DataContext="{Binding FilterVM.FilterDefaults[0]}"
                           HorizontalAlignment="Left" Margin="10,245,0,0" VerticalAlignment="Top" Width="180" Height="20" DropDownOpened="DynamicallyPopulatedComboBox_DropDownOpened">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterRarityTextBox"
-                                         Text="{Binding DefaultText, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=ComboBox}, UpdateSourceTrigger=PropertyChanged}"
+                                         Text="{Binding DefaultText, RelativeSource={RelativeSource AncestorType=ComboBox}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          Background="Transparent"
                                          TextChanged="FilterTextBox_TextChanged"
                                          GotFocus="TextBox_GotFocus"
