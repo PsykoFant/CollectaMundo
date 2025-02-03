@@ -8,7 +8,7 @@
         xmlns:System="clr-namespace:System;assembly=System.Runtime" x:Class="CollectaMundo.MainWindow"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        d:DataContext="{d:DesignInstance local:MainWindow, IsDesignTimeCreatable=True}"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}"
         Title="CollectaMundo"
         Icon="/Resources/Images/Icon.ico" 
         Width="1920"
@@ -27,7 +27,8 @@
             <GradientStop Color="White" Offset="1"/>
         </LinearGradientBrush>
     </Window.Background>
-    <Grid x:Name="AppWindow" Style="{StaticResource MPlantin}">
+    <Grid x:Name="AppWindow" 
+          Style="{StaticResource MPlantin}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="250"/>
             <ColumnDefinition Width="*"/>
@@ -114,11 +115,14 @@
                 <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="10,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueOperatorComboBox_SelectionChanged"/>
                 <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="125,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueComboBox_SelectionChanged"/>
 
-                <ComboBox x:Name="RarityComboBox" HorizontalAlignment="Left" Margin="10,245,0,0" VerticalAlignment="Top" Width="180" Height="20" DropDownOpened="DynamicallyPopulatedComboBox_DropDownOpened">
+                <ComboBox x:Name="RarityComboBox" 
+                          DataContext="{Binding FilterVM.FilterDefaults[5]}"
+                          HorizontalAlignment="Left" Margin="10,245,0,0" VerticalAlignment="Top" Width="180" Height="20" DropDownOpened="DynamicallyPopulatedComboBox_DropDownOpened">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterRarityTextBox"
+                                         Text="{Binding DefaultText, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=ComboBox}, UpdateSourceTrigger=PropertyChanged}"
                                          Background="Transparent"
                                          TextChanged="FilterTextBox_TextChanged"
                                          GotFocus="TextBox_GotFocus"
@@ -135,7 +139,9 @@
                                               Width="70"/>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox x:Name="FilterRarityListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
+                                        <ListBox x:Name="FilterRarityListBox" 
+                                                 ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+                                                 SelectionMode="Multiple">
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
@@ -224,6 +230,7 @@
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterTypesTextBox"
+                                         Text="{Binding DefaultText, UpdateSourceTrigger=PropertyChanged}"
                                          Background="Transparent"
                                          TextChanged="FilterTextBox_TextChanged"
                                          GotFocus="TextBox_GotFocus"
@@ -656,7 +663,7 @@
                 </ListView>
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
-                          ItemsSource="{Binding AllCardsView}"
+                          ItemsSource="{Binding CardVM.AllCardsView}"
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"
@@ -952,7 +959,7 @@
                 </ListView>
                 <!--The my collection datagrid-->
                 <DataGrid x:Name="MyCollectionDataGrid"
-                          ItemsSource="{Binding MyCardsView}"
+                          ItemsSource="{Binding CardVM.MyCardsView}"
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"

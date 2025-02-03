@@ -18,6 +18,9 @@ namespace CollectaMundo
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
         #region Set up varibales
+        public CardViewModel CardVM { get; }
+        public FilterViewModel FilterVM { get; }
+
         private static MainWindow? _currentInstance;
         public static MainWindow CurrentInstance
         {
@@ -31,8 +34,7 @@ namespace CollectaMundo
             }
             private set => _currentInstance = value;
         }
-        public CardViewModel CardVM { get; } = new();
-        public FilterViewModel FilterVM { get; }
+
 
         // Used for displaying images
         private string? _imageSourceUrl = string.Empty;
@@ -127,27 +129,27 @@ namespace CollectaMundo
         }
 
         // Define the criteria keys and their property mappings
-        //public Dictionary<string, string> CriteriaKeyToPropertyMap = new()
-        //{
-        //    { "Name", nameof(CardSet.Name) },
-        //    { "SetName", nameof(CardSet.SetName) },
-        //    { "Colors", nameof(CardSet.Colors) },
-        //    { "ManaValue", nameof(CardSet.ManaValue) },
-        //    { "Rarity", nameof(CardSet.Rarity) },
-        //    { "SuperTypes", nameof(CardSet.SuperTypes) },
-        //    { "Types", nameof(CardSet.Types) },
-        //    { "SubTypes", nameof(CardSet.SubTypes) },
-        //    { "Keywords", nameof(CardSet.Keywords) },
-        //    { "Text", nameof(CardSet.Text) },
-        //    { "Finishes", nameof(CardSet.Finishes) },
-        //    { "Language", nameof(CardInCollection.Language) },
-        //    { "SelectedCondition", nameof(CardInCollection.SelectedCondition) },
-        //    { "CardsForTrade", nameof(CardInCollection.CardsForTrade) }
-        //};
+        public Dictionary<string, string> CriteriaKeyToPropertyMap = new()
+        {
+            { "Name", nameof(CardSet.Name) },
+            { "SetName", nameof(CardSet.SetName) },
+            { "Colors", nameof(CardSet.Colors) },
+            { "ManaValue", nameof(CardSet.ManaValue) },
+            { "Rarity", nameof(CardSet.Rarity) },
+            { "SuperTypes", nameof(CardSet.SuperTypes) },
+            { "Types", nameof(CardSet.Types) },
+            { "SubTypes", nameof(CardSet.SubTypes) },
+            { "Keywords", nameof(CardSet.Keywords) },
+            { "Text", nameof(CardSet.Text) },
+            { "Finishes", nameof(CardSet.Finishes) },
+            { "Language", nameof(CardInCollection.Language) },
+            { "SelectedCondition", nameof(CardInCollection.SelectedCondition) },
+            { "CardsForTrade", nameof(CardInCollection.CardsForTrade) }
+        };
 
         // The object which holds the filter selections
         public List<FilterSelections> filterSelections = [];
-        public List<FilterDefaults> filterDefaults = [];
+        //public List<FilterDefaults> filterDefaults = [];
 
         // Objects for deck management
         public readonly List<Deck> allDecks = [];
@@ -176,8 +178,6 @@ namespace CollectaMundo
             _currentInstance = this;
             CardVM = new CardViewModel();
             FilterVM = new FilterViewModel(CardVM);
-
-            this.DataContext = this;
 
             // Set up system
             Loaded += async (sender, args) =>
@@ -302,6 +302,8 @@ namespace CollectaMundo
             await CardVM.PopulateCardDataGridAsync(CardVM.allCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
             await CardVM.PopulateCardDataGridAsync(CardVM.myCards, CardVM.MyCardsView, myCollectionQuery, DataGridContext.MyCollection);
 
+            OnPropertyChanged(nameof(CardVM));
+
             //Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, DataGridContext.AllCards);
             //Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, DataGridContext.MyCollection);
             Task loadCardsForDecks = PopulateCardDataGridAsync(allCardsForDecks, allCardsForDecksQuery, DataGridContext.AllCardsForDecks);
@@ -314,6 +316,8 @@ namespace CollectaMundo
 
 
             DBAccess.CloseConnection();
+
+            FilterVM.PopulateFilterDefaults();
 
             //await PopulateFilterUiElements();
 
@@ -635,135 +639,135 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error populating formats list: {ex.Message}");
             }
         }
-        public Task PopulateFilterUiElements()
-        {
-            //try
-            //{
-            //    // Setup common lists
-            //    List<string> allColors = ["W", "U", "B", "R", "G", "C", "X", "Colorless"];
-            //    List<int> manaValueOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000];
-            //    List<string> manaValueCompareOptions = ["less than", "less than/eq", "greater than", "greater than/eq", "equal to"];
+        //public Task PopulateFilterUiElements()
+        //{
+        //    try
+        //    {
+        //        // Setup common lists
+        //        List<string> allColors = ["W", "U", "B", "R", "G", "C", "X", "Colorless"];
+        //        List<int> manaValueOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000];
+        //        List<string> manaValueCompareOptions = ["less than", "less than/eq", "greater than", "greater than/eq", "equal to"];
 
-            //    // Set up unwanted types and subtypes from unsets etc.
-            //    HashSet<string> typesToRemove = ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards"];
-            //    HashSet<string> subTypesToRemove = ["(creature", "and/or", "type)|Judge", "The"];
+        //        // Set up unwanted types and subtypes from unsets etc.
+        //        HashSet<string> typesToRemove = ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards"];
+        //        HashSet<string> subTypesToRemove = ["(creature", "and/or", "type)|Judge", "The"];
 
-            //    // Clear existing filter context lists by re-initializing it
-            //    filterDefaults = [];
+        //        // Clear existing filter context lists by re-initializing it
+        //        filterDefaults = [];
 
-            //    var criteriaKeys = CriteriaKeyToPropertyMap.Keys.ToList();
+        //        var criteriaKeys = CriteriaKeyToPropertyMap.Keys.ToList();
 
-            //    // Initialize the filterDefaults list dynamically
-            //    filterDefaults = criteriaKeys
-            //        .Select(criteriaKey => new FilterDefaults { CriteriaKey = criteriaKey })
-            //        .ToList();
-
-
-            //    // Populate the filtered data dynamically
-            //    foreach (var filter in filterDefaults)
-            //    {
-            //        // Use reflection to dynamically get the property based on CriteriaKey
-            //        var propertyInfo = typeof(CardSet).GetProperty(filter.CriteriaKey)
-            //                         ?? typeof(CardInCollection).GetProperty(filter.CriteriaKey)
-            //                         ?? typeof(CardInDeck).GetProperty(filter.CriteriaKey);
-
-            //        if (propertyInfo == null)
-            //        {
-            //            Debug.WriteLine($"Property '{filter.CriteriaKey}' not found on any supported types.");
-            //            filter.AllCriteria = []; // Fallback to an empty list
-            //            continue;
-            //        }
-
-            //        // Dynamically retrieve unwanted items based on the CriteriaKey
-            //        HashSet<string>? removeItems = filter.CriteriaKey switch
-            //        {
-            //            "Types" => typesToRemove,
-            //            "SubTypes" => subTypesToRemove,
-            //            _ => null
-            //        };
-
-            //        // Use CleanAndFilter to process and populate AllCriteria
-            //        var dynamicCriteria = CleanAndFilter(
-            //            allCards
-            //                .Where(card => propertyInfo.DeclaringType?.IsInstanceOfType(card) == true) // Ensure compatibility
-            //                .Select(card => propertyInfo.GetValue(card)?.ToString()),
-            //            removeItems
-            //        );
-
-            //        // Special case for "Colors": include predefined values that may not exist in CardSet.Colors
-            //        if (filter.CriteriaKey == "Colors")
-            //        {
-            //            filter.AllCriteria = allColors;
-            //        }
-            //        else
-            //        {
-            //            filter.AllCriteria = dynamicCriteria.ToList();
-            //        }
-            //    }
+        //        // Initialize the filterDefaults list dynamically
+        //        filterDefaults = criteriaKeys
+        //            .Select(criteriaKey => new FilterDefaults { CriteriaKey = criteriaKey })
+        //            .ToList();
 
 
-            //    Dispatcher.Invoke(() =>
-            //    {
-            //        // Update DataGrid ComboBoxes
-            //        UpdateComboBoxSource(AllCardsDataGrid, "AllCardsName", allCards.Select(card => card.Name).Distinct().ToList());
-            //        UpdateComboBoxSource(AllCardsDataGrid, "AllCardsSet", allCards.Select(card => card.SetName).Distinct().ToList());
-            //        UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionName", allCards.Select(card => card.Name).Distinct().ToList());
-            //        UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionSet", allCards.Select(card => card.SetName).Distinct().ToList());
-            //        UpdateComboBoxSource(AllCardsForDecksDataGrid, "AllCardsForDecksName", allCardsForDecks.Select(card => card.Name).Distinct().ToList());
+        //        // Populate the filtered data dynamically
+        //        foreach (var filter in filterDefaults)
+        //        {
+        //            // Use reflection to dynamically get the property based on CriteriaKey
+        //            var propertyInfo = typeof(CardSet).GetProperty(filter.CriteriaKey)
+        //                             ?? typeof(CardInCollection).GetProperty(filter.CriteriaKey)
+        //                             ?? typeof(CardInDeck).GetProperty(filter.CriteriaKey);
+
+        //            if (propertyInfo == null)
+        //            {
+        //                Debug.WriteLine($"Property '{filter.CriteriaKey}' not found on any supported types.");
+        //                filter.AllCriteria = []; // Fallback to an empty list
+        //                continue;
+        //            }
+
+        //            // Dynamically retrieve unwanted items based on the CriteriaKey
+        //            HashSet<string>? removeItems = filter.CriteriaKey switch
+        //            {
+        //                "Types" => typesToRemove,
+        //                "SubTypes" => subTypesToRemove,
+        //                _ => null
+        //            };
+
+        //            // Use CleanAndFilter to process and populate AllCriteria
+        //            var dynamicCriteria = CleanAndFilter(
+        //                allCards
+        //                    .Where(card => propertyInfo.DeclaringType?.IsInstanceOfType(card) == true) // Ensure compatibility
+        //                    .Select(card => propertyInfo.GetValue(card)?.ToString()),
+        //                removeItems
+        //            );
+
+        //            // Special case for "Colors": include predefined values that may not exist in CardSet.Colors
+        //            if (filter.CriteriaKey == "Colors")
+        //            {
+        //                filter.AllCriteria = allColors;
+        //            }
+        //            else
+        //            {
+        //                filter.AllCriteria = dynamicCriteria.ToList();
+        //            }
+        //        }
 
 
-            //        var colorsFilter = filterDefaults.FirstOrDefault(fc => fc.CriteriaKey == "Colors");
-            //        if (colorsFilter != null)
-            //        {
-            //            FilterColorsListBox.ItemsSource = colorsFilter.AllCriteria;
-            //        }
+        //        Dispatcher.Invoke(() =>
+        //        {
+        //            // Update DataGrid ComboBoxes
+        //            UpdateComboBoxSource(AllCardsDataGrid, "AllCardsName", allCards.Select(card => card.Name).Distinct().ToList());
+        //            UpdateComboBoxSource(AllCardsDataGrid, "AllCardsSet", allCards.Select(card => card.SetName).Distinct().ToList());
+        //            UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionName", allCards.Select(card => card.Name).Distinct().ToList());
+        //            UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionSet", allCards.Select(card => card.SetName).Distinct().ToList());
+        //            UpdateComboBoxSource(AllCardsForDecksDataGrid, "AllCardsForDecksName", allCardsForDecks.Select(card => card.Name).Distinct().ToList());
 
-            //        ManaValueComboBox.ItemsSource = manaValueOptions;
-            //        ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
 
-            //        ManaValueOperatorComboBox.SelectedIndex = -1;
-            //        ManaValueComboBox.SelectedIndex = -1;
+        //            var colorsFilter = filterDefaults.FirstOrDefault(fc => fc.CriteriaKey == "Colors");
+        //            if (colorsFilter != null)
+        //            {
+        //                FilterColorsListBox.ItemsSource = colorsFilter.AllCriteria;
+        //            }
 
-            //        // Set default text in all textboxes
-            //        SetDefaultText(filterDefaults);
+        //            ManaValueComboBox.ItemsSource = manaValueOptions;
+        //            ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
 
-            //        PriceRetailerUiUpdates();
-            //    });
-            //}
-            //catch (Exception ex)
-            //{
-            //    Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
-            //    MessageBox.Show($"Error while filling comboboxes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            //}
-            return Task.CompletedTask;
+        //            ManaValueOperatorComboBox.SelectedIndex = -1;
+        //            ManaValueComboBox.SelectedIndex = -1;
 
-            // Define reusable helper function for cleaning lists
-            IEnumerable<string> CleanAndFilter(IEnumerable<string?> input, HashSet<string>? removeItems = null)
-            {
-                // Split strings by commas and clean data
-                char[] separatorArray = [','];
+        //            // Set default text in all textboxes
+        //            SetDefaultText(filterDefaults);
 
-                return input
-                    .Where(item => !string.IsNullOrEmpty(item))
-                    .SelectMany(item => item!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(item => item.Trim())
-                    .Where(item => removeItems == null || !removeItems.Contains(item))
-                    .Distinct()
-                    .OrderBy(item => item);
-            }
+        //            PriceRetailerUiUpdates();
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
+        //        MessageBox.Show($"Error while filling comboboxes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //    }
+        //    return Task.CompletedTask;
 
-            static void UpdateComboBoxSource(DataGrid dataGrid, string tag, List<string?> dataSource)
-            {
-                List<ComboBox> headerComboBoxes = FilterManager.FindVisualChildren<ComboBox>(dataGrid);
-                foreach (ComboBox comboBox in headerComboBoxes)
-                {
-                    if (comboBox.Tag?.ToString() == tag)
-                    {
-                        comboBox.ItemsSource = dataSource.OrderBy(name => name).ToList();
-                    }
-                }
-            }
-        }
+        //    // Define reusable helper function for cleaning lists
+        //    IEnumerable<string> CleanAndFilter(IEnumerable<string?> input, HashSet<string>? removeItems = null)
+        //    {
+        //        // Split strings by commas and clean data
+        //        char[] separatorArray = [','];
+
+        //        return input
+        //            .Where(item => !string.IsNullOrEmpty(item))
+        //            .SelectMany(item => item!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
+        //            .Select(item => item.Trim())
+        //            .Where(item => removeItems == null || !removeItems.Contains(item))
+        //            .Distinct()
+        //            .OrderBy(item => item);
+        //    }
+
+        //    static void UpdateComboBoxSource(DataGrid dataGrid, string tag, List<string?> dataSource)
+        //    {
+        //        List<ComboBox> headerComboBoxes = FilterManager.FindVisualChildren<ComboBox>(dataGrid);
+        //        foreach (ComboBox comboBox in headerComboBoxes)
+        //        {
+        //            if (comboBox.Tag?.ToString() == tag)
+        //            {
+        //                comboBox.ItemsSource = dataSource.OrderBy(name => name).ToList();
+        //            }
+        //        }
+        //    }
+        //}
         private void SetDefaultText(List<FilterDefaults> filterDefaults)
         {
             foreach (var filter in filterDefaults)
@@ -1096,9 +1100,11 @@ namespace CollectaMundo
             {
                 try
                 {
-                    (string defaultText, string filterTextBoxName, string listBoxName) = FilterManager.GetComboBoxConfig(comboBox.Name, filterDefaults);
+                    (string defaultText, string filterTextBoxName, string listBoxName) =
+                        FilterManager.GetComboBoxConfig(comboBox.Name, FilterVM.FilterDefaults); // Use ViewModel instead of old list
 
-                    if (comboBox.Template.FindName(filterTextBoxName, comboBox) is TextBox filterTextBox && (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == defaultText))
+                    if (comboBox.Template.FindName(filterTextBoxName, comboBox) is TextBox filterTextBox &&
+                        (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == defaultText))
                     {
                         PopulateListBoxWithValues(comboBox, listBoxName);
                         filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
@@ -1109,12 +1115,16 @@ namespace CollectaMundo
                     Debug.WriteLine($"Error in DynamicallyPopulatedComboBox_DropDownOpened: {ex.Message}");
                 }
             }
+
             void PopulateListBoxWithValues(ComboBox comboBox, string listBoxName)
             {
                 if (comboBox.Template.FindName(listBoxName, comboBox) is ListBox listBox)
                 {
-                    // Get both items source and the corresponding selected items set.
-                    (IEnumerable<string> itemsSource, HashSet<string> selectedItems) = FilterManager.GetDataSetAndSelection(listBoxName, filterSelections, filterDefaults);
+                    // Use FilterVM.FilterSelections now that it's been added
+                    (IEnumerable<string> itemsSource, HashSet<string> selectedItems) =
+                        FilterManager.GetDataSetAndSelection(listBoxName, FilterVM.FilterSelections, FilterVM.FilterDefaults);
+
+
                     listBox.ItemsSource = itemsSource;
 
                     listBox.Dispatcher.Invoke(() =>
@@ -1132,7 +1142,6 @@ namespace CollectaMundo
                         }
                     }, System.Windows.Threading.DispatcherPriority.Loaded);
                 }
-
             }
         }
         private void CheckBox_Loaded(object sender, RoutedEventArgs e)
@@ -1170,7 +1179,7 @@ namespace CollectaMundo
                     if (parent is ComboBox comboBox)
                     {
                         // Get configuration for this specific ComboBox
-                        (string defaultText, string _, string listBoxName) = FilterManager.GetComboBoxConfig(comboBox.Name, filterDefaults);
+                        (string defaultText, string _, string listBoxName) = FilterManager.GetComboBoxConfig(comboBox.Name, FilterVM.FilterDefaults);
 
                         // Check if the typed text is the default text
                         if (textBox.Text == defaultText)
@@ -1204,7 +1213,7 @@ namespace CollectaMundo
 
             void UpdateListBoxItems(ListBox listBox, string filterText) // This method updates the listbox items based on text typed in FilterTextBox
             {
-                (IEnumerable<string> dataSet, HashSet<string> selectedItems) = FilterManager.GetDataSetAndSelection(listBox.Name, filterSelections, filterDefaults);
+                (IEnumerable<string> dataSet, HashSet<string> selectedItems) = FilterManager.GetDataSetAndSelection(listBox.Name, FilterVM.FilterSelections, FilterVM.FilterDefaults);
 
                 List<string> filteredItems = !string.IsNullOrWhiteSpace(filterText)
                     ? dataSet.Where(type => type.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList()
@@ -1269,21 +1278,34 @@ namespace CollectaMundo
                 // Special case for FilterTextTextBox
                 if (textBox.Name == "FilterTextTextBox")
                 {
-                    var textFilter = filterDefaults.FirstOrDefault(fd => fd.CriteriaKey == "Text");
+                    var textFilter = FilterVM.FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == "Text");
                     defaultText = textFilter?.DefaultText ?? "Oops, something went wrong ...";
                 }
                 else
                 {
                     // Find the parent ComboBox dynamically
-                    var parentComboBox = FilterManager.FindParent<ComboBox>(textBox) ?? throw new InvalidOperationException($"No parent ComboBox found for TextBox: {textBox.Name}");
+                    var parentComboBox = FilterManager.FindParent<ComboBox>(textBox);
+                    if (parentComboBox == null)
+                    {
+                        Debug.WriteLine($"Warning: No parent ComboBox found for TextBox: {textBox.Name}");
+                        return;
+                    }
 
-                    // Get the default text dynamically using the ComboBox's name
-                    var config = FilterManager.GetComboBoxConfig(parentComboBox.Name, filterDefaults);
-                    defaultText = config.defaultText;
+                    // Attempt to get filter configuration
+                    try
+                    {
+                        var config = FilterManager.GetComboBoxConfig(parentComboBox.Name, FilterVM.FilterDefaults);
+                        defaultText = config.defaultText;
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        Debug.WriteLine($"Warning: No configuration found for ComboBox {parentComboBox.Name}. Skipping update.");
+                        return; // Avoids breaking execution if the config is missing
+                    }
                 }
 
-                // Apply condition and action
-                if (condition(textBox, defaultText))
+                // Apply condition and action if config was found
+                if (!string.IsNullOrEmpty(defaultText) && condition(textBox, defaultText))
                 {
                     action(textBox, defaultText);
                 }
@@ -1293,6 +1315,7 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error in HandleTextBoxFocus: {ex.Message}");
             }
         }
+
 
         public void ApplyFiltersToAllLists()
         {
@@ -1310,7 +1333,7 @@ namespace CollectaMundo
             filterSelections = [];
 
             // Reset filter TextBoxes for each ComboBox and also free-text filter textbox
-            SetDefaultText(filterDefaults);
+            //SetDefaultText(filterDefaults);
 
             // Clear filter summary
             FilterSummaryTextBlock.Text = string.Empty;

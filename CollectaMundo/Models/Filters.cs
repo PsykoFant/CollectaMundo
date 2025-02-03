@@ -1,4 +1,8 @@
-﻿using static CollectaMundo.MainWindow;
+﻿using System.ComponentModel;
+using System.Diagnostics;
+using System.Reflection;
+using static CollectaMundo.MainWindow;
+using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo.Models
 {
@@ -25,77 +29,90 @@ namespace CollectaMundo.Models
         /// </summary>
         /// <returns>A BaseFilterCriteria object.</returns>
 
+        public BaseFilterCriteria ToFilterCriteria()
+        {
+            // commented out - referenced the old CriteriaKeyToPropertyMap
+            if (!MainWindow.CurrentInstance.CriteriaKeyToPropertyMap.TryGetValue(CriteriaKey!, out var propertyName))
+            {
+                throw new InvalidOperationException($"Property mapping for '{CriteriaKey}' not found.");
+            }
 
-        // commented out - referenced the old CriteriaKeyToPropertyMap
-        //public BaseFilterCriteria ToFilterCriteria()
-        //{
-        //    // commented out - referenced the old CriteriaKeyToPropertyMap
-        //    if (!MainWindow.CurrentInstance.CriteriaKeyToPropertyMap.TryGetValue(CriteriaKey!, out var propertyName))
-        //    {
-        //        throw new InvalidOperationException($"Property mapping for '{CriteriaKey}' not found.");
-        //    }
+            var property = GetPropertyInfo(propertyName) ?? throw new InvalidOperationException($"Property '{propertyName}' not found on any supported types.");
+            if (IsNumericType(property.PropertyType))
+            {
+                return new NumericFilterCriteria
+                {
+                    CriteriaKey = CriteriaKey,
+                    PropertySelector = card =>
+                    {
+                        try
+                        {
+                            if (property.DeclaringType != null && property.DeclaringType.IsInstanceOfType(card))
+                            {
+                                var value = property.GetValue(card);
+                                return value != null ? Convert.ToDouble(value) : null;
+                            }
+                            return null;
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error accessing numeric property '{CriteriaKey}': {ex.Message}");
+                            return null;
+                        }
+                    },
+                    Value = NumberCriteria,
+                    OperatorType = Operator
+                };
+            }
+            else
+            {
+                return new StringFilterCriteria
+                {
+                    CriteriaKey = CriteriaKey,
+                    PropertySelector = card => property.GetValue(card) as string,
+                    SingleValue = SingleCriteria,
+                    MultipleValues = MultipleCriteria,
+                    OperatorType = Operator
+                };
+            }
 
-        //    var property = GetPropertyInfo(propertyName) ?? throw new InvalidOperationException($"Property '{propertyName}' not found on any supported types.");
-        //    if (IsNumericType(property.PropertyType))
-        //    {
-        //        return new NumericFilterCriteria
-        //        {
-        //            CriteriaKey = CriteriaKey,
-        //            PropertySelector = card =>
-        //            {
-        //                try
-        //                {
-        //                    if (property.DeclaringType != null && property.DeclaringType.IsInstanceOfType(card))
-        //                    {
-        //                        var value = property.GetValue(card);
-        //                        return value != null ? Convert.ToDouble(value) : null;
-        //                    }
-        //                    return null;
-        //                }
-        //                catch (Exception ex)
-        //                {
-        //                    Debug.WriteLine($"Error accessing numeric property '{CriteriaKey}': {ex.Message}");
-        //                    return null;
-        //                }
-        //            },
-        //            Value = NumberCriteria,
-        //            OperatorType = Operator
-        //        };
-        //    }
-        //    else
-        //    {
-        //        return new StringFilterCriteria
-        //        {
-        //            CriteriaKey = CriteriaKey,
-        //            PropertySelector = card => property.GetValue(card) as string,
-        //            SingleValue = SingleCriteria,
-        //            MultipleValues = MultipleCriteria,
-        //            OperatorType = Operator
-        //        };
-        //    }
+            static PropertyInfo? GetPropertyInfo(string propertyName)
+            {
+                return typeof(CardSet).GetProperty(propertyName)
+                       ?? typeof(CardInCollection).GetProperty(propertyName)
+                       ?? typeof(CardInDeck).GetProperty(propertyName);
+            }
 
-        //    static PropertyInfo? GetPropertyInfo(string propertyName)
-        //    {
-        //        return typeof(CardSet).GetProperty(propertyName)
-        //               ?? typeof(CardInCollection).GetProperty(propertyName)
-        //               ?? typeof(CardInDeck).GetProperty(propertyName);
-        //    }
-
-        //    static bool IsNumericType(Type type)
-        //    {
-        //        return type == typeof(int) || type == typeof(double) || type == typeof(float) ||
-        //               type == typeof(long) || type == typeof(short);
-        //    }
-        //}
+            static bool IsNumericType(Type type)
+            {
+                return type == typeof(int) || type == typeof(double) || type == typeof(float) ||
+                       type == typeof(long) || type == typeof(short);
+            }
+        }
     }
 
     /// <summary>
     /// Default values and options for a filter.
     /// </summary>
-    public class FilterDefaults : Filters
+    public class FilterDefaults : INotifyPropertyChanged
     {
+        public string CriteriaKey { get; set; } = string.Empty;
         public List<string> AllCriteria { get; set; } = [];
-        public string? DefaultText { get; set; } = null;
+
+        private string _defaultText = string.Empty;
+        public string DefaultText
+        {
+            get => _defaultText;
+            set
+            {
+                _defaultText = value;
+                OnPropertyChanged(nameof(DefaultText)); // Notify UI of updates
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
     /// <summary>
@@ -160,7 +177,10 @@ namespace CollectaMundo.Models
             var propertyValue = PropertySelector(card);
 
             // Check numeric criteria based on operator type
-            if (!propertyValue.HasValue) return false;
+            if (!propertyValue.HasValue)
+            {
+                return false;
+            }
 
             return OperatorType switch
             {

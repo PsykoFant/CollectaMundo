@@ -245,7 +245,7 @@ namespace CollectaMundo
         /// <param name="filterDefaults"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public static (IEnumerable<string> items, HashSet<string> selectedItems) GetDataSetAndSelection(string listBoxName, List<FilterSelections> filterSelections, List<FilterDefaults> filterDefaults)
+        public static (IEnumerable<string> items, HashSet<string> selectedItems) GetDataSetAndSelection(string listBoxName, List<FilterSelections> filterSelections, IEnumerable<FilterDefaults> filterDefaults)
         {
             IEnumerable<string> itemsSource;
             HashSet<string> selectedItemsSet;
@@ -271,7 +271,7 @@ namespace CollectaMundo
         /// <param name="filterDefaults"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public static (string defaultText, string textBoxName, string listBoxName) GetComboBoxConfig(string comboBoxName, List<FilterDefaults> filterDefaults)
+        public static (string defaultText, string textBoxName, string listBoxName) GetComboBoxConfig(string comboBoxName, IEnumerable<FilterDefaults> filterDefaults)
         {
             // Extract the CriteriaKey from the ComboBox name
             var criteriaKey = comboBoxName.Replace("ComboBox", "");

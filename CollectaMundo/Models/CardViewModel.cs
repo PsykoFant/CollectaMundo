@@ -17,7 +17,7 @@ namespace CollectaMundo.Models
         public List<CardSet> myCards = new();
         private List<CardSet> allCardsForDecks = new();
         private List<CardSet> cardsInDecks = new();
-        public Dictionary<string, string> CriteriaKeyToPropertyMap => FilterCriteriaMappings.CriteriaKeyToPropertyMap;
+
 
         // `ListCollectionView` for UI binding
         public ListCollectionView AllCardsView { get; }
@@ -28,6 +28,7 @@ namespace CollectaMundo.Models
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        public Dictionary<string, string> CriteriaKeyToPropertyMap => FilterCriteriaMappings.CriteriaKeyToPropertyMap;
 
         public CardViewModel()
         {
@@ -69,6 +70,9 @@ namespace CollectaMundo.Models
 
                 // Refresh the ListCollectionView to reflect new data
                 view.Refresh();
+
+                Debug.WriteLine($"Loaded {cardList.Count} cards into {context}");
+
             }
             catch (Exception ex)
             {

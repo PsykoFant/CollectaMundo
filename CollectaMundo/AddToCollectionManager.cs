@@ -406,7 +406,7 @@ namespace CollectaMundo
                 // Reload my collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
                 await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.DataGridContext.MyCollection);
-                await MainWindow.CurrentInstance.PopulateFilterUiElements();
+                //await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 DBAccess.connection.Close();
             }
@@ -497,7 +497,7 @@ namespace CollectaMundo
                 // Reload my collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
                 await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.DataGridContext.MyCollection);
-                await MainWindow.CurrentInstance.PopulateFilterUiElements();
+                //await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 MainWindow.CurrentInstance.ApplyFiltersToAllLists();
 
@@ -608,7 +608,7 @@ namespace CollectaMundo
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
                 await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.DataGridContext.MyCollection);
-                await MainWindow.CurrentInstance.PopulateFilterUiElements();
+                //await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 DBAccess.connection.Close();
             }
@@ -662,7 +662,7 @@ namespace CollectaMundo
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
                 await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.DataGridContext.MyCollection);
-                await MainWindow.CurrentInstance.PopulateFilterUiElements();
+                //await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 DBAccess.connection.Close();
             }
