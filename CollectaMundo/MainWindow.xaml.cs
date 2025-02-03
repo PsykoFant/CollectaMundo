@@ -31,9 +31,8 @@ namespace CollectaMundo
             }
             private set => _currentInstance = value;
         }
-        public FilterViewModel FilterVM { get; private set; } = new();
-
         public CardViewModel CardVM { get; } = new();
+        public FilterViewModel FilterVM { get; }
 
         // Used for displaying images
         private string? _imageSourceUrl = string.Empty;
@@ -128,23 +127,23 @@ namespace CollectaMundo
         }
 
         // Define the criteria keys and their property mappings
-        public Dictionary<string, string> CriteriaKeyToPropertyMap = new()
-        {
-            { "Name", nameof(CardSet.Name) },
-            { "SetName", nameof(CardSet.SetName) },
-            { "Colors", nameof(CardSet.Colors) },
-            { "ManaValue", nameof(CardSet.ManaValue) },
-            { "Rarity", nameof(CardSet.Rarity) },
-            { "SuperTypes", nameof(CardSet.SuperTypes) },
-            { "Types", nameof(CardSet.Types) },
-            { "SubTypes", nameof(CardSet.SubTypes) },
-            { "Keywords", nameof(CardSet.Keywords) },
-            { "Text", nameof(CardSet.Text) },
-            { "Finishes", nameof(CardSet.Finishes) },
-            { "Language", nameof(CardInCollection.Language) },
-            { "SelectedCondition", nameof(CardInCollection.SelectedCondition) },
-            { "CardsForTrade", nameof(CardInCollection.CardsForTrade) }
-        };
+        //public Dictionary<string, string> CriteriaKeyToPropertyMap = new()
+        //{
+        //    { "Name", nameof(CardSet.Name) },
+        //    { "SetName", nameof(CardSet.SetName) },
+        //    { "Colors", nameof(CardSet.Colors) },
+        //    { "ManaValue", nameof(CardSet.ManaValue) },
+        //    { "Rarity", nameof(CardSet.Rarity) },
+        //    { "SuperTypes", nameof(CardSet.SuperTypes) },
+        //    { "Types", nameof(CardSet.Types) },
+        //    { "SubTypes", nameof(CardSet.SubTypes) },
+        //    { "Keywords", nameof(CardSet.Keywords) },
+        //    { "Text", nameof(CardSet.Text) },
+        //    { "Finishes", nameof(CardSet.Finishes) },
+        //    { "Language", nameof(CardInCollection.Language) },
+        //    { "SelectedCondition", nameof(CardInCollection.SelectedCondition) },
+        //    { "CardsForTrade", nameof(CardInCollection.CardsForTrade) }
+        //};
 
         // The object which holds the filter selections
         public List<FilterSelections> filterSelections = [];
@@ -175,8 +174,10 @@ namespace CollectaMundo
         {
             InitializeComponent();
             _currentInstance = this;
-            DataContext = this;
-            this.DataContext = CardVM;
+            CardVM = new CardViewModel();
+            FilterVM = new FilterViewModel(CardVM);
+
+            this.DataContext = this;
 
             // Set up system
             Loaded += async (sender, args) =>
@@ -195,14 +196,6 @@ namespace CollectaMundo
             AllCardsDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(0);
             MyCollectionDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(1);
             AllCardsForDecksDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(2);
-
-
-            // Run some tests
-            //InitializeTestCards();
-            // Inject filterSelections only for testing purposes
-            //FilterDefaults testContext = new();
-
-            //RunFilterTests();
         }
 
         #region Tests
@@ -307,21 +300,22 @@ namespace CollectaMundo
             await DBAccess.OpenConnectionAsync();
 
             await CardVM.PopulateCardDataGridAsync(CardVM.allCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
+            await CardVM.PopulateCardDataGridAsync(CardVM.myCards, CardVM.MyCardsView, myCollectionQuery, DataGridContext.MyCollection);
 
             //Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, DataGridContext.AllCards);
-            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, DataGridContext.MyCollection);
+            //Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, DataGridContext.MyCollection);
             Task loadCardsForDecks = PopulateCardDataGridAsync(allCardsForDecks, allCardsForDecksQuery, DataGridContext.AllCardsForDecks);
             Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
             Task loadDecks = LoadAllDecksAsync();
             Task populateAllFormatsList = PopulateAllFormatsListAsync();
 
             //await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, loadDecks, populateAllFormatsList, loadCardsForDecks);
-            await Task.WhenAll(loadMyCollection, loadColorIcons, loadDecks, populateAllFormatsList, loadCardsForDecks);
+            await Task.WhenAll(loadColorIcons, loadDecks, populateAllFormatsList, loadCardsForDecks);
 
 
             DBAccess.CloseConnection();
 
-            await PopulateFilterUiElements();
+            //await PopulateFilterUiElements();
 
             CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
             CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
@@ -643,104 +637,104 @@ namespace CollectaMundo
         }
         public Task PopulateFilterUiElements()
         {
-            try
-            {
-                // Setup common lists
-                List<string> allColors = ["W", "U", "B", "R", "G", "C", "X", "Colorless"];
-                List<int> manaValueOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000];
-                List<string> manaValueCompareOptions = ["less than", "less than/eq", "greater than", "greater than/eq", "equal to"];
+            //try
+            //{
+            //    // Setup common lists
+            //    List<string> allColors = ["W", "U", "B", "R", "G", "C", "X", "Colorless"];
+            //    List<int> manaValueOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000];
+            //    List<string> manaValueCompareOptions = ["less than", "less than/eq", "greater than", "greater than/eq", "equal to"];
 
-                // Set up unwanted types and subtypes from unsets etc.
-                HashSet<string> typesToRemove = ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards"];
-                HashSet<string> subTypesToRemove = ["(creature", "and/or", "type)|Judge", "The"];
+            //    // Set up unwanted types and subtypes from unsets etc.
+            //    HashSet<string> typesToRemove = ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards"];
+            //    HashSet<string> subTypesToRemove = ["(creature", "and/or", "type)|Judge", "The"];
 
-                // Clear existing filter context lists by re-initializing it
-                filterDefaults = [];
+            //    // Clear existing filter context lists by re-initializing it
+            //    filterDefaults = [];
 
-                var criteriaKeys = CriteriaKeyToPropertyMap.Keys.ToList();
+            //    var criteriaKeys = CriteriaKeyToPropertyMap.Keys.ToList();
 
-                // Initialize the filterDefaults list dynamically
-                filterDefaults = criteriaKeys
-                    .Select(criteriaKey => new FilterDefaults { CriteriaKey = criteriaKey })
-                    .ToList();
-
-
-                // Populate the filtered data dynamically
-                foreach (var filter in filterDefaults)
-                {
-                    // Use reflection to dynamically get the property based on CriteriaKey
-                    var propertyInfo = typeof(CardSet).GetProperty(filter.CriteriaKey)
-                                     ?? typeof(CardInCollection).GetProperty(filter.CriteriaKey)
-                                     ?? typeof(CardInDeck).GetProperty(filter.CriteriaKey);
-
-                    if (propertyInfo == null)
-                    {
-                        Debug.WriteLine($"Property '{filter.CriteriaKey}' not found on any supported types.");
-                        filter.AllCriteria = []; // Fallback to an empty list
-                        continue;
-                    }
-
-                    // Dynamically retrieve unwanted items based on the CriteriaKey
-                    HashSet<string>? removeItems = filter.CriteriaKey switch
-                    {
-                        "Types" => typesToRemove,
-                        "SubTypes" => subTypesToRemove,
-                        _ => null
-                    };
-
-                    // Use CleanAndFilter to process and populate AllCriteria
-                    var dynamicCriteria = CleanAndFilter(
-                        allCards
-                            .Where(card => propertyInfo.DeclaringType?.IsInstanceOfType(card) == true) // Ensure compatibility
-                            .Select(card => propertyInfo.GetValue(card)?.ToString()),
-                        removeItems
-                    );
-
-                    // Special case for "Colors": include predefined values that may not exist in CardSet.Colors
-                    if (filter.CriteriaKey == "Colors")
-                    {
-                        filter.AllCriteria = allColors;
-                    }
-                    else
-                    {
-                        filter.AllCriteria = dynamicCriteria.ToList();
-                    }
-                }
+            //    // Initialize the filterDefaults list dynamically
+            //    filterDefaults = criteriaKeys
+            //        .Select(criteriaKey => new FilterDefaults { CriteriaKey = criteriaKey })
+            //        .ToList();
 
 
-                Dispatcher.Invoke(() =>
-                {
-                    // Update DataGrid ComboBoxes
-                    UpdateComboBoxSource(AllCardsDataGrid, "AllCardsName", allCards.Select(card => card.Name).Distinct().ToList());
-                    UpdateComboBoxSource(AllCardsDataGrid, "AllCardsSet", allCards.Select(card => card.SetName).Distinct().ToList());
-                    UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionName", allCards.Select(card => card.Name).Distinct().ToList());
-                    UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionSet", allCards.Select(card => card.SetName).Distinct().ToList());
-                    UpdateComboBoxSource(AllCardsForDecksDataGrid, "AllCardsForDecksName", allCardsForDecks.Select(card => card.Name).Distinct().ToList());
+            //    // Populate the filtered data dynamically
+            //    foreach (var filter in filterDefaults)
+            //    {
+            //        // Use reflection to dynamically get the property based on CriteriaKey
+            //        var propertyInfo = typeof(CardSet).GetProperty(filter.CriteriaKey)
+            //                         ?? typeof(CardInCollection).GetProperty(filter.CriteriaKey)
+            //                         ?? typeof(CardInDeck).GetProperty(filter.CriteriaKey);
+
+            //        if (propertyInfo == null)
+            //        {
+            //            Debug.WriteLine($"Property '{filter.CriteriaKey}' not found on any supported types.");
+            //            filter.AllCriteria = []; // Fallback to an empty list
+            //            continue;
+            //        }
+
+            //        // Dynamically retrieve unwanted items based on the CriteriaKey
+            //        HashSet<string>? removeItems = filter.CriteriaKey switch
+            //        {
+            //            "Types" => typesToRemove,
+            //            "SubTypes" => subTypesToRemove,
+            //            _ => null
+            //        };
+
+            //        // Use CleanAndFilter to process and populate AllCriteria
+            //        var dynamicCriteria = CleanAndFilter(
+            //            allCards
+            //                .Where(card => propertyInfo.DeclaringType?.IsInstanceOfType(card) == true) // Ensure compatibility
+            //                .Select(card => propertyInfo.GetValue(card)?.ToString()),
+            //            removeItems
+            //        );
+
+            //        // Special case for "Colors": include predefined values that may not exist in CardSet.Colors
+            //        if (filter.CriteriaKey == "Colors")
+            //        {
+            //            filter.AllCriteria = allColors;
+            //        }
+            //        else
+            //        {
+            //            filter.AllCriteria = dynamicCriteria.ToList();
+            //        }
+            //    }
 
 
-                    var colorsFilter = filterDefaults.FirstOrDefault(fc => fc.CriteriaKey == "Colors");
-                    if (colorsFilter != null)
-                    {
-                        FilterColorsListBox.ItemsSource = colorsFilter.AllCriteria;
-                    }
+            //    Dispatcher.Invoke(() =>
+            //    {
+            //        // Update DataGrid ComboBoxes
+            //        UpdateComboBoxSource(AllCardsDataGrid, "AllCardsName", allCards.Select(card => card.Name).Distinct().ToList());
+            //        UpdateComboBoxSource(AllCardsDataGrid, "AllCardsSet", allCards.Select(card => card.SetName).Distinct().ToList());
+            //        UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionName", allCards.Select(card => card.Name).Distinct().ToList());
+            //        UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionSet", allCards.Select(card => card.SetName).Distinct().ToList());
+            //        UpdateComboBoxSource(AllCardsForDecksDataGrid, "AllCardsForDecksName", allCardsForDecks.Select(card => card.Name).Distinct().ToList());
 
-                    ManaValueComboBox.ItemsSource = manaValueOptions;
-                    ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
 
-                    ManaValueOperatorComboBox.SelectedIndex = -1;
-                    ManaValueComboBox.SelectedIndex = -1;
+            //        var colorsFilter = filterDefaults.FirstOrDefault(fc => fc.CriteriaKey == "Colors");
+            //        if (colorsFilter != null)
+            //        {
+            //            FilterColorsListBox.ItemsSource = colorsFilter.AllCriteria;
+            //        }
 
-                    // Set default text in all textboxes
-                    SetDefaultText(filterDefaults);
+            //        ManaValueComboBox.ItemsSource = manaValueOptions;
+            //        ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
 
-                    PriceRetailerUiUpdates();
-                });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
-                MessageBox.Show($"Error while filling comboboxes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            //        ManaValueOperatorComboBox.SelectedIndex = -1;
+            //        ManaValueComboBox.SelectedIndex = -1;
+
+            //        // Set default text in all textboxes
+            //        SetDefaultText(filterDefaults);
+
+            //        PriceRetailerUiUpdates();
+            //    });
+            //}
+            //catch (Exception ex)
+            //{
+            //    Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
+            //    MessageBox.Show($"Error while filling comboboxes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            //}
             return Task.CompletedTask;
 
             // Define reusable helper function for cleaning lists
@@ -1999,8 +1993,8 @@ namespace CollectaMundo
             // Update the db views to load prices from the selected retailer
             await DownloadAndPrepDB.CreateViews();
 
-            Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, DataGridContext.AllCards);
-            Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, DataGridContext.MyCollection);
+            Task loadAllCards = CardVM.PopulateCardDataGridAsync(CardVM.allCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
+            Task loadMyCollection = CardVM.PopulateCardDataGridAsync(CardVM.myCards, CardVM.MyCardsView, myCollectionQuery, DataGridContext.MyCollection);
 
             await Task.WhenAll(loadAllCards, loadMyCollection);
 

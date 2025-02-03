@@ -6,8 +6,7 @@
         xmlns:local="clr-namespace:CollectaMundo"
         xmlns:converters="clr-namespace:CollectaMundo.Converters"
         xmlns:System="clr-namespace:System;assembly=System.Runtime" x:Class="CollectaMundo.MainWindow"
-        xmlns:sys="clr-namespace:System;assembly=mscorlib"       
-        
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance local:MainWindow, IsDesignTimeCreatable=True}"
         Title="CollectaMundo"
@@ -657,7 +656,7 @@
                 </ListView>
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
-                          ItemsSource="{Binding AllCardsView}" 
+                          ItemsSource="{Binding AllCardsView}"
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"
@@ -953,6 +952,7 @@
                 </ListView>
                 <!--The my collection datagrid-->
                 <DataGrid x:Name="MyCollectionDataGrid"
+                          ItemsSource="{Binding MyCardsView}"
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"

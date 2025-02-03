@@ -4,6 +4,7 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo
 {
@@ -38,8 +39,10 @@ namespace CollectaMundo
                             StatusMessageUpdated?.Invoke("Processing new prices and reloading card database ...");
 
                             // Reload cards to get updated prices
-                            Task loadAllCards = MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.allCards, MainWindow.CurrentInstance.allCardsQuery, MainWindow.DataGridContext.AllCards);
-                            Task loadMyCollection = MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.DataGridContext.MyCollection);
+
+
+                            Task loadAllCards = MainWindow.CurrentInstance.CardVM.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.allCards, MainWindow.CurrentInstance.CardVM.AllCardsView, MainWindow.CurrentInstance.allCardsQuery, DataGridContext.AllCards);
+                            Task loadMyCollection = MainWindow.CurrentInstance.CardVM.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.myCards, MainWindow.CurrentInstance.CardVM.MyCardsView, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
                             await Task.WhenAll(loadAllCards, loadMyCollection);
 
                             MainWindow.CurrentInstance.UtilsInfoLabel.Content = "Card prices have been updated ...";

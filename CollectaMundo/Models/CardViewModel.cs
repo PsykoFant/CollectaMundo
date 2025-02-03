@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using CollectaMundo.Utilities;
+using System.ComponentModel;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -13,9 +14,10 @@ namespace CollectaMundo.Models
     {
         // Core List<T> for performance
         public List<CardSet> allCards = new();
-        private List<CardSet> myCards = new();
+        public List<CardSet> myCards = new();
         private List<CardSet> allCardsForDecks = new();
         private List<CardSet> cardsInDecks = new();
+        public Dictionary<string, string> CriteriaKeyToPropertyMap => FilterCriteriaMappings.CriteriaKeyToPropertyMap;
 
         // `ListCollectionView` for UI binding
         public ListCollectionView AllCardsView { get; }
