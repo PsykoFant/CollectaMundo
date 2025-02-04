@@ -319,6 +319,8 @@ namespace CollectaMundo
 
             FilterVM.PopulateFilterDefaults();
 
+            OnPropertyChanged(nameof(FilterVM));
+
             //await PopulateFilterUiElements();
 
             CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
@@ -1107,7 +1109,6 @@ namespace CollectaMundo
                         (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == defaultText))
                     {
                         PopulateListBoxWithValues(comboBox, listBoxName);
-                        filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
                     }
                 }
                 catch (Exception ex)
@@ -1243,79 +1244,35 @@ namespace CollectaMundo
         {
             if (sender is TextBox textBox)
             {
-                HandleTextBoxFocus(
-                    textBox,
-                    (tb, defaultText) => tb.Text == defaultText, // Condition
-                    (tb, _) =>
-                    {
-                        tb.Text = string.Empty;
-                        tb.Foreground = new SolidColorBrush(Colors.Black);
-                    } // Action
-                );
+                textBox.Foreground = new SolidColorBrush(Colors.Black);
+                textBox.Text = string.Empty;
             }
         }
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)
         {
             if (sender is TextBox textBox)
             {
-                HandleTextBoxFocus(
-                    textBox,
-                    (tb, _) => string.IsNullOrWhiteSpace(tb.Text), // Condition
-                    (tb, defaultText) =>
+                // If TextBox is empty, restore default text
+                if (string.IsNullOrWhiteSpace(textBox.Text))
+                {
+                    // Extract CriteriaKey from TextBox name
+                    string criteriaKey = textBox.Name.Replace("Filter", "").Replace("TextBox", "");
+
+                    // Find the corresponding default text in FilterVM.FilterDefaults
+                    var matchingFilter = FilterVM.FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == criteriaKey);
+
+                    if (matchingFilter != null)
                     {
-                        tb.Text = defaultText;
-                        tb.Foreground = new SolidColorBrush(Colors.Gray);
-                    } // Action
-                );
+                        textBox.Text = matchingFilter.DefaultText;
+                        textBox.Foreground = new SolidColorBrush(Colors.Gray);
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"No matching FilterDefaults found for CriteriaKey: {criteriaKey}");
+                    }
+                }
             }
         }
-        private void HandleTextBoxFocus(TextBox textBox, Func<TextBox, string, bool> condition, Action<TextBox, string> action)
-        {
-            try
-            {
-                string defaultText;
-
-                // Special case for FilterTextTextBox
-                if (textBox.Name == "FilterTextTextBox")
-                {
-                    var textFilter = FilterVM.FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == "Text");
-                    defaultText = textFilter?.DefaultText ?? "Oops, something went wrong ...";
-                }
-                else
-                {
-                    // Find the parent ComboBox dynamically
-                    var parentComboBox = FilterManager.FindParent<ComboBox>(textBox);
-                    if (parentComboBox == null)
-                    {
-                        Debug.WriteLine($"Warning: No parent ComboBox found for TextBox: {textBox.Name}");
-                        return;
-                    }
-
-                    // Attempt to get filter configuration
-                    try
-                    {
-                        var config = FilterManager.GetComboBoxConfig(parentComboBox.Name, FilterVM.FilterDefaults);
-                        defaultText = config.defaultText;
-                    }
-                    catch (InvalidOperationException ex)
-                    {
-                        Debug.WriteLine($"Warning: No configuration found for ComboBox {parentComboBox.Name}. Skipping update.");
-                        return; // Avoids breaking execution if the config is missing
-                    }
-                }
-
-                // Apply condition and action if config was found
-                if (!string.IsNullOrEmpty(defaultText) && condition(textBox, defaultText))
-                {
-                    action(textBox, defaultText);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in HandleTextBoxFocus: {ex.Message}");
-            }
-        }
-
 
         public void ApplyFiltersToAllLists()
         {

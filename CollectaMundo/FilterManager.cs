@@ -286,9 +286,10 @@ namespace CollectaMundo
                 string listBoxName = $"Filter{criteriaKey}ListBox";
                 string defaultText = filterDefault.DefaultText ?? $"Filter {criteriaKey} ...";
 
+                Debug.WriteLine(textBoxName);
+
                 return (defaultText, textBoxName, listBoxName);
             }
-
             throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}");
         }
 

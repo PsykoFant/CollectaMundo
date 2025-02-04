@@ -115,19 +115,17 @@
                 <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="10,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueOperatorComboBox_SelectionChanged"/>
                 <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="125,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueComboBox_SelectionChanged"/>
 
-                <ComboBox x:Name="RarityComboBox" 
-                          DataContext="{Binding FilterVM.FilterDefaults[0]}"
-                          HorizontalAlignment="Left" Margin="10,245,0,0" VerticalAlignment="Top" Width="180" Height="20" DropDownOpened="DynamicallyPopulatedComboBox_DropDownOpened">
+                <ComboBox x:Name="RarityComboBox" HorizontalAlignment="Left" Margin="10,245,0,0" VerticalAlignment="Top" Width="180" Height="20" DropDownOpened="DynamicallyPopulatedComboBox_DropDownOpened">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterRarityTextBox"
-                                         Text="{Binding DefaultText, RelativeSource={RelativeSource AncestorType=ComboBox}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Text="Filter Rarity ..."
                                          Background="Transparent"
                                          TextChanged="FilterTextBox_TextChanged"
                                          GotFocus="TextBox_GotFocus"
                                          LostFocus="TextBox_LostFocus"
-                                         Foreground="{TemplateBinding Foreground}"
+                                         Foreground="Gray"
                                          Padding="3,3,0,0"
                                          Margin="0,0,0,0"/>
                                 <ToggleButton x:Name="ToggleButtonRarity"
@@ -177,11 +175,12 @@
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterSuperTypesTextBox"
+                                         Text="Filter SuperTypes ..."
                                          Background="Transparent"
                                          TextChanged="FilterTextBox_TextChanged"
                                          GotFocus="TextBox_GotFocus"
                                          LostFocus="TextBox_LostFocus"
-                                         Foreground="{TemplateBinding Foreground}"
+                                         Foreground="Gray"
                                          Padding="3,3,0,0"
                                          Margin="0,0,0,0"/>
                                 <ToggleButton x:Name="ToggleButtonSuperTypes"
@@ -230,12 +229,12 @@
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterTypesTextBox"
-                                         Text="{Binding DefaultText, UpdateSourceTrigger=PropertyChanged}"
+                                         Text="Filter Types ..."
                                          Background="Transparent"
                                          TextChanged="FilterTextBox_TextChanged"
                                          GotFocus="TextBox_GotFocus"
                                          LostFocus="TextBox_LostFocus"
-                                         Foreground="{TemplateBinding Foreground}"
+                                         Foreground="Gray"
                                          Padding="3,3,0,0"
                                          Margin="0,0,0,0"/>
                                 <ToggleButton x:Name="ToggleButtonTypes" 
@@ -284,11 +283,12 @@
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterSubTypesTextBox"
+                                         Text="Filter SubTypes ..."
                                          Background="Transparent"
                                          TextChanged="FilterTextBox_TextChanged"
                                          GotFocus="TextBox_GotFocus"
                                          LostFocus="TextBox_LostFocus"
-                                         Foreground="{TemplateBinding Foreground}"
+                                         Foreground="Gray"
                                          Padding="3,3,0,0"
                                          Margin="0,0,0,0"/>
                                 <ToggleButton x:Name="ToggleButtonSubTypes"
@@ -337,11 +337,12 @@
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterKeywordsTextBox"
+                                         Text="Filter Keywords ..."
                                          Background="Transparent"
                                          TextChanged="FilterTextBox_TextChanged"
                                          GotFocus="TextBox_GotFocus"
                                          LostFocus="TextBox_LostFocus"
-                                         Foreground="{TemplateBinding Foreground}"
+                                         Foreground="Gray"
                                          Padding="3,3,0,0"
                                          Margin="0,0,0,0"/>
                                 <ToggleButton x:Name="ToggleButtonKeywords" Content="Keywords" Focusable="false"
@@ -388,11 +389,12 @@
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterFinishesTextBox"
+                                         Text="Filter Finishes ..."
                                          Background="Transparent"
                                          TextChanged="FilterTextBox_TextChanged"
                                          GotFocus="TextBox_GotFocus"
                                          LostFocus="TextBox_LostFocus"
-                                         Foreground="{TemplateBinding Foreground}"
+                                         Foreground="Gray"
                                          Padding="3,3,0,0"
                                          Margin="0,0,0,0"/>
                                 <ToggleButton x:Name="ToggleButtonFinishes" Content="Finishes" Focusable="false"
@@ -434,7 +436,7 @@
                 </ComboBox>
 
                 <!--Rulestext filtering-->
-                <TextBox x:Name="FilterTextTextBox" HorizontalAlignment="Left" Margin="10,425,0,0" TextWrapping="Wrap" Foreground="Gray" VerticalAlignment="Top" Width="240" Height="45" Background="White" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" KeyDown="FilterTextTextBox_KeyDown"/>
+                <TextBox x:Name="FilterTextTextBox" Text="Filter Text ..." HorizontalAlignment="Left" Margin="10,425,0,0" TextWrapping="Wrap" Foreground="Gray" VerticalAlignment="Top" Width="240" Height="45" Background="White" GotFocus="TextBox_GotFocus" LostFocus="TextBox_LostFocus" KeyDown="FilterTextTextBox_KeyDown"/>
                 <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,470,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
 
                 <!--Languages filtering-->
@@ -443,11 +445,12 @@
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterLanguageTextBox"
+                                         Text="Filter Language ..."
                                          Background="Transparent"
                                          TextChanged="FilterTextBox_TextChanged"
                                          GotFocus="TextBox_GotFocus"
                                          LostFocus="TextBox_LostFocus"
-                                         Foreground="{TemplateBinding Foreground}"
+                                         Foreground="Gray"
                                          Padding="3,3,0,0"
                                          Margin="0,0,0,0"/>
                                 <ToggleButton x:Name="ToggleButtonLanguages" Content="Languages" Focusable="false" ClickMode="Press"
@@ -491,11 +494,12 @@
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterSelectedConditionTextBox"
+                                         Text="Filter SelectedCondition ..."
                                          Background="Transparent"
                                          TextChanged="FilterTextBox_TextChanged"
                                          GotFocus="TextBox_GotFocus"
                                          LostFocus="TextBox_LostFocus"
-                                         Foreground="{TemplateBinding Foreground}"
+                                         Foreground="Gray"
                                          Padding="3,3,0,0"
                                          Margin="0,0,0,0"/>
                                 <ToggleButton x:Name="ToggleButtonConditions" Content="Conditions" Focusable="false" ClickMode="Press"

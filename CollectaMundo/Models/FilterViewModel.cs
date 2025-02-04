@@ -76,16 +76,6 @@ namespace CollectaMundo.Models
                 // Add to ObservableCollection so UI updates automatically
                 FilterDefaults.Add(filter);
             }
-
-            // Force UI refresh by notifying PropertyChanged
-            OnPropertyChanged(nameof(FilterDefaults));
-
-            Debug.WriteLine("FilterDefaults after PopulateFilterDefaults():");
-            foreach (var filter in FilterDefaults)
-            {
-                Debug.WriteLine($"CriteriaKey: {filter.CriteriaKey}, DefaultText: {filter.DefaultText}");
-            }
-            FilterDefaults[0].DefaultText = "TEST UPDATE!";
         }
         private IEnumerable<string> CleanAndFilter(IEnumerable<string?> input, HashSet<string>? removeItems = null)
         {
