@@ -1,8 +1,5 @@
 ﻿using System.ComponentModel;
-using System.Diagnostics;
-using System.Reflection;
 using static CollectaMundo.MainWindow;
-using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo.Models
 {
@@ -17,79 +14,46 @@ namespace CollectaMundo.Models
     /// <summary>
     /// Selection-based filter, used during filtering operations.
     /// </summary>
-    public class FilterSelections : Filters
+    public class FilterSelections : Filters, INotifyPropertyChanged
     {
-        public OperatorType Operator { get; set; } = OperatorType.OR;
-        public string? SingleCriteria { get; set; } = null;
-        public HashSet<string> MultipleCriteria { get; set; } = [];
-        public double NumberCriteria { get; set; } = -1;
-
-        /// <summary>
-        /// Converts this FilterSelections into a strongly-typed BaseFilterCriteria.
-        /// </summary>
-        /// <returns>A BaseFilterCriteria object.</returns>
-
-        public BaseFilterCriteria ToFilterCriteria()
+        private OperatorType _operator = OperatorType.OR;
+        public OperatorType Operator
         {
-            // commented out - referenced the old CriteriaKeyToPropertyMap
-            if (!MainWindow.CurrentInstance.CriteriaKeyToPropertyMap.TryGetValue(CriteriaKey!, out var propertyName))
+            get => _operator;
+            set
             {
-                throw new InvalidOperationException($"Property mapping for '{CriteriaKey}' not found.");
-            }
-
-            var property = GetPropertyInfo(propertyName) ?? throw new InvalidOperationException($"Property '{propertyName}' not found on any supported types.");
-            if (IsNumericType(property.PropertyType))
-            {
-                return new NumericFilterCriteria
-                {
-                    CriteriaKey = CriteriaKey,
-                    PropertySelector = card =>
-                    {
-                        try
-                        {
-                            if (property.DeclaringType != null && property.DeclaringType.IsInstanceOfType(card))
-                            {
-                                var value = property.GetValue(card);
-                                return value != null ? Convert.ToDouble(value) : null;
-                            }
-                            return null;
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"Error accessing numeric property '{CriteriaKey}': {ex.Message}");
-                            return null;
-                        }
-                    },
-                    Value = NumberCriteria,
-                    OperatorType = Operator
-                };
-            }
-            else
-            {
-                return new StringFilterCriteria
-                {
-                    CriteriaKey = CriteriaKey,
-                    PropertySelector = card => property.GetValue(card) as string,
-                    SingleValue = SingleCriteria,
-                    MultipleValues = MultipleCriteria,
-                    OperatorType = Operator
-                };
-            }
-
-            static PropertyInfo? GetPropertyInfo(string propertyName)
-            {
-                return typeof(CardSet).GetProperty(propertyName)
-                       ?? typeof(CardInCollection).GetProperty(propertyName)
-                       ?? typeof(CardInDeck).GetProperty(propertyName);
-            }
-
-            static bool IsNumericType(Type type)
-            {
-                return type == typeof(int) || type == typeof(double) || type == typeof(float) ||
-                       type == typeof(long) || type == typeof(short);
+                _operator = value;
+                OnPropertyChanged(nameof(Operator));
             }
         }
+
+        private string? _singleCriteria;
+        public string? SingleCriteria
+        {
+            get => _singleCriteria;
+            set
+            {
+                _singleCriteria = value;
+                OnPropertyChanged(nameof(SingleCriteria));
+            }
+        }
+
+        private HashSet<string> _multipleCriteria = new();
+        public HashSet<string> MultipleCriteria
+        {
+            get => _multipleCriteria;
+            set
+            {
+                _multipleCriteria = value;
+                OnPropertyChanged(nameof(MultipleCriteria));
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
 
     /// <summary>
     /// Default values and options for a filter.

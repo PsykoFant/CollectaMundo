@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.Models;
 using ServiceStack;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
@@ -245,7 +246,7 @@ namespace CollectaMundo
         /// <param name="filterDefaults"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public static (IEnumerable<string> items, HashSet<string> selectedItems) GetDataSetAndSelection(string listBoxName, List<FilterSelections> filterSelections, IEnumerable<FilterDefaults> filterDefaults)
+        public static (IEnumerable<string> items, HashSet<string> selectedItems) GetDataSetAndSelection(string listBoxName, ObservableCollection<FilterSelections> filterSelections, IEnumerable<FilterDefaults> filterDefaults)
         {
             IEnumerable<string> itemsSource;
             HashSet<string> selectedItemsSet;
@@ -376,40 +377,5 @@ namespace CollectaMundo
         }
 
         #endregion
-
-
-        public static void DebugFilterSelections(List<FilterSelections> filterSelections)
-        {
-            try
-            {
-                Debug.WriteLine("FilterSelections Debug Output:");
-                Debug.WriteLine(new string('-', 50));
-
-                foreach (var filter in filterSelections)
-                {
-                    Debug.WriteLine($"CriteriaKey: {filter.CriteriaKey}");
-                    Debug.WriteLine($"Operator: {filter.Operator}");
-                    Debug.WriteLine($"SingleCriteria: {filter.SingleCriteria ?? "null"}");
-                    Debug.WriteLine($"NumberCriteria: {filter.NumberCriteria}");
-
-                    if (filter.MultipleCriteria != null && filter.MultipleCriteria.Count > 0)
-                    {
-                        Debug.WriteLine("MultipleCriteria: " + string.Join(", ", filter.MultipleCriteria));
-                    }
-                    else
-                    {
-                        Debug.WriteLine("MultipleCriteria: Empty or null");
-                    }
-
-                    Debug.WriteLine(new string('-', 50));
-                }
-
-                Debug.WriteLine("End of FilterSelections Debug Output");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in DebugFilterSelections: {ex.Message}");
-            }
-        }
     }
 }

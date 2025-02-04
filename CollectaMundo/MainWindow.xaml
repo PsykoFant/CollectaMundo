@@ -20,6 +20,7 @@
         <converters:StringToImageSourceConverter x:Key="StringToImageSourceConverter"/>
         <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
         <converters:ColorlessFontConverter x:Key="ColorlessFontConverter"/>
+        <converters:HashSetContainsConverter x:Key="HashSetContainsConverter"/>
     </Window.Resources>
     <Window.Background>
         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
@@ -146,7 +147,8 @@
                                                     <Setter Property="Template">
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded" Tag="Rarity">
+                                                                <CheckBox Margin="5,2"
+                                                                          IsChecked="{Binding Path=MultipleCriteria, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource HashSetContainsConverter}, ConverterParameter={Binding}}" Tag="{Binding Path=CriteriaKey}">
                                                                     <ContentPresenter/>
                                                                 </CheckBox>
                                                             </ControlTemplate>

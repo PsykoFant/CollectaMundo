@@ -27,7 +27,7 @@ namespace CollectaMundo.Models
         private string _allCardsCount = string.Empty;
         private string _myCollectionCount = string.Empty;
 
-        public List<FilterSelections> FilterSelections { get; set; } = new();
+        public ObservableCollection<FilterSelections> FilterSelections { get; set; } = new();
         public ObservableCollection<FilterDefaults> FilterDefaults { get; set; } = new();
 
         public void PopulateFilterDefaults()
