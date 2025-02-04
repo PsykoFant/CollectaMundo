@@ -3,9 +3,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
+using System.Windows.Input;
 using static CollectaMundo.MainWindow;
 using static CollectaMundo.Models.CardSet;
 
@@ -13,11 +11,68 @@ namespace CollectaMundo.Models
 {
     public class FilterViewModel : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         private readonly CardViewModel _cardViewModel;
+
+        public ICommand SetSelectedCriteriaCommand { get; }
 
         public FilterViewModel(CardViewModel cardViewModel)
         {
             _cardViewModel = cardViewModel;
+            SetSelectedCriteriaCommand = new RelayCommand<string>(SetSelectedCriteria);
+        }
+
+        private bool _isDropDownOpen;
+        public bool IsDropDownOpen
+        {
+            get => _isDropDownOpen;
+            set
+            {
+                _isDropDownOpen = value;
+                OnPropertyChanged(nameof(IsDropDownOpen));
+            }
+        }
+
+        private void SetSelectedCriteria(string criteriaKey)
+        {
+            if (SelectedCriteriaKey == criteriaKey && IsDropDownOpen)
+            {
+                IsDropDownOpen = false; // Close if already open
+            }
+            else
+            {
+                SelectedCriteriaKey = criteriaKey;
+                IsDropDownOpen = true; // Open if closed
+            }
+        }
+
+
+        private string _selectedCriteriaKey;
+        public string SelectedCriteriaKey
+        {
+            get => _selectedCriteriaKey;
+            set
+            {
+                if (_selectedCriteriaKey != value)
+                {
+                    _selectedCriteriaKey = value;
+                    OnPropertyChanged(nameof(SelectedCriteriaKey));
+                    OnPropertyChanged(nameof(FilteredListBoxItems)); // This ensures UI updates when the filter changes
+                }
+            }
+        }
+        public ObservableCollection<string> FilteredListBoxItems
+        {
+            get
+            {
+                var filter = FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == SelectedCriteriaKey);
+                return filter != null ? new ObservableCollection<string>(filter.AllCriteria) : new ObservableCollection<string>();
+            }
         }
 
         // Access mapping from the static class
@@ -90,40 +145,6 @@ namespace CollectaMundo.Models
                 .OrderBy(item => item);
         }
 
-        private void SetDefaultText()
-        {
-            foreach (var filter in FilterDefaults)
-            {
-                // Generate the default text
-                filter.DefaultText = $"Filter {filter.CriteriaKey} ...";
-
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    // Dynamically retrieve UI elements based on CriteriaKey
-                    string comboBoxName = $"{filter.CriteriaKey}ComboBox";
-                    string textBoxName = $"Filter{filter.CriteriaKey}TextBox";
-
-                    // Find the ComboBox by name
-                    if (Application.Current.MainWindow?.FindName(comboBoxName) is ComboBox comboBox)
-                    {
-                        // Find the TextBox inside the ComboBox template
-                        if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
-                        {
-                            // Set the default text and style
-                            filterTextBox.Text = filter.DefaultText ?? "Whoops, something went wrong!";
-                            filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-                        }
-                    }
-                    else if (Application.Current.MainWindow?.FindName(textBoxName) is TextBox textBox) // Directly locate the TextBox
-                    {
-                        // Set the default text and style
-                        textBox.Text = filter.DefaultText ?? "Whoops, something went wrong!";
-                        textBox.Foreground = new SolidColorBrush(Colors.Gray);
-                    }
-                });
-            }
-        }
-
 
 
         public string FilterSummary
@@ -154,11 +175,7 @@ namespace CollectaMundo.Models
             }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+
         public void UpdateCardCount(string datagridName, int count)
         {
             if (datagridName == "AllCardsDataGrid")
@@ -227,12 +244,5 @@ namespace CollectaMundo.Models
             // This updates the UI
             FilterSummary = summary.ToString();
         }
-
-
-
     }
-
-
 }
-
-

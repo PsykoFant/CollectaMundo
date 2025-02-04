@@ -8,7 +8,6 @@ using System.Data.SQLite;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using static CollectaMundo.BackupRestore;
@@ -1098,6 +1097,9 @@ namespace CollectaMundo
 
 
         // Every time a dynamically populated filter combobox is opened, it is populated with the correct values, including selected items
+
+
+
         private void DynamicallyPopulatedComboBox_DropDownOpened(object sender, EventArgs e)
         {
             if (sender is ComboBox comboBox)
@@ -1105,13 +1107,17 @@ namespace CollectaMundo
                 try
                 {
                     (string defaultText, string filterTextBoxName, string listBoxName) =
-                        FilterManager.GetComboBoxConfig(comboBox.Name, FilterVM.FilterDefaults); // Use ViewModel instead of old list
+                        FilterManager.GetComboBoxConfig(comboBox.Name, FilterVM.FilterDefaults);
 
-                    if (comboBox.Template.FindName(filterTextBoxName, comboBox) is TextBox filterTextBox &&
-                        (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == defaultText))
-                    {
-                        PopulateListBoxWithValues(comboBox, listBoxName);
-                    }
+                    Debug.WriteLine($"Default text: {defaultText}");
+                    Debug.WriteLine($"FilterTextBoxName: {filterTextBoxName}");
+                    Debug.WriteLine($"Listbox name: {listBoxName}");
+
+                    //if (comboBox.Template.FindName(filterTextBoxName, comboBox) is TextBox filterTextBox &&
+                    //    (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == defaultText))
+                    //{
+                    //    PopulateListBoxWithValues(comboBox, listBoxName);
+                    //}
                 }
                 catch (Exception ex)
                 {
@@ -1119,42 +1125,48 @@ namespace CollectaMundo
                 }
             }
 
-            void PopulateListBoxWithValues(ComboBox comboBox, string listBoxName)
-            {
-                if (comboBox.Template.FindName(listBoxName, comboBox) is ListBox listBox)
-                {
-                    // Use FilterVM.FilterSelections instead of old filterSelections list
-                    (IEnumerable<string> itemsSource, HashSet<string> selectedItems) =
-                        FilterManager.GetDataSetAndSelection(listBoxName, FilterVM.FilterSelections, FilterVM.FilterDefaults);
+            //void PopulateListBoxWithValues(ComboBox comboBox, string listBoxName)
+            //{
+            //    try
+            //    {
+            //        if (comboBox.Template.FindName(listBoxName, comboBox) is ListBox listBox)
+            //        {
+            //            // Use FilterVM.FilterSelections instead of old filterSelections list
+            //            (IEnumerable<string> itemsSource, HashSet<string> selectedItems) =
+            //                FilterManager.GetDataSetAndSelection(listBoxName, FilterVM.FilterSelections, FilterVM.FilterDefaults);
 
-                    listBox.ItemsSource = itemsSource;
+            //            listBox.ItemsSource = itemsSource;
 
-                    listBox.Dispatcher.Invoke(() =>
-                    {
-                        foreach (string item in itemsSource)
-                        {
-                            if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem listBoxItem)
-                            {
-                                CheckBox? checkBox = FilterManager.FindVisualChild<CheckBox>(listBoxItem);
-                                if (checkBox != null)
-                                {
-                                    // Ensure TwoWay binding reflects selections
-                                    checkBox.SetBinding(CheckBox.IsCheckedProperty, new Binding
-                                    {
-                                        Source = FilterVM.FilterSelections.FirstOrDefault(fs => fs.CriteriaKey == checkBox.Tag as string),
-                                        Path = new PropertyPath("MultipleCriteria"),
-                                        Mode = BindingMode.TwoWay,
-                                        UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
-                                        Converter = new Converters.HashSetContainsConverter(),
-                                        ConverterParameter = item
-                                    });
-                                }
-                            }
-                        }
-                    }, System.Windows.Threading.DispatcherPriority.Loaded);
-                }
-            }
-
+            //            listBox.Dispatcher.Invoke(() =>
+            //            {
+            //                foreach (string item in itemsSource)
+            //                {
+            //                    if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem listBoxItem)
+            //                    {
+            //                        CheckBox? checkBox = FilterManager.FindVisualChild<CheckBox>(listBoxItem);
+            //                        if (checkBox != null)
+            //                        {
+            //                            // Ensure TwoWay binding reflects selections
+            //                            checkBox.SetBinding(CheckBox.IsCheckedProperty, new Binding
+            //                            {
+            //                                Source = FilterVM.FilterSelections.FirstOrDefault(fs => fs.CriteriaKey == checkBox.Tag as string),
+            //                                Path = new PropertyPath("MultipleCriteria"),
+            //                                Mode = BindingMode.TwoWay,
+            //                                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+            //                                Converter = new Converters.HashSetContainsConverter(),
+            //                                ConverterParameter = item
+            //                            });
+            //                        }
+            //                    }
+            //                }
+            //            }, System.Windows.Threading.DispatcherPriority.Loaded);
+            //        }
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        Debug.WriteLine($"Error in PopulateListBoxWithValues: {ex.Message}");
+            //    }
+            //}
         }
         private void CheckBox_Loaded(object sender, RoutedEventArgs e)
         {
@@ -1667,7 +1679,7 @@ namespace CollectaMundo
         // Deck Editor Methods
 
         // Cancel edits by clicking outside edited element
-        private void Window_PreviewMouseDown_CancelEdits(object sender, MouseButtonEventArgs e)
+        private void Window_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             bool anEditTextBoxHasFocus = false;
             bool weAreClickingDeckNameElements = false;
@@ -1697,7 +1709,6 @@ namespace CollectaMundo
                     CancelDeckEdit(DeckFormatTextBox, EditDeckFormatButton, SaveDeckFormatButton, CancelDeckFormatEditButton, $"Target format: {CurrentDeck.TargetFormat}");
                 }
             }
-
         }
 
         // Turn on element to edit
