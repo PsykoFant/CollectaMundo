@@ -137,9 +137,9 @@
                               HorizontalAlignment="Right"
                               Width="70"/>
                                 <Popup x:Name="Popup" 
-                       Placement="Bottom" 
-                       IsOpen="{Binding FilterVM.IsDropDownOpen, Mode=TwoWay}"
-                       StaysOpen="False">
+                                   Placement="Bottom" 
+                                   IsOpen="{Binding FilterVM.IsDropDownOpen, Mode=TwoWay}"
+                                   StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
                                         <ListBox x:Name="FilterRarityListBox" ItemsSource="{Binding FilterVM.FilteredListBoxItems}" SelectionMode="Multiple">
                                             <ListBox.Resources>

@@ -39,12 +39,17 @@ namespace CollectaMundo.Models
             // Set the first available CriteriaKey as default
             SelectedCriteriaKey = FilterDefaults.FirstOrDefault()?.CriteriaKey ?? string.Empty;
 
+            // Set initial text to DefaultText
+            DefaultText = FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == SelectedCriteriaKey)?.DefaultText ?? string.Empty;
+            FilterText = DefaultText; // ✅ Set default text at startup
+
             // Populate FilteredListBoxItems at startup
             UpdateFilteredListBoxItems();
 
             // Command to apply selected filters
             ApplyFilterCommand = new RelayCommand(ApplyFilters);
         }
+
 
 
         private void ApplyFilters()
@@ -115,10 +120,15 @@ namespace CollectaMundo.Models
                 {
                     _filterText = value;
                     OnPropertyChanged(nameof(FilterText));
-                    UpdateFilteredListBoxItems();
+
+                    if (_filterText != DefaultText) // Ignore default text for filtering
+                    {
+                        UpdateFilteredListBoxItems();
+                    }
                 }
             }
         }
+
         private readonly ObservableCollection<string> _filteredListBoxItems = new();
         public ObservableCollection<string> FilteredListBoxItems => _filteredListBoxItems;
 

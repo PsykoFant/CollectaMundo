@@ -770,37 +770,6 @@ namespace CollectaMundo
         //        }
         //    }
         //}
-        private void SetDefaultText(List<FilterDefaults> filterDefaults)
-        {
-            foreach (var filter in filterDefaults)
-            {
-                // Dynamically retrieve ComboBox and TextBox names based on CriteriaKey
-                string comboBoxName = $"{filter.CriteriaKey}ComboBox";
-                string textBoxName = $"Filter{filter.CriteriaKey}TextBox";
-
-                // Generate the default text
-                filter.DefaultText = $"Filter {filter.CriteriaKey} ...";
-
-                // Find the ComboBox by name
-                if (FindName(comboBoxName) is ComboBox comboBox)
-                {
-                    // Find the TextBox within the ComboBox template
-                    if (comboBox.Template.FindName(textBoxName, comboBox) is TextBox filterTextBox)
-                    {
-                        // Set the default text and style
-                        filterTextBox.Text = filter.DefaultText ?? "Whoops, something went wrong!";
-                        filterTextBox.Foreground = new SolidColorBrush(Colors.Gray);
-                    }
-                }
-                else if (FindName(textBoxName) is TextBox textBox) // Directly locate the TextBox by name
-                {
-                    // Set the default text and style
-                    textBox.Text = filter.DefaultText ?? "Whoops, something went wrong!";
-                    textBox.Foreground = new SolidColorBrush(Colors.Gray);
-                }
-            }
-        }
-
         #endregion
 
         #region Filter elements handling        
@@ -1270,7 +1239,7 @@ namespace CollectaMundo
             if (sender is TextBox textBox)
             {
                 textBox.Foreground = new SolidColorBrush(Colors.Black);
-                if (textBox.Text == FilterVM.DefaultText)
+                if (textBox.Text == FilterVM.DefaultText) // Check against FilterVM.DefaultText
                 {
                     textBox.Text = string.Empty;
                 }
@@ -1287,6 +1256,7 @@ namespace CollectaMundo
                 }
             }
         }
+
 
         public void ApplyFiltersToAllLists()
         {
