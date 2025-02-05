@@ -3,8 +3,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
-using System.Windows;
-using System.Windows.Input;
 using static CollectaMundo.MainWindow;
 using static CollectaMundo.Models.CardSet;
 
@@ -13,22 +11,21 @@ namespace CollectaMundo.Models
     public class FilterViewModel : INotifyPropertyChanged
     {
         public Dictionary<string, string> CriteriaKeyToPropertyMap => FilterCriteriaMappings.CriteriaKeyToPropertyMap;
-
-        private string _filterSummary = string.Empty;
-        private string _allCardsCount = string.Empty;
-        private string _myCollectionCount = string.Empty;
-        public ObservableCollection<FilterSelections> FilterSelections { get; set; } = new();
         public ObservableCollection<FilterDefaults> FilterDefaults { get; set; } = new();
 
         private readonly CardViewModel _cardViewModel;
-        public ICommand SetSelectedCriteriaCommand { get; }
-        public ICommand ApplyFilterCommand { get; }
+
+        private readonly Dictionary<string, string> _filterTexts = new();
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        private string _filterSummary = string.Empty;
+        private string _allCardsCount = string.Empty;
+        private string _myCollectionCount = string.Empty;
         public FilterViewModel(CardViewModel cardViewModel)
         {
             _cardViewModel = cardViewModel;
@@ -36,27 +33,43 @@ namespace CollectaMundo.Models
             // Get initial filter data from FilterManager
             FilterDefaults = new ObservableCollection<FilterDefaults>(FilterManager.GetFilterDefaults(cardViewModel));
 
-            // Set the first available CriteriaKey as default
-            SelectedCriteriaKey = FilterDefaults.FirstOrDefault()?.CriteriaKey ?? string.Empty;
-
-            // Set initial text to DefaultText
-            DefaultText = FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == SelectedCriteriaKey)?.DefaultText ?? string.Empty;
-            FilterText = DefaultText; // ✅ Set default text at startup
-
-            // Populate FilteredListBoxItems at startup
-            UpdateFilteredListBoxItems();
-
-            // Command to apply selected filters
-            ApplyFilterCommand = new RelayCommand(ApplyFilters);
+            // Populate filter texts at startup
+            foreach (var filter in FilterDefaults)
+            {
+                _filterTexts[filter.CriteriaKey] = filter.DefaultText;
+            }
         }
 
-
-
-        private void ApplyFilters()
+        // Expose default text dynamically based on CriteriaKey
+        public string GetDefaultTextByTag(string criteriaKey)
         {
-            var activeFilters = FilterManager.GetActiveFilters(FilterSelections);
-            _cardViewModel.ApplyFilters(activeFilters);
+            if (_filterTexts.TryGetValue(criteriaKey, out var text))
+                return text;
+
+            return $"Filter {criteriaKey} ...";
         }
+
+
+
+
+        public Dictionary<string, ObservableCollection<string>> FilteredItems
+        {
+            get
+            {
+                return FilterDefaults.ToDictionary(
+                    filter => filter.CriteriaKey,
+                    filter =>
+                    {
+                        //var filterText = GetFilterText(filter.CriteriaKey);
+                        //var filtered = string.IsNullOrWhiteSpace(filterText) || filterText == filter.DefaultText
+                        //    ? filter.AllCriteria
+                        //    : filter.AllCriteria.Where(item => item.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+
+                        return new ObservableCollection<string>();
+                    });
+            }
+        }
+
 
 
         private bool _isDropDownOpen;
@@ -69,69 +82,6 @@ namespace CollectaMundo.Models
                 OnPropertyChanged(nameof(IsDropDownOpen));
             }
         }
-
-
-        private string _defaultText;
-        public string DefaultText
-        {
-            get => _defaultText;
-            set
-            {
-                if (_defaultText != value)
-                {
-                    _defaultText = value;
-                    OnPropertyChanged(nameof(DefaultText));
-                }
-            }
-        }
-
-        private string _selectedCriteriaKey;
-        public string SelectedCriteriaKey
-        {
-            get => _selectedCriteriaKey;
-            set
-            {
-                if (_selectedCriteriaKey != value)
-                {
-                    _selectedCriteriaKey = value;
-
-                    // Set DefaultText based on the selected CriteriaKey
-                    var filter = FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == _selectedCriteriaKey);
-                    DefaultText = filter?.DefaultText ?? $"Filter {_selectedCriteriaKey} ...";
-
-                    // Update the list when criteria changes
-                    UpdateFilteredListBoxItems();
-
-                    OnPropertyChanged(nameof(SelectedCriteriaKey));
-                    OnPropertyChanged(nameof(DefaultText));
-                }
-            }
-        }
-
-
-
-        private string _filterText = string.Empty;
-        public string FilterText
-        {
-            get => _filterText;
-            set
-            {
-                if (_filterText != value)
-                {
-                    _filterText = value;
-                    OnPropertyChanged(nameof(FilterText));
-
-                    if (_filterText != DefaultText) // Ignore default text for filtering
-                    {
-                        UpdateFilteredListBoxItems();
-                    }
-                }
-            }
-        }
-
-        private readonly ObservableCollection<string> _filteredListBoxItems = new();
-        public ObservableCollection<string> FilteredListBoxItems => _filteredListBoxItems;
-
 
         // Access mapping from the static class
 
@@ -195,33 +145,53 @@ namespace CollectaMundo.Models
                 .Distinct()
                 .OrderBy(item => item);
         }
-        private void UpdateFilteredListBoxItems()
+        //private void UpdateFilteredListBoxItems()
+        //{
+        //    var filter = FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == SelectedCriteriaKey);
+        //    if (filter == null || filter.AllCriteria.Count == 0)
+        //    {
+        //        _filteredListBoxItems.Clear();
+        //        return;
+        //    }
+
+        //    // Apply filtering
+        //    var filteredItems = string.IsNullOrWhiteSpace(FilterText)
+        //        ? filter.AllCriteria
+        //        : filter.AllCriteria.Where(item => item.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+
+        //    // 🔹 Make sure the UI updates immediately by resetting the collection
+        //    Application.Current.Dispatcher.Invoke(() =>
+        //    {
+        //        _filteredListBoxItems.Clear();
+        //        foreach (var item in filteredItems)
+        //        {
+        //            _filteredListBoxItems.Add(item);
+        //        }
+        //    }, System.Windows.Threading.DispatcherPriority.Render);
+
+        //    // 🔹 Explicitly notify UI
+        //    OnPropertyChanged(nameof(FilteredListBoxItems));
+        //}
+
+        public void DebugFilterDefaults()
         {
-            var filter = FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == SelectedCriteriaKey);
-            if (filter == null || filter.AllCriteria.Count == 0)
+            Debug.WriteLine("===== DEBUG: FilterVM Default Texts =====");
+
+            if (FilterDefaults.Count == 0)
             {
-                _filteredListBoxItems.Clear();
+                Debug.WriteLine("🚨 ERROR: No filter defaults found! PopulateFilterDefaults() may not have run.");
                 return;
             }
 
-            // Apply filtering
-            var filteredItems = string.IsNullOrWhiteSpace(FilterText)
-                ? filter.AllCriteria
-                : filter.AllCriteria.Where(item => item.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-
-            // 🔹 Make sure the UI updates immediately by resetting the collection
-            Application.Current.Dispatcher.Invoke(() =>
+            foreach (var filter in FilterDefaults)
             {
-                _filteredListBoxItems.Clear();
-                foreach (var item in filteredItems)
-                {
-                    _filteredListBoxItems.Add(item);
-                }
-            }, System.Windows.Threading.DispatcherPriority.Render);
+                Debug.WriteLine($"CriteriaKey: {filter.CriteriaKey}, DefaultText: {filter.DefaultText}");
+            }
 
-            // 🔹 Explicitly notify UI
-            OnPropertyChanged(nameof(FilteredListBoxItems));
+            Debug.WriteLine("===== END DEBUG =====");
         }
+
+
         public string FilterSummary
         {
             get => _filterSummary;

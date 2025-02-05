@@ -318,8 +318,10 @@ namespace CollectaMundo
             FilterVM.PopulateFilterDefaults();
             OnPropertyChanged(nameof(FilterVM));
 
-            // Ensure SelectedCriteriaKey is set (triggers UI update)
-            FilterVM.SelectedCriteriaKey = "Rarity";
+            // Call debug method to verify default texts
+            FilterVM.DebugFilterDefaults();
+            // Call this method to apply default text to embedded textboxes
+            InitializeFilterTextBoxes();
 
             //await PopulateFilterUiElements();
 
@@ -339,6 +341,78 @@ namespace CollectaMundo
 
             await ShowStatusWindowAsync(false);
         }
+
+        public void InitializeFilterTextBoxes()
+        {
+            Debug.WriteLine("===== INITIALIZING FILTER TEXTBOXES =====");
+
+            foreach (var comboBox in FindVisualChildren<ComboBox>(this))
+            {
+                if (comboBox.Tag is string criteriaKey)
+                {
+                    // Ensure the template is applied before searching
+                    comboBox.ApplyTemplate();
+
+                    // Find the first TextBox inside the ComboBox template
+                    var textBox = FindVisualChild<TextBox>(comboBox);
+
+                    if (textBox != null)
+                    {
+                        // Retrieve the default text from FilterVM
+                        var defaultText = FilterVM.FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == criteriaKey)?.DefaultText;
+
+                        if (!string.IsNullOrWhiteSpace(defaultText))
+                        {
+                            textBox.Text = defaultText;
+                            textBox.Foreground = new SolidColorBrush(Colors.Gray);
+                            Debug.WriteLine($"Set default text for {criteriaKey}: {defaultText}");
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"No default text found for {criteriaKey}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"Could not find embedded TextBox inside ComboBox {criteriaKey}");
+                    }
+                }
+            }
+            Debug.WriteLine("===== END INITIALIZATION =====");
+        }
+        public static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T foundChild)
+                    return foundChild;
+
+                var childOfChild = FindVisualChild<T>(child);
+                if (childOfChild != null)
+                    return childOfChild;
+            }
+            return null;
+        }
+        public static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
+        {
+            if (depObj == null) yield break;
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+            {
+                DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
+                if (child is T typedChild)
+                {
+                    yield return typedChild;
+                }
+
+                foreach (T childOfChild in FindVisualChildren<T>(child))
+                {
+                    yield return childOfChild;
+                }
+            }
+        }
+
         public static async Task PopulateCardDataGridAsync(List<CardSet> cardList, string query, DataGridContext context)
         {
             try
@@ -1025,39 +1099,39 @@ namespace CollectaMundo
         {
             try
             {
-                if (sender is not DependencyObject dependencyObject)
-                {
-                    return; // Exit if casting failed
-                }
+                //if (sender is not DependencyObject dependencyObject)
+                //{
+                //    return; // Exit if casting failed
+                //}
 
-                // Find the CheckBox and retrieve its Tag and Content
-                CheckBox? checkBox = FilterManagerOld.FindVisualChild<CheckBox>(dependencyObject);
-                if (checkBox == null || checkBox.Tag is not string criteriaKey || checkBox.Content is not ContentPresenter contentPresenter)
-                {
-                    return; // Exit if required data is unavailable
-                }
+                //// Find the CheckBox and retrieve its Tag and Content
+                //CheckBox? checkBox = FilterManagerOld.FindVisualChild<CheckBox>(dependencyObject);
+                //if (checkBox == null || checkBox.Tag is not string criteriaKey || checkBox.Content is not ContentPresenter contentPresenter)
+                //{
+                //    return; // Exit if required data is unavailable
+                //}
 
-                string? label = contentPresenter.Content as string;
-                if (string.IsNullOrEmpty(label))
-                {
-                    return; // Exit if no label is present
-                }
+                //string? label = contentPresenter.Content as string;
+                //if (string.IsNullOrEmpty(label))
+                //{
+                //    return; // Exit if no label is present
+                //}
 
-                // Ensure the FilterSelections object for this CriteriaKey exists in FilterVM
-                var targetFilterSelection = FilterVM.FilterSelections.FirstOrDefault(fs => fs.CriteriaKey == criteriaKey);
-                if (targetFilterSelection == null)
-                {
-                    targetFilterSelection = new FilterSelections { CriteriaKey = criteriaKey };
-                    FilterVM.FilterSelections.Add(targetFilterSelection);
-                }
+                //// Ensure the FilterSelections object for this CriteriaKey exists in FilterVM
+                //var targetFilterSelection = FilterVM.FilterSelections.FirstOrDefault(fs => fs.CriteriaKey == criteriaKey);
+                //if (targetFilterSelection == null)
+                //{
+                //    targetFilterSelection = new FilterSelections { CriteriaKey = criteriaKey };
+                //    FilterVM.FilterSelections.Add(targetFilterSelection);
+                //}
 
-                // Modify MultipleCriteria via the property setter (which calls OnPropertyChanged)
-                var updatedCriteria = new HashSet<string>(targetFilterSelection.MultipleCriteria); // Create a new HashSet copy
-                action(updatedCriteria, label);
-                targetFilterSelection.MultipleCriteria = updatedCriteria; // Assign to trigger PropertyChanged
+                //// Modify MultipleCriteria via the property setter (which calls OnPropertyChanged)
+                //var updatedCriteria = new HashSet<string>(targetFilterSelection.MultipleCriteria); // Create a new HashSet copy
+                //action(updatedCriteria, label);
+                //targetFilterSelection.MultipleCriteria = updatedCriteria; // Assign to trigger PropertyChanged
 
-                // Log for debugging
-                Debug.WriteLine($"Updated FilterSelections[{criteriaKey}]: {string.Join(", ", targetFilterSelection.MultipleCriteria)}");
+                //// Log for debugging
+                //Debug.WriteLine($"Updated FilterSelections[{criteriaKey}]: {string.Join(", ", targetFilterSelection.MultipleCriteria)}");
             }
             catch (Exception ex)
             {
@@ -1239,10 +1313,10 @@ namespace CollectaMundo
             if (sender is TextBox textBox)
             {
                 textBox.Foreground = new SolidColorBrush(Colors.Black);
-                if (textBox.Text == FilterVM.DefaultText) // Check against FilterVM.DefaultText
-                {
-                    textBox.Text = string.Empty;
-                }
+                //if (textBox.Text == FilterVM.DefaultText) // Check against FilterVM.DefaultText
+                //{
+                //    textBox.Text = string.Empty;
+                //}
             }
         }
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)
@@ -1251,7 +1325,7 @@ namespace CollectaMundo
             {
                 if (string.IsNullOrWhiteSpace(textBox.Text))
                 {
-                    textBox.Text = FilterVM.DefaultText;
+                    //textBox.Text = FilterVM.DefaultText;
                     textBox.Foreground = new SolidColorBrush(Colors.Gray);
                 }
             }

@@ -21,7 +21,7 @@
         <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
         <converters:ColorlessFontConverter x:Key="ColorlessFontConverter"/>
         <converters:HashSetContainsConverter x:Key="HashSetContainsConverter"/>
-        <converters:TextBoxPlaceholderConverter x:Key="TextBoxPlaceholderConverter"/>
+        <converters:TagToFilterTextConverter x:Key="TagToFilterTextConverter"/>
     </Window.Resources>
     <Window.Background>
         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
@@ -117,31 +117,32 @@
                 <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="10,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueOperatorComboBox_SelectionChanged"/>
                 <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="125,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueComboBox_SelectionChanged"/>
 
-                <ComboBox x:Name="RarityComboBox" HorizontalAlignment="Left" Margin="10,245,0,0" VerticalAlignment="Top" Width="180" Height="20">
+                <ComboBox x:Name="RarityComboBox" Tag="Rarity" HorizontalAlignment="Left" Margin="10,245,0,0" VerticalAlignment="Top" Width="180" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox x:Name="FilterRarityTextBox"                                         
-                                     Text="{Binding FilterVM.FilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBox
+                                     x:Name="FilterTextBox"
                                      GotFocus="TextBox_GotFocus"
                                      LostFocus="TextBox_LostFocus"
                                      Background="Transparent"
                                      Foreground="Gray"
                                      Padding="3,3,0,0"
                                      Margin="0,0,0,0"/>
+
                                 <ToggleButton x:Name="ToggleButtonRarity"
-                              Content="Rarities"
-                              Focusable="false"
-                              ClickMode="Press"
-                              IsChecked="{Binding FilterVM.IsDropDownOpen, Mode=TwoWay}"
-                              HorizontalAlignment="Right"
-                              Width="70"/>
+                                      Content="Rarities"
+                                      Focusable="false"
+                                      ClickMode="Press"
+                                      IsChecked="{Binding FilterVM.IsDropDownOpen, Mode=TwoWay}"
+                                      HorizontalAlignment="Right"
+                                      Width="70"/>
                                 <Popup x:Name="Popup" 
                                    Placement="Bottom" 
                                    IsOpen="{Binding FilterVM.IsDropDownOpen, Mode=TwoWay}"
                                    StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox x:Name="FilterRarityListBox" ItemsSource="{Binding FilterVM.FilteredListBoxItems}" SelectionMode="Multiple">
+                                        <ListBox SelectionMode="Multiple">
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
