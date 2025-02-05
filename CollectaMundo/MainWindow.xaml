@@ -132,10 +132,9 @@
                                               Content="Rarities"
                                               Focusable="false"
                                               ClickMode="Press"
+                                              IsChecked="{Binding FilterVM.IsDropDownOpen, Mode=TwoWay}"
                                               HorizontalAlignment="Right"
-                                              Width="70"
-                                              Command="{Binding FilterVM.SetSelectedCriteriaCommand}"
-                                              CommandParameter="Rarity"/>
+                                              Width="70"/>
                                 <Popup x:Name="Popup" 
                                        Placement="Bottom" 
                                        IsOpen="{Binding FilterVM.IsDropDownOpen, Mode=TwoWay}"

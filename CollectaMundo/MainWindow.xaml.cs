@@ -316,8 +316,10 @@ namespace CollectaMundo
             DBAccess.CloseConnection();
 
             FilterVM.PopulateFilterDefaults();
-
             OnPropertyChanged(nameof(FilterVM));
+
+            // Ensure SelectedCriteriaKey is set (triggers UI update)
+            FilterVM.SelectedCriteriaKey = "Rarity";
 
             //await PopulateFilterUiElements();
 

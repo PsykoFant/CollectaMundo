@@ -18,13 +18,17 @@ namespace CollectaMundo.Models
         }
 
         private readonly CardViewModel _cardViewModel;
-
         public ICommand SetSelectedCriteriaCommand { get; }
 
         public FilterViewModel(CardViewModel cardViewModel)
         {
             _cardViewModel = cardViewModel;
-            SetSelectedCriteriaCommand = new RelayCommand<string>(SetSelectedCriteria);
+
+            // Initialize filter defaults
+            PopulateFilterDefaults();
+
+            //Set default SelectedCriteriaKey to the first available filter key
+            SelectedCriteriaKey = FilterDefaults.FirstOrDefault()?.CriteriaKey ?? string.Empty;
         }
 
         private bool _isDropDownOpen;
@@ -37,20 +41,6 @@ namespace CollectaMundo.Models
                 OnPropertyChanged(nameof(IsDropDownOpen));
             }
         }
-
-        private void SetSelectedCriteria(string criteriaKey)
-        {
-            if (SelectedCriteriaKey == criteriaKey && IsDropDownOpen)
-            {
-                IsDropDownOpen = false; // Close if already open
-            }
-            else
-            {
-                SelectedCriteriaKey = criteriaKey;
-                IsDropDownOpen = true; // Open if closed
-            }
-        }
-
 
         private string _selectedCriteriaKey;
         public string SelectedCriteriaKey
