@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using System.Windows;
 using System.Windows.Input;
 using static CollectaMundo.MainWindow;
 using static CollectaMundo.Models.CardSet;
@@ -30,9 +31,6 @@ namespace CollectaMundo.Models
         }
         public FilterViewModel(CardViewModel cardViewModel)
         {
-            // Initialize filter defaults
-            //PopulateFilterDefaults();
-
             _cardViewModel = cardViewModel;
 
             // Get initial filter data from FilterManager
@@ -41,10 +39,13 @@ namespace CollectaMundo.Models
             // Set the first available CriteriaKey as default
             SelectedCriteriaKey = FilterDefaults.FirstOrDefault()?.CriteriaKey ?? string.Empty;
 
+            // Populate FilteredListBoxItems at startup
+            UpdateFilteredListBoxItems();
+
             // Command to apply selected filters
             ApplyFilterCommand = new RelayCommand(ApplyFilters);
-
         }
+
 
         private void ApplyFilters()
         {
@@ -89,16 +90,19 @@ namespace CollectaMundo.Models
                 {
                     _selectedCriteriaKey = value;
 
-                    // Set the DefaultText based on the selected CriteriaKey
+                    // Set DefaultText based on the selected CriteriaKey
                     var filter = FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == _selectedCriteriaKey);
                     DefaultText = filter?.DefaultText ?? $"Filter {_selectedCriteriaKey} ...";
 
+                    // Update the list when criteria changes
+                    UpdateFilteredListBoxItems();
+
                     OnPropertyChanged(nameof(SelectedCriteriaKey));
                     OnPropertyChanged(nameof(DefaultText));
-                    OnPropertyChanged(nameof(FilteredListBoxItems)); // Update the listbox items
                 }
             }
         }
+
 
 
         private string _filterText = string.Empty;
@@ -184,23 +188,30 @@ namespace CollectaMundo.Models
         private void UpdateFilteredListBoxItems()
         {
             var filter = FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == SelectedCriteriaKey);
-            if (filter == null) return;
+            if (filter == null || filter.AllCriteria.Count == 0)
+            {
+                _filteredListBoxItems.Clear();
+                return;
+            }
 
             // Apply filtering
             var filteredItems = string.IsNullOrWhiteSpace(FilterText)
                 ? filter.AllCriteria
                 : filter.AllCriteria.Where(item => item.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
 
-            // 🔹 Instead of replacing the collection, update its contents
-            _filteredListBoxItems.Clear();
-            foreach (var item in filteredItems)
+            // 🔹 Make sure the UI updates immediately by resetting the collection
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                _filteredListBoxItems.Add(item);
-            }
+                _filteredListBoxItems.Clear();
+                foreach (var item in filteredItems)
+                {
+                    _filteredListBoxItems.Add(item);
+                }
+            }, System.Windows.Threading.DispatcherPriority.Render);
+
+            // 🔹 Explicitly notify UI
+            OnPropertyChanged(nameof(FilteredListBoxItems));
         }
-
-
-
         public string FilterSummary
         {
             get => _filterSummary;

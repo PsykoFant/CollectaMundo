@@ -122,41 +122,34 @@
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox x:Name="FilterRarityTextBox"                                         
-                                         GotFocus="TextBox_GotFocus"
-                                         LostFocus="TextBox_LostFocus"
-                                         TextChanged="FilterTextBox_TextChanged"
-                                         Background="Transparent"
-                                         Foreground="Gray"
-                                         Padding="3,3,0,0"
-                                         Margin="0,0,0,0">
-                                    <TextBox.Text>
-                                        <MultiBinding Converter="{StaticResource TextBoxPlaceholderConverter}" Mode="TwoWay">
-                                            <Binding Path="FilterVM.FilterText" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"/>
-                                            <Binding Path="FilterVM.DefaultText" Mode="OneWay"/>
-                                        </MultiBinding>
-                                    </TextBox.Text>
-                                </TextBox>
+                                     Text="{Binding FilterVM.FilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     GotFocus="TextBox_GotFocus"
+                                     LostFocus="TextBox_LostFocus"
+                                     Background="Transparent"
+                                     Foreground="Gray"
+                                     Padding="3,3,0,0"
+                                     Margin="0,0,0,0"/>
                                 <ToggleButton x:Name="ToggleButtonRarity"
-                                              Content="Rarities"
-                                              Focusable="false"
-                                              ClickMode="Press"
-                                              IsChecked="{Binding FilterVM.IsDropDownOpen, Mode=TwoWay}"
-                                              HorizontalAlignment="Right"
-                                              Width="70"/>
+                              Content="Rarities"
+                              Focusable="false"
+                              ClickMode="Press"
+                              IsChecked="{Binding FilterVM.IsDropDownOpen, Mode=TwoWay}"
+                              HorizontalAlignment="Right"
+                              Width="70"/>
                                 <Popup x:Name="Popup" 
-                                       Placement="Bottom" 
-                                       IsOpen="{Binding FilterVM.IsDropDownOpen, Mode=TwoWay}"
-                                       StaysOpen="False">
+                       Placement="Bottom" 
+                       IsOpen="{Binding FilterVM.IsDropDownOpen, Mode=TwoWay}"
+                       StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
                                         <ListBox x:Name="FilterRarityListBox" ItemsSource="{Binding FilterVM.FilteredListBoxItems}" SelectionMode="Multiple">
-                                                <ListBox.Resources>
+                                            <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
                                                     <Setter Property="Template">
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                 <CheckBox Margin="5,2"
-                                                                          Content="{Binding}"/>
+                                                          Content="{Binding}"/>
                                                             </ControlTemplate>
                                                         </Setter.Value>
                                                     </Setter>
