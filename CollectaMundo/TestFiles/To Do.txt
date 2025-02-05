@@ -1,12 +1,7 @@
 TO DO 
-- For trade
-- Card in collection ui
-- farver
-- unit test
-
-- deck manager
-
-
-
-Keyword dropdown performance
-startup performance igen igen
+- MVVM refactor
+ - Populate listbox med værdier
+ - Filtrering af værdier
+ - Huske selections
+ - Filtrer når der bliver lavet selections
+ - Start med sidste svar i Collectamundo 4
