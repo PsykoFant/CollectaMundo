@@ -1276,7 +1276,6 @@ namespace CollectaMundo
                 }
             }
         }
-
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)
         {
             if (sender is TextBox textBox)
@@ -1288,7 +1287,6 @@ namespace CollectaMundo
                 }
             }
         }
-
 
         public void ApplyFiltersToAllLists()
         {
