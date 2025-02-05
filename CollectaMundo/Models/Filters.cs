@@ -58,9 +58,9 @@ namespace CollectaMundo.Models
     /// <summary>
     /// Default values and options for a filter.
     /// </summary>
-    public class FilterDefaults : INotifyPropertyChanged
+    public class FilterDefaults : Filters, INotifyPropertyChanged
     {
-        public string CriteriaKey { get; set; } = string.Empty;
+        //public string CriteriaKey { get; set; } = string.Empty;
         public List<string> AllCriteria { get; set; } = [];
 
         private string _defaultText = string.Empty;

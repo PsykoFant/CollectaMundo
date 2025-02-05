@@ -21,6 +21,7 @@
         <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
         <converters:ColorlessFontConverter x:Key="ColorlessFontConverter"/>
         <converters:HashSetContainsConverter x:Key="HashSetContainsConverter"/>
+        <converters:TextBoxPlaceholderConverter x:Key="TextBoxPlaceholderConverter"/>
     </Window.Resources>
     <Window.Background>
         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
@@ -120,14 +121,21 @@
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox x:Name="FilterRarityTextBox"
-                                         Text="Filter Rarity ..."
+                                <TextBox x:Name="FilterRarityTextBox"                                         
                                          GotFocus="TextBox_GotFocus"
                                          LostFocus="TextBox_LostFocus"
+                                         TextChanged="FilterTextBox_TextChanged"
                                          Background="Transparent"
                                          Foreground="Gray"
                                          Padding="3,3,0,0"
-                                         Margin="0,0,0,0"/>
+                                         Margin="0,0,0,0">
+                                    <TextBox.Text>
+                                        <MultiBinding Converter="{StaticResource TextBoxPlaceholderConverter}" Mode="TwoWay">
+                                            <Binding Path="FilterVM.FilterText" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"/>
+                                            <Binding Path="FilterVM.DefaultText" Mode="OneWay"/>
+                                        </MultiBinding>
+                                    </TextBox.Text>
+                                </TextBox>
                                 <ToggleButton x:Name="ToggleButtonRarity"
                                               Content="Rarities"
                                               Focusable="false"

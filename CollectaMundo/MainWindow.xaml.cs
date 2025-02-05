@@ -1270,34 +1270,25 @@ namespace CollectaMundo
             if (sender is TextBox textBox)
             {
                 textBox.Foreground = new SolidColorBrush(Colors.Black);
-                textBox.Text = string.Empty;
+                if (textBox.Text == FilterVM.DefaultText)
+                {
+                    textBox.Text = string.Empty;
+                }
             }
         }
+
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)
         {
             if (sender is TextBox textBox)
             {
-                // If TextBox is empty, restore default text
                 if (string.IsNullOrWhiteSpace(textBox.Text))
                 {
-                    // Extract CriteriaKey from TextBox name
-                    string criteriaKey = textBox.Name.Replace("Filter", "").Replace("TextBox", "");
-
-                    // Find the corresponding default text in FilterVM.FilterDefaults
-                    var matchingFilter = FilterVM.FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == criteriaKey);
-
-                    if (matchingFilter != null)
-                    {
-                        textBox.Text = matchingFilter.DefaultText;
-                        textBox.Foreground = new SolidColorBrush(Colors.Gray);
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"No matching FilterDefaults found for CriteriaKey: {criteriaKey}");
-                    }
+                    textBox.Text = FilterVM.DefaultText;
+                    textBox.Foreground = new SolidColorBrush(Colors.Gray);
                 }
             }
         }
+
 
         public void ApplyFiltersToAllLists()
         {

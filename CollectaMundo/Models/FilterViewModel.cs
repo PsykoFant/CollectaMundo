@@ -42,6 +42,21 @@ namespace CollectaMundo.Models
             }
         }
 
+
+        private string _defaultText;
+        public string DefaultText
+        {
+            get => _defaultText;
+            set
+            {
+                if (_defaultText != value)
+                {
+                    _defaultText = value;
+                    OnPropertyChanged(nameof(DefaultText));
+                }
+            }
+        }
+
         private string _selectedCriteriaKey;
         public string SelectedCriteriaKey
         {
@@ -51,8 +66,30 @@ namespace CollectaMundo.Models
                 if (_selectedCriteriaKey != value)
                 {
                     _selectedCriteriaKey = value;
+
+                    // Set the DefaultText based on the selected CriteriaKey
+                    var filter = FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == _selectedCriteriaKey);
+                    DefaultText = filter?.DefaultText ?? $"Filter {_selectedCriteriaKey} ...";
+
                     OnPropertyChanged(nameof(SelectedCriteriaKey));
-                    OnPropertyChanged(nameof(FilteredListBoxItems)); // This ensures UI updates when the filter changes
+                    OnPropertyChanged(nameof(DefaultText));
+                    OnPropertyChanged(nameof(FilteredListBoxItems)); // Update the listbox items
+                }
+            }
+        }
+
+
+        private string _filterText = string.Empty;
+        public string FilterText
+        {
+            get => _filterText;
+            set
+            {
+                if (_filterText != value)
+                {
+                    _filterText = value;
+                    OnPropertyChanged(nameof(FilterText));
+                    OnPropertyChanged(nameof(FilteredListBoxItems)); // Update ListBox when text changes
                 }
             }
         }
@@ -61,7 +98,14 @@ namespace CollectaMundo.Models
             get
             {
                 var filter = FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == SelectedCriteriaKey);
-                return filter != null ? new ObservableCollection<string>(filter.AllCriteria) : new ObservableCollection<string>();
+                if (filter == null) return new ObservableCollection<string>();
+
+                // Filter items based on text input
+                var filteredItems = string.IsNullOrWhiteSpace(FilterText)
+                    ? filter.AllCriteria
+                    : filter.AllCriteria.Where(item => item.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+
+                return new ObservableCollection<string>(filteredItems);
             }
         }
 
