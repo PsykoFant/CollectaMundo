@@ -2,28 +2,18 @@
 
 namespace CollectaMundo.Utilities
 {
-    public class RelayCommand<T>(Action<T> execute, Predicate<T>? canExecute = null) : ICommand
+    public class RelayCommand(Action execute, Func<bool>? canExecute = null) : ICommand
     {
-        private readonly Action<T> _execute = execute ?? throw new ArgumentNullException(nameof(execute));
-        private readonly Predicate<T>? _canExecute = canExecute;
+        private readonly Action _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+        private readonly Func<bool>? _canExecute = canExecute;
 
-        public bool CanExecute(object? parameter)
-        {
-            return _canExecute == null || (parameter is T param && _canExecute(param));
-        }
-
-        public void Execute(object? parameter)
-        {
-            if (parameter is T param)
-            {
-                _execute(param);
-            }
-        }
-
+        public bool CanExecute(object? parameter) => _canExecute == null || _canExecute();
+        public void Execute(object? parameter) => _execute();
         public event EventHandler? CanExecuteChanged
         {
-            add { CommandManager.RequerySuggested += value; }
-            remove { CommandManager.RequerySuggested -= value; }
+            add => CommandManager.RequerySuggested += value;
+            remove => CommandManager.RequerySuggested -= value;
         }
     }
+
 }

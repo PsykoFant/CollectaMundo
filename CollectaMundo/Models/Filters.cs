@@ -1,8 +1,14 @@
-﻿using System.ComponentModel;
+﻿using CollectaMundo.Utilities;
+using System.ComponentModel;
 using static CollectaMundo.MainWindow;
+using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo.Models
 {
+
+
+
+
     /// <summary>
     /// Base class for all filters with common properties.
     /// </summary>
@@ -52,6 +58,19 @@ namespace CollectaMundo.Models
         public event PropertyChangedEventHandler? PropertyChanged;
         protected virtual void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        public BaseFilterCriteria ToFilterCriteria()
+        {
+            return new StringFilterCriteria
+            {
+                CriteriaKey = this.CriteriaKey,
+                SingleValue = this.SingleCriteria,
+                MultipleValues = new HashSet<string>(this.MultipleCriteria),
+                OperatorType = this.Operator,
+
+                // PropertySelector is required, so we set it dynamically
+                PropertySelector = card => card.GetType().GetProperty(CriteriaKey)?.GetValue(card)?.ToString()
+            };
+        }
     }
 
 
@@ -158,5 +177,51 @@ namespace CollectaMundo.Models
             };
         }
     }
+
+    public static class FilterManager
+    {
+        public static List<FilterDefaults> GetFilterDefaults(CardViewModel cardViewModel)
+        {
+            List<FilterDefaults> filterDefaults = new();
+
+            foreach (var criteriaKey in FilterCriteriaMappings.CriteriaKeyToPropertyMap.Keys)
+            {
+                var filter = new FilterDefaults { CriteriaKey = criteriaKey };
+
+                // Use reflection to dynamically find matching properties
+                var propertyName = FilterCriteriaMappings.CriteriaKeyToPropertyMap[criteriaKey];
+                var propertyInfo = typeof(CardSet).GetProperty(propertyName)
+                                 ?? typeof(CardInCollection).GetProperty(propertyName)
+                                 ?? typeof(CardInDeck).GetProperty(propertyName);
+
+                if (propertyInfo != null)
+                {
+                    var values = cardViewModel.AllCardsView
+                        .Cast<CardSet>()
+                        .Where(card => propertyInfo.DeclaringType!.IsInstanceOfType(card))
+                        .Select(card => propertyInfo.GetValue(card)?.ToString())
+                        .Where(v => !string.IsNullOrEmpty(v))
+                        .Distinct()
+                        .OrderBy(v => v)
+                        .ToList();
+
+                    filter.AllCriteria = values;
+                }
+
+                filter.DefaultText = $"Filter {criteriaKey} ...";
+                filterDefaults.Add(filter);
+            }
+
+            return filterDefaults;
+        }
+        public static IEnumerable<BaseFilterCriteria> GetActiveFilters(IEnumerable<FilterSelections> filterSelections)
+        {
+            return filterSelections
+                .Where(selection => selection.MultipleCriteria.Count > 0 || !string.IsNullOrWhiteSpace(selection.SingleCriteria))
+                .Select(selection => selection.ToFilterCriteria())
+                .ToList();
+        }
+    }
+
 }
 

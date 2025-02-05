@@ -8,7 +8,7 @@ using System.Windows.Media;
 
 namespace CollectaMundo
 {
-    public class FilterManager
+    public class FilterManagerOld
     {
         #region Filtering
         public static void ApplyFilter(IEnumerable<CardSet> cards, DataGrid dataGrid)

@@ -969,7 +969,7 @@ namespace CollectaMundo
                     DataGridRow row = (DataGridRow)MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemContainerGenerator.ContainerFromItem(multipleUuidsItem);
                     if (row != null)
                     {
-                        ComboBox? comboBox = FilterManager.FindVisualChild<ComboBox>(row);
+                        ComboBox? comboBox = FilterManagerOld.FindVisualChild<ComboBox>(row);
                         if (comboBox != null && comboBox.SelectedItem is UuidVersion selectedVersion)
                         {
                             multipleUuidsItem.SelectedUuid = selectedVersion.Uuid;

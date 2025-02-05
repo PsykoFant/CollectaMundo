@@ -191,9 +191,9 @@ namespace CollectaMundo
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
 
             // Subscribe to column width changes
-            AllCardsDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(0);
-            MyCollectionDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(1);
-            AllCardsForDecksDataGrid.LayoutUpdated += (s, e) => FilterManager.DataGrid_LayoutUpdated(2);
+            AllCardsDataGrid.LayoutUpdated += (s, e) => FilterManagerOld.DataGrid_LayoutUpdated(0);
+            MyCollectionDataGrid.LayoutUpdated += (s, e) => FilterManagerOld.DataGrid_LayoutUpdated(1);
+            AllCardsForDecksDataGrid.LayoutUpdated += (s, e) => FilterManagerOld.DataGrid_LayoutUpdated(2);
         }
 
         #region Tests
@@ -227,7 +227,7 @@ namespace CollectaMundo
         //    // c og x test
 
         //    _ = new FilterDefaults();
-        //    FilterManager testFilterManager = new FilterManager();
+        //    FilterManagerOld testFilterManager = new FilterManagerOld();
 
         //    // Test 1: Select single color / ANY
         //    RunTest(testFilterManager, ["R"], 0, "Test 1: Single color / ANY", 1);
@@ -261,16 +261,16 @@ namespace CollectaMundo
         /// <summary>
         /// Helper method to execute and log results for a single test case.
         /// </summary>
-        //private void RunTest(FilterManager testFilterManager, HashSet<string> selectedColors, int filterMode, string testName, int expectedCount)
+        //private void RunTest(FilterManagerOld testFilterManager, HashSet<string> selectedColors, int filterMode, string testName, int expectedCount)
         //{
         //    //AllOrNoneComboBox.SelectedIndex = filterMode;
 
         //    // Directly modify the test FilterDefaults without needing public access
-        //    typeof(FilterManager)
+        //    typeof(FilterManagerOld)
         //        .GetField("filterSelections", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)?
         //        .SetValue(testFilterManager, new FilterSelections { SelectedColors = selectedColors });
 
-        //    List<CardSet> result = FilterManager.FilterByColor(testCards, selectedColors, filterMode).ToList();
+        //    List<CardSet> result = FilterManagerOld.FilterByColor(testCards, selectedColors, filterMode).ToList();
         //    Debug.WriteLine($"{testName} -> Expected: {expectedCount}, Actual: {result.Count}");
 
         //    if (result.Count == expectedCount)
@@ -760,7 +760,7 @@ namespace CollectaMundo
 
         //    static void UpdateComboBoxSource(DataGrid dataGrid, string tag, List<string?> dataSource)
         //    {
-        //        List<ComboBox> headerComboBoxes = FilterManager.FindVisualChildren<ComboBox>(dataGrid);
+        //        List<ComboBox> headerComboBoxes = FilterManagerOld.FindVisualChildren<ComboBox>(dataGrid);
         //        foreach (ComboBox comboBox in headerComboBoxes)
         //        {
         //            if (comboBox.Tag?.ToString() == tag)
@@ -839,12 +839,12 @@ namespace CollectaMundo
                 //    // Update the SingleCriteria field with the selected value
                 //    setFilterSelection.SingleCriteria = comboBox.SelectedItem?.ToString();
                 //    // Trigger filtering
-                //    FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
-                //    FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
+                //    FilterManagerOld.ApplyFilter(allCards, AllCardsDataGrid);
+                //    FilterManagerOld.ApplyFilter(myCards, MyCollectionDataGrid);
                 //}
 
                 //// Find the parent DataGrid for the current ComboBox
-                //DataGrid? parentDataGrid = FilterManager.FindParent<DataGrid>(comboBox);
+                //DataGrid? parentDataGrid = FilterManagerOld.FindParent<DataGrid>(comboBox);
 
                 //// If a parent DataGrid is found, reset selections in other DataGrids
                 //if (parentDataGrid != null)
@@ -867,7 +867,7 @@ namespace CollectaMundo
                 // Iterate through other DataGrids and reset their ComboBox selections
                 foreach (DataGrid dataGrid in allDataGrids.Where(dg => dg != currentDataGrid))
                 {
-                    List<ComboBox> headerComboBoxes = FilterManager.FindVisualChildren<ComboBox>(dataGrid);
+                    List<ComboBox> headerComboBoxes = FilterManagerOld.FindVisualChildren<ComboBox>(dataGrid);
                     foreach (ComboBox headerComboBox in headerComboBoxes)
                     {
                         headerComboBox.SelectedIndex = -1;
@@ -1062,7 +1062,7 @@ namespace CollectaMundo
                 }
 
                 // Find the CheckBox and retrieve its Tag and Content
-                CheckBox? checkBox = FilterManager.FindVisualChild<CheckBox>(dependencyObject);
+                CheckBox? checkBox = FilterManagerOld.FindVisualChild<CheckBox>(dependencyObject);
                 if (checkBox == null || checkBox.Tag is not string criteriaKey || checkBox.Content is not ContentPresenter contentPresenter)
                 {
                     return; // Exit if required data is unavailable
@@ -1109,7 +1109,7 @@ namespace CollectaMundo
                 try
                 {
                     (string defaultText, string filterTextBoxName, string listBoxName) =
-                        FilterManager.GetComboBoxConfig(comboBox.Name, FilterVM.FilterDefaults);
+                        FilterManagerOld.GetComboBoxConfig(comboBox.Name, FilterVM.FilterDefaults);
 
                     Debug.WriteLine($"Default text: {defaultText}");
                     Debug.WriteLine($"FilterTextBoxName: {filterTextBoxName}");
@@ -1135,7 +1135,7 @@ namespace CollectaMundo
             //        {
             //            // Use FilterVM.FilterSelections instead of old filterSelections list
             //            (IEnumerable<string> itemsSource, HashSet<string> selectedItems) =
-            //                FilterManager.GetDataSetAndSelection(listBoxName, FilterVM.FilterSelections, FilterVM.FilterDefaults);
+            //                FilterManagerOld.GetDataSetAndSelection(listBoxName, FilterVM.FilterSelections, FilterVM.FilterDefaults);
 
             //            listBox.ItemsSource = itemsSource;
 
@@ -1145,7 +1145,7 @@ namespace CollectaMundo
             //                {
             //                    if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem listBoxItem)
             //                    {
-            //                        CheckBox? checkBox = FilterManager.FindVisualChild<CheckBox>(listBoxItem);
+            //                        CheckBox? checkBox = FilterManagerOld.FindVisualChild<CheckBox>(listBoxItem);
             //                        if (checkBox != null)
             //                        {
             //                            // Ensure TwoWay binding reflects selections
@@ -1199,13 +1199,13 @@ namespace CollectaMundo
             //    try
             //    {
             //        // Finding the parent ComboBox by traversing up the visual tree
-            //        var parent = FilterManager.FindParent<ComboBox>(textBox);
+            //        var parent = FilterManagerOld.FindParent<ComboBox>(textBox);
 
             //        // Explicitly check for null before casting
             //        if (parent is ComboBox comboBox)
             //        {
             //            // Get configuration for this specific ComboBox
-            //            (string defaultText, string _, string listBoxName) = FilterManager.GetComboBoxConfig(comboBox.Name, FilterVM.FilterDefaults);
+            //            (string defaultText, string _, string listBoxName) = FilterManagerOld.GetComboBoxConfig(comboBox.Name, FilterVM.FilterDefaults);
 
             //            // Check if the typed text is the default text
             //            if (textBox.Text == defaultText)
@@ -1239,7 +1239,7 @@ namespace CollectaMundo
 
             //void UpdateListBoxItems(ListBox listBox, string filterText) // This method updates the listbox items based on text typed in FilterTextBox
             //{
-            //    (IEnumerable<string> dataSet, HashSet<string> selectedItems) = FilterManager.GetDataSetAndSelection(listBox.Name, FilterVM.FilterSelections, FilterVM.FilterDefaults);
+            //    (IEnumerable<string> dataSet, HashSet<string> selectedItems) = FilterManagerOld.GetDataSetAndSelection(listBox.Name, FilterVM.FilterSelections, FilterVM.FilterDefaults);
 
             //    List<string> filteredItems = !string.IsNullOrWhiteSpace(filterText)
             //        ? dataSet.Where(type => type.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList()
@@ -1253,7 +1253,7 @@ namespace CollectaMundo
             //        {
             //            if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem listBoxItem) // Check if listBoxItem is not null
             //            {
-            //                CheckBox? checkBox = FilterManager.FindVisualChild<CheckBox>(listBoxItem);
+            //                CheckBox? checkBox = FilterManagerOld.FindVisualChild<CheckBox>(listBoxItem);
             //                if (checkBox != null) // Check if checkBox is not null
             //                {
             //                    checkBox.IsChecked = selectedItems.Contains(item);
@@ -1290,9 +1290,9 @@ namespace CollectaMundo
 
         public void ApplyFiltersToAllLists()
         {
-            FilterManager.ApplyFilter(allCards, AllCardsDataGrid);
-            FilterManager.ApplyFilter(myCards, MyCollectionDataGrid);
-            FilterManager.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
+            FilterManagerOld.ApplyFilter(allCards, AllCardsDataGrid);
+            FilterManagerOld.ApplyFilter(myCards, MyCollectionDataGrid);
+            FilterManagerOld.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
         }
 
         // Reset filter elements
@@ -1314,17 +1314,17 @@ namespace CollectaMundo
             ManaValueComboBox.SelectedIndex = -1;
 
             // Find and clear all ComboBoxes in the DataGrid header
-            List<ComboBox> headerComboBoxesAllCards = FilterManager.FindVisualChildren<ComboBox>(AllCardsDataGrid);
+            List<ComboBox> headerComboBoxesAllCards = FilterManagerOld.FindVisualChildren<ComboBox>(AllCardsDataGrid);
             foreach (ComboBox headerComboBox in headerComboBoxesAllCards)
             {
                 headerComboBox.SelectedIndex = -1;
             }
-            List<ComboBox> headerComboBoxesMyCollection = FilterManager.FindVisualChildren<ComboBox>(MyCollectionDataGrid);
+            List<ComboBox> headerComboBoxesMyCollection = FilterManagerOld.FindVisualChildren<ComboBox>(MyCollectionDataGrid);
             foreach (ComboBox headerComboBox in headerComboBoxesMyCollection)
             {
                 headerComboBox.SelectedIndex = -1;
             }
-            List<ComboBox> headerComboBoxesAllCardsForDecks = FilterManager.FindVisualChildren<ComboBox>(AllCardsForDecksDataGrid);
+            List<ComboBox> headerComboBoxesAllCardsForDecks = FilterManagerOld.FindVisualChildren<ComboBox>(AllCardsForDecksDataGrid);
             foreach (ComboBox headerComboBox in headerComboBoxesAllCardsForDecks)
             {
                 headerComboBox.SelectedIndex = -1;
@@ -1359,7 +1359,7 @@ namespace CollectaMundo
                 {
                     if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem container)
                     {
-                        CheckBox? checkBox = FilterManager.FindVisualChild<CheckBox>(container);
+                        CheckBox? checkBox = FilterManagerOld.FindVisualChild<CheckBox>(container);
                         if (checkBox != null)
                         {
                             checkBox.IsChecked = false;

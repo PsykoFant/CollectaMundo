@@ -149,7 +149,7 @@
                                        StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
                                         <ListBox x:Name="FilterRarityListBox" ItemsSource="{Binding FilterVM.FilteredListBoxItems}" SelectionMode="Multiple">
-                                            <ListBox.Resources>
+                                                <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
                                                     <Setter Property="Template">

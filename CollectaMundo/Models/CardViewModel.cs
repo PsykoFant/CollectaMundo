@@ -38,6 +38,17 @@ namespace CollectaMundo.Models
             AllCardsForDecksView = new ListCollectionView(allCardsForDecks);
             CardsInDecksView = new ListCollectionView(cardsInDecks);
         }
+        public void ApplyFilters(IEnumerable<BaseFilterCriteria> filters)
+        {
+            AllCardsView.Filter = obj =>
+            {
+                if (obj is not CardSet card) return false;
+
+                return filters.All(filter => filter.Matches(card));
+            };
+
+            AllCardsView.Refresh();
+        }
 
         // Async method to populate data
         public async Task PopulateCardDataGridAsync(List<CardSet> cardList, ListCollectionView view, string query, DataGridContext context)

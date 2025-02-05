@@ -11,25 +11,47 @@ namespace CollectaMundo.Models
 {
     public class FilterViewModel : INotifyPropertyChanged
     {
+        public Dictionary<string, string> CriteriaKeyToPropertyMap => FilterCriteriaMappings.CriteriaKeyToPropertyMap;
+
+        private string _filterSummary = string.Empty;
+        private string _allCardsCount = string.Empty;
+        private string _myCollectionCount = string.Empty;
+        public ObservableCollection<FilterSelections> FilterSelections { get; set; } = new();
+        public ObservableCollection<FilterDefaults> FilterDefaults { get; set; } = new();
+
+        private readonly CardViewModel _cardViewModel;
+        public ICommand SetSelectedCriteriaCommand { get; }
+        public ICommand ApplyFilterCommand { get; }
+
         public event PropertyChangedEventHandler? PropertyChanged;
         protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
-        private readonly CardViewModel _cardViewModel;
-        public ICommand SetSelectedCriteriaCommand { get; }
-
         public FilterViewModel(CardViewModel cardViewModel)
         {
+            // Initialize filter defaults
+            //PopulateFilterDefaults();
+
             _cardViewModel = cardViewModel;
 
-            // Initialize filter defaults
-            PopulateFilterDefaults();
+            // Get initial filter data from FilterManager
+            FilterDefaults = new ObservableCollection<FilterDefaults>(FilterManager.GetFilterDefaults(cardViewModel));
 
-            //Set default SelectedCriteriaKey to the first available filter key
+            // Set the first available CriteriaKey as default
             SelectedCriteriaKey = FilterDefaults.FirstOrDefault()?.CriteriaKey ?? string.Empty;
+
+            // Command to apply selected filters
+            ApplyFilterCommand = new RelayCommand(ApplyFilters);
+
         }
+
+        private void ApplyFilters()
+        {
+            var activeFilters = FilterManager.GetActiveFilters(FilterSelections);
+            _cardViewModel.ApplyFilters(activeFilters);
+        }
+
 
         private bool _isDropDownOpen;
         public bool IsDropDownOpen
@@ -89,35 +111,16 @@ namespace CollectaMundo.Models
                 {
                     _filterText = value;
                     OnPropertyChanged(nameof(FilterText));
-                    OnPropertyChanged(nameof(FilteredListBoxItems)); // Update ListBox when text changes
+                    UpdateFilteredListBoxItems();
                 }
             }
         }
-        public ObservableCollection<string> FilteredListBoxItems
-        {
-            get
-            {
-                var filter = FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == SelectedCriteriaKey);
-                if (filter == null) return new ObservableCollection<string>();
+        private readonly ObservableCollection<string> _filteredListBoxItems = new();
+        public ObservableCollection<string> FilteredListBoxItems => _filteredListBoxItems;
 
-                // Filter items based on text input
-                var filteredItems = string.IsNullOrWhiteSpace(FilterText)
-                    ? filter.AllCriteria
-                    : filter.AllCriteria.Where(item => item.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-
-                return new ObservableCollection<string>(filteredItems);
-            }
-        }
 
         // Access mapping from the static class
-        public Dictionary<string, string> CriteriaKeyToPropertyMap => FilterCriteriaMappings.CriteriaKeyToPropertyMap;
 
-        private string _filterSummary = string.Empty;
-        private string _allCardsCount = string.Empty;
-        private string _myCollectionCount = string.Empty;
-
-        public ObservableCollection<FilterSelections> FilterSelections { get; set; } = new();
-        public ObservableCollection<FilterDefaults> FilterDefaults { get; set; } = new();
 
         public void PopulateFilterDefaults()
         {
@@ -177,6 +180,23 @@ namespace CollectaMundo.Models
                 .Where(item => removeItems == null || !removeItems.Contains(item))
                 .Distinct()
                 .OrderBy(item => item);
+        }
+        private void UpdateFilteredListBoxItems()
+        {
+            var filter = FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == SelectedCriteriaKey);
+            if (filter == null) return;
+
+            // Apply filtering
+            var filteredItems = string.IsNullOrWhiteSpace(FilterText)
+                ? filter.AllCriteria
+                : filter.AllCriteria.Where(item => item.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+
+            // 🔹 Instead of replacing the collection, update its contents
+            _filteredListBoxItems.Clear();
+            foreach (var item in filteredItems)
+            {
+                _filteredListBoxItems.Add(item);
+            }
         }
 
 

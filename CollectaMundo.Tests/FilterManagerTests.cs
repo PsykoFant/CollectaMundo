@@ -20,7 +20,7 @@ namespace CollectaMundo.Tests
             MainWindow.CurrentInstance.filterSelections.Clear();
 
             // Act
-            FilterManager.ApplyFilter(cards, dataGrid);
+            FilterManagerOld.ApplyFilter(cards, dataGrid);
 
             // Assert
             dataGrid.ItemsSource.Should().BeEquivalentTo(cards.ToList()); // No change expected
@@ -44,7 +44,7 @@ namespace CollectaMundo.Tests
             });
 
             // Act
-            FilterManager.ApplyFilter(cards, dataGrid);
+            FilterManagerOld.ApplyFilter(cards, dataGrid);
 
             // Assert
             var filteredCards = (List<CardSet>)dataGrid.ItemsSource!;
@@ -70,7 +70,7 @@ namespace CollectaMundo.Tests
             });
 
             // Act
-            FilterManager.ApplyFilter(cards, dataGrid);
+            FilterManagerOld.ApplyFilter(cards, dataGrid);
 
             // Assert
             dataGrid.ItemsSource.Should().BeEquivalentTo(cards.ToList()); // No change expected
@@ -94,7 +94,7 @@ namespace CollectaMundo.Tests
             });
 
             // Act
-            FilterManager.ApplyFilter(cards, dataGrid);
+            FilterManagerOld.ApplyFilter(cards, dataGrid);
 
             // Assert
             MainWindow.CurrentInstance.FilterSummaryTextBlock.Text.Should().Contain("Rarity");
@@ -109,7 +109,7 @@ namespace CollectaMundo.Tests
             dataGrid.ItemsSource = emptyCards; // Set initial value
 
             // Act
-            var exception = Record.Exception(() => FilterManager.ApplyFilter(emptyCards, dataGrid));
+            var exception = Record.Exception(() => FilterManagerOld.ApplyFilter(emptyCards, dataGrid));
 
             // Debugging output
             Debug.WriteLine($"Actual ItemsSource: {dataGrid.ItemsSource}");
