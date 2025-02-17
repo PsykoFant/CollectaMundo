@@ -128,23 +128,23 @@ namespace CollectaMundo
         }
 
         // Define the criteria keys and their property mappings
-        public Dictionary<string, string> CriteriaKeyToPropertyMap = new()
-        {
-            { "Name", nameof(CardSet.Name) },
-            { "SetName", nameof(CardSet.SetName) },
-            { "Colors", nameof(CardSet.Colors) },
-            { "ManaValue", nameof(CardSet.ManaValue) },
-            { "Rarity", nameof(CardSet.Rarity) },
-            { "SuperTypes", nameof(CardSet.SuperTypes) },
-            { "Types", nameof(CardSet.Types) },
-            { "SubTypes", nameof(CardSet.SubTypes) },
-            { "Keywords", nameof(CardSet.Keywords) },
-            { "Text", nameof(CardSet.Text) },
-            { "Finishes", nameof(CardSet.Finishes) },
-            { "Language", nameof(CardInCollection.Language) },
-            { "SelectedCondition", nameof(CardInCollection.SelectedCondition) },
-            { "CardsForTrade", nameof(CardInCollection.CardsForTrade) }
-        };
+        //public Dictionary<string, string> CriteriaKeyToPropertyMap = new()
+        //{
+        //    { "Name", nameof(CardSet.Name) },
+        //    { "SetName", nameof(CardSet.SetName) },
+        //    { "Colors", nameof(CardSet.Colors) },
+        //    { "ManaValue", nameof(CardSet.ManaValue) },
+        //    { "Rarity", nameof(CardSet.Rarity) },
+        //    { "SuperTypes", nameof(CardSet.SuperTypes) },
+        //    { "Types", nameof(CardSet.Types) },
+        //    { "SubTypes", nameof(CardSet.SubTypes) },
+        //    { "Keywords", nameof(CardSet.Keywords) },
+        //    { "Text", nameof(CardSet.Text) },
+        //    { "Finishes", nameof(CardSet.Finishes) },
+        //    { "Language", nameof(CardInCollection.Language) },
+        //    { "SelectedCondition", nameof(CardInCollection.SelectedCondition) },
+        //    { "CardsForTrade", nameof(CardInCollection.CardsForTrade) }
+        //};
 
         // The object which holds the filter selections
         //public List<FilterSelections> filterSelections = [];
@@ -175,7 +175,12 @@ namespace CollectaMundo
             InitializeComponent();
             _currentInstance = this;
             CardVM = new CardViewModel();
+
             FilterVM = new FilterViewModel(CardVM);
+
+            // Debugging: Verify initialization
+            DebugFilterInitialization();
+
 
             // Set up system
             Loaded += async (sender, args) =>
@@ -195,6 +200,18 @@ namespace CollectaMundo
             MyCollectionDataGrid.LayoutUpdated += (s, e) => FilterManagerOld.DataGrid_LayoutUpdated(1);
             AllCardsForDecksDataGrid.LayoutUpdated += (s, e) => FilterManagerOld.DataGrid_LayoutUpdated(2);
         }
+
+        private void DebugFilterInitialization()
+        {
+            Debug.WriteLine("===== DEBUG: Initializing Filters =====");
+
+            // Verify "Rarity" filter
+            FilterVM.DebugFilterItems("Rarity");
+
+            Debug.WriteLine("===== END DEBUG =====");
+        }
+
+
 
         #region Tests
 
@@ -315,13 +332,6 @@ namespace CollectaMundo
 
             DBAccess.CloseConnection();
 
-            FilterVM.PopulateFilterDefaults();
-            OnPropertyChanged(nameof(FilterVM));
-
-            // Call debug method to verify default texts
-            FilterVM.DebugFilterDefaults();
-            // Call this method to apply default text to embedded textboxes
-            InitializeFilterTextBoxes();
 
             //await PopulateFilterUiElements();
 
@@ -342,44 +352,6 @@ namespace CollectaMundo
             await ShowStatusWindowAsync(false);
         }
 
-        public void InitializeFilterTextBoxes()
-        {
-            Debug.WriteLine("===== INITIALIZING FILTER TEXTBOXES =====");
-
-            foreach (var comboBox in FindVisualChildren<ComboBox>(this))
-            {
-                if (comboBox.Tag is string criteriaKey)
-                {
-                    // Ensure the template is applied before searching
-                    comboBox.ApplyTemplate();
-
-                    // Find the first TextBox inside the ComboBox template
-                    var textBox = FindVisualChild<TextBox>(comboBox);
-
-                    if (textBox != null)
-                    {
-                        // Retrieve the default text from FilterVM
-                        var defaultText = FilterVM.FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == criteriaKey)?.DefaultText;
-
-                        if (!string.IsNullOrWhiteSpace(defaultText))
-                        {
-                            textBox.Text = defaultText;
-                            textBox.Foreground = new SolidColorBrush(Colors.Gray);
-                            Debug.WriteLine($"Set default text for {criteriaKey}: {defaultText}");
-                        }
-                        else
-                        {
-                            Debug.WriteLine($"No default text found for {criteriaKey}");
-                        }
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"Could not find embedded TextBox inside ComboBox {criteriaKey}");
-                    }
-                }
-            }
-            Debug.WriteLine("===== END INITIALIZATION =====");
-        }
         public static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
@@ -1151,12 +1123,12 @@ namespace CollectaMundo
             {
                 try
                 {
-                    (string defaultText, string filterTextBoxName, string listBoxName) =
-                        FilterManagerOld.GetComboBoxConfig(comboBox.Name, FilterVM.FilterDefaults);
+                    //(string defaultText, string filterTextBoxName, string listBoxName) =
+                    //    FilterManagerOld.GetComboBoxConfig(comboBox.Name, FilterVM.FilterDefaults);
 
-                    Debug.WriteLine($"Default text: {defaultText}");
-                    Debug.WriteLine($"FilterTextBoxName: {filterTextBoxName}");
-                    Debug.WriteLine($"Listbox name: {listBoxName}");
+                    //Debug.WriteLine($"Default text: {defaultText}");
+                    //Debug.WriteLine($"FilterTextBoxName: {filterTextBoxName}");
+                    //Debug.WriteLine($"Listbox name: {listBoxName}");
 
                     //if (comboBox.Template.FindName(filterTextBoxName, comboBox) is TextBox filterTextBox &&
                     //    (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == defaultText))

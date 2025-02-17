@@ -91,7 +91,6 @@ namespace CollectaMundo.Models
                 System.Windows.MessageBox.Show($"Error while loading cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
         private static CardSet CreateCardFromReader(DbDataReader reader, DataGridContext context)
         {
             try
