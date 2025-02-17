@@ -1325,7 +1325,7 @@ namespace CollectaMundo
                 // Mapping values for condition should be the ones specified in the Condition field in the CardSet class.
                 else
                 {
-                    CardSet.CardInCollection cardItem = new();
+                    CardSet cardItem = new();
                     mappingValues = cardItem.Conditions;
 
                 }

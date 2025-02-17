@@ -118,78 +118,79 @@ namespace CollectaMundo.Models
         }
 
         public int? CardId { get; set; }
-        public class CardInCollection : CardSet, INotifyPropertyChanged
+
+        // For cards in collection
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName)
         {
-            public event PropertyChangedEventHandler? PropertyChanged;
-            protected virtual void OnPropertyChanged(string propertyName)
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+        private int _cardsOwned;
+        public int CardsOwned
+        {
+            get => _cardsOwned;
+            set
             {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            }
-            private int _cardsOwned;
-            public int CardsOwned
-            {
-                get => _cardsOwned;
-                set
+                if (_cardsOwned != value)
                 {
-                    if (_cardsOwned != value)
-                    {
-                        _cardsOwned = value;
-                        OnPropertyChanged(nameof(CardsOwned));
-                    }
+                    _cardsOwned = value;
+                    OnPropertyChanged(nameof(CardsOwned));
                 }
             }
+        }
 
-            private int _cardsForTrade;
-            public int CardsForTrade
+        private int _cardsForTrade;
+        public int CardsForTrade
+        {
+            get => _cardsForTrade;
+            set
             {
-                get => _cardsForTrade;
-                set
+                if (_cardsForTrade != value)
                 {
-                    if (_cardsForTrade != value)
-                    {
-                        _cardsForTrade = value;
-                        OnPropertyChanged(nameof(CardsForTrade));
-                    }
+                    _cardsForTrade = value;
+                    OnPropertyChanged(nameof(CardsForTrade));
                 }
             }
+        }
 
-            private string? _selectedCondition;
-            public List<string> Conditions { get; } =
-                [
-                    "Mint",
+        private string? _selectedCondition;
+        public List<string> Conditions { get; } =
+            [
+                "Mint",
                     "Near Mint",
                     "Excellent",
                     "Good",
                     "Light Played",
                     "Played",
                     "Poor"
-                ];
-            public string? SelectedCondition
+            ];
+        public string? SelectedCondition
+        {
+            get => _selectedCondition;
+            set
             {
-                get => _selectedCondition;
-                set
+                if (_selectedCondition != value)
                 {
-                    if (_selectedCondition != value)
-                    {
-                        _selectedCondition = value;
-                        OnPropertyChanged(nameof(SelectedCondition));
-                    }
+                    _selectedCondition = value;
+                    OnPropertyChanged(nameof(SelectedCondition));
                 }
             }
-            public List<string> AvailableFinishes { get; set; } = [];
-            public string? SelectedFinish { get; set; }
-            public decimal? CardInCollectionPrice { get; set; }
         }
-        public class PricedCardSet : CardSet
-        {
-            public decimal? NormalPrice { get; set; }
-            public decimal? FoilPrice { get; set; }
-            public decimal? EtchedPrice { get; set; }
-        }
-        public class CardInDeck : CardSet
-        {
-            public int Count { get; set; }
-        }
+        public List<string> AvailableFinishes { get; set; } = [];
+        public string? SelectedFinish { get; set; }
+        public decimal? CardInCollectionPrice { get; set; }
+
+        // PricedCardSet
+
+        public decimal? NormalPrice { get; set; }
+        public decimal? FoilPrice { get; set; }
+        public decimal? EtchedPrice { get; set; }
+
+        // CardInDeck
+
+        public int Count { get; set; }
+
 
     }
 }
