@@ -1,14 +1,11 @@
 ﻿using CollectaMundo.Utilities;
 using System.ComponentModel;
+using System.Diagnostics;
 using static CollectaMundo.MainWindow;
 using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo.Models
 {
-
-
-
-
     /// <summary>
     /// Base class for all filters with common properties.
     /// </summary>
@@ -188,7 +185,7 @@ namespace CollectaMundo.Models
             {
                 var filter = new FilterDefaults { CriteriaKey = criteriaKey };
 
-                // Use reflection to dynamically find matching properties
+                // Use reflection to find matching properties
                 var propertyName = FilterCriteriaMappings.CriteriaKeyToPropertyMap[criteriaKey];
                 var propertyInfo = typeof(CardSet).GetProperty(propertyName)
                                  ?? typeof(CardInCollection).GetProperty(propertyName)
@@ -207,6 +204,11 @@ namespace CollectaMundo.Models
 
                     filter.AllCriteria = values;
                 }
+                else
+                {
+                    Debug.WriteLine($"[ERROR] Property '{propertyName}' not found in any model.");
+                    filter.AllCriteria = [];
+                }
 
                 filter.DefaultText = $"Filter {criteriaKey} ...";
                 filterDefaults.Add(filter);
@@ -214,6 +216,7 @@ namespace CollectaMundo.Models
 
             return filterDefaults;
         }
+
         public static IEnumerable<BaseFilterCriteria> GetActiveFilters(IEnumerable<FilterSelections> filterSelections)
         {
             return filterSelections

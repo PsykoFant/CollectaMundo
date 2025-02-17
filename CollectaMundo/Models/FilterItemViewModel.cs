@@ -10,21 +10,26 @@ namespace CollectaMundo.Models
         protected void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        // The category of the filter (e.g., "Rarity", "Types", etc.)
-        public string CriteriaKey { get; }
+        // Underlying FilterDefaults instance
+        public FilterDefaults FilterDefaults { get; }
 
-        // Available filtering options for this category
-        public ObservableCollection<string> AvailableOptions { get; } = new();
+        public string CriteriaKey => FilterDefaults.CriteriaKey;
 
-        public FilterItemViewModel(string criteriaKey)
+        // Directly bind to AllCriteria from FilterDefaults
+        public ObservableCollection<string> AvailableOptions { get; }
+
+        public string DefaultText => FilterDefaults.DefaultText;
+
+        public FilterItemViewModel(FilterDefaults filterDefaults)
         {
-            CriteriaKey = criteriaKey;
+            FilterDefaults = filterDefaults;
+            AvailableOptions = new ObservableCollection<string>(filterDefaults.AllCriteria);
         }
 
-        // Debug method to verify correct initialization
         public void DebugFilterItem()
         {
             Debug.WriteLine($"===== DEBUG: Filter Item ({CriteriaKey}) =====");
+            Debug.WriteLine($"Default Text: {DefaultText}");
             Debug.WriteLine($"Available Options: {string.Join(", ", AvailableOptions)}");
             Debug.WriteLine($"====================================");
         }

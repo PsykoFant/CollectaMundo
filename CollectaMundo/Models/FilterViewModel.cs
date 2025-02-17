@@ -1,7 +1,5 @@
-﻿using CollectaMundo.Utilities;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Reflection;
 
 namespace CollectaMundo.Models
 {
@@ -18,44 +16,11 @@ namespace CollectaMundo.Models
 
         private void PopulateFilters()
         {
-            foreach (var criteriaKey in FilterCriteriaMappings.CriteriaKeyToPropertyMap.Keys)
+            List<FilterDefaults> defaults = FilterManager.GetFilterDefaults(_cardViewModel);
+            foreach (var filter in defaults)
             {
-                var filterItem = new FilterItemViewModel(criteriaKey);
-
-                // Retrieve distinct values from CardSet dynamically
-                var options = GetDistinctValuesForCriteria(criteriaKey);
-                foreach (var option in options)
-                {
-                    filterItem.AvailableOptions.Add(option);
-                }
-
-                Filters.Add(filterItem);
+                Filters.Add(new FilterItemViewModel(filter));
             }
-        }
-
-        // Uses reflection to retrieve distinct values for a filter criteria (e.g., "Rarity", "Colors")
-        private List<string> GetDistinctValuesForCriteria(string criteriaKey)
-        {
-            if (!FilterCriteriaMappings.CriteriaKeyToPropertyMap.TryGetValue(criteriaKey, out var propertyName))
-            {
-                Debug.WriteLine($"[ERROR] No property mapping found for {criteriaKey}");
-                return new List<string>();
-            }
-
-            // Try to find the property in CardSet
-            PropertyInfo? propertyInfo = typeof(CardSet).GetProperty(propertyName);
-            if (propertyInfo == null)
-            {
-                Debug.WriteLine($"[ERROR] Property '{propertyName}' not found in CardSet.");
-                return new List<string>();
-            }
-
-            return _cardViewModel.allCards
-                .Select(card => propertyInfo.GetValue(card)?.ToString())
-                .Where(value => !string.IsNullOrEmpty(value))
-                .Distinct()
-                .OrderBy(value => value)
-                .ToList()!;
         }
 
         public FilterItemViewModel? GetFilterItem(string criteriaKey) =>
@@ -75,6 +40,7 @@ namespace CollectaMundo.Models
         }
     }
 }
+
 
 
 
