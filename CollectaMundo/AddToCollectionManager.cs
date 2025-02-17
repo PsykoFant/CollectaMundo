@@ -5,7 +5,6 @@ using System.Data.SQLite;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo
 {
@@ -13,14 +12,14 @@ namespace CollectaMundo
     {
         private static AddToCollectionManager? _instance;
         public static AddToCollectionManager Instance => _instance ??= new AddToCollectionManager();
-        public ObservableCollection<CardInCollection> CardItemsToAdd { get; private set; }
-        public ObservableCollection<CardInCollection> CardItemsToEdit { get; private set; }
+        public ObservableCollection<CardSet> CardItemsToAdd { get; private set; }
+        public ObservableCollection<CardSet> CardItemsToEdit { get; private set; }
 
         // Timer for delayed processing
         private readonly System.Timers.Timer _typingTimer;
         private const int TypingDelay = 500; // 500 milliseconds delay
         private TextBox? _lastTextBox;
-        private ObservableCollection<CardInCollection>? _lastTargetCollection;
+        private ObservableCollection<CardSet>? _lastTargetCollection;
 
         public AddToCollectionManager()
         {
@@ -34,7 +33,7 @@ namespace CollectaMundo
         }
 
         // Handling typing numbers directly into count and trade fields
-        public void CardsOwnedTextHandler(object sender, ObservableCollection<CardInCollection> targetCollection)
+        public void CardsOwnedTextHandler(object sender, ObservableCollection<CardSet> targetCollection)
         {
             _lastTextBox = sender as TextBox;
             _lastTargetCollection = targetCollection;
@@ -58,9 +57,9 @@ namespace CollectaMundo
                 CardsOwnedTextChangedLogic(_lastTextBox, _lastTargetCollection);
             });
         }
-        private static void CardsOwnedTextChangedLogic(TextBox? textBox, ObservableCollection<CardInCollection>? targetCollection)
+        private static void CardsOwnedTextChangedLogic(TextBox? textBox, ObservableCollection<CardSet>? targetCollection)
         {
-            if (textBox?.DataContext is CardInCollection cardItem)
+            if (textBox?.DataContext is CardSet cardItem)
             {
                 // Try parsing the new value
                 if (int.TryParse(textBox.Text, out int newCount) && newCount >= 0)
@@ -90,7 +89,7 @@ namespace CollectaMundo
         public static void CardsForTradeTextHandler(object sender)
         {
             var textBox = sender as TextBox;
-            if (textBox?.DataContext is CardInCollection cardItem)
+            if (textBox?.DataContext is CardSet cardItem)
             {
                 // Use the TextBox's binding expression to check for validation errors
                 var bindingExpression = textBox.GetBindingExpression(TextBox.TextProperty);
@@ -129,7 +128,7 @@ namespace CollectaMundo
             // Retrieve the DataContext (bound item) of the button that was clicked
             var button = sender as Button;
 
-            if (button?.DataContext is CardInCollection cardItem)
+            if (button?.DataContext is CardSet cardItem)
             {
                 // Check the Tag property to determine which field to increment
                 if (button.Tag?.ToString() == "CardsOwned")
@@ -145,10 +144,10 @@ namespace CollectaMundo
                 }
             }
         }
-        public void DecrementButtonHandler(object sender, ObservableCollection<CardInCollection> targetCollection)
+        public void DecrementButtonHandler(object sender, ObservableCollection<CardSet> targetCollection)
         {
             var button = sender as Button;
-            if (button?.DataContext is CardInCollection cardItem)
+            if (button?.DataContext is CardSet cardItem)
             {
                 // Decrease the count
                 if (button.Tag?.ToString() == "CardsOwned")
@@ -177,7 +176,7 @@ namespace CollectaMundo
         }
 
         // Adds cards to the listview
-        public static void AddCardsToListView(DataGrid dataGrid, Action showListViewAction, ObservableCollection<CardInCollection> cardItemsCollection)
+        public static void AddCardsToListView(DataGrid dataGrid, Action showListViewAction, ObservableCollection<CardSet> cardItemsCollection)
         {
             // Show the corresponding list view (either for adding or editing)
             showListViewAction();
@@ -191,7 +190,7 @@ namespace CollectaMundo
             // Unselect all items after handling
             dataGrid.UnselectAll();
         }
-        public static async void AddOrEditCardHandler(CardSet selectedCard, ObservableCollection<CardInCollection> targetCollection)
+        public static async void AddOrEditCardHandler(CardSet selectedCard, ObservableCollection<CardSet> targetCollection)
         {
             if (selectedCard.Uuid == null)
             {
@@ -213,7 +212,7 @@ namespace CollectaMundo
                 var finishes = await FetchFinishesForCardAsync(selectedCard.Uuid);
                 DBAccess.CloseConnection();
 
-                var newItem = new CardInCollection
+                var newItem = new CardSet
                 {
                     Name = selectedCard.Name,
                     SetName = selectedCard.SetName,
@@ -228,7 +227,7 @@ namespace CollectaMundo
                 };
 
                 // Adjust properties if the selected card is to edit an existing card item.
-                if (selectedCard is CardInCollection cardItem)
+                if (selectedCard is CardSet cardItem)
                 {
                     newItem.CardId = cardItem.CardId;
                     newItem.CardsOwned = cardItem.CardsOwned;
@@ -364,7 +363,7 @@ namespace CollectaMundo
                         await updateCommand.ExecuteNonQueryAsync();
                         // Update the item in the list
                         var cardToUpdate = MainWindow.CurrentInstance.myCards.FirstOrDefault(c => c.Uuid == currentCardItem.Uuid);
-                        if (cardToUpdate != null && cardToUpdate is CardInCollection card)
+                        if (cardToUpdate != null && cardToUpdate is CardSet card)
                         {
                             card.CardsOwned += currentCardItem.CardsOwned;
                         }
@@ -504,7 +503,7 @@ namespace CollectaMundo
                 DBAccess.connection.Close();
             }
         }
-        private static async Task<int?> CheckForExistingCardAsync(CardInCollection card)
+        private static async Task<int?> CheckForExistingCardAsync(CardSet card)
         {
             string selectSql = @"
                 SELECT id FROM myCollection 
@@ -548,7 +547,7 @@ namespace CollectaMundo
             {
                 foreach (CardSet card in selectedCards)
                 {
-                    CardInCollection currentCardItem = card as CardInCollection ?? new CardInCollection
+                    CardSet currentCardItem = card as CardSet ?? new CardSet
                     {
                         Uuid = card.Uuid,
                         Name = card.Name,
@@ -613,7 +612,7 @@ namespace CollectaMundo
                 DBAccess.connection.Close();
             }
         }
-        public async void DeleteCardsFromCollection(List<CardInCollection> selectedCards)
+        public async void DeleteCardsFromCollection(List<CardSet> selectedCards)
         {
             if (DBAccess.connection == null)
             {
@@ -624,7 +623,7 @@ namespace CollectaMundo
             await DBAccess.connection.OpenAsync();
             try
             {
-                foreach (CardInCollection card in selectedCards)
+                foreach (CardSet card in selectedCards)
                 {
                     // Delete card from database (myCollection)
                     string deleteSql = "DELETE FROM myCollection WHERE uuid = @uuid;";
@@ -667,7 +666,7 @@ namespace CollectaMundo
                 DBAccess.connection.Close();
             }
         }
-        public async void SetCardsForTrade(List<CardInCollection> selectedCards, bool setForTrade)
+        public async void SetCardsForTrade(List<CardSet> selectedCards, bool setForTrade)
         {
             if (DBAccess.connection == null)
             {
@@ -690,7 +689,7 @@ namespace CollectaMundo
                 }
 
 
-                foreach (CardInCollection card in selectedCards)
+                foreach (CardSet card in selectedCards)
                 {
 
                     using var setForTradeCommand = new SQLiteCommand(sqlString, DBAccess.connection);

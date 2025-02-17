@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Data;
 using static CollectaMundo.MainWindow;
-using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo.Models
 {
@@ -42,7 +41,10 @@ namespace CollectaMundo.Models
         {
             AllCardsView.Filter = obj =>
             {
-                if (obj is not CardSet card) return false;
+                if (obj is not CardSet card)
+                {
+                    return false;
+                }
 
                 return filters.All(filter => filter.Matches(card));
             };
@@ -95,23 +97,18 @@ namespace CollectaMundo.Models
         {
             try
             {
-                // Instantiate appropriate subclass based on the context
-                CardSet card = context switch
-                {
-                    DataGridContext.AllCards => new PricedCardSet(),
-                    DataGridContext.MyCollection => new CardInCollection(),
-                    DataGridContext.CardsInDecks => new CardInDeck(),
-                    _ => new CardSet()
-                };
+                CardSet card = new()
 
-                // ✅ Fields common to all CardSet lists
-                card.Name = GetFieldValue<string>(reader, "Name") ?? string.Empty;
-                card.ManaCost = ProcessManaCost(GetFieldValue<string>(reader, "ManaCost") ?? string.Empty);
-                card.Colors = GetFieldValue<string>(reader, "Colors") ?? string.Empty;
-                card.Type = GetFieldValue<string>(reader, "Type") ?? string.Empty;
-                card.ManaValue = GetFieldValue<double?>(reader, "ManaValue") ?? 0;
-                card.ManaCostImageBytes = GetFieldValue<byte[]>(reader, "ManaCostImage");
-                card.ManaCostRaw = GetFieldValue<string>(reader, "ManaCost") ?? string.Empty;
+                {
+                    // ✅ Fields common to all CardSet lists
+                    Name = GetFieldValue<string>(reader, "Name") ?? string.Empty,
+                    ManaCost = ProcessManaCost(GetFieldValue<string>(reader, "ManaCost") ?? string.Empty),
+                    Colors = GetFieldValue<string>(reader, "Colors") ?? string.Empty,
+                    Type = GetFieldValue<string>(reader, "Type") ?? string.Empty,
+                    ManaValue = GetFieldValue<double?>(reader, "ManaValue") ?? 0,
+                    ManaCostImageBytes = GetFieldValue<byte[]>(reader, "ManaCostImage"),
+                    ManaCostRaw = GetFieldValue<string>(reader, "ManaCost") ?? string.Empty
+                };
 
                 // ✅ Fields applicable to all except CardsInDecks
                 if (context != DataGridContext.CardsInDecks)
@@ -144,31 +141,33 @@ namespace CollectaMundo.Models
                     card.CardId = GetFieldValue<int?>(reader, "CardId");
                 }
 
-                // ✅ Handle subclass-specific fields
-                switch (card)
+                // ✅ Fields specific for AllCards
+                if (context == DataGridContext.AllCards)
                 {
-                    case PricedCardSet pricedCard:
-                        pricedCard.NormalPrice = GetFieldValue<decimal?>(reader, "NormalPrice");
-                        pricedCard.FoilPrice = GetFieldValue<decimal?>(reader, "FoilPrice");
-                        pricedCard.EtchedPrice = GetFieldValue<decimal?>(reader, "EtchedPrice");
-                        break;
+                    card.NormalPrice = GetFieldValue<decimal?>(reader, "NormalPrice");
+                    card.FoilPrice = GetFieldValue<decimal?>(reader, "FoilPrice");
+                    card.EtchedPrice = GetFieldValue<decimal?>(reader, "EtchedPrice");
+                }
 
-                    case CardInCollection cardInCollection:
-                        cardInCollection.CardsOwned = GetFieldValue<int?>(reader, "CardsOwned") ?? 0;
-                        cardInCollection.CardsForTrade = GetFieldValue<int?>(reader, "CardsForTrade") ?? 0;
-                        cardInCollection.SelectedCondition = GetFieldValue<string>(reader, "Condition");
-                        cardInCollection.SelectedFinish = GetFieldValue<string>(reader, "Finish");
-                        cardInCollection.CardInCollectionPrice = cardInCollection.SelectedFinish switch
-                        {
-                            "foil" => ParsePrice("FoilPrice", reader),
-                            "etched" => ParsePrice("EtchedPrice", reader),
-                            _ => ParsePrice("NormalPrice", reader)
-                        };
-                        break;
+                // ✅ Fields specific for CardInCollection
+                if (context == DataGridContext.MyCollection)
+                {
+                    card.CardsOwned = GetFieldValue<int?>(reader, "CardsOwned") ?? 0;
+                    card.CardsForTrade = GetFieldValue<int?>(reader, "CardsForTrade") ?? 0;
+                    card.SelectedCondition = GetFieldValue<string>(reader, "Condition");
+                    card.SelectedFinish = GetFieldValue<string>(reader, "Finish");
+                    card.CardInCollectionPrice = card.SelectedFinish switch
+                    {
+                        "foil" => ParsePrice("FoilPrice", reader),
+                        "etched" => ParsePrice("EtchedPrice", reader),
+                        _ => ParsePrice("NormalPrice", reader)
+                    };
+                }
 
-                    case CardInDeck cardInDeck:
-                        cardInDeck.Count = GetFieldValue<int?>(reader, "Count") ?? 0;
-                        break;
+                // ✅ Fields specific for CardsInDecks
+                if (context == DataGridContext.CardsInDecks)
+                {
+                    card.Count = GetFieldValue<int?>(reader, "Count") ?? 0;
                 }
 
                 return card;
@@ -215,23 +214,6 @@ namespace CollectaMundo.Models
             {
                 return DateTime.TryParse(dateRaw, out DateTime parsedDate) ? parsedDate : null;
             }
-        }
-
-
-        private static T? GetFieldValue<T>(DbDataReader reader, string columnName)
-        {
-            if (reader[columnName] == DBNull.Value)
-            {
-                return default;
-            }
-
-            return (T)reader[columnName];
-        }
-
-        private static string ProcessManaCost(string manaCostRaw)
-        {
-            char[] separator = ['{', '}'];
-            return string.Join(",", manaCostRaw.Split(separator, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
         }
     }
 }

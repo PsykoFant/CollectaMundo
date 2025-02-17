@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using static CollectaMundo.MainWindow;
-using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo.Models
 {
@@ -41,7 +40,7 @@ namespace CollectaMundo.Models
             }
         }
 
-        private HashSet<string> _multipleCriteria = new();
+        private HashSet<string> _multipleCriteria = [];
         public HashSet<string> MultipleCriteria
         {
             get => _multipleCriteria;
@@ -179,25 +178,32 @@ namespace CollectaMundo.Models
     {
         public static List<FilterDefaults> GetFilterDefaults(CardViewModel cardViewModel)
         {
-            List<FilterDefaults> filterDefaults = new();
+            List<FilterDefaults> filterDefaults = [];
 
             foreach (var criteriaKey in FilterCriteriaMappings.CriteriaKeyToPropertyMap.Keys)
             {
                 var filter = new FilterDefaults { CriteriaKey = criteriaKey };
 
-                // Use reflection to find matching properties
+                // Use reflection to get the property based on CriteriaKey
                 var propertyName = FilterCriteriaMappings.CriteriaKeyToPropertyMap[criteriaKey];
-                var propertyInfo = typeof(CardSet).GetProperty(propertyName)
-                                 ?? typeof(CardInCollection).GetProperty(propertyName)
-                                 ?? typeof(CardInDeck).GetProperty(propertyName);
+                var propertyInfo = typeof(CardSet).GetProperty(propertyName);
 
                 if (propertyInfo != null)
                 {
+                    // Extract values dynamically
                     var values = cardViewModel.AllCardsView
                         .Cast<CardSet>()
-                        .Where(card => propertyInfo.DeclaringType!.IsInstanceOfType(card))
-                        .Select(card => propertyInfo.GetValue(card)?.ToString())
-                        .Where(v => !string.IsNullOrEmpty(v))
+                        .Select(card => propertyInfo.GetValue(card))
+                        .Where(value => value != null)
+                        .SelectMany(value =>
+                        {
+                            return value switch
+                            {
+                                string str => [str], // Single string property
+                                List<string> strList => strList,        // List<string> property
+                                _ => []                 // Unsupported type (ignored)
+                            };
+                        })
                         .Distinct()
                         .OrderBy(v => v)
                         .ToList();
@@ -206,7 +212,7 @@ namespace CollectaMundo.Models
                 }
                 else
                 {
-                    Debug.WriteLine($"[ERROR] Property '{propertyName}' not found in any model.");
+                    Debug.WriteLine($"[ERROR] Property '{propertyName}' not found in CardSet.");
                     filter.AllCriteria = [];
                 }
 

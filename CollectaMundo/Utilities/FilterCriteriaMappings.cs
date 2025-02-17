@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.Models;
-using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo.Utilities
 {
@@ -18,9 +17,9 @@ namespace CollectaMundo.Utilities
             { "Keywords", nameof(CardSet.Keywords) },
             { "Text", nameof(CardSet.Text) },
             { "Finishes", nameof(CardSet.Finishes) },
-            { "Language", nameof(CardInCollection.Language) },
-            { "SelectedCondition", nameof(CardInCollection.SelectedCondition) },
-            { "CardsForTrade", nameof(CardInCollection.CardsForTrade) }
+            { "Language", nameof(CardSet.Language) },
+            { "SelectedCondition", nameof(CardSet.SelectedCondition) },
+            { "CardsForTrade", nameof(CardSet.CardsForTrade) }
         };
     }
 }

@@ -11,7 +11,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using static CollectaMundo.BackupRestore;
-using static CollectaMundo.Models.CardSet;
 
 namespace CollectaMundo
 {
@@ -126,28 +125,6 @@ namespace CollectaMundo
             // Unknown or default
             Unknown = -1
         }
-
-        // Define the criteria keys and their property mappings
-        //public Dictionary<string, string> CriteriaKeyToPropertyMap = new()
-        //{
-        //    { "Name", nameof(CardSet.Name) },
-        //    { "SetName", nameof(CardSet.SetName) },
-        //    { "Colors", nameof(CardSet.Colors) },
-        //    { "ManaValue", nameof(CardSet.ManaValue) },
-        //    { "Rarity", nameof(CardSet.Rarity) },
-        //    { "SuperTypes", nameof(CardSet.SuperTypes) },
-        //    { "Types", nameof(CardSet.Types) },
-        //    { "SubTypes", nameof(CardSet.SubTypes) },
-        //    { "Keywords", nameof(CardSet.Keywords) },
-        //    { "Text", nameof(CardSet.Text) },
-        //    { "Finishes", nameof(CardSet.Finishes) },
-        //    { "Language", nameof(CardInCollection.Language) },
-        //    { "SelectedCondition", nameof(CardInCollection.SelectedCondition) },
-        //    { "CardsForTrade", nameof(CardInCollection.CardsForTrade) }
-        //};
-
-        // The object which holds the filter selections
-        //public List<FilterSelections> filterSelections = [];
 
         // Objects for deck management
         public readonly List<Deck> allDecks = [];
@@ -359,17 +336,24 @@ namespace CollectaMundo
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
                 if (child is T foundChild)
+                {
                     return foundChild;
+                }
 
                 var childOfChild = FindVisualChild<T>(child);
                 if (childOfChild != null)
+                {
                     return childOfChild;
+                }
             }
             return null;
         }
         public static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
         {
-            if (depObj == null) yield break;
+            if (depObj == null)
+            {
+                yield break;
+            }
 
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
             {
@@ -447,81 +431,81 @@ namespace CollectaMundo
         {
             try
             {
-                // Instantiate appropriate type
+                //// Instantiate appropriate type
                 CardSet card = context switch
                 {
-                    DataGridContext.AllCards => new PricedCardSet(),
-                    DataGridContext.MyCollection => new CardInCollection(),
-                    DataGridContext.CardsInDecks => new CardInDeck(),
+                    DataGridContext.AllCards => new CardSet(),
+                    DataGridContext.MyCollection => new CardSet(),
+                    DataGridContext.CardsInDecks => new CardSet(),
                     _ => new CardSet()
                 };
 
-                // for all CardSet lists 
-                card.Name = GetFieldValue<string>(reader, "Name") ?? string.Empty;
-                card.ManaCost = ProcessManaCost(GetFieldValue<string>(reader, "ManaCost") ?? string.Empty);
-                card.Colors = GetFieldValue<string>(reader, "Colors") ?? string.Empty;
-                card.Type = GetFieldValue<string>(reader, "Type") ?? string.Empty;
-                card.ManaValue = GetFieldValue<double?>(reader, "ManaValue") ?? 0;
-                card.ManaCostImageBytes = GetFieldValue<byte[]>(reader, "ManaCostImage");
-                card.ManaCostRaw = GetFieldValue<string>(reader, "ManaCost") ?? string.Empty;
+                //// for all CardSet lists 
+                //card.Name = GetFieldValue<string>(reader, "Name") ?? string.Empty;
+                //card.ManaCost = ProcessManaCost(GetFieldValue<string>(reader, "ManaCost") ?? string.Empty);
+                //card.Colors = GetFieldValue<string>(reader, "Colors") ?? string.Empty;
+                //card.Type = GetFieldValue<string>(reader, "Type") ?? string.Empty;
+                //card.ManaValue = GetFieldValue<double?>(reader, "ManaValue") ?? 0;
+                //card.ManaCostImageBytes = GetFieldValue<byte[]>(reader, "ManaCostImage");
+                //card.ManaCostRaw = GetFieldValue<string>(reader, "ManaCost") ?? string.Empty;
 
-                // for all CardSet lists except cardsInDecks
-                if (context != DataGridContext.CardsInDecks)
-                {
-                    card.Types = GetFieldValue<string>(reader, "Types") ?? string.Empty;
-                    card.SuperTypes = GetFieldValue<string>(reader, "SuperTypes") ?? string.Empty;
-                    card.SubTypes = GetFieldValue<string>(reader, "SubTypes") ?? string.Empty;
-                    card.Keywords = GetFieldValue<string>(reader, "Keywords") ?? string.Empty;
-                    card.Text = GetFieldValue<string>(reader, "RulesText") ?? string.Empty;
-                    card.Side = GetFieldValue<string>(reader, "Side") ?? string.Empty;
-                }
+                //// for all CardSet lists except cardsInDecks
+                //if (context != DataGridContext.CardsInDecks)
+                //{
+                //    card.Types = GetFieldValue<string>(reader, "Types") ?? string.Empty;
+                //    card.SuperTypes = GetFieldValue<string>(reader, "SuperTypes") ?? string.Empty;
+                //    card.SubTypes = GetFieldValue<string>(reader, "SubTypes") ?? string.Empty;
+                //    card.Keywords = GetFieldValue<string>(reader, "Keywords") ?? string.Empty;
+                //    card.Text = GetFieldValue<string>(reader, "RulesText") ?? string.Empty;
+                //    card.Side = GetFieldValue<string>(reader, "Side") ?? string.Empty;
+                //}
 
-                // for all CardSet lists except allCardsForDecks or cardsInDecks
-                if (context != DataGridContext.AllCardsForDecks && context != DataGridContext.CardsInDecks)
-                {
-                    card.Language = GetFieldValue<string>(reader, "Language") ?? string.Empty;
-                    card.Uuid = GetFieldValue<string>(reader, "Uuid") ?? string.Empty;
-                    card.SetName = GetFieldValue<string>(reader, "SetName") ?? string.Empty;
-                    card.Rarity = GetFieldValue<string>(reader, "Rarity") ?? string.Empty;
-                    card.Finishes = GetFieldValue<string>(reader, "Finishes");
-                    card.ReleaseDate = ParseDate(GetFieldValue<string>(reader, "ReleaseDate"));
+                //// for all CardSet lists except allCardsForDecks or cardsInDecks
+                //if (context != DataGridContext.AllCardsForDecks && context != DataGridContext.CardsInDecks)
+                //{
+                //    card.Language = GetFieldValue<string>(reader, "Language") ?? string.Empty;
+                //    card.Uuid = GetFieldValue<string>(reader, "Uuid") ?? string.Empty;
+                //    card.SetName = GetFieldValue<string>(reader, "SetName") ?? string.Empty;
+                //    card.Rarity = GetFieldValue<string>(reader, "Rarity") ?? string.Empty;
+                //    card.Finishes = GetFieldValue<string>(reader, "Finishes");
+                //    card.ReleaseDate = ParseDate(GetFieldValue<string>(reader, "ReleaseDate"));
 
-                    // Populate raw data fields for parallel processing
-                    card.SetIconBytes = GetFieldValue<byte[]>(reader, "KeyRuneImage");
-                }
+                //    // Populate raw data fields for parallel processing
+                //    card.SetIconBytes = GetFieldValue<byte[]>(reader, "KeyRuneImage");
+                //}
 
-                // Only for myCards and cardsInDecks lists
-                if (context == DataGridContext.MyCollection || context == DataGridContext.CardsInDecks)
-                {
-                    card.CardId = GetFieldValue<int?>(reader, "CardId");
-                }
+                //// Only for myCards and cardsInDecks lists
+                //if (context == DataGridContext.MyCollection || context == DataGridContext.CardsInDecks)
+                //{
+                //    card.CardId = GetFieldValue<int?>(reader, "CardId");
+                //}
 
-                // Only fiels specific to certain lists
-                switch (card)
-                {
-                    case PricedCardSet pricedCard:
-                        pricedCard.NormalPrice = GetFieldValue<decimal?>(reader, "NormalPrice");
-                        pricedCard.FoilPrice = GetFieldValue<decimal?>(reader, "FoilPrice");
-                        pricedCard.EtchedPrice = GetFieldValue<decimal?>(reader, "EtchedPrice");
-                        break;
+                //// Only fiels specific to certain lists
+                //switch (card)
+                //{
+                //    case PricedCardSet pricedCard:
+                //        pricedCard.NormalPrice = GetFieldValue<decimal?>(reader, "NormalPrice");
+                //        pricedCard.FoilPrice = GetFieldValue<decimal?>(reader, "FoilPrice");
+                //        pricedCard.EtchedPrice = GetFieldValue<decimal?>(reader, "EtchedPrice");
+                //        break;
 
-                    case CardInCollection cardInCollection:
-                        cardInCollection.CardsOwned = GetFieldValue<int?>(reader, "CardsOwned") ?? 0;
-                        cardInCollection.CardsForTrade = GetFieldValue<int?>(reader, "CardsForTrade") ?? 0;
-                        cardInCollection.SelectedCondition = GetFieldValue<string>(reader, "Condition");
-                        cardInCollection.SelectedFinish = GetFieldValue<string>(reader, "Finish");
-                        cardInCollection.CardInCollectionPrice = cardInCollection.SelectedFinish switch
-                        {
-                            "foil" => ParsePrice("FoilPrice", reader),
-                            "etched" => ParsePrice("EtchedPrice", reader),
-                            _ => ParsePrice("NormalPrice", reader)
-                        };
-                        break;
+                //    case CardInCollection cardInCollection:
+                //        cardInCollection.CardsOwned = GetFieldValue<int?>(reader, "CardsOwned") ?? 0;
+                //        cardInCollection.CardsForTrade = GetFieldValue<int?>(reader, "CardsForTrade") ?? 0;
+                //        cardInCollection.SelectedCondition = GetFieldValue<string>(reader, "Condition");
+                //        cardInCollection.SelectedFinish = GetFieldValue<string>(reader, "Finish");
+                //        cardInCollection.CardInCollectionPrice = cardInCollection.SelectedFinish switch
+                //        {
+                //            "foil" => ParsePrice("FoilPrice", reader),
+                //            "etched" => ParsePrice("EtchedPrice", reader),
+                //            _ => ParsePrice("NormalPrice", reader)
+                //        };
+                //        break;
 
-                    case CardInDeck cardInDeck:
-                        cardInDeck.Count = GetFieldValue<int?>(reader, "Count") ?? 0;
-                        break;
-                }
+                //    case CardInDeck cardInDeck:
+                //        cardInDeck.Count = GetFieldValue<int?>(reader, "Count") ?? 0;
+                //        break;
+                //}
 
                 return card;
             }
@@ -1452,10 +1436,10 @@ namespace CollectaMundo
         {
             if (sender is Button button)  // This checks if sender is a Button and assigns it to button if true
             {
-                if (button.DataContext is CardSet.CardInCollection cardItem)
+                if (button.DataContext is CardSet cardItem)
                 {
                     // Determine which ListView initiated the event and pass the appropriate collection
-                    ObservableCollection<CardSet.CardInCollection> targetCollection =
+                    ObservableCollection<CardSet> targetCollection =
                         (CardsToEditListView.Items.Contains(cardItem)) ? addToCollectionManager.CardItemsToEdit : addToCollectionManager.CardItemsToAdd;
 
                     // Only decrement for CardItemsToEdit if count is above 0
@@ -1515,7 +1499,7 @@ namespace CollectaMundo
                     AddToCollectionManager.AddOrEditCardHandler(cardSetCard, addToCollectionManager.CardItemsToAdd);
                     AddToCollectionManager.ShowCardsToAddListView();
                 }
-                else if (grid.SelectedItem is CardInCollection cardItemCard && grid.Name == "MyCollectionDataGrid")
+                else if (grid.SelectedItem is CardSet cardItemCard && grid.Name == "MyCollectionDataGrid")
                 {
                     AddToCollectionManager.AddOrEditCardHandler(cardItemCard, addToCollectionManager.CardItemsToEdit);
                     AddToCollectionManager.ShowCardsToEditListView();
@@ -1556,7 +1540,7 @@ namespace CollectaMundo
         }
         private void ButtonDeleteCardsFromCollection_Click(object sender, RoutedEventArgs e)
         {
-            List<CardInCollection> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardInCollection>().ToList();
+            List<CardSet> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardSet>().ToList();
             if (selectedCards.Count > 0)
             {
                 addToCollectionManager.DeleteCardsFromCollection(selectedCards);
@@ -1564,7 +1548,7 @@ namespace CollectaMundo
         }
         private void ButtonSetCardsForTrade_Click(object sender, RoutedEventArgs e)
         {
-            List<CardInCollection> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardInCollection>().ToList();
+            List<CardSet> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardSet>().ToList();
             if (selectedCards.Count > 0)
             {
                 addToCollectionManager.SetCardsForTrade(selectedCards, true);
@@ -1573,7 +1557,7 @@ namespace CollectaMundo
         }
         private void ButtonSetNoneForTrade_Click(object sender, RoutedEventArgs e)
         {
-            List<CardInCollection> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardInCollection>().ToList();
+            List<CardSet> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardSet>().ToList();
             if (selectedCards.Count > 0)
             {
                 addToCollectionManager.SetCardsForTrade(selectedCards, false);
