@@ -215,7 +215,7 @@ namespace CollectaMundo.Models
                     filter.AllCriteria = [];
                 }
 
-                filter.DefaultText = $"Filter {criteriaKey} ...";
+                filter.DefaultText = $"{criteriaKey} ...";
                 filterDefaults.Add(filter);
             }
 
