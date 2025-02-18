@@ -132,19 +132,18 @@
                                 <TextBox
                                     Background="Transparent"
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Foreground="{TemplateBinding Foreground}"
+                                    Foreground="Gray"
                                     Padding="3,3,0,0"
                                     Margin="0,0,0,0"
                                     GotFocus="TextBox_GotFocus"
                                     LostFocus="TextBox_LostFocus"
                                     />
                                 <ToggleButton 
-                                    Content="Rarities" 
+                                    Content="{Binding CriteriaKey}"
                                     Focusable="false"
                                     ClickMode="Press"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                                    HorizontalAlignment="Right"
-                                    Width="70"/>
+                                    HorizontalAlignment="Right"/>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
                                         <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple">

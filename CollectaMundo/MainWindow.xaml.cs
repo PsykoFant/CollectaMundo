@@ -1278,6 +1278,7 @@ namespace CollectaMundo
                 }, System.Windows.Threading.DispatcherPriority.Background);
 
                 textBox.Text = ""; // Clear text on focus
+                textBox.Foreground = new SolidColorBrush(Colors.Black);
             }
         }
 
@@ -1291,6 +1292,7 @@ namespace CollectaMundo
                     filterItem._suppressFiltering = true; // Temporarily disable filtering
                     filterItem.FilterText = filterItem.DefaultText; // Set text without triggering filtering
                     filterItem._suppressFiltering = false; // Re-enable filtering
+                    textBox.Foreground = new SolidColorBrush(Colors.Gray);
                 }
             }
         }
