@@ -6,20 +6,20 @@ namespace CollectaMundo.Utilities
     {
         public static readonly Dictionary<string, string> CriteriaKeyToPropertyMap = new()
         {
-            { "Name", nameof(CardSet.Name) },
-            { "SetName", nameof(CardSet.SetName) },
-            { "Colors", nameof(CardSet.Colors) },
-            { "ManaValue", nameof(CardSet.ManaValue) },
-            { "Rarity", nameof(CardSet.Rarity) },
-            { "SuperTypes", nameof(CardSet.SuperTypes) },
-            { "Types", nameof(CardSet.Types) },
-            { "SubTypes", nameof(CardSet.SubTypes) },
-            { "Keywords", nameof(CardSet.Keywords) },
-            { "Text", nameof(CardSet.Text) },
-            { "Finishes", nameof(CardSet.Finishes) },
-            { "Language", nameof(CardSet.Language) },
-            { "SelectedCondition", nameof(CardSet.SelectedCondition) },
-            { "CardsForTrade", nameof(CardSet.CardsForTrade) }
+            { "Name", nameof(CardViewModel.allCards) },
+            { "SetName", nameof(CardViewModel.allCards) },
+            { "Colors", nameof(CardViewModel.allCards) },
+            { "ManaValue", nameof(CardViewModel.allCards) },
+            { "Rarity", nameof(CardViewModel.allCards) },
+            { "SuperTypes", nameof(CardViewModel.allCards) },
+            { "Types", nameof(CardViewModel.allCards) },
+            { "SubTypes", nameof(CardViewModel.allCards) },
+            { "Keywords", nameof(CardViewModel.allCards) },
+            { "Text", nameof(CardViewModel.allCards) },
+            { "Finishes", nameof(CardViewModel.allCards) },
+            { "Language", nameof(CardViewModel.myCards) },
+            { "SelectedCondition", nameof(CardViewModel.myCards) },
+            { "CardsForTrade", nameof(CardViewModel.myCards) }
         };
     }
 }

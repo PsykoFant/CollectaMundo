@@ -5,17 +5,13 @@ using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Models
 {
-    /// <summary>
-    /// Base class for all filters with common properties.
-    /// </summary>
+    // Base class for all filters with common properties.
     public abstract class Filters
     {
         public required string CriteriaKey { get; set; }
     }
 
-    /// <summary>
-    /// Selection-based filter, used during filtering operations.
-    /// </summary>
+    // Selection-based filter, used during filtering operations.
     public class FilterSelections : Filters, INotifyPropertyChanged
     {
         private OperatorType _operator = OperatorType.OR;
@@ -69,10 +65,7 @@ namespace CollectaMundo.Models
         }
     }
 
-
-    /// <summary>
-    /// Default values and options for a filter.
-    /// </summary>
+    // Default values and options for a filter.
     public class FilterDefaults : Filters, INotifyPropertyChanged
     {
         //public string CriteriaKey { get; set; } = string.Empty;
@@ -94,9 +87,7 @@ namespace CollectaMundo.Models
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
-    /// <summary>
-    /// Base class for strongly-typed filter criteria.
-    /// </summary>
+    // Base class for strongly-typed filter criteria.
     public abstract class BaseFilterCriteria : Filters
     {
         public OperatorType OperatorType { get; set; }
@@ -107,9 +98,7 @@ namespace CollectaMundo.Models
         public abstract bool Matches(CardSet card);
     }
 
-    /// <summary>
-    /// Strongly-typed filter for string properties.
-    /// </summary>
+    // Strongly-typed filter for string properties.    
     public class StringFilterCriteria : BaseFilterCriteria
     {
         public required Func<CardSet, string?> PropertySelector { get; set; }
@@ -143,9 +132,7 @@ namespace CollectaMundo.Models
         }
     }
 
-    /// <summary>
-    /// Strongly-typed filter for numeric properties.
-    /// </summary>
+    // Strongly-typed filter for numeric properties.
     public class NumericFilterCriteria : BaseFilterCriteria
     {
         public required Func<CardSet, double?> PropertySelector { get; set; }
@@ -173,70 +160,63 @@ namespace CollectaMundo.Models
             };
         }
     }
-
     public static class FilterManager
     {
         public static List<FilterDefaults> GetFilterDefaults(CardViewModel cardViewModel)
         {
-            List<FilterDefaults> filterDefaults = [];
-
-            foreach (var criteriaKey in FilterCriteriaMappings.CriteriaKeyToPropertyMap.Keys)
-            {
-                var filter = new FilterDefaults { CriteriaKey = criteriaKey };
-
-                // Use reflection to get the property based on CriteriaKey
-                var propertyName = FilterCriteriaMappings.CriteriaKeyToPropertyMap[criteriaKey];
-                var propertyInfo = typeof(CardSet).GetProperty(propertyName);
-
-                if (propertyInfo != null)
+            return FilterCriteriaMappings.CriteriaKeyToPropertyMap
+                .Select(entry =>
                 {
-                    // Extract values dynamically
-                    var values = cardViewModel.AllCardsView
-                        .Cast<CardSet>()
-                        .Select(card => propertyInfo.GetValue(card))
-                        .Where(value => value != null)
-                        .SelectMany(value =>
-                        {
-                            return value switch
-                            {
-                                string str => [str],      // Single string property
-                                List<string> strList => strList,  // List<string> property
-                                _ => [] // Unsupported type (ignored)
-                            };
-                        })
-                        .ToList();
+                    var sourceCollection = entry.Value == nameof(CardViewModel.allCards) ? cardViewModel.allCards : cardViewModel.myCards;
+                    var rawValues = ExtractCriteriaValues(entry.Key, sourceCollection);
 
-                    // Clean and filter the extracted values
-                    filter.AllCriteria = CleanAndFilter(values);
-                }
-                else
-                {
-                    Debug.WriteLine($"[ERROR] Property '{propertyName}' not found in CardSet.");
-                    filter.AllCriteria = [];
-                }
+                    var removeItems = GetUnwantedItems(entry.Key);
+                    var filteredValues = CleanAndFilter(rawValues, removeItems);
 
-                filter.DefaultText = $"{criteriaKey} ...";
-                filterDefaults.Add(filter);
-            }
-
-            return filterDefaults;
-        }
-
-        // Helper function to remove empty entries, trim whitespace, and split lists
-        private static List<string> CleanAndFilter(IEnumerable<string?> input)
-        {
-            char[] separatorArray = [',']; // Handles cases where values are comma-separated
-
-            return input
-                .Where(item => !string.IsNullOrWhiteSpace(item)) // Remove empty/null items
-                .SelectMany(item => item!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries)) // Split multi-values
-                .Select(item => item.Trim()) // Trim spaces
-                .Distinct()
-                .OrderBy(item => item)
+                    return new FilterDefaults
+                    {
+                        CriteriaKey = entry.Key,
+                        AllCriteria = filteredValues,
+                        DefaultText = $"{entry.Key} ..."
+                    };
+                })
                 .ToList();
         }
+        private static List<string> ExtractCriteriaValues(string propertyName, List<CardSet> sourceCollection)
+        {
+            var propertyInfo = typeof(CardSet).GetProperty(propertyName);
+            if (propertyInfo == null)
+            {
+                Debug.WriteLine($"[ERROR] Property '{propertyName}' not found in CardSet.");
+                return [];
+            }
 
+            return sourceCollection
+                .Select(card => propertyInfo.GetValue(card))
+                .Where(value => value != null)
+                .SelectMany(value => value is string str ? [str] : value as List<string> ?? [])
+                .ToList();
+        }
+        private static HashSet<string>? GetUnwantedItems(string criteriaKey)
+        {
+            return criteriaKey switch
+            {
+                "Types" => ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards"],
+                "SubTypes" => ["(creature", "and/or", "type)|Judge", "The"],
+                _ => null
+            };
+        }
+        private static List<string> CleanAndFilter(IEnumerable<string> input, HashSet<string>? removeItems = null)
+        {
+            char[] separatorArray = [','];
 
+            return [.. input
+                .SelectMany(item => item.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
+                .Select(item => item.Trim())
+                .Where(item => !string.IsNullOrEmpty(item) && (removeItems == null || !removeItems.Contains(item)))
+                .Distinct()
+                .OrderBy(item => item)];
+        }
         public static IEnumerable<BaseFilterCriteria> GetActiveFilters(IEnumerable<FilterSelections> filterSelections)
         {
             return filterSelections

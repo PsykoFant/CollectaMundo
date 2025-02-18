@@ -288,7 +288,7 @@ namespace CollectaMundo
 
             // Debugging
             Debug.WriteLine("===== DEBUG: Re-check UI Bindings After Reload =====");
-            FilterVM.DebugFilterItems("Rarity"); // Verify that filters are populated
+            //FilterVM.DebugFilterItems("Name"); // Verify that filters are populated
 
             Application.Current.Dispatcher.Invoke(() =>
             {
@@ -327,7 +327,6 @@ namespace CollectaMundo
 
             await ShowStatusWindowAsync(false);
         }
-
         public static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
@@ -367,7 +366,6 @@ namespace CollectaMundo
                 }
             }
         }
-
         public static async Task PopulateCardDataGridAsync(List<CardSet> cardList, string query, DataGridContext context)
         {
             try

@@ -284,27 +284,27 @@
 
                 <!--SubTypes-->
                 <ComboBox HorizontalAlignment="Left"
-Margin="10,335,0,0"
-VerticalAlignment="Top"
-Width="180" Height="20"
-DataContext="{Binding FilterVM.Filters[SubTypes], RelativeSource={RelativeSource AncestorType=Window}}"
-IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
+                          Margin="10,335,0,0"
+                          VerticalAlignment="Top"
+                          Width="180" Height="20"
+                          DataContext="{Binding FilterVM.Filters[SubTypes], RelativeSource={RelativeSource AncestorType=Window}}"
+                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox
-          Background="Transparent"
-          Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-          Foreground="Gray"
-          Padding="3,3,0,0"
-          Margin="0,0,0,0"
-          GotFocus="TextBox_GotFocus"
-          LostFocus="TextBox_LostFocus"/>
+                                    Background="Transparent"
+                                    Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    Foreground="Gray"
+                                    Padding="3,3,0,0"
+                                    Margin="0,0,0,0"
+                                    GotFocus="TextBox_GotFocus"
+                                    LostFocus="TextBox_LostFocus"/>
                                 <ToggleButton
-          Focusable="false"
-          ClickMode="Press"
-          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-          HorizontalAlignment="Right">
+                                    Focusable="false"
+                                    ClickMode="Press"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+                                    HorizontalAlignment="Right">
                                     <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
@@ -394,27 +394,26 @@ IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
 
                 <!--Finishes-->
                 <ComboBox HorizontalAlignment="Left"
-Margin="10,395,0,0"
-VerticalAlignment="Top"
-Width="180" Height="20"
-DataContext="{Binding FilterVM.Filters[Finishes], RelativeSource={RelativeSource AncestorType=Window}}"
-IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
+                          Margin="10,395,0,0"
+                          VerticalAlignment="Top"
+                          Width="180" Height="20"
+                          DataContext="{Binding FilterVM.Filters[Finishes], RelativeSource={RelativeSource AncestorType=Window}}" IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox
-          Background="Transparent"
-          Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-          Foreground="Gray"
-          Padding="3,3,0,0"
-          Margin="0,0,0,0"
-          GotFocus="TextBox_GotFocus"
-          LostFocus="TextBox_LostFocus"/>
+                                    Background="Transparent"
+                                    Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    Foreground="Gray"
+                                    Padding="3,3,0,0"
+                                    Margin="0,0,0,0"
+                                    GotFocus="TextBox_GotFocus"
+                                    LostFocus="TextBox_LostFocus"/>
                                 <ToggleButton
-          Focusable="false"
-          ClickMode="Press"
-          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-          HorizontalAlignment="Right">
+                                    Focusable="false"
+                                    ClickMode="Press"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+                                    HorizontalAlignment="Right">
                                     <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
@@ -508,28 +507,28 @@ IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
 
                 <!--SelectedCondition-->
                 <ComboBox x:Name="SelectedConditionComboBox"
-                    HorizontalAlignment="Left"
-Margin="10,545,0,0"
-VerticalAlignment="Top"
-Width="180" Height="20"
-DataContext="{Binding FilterVM.Filters[SelectedCondition], RelativeSource={RelativeSource AncestorType=Window}}"
-IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
+                          HorizontalAlignment="Left"
+                          Margin="10,545,0,0"
+                          VerticalAlignment="Top"
+                          Width="180" Height="20"
+                          DataContext="{Binding FilterVM.Filters[SelectedCondition], RelativeSource={RelativeSource AncestorType=Window}}"
+                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox
-          Background="Transparent"
-          Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-          Foreground="Gray"
-          Padding="3,3,0,0"
-          Margin="0,0,0,0"
-          GotFocus="TextBox_GotFocus"
-          LostFocus="TextBox_LostFocus"/>
+                                    Background="Transparent"
+                                    Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    Foreground="Gray"
+                                    Padding="3,3,0,0"
+                                    Margin="0,0,0,0"
+                                    GotFocus="TextBox_GotFocus"
+                                    LostFocus="TextBox_LostFocus"/>
                                 <ToggleButton
-          Focusable="false"
-          ClickMode="Press"
-          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-          HorizontalAlignment="Right">
+                                    Focusable="false"
+                                    ClickMode="Press"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+                                    HorizontalAlignment="Right">
                                     <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
@@ -762,21 +761,20 @@ IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Label Content="Name" VerticalAlignment="Center" Grid.Column="0"/>
-                                        <ComboBox x:Name="AllCardsNameComboBox"
-                                                  IsTextSearchEnabled="True" 
+                                        <ComboBox IsTextSearchEnabled="True"
                                                   Grid.Column="1"
                                                   HorizontalAlignment="Stretch"
                                                   Height="20"
                                                   IsEditable="True"
-                                                  Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}" 
-                                                  Tag="AllCardsName"
-                                                  SelectionChanged="DataGridHeaderComboBox_SelectionChanged">
+                                                  Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
                                                 </ItemsPanelTemplate>
                                             </ComboBox.ItemsPanel>
                                         </ComboBox>
+
                                     </Grid>
                                 </DataTemplate>
                             </DataGridTemplateColumn.HeaderTemplate>
@@ -1019,20 +1017,21 @@ IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Label Content="Name" VerticalAlignment="Center" Grid.Column="0"/>
-                                        <ComboBox x:Name="MyCollectionNameComboBox" IsTextSearchEnabled="True"
-                                                  Grid.Column="1"
-                                                  HorizontalAlignment="Stretch"
-                                                  Height="20"
-                                                  IsEditable="True"
-                                                  Width="{Binding ColumnWidths[1][0], RelativeSource={RelativeSource AncestorType=Window}}" 
-                                                  Tag="MyCollectionName"
-                                                  SelectionChanged="DataGridHeaderComboBox_SelectionChanged">
+                                        <ComboBox IsTextSearchEnabled="True"
+          Grid.Column="1"
+          HorizontalAlignment="Stretch"
+          Height="20"
+          IsEditable="True"
+          Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}"
+          ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
                                                 </ItemsPanelTemplate>
                                             </ComboBox.ItemsPanel>
                                         </ComboBox>
+
+
                                     </Grid>
                                 </DataTemplate>
                             </DataGridTemplateColumn.HeaderTemplate>

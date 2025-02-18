@@ -7,13 +7,10 @@ namespace CollectaMundo.Models
     public class FilterItemViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
+        protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         public string CriteriaKey { get; }
 
         public bool _suppressFiltering = false; // Used to temporarily disable filtering
-
         public ObservableCollection<string> AvailableOptions { get; }
 
         private string _filterText = string.Empty;
@@ -46,7 +43,6 @@ namespace CollectaMundo.Models
                 OnPropertyChanged(nameof(FilteredOptions));
             }
         }
-
         public FilterItemViewModel(string criteriaKey, ObservableCollection<string> availableOptions, string defaultText)
         {
             CriteriaKey = criteriaKey;
@@ -58,7 +54,6 @@ namespace CollectaMundo.Models
 
             _filteredOptions = new ObservableCollection<string>(availableOptions);
         }
-
 
         private bool _isDropDownOpen;
         public bool IsDropDownOpen
