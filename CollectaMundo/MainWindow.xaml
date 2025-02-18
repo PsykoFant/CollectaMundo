@@ -139,7 +139,7 @@
                                     LostFocus="TextBox_LostFocus"
                                     />
                                 <ToggleButton 
-                                    Content="{Binding CriteriaKey}"
+                                    Content="{Binding CriteriaKey, StringFormat='        {0}      '}"
                                     Focusable="false"
                                     ClickMode="Press"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
