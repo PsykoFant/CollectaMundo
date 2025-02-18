@@ -115,34 +115,33 @@
                 <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="10,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueOperatorComboBox_SelectionChanged"/>
                 <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="125,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueComboBox_SelectionChanged"/>
 
-                <ComboBox x:Name="RarityComboBox"
-                          HorizontalAlignment="Left"
+                <TextBlock Margin="10,160,0,0" Text="{Binding FilterVM.Filters.Count, RelativeSource={RelativeSource AncestorType=Window}}" />
+                <TextBlock Margin="10,175,0,0" Text="{Binding FilterVM.Filters[Rarity].CriteriaKey, RelativeSource={RelativeSource AncestorType=Window}}" />
+                
+                <ComboBox HorizontalAlignment="Left"
                           Margin="10,245,0,0"
                           VerticalAlignment="Top"
                           Width="180" Height="20"
-                          ItemsSource="{Binding Filters[0].AvailableOptions}"
-                          DataContext="{Binding Filters[0]}">
+                          DataContext="{Binding FilterVM.Filters[Rarity], RelativeSource={RelativeSource AncestorType=Window}}">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox x:Name="FilterRarityTextBox"
-                                         Background="Transparent"
-                                         Text="{Binding DefaultText, Mode=OneWay}"
-                                         Foreground="{TemplateBinding Foreground}"
-                                         Padding="3,3,0,0"
-                                         Margin="0,0,0,0"/>
-                                <ToggleButton x:Name="ToggleButtonRarity"
-                                              Content="Rarities" 
-                                              Focusable="false"
-                                              ClickMode="Press"
-                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                                              HorizontalAlignment="Right"
-                                              Width="70"/>                                
+                                <TextBox 
+                                    Background="Transparent"
+                                    Text="{Binding DefaultText, Mode=OneWay}"
+                                    Foreground="{TemplateBinding Foreground}"
+                                    Padding="3,3,0,0"
+                                    Margin="0,0,0,0"/>
+                                <ToggleButton 
+                                    Content="Rarities" 
+                                    Focusable="false"
+                                    ClickMode="Press"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+                                    HorizontalAlignment="Right"
+                                    Width="70"/>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox x:Name="FilterRarityListBox" 
-                                                 ItemsSource="{Binding AvailableOptions}"
-                                                 SelectionMode="Multiple">
+                                        <ListBox ItemsSource="{Binding AvailableOptions}" SelectionMode="Multiple">
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
@@ -169,46 +168,46 @@
                 <ComboBox x:Name="RarityOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,245,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
                     <ComboBoxItem Content="OR" IsSelected="True" />
                     <ComboBoxItem Content="NOT" />
-                </ComboBox>
+                </ComboBox>               
 
                 <!--Supertype listbox and filtering-->
-                <ComboBox x:Name="SuperTypesComboBox" HorizontalAlignment="Left" Margin="10,275,0,0" VerticalAlignment="Top" Width="180" Height="20" DropDownOpened="DynamicallyPopulatedComboBox_DropDownOpened">
+                <ComboBox HorizontalAlignment="Left"
+                          Margin="10,275,0,0"
+                          VerticalAlignment="Top"
+                          Width="180" Height="20"
+                          DataContext="{Binding FilterVM.Filters[SuperTypes], RelativeSource={RelativeSource AncestorType=Window}}">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox x:Name="FilterSuperTypesTextBox"
-                                         Text="Filter SuperTypes ..."
-                                         Background="Transparent"
-                                         TextChanged="FilterTextBox_TextChanged"
-                                         GotFocus="TextBox_GotFocus"
-                                         LostFocus="TextBox_LostFocus"
-                                         Foreground="Gray"
-                                         Padding="3,3,0,0"
-                                         Margin="0,0,0,0"/>
-                                <ToggleButton x:Name="ToggleButtonSuperTypes"
-                                              Content="Supertypes" 
-                                              Focusable="false"
-                                              ClickMode="Press"
-                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                                              HorizontalAlignment="Right"
-                                              Width="70"/>
+                                <TextBox 
+                                    Background="Transparent"
+                                    Text="{Binding DefaultText, Mode=OneWay}"
+                                    Foreground="{TemplateBinding Foreground}"
+                                    Padding="3,3,0,0"
+                                    Margin="0,0,0,0"/>
+                                <ToggleButton 
+                                    Content="Rarities" 
+                                    Focusable="false"
+                                    ClickMode="Press"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+                                    HorizontalAlignment="Right"
+                                    Width="70"/>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox x:Name="FilterSuperTypesListBox" ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource Mode=TemplatedParent}}" SelectionMode="Multiple">
+                                        <ListBox ItemsSource="{Binding AvailableOptions}" SelectionMode="Multiple">
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
                                                     <Setter Property="Template">
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <CheckBox Margin="5,2" IsChecked="{TemplateBinding IsSelected}" Loaded="CheckBox_Loaded" Tag="SuperTypes">
+                                                                <CheckBox Margin="5,2"
+                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                                                     <ContentPresenter/>
                                                                 </CheckBox>
                                                             </ControlTemplate>
                                                         </Setter.Value>
                                                     </Setter>
-                                                    <EventSetter Event="ToggleButton.Checked" Handler="CheckBox_Checked"/>
-                                                    <EventSetter Event="ToggleButton.Unchecked" Handler="CheckBox_Unchecked"/>
                                                 </Style>
                                             </ListBox.Resources>
                                         </ListBox>
@@ -217,7 +216,6 @@
                             </Grid>
                         </ControlTemplate>
                     </ComboBox.Template>
-                    <sys:String>&gt;</sys:String>
                 </ComboBox>
                 <ComboBox x:Name="SuperTypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,275,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
                     <ComboBoxItem Content="OR" IsSelected="True" />

@@ -151,7 +151,7 @@ namespace CollectaMundo
         {
             InitializeComponent();
             _currentInstance = this;
-            DataContext = this;
+            //DataContext = this;
             CardVM = new CardViewModel();
 
             // Set up system
@@ -172,18 +172,6 @@ namespace CollectaMundo
             MyCollectionDataGrid.LayoutUpdated += (s, e) => FilterManagerOld.DataGrid_LayoutUpdated(1);
             AllCardsForDecksDataGrid.LayoutUpdated += (s, e) => FilterManagerOld.DataGrid_LayoutUpdated(2);
         }
-
-        private void DebugFilterInitialization()
-        {
-            Debug.WriteLine("===== DEBUG: Initializing Filters =====");
-
-            // Verify "Rarity" filter
-            FilterVM.DebugFilterItems("Rarity");
-
-            Debug.WriteLine("===== END DEBUG =====");
-        }
-
-
 
         #region Tests
 
@@ -289,13 +277,23 @@ namespace CollectaMundo
             await CardVM.PopulateCardDataGridAsync(CardVM.allCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
             await CardVM.PopulateCardDataGridAsync(CardVM.myCards, CardVM.MyCardsView, myCollectionQuery, DataGridContext.MyCollection);
 
-            OnPropertyChanged(nameof(CardVM));
 
+            OnPropertyChanged(nameof(CardVM)); // This ensures CardVM bindings refresh
+
+            // Assign the new FilterVM object AFTER data is available
             FilterVM = new FilterViewModel(CardVM);
-            OnPropertyChanged(nameof(FilterVM));
 
-            // Debugging: Verify initialization
-            //DebugFilterInitialization();
+            Debug.WriteLine($"Filters.Count AFTER Data Load: {FilterVM.Filters.Count}");
+            OnPropertyChanged(nameof(FilterVM)); // Force UI refresh so bindings update
+
+            // Debugging
+            Debug.WriteLine("===== DEBUG: Re-check UI Bindings After Reload =====");
+            FilterVM.DebugFilterItems("Rarity"); // Verify that filters are populated
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                OnPropertyChanged(nameof(FilterVM));
+            }, System.Windows.Threading.DispatcherPriority.Render);
 
             //Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, DataGridContext.AllCards);
             //Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, DataGridContext.MyCollection);
@@ -672,6 +670,7 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error populating formats list: {ex.Message}");
             }
         }
+
         //public Task PopulateFilterUiElements()
         //{
         //    try

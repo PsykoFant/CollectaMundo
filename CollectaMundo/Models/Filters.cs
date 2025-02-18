@@ -199,16 +199,15 @@ namespace CollectaMundo.Models
                         {
                             return value switch
                             {
-                                string str => [str], // Single string property
-                                List<string> strList => strList,        // List<string> property
-                                _ => []                 // Unsupported type (ignored)
+                                string str => [str],      // Single string property
+                                List<string> strList => strList,  // List<string> property
+                                _ => [] // Unsupported type (ignored)
                             };
                         })
-                        .Distinct()
-                        .OrderBy(v => v)
                         .ToList();
 
-                    filter.AllCriteria = values;
+                    // Clean and filter the extracted values
+                    filter.AllCriteria = CleanAndFilter(values);
                 }
                 else
                 {
@@ -222,6 +221,21 @@ namespace CollectaMundo.Models
 
             return filterDefaults;
         }
+
+        // Helper function to remove empty entries, trim whitespace, and split lists
+        private static List<string> CleanAndFilter(IEnumerable<string?> input)
+        {
+            char[] separatorArray = [',']; // Handles cases where values are comma-separated
+
+            return input
+                .Where(item => !string.IsNullOrWhiteSpace(item)) // Remove empty/null items
+                .SelectMany(item => item!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries)) // Split multi-values
+                .Select(item => item.Trim()) // Trim spaces
+                .Distinct()
+                .OrderBy(item => item)
+                .ToList();
+        }
+
 
         public static IEnumerable<BaseFilterCriteria> GetActiveFilters(IEnumerable<FilterSelections> filterSelections)
         {

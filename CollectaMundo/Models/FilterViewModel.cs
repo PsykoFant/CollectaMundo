@@ -1,12 +1,11 @@
-﻿using System.Collections.ObjectModel;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 
 namespace CollectaMundo.Models
 {
     public class FilterViewModel : INotifyPropertyChanged
     {
-        public ObservableCollection<FilterItemViewModel> Filters { get; } = new();
+        public Dictionary<string, FilterItemViewModel> Filters { get; } = new();
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) =>
@@ -24,14 +23,12 @@ namespace CollectaMundo.Models
 
             foreach (var filter in filterDefaults)
             {
-                Filters.Add(new FilterItemViewModel(filter));
+                Filters[filter.CriteriaKey] = new FilterItemViewModel(filter);
             }
-
-            DebugFilterItems("Rarity");
         }
 
         public FilterItemViewModel? GetFilterItem(string criteriaKey) =>
-            Filters.FirstOrDefault(f => f.CriteriaKey == criteriaKey);
+            Filters.TryGetValue(criteriaKey, out var filterItem) ? filterItem : null;
 
         public void DebugFilterItems(string criteriaKey)
         {
