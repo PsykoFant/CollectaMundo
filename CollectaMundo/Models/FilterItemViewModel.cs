@@ -9,21 +9,55 @@ namespace CollectaMundo.Models
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        public string CriteriaKey { get; } // e.g. "Rarity"
+        public ObservableCollection<string> AvailableOptions { get; } // Full list of options
 
-        // Underlying FilterDefaults instance
-        public FilterDefaults FilterDefaults { get; }
-
-        public string CriteriaKey => FilterDefaults.CriteriaKey;
-
-        // Directly bind to AllCriteria from FilterDefaults
-        public ObservableCollection<string> AvailableOptions { get; }
-
-        public string DefaultText => FilterDefaults.DefaultText;
-
-        public FilterItemViewModel(FilterDefaults filterDefaults)
+        private string _filterText = string.Empty;
+        public string FilterText
         {
-            FilterDefaults = filterDefaults;
-            AvailableOptions = new ObservableCollection<string>(filterDefaults.AllCriteria);
+            get => _filterText;
+            set
+            {
+                if (_filterText != value)
+                {
+                    _filterText = value;
+                    OnPropertyChanged(nameof(FilterText));
+                    OnPropertyChanged(nameof(FilteredOptions)); // Notify UI
+                }
+            }
+        }
+        public ObservableCollection<string> FilteredOptions
+        {
+            get
+            {
+                var filtered = AvailableOptions
+                    .Where(option => string.IsNullOrWhiteSpace(FilterText) ||
+                                     option.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                    .ToList();
+
+                return new ObservableCollection<string>(filtered);
+            }
+        }
+
+        private bool _isDropDownOpen;
+        public bool IsDropDownOpen
+        {
+            get => _isDropDownOpen;
+            set
+            {
+                if (_isDropDownOpen != value)
+                {
+                    _isDropDownOpen = value;
+                    OnPropertyChanged(nameof(IsDropDownOpen));
+                }
+            }
+        }
+        public string DefaultText { get; }
+        public FilterItemViewModel(string criteriaKey, ObservableCollection<string> availableOptions, string defaultText)
+        {
+            CriteriaKey = criteriaKey;
+            AvailableOptions = availableOptions;
+            DefaultText = defaultText;
         }
 
         public void DebugFilterItem()

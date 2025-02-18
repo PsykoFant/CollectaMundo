@@ -1095,12 +1095,6 @@ namespace CollectaMundo
             }
         }
 
-
-
-        // Every time a dynamically populated filter combobox is opened, it is populated with the correct values, including selected items
-
-
-
         private void DynamicallyPopulatedComboBox_DropDownOpened(object sender, EventArgs e)
         {
             if (sender is ComboBox comboBox)
@@ -1266,26 +1260,28 @@ namespace CollectaMundo
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
-            if (sender is TextBox textBox)
+            if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
             {
-                textBox.Foreground = new SolidColorBrush(Colors.Black);
-                //if (textBox.Text == FilterVM.DefaultText) // Check against FilterVM.DefaultText
-                //{
-                //    textBox.Text = string.Empty;
-                //}
+                if (filterItem.FilterText == filterItem.DefaultText)
+                {
+                    filterItem.FilterText = "";
+                }
+                filterItem.IsDropDownOpen = true; // Open dropdown
             }
         }
+
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (sender is TextBox textBox)
+            if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
             {
-                if (string.IsNullOrWhiteSpace(textBox.Text))
+                if (string.IsNullOrWhiteSpace(filterItem.FilterText))
                 {
-                    //textBox.Text = FilterVM.DefaultText;
-                    textBox.Foreground = new SolidColorBrush(Colors.Gray);
+                    filterItem.FilterText = filterItem.DefaultText; // Restore default text
                 }
+                filterItem.IsDropDownOpen = false; // Close dropdown
             }
         }
+
 
 
         public void ApplyFiltersToAllLists()

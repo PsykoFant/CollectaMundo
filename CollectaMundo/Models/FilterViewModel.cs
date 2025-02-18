@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 
 namespace CollectaMundo.Models
@@ -14,16 +15,11 @@ namespace CollectaMundo.Models
         public FilterViewModel(CardViewModel cardViewModel)
         {
             var filterDefaults = FilterManager.GetFilterDefaults(cardViewModel);
-
-            if (filterDefaults.Count == 0)
-            {
-                Debug.WriteLine("[ERROR] No filter defaults found! UI bindings will fail.");
-                return;
-            }
-
             foreach (var filter in filterDefaults)
             {
-                Filters[filter.CriteriaKey] = new FilterItemViewModel(filter);
+                Filters[filter.CriteriaKey] = new FilterItemViewModel(filter.CriteriaKey,
+                                                                      new ObservableCollection<string>(filter.AllCriteria),
+                                                                      filter.DefaultText);
             }
         }
 
