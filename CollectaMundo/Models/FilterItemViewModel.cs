@@ -9,8 +9,12 @@ namespace CollectaMundo.Models
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        public string CriteriaKey { get; } // e.g. "Rarity"
-        public ObservableCollection<string> AvailableOptions { get; } // Full list of options
+
+        public string CriteriaKey { get; }
+
+        public bool _suppressFiltering = false; // Used to temporarily disable filtering
+
+        public ObservableCollection<string> AvailableOptions { get; }
 
         private string _filterText = string.Empty;
         public string FilterText
@@ -22,22 +26,39 @@ namespace CollectaMundo.Models
                 {
                     _filterText = value;
                     OnPropertyChanged(nameof(FilterText));
-                    OnPropertyChanged(nameof(FilteredOptions)); // Notify UI
+
+                    if (!_suppressFiltering) // Only update filtering when allowed
+                    {
+                        UpdateFilteredOptions();
+                    }
                 }
             }
         }
+        public string DefaultText { get; }
+
+        private ObservableCollection<string> _filteredOptions;
         public ObservableCollection<string> FilteredOptions
         {
-            get
+            get => _filteredOptions;
+            private set
             {
-                var filtered = AvailableOptions
-                    .Where(option => string.IsNullOrWhiteSpace(FilterText) ||
-                                     option.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0)
-                    .ToList();
-
-                return new ObservableCollection<string>(filtered);
+                _filteredOptions = value;
+                OnPropertyChanged(nameof(FilteredOptions));
             }
         }
+
+        public FilterItemViewModel(string criteriaKey, ObservableCollection<string> availableOptions, string defaultText)
+        {
+            CriteriaKey = criteriaKey;
+            AvailableOptions = availableOptions;
+            DefaultText = defaultText;
+
+            // Set FilterText to DefaultText at startup
+            _filterText = DefaultText;
+
+            _filteredOptions = new ObservableCollection<string>(availableOptions);
+        }
+
 
         private bool _isDropDownOpen;
         public bool IsDropDownOpen
@@ -45,27 +66,28 @@ namespace CollectaMundo.Models
             get => _isDropDownOpen;
             set
             {
-                if (_isDropDownOpen != value)
-                {
-                    _isDropDownOpen = value;
-                    OnPropertyChanged(nameof(IsDropDownOpen));
-                }
+                _isDropDownOpen = value;
+                OnPropertyChanged(nameof(IsDropDownOpen));
             }
         }
-        public string DefaultText { get; }
-        public FilterItemViewModel(string criteriaKey, ObservableCollection<string> availableOptions, string defaultText)
+        private void UpdateFilteredOptions()
         {
-            CriteriaKey = criteriaKey;
-            AvailableOptions = availableOptions;
-            DefaultText = defaultText;
+            var filtered = AvailableOptions
+                .Where(option => string.IsNullOrWhiteSpace(FilterText) ||
+                                 option.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                .ToList();
+
+            FilteredOptions = new ObservableCollection<string>(filtered);
         }
 
         public void DebugFilterItem()
         {
             Debug.WriteLine($"===== DEBUG: Filter Item ({CriteriaKey}) =====");
             Debug.WriteLine($"Default Text: {DefaultText}");
+            Debug.WriteLine($"Filter Text: {FilterText}");
             Debug.WriteLine($"Available Options: {string.Join(", ", AvailableOptions)}");
             Debug.WriteLine($"====================================");
         }
     }
+
 }

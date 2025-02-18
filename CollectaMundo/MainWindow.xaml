@@ -123,20 +123,21 @@
                           Margin="10,245,0,0"
                           VerticalAlignment="Top"
                           Width="180" Height="20"
-                          DataContext="{Binding FilterVM.Filters[Rarity], RelativeSource={RelativeSource AncestorType=Window}}">
+                          ItemsSource="{Binding FilterVM.Filters[Rarity].FilteredOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                          DataContext="{Binding FilterVM.Filters[Rarity], RelativeSource={RelativeSource AncestorType=Window}}"
+                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox Background="Transparent"
-                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                     Foreground="{TemplateBinding Foreground}"
-                                     Padding="3,3,0,0"
-                                     Margin="0,0,0,0"
-                                     IsHitTestVisible="True"
-                                     Focusable="True"
-                                     IsReadOnly="False"
-                                     GotFocus="TextBox_GotFocus"
-                                     LostFocus="TextBox_LostFocus"/>
+                                <TextBox
+                                    Background="Transparent"
+                                    Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    Foreground="{TemplateBinding Foreground}"
+                                    Padding="3,3,0,0"
+                                    Margin="0,0,0,0"
+                                    GotFocus="TextBox_GotFocus"
+                                    LostFocus="TextBox_LostFocus"
+                                    />
                                 <ToggleButton 
                                     Content="Rarities" 
                                     Focusable="false"
@@ -146,7 +147,7 @@
                                     Width="70"/>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox ItemsSource="{Binding AvailableOptions}" SelectionMode="Multiple">
+                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple">
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
@@ -154,7 +155,7 @@
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                 <CheckBox Margin="5,2"
-                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
+                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                                                     <ContentPresenter/>
                                                                 </CheckBox>
                                                             </ControlTemplate>
@@ -169,6 +170,7 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
+
 
                 <ComboBox x:Name="RarityOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,245,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
                     <ComboBoxItem Content="OR" IsSelected="True" />

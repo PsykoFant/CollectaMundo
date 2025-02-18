@@ -880,7 +880,7 @@ namespace CollectaMundo
 
             //OperatorType operatorSelection = OperatorType.Unknown;
 
-            if (sender is ComboBox comboBox)
+            if (sender is ComboBox)
             {
                 //// Determine the selected operator
                 //if (comboBox.SelectedItem is ComboBoxItem selectedItem)
@@ -1097,7 +1097,7 @@ namespace CollectaMundo
 
         private void DynamicallyPopulatedComboBox_DropDownOpened(object sender, EventArgs e)
         {
-            if (sender is ComboBox comboBox)
+            if (sender is ComboBox)
             {
                 try
                 {
@@ -1262,25 +1262,40 @@ namespace CollectaMundo
         {
             if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
             {
-                if (filterItem.FilterText == filterItem.DefaultText)
+                // Store reference to the TextBox
+                var textBoxRef = textBox;
+
+                // Force WPF to recognize a change by setting IsDropDownOpen to false first
+                filterItem.IsDropDownOpen = false;
+
+                Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    filterItem.FilterText = "";
-                }
-                filterItem.IsDropDownOpen = true; // Open dropdown
+                    filterItem.IsDropDownOpen = true;
+
+                    // Restore focus explicitly after dropdown opens
+                    textBoxRef.Focus();
+                    textBoxRef.CaretIndex = textBoxRef.Text.Length; // Ensure caret is at the end
+                }, System.Windows.Threading.DispatcherPriority.Background);
+
+                textBox.Text = ""; // Clear text on focus
             }
         }
+
 
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)
         {
             if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
             {
-                if (string.IsNullOrWhiteSpace(filterItem.FilterText))
+                if (string.IsNullOrWhiteSpace(textBox.Text))
                 {
-                    filterItem.FilterText = filterItem.DefaultText; // Restore default text
+                    filterItem._suppressFiltering = true; // Temporarily disable filtering
+                    filterItem.FilterText = filterItem.DefaultText; // Set text without triggering filtering
+                    filterItem._suppressFiltering = false; // Re-enable filtering
                 }
-                filterItem.IsDropDownOpen = false; // Close dropdown
             }
         }
+
+
 
 
 
