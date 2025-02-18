@@ -18,7 +18,7 @@ namespace CollectaMundo
     {
         #region Set up varibales
         public CardViewModel CardVM { get; }
-        public FilterViewModel FilterVM { get; private set; }
+        public FilterViewModel? FilterVM { get; private set; }
 
         private static MainWindow? _currentInstance;
         public static MainWindow CurrentInstance
@@ -151,7 +151,7 @@ namespace CollectaMundo
         {
             InitializeComponent();
             _currentInstance = this;
-
+            DataContext = this;
             CardVM = new CardViewModel();
 
             // Set up system
@@ -295,7 +295,7 @@ namespace CollectaMundo
             OnPropertyChanged(nameof(FilterVM));
 
             // Debugging: Verify initialization
-            DebugFilterInitialization();
+            //DebugFilterInitialization();
 
             //Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, DataGridContext.AllCards);
             //Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, DataGridContext.MyCollection);

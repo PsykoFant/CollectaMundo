@@ -115,32 +115,34 @@
                 <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="10,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueOperatorComboBox_SelectionChanged"/>
                 <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="125,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueComboBox_SelectionChanged"/>
 
-                <ComboBox x:Name="RarityComboBox" Tag="Rarity" HorizontalAlignment="Left" Margin="10,245,0,0" VerticalAlignment="Top" Width="180" Height="20">
+                <ComboBox x:Name="RarityComboBox"
+                          HorizontalAlignment="Left"
+                          Margin="10,245,0,0"
+                          VerticalAlignment="Top"
+                          Width="180" Height="20"
+                          ItemsSource="{Binding Filters[0].AvailableOptions}"
+                          DataContext="{Binding Filters[0]}">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox
-                                     x:Name="FilterTextBox"
-                                     GotFocus="TextBox_GotFocus"
-                                     LostFocus="TextBox_LostFocus"
-                                     Background="Transparent"
-                                     Foreground="Gray"
-                                     Padding="3,3,0,0"
-                                     Margin="0,0,0,0"/>
-
+                                <TextBox x:Name="FilterRarityTextBox"
+                                         Background="Transparent"
+                                         Text="{Binding DefaultText, Mode=OneWay}"
+                                         Foreground="{TemplateBinding Foreground}"
+                                         Padding="3,3,0,0"
+                                         Margin="0,0,0,0"/>
                                 <ToggleButton x:Name="ToggleButtonRarity"
-                                      Content="Rarities"
-                                      Focusable="false"
-                                      ClickMode="Press"
-                                      IsChecked="{Binding FilterVM.IsDropDownOpen, Mode=TwoWay}"
-                                      HorizontalAlignment="Right"
-                                      Width="70"/>
-                                <Popup x:Name="Popup" 
-                                   Placement="Bottom" 
-                                   IsOpen="{Binding FilterVM.IsDropDownOpen, Mode=TwoWay}"
-                                   StaysOpen="False">
+                                              Content="Rarities" 
+                                              Focusable="false"
+                                              ClickMode="Press"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
+                                              HorizontalAlignment="Right"
+                                              Width="70"/>                                
+                                <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox SelectionMode="Multiple">
+                                        <ListBox x:Name="FilterRarityListBox" 
+                                                 ItemsSource="{Binding AvailableOptions}"
+                                                 SelectionMode="Multiple">
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
@@ -148,7 +150,9 @@
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                 <CheckBox Margin="5,2"
-                                                          Content="{Binding}"/>
+                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
+                                                                    <ContentPresenter/>
+                                                                </CheckBox>
                                                             </ControlTemplate>
                                                         </Setter.Value>
                                                     </Setter>

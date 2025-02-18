@@ -1,26 +1,33 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 
 namespace CollectaMundo.Models
 {
-    public class FilterViewModel
+    public class FilterViewModel : INotifyPropertyChanged
     {
         public ObservableCollection<FilterItemViewModel> Filters { get; } = new();
-        private readonly CardViewModel _cardViewModel;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         public FilterViewModel(CardViewModel cardViewModel)
         {
-            _cardViewModel = cardViewModel;
-            PopulateFilters();
-        }
+            var filterDefaults = FilterManager.GetFilterDefaults(cardViewModel);
 
-        private void PopulateFilters()
-        {
-            List<FilterDefaults> defaults = FilterManager.GetFilterDefaults(_cardViewModel);
-            foreach (var filter in defaults)
+            if (filterDefaults.Count == 0)
+            {
+                Debug.WriteLine("[ERROR] No filter defaults found! UI bindings will fail.");
+                return;
+            }
+
+            foreach (var filter in filterDefaults)
             {
                 Filters.Add(new FilterItemViewModel(filter));
             }
+
+            DebugFilterItems("Rarity");
         }
 
         public FilterItemViewModel? GetFilterItem(string criteriaKey) =>
@@ -39,6 +46,7 @@ namespace CollectaMundo.Models
             }
         }
     }
+
 }
 
 
