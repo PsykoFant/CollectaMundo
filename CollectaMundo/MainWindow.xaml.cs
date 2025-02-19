@@ -282,25 +282,12 @@ namespace CollectaMundo
 
             // Assign the new FilterVM object AFTER data is available
             FilterVM = new FilterViewModel(CardVM);
-
-            Debug.WriteLine($"Filters.Count AFTER Data Load: {FilterVM.Filters.Count}");
             OnPropertyChanged(nameof(FilterVM)); // Force UI refresh so bindings update
 
-            // Debugging
-            Debug.WriteLine("===== DEBUG: Re-check UI Bindings After Reload =====");
-            FilterVM.DebugFilterItems("Name"); // Verify that filters are populated
-
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                OnPropertyChanged(nameof(FilterVM));
-            }, System.Windows.Threading.DispatcherPriority.Render);
-
-            //Task loadAllCards = PopulateCardDataGridAsync(allCards, allCardsQuery, DataGridContext.AllCards);
-            //Task loadMyCollection = PopulateCardDataGridAsync(myCards, myCollectionQuery, DataGridContext.MyCollection);
-            Task loadCardsForDecks = PopulateCardDataGridAsync(allCardsForDecks, allCardsForDecksQuery, DataGridContext.AllCardsForDecks);
             Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
             Task loadDecks = LoadAllDecksAsync();
             Task populateAllFormatsList = PopulateAllFormatsListAsync();
+            Task loadCardsForDecks = PopulateCardDataGridAsync(allCardsForDecks, allCardsForDecksQuery, DataGridContext.AllCardsForDecks);
 
             //await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, loadDecks, populateAllFormatsList, loadCardsForDecks);
             await Task.WhenAll(loadColorIcons, loadDecks, populateAllFormatsList, loadCardsForDecks);
