@@ -1,12 +1,11 @@
-﻿using System.Collections.ObjectModel;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Diagnostics;
 
 namespace CollectaMundo.Models
 {
     public class FilterViewModel : INotifyPropertyChanged
     {
-        public Dictionary<string, FilterItemViewModel> Filters { get; } = new();
+        public Dictionary<string, FilterItemViewModel> Filters { get; } = [];
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) =>
@@ -17,9 +16,7 @@ namespace CollectaMundo.Models
             var filterDefaults = FilterManager.GetFilterDefaults(cardViewModel);
             foreach (var filter in filterDefaults)
             {
-                Filters[filter.CriteriaKey] = new FilterItemViewModel(filter.CriteriaKey,
-                                                                      new ObservableCollection<string>(filter.AllCriteria),
-                                                                      filter.DefaultText);
+                Filters[filter.CriteriaKey] = new FilterItemViewModel(filter.CriteriaKey, [.. filter.AllCriteria], filter.DefaultText);
             }
         }
 

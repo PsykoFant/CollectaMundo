@@ -774,7 +774,6 @@ IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
                                                 </ItemsPanelTemplate>
                                             </ComboBox.ItemsPanel>
                                         </ComboBox>
-
                                     </Grid>
                                 </DataTemplate>
                             </DataGridTemplateColumn.HeaderTemplate>
@@ -793,14 +792,13 @@ IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Label Content="Set" VerticalAlignment="Center" Grid.Column="0"/>
-                                        <ComboBox x:Name="AllCardsSetComboBox" IsTextSearchEnabled="True" 
+                                        <ComboBox IsTextSearchEnabled="True"
                                                   Grid.Column="1"
                                                   HorizontalAlignment="Stretch"
                                                   Height="20"
                                                   IsEditable="True"
-                                                  Width="{Binding ColumnWidths[0][1], RelativeSource={RelativeSource AncestorType=Window}}" 
-                                                  Tag="AllCardsSet"
-                                                  SelectionChanged="DataGridHeaderComboBox_SelectionChanged">
+                                                  Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  ItemsSource="{Binding FilterVM.Filters[SetName].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />

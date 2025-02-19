@@ -52,7 +52,7 @@ namespace CollectaMundo.Models
             // Set FilterText to DefaultText at startup
             _filterText = DefaultText;
 
-            _filteredOptions = new ObservableCollection<string>(availableOptions);
+            _filteredOptions = [.. availableOptions];
         }
 
         private bool _isDropDownOpen;
@@ -72,7 +72,7 @@ namespace CollectaMundo.Models
                                  option.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0)
                 .ToList();
 
-            FilteredOptions = new ObservableCollection<string>(filtered);
+            FilteredOptions = [.. filtered];
         }
 
         public void DebugFilterItem()

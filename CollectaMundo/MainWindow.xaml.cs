@@ -288,7 +288,7 @@ namespace CollectaMundo
 
             // Debugging
             Debug.WriteLine("===== DEBUG: Re-check UI Bindings After Reload =====");
-            //FilterVM.DebugFilterItems("Name"); // Verify that filters are populated
+            FilterVM.DebugFilterItems("SetName"); // Verify that filters are populated
 
             Application.Current.Dispatcher.Invoke(() =>
             {

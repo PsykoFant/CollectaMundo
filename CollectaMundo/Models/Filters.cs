@@ -164,7 +164,7 @@ namespace CollectaMundo.Models
     {
         public static List<FilterDefaults> GetFilterDefaults(CardViewModel cardViewModel)
         {
-            return FilterCriteriaMappings.CriteriaKeyToPropertyMap
+            return [.. FilterCriteriaMappings.CriteriaKeyToPropertyMap
                 .Select(entry =>
                 {
                     var sourceCollection = entry.Value == nameof(CardViewModel.allCards) ? cardViewModel.allCards : cardViewModel.myCards;
@@ -179,8 +179,7 @@ namespace CollectaMundo.Models
                         AllCriteria = filteredValues,
                         DefaultText = $"{entry.Key} ..."
                     };
-                })
-                .ToList();
+                })];
         }
         private static List<string> ExtractCriteriaValues(string propertyName, List<CardSet> sourceCollection)
         {
@@ -191,11 +190,10 @@ namespace CollectaMundo.Models
                 return [];
             }
 
-            return sourceCollection
+            return [.. sourceCollection
                 .Select(card => propertyInfo.GetValue(card))
                 .Where(value => value != null)
-                .SelectMany(value => value is string str ? [str] : value as List<string> ?? [])
-                .ToList();
+                .SelectMany(value => value is string str ? [str] : value as List<string> ?? [])];
         }
         private static HashSet<string>? GetUnwantedItems(string criteriaKey)
         {
