@@ -1279,8 +1279,6 @@ namespace CollectaMundo
                 textBox.Foreground = new SolidColorBrush(Colors.Black);
             }
         }
-
-
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)
         {
             if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
