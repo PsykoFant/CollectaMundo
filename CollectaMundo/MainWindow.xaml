@@ -116,40 +116,42 @@
                 <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="125,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueComboBox_SelectionChanged"/>
 
                 <!--Rarity-->
-                <ComboBox HorizontalAlignment="Left"
-                          Margin="10,245,0,0"
-                          VerticalAlignment="Top"
-                          Width="180" Height="20"
-                          DataContext="{Binding FilterVM.Filters[Rarity], RelativeSource={RelativeSource AncestorType=Window}}"
-                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
+                <ComboBox DataContext="{Binding FilterVM.Filters[Rarity], RelativeSource={RelativeSource AncestorType=Window}}"
+                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
+                          HorizontalAlignment="Left" VerticalAlignment="Top" 
+                          Margin="10,245,0,0" 
+                          Width="180" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox
-                                    Background="Transparent"
+                                <TextBox 
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Foreground="Gray"
-                                    Padding="3,3,0,0"
-                                    Margin="0,0,0,0"
+                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
                                     GotFocus="TextBox_GotFocus"
                                     LostFocus="TextBox_LostFocus"/>
                                 <ToggleButton 
-                                    Focusable="false"
-                                    ClickMode="Press"
-                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                                    HorizontalAlignment="Right">
+                                    Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                     <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple">
+                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple"
+                                                 VirtualizingPanel.IsVirtualizing="True"
+                                                 ScrollViewer.CanContentScroll="True">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel />
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
                                                     <Setter Property="Template">
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <CheckBox Margin="5,2" IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
+                                                                <CheckBox Margin="5,2"
+                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                                                     <ContentPresenter/>
                                                                 </CheckBox>
                                                             </ControlTemplate>
@@ -170,40 +172,42 @@
                 </ComboBox>
 
                 <!--SuperTypes-->
-                <ComboBox HorizontalAlignment="Left"
-                          Margin="10,275,0,0"
-                          VerticalAlignment="Top"
-                          Width="180" Height="20"
-                          DataContext="{Binding FilterVM.Filters[SuperTypes], RelativeSource={RelativeSource AncestorType=Window}}"
-                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
+                <ComboBox DataContext="{Binding FilterVM.Filters[SuperTypes], RelativeSource={RelativeSource AncestorType=Window}}"
+                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
+                          HorizontalAlignment="Left" VerticalAlignment="Top" 
+                          Margin="10,275,0,0" 
+                          Width="180" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox
-                                    Background="Transparent"
+                                <TextBox 
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Foreground="Gray"
-                                    Padding="3,3,0,0"
-                                    Margin="0,0,0,0"
+                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
                                     GotFocus="TextBox_GotFocus"
                                     LostFocus="TextBox_LostFocus"/>
-                                <ToggleButton
-                                    Focusable="false"
-                                    ClickMode="Press"
-                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                                    HorizontalAlignment="Right">
+                                <ToggleButton 
+                                    Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                     <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple">
+                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple"
+                                                 VirtualizingPanel.IsVirtualizing="True"
+                                                 ScrollViewer.CanContentScroll="True">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel />
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
                                                     <Setter Property="Template">
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <CheckBox Margin="5,2" IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
+                                                                <CheckBox Margin="5,2"
+                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                                                     <ContentPresenter/>
                                                                 </CheckBox>
                                                             </ControlTemplate>
@@ -225,40 +229,42 @@
                 </ComboBox>
 
                 <!--Types-->
-                <ComboBox HorizontalAlignment="Left"
-          Margin="10,305,0,0"
-          VerticalAlignment="Top"
-          Width="180" Height="20"
-          DataContext="{Binding FilterVM.Filters[Types], RelativeSource={RelativeSource AncestorType=Window}}"
-          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
+                <ComboBox DataContext="{Binding FilterVM.Filters[Types], RelativeSource={RelativeSource AncestorType=Window}}"
+                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
+                          HorizontalAlignment="Left" VerticalAlignment="Top" 
+                          Margin="10,305,0,0" 
+                          Width="180" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox
-                    Background="Transparent"
-                    Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                    Foreground="Gray"
-                    Padding="3,3,0,0"
-                    Margin="0,0,0,0"
-                    GotFocus="TextBox_GotFocus"
-                    LostFocus="TextBox_LostFocus"/>
-                                <ToggleButton
-                    Focusable="false"
-                    ClickMode="Press"
-                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                    HorizontalAlignment="Right">
+                                <TextBox 
+                                    Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
+                                    GotFocus="TextBox_GotFocus"
+                                    LostFocus="TextBox_LostFocus"/>
+                                <ToggleButton 
+                                    Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                     <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple">
+                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple"
+                                                 VirtualizingPanel.IsVirtualizing="True"
+                                                 ScrollViewer.CanContentScroll="True">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel />
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
                                                     <Setter Property="Template">
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <CheckBox Margin="5,2" IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
+                                                                <CheckBox Margin="5,2"
+                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                                                     <ContentPresenter/>
                                                                 </CheckBox>
                                                             </ControlTemplate>
@@ -280,40 +286,42 @@
                 </ComboBox>
 
                 <!--SubTypes-->
-                <ComboBox HorizontalAlignment="Left"
-                          Margin="10,335,0,0"
-                          VerticalAlignment="Top"
-                          Width="180" Height="20"
-                          DataContext="{Binding FilterVM.Filters[SubTypes], RelativeSource={RelativeSource AncestorType=Window}}"
-                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
+                <ComboBox DataContext="{Binding FilterVM.Filters[SubTypes], RelativeSource={RelativeSource AncestorType=Window}}"
+                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
+                          HorizontalAlignment="Left" VerticalAlignment="Top" 
+                          Margin="10,335,0,0" 
+                          Width="180" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox
-                                    Background="Transparent"
+                                <TextBox 
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Foreground="Gray"
-                                    Padding="3,3,0,0"
-                                    Margin="0,0,0,0"
+                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
                                     GotFocus="TextBox_GotFocus"
                                     LostFocus="TextBox_LostFocus"/>
-                                <ToggleButton
-                                    Focusable="false"
-                                    ClickMode="Press"
-                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                                    HorizontalAlignment="Right">
+                                <ToggleButton 
+                                    Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                     <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple">
+                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple"
+                                                 VirtualizingPanel.IsVirtualizing="True"
+                                                 ScrollViewer.CanContentScroll="True">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel />
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
                                                     <Setter Property="Template">
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <CheckBox Margin="5,2" IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
+                                                                <CheckBox Margin="5,2"
+                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                                                     <ContentPresenter/>
                                                                 </CheckBox>
                                                             </ControlTemplate>
@@ -335,40 +343,42 @@
                 </ComboBox>
 
                 <!--Keywords-->
-                <ComboBox HorizontalAlignment="Left"
-Margin="10,365,0,0"
-VerticalAlignment="Top"
-Width="180" Height="20"
-DataContext="{Binding FilterVM.Filters[Keywords], RelativeSource={RelativeSource AncestorType=Window}}"
-IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
+                <ComboBox DataContext="{Binding FilterVM.Filters[Keywords], RelativeSource={RelativeSource AncestorType=Window}}"
+                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
+                          HorizontalAlignment="Left" VerticalAlignment="Top" 
+                          Margin="10,365,0,0" 
+                          Width="180" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox
-          Background="Transparent"
-          Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-          Foreground="Gray"
-          Padding="3,3,0,0"
-          Margin="0,0,0,0"
-          GotFocus="TextBox_GotFocus"
-          LostFocus="TextBox_LostFocus"/>
-                                <ToggleButton
-          Focusable="false"
-          ClickMode="Press"
-          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-          HorizontalAlignment="Right">
+                                <TextBox 
+                                    Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
+                                    GotFocus="TextBox_GotFocus"
+                                    LostFocus="TextBox_LostFocus"/>
+                                <ToggleButton 
+                                    Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">                                    
                                     <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple">
+                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple"
+                                                 VirtualizingPanel.IsVirtualizing="True"
+                                                 ScrollViewer.CanContentScroll="True">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel />
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
                                                     <Setter Property="Template">
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <CheckBox Margin="5,2" IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
+                                                                <CheckBox Margin="5,2"
+                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                                                     <ContentPresenter/>
                                                                 </CheckBox>
                                                             </ControlTemplate>
@@ -390,39 +400,42 @@ IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
                 </ComboBox>
 
                 <!--Finishes-->
-                <ComboBox HorizontalAlignment="Left"
-                          Margin="10,395,0,0"
-                          VerticalAlignment="Top"
-                          Width="180" Height="20"
-                          DataContext="{Binding FilterVM.Filters[Finishes], RelativeSource={RelativeSource AncestorType=Window}}" IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
+                <ComboBox DataContext="{Binding FilterVM.Filters[Finishes], RelativeSource={RelativeSource AncestorType=Window}}"
+                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
+                          HorizontalAlignment="Left" VerticalAlignment="Top" 
+                          Margin="10,395,0,0" 
+                          Width="180" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox
-                                    Background="Transparent"
+                                <TextBox 
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Foreground="Gray"
-                                    Padding="3,3,0,0"
-                                    Margin="0,0,0,0"
+                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
                                     GotFocus="TextBox_GotFocus"
                                     LostFocus="TextBox_LostFocus"/>
-                                <ToggleButton
-                                    Focusable="false"
-                                    ClickMode="Press"
-                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                                    HorizontalAlignment="Right">
+                                <ToggleButton 
+                                    Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                     <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple">
+                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple"
+                                                 VirtualizingPanel.IsVirtualizing="True"
+                                                 ScrollViewer.CanContentScroll="True">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel />
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
                                                     <Setter Property="Template">
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <CheckBox Margin="5,2" IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
+                                                                <CheckBox Margin="5,2"
+                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                                                     <ContentPresenter/>
                                                                 </CheckBox>
                                                             </ControlTemplate>
@@ -460,41 +473,44 @@ IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
                 <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,470,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
 
                 <!--Language-->
+
                 <ComboBox x:Name="LanguageComboBox"
-                          HorizontalAlignment="Left"
-                          Margin="10,515,0,0"
-                          VerticalAlignment="Top"
-                          Width="180" Height="20"
                           DataContext="{Binding FilterVM.Filters[Language], RelativeSource={RelativeSource AncestorType=Window}}"
-                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
+                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
+                          HorizontalAlignment="Left" VerticalAlignment="Top" 
+                          Margin="10,515,0,0" 
+                          Width="180" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox
-                                    Background="Transparent"
+                                <TextBox 
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Foreground="Gray"
-                                    Padding="3,3,0,0"
-                                    Margin="0,0,0,0"
+                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
                                     GotFocus="TextBox_GotFocus"
                                     LostFocus="TextBox_LostFocus"/>
-                                <ToggleButton
-                                    Focusable="false"
-                                    ClickMode="Press"
-                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                                    HorizontalAlignment="Right">
+                                <ToggleButton 
+                                    Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                     <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple">
+                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple"
+                                                 VirtualizingPanel.IsVirtualizing="True"
+                                                 ScrollViewer.CanContentScroll="True">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel />
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
                                                     <Setter Property="Template">
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <CheckBox Margin="5,2" IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
+                                                                <CheckBox Margin="5,2"
+                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                                                     <ContentPresenter/>
                                                                 </CheckBox>
                                                             </ControlTemplate>
@@ -516,40 +532,42 @@ IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
 
                 <!--SelectedCondition-->
                 <ComboBox x:Name="SelectedConditionComboBox"
-                          HorizontalAlignment="Left"
-                          Margin="10,545,0,0"
-                          VerticalAlignment="Top"
-                          Width="180" Height="20"
                           DataContext="{Binding FilterVM.Filters[SelectedCondition], RelativeSource={RelativeSource AncestorType=Window}}"
-                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
+                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
+                          HorizontalAlignment="Left" VerticalAlignment="Top" 
+                          Margin="10,545,0,0" 
+                          Width="180" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
-                                <TextBox
-                                    Background="Transparent"
+                                <TextBox 
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Foreground="Gray"
-                                    Padding="3,3,0,0"
-                                    Margin="0,0,0,0"
+                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
                                     GotFocus="TextBox_GotFocus"
                                     LostFocus="TextBox_LostFocus"/>
-                                <ToggleButton
-                                    Focusable="false"
-                                    ClickMode="Press"
-                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                                    HorizontalAlignment="Right">
+                                <ToggleButton 
+                                    Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                     <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
-                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple">
+                                        <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple"
+                                                 VirtualizingPanel.IsVirtualizing="True"
+                                                 ScrollViewer.CanContentScroll="True">
+                                            <ListBox.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <VirtualizingStackPanel />
+                                                </ItemsPanelTemplate>
+                                            </ListBox.ItemsPanel>
                                             <ListBox.Resources>
                                                 <Style TargetType="{x:Type ListBoxItem}">
                                                     <Setter Property="SnapsToDevicePixels" Value="true"/>
                                                     <Setter Property="Template">
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                                                                <CheckBox Margin="5,2" IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
+                                                                <CheckBox Margin="5,2"
+                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                                                     <ContentPresenter/>
                                                                 </CheckBox>
                                                             </ControlTemplate>

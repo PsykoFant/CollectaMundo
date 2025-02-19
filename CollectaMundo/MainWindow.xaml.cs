@@ -1093,74 +1093,7 @@ namespace CollectaMundo
             }
         }
 
-        private void DynamicallyPopulatedComboBox_DropDownOpened(object sender, EventArgs e)
-        {
-            if (sender is ComboBox)
-            {
-                try
-                {
-                    //(string defaultText, string filterTextBoxName, string listBoxName) =
-                    //    FilterManagerOld.GetComboBoxConfig(comboBox.Name, FilterVM.FilterDefaults);
 
-                    //Debug.WriteLine($"Default text: {defaultText}");
-                    //Debug.WriteLine($"FilterTextBoxName: {filterTextBoxName}");
-                    //Debug.WriteLine($"Listbox name: {listBoxName}");
-
-                    //if (comboBox.Template.FindName(filterTextBoxName, comboBox) is TextBox filterTextBox &&
-                    //    (string.IsNullOrWhiteSpace(filterTextBox.Text) || filterTextBox.Text == defaultText))
-                    //{
-                    //    PopulateListBoxWithValues(comboBox, listBoxName);
-                    //}
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Error in DynamicallyPopulatedComboBox_DropDownOpened: {ex.Message}");
-                }
-            }
-
-            //void PopulateListBoxWithValues(ComboBox comboBox, string listBoxName)
-            //{
-            //    try
-            //    {
-            //        if (comboBox.Template.FindName(listBoxName, comboBox) is ListBox listBox)
-            //        {
-            //            // Use FilterVM.FilterSelections instead of old filterSelections list
-            //            (IEnumerable<string> itemsSource, HashSet<string> selectedItems) =
-            //                FilterManagerOld.GetDataSetAndSelection(listBoxName, FilterVM.FilterSelections, FilterVM.FilterDefaults);
-
-            //            listBox.ItemsSource = itemsSource;
-
-            //            listBox.Dispatcher.Invoke(() =>
-            //            {
-            //                foreach (string item in itemsSource)
-            //                {
-            //                    if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem listBoxItem)
-            //                    {
-            //                        CheckBox? checkBox = FilterManagerOld.FindVisualChild<CheckBox>(listBoxItem);
-            //                        if (checkBox != null)
-            //                        {
-            //                            // Ensure TwoWay binding reflects selections
-            //                            checkBox.SetBinding(CheckBox.IsCheckedProperty, new Binding
-            //                            {
-            //                                Source = FilterVM.FilterSelections.FirstOrDefault(fs => fs.CriteriaKey == checkBox.Tag as string),
-            //                                Path = new PropertyPath("MultipleCriteria"),
-            //                                Mode = BindingMode.TwoWay,
-            //                                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
-            //                                Converter = new Converters.HashSetContainsConverter(),
-            //                                ConverterParameter = item
-            //                            });
-            //                        }
-            //                    }
-            //                }
-            //            }, System.Windows.Threading.DispatcherPriority.Loaded);
-            //        }
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        Debug.WriteLine($"Error in PopulateListBoxWithValues: {ex.Message}");
-            //    }
-            //}
-        }
         private void CheckBox_Loaded(object sender, RoutedEventArgs e)
         {
             //if (sender is CheckBox checkBox && checkBox.DataContext is string dataContext)
