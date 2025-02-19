@@ -1260,23 +1260,17 @@ namespace CollectaMundo
         {
             if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
             {
-                // Store reference to the TextBox
-                var textBoxRef = textBox;
-
-                // Force WPF to recognize a change by setting IsDropDownOpen to false first
-                filterItem.IsDropDownOpen = false;
-
-                Application.Current.Dispatcher.InvokeAsync(() =>
+                if (!filterItem.IsDropDownOpen) // Only open if it's closed
                 {
-                    filterItem.IsDropDownOpen = true;
+                    Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        filterItem.IsDropDownOpen = true;
+                    }, System.Windows.Threading.DispatcherPriority.Background);
+                }
 
-                    // Restore focus explicitly after dropdown opens
-                    textBoxRef.Focus();
-                    textBoxRef.CaretIndex = textBoxRef.Text.Length; // Ensure caret is at the end
-                }, System.Windows.Threading.DispatcherPriority.Background);
-
-                textBox.Text = ""; // Clear text on focus
+                textBox.Text = "";
                 textBox.Foreground = new SolidColorBrush(Colors.Black);
+
             }
         }
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)
@@ -1286,17 +1280,12 @@ namespace CollectaMundo
                 if (string.IsNullOrWhiteSpace(textBox.Text))
                 {
                     filterItem._suppressFiltering = true; // Temporarily disable filtering
-                    filterItem.FilterText = filterItem.DefaultText; // Set text without triggering filtering
-                    filterItem._suppressFiltering = false; // Re-enable filtering
+                    filterItem.FilterText = filterItem.DefaultText; // Restore default text without filtering
+                    filterItem._suppressFiltering = false;
                     textBox.Foreground = new SolidColorBrush(Colors.Gray);
                 }
             }
         }
-
-
-
-
-
         public void ApplyFiltersToAllLists()
         {
             FilterManagerOld.ApplyFilter(allCards, AllCardsDataGrid);
