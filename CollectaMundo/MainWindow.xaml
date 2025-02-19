@@ -797,7 +797,7 @@ IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
                                                   HorizontalAlignment="Stretch"
                                                   Height="20"
                                                   IsEditable="True"
-                                                  Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  Width="{Binding ColumnWidths[0][1], RelativeSource={RelativeSource AncestorType=Window}}"
                                                   ItemsSource="{Binding FilterVM.Filters[SetName].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
@@ -1016,20 +1016,18 @@ IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
                                         </Grid.ColumnDefinitions>
                                         <Label Content="Name" VerticalAlignment="Center" Grid.Column="0"/>
                                         <ComboBox IsTextSearchEnabled="True"
-          Grid.Column="1"
-          HorizontalAlignment="Stretch"
-          Height="20"
-          IsEditable="True"
-          Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}"
-          ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                  Grid.Column="1"
+                                                  HorizontalAlignment="Stretch"
+                                                  Height="20"
+                                                  IsEditable="True"
+                                                  Width="{Binding ColumnWidths[1][0], RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
                                                 </ItemsPanelTemplate>
                                             </ComboBox.ItemsPanel>
                                         </ComboBox>
-
-
                                     </Grid>
                                 </DataTemplate>
                             </DataGridTemplateColumn.HeaderTemplate>
@@ -1048,15 +1046,13 @@ IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Label Content="Set" VerticalAlignment="Center" Grid.Column="0"/>
-                                        <ComboBox x:Name="MyCollectionSetComboBox" 
-                                                  IsTextSearchEnabled="True"
+                                        <ComboBox IsTextSearchEnabled="True"
                                                   Grid.Column="1"
                                                   HorizontalAlignment="Stretch"
                                                   Height="20"
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[1][1], RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  Tag="MyCollectionSet"
-                                                  SelectionChanged="DataGridHeaderComboBox_SelectionChanged">
+                                                  ItemsSource="{Binding FilterVM.Filters[SetName].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -1259,15 +1255,13 @@ IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}">
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
                                                 <Label Content="Name" VerticalAlignment="Center" Grid.Column="0"/>
-                                                <ComboBox x:Name="AllCardsForDecksNameComboBox"
-                                                          IsTextSearchEnabled="True" 
+                                                <ComboBox IsTextSearchEnabled="True"
                                                           Grid.Column="1"
                                                           HorizontalAlignment="Stretch"
                                                           Height="20"
                                                           IsEditable="True"
-                                                          Width="{Binding ColumnWidths[2][0], RelativeSource={RelativeSource AncestorType=Window}}" 
-                                                          Tag="AllCardsForDecksName"
-                                                          SelectionChanged="DataGridHeaderComboBox_SelectionChanged">
+                                                          Width="{Binding ColumnWidths[2][0], RelativeSource={RelativeSource AncestorType=Window}}"
+                                                          ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}">
                                                     <ComboBox.ItemsPanel>
                                                         <ItemsPanelTemplate>
                                                             <VirtualizingStackPanel />

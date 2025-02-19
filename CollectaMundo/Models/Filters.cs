@@ -165,21 +165,22 @@ namespace CollectaMundo.Models
         public static List<FilterDefaults> GetFilterDefaults(CardViewModel cardViewModel)
         {
             return [.. FilterCriteriaMappings.CriteriaKeyToPropertyMap
-                .Select(entry =>
-                {
-                    var sourceCollection = entry.Value == nameof(CardViewModel.allCards) ? cardViewModel.allCards : cardViewModel.myCards;
-                    var rawValues = ExtractCriteriaValues(entry.Key, sourceCollection);
+        .Select(entry =>
+        {
+            var sourceCollection = entry.Value == nameof(CardViewModel.allCards) ? cardViewModel.allCards : cardViewModel.myCards;
+            var rawValues = ExtractCriteriaValues(entry.Key, sourceCollection);
 
-                    var removeItems = GetUnwantedItems(entry.Key);
-                    var filteredValues = CleanAndFilter(rawValues, removeItems);
+            var removeItems = GetUnwantedItems(entry.Key);
+            bool shouldNotSplit = entry.Key is "SetName" or "Name"; // Prevent splitting for these fields
+            var filteredValues = CleanAndFilter(rawValues, removeItems, shouldNotSplit);
 
-                    return new FilterDefaults
-                    {
-                        CriteriaKey = entry.Key,
-                        AllCriteria = filteredValues,
-                        DefaultText = $"{entry.Key} ..."
-                    };
-                })];
+            return new FilterDefaults
+            {
+                CriteriaKey = entry.Key,
+                AllCriteria = filteredValues,
+                DefaultText = $"{entry.Key} ..."
+            };
+        })];
         }
         private static List<string> ExtractCriteriaValues(string propertyName, List<CardSet> sourceCollection)
         {
@@ -204,16 +205,22 @@ namespace CollectaMundo.Models
                 _ => null
             };
         }
-        private static List<string> CleanAndFilter(IEnumerable<string> input, HashSet<string>? removeItems = null)
+        private static List<string> CleanAndFilter(IEnumerable<string> input, HashSet<string>? removeItems = null, bool shouldNotSplit = false)
         {
             char[] separatorArray = [','];
 
-            return [.. input
-                .SelectMany(item => item.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
+            var processedItems = input
+                .Where(item => !string.IsNullOrEmpty(item)) // Ensure we don't process null/empty values
+                .SelectMany<string, string>(item => shouldNotSplit
+                    ? new List<string> { item } // Keep whole string if shouldNotSplit == true
+                    : item.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries)) // Otherwise, split by comma
                 .Select(item => item.Trim())
-                .Where(item => !string.IsNullOrEmpty(item) && (removeItems == null || !removeItems.Contains(item)))
+                .Where(item => removeItems == null || !removeItems.Contains(item)) // Apply filter
                 .Distinct()
-                .OrderBy(item => item)];
+                .OrderBy(item => item)
+                .ToList(); // Ensuring `OrderBy(item)` works
+
+            return processedItems;
         }
         public static IEnumerable<BaseFilterCriteria> GetActiveFilters(IEnumerable<FilterSelections> filterSelections)
         {
