@@ -12,23 +12,22 @@ namespace CollectaMundo.Models
 {
     public class CardViewModel : INotifyPropertyChanged
     {
-        // Core List<T> for performance
+        public Dictionary<string, string> CriteriaKeyToPropertyMap => FilterCriteriaMappings.CriteriaKeyToPropertyMap;
+        public ObservableCollection<CardSet> ColorIcons { get; } = new();
+
         public List<CardSet> allCards = new();
         public List<CardSet> myCards = new();
         private List<CardSet> allCardsForDecks = new();
         private List<CardSet> cardsInDecks = new();
 
+        private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         // `ListCollectionView` for UI binding
         public ListCollectionView AllCardsView { get; }
         public ListCollectionView MyCardsView { get; }
         public ListCollectionView AllCardsForDecksView { get; }
         public ListCollectionView CardsInDecksView { get; }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged(string propertyName) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        public Dictionary<string, string> CriteriaKeyToPropertyMap => FilterCriteriaMappings.CriteriaKeyToPropertyMap;
 
         public CardViewModel()
         {
@@ -216,9 +215,6 @@ namespace CollectaMundo.Models
                 return DateTime.TryParse(dateRaw, out DateTime parsedDate) ? parsedDate : null;
             }
         }
-
-
-        public ObservableCollection<CardSet> ColorIcons { get; } = new();
         public async Task LoadColorIconsAsync()
         {
             string query = "SELECT * FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ('W', 'U', 'B', 'R', 'G', 'C', 'X') " +
@@ -250,7 +246,6 @@ namespace CollectaMundo.Models
                 Debug.WriteLine($"Error while loading color icons: {ex.Message}");
             }
         }
-
         private static CardSet CreateColorIcon(DbDataReader reader)
         {
             return new CardSet

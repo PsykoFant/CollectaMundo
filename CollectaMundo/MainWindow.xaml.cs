@@ -655,31 +655,7 @@ namespace CollectaMundo
         //                continue;
         //            }
 
-        //            // Dynamically retrieve unwanted items based on the CriteriaKey
-        //            HashSet<string>? removeItems = filter.CriteriaKey switch
-        //            {
-        //                "Types" => typesToRemove,
-        //                "SubTypes" => subTypesToRemove,
-        //                _ => null
-        //            };
 
-        //            // Use CleanAndFilter to process and populate AllCriteria
-        //            var dynamicCriteria = CleanAndFilter(
-        //                allCards
-        //                    .Where(card => propertyInfo.DeclaringType?.IsInstanceOfType(card) == true) // Ensure compatibility
-        //                    .Select(card => propertyInfo.GetValue(card)?.ToString()),
-        //                removeItems
-        //            );
-
-        //            // Special case for "Colors": include predefined values that may not exist in CardSet.Colors
-        //            if (filter.CriteriaKey == "Colors")
-        //            {
-        //                filter.AllCriteria = allColors;
-        //            }
-        //            else
-        //            {
-        //                filter.AllCriteria = dynamicCriteria.ToList();
-        //            }
         //        }
 
 

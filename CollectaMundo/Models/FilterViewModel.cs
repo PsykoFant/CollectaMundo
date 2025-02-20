@@ -20,8 +20,7 @@ namespace CollectaMundo.Models
             }
         }
 
-        public FilterItemViewModel? GetFilterItem(string criteriaKey) =>
-            Filters.TryGetValue(criteriaKey, out var filterItem) ? filterItem : null;
+        public FilterItemViewModel? GetFilterItem(string criteriaKey) => Filters.TryGetValue(criteriaKey, out var filterItem) ? filterItem : null;
         public void DebugFilterItems(string criteriaKey)
         {
             var filter = GetFilterItem(criteriaKey);
