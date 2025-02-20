@@ -4,19 +4,10 @@ using System.Windows.Data;
 
 namespace CollectaMundo.Converters
 {
-    /// <summary>
-    /// Sets the font for the Colorless option in FilterColorsListBox
-    /// </summary>
+    // Sets the font for the Colorless option in FilterColorsListBox
     public class ColorlessFontConverter : IValueConverter
     {
-        /// <summary>
-        /// Applies a different font size if the ListBoxItem content is "Colorless".
-        /// </summary>
-        /// <param name="value">The value passed from the binding (ListBoxItem).</param>
-        /// <param name="targetType">The target property type.</param>
-        /// <param name="parameter">The font size to apply if the condition is met.</param>
-        /// <param name="culture">The culture information.</param>
-        /// <returns>Modified font size based on the item's content.</returns>
+        // Applies a different font size if the ListBoxItem content is "Colorless".
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is ListBoxItem listBoxItem && listBoxItem.Content is string content)
@@ -29,10 +20,7 @@ namespace CollectaMundo.Converters
             return 0.01; // Default size for all other items
         }
 
-
-        /// <summary>
-        /// ConvertBack not implemented, as it's a one-way binding.
-        /// </summary>
+        // ConvertBack not implemented, as it's a one-way binding.        
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
             => throw new NotImplementedException();
     }

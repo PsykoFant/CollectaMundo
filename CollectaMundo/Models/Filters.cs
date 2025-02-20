@@ -171,8 +171,14 @@ namespace CollectaMundo.Models
             var rawValues = ExtractCriteriaValues(entry.Key, sourceCollection);
 
             var removeItems = GetUnwantedItems(entry.Key);
-            bool shouldNotSplit = entry.Key is "SetName" or "Name"; // Prevent splitting for these fields
-            var filteredValues = CleanAndFilter(rawValues, removeItems, shouldNotSplit);
+            var filteredValues = CleanAndFilter(rawValues, removeItems);
+
+            // Special handling for "Colors" (add predefined values)
+            if (entry.Key == "Colors")
+            {
+                var predefinedColors = new List<string> { "W", "U", "B", "R", "G", "C", "X", "Colorless" };
+                filteredValues = [.. predefinedColors.Union(filteredValues)];
+            }
 
             return new FilterDefaults
             {
@@ -182,6 +188,7 @@ namespace CollectaMundo.Models
             };
         })];
         }
+
         private static List<string> ExtractCriteriaValues(string propertyName, List<CardSet> sourceCollection)
         {
             var propertyInfo = typeof(CardSet).GetProperty(propertyName);

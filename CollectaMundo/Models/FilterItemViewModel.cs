@@ -80,7 +80,7 @@ namespace CollectaMundo.Models
             Debug.WriteLine($"===== DEBUG: Filter Item ({CriteriaKey}) =====");
             Debug.WriteLine($"Default Text: {DefaultText}");
             Debug.WriteLine($"Filter Text: {FilterText}");
-            //Debug.WriteLine($"Available Options: {string.Join(", ", AvailableOptions)}");
+            Debug.WriteLine($"Available Options: {string.Join(", ", AvailableOptions)}");
             Debug.WriteLine($"Number of options: {AvailableOptions.Count}");
             Debug.WriteLine($"====================================");
         }

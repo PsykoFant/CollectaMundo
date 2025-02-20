@@ -151,7 +151,6 @@ namespace CollectaMundo
         {
             InitializeComponent();
             _currentInstance = this;
-            //DataContext = this;
             CardVM = new CardViewModel();
 
             // Set up system
@@ -276,7 +275,7 @@ namespace CollectaMundo
 
             await CardVM.PopulateCardDataGridAsync(CardVM.allCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
             await CardVM.PopulateCardDataGridAsync(CardVM.myCards, CardVM.MyCardsView, myCollectionQuery, DataGridContext.MyCollection);
-
+            await CardVM.LoadColorIconsAsync();
 
             OnPropertyChanged(nameof(CardVM)); // This ensures CardVM bindings refresh
 
@@ -284,13 +283,16 @@ namespace CollectaMundo
             FilterVM = new FilterViewModel(CardVM);
             OnPropertyChanged(nameof(FilterVM)); // Force UI refresh so bindings update
 
-            Task loadColorIcons = LoadColorIcons(ColorIcons, colourQuery);
+            FilterVM.DebugFilterItems("Colors");
+
+
+
             Task loadDecks = LoadAllDecksAsync();
             Task populateAllFormatsList = PopulateAllFormatsListAsync();
             Task loadCardsForDecks = PopulateCardDataGridAsync(allCardsForDecks, allCardsForDecksQuery, DataGridContext.AllCardsForDecks);
 
             //await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, loadDecks, populateAllFormatsList, loadCardsForDecks);
-            await Task.WhenAll(loadColorIcons, loadDecks, populateAllFormatsList, loadCardsForDecks);
+            await Task.WhenAll(loadDecks, populateAllFormatsList, loadCardsForDecks);
 
 
             DBAccess.CloseConnection();
@@ -534,48 +536,6 @@ namespace CollectaMundo
             static DateTime? ParseDate(string? dateRaw)
             {
                 return DateTime.TryParse(dateRaw, out DateTime parsedDate) ? parsedDate : null;
-            }
-        }
-        private async Task LoadColorIcons(List<CardSet> cardList, string query)
-        {
-            try
-            {
-                cardList.Clear();
-
-                List<CardSet> tempCardList = [];
-                using SQLiteCommand command = new(query, DBAccess.connection);
-                using DbDataReader reader = await command.ExecuteReaderAsync();
-
-                while (await reader.ReadAsync())
-                {
-                    CardSet card = CreateColorIcon(reader);
-                    tempCardList.Add(card);
-                }
-
-                cardList.AddRange(tempCardList);
-                FilterColorsListBoxIcons.ItemsSource = cardList;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while loading color icons: {ex.Message}");
-                MessageBox.Show($"Error while loading color icons: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-        private static CardSet CreateColorIcon(DbDataReader reader)
-        {
-            try
-            {
-                CardSet card = new()
-                {
-                    ManaCostImageBytes = reader["ManaSymbolImage"] as byte[],
-                    ManaCostRaw = reader["uniqueManaSymbol"]?.ToString() ?? string.Empty
-                };
-                return card;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in CreateColorIcon: {ex.Message}");
-                throw;
             }
         }
         public async Task LoadAllDecksAsync()
@@ -1026,155 +986,6 @@ namespace CollectaMundo
 
         }
 
-
-        // When a combobox checkbox item is checked or unchecked
-        private void CheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            HandleCheckOrUncheck(sender, (collection, label) => collection.Add(label));
-        }
-        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            HandleCheckOrUncheck(sender, (collection, label) => collection.Remove(label));
-        }
-        private void HandleCheckOrUncheck(object sender, Action<HashSet<string>, string> action)
-        {
-            try
-            {
-                //if (sender is not DependencyObject dependencyObject)
-                //{
-                //    return; // Exit if casting failed
-                //}
-
-                //// Find the CheckBox and retrieve its Tag and Content
-                //CheckBox? checkBox = FilterManagerOld.FindVisualChild<CheckBox>(dependencyObject);
-                //if (checkBox == null || checkBox.Tag is not string criteriaKey || checkBox.Content is not ContentPresenter contentPresenter)
-                //{
-                //    return; // Exit if required data is unavailable
-                //}
-
-                //string? label = contentPresenter.Content as string;
-                //if (string.IsNullOrEmpty(label))
-                //{
-                //    return; // Exit if no label is present
-                //}
-
-                //// Ensure the FilterSelections object for this CriteriaKey exists in FilterVM
-                //var targetFilterSelection = FilterVM.FilterSelections.FirstOrDefault(fs => fs.CriteriaKey == criteriaKey);
-                //if (targetFilterSelection == null)
-                //{
-                //    targetFilterSelection = new FilterSelections { CriteriaKey = criteriaKey };
-                //    FilterVM.FilterSelections.Add(targetFilterSelection);
-                //}
-
-                //// Modify MultipleCriteria via the property setter (which calls OnPropertyChanged)
-                //var updatedCriteria = new HashSet<string>(targetFilterSelection.MultipleCriteria); // Create a new HashSet copy
-                //action(updatedCriteria, label);
-                //targetFilterSelection.MultipleCriteria = updatedCriteria; // Assign to trigger PropertyChanged
-
-                //// Log for debugging
-                //Debug.WriteLine($"Updated FilterSelections[{criteriaKey}]: {string.Join(", ", targetFilterSelection.MultipleCriteria)}");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in HandleCheckOrUncheck: {ex.Message}");
-            }
-        }
-
-
-        private void CheckBox_Loaded(object sender, RoutedEventArgs e)
-        {
-            //if (sender is CheckBox checkBox && checkBox.DataContext is string dataContext)
-            //{
-            //    // Retrieve the CriteriaKey from the CheckBox's Tag
-            //    string? criteriaKey = checkBox.Tag as string;
-
-            //    if (!string.IsNullOrEmpty(criteriaKey))
-            //    {
-            //        // Find the FilterSelections object corresponding to the CriteriaKey
-            //        var targetFilterSelection = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == criteriaKey);
-
-            //        if (targetFilterSelection != null)
-            //        {
-            //            // Check if the dataContext exists in the MultipleCriteria collection
-            //            checkBox.IsChecked = targetFilterSelection.MultipleCriteria.Contains(dataContext);
-            //        }
-            //    }
-            //}
-        }
-
-        // Filter checkbox elements in the embedded listbox based text typed in the embedded testbox
-        private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            //if (sender is TextBox textBox)
-            //{
-            //    try
-            //    {
-            //        // Finding the parent ComboBox by traversing up the visual tree
-            //        var parent = FilterManagerOld.FindParent<ComboBox>(textBox);
-
-            //        // Explicitly check for null before casting
-            //        if (parent is ComboBox comboBox)
-            //        {
-            //            // Get configuration for this specific ComboBox
-            //            (string defaultText, string _, string listBoxName) = FilterManagerOld.GetComboBoxConfig(comboBox.Name, FilterVM.FilterDefaults);
-
-            //            // Check if the typed text is the default text
-            //            if (textBox.Text == defaultText)
-            //            {
-            //                return; // Ignore the default placeholder text
-            //            }
-
-            //            // Finding the associated ListBox using the dynamically determined name
-            //            if (comboBox.Template.FindName(listBoxName, comboBox) is ListBox listBox)
-            //            {
-            //                UpdateListBoxItems(listBox, textBox.Text);
-
-            //                // Ensure the ComboBox's dropdown is open to show filtered results
-            //                if (!comboBox.IsDropDownOpen)
-            //                {
-            //                    comboBox.IsDropDownOpen = true;
-            //                }
-            //            }
-            //        }
-            //        else
-            //        {
-            //            // Log or handle the scenario where the parent ComboBox is not found
-            //            Debug.WriteLine("Parent ComboBox not found.");
-            //        }
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        Debug.WriteLine($"Error in FilterTextBox_TextChanged: {ex.Message}");
-            //    }
-            //}
-
-            //void UpdateListBoxItems(ListBox listBox, string filterText) // This method updates the listbox items based on text typed in FilterTextBox
-            //{
-            //    (IEnumerable<string> dataSet, HashSet<string> selectedItems) = FilterManagerOld.GetDataSetAndSelection(listBox.Name, FilterVM.FilterSelections, FilterVM.FilterDefaults);
-
-            //    List<string> filteredItems = !string.IsNullOrWhiteSpace(filterText)
-            //        ? dataSet.Where(type => type.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList()
-            //        : [.. dataSet.Distinct().OrderBy(type => type)];
-
-            //    listBox.ItemsSource = filteredItems;
-
-            //    listBox.Dispatcher.Invoke(() =>
-            //    {
-            //        foreach (string item in filteredItems)
-            //        {
-            //            if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem listBoxItem) // Check if listBoxItem is not null
-            //            {
-            //                CheckBox? checkBox = FilterManagerOld.FindVisualChild<CheckBox>(listBoxItem);
-            //                if (checkBox != null) // Check if checkBox is not null
-            //                {
-            //                    checkBox.IsChecked = selectedItems.Contains(item);
-            //                }
-            //            }
-            //        }
-            //    }, System.Windows.Threading.DispatcherPriority.Loaded);
-            //}
-        }
-
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
@@ -1255,7 +1066,7 @@ namespace CollectaMundo
             }
 
             // Clear selections in the colors listbox
-            ClearListBoxSelections(FilterColorsListBox);
+            //ClearListBoxSelections(FilterColorsListBox);
 
             // Uncheck CheckBoxes if necessary
             CheckBoxCardsForTrade.IsChecked = false;
