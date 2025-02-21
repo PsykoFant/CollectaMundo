@@ -12,7 +12,8 @@ namespace CollectaMundo.Models
 {
     public class CardViewModel : INotifyPropertyChanged
     {
-        public Dictionary<string, string> CriteriaKeyToPropertyMap => FilterCriteriaMappings.CriteriaKeyToPropertyMap;
+        public Dictionary<string, (string Property, OperatorType[] Operators)> CriteriaMappings => FilterCriteriaMappings.CriteriaMappings;
+
         public ObservableCollection<CardSet> ColorIcons { get; } = new();
 
         public List<CardSet> allCards = new();

@@ -164,10 +164,10 @@ namespace CollectaMundo.Models
     {
         public static List<FilterDefaults> GetFilterDefaults(CardViewModel cardViewModel)
         {
-            return [.. FilterCriteriaMappings.CriteriaKeyToPropertyMap
+            return [.. FilterCriteriaMappings.CriteriaMappings
         .Select(entry =>
         {
-            var sourceCollection = entry.Value == nameof(CardViewModel.allCards) ? cardViewModel.allCards : cardViewModel.myCards;
+            var sourceCollection = entry.Value.Property == nameof(CardViewModel.allCards) ? cardViewModel.allCards : cardViewModel.myCards;
             var rawValues = ExtractCriteriaValues(entry.Key, sourceCollection);
 
             var removeItems = GetUnwantedItems(entry.Key);
@@ -188,6 +188,7 @@ namespace CollectaMundo.Models
             };
         })];
         }
+
 
         private static List<string> ExtractCriteriaValues(string propertyName, List<CardSet> sourceCollection)
         {

@@ -169,10 +169,15 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox x:Name="RarityOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,245,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
-                    <ComboBoxItem Content="OR" IsSelected="True" />
-                    <ComboBoxItem Content="NOT" />
+                <ComboBox Width="60"
+          Margin="190,245,0,0"
+          VerticalAlignment="Top"
+          HorizontalAlignment="Right"
+          DataContext="{Binding FilterVM.Filters[Rarity], RelativeSource={RelativeSource AncestorType=Window}}"
+          ItemsSource="{Binding AvailableOperators}"
+          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
                 </ComboBox>
+
 
                 <!--SuperTypes-->
                 <ComboBox DataContext="{Binding FilterVM.Filters[SuperTypes], RelativeSource={RelativeSource AncestorType=Window}}"

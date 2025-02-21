@@ -1,6 +1,8 @@
-﻿using System.Collections.ObjectModel;
+﻿using CollectaMundo.Utilities;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Models
 {
@@ -12,6 +14,21 @@ namespace CollectaMundo.Models
 
         public bool _suppressFiltering = false; // Used to temporarily disable filtering
         public ObservableCollection<string> AvailableOptions { get; }
+        public ObservableCollection<OperatorType>? AvailableOperators { get; }
+
+        private OperatorType _operatorSelection;
+        public OperatorType OperatorSelection
+        {
+            get => _operatorSelection;
+            set
+            {
+                if (_operatorSelection != value)
+                {
+                    _operatorSelection = value;
+                    OnPropertyChanged(nameof(OperatorSelection));
+                }
+            }
+        }
 
         private string _filterText = string.Empty;
         public string FilterText
@@ -53,6 +70,17 @@ namespace CollectaMundo.Models
             _filterText = DefaultText;
 
             _filteredOptions = [.. availableOptions];
+
+            if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
+            {
+                AvailableOperators = new ObservableCollection<OperatorType>(mapping.Operators);
+                OperatorSelection = mapping.Operators.FirstOrDefault(OperatorType.OR); // Default "OR"
+            }
+            else
+            {
+                AvailableOperators = new ObservableCollection<OperatorType> { OperatorType.OR }; // Default fallback
+                OperatorSelection = OperatorType.OR;
+            }
         }
 
         private bool _isDropDownOpen;

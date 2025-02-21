@@ -8,8 +8,7 @@ namespace CollectaMundo.Models
         public Dictionary<string, FilterItemViewModel> Filters { get; } = [];
 
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         public FilterViewModel(CardViewModel cardViewModel)
         {
