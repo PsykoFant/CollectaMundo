@@ -107,10 +107,13 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <ComboBox x:Name="ColorsOperatorComboBox" HorizontalAlignment="Right" Margin="0,35,0,0" VerticalAlignment="Top" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
-                    <ComboBoxItem Content="OR" IsSelected="True" />
-                    <ComboBoxItem Content="AND" />
-                    <ComboBoxItem Content="NOT" />
+                <ComboBox DataContext="{Binding FilterVM.Filters[Colors], RelativeSource={RelativeSource AncestorType=Window}}"
+                          Width="60"
+                          Margin="190,35,0,0"
+                          VerticalAlignment="Top"
+                          HorizontalAlignment="Right"
+                          ItemsSource="{Binding AvailableOperators}"
+                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
                 </ComboBox>
 
                 <!--Mana value filtering-->
@@ -169,13 +172,13 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox Width="60"
-          Margin="190,245,0,0"
-          VerticalAlignment="Top"
-          HorizontalAlignment="Right"
-          DataContext="{Binding FilterVM.Filters[Rarity], RelativeSource={RelativeSource AncestorType=Window}}"
-          ItemsSource="{Binding AvailableOperators}"
-          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
+                <ComboBox DataContext="{Binding FilterVM.Filters[Rarity], RelativeSource={RelativeSource AncestorType=Window}}"
+                          Width="60"
+                          Margin="190,245,0,0"
+                          VerticalAlignment="Top"
+                          HorizontalAlignment="Right"
+                          ItemsSource="{Binding AvailableOperators}"
+                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
                 </ComboBox>
 
 
@@ -230,10 +233,13 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox x:Name="SuperTypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,275,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
-                    <ComboBoxItem Content="OR" IsSelected="True" />
-                    <ComboBoxItem Content="AND" />
-                    <ComboBoxItem Content="NOT" />
+                <ComboBox DataContext="{Binding FilterVM.Filters[SuperTypes], RelativeSource={RelativeSource AncestorType=Window}}"
+                          Width="60"
+                          Margin="190,275,0,0"
+                          VerticalAlignment="Top"
+                          HorizontalAlignment="Right"
+                          ItemsSource="{Binding AvailableOperators}"
+                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
                 </ComboBox>
 
                 <!--Types-->
@@ -287,10 +293,13 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox x:Name="TypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,305,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
-                    <ComboBoxItem Content="OR" IsSelected="True" />
-                    <ComboBoxItem Content="AND" />
-                    <ComboBoxItem Content="NOT" />
+                <ComboBox DataContext="{Binding FilterVM.Filters[Types], RelativeSource={RelativeSource AncestorType=Window}}"
+                          Width="60"
+                          Margin="190,305,0,0"
+                          VerticalAlignment="Top"
+                          HorizontalAlignment="Right"
+                          ItemsSource="{Binding AvailableOperators}"
+                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
                 </ComboBox>
 
                 <!--SubTypes-->
@@ -344,10 +353,13 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox x:Name="SubTypesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,335,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
-                    <ComboBoxItem Content="OR" IsSelected="True" />
-                    <ComboBoxItem Content="AND" />
-                    <ComboBoxItem Content="NOT" />
+                <ComboBox DataContext="{Binding FilterVM.Filters[SubTypes], RelativeSource={RelativeSource AncestorType=Window}}"
+                          Width="60"
+                          Margin="190,335,0,0"
+                          VerticalAlignment="Top"
+                          HorizontalAlignment="Right"
+                          ItemsSource="{Binding AvailableOperators}"
+                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
                 </ComboBox>
 
                 <!--Keywords-->
@@ -401,10 +413,13 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox x:Name="KeywordsOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,365,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
-                    <ComboBoxItem Content="OR" IsSelected="True" />
-                    <ComboBoxItem Content="AND" />
-                    <ComboBoxItem Content="NOT" />
+                <ComboBox DataContext="{Binding FilterVM.Filters[Keywords], RelativeSource={RelativeSource AncestorType=Window}}"
+                          Width="60"
+                          Margin="190,365,0,0"
+                          VerticalAlignment="Top"
+                          HorizontalAlignment="Right"
+                          ItemsSource="{Binding AvailableOperators}"
+                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
                 </ComboBox>
 
                 <!--Finishes-->
@@ -458,10 +473,13 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox x:Name="FinishesOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,395,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
-                    <ComboBoxItem Content="OR" IsSelected="True" />
-                    <ComboBoxItem Content="AND" />
-                    <ComboBoxItem Content="NOT" />
+                <ComboBox DataContext="{Binding FilterVM.Filters[Finishes], RelativeSource={RelativeSource AncestorType=Window}}"
+                          Width="60"
+                          Margin="190,395,0,0"
+                          VerticalAlignment="Top"
+                          HorizontalAlignment="Right"
+                          ItemsSource="{Binding AvailableOperators}"
+                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
                 </ComboBox>
 
                 <!--Rulestext filtering-->
@@ -479,9 +497,8 @@
                          LostFocus="TextBox_LostFocus" 
                          KeyDown="FilterTextTextBox_KeyDown"/>
                 <Button x:Name="FilterRulesTextButton" Content="Filter rulestext" HorizontalAlignment="Left" Margin="10,470,0,0" VerticalAlignment="Top" Click="FilterRulesTextButton_Click" Height="20" Width="90"/>
-
+                
                 <!--Language-->
-
                 <ComboBox x:Name="LanguageComboBox"
                           DataContext="{Binding FilterVM.Filters[Language], RelativeSource={RelativeSource AncestorType=Window}}"
                           IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
@@ -533,9 +550,14 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox x:Name="LanguageOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,515,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
-                    <ComboBoxItem Content="OR" IsSelected="True" />
-                    <ComboBoxItem Content="NOT" />
+                <ComboBox x:Name="LanguageOperatorComboBox"
+                          DataContext="{Binding FilterVM.Filters[Language], RelativeSource={RelativeSource AncestorType=Window}}"
+                          Width="60"
+                          Margin="190,515,0,0"
+                          VerticalAlignment="Top"
+                          HorizontalAlignment="Right"
+                          ItemsSource="{Binding AvailableOperators}"
+                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
                 </ComboBox>
 
                 <!--SelectedCondition-->
@@ -590,9 +612,14 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox x:Name="SelectedConditionOperatorComboBox" Width="60" SelectedIndex="0" Margin="190,545,0,0" VerticalAlignment="Top" HorizontalAlignment="Right" Tag="OperatorComboBox" SelectionChanged="OperatorComboBox_SelectionChanged">
-                    <ComboBoxItem Content="OR" IsSelected="True" />
-                    <ComboBoxItem Content="NOT" />
+                <ComboBox x:Name="SelectedConditionOperatorComboBox"
+                          DataContext="{Binding FilterVM.Filters[SelectedCondition], RelativeSource={RelativeSource AncestorType=Window}}"
+                          Width="60"
+                          Margin="190,545,0,0"
+                          VerticalAlignment="Top"
+                          HorizontalAlignment="Right"
+                          ItemsSource="{Binding AvailableOperators}"
+                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
                 </ComboBox>
 
                 <CheckBox x:Name="CheckBoxCardsForTrade" Margin="10,570,0,0" Content="Filter on cards for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="CheckBoxCardsForTrade_Checked" Unchecked="CheckBoxCardsForTrade_Unchecked"/>
