@@ -10,7 +10,7 @@ namespace CollectaMundo.Utilities
             { "Name", (nameof(CardViewModel.allCards), [OperatorType.OR, OperatorType.NOT]) },
             { "SetName", (nameof(CardViewModel.allCards), [OperatorType.OR, OperatorType.NOT]) },
             { "Colors", (nameof(CardViewModel.allCards), [OperatorType.OR, OperatorType.AND, OperatorType.NOT]) },
-            { "ManaValue", (nameof(CardViewModel.allCards), [OperatorType.GREATER_THAN, OperatorType.LESS_THAN, OperatorType.EQUALS]) },
+            { "ManaValue", (nameof(CardViewModel.allCards), [OperatorType.GREATER_THAN, OperatorType.LESS_THAN, OperatorType.EQUALS, OperatorType.GREATER_THAN_OR_EQUALS, OperatorType.LESS_THAN_OR_EQUALS]) },
             { "Rarity", (nameof(CardViewModel.allCards), [OperatorType.OR, OperatorType.NOT]) },
             { "SuperTypes", (nameof(CardViewModel.allCards), [OperatorType.OR, OperatorType.AND, OperatorType.NOT]) },
             { "Types", (nameof(CardViewModel.allCards), [OperatorType.OR, OperatorType.AND, OperatorType.NOT]) },

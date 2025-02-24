@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
-using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Models
 {
@@ -16,17 +15,7 @@ namespace CollectaMundo.Models
             var filterDefaults = FilterManager.GetFilterDefaults(cardViewModel);
             foreach (var filter in filterDefaults)
             {
-                if (filter.CriteriaKey == "ManaValue")
-                {
-                    var manaValues = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000 };
-                    var manaOperators = new List<OperatorType> { OperatorType.LESS_THAN, OperatorType.LESS_THAN_OR_EQUALS, OperatorType.GREATER_THAN, OperatorType.GREATER_THAN_OR_EQUALS, OperatorType.EQUALS };
-
-                    Filters["ManaValue"] = new FilterItemViewModel("ManaValue", manaValues, manaOperators);
-                }
-                else
-                {
-                    Filters[filter.CriteriaKey] = new FilterItemViewModel(filter.CriteriaKey, [.. filter.AllCriteria], filter.DefaultText);
-                }
+                Filters[filter.CriteriaKey] = new FilterItemViewModel(filter.CriteriaKey, [.. filter.AllCriteria], filter.DefaultText);
             }
         }
 

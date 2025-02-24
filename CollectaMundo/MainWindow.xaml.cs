@@ -281,7 +281,7 @@ namespace CollectaMundo
             FilterVM = new FilterViewModel(CardVM);
             OnPropertyChanged(nameof(FilterVM)); // Force UI refresh so bindings update
 
-            FilterVM.DebugFilterItems("Colors");
+            FilterVM.DebugFilterItems("ManaValue");
 
 
 

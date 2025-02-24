@@ -199,11 +199,33 @@ namespace CollectaMundo.Models
                 return [];
             }
 
-            return [.. sourceCollection
+            var extractedValues = sourceCollection
                 .Select(card => propertyInfo.GetValue(card))
                 .Where(value => value != null)
-                .SelectMany(value => value is string str ? [str] : value as List<string> ?? [])];
+                .SelectMany(value =>
+                {
+                    return value switch
+                    {
+                        string str => [str],                     // ✅ String properties
+                        List<string> strList => strList,         // ✅ List<string> properties
+                        double dbl => [dbl.ToString()],          // ✅ Convert numeric values to strings
+                        int num => [num.ToString()],             // ✅ Convert int values to strings
+                        _ => []                                  // Ignore unsupported types
+                    };
+                })
+                .Distinct()
+                .ToList();
+
+            // **Sort Numeric Values Separately**
+            if (propertyInfo.PropertyType == typeof(double) || propertyInfo.PropertyType == typeof(int))
+            {
+                return extractedValues.OrderBy(v => double.Parse(v)).ToList();  // ✅ Sort Numerically
+            }
+
+            return extractedValues.OrderBy(v => v).ToList();  // ✅ Default Sort (Alphabetical)
         }
+
+
         private static HashSet<string>? GetUnwantedItems(string criteriaKey)
         {
             return criteriaKey switch

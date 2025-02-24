@@ -113,15 +113,16 @@ namespace CollectaMundo.Models
             }
         }
 
-        // **Constructor for Numeric Filters**
+        // Constructor for Numeric Filters
         public FilterItemViewModel(string criteriaKey, IEnumerable<int> availableNumericOptions, List<OperatorType> operators)
         {
             CriteriaKey = criteriaKey;
-            AvailableNumericOptions = new ObservableCollection<int>(availableNumericOptions);
+            AvailableNumericOptions = new ObservableCollection<int>(availableNumericOptions.OrderBy(n => n));  // Ensure Sorted Order
             AvailableOperators = new ObservableCollection<OperatorType>(operators);
-            OperatorSelection = operators.FirstOrDefault(OperatorType.EQUALS); // Default "="
-            SelectedNumericValue = null;
+            OperatorSelection = operators.FirstOrDefault(OperatorType.OR); // Default "OR"
+            SelectedNumericValue = AvailableNumericOptions.FirstOrDefault();  // Default to "0"
         }
+
 
         private void UpdateFilteredOptions()
         {
