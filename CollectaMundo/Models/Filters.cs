@@ -164,31 +164,29 @@ namespace CollectaMundo.Models
     {
         public static List<FilterDefaults> GetFilterDefaults(CardViewModel cardViewModel)
         {
-            return [.. FilterCriteriaMappings.CriteriaMappings
-        .Select(entry =>
-        {
-            var sourceCollection = entry.Value.Property == nameof(CardViewModel.allCards) ? cardViewModel.allCards : cardViewModel.myCards;
-            var rawValues = ExtractCriteriaValues(entry.Key, sourceCollection);
-
-            var removeItems = GetUnwantedItems(entry.Key);
-            var filteredValues = CleanAndFilter(rawValues, removeItems);
-
-            // Special handling for "Colors" (add predefined values)
-            if (entry.Key == "Colors")
+            return [.. FilterCriteriaMappings.CriteriaMappings.Select(entry =>
             {
-                var predefinedColors = new List<string> { "W", "U", "B", "R", "G", "C", "X", "Colorless" };
-                filteredValues = [.. predefinedColors.Union(filteredValues)];
-            }
+                var sourceCollection = entry.Value.Property == nameof(CardViewModel.allCards) ? cardViewModel.allCards : cardViewModel.myCards;
+                var rawValues = ExtractCriteriaValues(entry.Key, sourceCollection);
+                var removeItems = GetUnwantedItems(entry.Key);
+                bool shouldNotSplit = entry.Value.ShouldNotSplit;
+                var filteredValues = CleanAndFilter(rawValues, removeItems, shouldNotSplit);
 
-            return new FilterDefaults
-            {
-                CriteriaKey = entry.Key,
-                AllCriteria = filteredValues,
-                DefaultText = $"{entry.Key} ..."
-            };
-        })];
+                // Special handling for "Colors" (add predefined values)
+                if (entry.Key == "Colors")
+                {
+                    var predefinedColors = new List<string> { "W", "U", "B", "R", "G", "C", "X", "Colorless" };
+                    filteredValues = [.. predefinedColors.Union(filteredValues)];
+                }
+
+                return new FilterDefaults
+                {
+                    CriteriaKey = entry.Key,
+                    AllCriteria = filteredValues,
+                    DefaultText = $"{entry.Key} ..."
+                };
+            })];
         }
-
 
         private static List<string> ExtractCriteriaValues(string propertyName, List<CardSet> sourceCollection)
         {
@@ -199,43 +197,22 @@ namespace CollectaMundo.Models
                 return [];
             }
 
-            var extractedValues = sourceCollection
+            return [.. sourceCollection
                 .Select(card => propertyInfo.GetValue(card))
                 .Where(value => value != null)
                 .SelectMany(value =>
                 {
                     return value switch
                     {
-                        string str => [str],                     // ✅ String properties
-                        List<string> strList => strList,         // ✅ List<string> properties
-                        double dbl => [dbl.ToString()],          // ✅ Convert numeric values to strings
-                        int num => [num.ToString()],             // ✅ Convert int values to strings
+                        string str => [str],                     // String properties
+                        List<string> strList => strList,         // List<string> properties
+                        double dbl => [dbl.ToString()],          // Convert numeric values to strings
+                        int num => [num.ToString()],             // Convert int values to strings
                         _ => []                                  // Ignore unsupported types
                     };
-                })
-                .Distinct()
-                .ToList();
-
-            // **Sort Numeric Values Separately**
-            if (propertyInfo.PropertyType == typeof(double) || propertyInfo.PropertyType == typeof(int))
-            {
-                return extractedValues.OrderBy(v => double.Parse(v)).ToList();  // ✅ Sort Numerically
-            }
-
-            return extractedValues.OrderBy(v => v).ToList();  // ✅ Default Sort (Alphabetical)
+                }).Distinct()];
         }
-
-
-        private static HashSet<string>? GetUnwantedItems(string criteriaKey)
-        {
-            return criteriaKey switch
-            {
-                "Types" => ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards"],
-                "SubTypes" => ["(creature", "and/or", "type)|Judge", "The"],
-                _ => null
-            };
-        }
-        private static List<string> CleanAndFilter(IEnumerable<string> input, HashSet<string>? removeItems = null, bool shouldNotSplit = false)
+        private static List<string> CleanAndFilter(IEnumerable<string> input, HashSet<string>? removeItems, bool shouldNotSplit)
         {
             char[] separatorArray = [','];
 
@@ -247,10 +224,32 @@ namespace CollectaMundo.Models
                 .Select(item => item.Trim())
                 .Where(item => removeItems == null || !removeItems.Contains(item)) // Apply filter
                 .Distinct()
-                .OrderBy(item => item)
-                .ToList(); // Ensuring `OrderBy(item)` works
+                .ToList();
 
-            return processedItems;
+            // ✅ Separate Numeric & Non-Numeric Values
+            var numericValues = processedItems
+                .Where(v => double.TryParse(v, out _))    // Extract numbers
+                .Select(double.Parse)                     // Convert to actual numbers
+                .OrderBy(n => n)                          // Sort Numerically
+                .Select(n => n.ToString())                // Convert back to string
+                .ToList();
+
+            var stringValues = processedItems
+                .Where(v => !double.TryParse(v, out _))   // Extract non-numeric values
+                .OrderBy(v => v)                          // Sort Alphabetically
+                .ToList();
+
+            // Combine Numeric & String Values (Numeric First)
+            return [.. numericValues, .. stringValues];
+        }
+        private static HashSet<string>? GetUnwantedItems(string criteriaKey)
+        {
+            return criteriaKey switch
+            {
+                "Types" => ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards"],
+                "SubTypes" => ["(creature", "and/or", "type)|Judge", "The"],
+                _ => null
+            };
         }
         public static IEnumerable<BaseFilterCriteria> GetActiveFilters(IEnumerable<FilterSelections> filterSelections)
         {

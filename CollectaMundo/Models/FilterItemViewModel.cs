@@ -15,7 +15,6 @@ namespace CollectaMundo.Models
         public bool _suppressFiltering = false; // Used to temporarily disable filtering
 
         public ObservableCollection<string>? AvailableOptions { get; } // For text-based filters
-        public ObservableCollection<int>? AvailableNumericOptions { get; } // For numeric filters
         public ObservableCollection<OperatorType>? AvailableOperators { get; }
 
         // Operator selection (e.g., "<", ">=", "=")
@@ -52,22 +51,6 @@ namespace CollectaMundo.Models
                 }
             }
         }
-
-        // **Selected Numeric Value (for numeric filters)**
-        private int? _selectedNumericValue;
-        public int? SelectedNumericValue
-        {
-            get => _selectedNumericValue;
-            set
-            {
-                if (_selectedNumericValue != value)
-                {
-                    _selectedNumericValue = value;
-                    OnPropertyChanged(nameof(SelectedNumericValue));
-                }
-            }
-        }
-
         public string DefaultText { get; }
 
         private ObservableCollection<string> _filteredOptions;
@@ -95,44 +78,30 @@ namespace CollectaMundo.Models
         public FilterItemViewModel(string criteriaKey, IEnumerable<string> availableOptions, string defaultText)
         {
             CriteriaKey = criteriaKey;
-            AvailableOptions = new ObservableCollection<string>(availableOptions);
+            AvailableOptions = [.. availableOptions];
             DefaultText = defaultText;
 
             _filterText = DefaultText;
-            _filteredOptions = new ObservableCollection<string>(availableOptions);
+            _filteredOptions = [.. availableOptions];
 
             if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
             {
-                AvailableOperators = new ObservableCollection<OperatorType>(mapping.Operators);
-                OperatorSelection = mapping.Operators.FirstOrDefault(OperatorType.OR); // Default "OR"
-            }
-            else
-            {
-                AvailableOperators = new ObservableCollection<OperatorType> { OperatorType.OR }; // Default fallback
-                OperatorSelection = OperatorType.OR;
+                AvailableOperators = [.. mapping.Operators];
+                OperatorSelection = mapping.Operators.FirstOrDefault();
             }
         }
-
-        // Constructor for Numeric Filters
-        public FilterItemViewModel(string criteriaKey, IEnumerable<int> availableNumericOptions, List<OperatorType> operators)
-        {
-            CriteriaKey = criteriaKey;
-            AvailableNumericOptions = new ObservableCollection<int>(availableNumericOptions.OrderBy(n => n));  // Ensure Sorted Order
-            AvailableOperators = new ObservableCollection<OperatorType>(operators);
-            OperatorSelection = operators.FirstOrDefault(OperatorType.OR); // Default "OR"
-            SelectedNumericValue = AvailableNumericOptions.FirstOrDefault();  // Default to "0"
-        }
-
-
         private void UpdateFilteredOptions()
         {
             var filtered = AvailableOptions?
                 .Where(option => string.IsNullOrWhiteSpace(FilterText) ||
-                                 option.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0)
+                                 option.Contains(FilterText, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            FilteredOptions = new ObservableCollection<string>(filtered ?? []);
+            FilteredOptions = [.. filtered ?? []];
         }
+
+
+
 
         public void DebugFilterItem()
         {
@@ -140,7 +109,6 @@ namespace CollectaMundo.Models
             Debug.WriteLine($"Default Text: {DefaultText}");
             Debug.WriteLine($"Filter Text: {FilterText}");
             Debug.WriteLine($"Available Options: {string.Join(", ", AvailableOptions ?? [])}");
-            Debug.WriteLine($"Available Numeric Options: {string.Join(", ", AvailableNumericOptions ?? [])}");
             Debug.WriteLine($"Number of options: {AvailableOptions?.Count ?? 0}");
             Debug.WriteLine($"====================================");
         }

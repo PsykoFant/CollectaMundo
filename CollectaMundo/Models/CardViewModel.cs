@@ -12,14 +12,14 @@ namespace CollectaMundo.Models
 {
     public class CardViewModel : INotifyPropertyChanged
     {
-        public Dictionary<string, (string Property, OperatorType[] Operators)> CriteriaMappings => FilterCriteriaMappings.CriteriaMappings;
+        public static Dictionary<string, (string Property, OperatorType[] Operators, bool ShouldNotSplit)> CriteriaMappings => FilterCriteriaMappings.CriteriaMappings;
 
-        public ObservableCollection<CardSet> ColorIcons { get; } = new();
+        public ObservableCollection<CardSet> ColorIcons { get; } = [];
 
-        public List<CardSet> allCards = new();
-        public List<CardSet> myCards = new();
-        private List<CardSet> allCardsForDecks = new();
-        private List<CardSet> cardsInDecks = new();
+        public List<CardSet> allCards = [];
+        public List<CardSet> myCards = [];
+        public List<CardSet> allCardsForDecks = [];
+        private List<CardSet> cardsInDecks = [];
 
         private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -38,23 +38,9 @@ namespace CollectaMundo.Models
             AllCardsForDecksView = new ListCollectionView(allCardsForDecks);
             CardsInDecksView = new ListCollectionView(cardsInDecks);
         }
-        public void ApplyFilters(IEnumerable<BaseFilterCriteria> filters)
-        {
-            AllCardsView.Filter = obj =>
-            {
-                if (obj is not CardSet card)
-                {
-                    return false;
-                }
-
-                return filters.All(filter => filter.Matches(card));
-            };
-
-            AllCardsView.Refresh();
-        }
 
         // Async method to populate data
-        public async Task PopulateCardDataGridAsync(List<CardSet> cardList, ListCollectionView view, string query, DataGridContext context)
+        public static async Task PopulateCardDataGridAsync(List<CardSet> cardList, ListCollectionView view, string query, DataGridContext context)
         {
             try
             {
@@ -62,7 +48,7 @@ namespace CollectaMundo.Models
 
                 Debug.WriteLine($"Populating {context} ...");
 
-                List<CardSet> tempCardList = new();
+                List<CardSet> tempCardList = [];
                 using SQLiteCommand command = new(query, DBAccess.connection);
                 using DbDataReader reader = await command.ExecuteReaderAsync();
 

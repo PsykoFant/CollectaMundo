@@ -123,8 +123,7 @@
                     <ComboBox ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableOperators, RelativeSource={RelativeSource AncestorType=Window}}"
                               SelectedItem="{Binding FilterVM.Filters[ManaValue].OperatorSelection, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}" />
                     <!-- Numeric Value Selection -->
-                    <ComboBox ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                              SelectedItem="{Binding FilterVM.Filters[ManaValue].SelectedNumericValue, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}" />
+                    <ComboBox ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </StackPanel>
 
                 <!--Rarity-->
@@ -1303,6 +1302,7 @@
                     </Grid>
                     <Grid Grid.Row="1">
                         <DataGrid x:Name="AllCardsForDecksDataGrid"
+                                  ItemsSource="{Binding CardVM.AllCardsForDecksView}"
                                   AutoGenerateColumns="False"
                                   SelectionChanged="CardImageSelectionChangedHandler"
                                   MouseDoubleClick="AddCardToDeck"

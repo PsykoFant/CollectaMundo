@@ -271,8 +271,9 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            await CardVM.PopulateCardDataGridAsync(CardVM.allCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
-            await CardVM.PopulateCardDataGridAsync(CardVM.myCards, CardVM.MyCardsView, myCollectionQuery, DataGridContext.MyCollection);
+            await CardViewModel.PopulateCardDataGridAsync(CardVM.allCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
+            await CardViewModel.PopulateCardDataGridAsync(CardVM.myCards, CardVM.MyCardsView, myCollectionQuery, DataGridContext.MyCollection);
+            await CardViewModel.PopulateCardDataGridAsync(CardVM.allCardsForDecks, CardVM.AllCardsForDecksView, allCardsForDecksQuery, DataGridContext.AllCardsForDecks);
             await CardVM.LoadColorIconsAsync();
 
             OnPropertyChanged(nameof(CardVM)); // This ensures CardVM bindings refresh
@@ -287,10 +288,7 @@ namespace CollectaMundo
 
             Task loadDecks = LoadAllDecksAsync();
             Task populateAllFormatsList = PopulateAllFormatsListAsync();
-            Task loadCardsForDecks = PopulateCardDataGridAsync(allCardsForDecks, allCardsForDecksQuery, DataGridContext.AllCardsForDecks);
-
-            //await Task.WhenAll(loadAllCards, loadMyCollection, loadColorIcons, loadDecks, populateAllFormatsList, loadCardsForDecks);
-            await Task.WhenAll(loadDecks, populateAllFormatsList, loadCardsForDecks);
+            await Task.WhenAll(loadDecks, populateAllFormatsList);
 
 
             DBAccess.CloseConnection();
@@ -965,37 +963,31 @@ namespace CollectaMundo
         {
             if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
             {
-                if (!filterItem.IsDropDownOpen) // Only open if it's closed
-                {
-                    Application.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        filterItem.IsDropDownOpen = true;
-                    }, System.Windows.Threading.DispatcherPriority.Background);
-                }
-
                 textBox.Text = "";
                 textBox.Foreground = new SolidColorBrush(Colors.Black);
-
             }
         }
+
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)
         {
             if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
             {
                 if (string.IsNullOrWhiteSpace(textBox.Text))
                 {
-                    filterItem._suppressFiltering = true; // Temporarily disable filtering
-                    filterItem.FilterText = filterItem.DefaultText; // Restore default text without filtering
-                    filterItem._suppressFiltering = false;
+                    filterItem.FilterText = filterItem.DefaultText;
                     textBox.Foreground = new SolidColorBrush(Colors.Gray);
                 }
+
+                Debug.WriteLine($"I lose focus - is dropdown open? {filterItem.IsDropDownOpen}");
             }
         }
+
+
         public void ApplyFiltersToAllLists()
         {
-            FilterManagerOld.ApplyFilter(allCards, AllCardsDataGrid);
-            FilterManagerOld.ApplyFilter(myCards, MyCollectionDataGrid);
-            FilterManagerOld.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
+            //FilterManagerOld.ApplyFilter(allCards, AllCardsDataGrid);
+            //FilterManagerOld.ApplyFilter(myCards, MyCollectionDataGrid);
+            //FilterManagerOld.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
         }
 
         // Reset filter elements
@@ -1689,8 +1681,8 @@ namespace CollectaMundo
             // Update the db views to load prices from the selected retailer
             await DownloadAndPrepDB.CreateViews();
 
-            Task loadAllCards = CardVM.PopulateCardDataGridAsync(CardVM.allCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
-            Task loadMyCollection = CardVM.PopulateCardDataGridAsync(CardVM.myCards, CardVM.MyCardsView, myCollectionQuery, DataGridContext.MyCollection);
+            Task loadAllCards = CardViewModel.PopulateCardDataGridAsync(CardVM.allCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
+            Task loadMyCollection = CardViewModel.PopulateCardDataGridAsync(CardVM.myCards, CardVM.MyCardsView, myCollectionQuery, DataGridContext.MyCollection);
 
             await Task.WhenAll(loadAllCards, loadMyCollection);
 

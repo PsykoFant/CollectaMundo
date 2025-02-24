@@ -9,7 +9,6 @@ namespace CollectaMundo.Models
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
         public FilterViewModel(CardViewModel cardViewModel)
         {
             var filterDefaults = FilterManager.GetFilterDefaults(cardViewModel);
@@ -19,6 +18,10 @@ namespace CollectaMundo.Models
             }
         }
 
+
+
+
+        // Debug
         public FilterItemViewModel? GetFilterItem(string criteriaKey) => Filters.TryGetValue(criteriaKey, out var filterItem) ? filterItem : null;
         public void DebugFilterItems(string criteriaKey)
         {
