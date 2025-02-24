@@ -74,7 +74,6 @@ namespace CollectaMundo
         public readonly string allCardsQuery = "SELECT * FROM view_allCards";
         public readonly string myCollectionQuery = "SELECT * FROM view_myCollection;";
         public readonly string allCardsForDecksQuery = "SELECT * FROM view_allCardsForDecks;";
-        private readonly string colourQuery = "SELECT* FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ('W', 'U', 'B', 'R', 'G', 'C', 'X') ORDER BY CASE uniqueManaSymbol WHEN 'W' THEN 1 WHEN 'U' THEN 2 WHEN 'B' THEN 3 WHEN 'R' THEN 4 WHEN 'G' THEN 5 WHEN 'C' THEN 6 WHEN 'X' THEN 7 END;";
 
         // Flag to track startup phase
         public bool _isStartup = true;
@@ -84,7 +83,6 @@ namespace CollectaMundo
         public readonly List<CardSet> myCards = [];
         public readonly List<CardSet> allCardsForDecks = [];
         public readonly List<CardSet> cardsInDecks = [];
-        private readonly List<CardSet> ColorIcons = [];
 
         public enum DataGridContext
         {
@@ -1015,8 +1013,8 @@ namespace CollectaMundo
             FilterSummaryTextBlock.Text = string.Empty;
 
             // Clear non-custom comboboxes
-            ManaValueOperatorComboBox.SelectedIndex = -1;
-            ManaValueComboBox.SelectedIndex = -1;
+            //ManaValueOperatorComboBox.SelectedIndex = -1;
+            //ManaValueComboBox.SelectedIndex = -1;
 
             // Find and clear all ComboBoxes in the DataGrid header
             List<ComboBox> headerComboBoxesAllCards = FilterManagerOld.FindVisualChildren<ComboBox>(AllCardsDataGrid);

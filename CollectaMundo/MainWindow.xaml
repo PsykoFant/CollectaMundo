@@ -118,8 +118,14 @@
 
                 <!--Mana value filtering-->
                 <Label x:Name="ManaValueLabel" Content="Mana value is: " HorizontalAlignment="Left" Margin="0,190,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
-                <ComboBox x:Name="ManaValueOperatorComboBox" HorizontalAlignment="Left" Margin="10,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueOperatorComboBox_SelectionChanged"/>
-                <ComboBox x:Name="ManaValueComboBox" HorizontalAlignment="Left" Margin="125,215,0,0" VerticalAlignment="Top" Height="20" SelectionChanged="ManaValueComboBox_SelectionChanged"/>
+                <StackPanel VerticalAlignment="Top" Orientation="Horizontal"  Margin="10,215,0,0" Height="20">
+                    <!-- Operator Selection -->
+                    <ComboBox ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableOperators, RelativeSource={RelativeSource AncestorType=Window}}"
+                              SelectedItem="{Binding FilterVM.Filters[ManaValue].OperatorSelection, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}" />
+                    <!-- Numeric Value Selection -->
+                    <ComboBox ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableNumericOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                              SelectedItem="{Binding FilterVM.Filters[ManaValue].SelectedNumericValue, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}" />
+                </StackPanel>
 
                 <!--Rarity-->
                 <ComboBox DataContext="{Binding FilterVM.Filters[Rarity], RelativeSource={RelativeSource AncestorType=Window}}"
@@ -180,7 +186,6 @@
                           ItemsSource="{Binding AvailableOperators}"
                           SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
                 </ComboBox>
-
 
                 <!--SuperTypes-->
                 <ComboBox DataContext="{Binding FilterVM.Filters[SuperTypes], RelativeSource={RelativeSource AncestorType=Window}}"

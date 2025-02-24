@@ -13,9 +13,12 @@ namespace CollectaMundo.Models
         public string CriteriaKey { get; }
 
         public bool _suppressFiltering = false; // Used to temporarily disable filtering
-        public ObservableCollection<string> AvailableOptions { get; }
+
+        public ObservableCollection<string>? AvailableOptions { get; } // For text-based filters
+        public ObservableCollection<int>? AvailableNumericOptions { get; } // For numeric filters
         public ObservableCollection<OperatorType>? AvailableOperators { get; }
 
+        // Operator selection (e.g., "<", ">=", "=")
         private OperatorType _operatorSelection;
         public OperatorType OperatorSelection
         {
@@ -30,6 +33,7 @@ namespace CollectaMundo.Models
             }
         }
 
+        // **Filter Text (for text-based filters)**
         private string _filterText = string.Empty;
         public string FilterText
         {
@@ -41,13 +45,29 @@ namespace CollectaMundo.Models
                     _filterText = value;
                     OnPropertyChanged(nameof(FilterText));
 
-                    if (!_suppressFiltering) // Only update filtering when allowed
+                    if (!_suppressFiltering)
                     {
                         UpdateFilteredOptions();
                     }
                 }
             }
         }
+
+        // **Selected Numeric Value (for numeric filters)**
+        private int? _selectedNumericValue;
+        public int? SelectedNumericValue
+        {
+            get => _selectedNumericValue;
+            set
+            {
+                if (_selectedNumericValue != value)
+                {
+                    _selectedNumericValue = value;
+                    OnPropertyChanged(nameof(SelectedNumericValue));
+                }
+            }
+        }
+
         public string DefaultText { get; }
 
         private ObservableCollection<string> _filteredOptions;
@@ -58,28 +78,6 @@ namespace CollectaMundo.Models
             {
                 _filteredOptions = value;
                 OnPropertyChanged(nameof(FilteredOptions));
-            }
-        }
-        public FilterItemViewModel(string criteriaKey, ObservableCollection<string> availableOptions, string defaultText)
-        {
-            CriteriaKey = criteriaKey;
-            AvailableOptions = availableOptions;
-            DefaultText = defaultText;
-
-            // Set FilterText to DefaultText at startup
-            _filterText = DefaultText;
-
-            _filteredOptions = [.. availableOptions];
-
-            if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
-            {
-                AvailableOperators = new ObservableCollection<OperatorType>(mapping.Operators);
-                OperatorSelection = mapping.Operators.FirstOrDefault(OperatorType.OR); // Default "OR"
-            }
-            else
-            {
-                AvailableOperators = new ObservableCollection<OperatorType> { OperatorType.OR }; // Default fallback
-                OperatorSelection = OperatorType.OR;
             }
         }
 
@@ -93,14 +91,46 @@ namespace CollectaMundo.Models
                 OnPropertyChanged(nameof(IsDropDownOpen));
             }
         }
+
+        public FilterItemViewModel(string criteriaKey, IEnumerable<string> availableOptions, string defaultText)
+        {
+            CriteriaKey = criteriaKey;
+            AvailableOptions = new ObservableCollection<string>(availableOptions);
+            DefaultText = defaultText;
+
+            _filterText = DefaultText;
+            _filteredOptions = new ObservableCollection<string>(availableOptions);
+
+            if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
+            {
+                AvailableOperators = new ObservableCollection<OperatorType>(mapping.Operators);
+                OperatorSelection = mapping.Operators.FirstOrDefault(OperatorType.OR); // Default "OR"
+            }
+            else
+            {
+                AvailableOperators = new ObservableCollection<OperatorType> { OperatorType.OR }; // Default fallback
+                OperatorSelection = OperatorType.OR;
+            }
+        }
+
+        // **Constructor for Numeric Filters**
+        public FilterItemViewModel(string criteriaKey, IEnumerable<int> availableNumericOptions, List<OperatorType> operators)
+        {
+            CriteriaKey = criteriaKey;
+            AvailableNumericOptions = new ObservableCollection<int>(availableNumericOptions);
+            AvailableOperators = new ObservableCollection<OperatorType>(operators);
+            OperatorSelection = operators.FirstOrDefault(OperatorType.EQUALS); // Default "="
+            SelectedNumericValue = null;
+        }
+
         private void UpdateFilteredOptions()
         {
-            var filtered = AvailableOptions
+            var filtered = AvailableOptions?
                 .Where(option => string.IsNullOrWhiteSpace(FilterText) ||
                                  option.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0)
                 .ToList();
 
-            FilteredOptions = [.. filtered];
+            FilteredOptions = new ObservableCollection<string>(filtered ?? []);
         }
 
         public void DebugFilterItem()
@@ -108,10 +138,10 @@ namespace CollectaMundo.Models
             Debug.WriteLine($"===== DEBUG: Filter Item ({CriteriaKey}) =====");
             Debug.WriteLine($"Default Text: {DefaultText}");
             Debug.WriteLine($"Filter Text: {FilterText}");
-            Debug.WriteLine($"Available Options: {string.Join(", ", AvailableOptions)}");
-            Debug.WriteLine($"Number of options: {AvailableOptions.Count}");
+            Debug.WriteLine($"Available Options: {string.Join(", ", AvailableOptions ?? [])}");
+            Debug.WriteLine($"Available Numeric Options: {string.Join(", ", AvailableNumericOptions ?? [])}");
+            Debug.WriteLine($"Number of options: {AvailableOptions?.Count ?? 0}");
             Debug.WriteLine($"====================================");
         }
     }
-
 }
