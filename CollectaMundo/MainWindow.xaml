@@ -139,7 +139,8 @@
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                     Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
                                     GotFocus="TextBox_GotFocus"
-                                    LostFocus="TextBox_LostFocus"/>
+                                    LostFocus="TextBox_LostFocus"
+                                    TextChanged="TextBox_TextChanged"/>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">

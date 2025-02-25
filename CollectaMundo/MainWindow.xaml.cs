@@ -965,6 +965,7 @@ namespace CollectaMundo
             {
                 textBox.Text = "";
                 textBox.Foreground = new SolidColorBrush(Colors.Black);
+                filterItem.IsDropDownOpen = true;
             }
         }
 
@@ -974,11 +975,22 @@ namespace CollectaMundo
             {
                 if (string.IsNullOrWhiteSpace(textBox.Text))
                 {
+
                     filterItem.FilterText = filterItem.DefaultText;
                     textBox.Foreground = new SolidColorBrush(Colors.Gray);
                 }
 
-                Debug.WriteLine($"I lose focus - is dropdown open? {filterItem.IsDropDownOpen}");
+                //Debug.WriteLine($"I lose focus - is dropdown open? {filterItem.IsDropDownOpen}");
+            }
+        }
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
+            {
+                if (!filterItem.IsDropDownOpen)  // Only open if it's closed
+                {
+                    filterItem.IsDropDownOpen = true;
+                }
             }
         }
 
