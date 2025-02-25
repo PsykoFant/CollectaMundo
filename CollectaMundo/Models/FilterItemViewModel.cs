@@ -41,7 +41,7 @@ namespace CollectaMundo.Models
 
         // 🔹 Filtered text-based options
         public ObservableCollection<string> AvailableOptions =>
-            new(FilterOptions.Select(opt => opt.OptionName));
+            [.. FilterOptions.Select(opt => opt.OptionName)];
 
         // 🔹 Filter text (for searching in options)
         private string _filterText = string.Empty;
@@ -97,12 +97,10 @@ namespace CollectaMundo.Models
             _filterText = DefaultText;
 
             // 🔹 Convert available options into FilterOption objects
-            FilterOptions = new ObservableCollection<FilterOption>(
-                availableOptions.Select(option => new FilterOption(option))
-            );
+            FilterOptions = [.. availableOptions.Select(option => new FilterOption(option))];
 
             // 🔹 Initially, show all options
-            _filteredOptions = new ObservableCollection<FilterOption>(FilterOptions);
+            _filteredOptions = [.. FilterOptions];
 
             // 🔹 Subscribe to selection changes in checkboxes
             foreach (var filterOption in FilterOptions)
@@ -117,7 +115,7 @@ namespace CollectaMundo.Models
             // 🔹 Set available operators based on criteria
             if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
             {
-                AvailableOperators = new ObservableCollection<OperatorType>(mapping.Operators);
+                AvailableOperators = [.. mapping.Operators];
                 OperatorSelection = mapping.Operators.FirstOrDefault();
             }
         }
@@ -140,11 +138,9 @@ namespace CollectaMundo.Models
         private void ApplyTextFilter()
         {
             var filtered = FilterOptions
-                .Where(option => string.IsNullOrWhiteSpace(FilterText) ||
-                                 option.OptionName.Contains(FilterText, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+                .Where(option => string.IsNullOrWhiteSpace(FilterText) || option.OptionName.Contains(FilterText, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            FilteredOptions = new ObservableCollection<FilterOption>(filtered);
+            FilteredOptions = [.. filtered];
         }
 
         // 🔹 Debugging Methods
@@ -176,15 +172,15 @@ namespace CollectaMundo.Models
     /// <summary>
     /// Represents an individual selectable filter option.
     /// </summary>
-    public class FilterOption : INotifyPropertyChanged
+    public class FilterOption(string optionName, bool isSelected = false) : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        public string OptionName { get; }
+        public string OptionName { get; } = optionName;
 
-        private bool _isSelected;
+        private bool _isSelected = isSelected;
         public bool IsSelected
         {
             get => _isSelected;
@@ -196,12 +192,6 @@ namespace CollectaMundo.Models
                     OnPropertyChanged(nameof(IsSelected));
                 }
             }
-        }
-
-        public FilterOption(string optionName, bool isSelected = false)
-        {
-            OptionName = optionName;
-            _isSelected = isSelected;
         }
     }
 }
