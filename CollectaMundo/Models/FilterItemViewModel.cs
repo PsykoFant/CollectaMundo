@@ -9,15 +9,21 @@ namespace CollectaMundo.Models
     public class FilterItemViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        public string CriteriaKey { get; }
+        protected void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
+        public string CriteriaKey { get; }
         public bool _suppressFiltering = false; // Used to temporarily disable filtering
 
-        public ObservableCollection<string>? AvailableOptions { get; } // For text-based filters
+        // **List of options with selection state**
+        public ObservableCollection<FilterOption> FilterOptions { get; }
+
+        // **Selected values**
+        public ObservableCollection<string> SelectedOptions { get; } = new();
+
+        // **Operators**
         public ObservableCollection<OperatorType>? AvailableOperators { get; }
 
-        // Operator selection (e.g., "<", ">=", "=")
         private OperatorType _operatorSelection;
         public OperatorType OperatorSelection
         {
@@ -32,7 +38,7 @@ namespace CollectaMundo.Models
             }
         }
 
-        // **Filter Text (for text-based filters)**
+        // **Filter Text**
         private string _filterText = string.Empty;
         public string FilterText
         {
@@ -51,10 +57,11 @@ namespace CollectaMundo.Models
                 }
             }
         }
+
         public string DefaultText { get; }
 
-        private ObservableCollection<string> _filteredOptions;
-        public ObservableCollection<string> FilteredOptions
+        private ObservableCollection<FilterOption> _filteredOptions;
+        public ObservableCollection<FilterOption> FilteredOptions
         {
             get => _filteredOptions;
             private set
@@ -75,42 +82,110 @@ namespace CollectaMundo.Models
             }
         }
 
+        // **Constructor**
         public FilterItemViewModel(string criteriaKey, IEnumerable<string> availableOptions, string defaultText)
         {
             CriteriaKey = criteriaKey;
-            AvailableOptions = [.. availableOptions];
             DefaultText = defaultText;
-
             _filterText = DefaultText;
-            _filteredOptions = [.. availableOptions];
 
+            // Convert available options into FilterOption objects
+            FilterOptions = new ObservableCollection<FilterOption>(
+                availableOptions.Select(option => new FilterOption(option))
+            );
+
+            // Initially, filtered options match all options
+            _filteredOptions = new ObservableCollection<FilterOption>(FilterOptions);
+
+            // Subscribe to selection changes
+            foreach (var filterOption in FilterOptions)
+            {
+                filterOption.PropertyChanged += (sender, e) =>
+                {
+                    if (e.PropertyName == nameof(FilterOption.IsSelected))
+                    {
+                        UpdateSelectedOptions();
+                    }
+                };
+            }
+
+            // Set available operators
             if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
             {
-                AvailableOperators = [.. mapping.Operators];
+                AvailableOperators = new ObservableCollection<OperatorType>(mapping.Operators);
                 OperatorSelection = mapping.Operators.FirstOrDefault();
             }
         }
-        private void UpdateFilteredOptions()
-        {
-            var filtered = AvailableOptions?
-                .Where(option => string.IsNullOrWhiteSpace(FilterText) ||
-                                 option.Contains(FilterText, StringComparison.OrdinalIgnoreCase))
-                .ToList();
 
-            FilteredOptions = [.. filtered ?? []];
+        // **Update selected options when checkboxes are checked/unchecked**
+        private void UpdateSelectedOptions()
+        {
+            SelectedOptions.Clear();
+            foreach (var option in FilterOptions.Where(opt => opt.IsSelected))
+            {
+                SelectedOptions.Add(option.Name);
+            }
+
+            DebugSelectedOptions();
         }
 
+        // **Filter the displayed options based on user input**
+        private void UpdateFilteredOptions()
+        {
+            var filtered = FilterOptions
+                .Where(option => string.IsNullOrWhiteSpace(FilterText) ||
+                                 option.Name.Contains(FilterText, StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
+            FilteredOptions = new ObservableCollection<FilterOption>(filtered);
+        }
 
+        // **Debugging Methods**
+        public void DebugSelectedOptions()
+        {
+            Debug.WriteLine($"===== DEBUG: Selected Items for {CriteriaKey} =====");
+            Debug.WriteLine($"Selected: {string.Join(", ", SelectedOptions)}");
+            Debug.WriteLine($"=============================================");
+        }
 
         public void DebugFilterItem()
         {
             Debug.WriteLine($"===== DEBUG: Filter Item ({CriteriaKey}) =====");
             Debug.WriteLine($"Default Text: {DefaultText}");
             Debug.WriteLine($"Filter Text: {FilterText}");
-            Debug.WriteLine($"Available Options: {string.Join(", ", AvailableOptions ?? [])}");
-            Debug.WriteLine($"Number of options: {AvailableOptions?.Count ?? 0}");
+            Debug.WriteLine($"Available Options: {string.Join(", ", FilterOptions.Select(opt => opt.Name))}");
+            Debug.WriteLine($"Number of options: {FilterOptions.Count}");
             Debug.WriteLine($"====================================");
+        }
+    }
+
+    // **Helper Class for Selection Tracking**
+    public class FilterOption : INotifyPropertyChanged
+    {
+        public string Name { get; }
+
+        private bool _isSelected;
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected != value)
+                {
+                    _isSelected = value;
+                    OnPropertyChanged(nameof(IsSelected));
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        public FilterOption(string name, bool isSelected = false)
+        {
+            Name = name;
+            _isSelected = isSelected;
         }
     }
 }
