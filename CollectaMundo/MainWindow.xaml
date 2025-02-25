@@ -128,28 +128,28 @@
 
                 <!--Rarity-->
                 <ComboBox DataContext="{Binding FilterVM.Filters[Rarity], RelativeSource={RelativeSource AncestorType=Window}}"
-          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
-          HorizontalAlignment="Left" VerticalAlignment="Top" 
-          Margin="10,245,0,0" 
-          Width="180" Height="20">
+                          IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
+                          HorizontalAlignment="Left" VerticalAlignment="Top" 
+                          Margin="10,245,0,0" 
+                          Width="180" Height="20">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
                                 <TextBox 
-                    Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
-                    GotFocus="TextBox_GotFocus"
-                    LostFocus="TextBox_LostFocus"/>
+                                    Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
+                                    GotFocus="TextBox_GotFocus"
+                                    LostFocus="TextBox_LostFocus"/>
                                 <ToggleButton 
-                    Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
-                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
+                                    Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
+                                    IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
                                     <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
                                         <ListBox ItemsSource="{Binding FilteredOptions}" SelectionMode="Multiple"
-                                 VirtualizingPanel.IsVirtualizing="True"
-                                 ScrollViewer.CanContentScroll="True">
+                                                 VirtualizingPanel.IsVirtualizing="True"
+                                                 ScrollViewer.CanContentScroll="True">
                                             <ListBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -162,8 +162,8 @@
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                 <CheckBox Margin="5,2"
-                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                          Content="{Binding Name}">
+                                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                          Content="{Binding OptionName}">
                                                                 </CheckBox>
                                                             </ControlTemplate>
                                                         </Setter.Value>
@@ -177,7 +177,6 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-
                 <ComboBox DataContext="{Binding FilterVM.Filters[Rarity], RelativeSource={RelativeSource AncestorType=Window}}"
                           Width="60"
                           Margin="190,245,0,0"
@@ -223,8 +222,8 @@
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                 <CheckBox Margin="5,2"
-                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
-                                                                    <ContentPresenter/>
+                                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                          Content="{Binding OptionName}">
                                                                 </CheckBox>
                                                             </ControlTemplate>
                                                         </Setter.Value>
@@ -283,8 +282,8 @@
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                 <CheckBox Margin="5,2"
-                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
-                                                                    <ContentPresenter/>
+                                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                          Content="{Binding OptionName}">
                                                                 </CheckBox>
                                                             </ControlTemplate>
                                                         </Setter.Value>
@@ -343,8 +342,8 @@
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                 <CheckBox Margin="5,2"
-                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
-                                                                    <ContentPresenter/>
+                                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                          Content="{Binding OptionName}">
                                                                 </CheckBox>
                                                             </ControlTemplate>
                                                         </Setter.Value>
@@ -403,8 +402,8 @@
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                 <CheckBox Margin="5,2"
-                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
-                                                                    <ContentPresenter/>
+                                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                          Content="{Binding OptionName}">
                                                                 </CheckBox>
                                                             </ControlTemplate>
                                                         </Setter.Value>
@@ -463,8 +462,8 @@
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                 <CheckBox Margin="5,2"
-                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
-                                                                    <ContentPresenter/>
+                                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                          Content="{Binding OptionName}">
                                                                 </CheckBox>
                                                             </ControlTemplate>
                                                         </Setter.Value>
@@ -540,8 +539,8 @@
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                 <CheckBox Margin="5,2"
-                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
-                                                                    <ContentPresenter/>
+                                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                          Content="{Binding OptionName}">
                                                                 </CheckBox>
                                                             </ControlTemplate>
                                                         </Setter.Value>
@@ -602,8 +601,8 @@
                                                         <Setter.Value>
                                                             <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                 <CheckBox Margin="5,2"
-                                                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource Mode=TemplatedParent}}">
-                                                                    <ContentPresenter/>
+                                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                          Content="{Binding OptionName}">
                                                                 </CheckBox>
                                                             </ControlTemplate>
                                                         </Setter.Value>

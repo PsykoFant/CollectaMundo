@@ -6,24 +6,25 @@ using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Models
 {
+    /// <summary>
+    /// Represents a filterable item in the UI, supporting multi-selection and filtering.
+    /// </summary>
     public class FilterItemViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) =>
+        private void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
+        // 🔹 Core properties
         public string CriteriaKey { get; }
-        public bool _suppressFiltering = false; // Used to temporarily disable filtering
+        public bool _suppressFiltering = false; // Used to temporarily disable filtering.
 
-        // **List of options with selection state**
+        // 🔹 Selection-related properties
         public ObservableCollection<FilterOption> FilterOptions { get; }
+        public ObservableCollection<string> SelectedOptions { get; } = [];
 
-        // **Selected values**
-        public ObservableCollection<string> SelectedOptions { get; } = new();
-
-        // **Operators**
+        // 🔹 Operator selection
         public ObservableCollection<OperatorType>? AvailableOperators { get; }
-
         private OperatorType _operatorSelection;
         public OperatorType OperatorSelection
         {
@@ -38,7 +39,11 @@ namespace CollectaMundo.Models
             }
         }
 
-        // **Filter Text**
+        // 🔹 Filtered text-based options
+        public ObservableCollection<string> AvailableOptions =>
+            new(FilterOptions.Select(opt => opt.OptionName));
+
+        // 🔹 Filter text (for searching in options)
         private string _filterText = string.Empty;
         public string FilterText
         {
@@ -51,15 +56,14 @@ namespace CollectaMundo.Models
                     OnPropertyChanged(nameof(FilterText));
 
                     if (!_suppressFiltering)
-                    {
-                        UpdateFilteredOptions();
-                    }
+                        ApplyTextFilter();
                 }
             }
         }
 
         public string DefaultText { get; }
 
+        // 🔹 Filtered options (updates based on text search)
         private ObservableCollection<FilterOption> _filteredOptions;
         public ObservableCollection<FilterOption> FilteredOptions
         {
@@ -71,6 +75,7 @@ namespace CollectaMundo.Models
             }
         }
 
+        // 🔹 UI dropdown open state
         private bool _isDropDownOpen;
         public bool IsDropDownOpen
         {
@@ -82,34 +87,34 @@ namespace CollectaMundo.Models
             }
         }
 
-        // **Constructor**
+        /// <summary>
+        /// Constructor - Initializes filter options and selection tracking.
+        /// </summary>
         public FilterItemViewModel(string criteriaKey, IEnumerable<string> availableOptions, string defaultText)
         {
             CriteriaKey = criteriaKey;
             DefaultText = defaultText;
             _filterText = DefaultText;
 
-            // Convert available options into FilterOption objects
+            // 🔹 Convert available options into FilterOption objects
             FilterOptions = new ObservableCollection<FilterOption>(
                 availableOptions.Select(option => new FilterOption(option))
             );
 
-            // Initially, filtered options match all options
+            // 🔹 Initially, show all options
             _filteredOptions = new ObservableCollection<FilterOption>(FilterOptions);
 
-            // Subscribe to selection changes
+            // 🔹 Subscribe to selection changes in checkboxes
             foreach (var filterOption in FilterOptions)
             {
-                filterOption.PropertyChanged += (sender, e) =>
+                filterOption.PropertyChanged += (_, e) =>
                 {
                     if (e.PropertyName == nameof(FilterOption.IsSelected))
-                    {
                         UpdateSelectedOptions();
-                    }
                 };
             }
 
-            // Set available operators
+            // 🔹 Set available operators based on criteria
             if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
             {
                 AvailableOperators = new ObservableCollection<OperatorType>(mapping.Operators);
@@ -117,52 +122,67 @@ namespace CollectaMundo.Models
             }
         }
 
-        // **Update selected options when checkboxes are checked/unchecked**
+        /// <summary>
+        /// Updates the selected options when checkboxes are toggled.
+        /// </summary>
         private void UpdateSelectedOptions()
         {
             SelectedOptions.Clear();
             foreach (var option in FilterOptions.Where(opt => opt.IsSelected))
-            {
-                SelectedOptions.Add(option.Name);
-            }
+                SelectedOptions.Add(option.OptionName);
 
-            DebugSelectedOptions();
+            LogSelectedOptions();
         }
 
-        // **Filter the displayed options based on user input**
-        private void UpdateFilteredOptions()
+        /// <summary>
+        /// Applies text-based filtering to the options.
+        /// </summary>
+        private void ApplyTextFilter()
         {
             var filtered = FilterOptions
                 .Where(option => string.IsNullOrWhiteSpace(FilterText) ||
-                                 option.Name.Contains(FilterText, StringComparison.OrdinalIgnoreCase))
+                                 option.OptionName.Contains(FilterText, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             FilteredOptions = new ObservableCollection<FilterOption>(filtered);
         }
 
-        // **Debugging Methods**
-        public void DebugSelectedOptions()
+        // 🔹 Debugging Methods
+
+        /// <summary>
+        /// Logs selected items for debugging.
+        /// </summary>
+        private void LogSelectedOptions()
         {
             Debug.WriteLine($"===== DEBUG: Selected Items for {CriteriaKey} =====");
             Debug.WriteLine($"Selected: {string.Join(", ", SelectedOptions)}");
             Debug.WriteLine($"=============================================");
         }
 
+        /// <summary>
+        /// Logs filter state for debugging.
+        /// </summary>
         public void DebugFilterItem()
         {
             Debug.WriteLine($"===== DEBUG: Filter Item ({CriteriaKey}) =====");
             Debug.WriteLine($"Default Text: {DefaultText}");
             Debug.WriteLine($"Filter Text: {FilterText}");
-            Debug.WriteLine($"Available Options: {string.Join(", ", FilterOptions.Select(opt => opt.Name))}");
+            Debug.WriteLine($"Available Options: {string.Join(", ", FilterOptions.Select(opt => opt.OptionName))}");
             Debug.WriteLine($"Number of options: {FilterOptions.Count}");
             Debug.WriteLine($"====================================");
         }
     }
 
-    // **Helper Class for Selection Tracking**
+    /// <summary>
+    /// Represents an individual selectable filter option.
+    /// </summary>
     public class FilterOption : INotifyPropertyChanged
     {
-        public string Name { get; }
+        public event PropertyChangedEventHandler? PropertyChanged;
+        private void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        public string OptionName { get; }
 
         private bool _isSelected;
         public bool IsSelected
@@ -178,13 +198,9 @@ namespace CollectaMundo.Models
             }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
-        public FilterOption(string name, bool isSelected = false)
+        public FilterOption(string optionName, bool isSelected = false)
         {
-            Name = name;
+            OptionName = optionName;
             _isSelected = isSelected;
         }
     }
