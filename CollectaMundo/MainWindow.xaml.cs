@@ -968,7 +968,6 @@ namespace CollectaMundo
                 filterItem.IsDropDownOpen = true;
             }
         }
-
         private void TextBox_LostFocus(object sender, RoutedEventArgs e)
         {
             if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
@@ -976,25 +975,13 @@ namespace CollectaMundo
                 if (string.IsNullOrWhiteSpace(textBox.Text))
                 {
 
-                    filterItem.FilterText = filterItem.DefaultText;
+                    filterItem._suppressFiltering = true; // Temporarily disable filtering
+                    filterItem.FilterText = filterItem.DefaultText; // Restore default text without filtering
+                    filterItem._suppressFiltering = false;
                     textBox.Foreground = new SolidColorBrush(Colors.Gray);
                 }
-
-                //Debug.WriteLine($"I lose focus - is dropdown open? {filterItem.IsDropDownOpen}");
             }
         }
-        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
-            {
-                if (!filterItem.IsDropDownOpen)  // Only open if it's closed
-                {
-                    filterItem.IsDropDownOpen = true;
-                }
-            }
-        }
-
-
         public void ApplyFiltersToAllLists()
         {
             //FilterManagerOld.ApplyFilter(allCards, AllCardsDataGrid);
