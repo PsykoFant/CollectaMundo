@@ -90,6 +90,13 @@ namespace CollectaMundo.Models
             }
         }
 
+        private void ApplyTextFilter()
+        {
+            var filtered = FilterOptions.Where(option => string.IsNullOrWhiteSpace(FilterText) || option.OptionName.Contains(FilterText, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            FilteredOptions = [.. filtered];
+        }
+
 
         // Operator selection
         public ObservableCollection<OperatorType>? AvailableOperators { get; }
@@ -145,11 +152,11 @@ namespace CollectaMundo.Models
                 AvailableOperators = mapping.Operators != null ? [.. mapping.Operators] : null;
                 OperatorSelection = mapping.Operators?.FirstOrDefault() ?? OperatorType.OR;
 
-                // Handle Single-Selection Filters (e.g., Name, SetName)
-                if (FilterCategory == FilterType.Single)
-                {
-                    SelectedSingleOption = null; // Default to no selection
-                }
+                //// Handle Single-Selection Filters (e.g., Name, SetName)
+                //if (FilterCategory == FilterType.Single)
+                //{
+                //    SelectedSingleOption = null; // Default to no selection
+                //}
             }
         }
 
@@ -166,15 +173,7 @@ namespace CollectaMundo.Models
             MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
         }
 
-        /// <summary>
-        /// Applies text-based filtering to the options.
-        /// </summary>
-        private void ApplyTextFilter()
-        {
-            var filtered = FilterOptions.Where(option => string.IsNullOrWhiteSpace(FilterText) || option.OptionName.Contains(FilterText, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            FilteredOptions = [.. filtered];
-        }
 
         // 🔹 Debugging Methods
 
@@ -186,7 +185,7 @@ namespace CollectaMundo.Models
             Debug.WriteLine($"===== DEBUG: Filter Item ({CriteriaKey}) =====");
             Debug.WriteLine($"Default Text: {DefaultText}");
             Debug.WriteLine($"Filter Text: {FilterText}");
-            //Debug.WriteLine($"Available Options: {string.Join(", ", FilterOptions.Select(opt => opt.OptionName))}");
+            Debug.WriteLine($"Available Options: {string.Join(", ", FilterOptions.Select(opt => opt.OptionName))}");
             Debug.WriteLine($"Number of options: {FilterOptions.Count}");
             Debug.WriteLine($"====================================");
         }
