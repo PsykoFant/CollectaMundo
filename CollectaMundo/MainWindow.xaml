@@ -833,7 +833,8 @@
                                                   Height="20"
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                  ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  SelectedItem="{Binding FilterVM.Filters[Name].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -864,7 +865,8 @@
                                                   Height="20"
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[0][1], RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  ItemsSource="{Binding FilterVM.Filters[SetName].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                  ItemsSource="{Binding FilterVM.Filters[SetName].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  SelectedItem="{Binding FilterVM.Filters[SetName].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -1087,7 +1089,8 @@
                                                   Height="20"
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[1][0], RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                  ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  SelectedItem="{Binding FilterVM.Filters[Name].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -1118,7 +1121,8 @@
                                                   Height="20"
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[1][1], RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  ItemsSource="{Binding FilterVM.Filters[SetName].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                  ItemsSource="{Binding FilterVM.Filters[SetName].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  SelectedItem="{Binding FilterVM.Filters[SetName].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -1328,7 +1332,8 @@
                                                           Height="20"
                                                           IsEditable="True"
                                                           Width="{Binding ColumnWidths[2][0], RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                          ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                          SelectedItem="{Binding FilterVM.Filters[Name].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}">
                                                     <ComboBox.ItemsPanel>
                                                         <ItemsPanelTemplate>
                                                             <VirtualizingStackPanel />

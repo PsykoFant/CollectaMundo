@@ -45,7 +45,7 @@ namespace CollectaMundo.Models
                 switch (filter.FilterCategory)
                 {
                     case FilterType.Single:
-                        Debug.WriteLine($"  Selected Value: {filter.FilterText}");
+                        Debug.WriteLine($"  Selected Value: {filter.SelectedSingleOption}");
                         break;
 
                     case FilterType.Multi:

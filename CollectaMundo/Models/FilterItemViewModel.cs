@@ -17,13 +17,81 @@ namespace CollectaMundo.Models
 
         // 🔹 Core properties
         public string CriteriaKey { get; }
-        public bool _suppressFiltering = false; // Used to temporarily disable filtering.
+        public FilterType FilterCategory { get; }
+
+        // Selection-related properties for single-criteria
+
+        private string? _selectedSingleOption;
+        public string? SelectedSingleOption
+        {
+            get => _selectedSingleOption;
+            set
+            {
+                if (_selectedSingleOption != value)
+                {
+                    _selectedSingleOption = value;
+                    OnPropertyChanged(nameof(SelectedSingleOption));
+
+                    // Debug to verify persistence
+                    if (!MainWindow.CurrentInstance._isStartup)
+                    {
+                        MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
+                    }
+                }
+            }
+        }
 
         // Selection-related properties for multi-criteria
         public ObservableCollection<FilterOption> FilterOptions { get; }
         public ObservableCollection<string> SelectedOptions { get; } = [];
 
-        // 🔹 Operator selection
+
+        // View model for UI for custom comboboxes
+        public bool _suppressFiltering = false; // Used to temporarily disable filtering.
+        public ObservableCollection<string> AvailableOptions => [.. FilterOptions.Select(opt => opt.OptionName)];
+
+        private string _filterText = string.Empty;
+        public string FilterText
+        {
+            get => _filterText;
+            set
+            {
+                if (_filterText != value)
+                {
+                    _filterText = value;
+                    OnPropertyChanged(nameof(FilterText));
+
+                    if (!_suppressFiltering)
+                        ApplyTextFilter();
+                }
+            }
+        }
+        public string DefaultText { get; }
+
+        private ObservableCollection<FilterOption> _filteredOptions;
+        public ObservableCollection<FilterOption> FilteredOptions
+        {
+            get => _filteredOptions;
+            private set
+            {
+                _filteredOptions = value;
+                OnPropertyChanged(nameof(FilteredOptions));
+            }
+        }
+
+        private bool _isDropDownOpen;
+        public bool IsDropDownOpen
+        {
+            get => _isDropDownOpen;
+            set
+            {
+                _isDropDownOpen = value;
+                OnPropertyChanged(nameof(IsDropDownOpen));
+            }
+        }
+
+
+        // Operator selection
         public ObservableCollection<OperatorType>? AvailableOperators { get; }
 
         private OperatorType _operatorSelection;
@@ -45,55 +113,6 @@ namespace CollectaMundo.Models
             }
         }
 
-        // 🔹 Filtered text-based options
-        public ObservableCollection<string> AvailableOptions => [.. FilterOptions.Select(opt => opt.OptionName)];
-
-        // 🔹 Filter text (for searching in options)
-        private string _filterText = string.Empty;
-        public string FilterText
-        {
-            get => _filterText;
-            set
-            {
-                if (_filterText != value)
-                {
-                    _filterText = value;
-                    OnPropertyChanged(nameof(FilterText));
-
-                    if (!_suppressFiltering)
-                        ApplyTextFilter();
-                }
-            }
-        }
-        public string DefaultText { get; }
-
-        // Filtered options in custom comboboxes (updates based on text search)
-        private ObservableCollection<FilterOption> _filteredOptions;
-        public ObservableCollection<FilterOption> FilteredOptions
-        {
-            get => _filteredOptions;
-            private set
-            {
-                _filteredOptions = value;
-                OnPropertyChanged(nameof(FilteredOptions));
-            }
-        }
-
-        // UI dropdown open state
-        private bool _isDropDownOpen;
-        public bool IsDropDownOpen
-        {
-            get => _isDropDownOpen;
-            set
-            {
-                _isDropDownOpen = value;
-                OnPropertyChanged(nameof(IsDropDownOpen));
-            }
-        }
-
-        public FilterType FilterCategory { get; }
-
-
         /// <summary>
         /// Constructor - Initializes filter options and selection tracking.
         /// </summary>
@@ -109,7 +128,7 @@ namespace CollectaMundo.Models
             // Initially, show all options
             _filteredOptions = [.. FilterOptions];
 
-            // Subscribe to selection changes in checkboxes
+            // Subscribe to selection changes in checkboxes (for Multi-selection filters)
             foreach (var filterOption in FilterOptions)
             {
                 filterOption.PropertyChanged += (_, e) =>
@@ -119,13 +138,21 @@ namespace CollectaMundo.Models
                 };
             }
 
+            // Retrieve filter configuration from FilterCriteriaMappings
             if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
             {
                 FilterCategory = mapping.Type;
                 AvailableOperators = mapping.Operators != null ? [.. mapping.Operators] : null;
                 OperatorSelection = mapping.Operators?.FirstOrDefault() ?? OperatorType.OR;
+
+                // Handle Single-Selection Filters (e.g., Name, SetName)
+                if (FilterCategory == FilterType.Single)
+                {
+                    SelectedSingleOption = null; // Default to no selection
+                }
             }
         }
+
 
         /// <summary>
         /// Updates the selected options when checkboxes are toggled.
