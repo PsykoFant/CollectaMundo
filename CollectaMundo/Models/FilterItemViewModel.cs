@@ -19,12 +19,13 @@ namespace CollectaMundo.Models
         public string CriteriaKey { get; }
         public bool _suppressFiltering = false; // Used to temporarily disable filtering.
 
-        // 🔹 Selection-related properties
+        // Selection-related properties for multi-criteria
         public ObservableCollection<FilterOption> FilterOptions { get; }
         public ObservableCollection<string> SelectedOptions { get; } = [];
 
         // 🔹 Operator selection
         public ObservableCollection<OperatorType>? AvailableOperators { get; }
+
         private OperatorType _operatorSelection;
         public OperatorType OperatorSelection
         {
@@ -35,13 +36,17 @@ namespace CollectaMundo.Models
                 {
                     _operatorSelection = value;
                     OnPropertyChanged(nameof(OperatorSelection));
+
+                    if (!MainWindow.CurrentInstance._isStartup)
+                    {
+                        MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
+                    }
                 }
             }
         }
 
         // 🔹 Filtered text-based options
-        public ObservableCollection<string> AvailableOptions =>
-            [.. FilterOptions.Select(opt => opt.OptionName)];
+        public ObservableCollection<string> AvailableOptions => [.. FilterOptions.Select(opt => opt.OptionName)];
 
         // 🔹 Filter text (for searching in options)
         private string _filterText = string.Empty;
@@ -60,10 +65,9 @@ namespace CollectaMundo.Models
                 }
             }
         }
-
         public string DefaultText { get; }
 
-        // 🔹 Filtered options (updates based on text search)
+        // Filtered options in custom comboboxes (updates based on text search)
         private ObservableCollection<FilterOption> _filteredOptions;
         public ObservableCollection<FilterOption> FilteredOptions
         {
@@ -75,7 +79,7 @@ namespace CollectaMundo.Models
             }
         }
 
-        // 🔹 UI dropdown open state
+        // UI dropdown open state
         private bool _isDropDownOpen;
         public bool IsDropDownOpen
         {
@@ -87,6 +91,9 @@ namespace CollectaMundo.Models
             }
         }
 
+        public FilterType FilterCategory { get; }
+
+
         /// <summary>
         /// Constructor - Initializes filter options and selection tracking.
         /// </summary>
@@ -96,13 +103,13 @@ namespace CollectaMundo.Models
             DefaultText = defaultText;
             _filterText = DefaultText;
 
-            // 🔹 Convert available options into FilterOption objects
+            // Convert available options into FilterOption objects
             FilterOptions = [.. availableOptions.Select(option => new FilterOption(option))];
 
-            // 🔹 Initially, show all options
+            // Initially, show all options
             _filteredOptions = [.. FilterOptions];
 
-            // 🔹 Subscribe to selection changes in checkboxes
+            // Subscribe to selection changes in checkboxes
             foreach (var filterOption in FilterOptions)
             {
                 filterOption.PropertyChanged += (_, e) =>
@@ -112,11 +119,11 @@ namespace CollectaMundo.Models
                 };
             }
 
-            // 🔹 Set available operators based on criteria
             if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
             {
-                AvailableOperators = [.. mapping.Operators];
-                OperatorSelection = mapping.Operators.FirstOrDefault();
+                FilterCategory = mapping.Type;
+                AvailableOperators = mapping.Operators != null ? [.. mapping.Operators] : null;
+                OperatorSelection = mapping.Operators?.FirstOrDefault() ?? OperatorType.OR;
             }
         }
 
@@ -129,7 +136,7 @@ namespace CollectaMundo.Models
             foreach (var option in FilterOptions.Where(opt => opt.IsSelected))
                 SelectedOptions.Add(option.OptionName);
 
-            LogSelectedOptions();
+            MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
         }
 
         /// <summary>
@@ -137,23 +144,12 @@ namespace CollectaMundo.Models
         /// </summary>
         private void ApplyTextFilter()
         {
-            var filtered = FilterOptions
-                .Where(option => string.IsNullOrWhiteSpace(FilterText) || option.OptionName.Contains(FilterText, StringComparison.OrdinalIgnoreCase)).ToList();
+            var filtered = FilterOptions.Where(option => string.IsNullOrWhiteSpace(FilterText) || option.OptionName.Contains(FilterText, StringComparison.OrdinalIgnoreCase)).ToList();
 
             FilteredOptions = [.. filtered];
         }
 
         // 🔹 Debugging Methods
-
-        /// <summary>
-        /// Logs selected items for debugging.
-        /// </summary>
-        private void LogSelectedOptions()
-        {
-            Debug.WriteLine($"===== DEBUG: Selected Items for {CriteriaKey} =====");
-            Debug.WriteLine($"Selected: {string.Join(", ", SelectedOptions)}");
-            Debug.WriteLine($"=============================================");
-        }
 
         /// <summary>
         /// Logs filter state for debugging.
@@ -163,7 +159,7 @@ namespace CollectaMundo.Models
             Debug.WriteLine($"===== DEBUG: Filter Item ({CriteriaKey}) =====");
             Debug.WriteLine($"Default Text: {DefaultText}");
             Debug.WriteLine($"Filter Text: {FilterText}");
-            Debug.WriteLine($"Available Options: {string.Join(", ", FilterOptions.Select(opt => opt.OptionName))}");
+            //Debug.WriteLine($"Available Options: {string.Join(", ", FilterOptions.Select(opt => opt.OptionName))}");
             Debug.WriteLine($"Number of options: {FilterOptions.Count}");
             Debug.WriteLine($"====================================");
         }

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using CollectaMundo.Utilities;
+using System.ComponentModel;
 using System.Diagnostics;
 
 namespace CollectaMundo.Models
@@ -18,9 +19,6 @@ namespace CollectaMundo.Models
             }
         }
 
-
-
-
         // Debug
         public FilterItemViewModel? GetFilterItem(string criteriaKey) => Filters.TryGetValue(criteriaKey, out var filterItem) ? filterItem : null;
         public void DebugFilterItems(string criteriaKey)
@@ -34,6 +32,37 @@ namespace CollectaMundo.Models
             {
                 Debug.WriteLine($"[DEBUG]: No filter found for {criteriaKey}");
             }
+        }
+
+        public void DebugFullFilterState()
+        {
+            Debug.WriteLine("===== DEBUG: FULL FILTER STATE =====");
+
+            foreach (var filter in Filters.Values)
+            {
+                Debug.WriteLine($"Criteria: {filter.CriteriaKey} | Type: {filter.FilterCategory}");
+
+                switch (filter.FilterCategory)
+                {
+                    case FilterType.Single:
+                        Debug.WriteLine($"  Selected Value: {filter.FilterText}");
+                        break;
+
+                    case FilterType.Multi:
+                        Debug.WriteLine($"  Selected Options: {string.Join(", ", filter.SelectedOptions)}");
+                        Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
+                        break;
+
+                        //case FilterType.Numeric:
+                        //    Debug.WriteLine($"  Selected Numeric Value: {filter.SelectedNumericValue}");
+                        //    Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
+                        //    break;
+                }
+
+                Debug.WriteLine("---------------------------------");
+            }
+
+            Debug.WriteLine("===================================");
         }
     }
 
