@@ -752,31 +752,12 @@ namespace CollectaMundo
                 }
             }
         }
-        private void FilterRulesTextButton_Click(object sender, RoutedEventArgs e)
-        {
-            FilterRulesText();
-        }
         private void FilterTextTextBox_KeyDown(object sender, KeyEventArgs e)
         {
-            // Filter by pressing enter
-            if (e.Key == Key.Enter)
+            if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
             {
-                FilterRulesText();
+                filterItem.HandleKeyPress(e.Key);
             }
-        }
-        private void FilterRulesText()
-        {
-            //var filterTextEntry = filterSelections.FirstOrDefault(ft => ft.CriteriaKey == "Text");
-            //if (filterTextEntry == null)
-            //{
-            //    filterTextEntry = new FilterSelections { CriteriaKey = "Text" };
-            //    filterSelections.Add(filterTextEntry);
-            //}
-
-            // Update the SingleCriteria field with the selected value
-            //filterTextEntry.SingleCriteria = FilterTextTextBox.Text;
-
-            ApplyFiltersToAllLists();
         }
 
         // Cards for trade filtering

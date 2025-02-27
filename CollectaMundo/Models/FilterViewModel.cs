@@ -49,15 +49,15 @@ namespace CollectaMundo.Models
                         Debug.WriteLine($"  Selected Value: {filter.SelectedSingleOption}");
                         break;
 
-                    case FilterType.Multi:
-                        Debug.WriteLine($"  Selected Options: {string.Join(", ", filter.SelectedOptions)}");
-                        Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
-                        break;
+                        //case FilterType.Multi:
+                        //    Debug.WriteLine($"  Selected Options: {string.Join(", ", filter.SelectedOptions)}");
+                        //    Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
+                        //    break;
 
-                    case FilterType.Numeric:
-                        Debug.WriteLine($"  Selected Numeric Value: {filter.SelectedNumericValue}");
-                        Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
-                        break;
+                        //case FilterType.Numeric:
+                        //    Debug.WriteLine($"  Selected Numeric Value: {filter.SelectedNumericValue}");
+                        //    Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
+                        //    break;
                 }
 
                 Debug.WriteLine("---------------------------------");

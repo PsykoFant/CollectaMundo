@@ -2,7 +2,9 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Windows.Input;
 using static CollectaMundo.MainWindow;
+using Timer = System.Timers.Timer;
 
 namespace CollectaMundo.Models
 {
@@ -41,7 +43,7 @@ namespace CollectaMundo.Models
             }
         }
 
-        // Selection-related properties for single-criteria
+        // Selection-related properties for mumeric-criteria
 
         private string? _selectedNumericValue;
         public string? SelectedNumericValue
@@ -120,6 +122,52 @@ namespace CollectaMundo.Models
         }
 
 
+        private string _freetextSearch = string.Empty;
+        public string FreetextSearch
+        {
+            get => _freetextSearch;
+            set
+            {
+                if (_freetextSearch != value)
+                {
+                    _freetextSearch = value;
+                    OnPropertyChanged(nameof(FreetextSearch));
+
+                    // ✅ Store the value in SelectedSingleOption (so filtering works)
+                    if (FilterCategory == FilterType.Single)
+                    {
+                        SelectedSingleOption = string.IsNullOrWhiteSpace(value) || value == DefaultText ? null : value;
+                        ResetTypingDelay();
+                    }
+                }
+            }
+        }
+
+        // Resets the typing delay timer for freetext filtering.
+
+        private Timer? _typingTimer;
+        private void ResetTypingDelay()
+        {
+            _typingTimer?.Stop();
+            _typingTimer?.Start();
+        }
+        // Handles keypress events for the TextBox.
+        public void HandleKeyPress(Key key)
+        {
+            if (FilterCategory != FilterType.Single) return;
+
+            if (key == Key.Enter)
+            {
+                _typingTimer?.Stop(); // Cancel delay, apply filtering immediately
+                MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
+            }
+            else if (key == Key.Escape)
+            {
+                FreetextSearch = DefaultText; // Reset to default text
+            }
+        }
+
+
         // Operator selection
         public ObservableCollection<OperatorType>? AvailableOperators { get; }
 
@@ -150,6 +198,7 @@ namespace CollectaMundo.Models
             CriteriaKey = criteriaKey;
             DefaultText = defaultText;
             _filterText = DefaultText;
+            _freetextSearch = DefaultText;
 
             // Use the pre-generated FilterOptions directly
             FilterOptions = [.. filterOptions];
@@ -173,6 +222,13 @@ namespace CollectaMundo.Models
                 FilterCategory = mapping.Type;
                 AvailableOperators = mapping.Operators != null ? [.. mapping.Operators] : null;
                 OperatorSelection = mapping.Operators?.FirstOrDefault() ?? OperatorType.OR;
+
+                // Initialize typing delay only for Freetext filters
+                if (FilterCategory == FilterType.Single)
+                {
+                    _typingTimer = new Timer(1000) { AutoReset = false };
+                    _typingTimer.Elapsed += (_, _) => MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
+                }
             }
         }
 
