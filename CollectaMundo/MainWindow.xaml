@@ -73,7 +73,7 @@
                 <Button x:Name="ClearFiltersButton" Content="Clear filters" Margin="10,0,0,0" VerticalAlignment="Top" Height="20" Click="ClearFiltersButton_Click" />
 
                 <!--Color filtering-->
-                <ListBox ItemsSource="{Binding FilterVM.Filters[Colors].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                <ListBox ItemsSource="{Binding FilterVM.Filters[Colors].FilterOptions, RelativeSource={RelativeSource AncestorType=Window}}"
                          SelectionMode="Extended" Margin="0,30,0,0" Width="120" HorizontalAlignment="Left"
                          Height="170" VerticalAlignment="Top" Background="{x:Null}" 
                          BorderBrush="{x:Null}" Foreground="{x:Null}">
@@ -84,10 +84,9 @@
                                 <Setter.Value>
                                     <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                         <CheckBox Margin="5,2"
-                                                  IsChecked="{TemplateBinding IsSelected}"
-                                                  FontSize="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Converter={StaticResource ColorlessFontConverter}, ConverterParameter=30}">
-                                            <ContentPresenter />
-                                        </CheckBox>
+                                                  IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                  Content="{Binding OptionName}"
+                                                  FontSize="{Binding ., Converter={StaticResource ColorlessFontConverter}, ConverterParameter=30}"/>
                                     </ControlTemplate>
                                 </Setter.Value>
                             </Setter>
@@ -123,7 +122,9 @@
                     <ComboBox ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableOperators, RelativeSource={RelativeSource AncestorType=Window}}"
                               SelectedItem="{Binding FilterVM.Filters[ManaValue].OperatorSelection, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}" />
                     <!-- Numeric Value Selection -->
-                    <ComboBox ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <ComboBox 
+                        ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                        SelectedItem="{Binding FilterVM.Filters[ManaValue].SelectedNumericValue, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </StackPanel>
 
                 <!--Rarity-->

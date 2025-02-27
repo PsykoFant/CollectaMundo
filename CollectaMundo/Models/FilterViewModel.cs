@@ -15,7 +15,8 @@ namespace CollectaMundo.Models
             var filterDefaults = FilterManager.GetFilterDefaults(cardViewModel);
             foreach (var filter in filterDefaults)
             {
-                Filters[filter.CriteriaKey] = new FilterItemViewModel(filter.CriteriaKey, [.. filter.AllCriteria], filter.DefaultText);
+                // ✅ Pass `FilterOptions` instead of `AllCriteria`
+                Filters[filter.CriteriaKey] = new FilterItemViewModel(filter.CriteriaKey, filter.FilterOptions, filter.DefaultText);
             }
         }
 
@@ -53,10 +54,10 @@ namespace CollectaMundo.Models
                         Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
                         break;
 
-                        //case FilterType.Numeric:
-                        //    Debug.WriteLine($"  Selected Numeric Value: {filter.SelectedNumericValue}");
-                        //    Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
-                        //    break;
+                    case FilterType.Numeric:
+                        Debug.WriteLine($"  Selected Numeric Value: {filter.SelectedNumericValue}");
+                        Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
+                        break;
                 }
 
                 Debug.WriteLine("---------------------------------");

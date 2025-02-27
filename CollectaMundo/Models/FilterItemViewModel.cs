@@ -41,6 +41,28 @@ namespace CollectaMundo.Models
             }
         }
 
+        // Selection-related properties for single-criteria
+
+        private string? _selectedNumericValue;
+        public string? SelectedNumericValue
+        {
+            get => _selectedNumericValue;
+            set
+            {
+                if (_selectedNumericValue != value)
+                {
+                    _selectedNumericValue = value;
+                    OnPropertyChanged(nameof(SelectedNumericValue));
+
+                    // Debug to verify persistence
+                    if (!MainWindow.CurrentInstance._isStartup)
+                    {
+                        MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
+                    }
+                }
+            }
+        }
+
         // Selection-related properties for multi-criteria
         public ObservableCollection<FilterOption> FilterOptions { get; }
         public ObservableCollection<string> SelectedOptions { get; } = [];
@@ -123,14 +145,14 @@ namespace CollectaMundo.Models
         /// <summary>
         /// Constructor - Initializes filter options and selection tracking.
         /// </summary>
-        public FilterItemViewModel(string criteriaKey, IEnumerable<string> availableOptions, string defaultText)
+        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText)
         {
             CriteriaKey = criteriaKey;
             DefaultText = defaultText;
             _filterText = DefaultText;
 
-            // Convert available options into FilterOption objects
-            FilterOptions = [.. availableOptions.Select(option => new FilterOption(option))];
+            // Use the pre-generated FilterOptions directly
+            FilterOptions = [.. filterOptions];
 
             // Initially, show all options
             _filteredOptions = [.. FilterOptions];
@@ -151,19 +173,10 @@ namespace CollectaMundo.Models
                 FilterCategory = mapping.Type;
                 AvailableOperators = mapping.Operators != null ? [.. mapping.Operators] : null;
                 OperatorSelection = mapping.Operators?.FirstOrDefault() ?? OperatorType.OR;
-
-                //// Handle Single-Selection Filters (e.g., Name, SetName)
-                //if (FilterCategory == FilterType.Single)
-                //{
-                //    SelectedSingleOption = null; // Default to no selection
-                //}
             }
         }
 
-
-        /// <summary>
-        /// Updates the selected options when checkboxes are toggled.
-        /// </summary>
+        // Updates the selected options when checkboxes are toggled.
         private void UpdateSelectedOptions()
         {
             SelectedOptions.Clear();

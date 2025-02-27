@@ -312,45 +312,6 @@ namespace CollectaMundo
 
             await ShowStatusWindowAsync(false);
         }
-        public static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T foundChild)
-                {
-                    return foundChild;
-                }
-
-                var childOfChild = FindVisualChild<T>(child);
-                if (childOfChild != null)
-                {
-                    return childOfChild;
-                }
-            }
-            return null;
-        }
-        public static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
-        {
-            if (depObj == null)
-            {
-                yield break;
-            }
-
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
-            {
-                DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
-                if (child is T typedChild)
-                {
-                    yield return typedChild;
-                }
-
-                foreach (T childOfChild in FindVisualChildren<T>(child))
-                {
-                    yield return childOfChild;
-                }
-            }
-        }
         public static async Task PopulateCardDataGridAsync(List<CardSet> cardList, string query, DataGridContext context)
         {
             try
@@ -791,46 +752,6 @@ namespace CollectaMundo
                 }
             }
         }
-        private void OperatorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (_isStartup) { return; }
-
-            //OperatorType operatorSelection = OperatorType.Unknown;
-
-            if (sender is ComboBox)
-            {
-                //// Determine the selected operator
-                //if (comboBox.SelectedItem is ComboBoxItem selectedItem)
-                //{
-                //    string? selectedText = selectedItem.Content.ToString();
-                //    operatorSelection = selectedText switch
-                //    {
-                //        "OR" => OperatorType.OR,
-                //        "AND" => OperatorType.AND,
-                //        "NOT" => OperatorType.NOT,
-                //        _ => OperatorType.Unknown
-                //    };
-                //}
-
-                //// Derive the CriteriaKey from the ComboBox name
-                //string? criteriaKey = comboBox.Name.Replace("OperatorComboBox", string.Empty);
-
-                //if (!string.IsNullOrEmpty(criteriaKey))
-                //{
-                //    // Retrieve or create the FilterSelections object for this CriteriaKey
-                //    var filterSelection = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == criteriaKey);
-                //    if (filterSelection == null)
-                //    {
-                //        filterSelection = new FilterSelections { CriteriaKey = criteriaKey };
-                //        filterSelections.Add(filterSelection);
-                //    }
-
-                //    // Update the Operator field
-                //    filterSelection.Operator = operatorSelection;
-                //}
-            }
-            ApplyFiltersToAllLists();
-        }
         private void FilterRulesTextButton_Click(object sender, RoutedEventArgs e)
         {
             FilterRulesText();
@@ -855,64 +776,6 @@ namespace CollectaMundo
             // Update the SingleCriteria field with the selected value
             //filterTextEntry.SingleCriteria = FilterTextTextBox.Text;
 
-            ApplyFiltersToAllLists();
-        }
-
-        private void ManaValueComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            FilterByManaValue();
-        }
-        private void ManaValueOperatorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            FilterByManaValue();
-        }
-        private void FilterByManaValue()
-        {
-            //// Both ManaValue dropdowns needs to be set to trigger filtering
-            //if (ManaValueOperatorComboBox.SelectedIndex == -1 || ManaValueComboBox.SelectedIndex == -1)
-            //{
-            //    return;
-            //}
-
-            //// Find or create the FilterSelections object for ManaValue
-            //var manaValue = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "ManaValue");
-            //if (manaValue == null)
-            //{
-            //    manaValue = new FilterSelections { CriteriaKey = "ManaValue" };
-            //    filterSelections.Add(manaValue);
-            //}
-
-            //// Parse the selected value as a double and update NumberCriteria
-            //if (ManaValueComboBox.SelectedItem != null &&
-            //    double.TryParse(ManaValueComboBox.SelectedItem.ToString(), out double parsedValue))
-            //{
-            //    manaValue.NumberCriteria = parsedValue;
-            //}
-            //else
-            //{
-            //    Debug.WriteLine("Invalid or missing ManaValue selection.");
-            //}
-
-            //// Map the selected operator text to the OperatorType enum
-            //if (ManaValueOperatorComboBox.SelectedItem != null)
-            //{
-            //    string selectedOperator = ManaValueOperatorComboBox.SelectedItem.ToString()!;
-            //    manaValue.Operator = selectedOperator switch
-            //    {
-            //        "less than" => OperatorType.LESS_THAN,
-            //        "less than/eq" => OperatorType.LESS_THAN_OR_EQUALS,
-            //        "greater than" => OperatorType.GREATER_THAN,
-            //        "greater than/eq" => OperatorType.GREATER_THAN_OR_EQUALS,
-            //        "equal to" => OperatorType.EQUALS,
-            //        _ => OperatorType.Unknown
-            //    };
-            //}
-            //else
-            //{
-            //    Debug.WriteLine("No operator selected.");
-            //    manaValue.Operator = OperatorType.Unknown;
-            //}
-            // Apply the updated filters
             ApplyFiltersToAllLists();
         }
 

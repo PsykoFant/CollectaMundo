@@ -68,8 +68,8 @@ namespace CollectaMundo.Models
     // Default values and options for a filter.
     public class FilterDefaults : Filters, INotifyPropertyChanged
     {
-        //public string CriteriaKey { get; set; } = string.Empty;
-        public List<string> AllCriteria { get; set; } = [];
+        public List<string> AllCriteria { get; set; } = [];  // ✅ Keeping raw values for debugging
+        public List<FilterOption> FilterOptions { get; set; } = [];  // ✅ New list of FilterOption objects
 
         private string _defaultText = string.Empty;
         public string DefaultText
@@ -86,6 +86,7 @@ namespace CollectaMundo.Models
         protected virtual void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
 
     // Base class for strongly-typed filter criteria.
     public abstract class BaseFilterCriteria : Filters
@@ -172,21 +173,26 @@ namespace CollectaMundo.Models
                 bool shouldNotSplit = entry.Value.ShouldNotSplit;
                 var filteredValues = CleanAndFilter(rawValues, removeItems, shouldNotSplit);
 
-                // Special handling for "Colors" (add predefined values)
+                // ✅ Special handling for "Colors" (add predefined values)
                 if (entry.Key == "Colors")
                 {
                     var predefinedColors = new List<string> { "W", "U", "B", "R", "G", "C", "X", "Colorless" };
                     filteredValues = [.. predefinedColors.Union(filteredValues)];
                 }
 
+                // ✅ Convert list of strings to list of FilterOption objects
+                var filterOptions = filteredValues.Select(value => new FilterOption(value)).ToList();
+
                 return new FilterDefaults
                 {
                     CriteriaKey = entry.Key,
-                    AllCriteria = filteredValues,
+                    AllCriteria = filteredValues, // Keep raw values for debugging/reference
+                    FilterOptions = filterOptions, // ✅ Store as FilterOptions
                     DefaultText = $"{entry.Key} ..."
                 };
             })];
         }
+
 
         private static List<string> ExtractCriteriaValues(string propertyName, List<CardSet> sourceCollection)
         {
@@ -226,7 +232,7 @@ namespace CollectaMundo.Models
                 .Distinct()
                 .ToList();
 
-            // ✅ Separate Numeric & Non-Numeric Values
+            // Separate Numeric & Non-Numeric Values
             var numericValues = processedItems
                 .Where(v => double.TryParse(v, out _))    // Extract numbers
                 .Select(double.Parse)                     // Convert to actual numbers
