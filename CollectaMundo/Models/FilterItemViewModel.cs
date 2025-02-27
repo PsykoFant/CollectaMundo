@@ -34,7 +34,13 @@ namespace CollectaMundo.Models
                     _selectedSingleOption = value;
                     OnPropertyChanged(nameof(SelectedSingleOption));
 
-                    // Debug to verify persistence
+                    // ✅ If this is a freetext search, update FreetextSearch accordingly
+                    if (FilterCategory == FilterType.Single)
+                    {
+                        FreetextSearch = value ?? DefaultText;
+                    }
+
+                    // ✅ Debug output to verify persistence
                     if (!MainWindow.CurrentInstance._isStartup)
                     {
                         MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
@@ -42,6 +48,7 @@ namespace CollectaMundo.Models
                 }
             }
         }
+
 
         // Selection-related properties for mumeric-criteria
 
@@ -159,13 +166,22 @@ namespace CollectaMundo.Models
             if (key == Key.Enter)
             {
                 _typingTimer?.Stop(); // Cancel delay, apply filtering immediately
+
+                // ✅ Store value in filter selection before triggering filtering
+                SelectedSingleOption = string.IsNullOrWhiteSpace(FreetextSearch) || FreetextSearch == DefaultText
+                    ? null
+                    : FreetextSearch;
+
                 MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
             }
             else if (key == Key.Escape)
             {
-                FreetextSearch = DefaultText; // Reset to default text
+                // ✅ Reset search box when Escape is pressed
+                FreetextSearch = DefaultText;
+                SelectedSingleOption = null;
             }
         }
+
 
 
         // Operator selection
@@ -226,7 +242,7 @@ namespace CollectaMundo.Models
                 // Initialize typing delay only for Freetext filters
                 if (FilterCategory == FilterType.Single)
                 {
-                    _typingTimer = new Timer(1000) { AutoReset = false };
+                    _typingTimer = new Timer(1500) { AutoReset = false };
                     _typingTimer.Elapsed += (_, _) => MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
                 }
             }
