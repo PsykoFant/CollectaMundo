@@ -17,12 +17,14 @@ namespace CollectaMundo.Models
             {
                 Filters[filter.CriteriaKey] = new FilterItemViewModel(
                     filter.CriteriaKey,
-                    [.. filter.FilterOptions],
+                    filter.FilterOptions,
                     filter.DefaultText,
+                    this,                  // Passing the FilterViewModel as the source of truth
                     filter.NumericCriteria // Pass numeric criteria if applicable
                 );
             }
         }
+
 
         // Debug
         public void DebugFullFilterState()
@@ -31,30 +33,45 @@ namespace CollectaMundo.Models
 
             foreach (var filter in Filters.Values)
             {
-                Debug.WriteLine($"Criteria: {filter.CriteriaKey} | Type: {filter.FilterCategory}");
-
                 switch (filter.FilterCategory)
                 {
                     case FilterType.Single:
-                        Debug.WriteLine($"  Selected Value: {filter.SelectedSingleOption}");
+                        // Only output if a non-empty single selection is made.
+                        if (!string.IsNullOrWhiteSpace(filter.SelectedSingleOption) && filter.SelectedSingleOption != filter.DefaultText)
+                        {
+                            Debug.WriteLine($"Criteria: {filter.CriteriaKey} | Type: {filter.FilterCategory}");
+                            Debug.WriteLine($"  Selected Value: {filter.SelectedSingleOption}");
+                            Debug.WriteLine("----------------------");
+                        }
                         break;
 
                     case FilterType.Multi:
-                        Debug.WriteLine($"  Selected Options: {string.Join(", ", filter.SelectedOptions)}");
-                        Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
+                        // Only output if there is at least one selected option.
+                        if (filter.SelectedOptions != null && filter.SelectedOptions.Any())
+                        {
+                            Debug.WriteLine($"Criteria: {filter.CriteriaKey} | Type: {filter.FilterCategory}");
+                            Debug.WriteLine($"  Selected Options: {string.Join(", ", filter.SelectedOptions)}");
+                            Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
+                            Debug.WriteLine("----------------------");
+                        }
                         break;
 
                     case FilterType.Numeric:
-                        Debug.WriteLine($"  Selected Numeric Value: {filter.SelectedNumericValue}");
-                        Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
+                        // Only output if a numeric value is selected.
+                        if (filter.SelectedNumericValue != null)
+                        {
+                            Debug.WriteLine($"Criteria: {filter.CriteriaKey} | Type: {filter.FilterCategory}");
+                            Debug.WriteLine($"  Selected Numeric Value: {filter.SelectedNumericValue}");
+                            Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
+                            Debug.WriteLine("----------------------");
+                        }
                         break;
                 }
-
-                Debug.WriteLine("----------------------");
             }
 
             Debug.WriteLine("===================================");
         }
+
     }
 
 }

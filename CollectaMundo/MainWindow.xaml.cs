@@ -910,20 +910,7 @@ namespace CollectaMundo
             ApplyFiltersToAllLists();
 
             // Local helper functions
-            static void ClearListBoxSelections(ListBox listBox)
-            {
-                foreach (object? item in listBox.Items)
-                {
-                    if (listBox.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem container)
-                    {
-                        CheckBox? checkBox = FilterManagerOld.FindVisualChild<CheckBox>(container);
-                        if (checkBox != null)
-                        {
-                            checkBox.IsChecked = false;
-                        }
-                    }
-                }
-            }
+
             IEnumerable<ComboBox> FindAllOperatorComboBoxes()
             {
                 var comboBoxes = new List<ComboBox>();

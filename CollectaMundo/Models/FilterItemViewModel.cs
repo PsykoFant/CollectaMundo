@@ -41,7 +41,7 @@ namespace CollectaMundo.Models
                     // Trigger filtering, but ONLY when the final value is set
                     if (!MainWindow.CurrentInstance._isStartup)
                     {
-                        MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
+                        _filterViewModel.DebugFullFilterState();
                     }
                 }
             }
@@ -60,7 +60,7 @@ namespace CollectaMundo.Models
                 {
                     _selectedNumericValue = value;
                     OnPropertyChanged(nameof(SelectedNumericValue));
-                    MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
+                    _filterViewModel.DebugFullFilterState();
                 }
             }
         }
@@ -86,7 +86,9 @@ namespace CollectaMundo.Models
                     OnPropertyChanged(nameof(FilterText));
 
                     if (!_suppressFiltering)
+                    {
                         ApplyTextFilter();
+                    }
                 }
             }
         }
@@ -151,7 +153,10 @@ namespace CollectaMundo.Models
         // Handles keypress events for the TextBox.
         public void HandleKeyPress(Key key)
         {
-            if (FilterCategory != FilterType.Single) return;
+            if (FilterCategory != FilterType.Single)
+            {
+                return;
+            }
 
             if (key == Key.Enter)
             {
@@ -160,7 +165,7 @@ namespace CollectaMundo.Models
                     ? null
                     : FreetextSearch;
 
-                MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
+                _filterViewModel.DebugFullFilterState();
             }
             else if (key == Key.Escape)
             {
@@ -186,7 +191,7 @@ namespace CollectaMundo.Models
 
                     if (!MainWindow.CurrentInstance._isStartup)
                     {
-                        MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
+                        _filterViewModel.DebugFullFilterState();
                     }
                 }
             }
@@ -205,7 +210,9 @@ namespace CollectaMundo.Models
                     OnPropertyChanged(nameof(IsTradeChecked));
 
                     if (value) // If checked, ensure other checkbox is unchecked
+                    {
                         IsNotTradeChecked = false;
+                    }
 
                     ApplyTradeFilter();
                 }
@@ -224,7 +231,9 @@ namespace CollectaMundo.Models
                     OnPropertyChanged(nameof(IsNotTradeChecked));
 
                     if (value) // If checked, ensure other checkbox is unchecked
+                    {
                         IsTradeChecked = false;
+                    }
 
                     ApplyTradeFilter();
                 }
@@ -250,17 +259,17 @@ namespace CollectaMundo.Models
             }
 
             // Debug output (will later be replaced with actual filtering)
-            MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
+            _filterViewModel.DebugFullFilterState();
         }
 
         // Constructor - Initializes filter options and selection tracking.
         private readonly FilterViewModel _filterViewModel;
         public FilterItemViewModel(
-    string criteriaKey,
-    IEnumerable<FilterOption> filterOptions,
-    string defaultText,
-    FilterViewModel filterViewModel,
-    IEnumerable<int>? numericOptions = null)
+        string criteriaKey,
+        IEnumerable<FilterOption> filterOptions,
+        string defaultText,
+        FilterViewModel filterViewModel,
+        IEnumerable<int>? numericOptions = null)
         {
             _filterViewModel = filterViewModel ?? throw new ArgumentNullException(nameof(filterViewModel));
             CriteriaKey = criteriaKey;
@@ -286,7 +295,9 @@ namespace CollectaMundo.Models
                 filterOption.PropertyChanged += (_, e) =>
                 {
                     if (e.PropertyName == nameof(FilterOption.IsSelected))
+                    {
                         UpdateSelectedOptions();
+                    }
                 };
             }
 
@@ -317,7 +328,9 @@ namespace CollectaMundo.Models
         {
             SelectedOptions.Clear();
             foreach (var option in FilterOptions.Where(opt => opt.IsSelected))
+            {
                 SelectedOptions.Add(option.OptionName);
+            }
 
             _filterViewModel.DebugFullFilterState();
         }
