@@ -24,22 +24,7 @@ namespace CollectaMundo.Models
             }
         }
 
-
         // Debug
-        public FilterItemViewModel? GetFilterItem(string criteriaKey) => Filters.TryGetValue(criteriaKey, out var filterItem) ? filterItem : null;
-        public void DebugFilterItems(string criteriaKey)
-        {
-            var filter = GetFilterItem(criteriaKey);
-            if (filter != null)
-            {
-                filter.DebugFilterItem();
-            }
-            else
-            {
-                Debug.WriteLine($"[DEBUG]: No filter found for {criteriaKey}");
-            }
-        }
-
         public void DebugFullFilterState()
         {
             Debug.WriteLine("===== DEBUG: FULL FILTER STATE =====");

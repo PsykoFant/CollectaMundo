@@ -32,13 +32,13 @@ namespace CollectaMundo.Models
                     _selectedSingleOption = value;
                     OnPropertyChanged(nameof(SelectedSingleOption));
 
-                    // ✅ Update the text box when the value changes externally
+                    // Update the text box when the value changes externally
                     if (FilterCategory == FilterType.Single)
                     {
                         FreetextSearch = value ?? DefaultText;
                     }
 
-                    // ✅ Trigger filtering, but ONLY when the final value is set
+                    // Trigger filtering, but ONLY when the final value is set
                     if (!MainWindow.CurrentInstance._isStartup)
                     {
                         MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
@@ -47,9 +47,7 @@ namespace CollectaMundo.Models
             }
         }
 
-
         // Selection-related properties for mumeric-criteria
-
         public ObservableCollection<int>? AvailableNumericOptions { get; }
 
         private int? _selectedNumericValue;
@@ -123,7 +121,6 @@ namespace CollectaMundo.Models
 
             FilteredOptions = [.. filtered];
         }
-
 
         private string _freetextSearch = string.Empty;
         public string FreetextSearch
@@ -273,7 +270,7 @@ namespace CollectaMundo.Models
             // Initially, show all options
             _filteredOptions = [.. FilterOptions];
 
-            // ✅ Handle Numeric Filters
+            // Handle Numeric Filters
             if (numericOptions != null)
             {
                 AvailableNumericOptions = [.. numericOptions];
@@ -311,8 +308,6 @@ namespace CollectaMundo.Models
             }
         }
 
-
-
         // Updates the selected options when checkboxes are toggled.
         private void UpdateSelectedOptions()
         {
@@ -325,11 +320,7 @@ namespace CollectaMundo.Models
 
 
 
-        // 🔹 Debugging Methods
-
-        /// <summary>
-        /// Logs filter state for debugging.
-        /// </summary>
+        // Debugging Methods
         public void DebugFilterItem()
         {
             Debug.WriteLine($"===== DEBUG: Filter Item ({CriteriaKey}) =====");

@@ -83,8 +83,7 @@ namespace CollectaMundo.Models
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected virtual void OnPropertyChanged(string propertyName) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected virtual void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
     // Base class for strongly-typed filter criteria.
@@ -179,14 +178,14 @@ namespace CollectaMundo.Models
                     filteredValues = [.. predefinedColors.Union(filteredValues)];
                 }
 
-                // ✅ Convert numeric filters to List<int>
+                // Convert numeric filters to List<int>
                 List<int>? numericValues = null;
                 if (entry.Value.Type == FilterType.Numeric)
                 {
                     numericValues = filteredValues.Where(v => int.TryParse(v, out _)).Select(int.Parse).ToList();
                 }
 
-                // ✅ Convert string options into FilterOption objects
+                // Convert string options into FilterOption objects
                 var filterOptions = filteredValues.Select(value => new FilterOption(value)).ToList();
 
                 return new FilterDefaults
@@ -198,8 +197,6 @@ namespace CollectaMundo.Models
                 };
             })];
         }
-
-
 
         private static List<string> ExtractCriteriaValues(string propertyName, List<CardSet> sourceCollection)
         {
@@ -254,7 +251,6 @@ namespace CollectaMundo.Models
 
             return [.. numericValues, .. stringValues]; // ✅ Keep numeric values first
         }
-
         private static HashSet<string>? GetUnwantedItems(string criteriaKey)
         {
             return criteriaKey switch
@@ -263,13 +259,6 @@ namespace CollectaMundo.Models
                 "SubTypes" => ["(creature", "and/or", "type)|Judge", "The"],
                 _ => null
             };
-        }
-        public static IEnumerable<BaseFilterCriteria> GetActiveFilters(IEnumerable<FilterSelections> filterSelections)
-        {
-            return filterSelections
-                .Where(selection => selection.MultipleCriteria.Count > 0 || !string.IsNullOrWhiteSpace(selection.SingleCriteria))
-                .Select(selection => selection.ToFilterCriteria())
-                .ToList();
         }
     }
 
