@@ -14,15 +14,13 @@ namespace CollectaMundo.Models
     public class FilterItemViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged(string propertyName) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        // 🔹 Core properties
+        // Core properties
         public string CriteriaKey { get; }
         public FilterType FilterCategory { get; }
 
         // Selection-related properties for single-criteria
-
         private string? _selectedSingleOption;
         public string? SelectedSingleOption
         {
@@ -34,13 +32,13 @@ namespace CollectaMundo.Models
                     _selectedSingleOption = value;
                     OnPropertyChanged(nameof(SelectedSingleOption));
 
-                    // ✅ If this is a freetext search, update FreetextSearch accordingly
+                    // ✅ Update the text box when the value changes externally
                     if (FilterCategory == FilterType.Single)
                     {
                         FreetextSearch = value ?? DefaultText;
                     }
 
-                    // ✅ Debug output to verify persistence
+                    // ✅ Trigger filtering, but ONLY when the final value is set
                     if (!MainWindow.CurrentInstance._isStartup)
                     {
                         MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
@@ -52,8 +50,10 @@ namespace CollectaMundo.Models
 
         // Selection-related properties for mumeric-criteria
 
-        private string? _selectedNumericValue;
-        public string? SelectedNumericValue
+        public ObservableCollection<int>? AvailableNumericOptions { get; }
+
+        private int? _selectedNumericValue;
+        public int? SelectedNumericValue
         {
             get => _selectedNumericValue;
             set
@@ -62,15 +62,11 @@ namespace CollectaMundo.Models
                 {
                     _selectedNumericValue = value;
                     OnPropertyChanged(nameof(SelectedNumericValue));
-
-                    // Debug to verify persistence
-                    if (!MainWindow.CurrentInstance._isStartup)
-                    {
-                        MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
-                    }
+                    MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
                 }
             }
         }
+
 
         // Selection-related properties for multi-criteria
         public ObservableCollection<FilterOption> FilterOptions { get; }
@@ -140,10 +136,8 @@ namespace CollectaMundo.Models
                     _freetextSearch = value;
                     OnPropertyChanged(nameof(FreetextSearch));
 
-                    // ✅ Store the value in SelectedSingleOption (so filtering works)
                     if (FilterCategory == FilterType.Single)
                     {
-                        SelectedSingleOption = string.IsNullOrWhiteSpace(value) || value == DefaultText ? null : value;
                         ResetTypingDelay();
                     }
                 }
@@ -165,9 +159,7 @@ namespace CollectaMundo.Models
 
             if (key == Key.Enter)
             {
-                _typingTimer?.Stop(); // Cancel delay, apply filtering immediately
-
-                // ✅ Store value in filter selection before triggering filtering
+                _typingTimer?.Stop(); // ✅ Cancel delay, apply filtering immediately
                 SelectedSingleOption = string.IsNullOrWhiteSpace(FreetextSearch) || FreetextSearch == DefaultText
                     ? null
                     : FreetextSearch;
@@ -176,13 +168,11 @@ namespace CollectaMundo.Models
             }
             else if (key == Key.Escape)
             {
-                // ✅ Reset search box when Escape is pressed
+                // Reset search box when Escape is pressed
                 FreetextSearch = DefaultText;
                 SelectedSingleOption = null;
             }
         }
-
-
 
         // Operator selection
         public ObservableCollection<OperatorType>? AvailableOperators { get; }
@@ -206,10 +196,71 @@ namespace CollectaMundo.Models
             }
         }
 
+        // Bindable properties for the two checkboxes
+        private bool _isTradeChecked;
+        public bool IsTradeChecked
+        {
+            get => _isTradeChecked;
+            set
+            {
+                if (_isTradeChecked != value)
+                {
+                    _isTradeChecked = value;
+                    OnPropertyChanged(nameof(IsTradeChecked));
+
+                    if (value) // If checked, ensure other checkbox is unchecked
+                        IsNotTradeChecked = false;
+
+                    ApplyTradeFilter();
+                }
+            }
+        }
+
+        private bool _isNotTradeChecked;
+        public bool IsNotTradeChecked
+        {
+            get => _isNotTradeChecked;
+            set
+            {
+                if (_isNotTradeChecked != value)
+                {
+                    _isNotTradeChecked = value;
+                    OnPropertyChanged(nameof(IsNotTradeChecked));
+
+                    if (value) // If checked, ensure other checkbox is unchecked
+                        IsTradeChecked = false;
+
+                    ApplyTradeFilter();
+                }
+            }
+        }
+
+        // This applies the filtering logic whenever a checkbox is clicked
+        private void ApplyTradeFilter()
+        {
+            if (IsTradeChecked)
+            {
+                SelectedNumericValue = 0;
+                OperatorSelection = OperatorType.GREATER_THAN; // CardsForTrade > 0
+            }
+            else if (IsNotTradeChecked)
+            {
+                SelectedNumericValue = 0;
+                OperatorSelection = OperatorType.EQUALS; // CardsForTrade == 0
+            }
+            else
+            {
+                SelectedNumericValue = null;
+            }
+
+            // Debug output (will later be replaced with actual filtering)
+            MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
+        }
+
         /// <summary>
         /// Constructor - Initializes filter options and selection tracking.
         /// </summary>
-        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText)
+        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, IEnumerable<int>? numericOptions = null)
         {
             CriteriaKey = criteriaKey;
             DefaultText = defaultText;
@@ -221,6 +272,12 @@ namespace CollectaMundo.Models
 
             // Initially, show all options
             _filteredOptions = [.. FilterOptions];
+
+            // ✅ Handle Numeric Filters
+            if (numericOptions != null)
+            {
+                AvailableNumericOptions = [.. numericOptions];
+            }
 
             // Subscribe to selection changes in checkboxes (for Multi-selection filters)
             foreach (var filterOption in FilterOptions)
@@ -239,14 +296,22 @@ namespace CollectaMundo.Models
                 AvailableOperators = mapping.Operators != null ? [.. mapping.Operators] : null;
                 OperatorSelection = mapping.Operators?.FirstOrDefault() ?? OperatorType.OR;
 
-                // Initialize typing delay only for Freetext filters
+                // Initialize typing delay timer for Single (freetext) filters
                 if (FilterCategory == FilterType.Single)
                 {
                     _typingTimer = new Timer(1500) { AutoReset = false };
-                    _typingTimer.Elapsed += (_, _) => MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
+                    _typingTimer.Elapsed += (_, _) =>
+                    {
+                        if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
+                        {
+                            SelectedSingleOption = FreetextSearch; // Assign value before filtering
+                        }
+                    };
                 }
             }
         }
+
+
 
         // Updates the selected options when checkboxes are toggled.
         private void UpdateSelectedOptions()

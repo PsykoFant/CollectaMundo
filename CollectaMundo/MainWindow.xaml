@@ -123,7 +123,7 @@
                               SelectedItem="{Binding FilterVM.Filters[ManaValue].OperatorSelection, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}" />
                     <!-- Numeric Value Selection -->
                     <ComboBox 
-                        ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                        ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableNumericOptions, RelativeSource={RelativeSource AncestorType=Window}}"
                         SelectedItem="{Binding FilterVM.Filters[ManaValue].SelectedNumericValue, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </StackPanel>
 
@@ -502,7 +502,6 @@
                      LostFocus="TextBox_LostFocus" 
                      PreviewKeyDown="FilterTextTextBox_KeyDown"/>
 
-
                 <!--Language-->
                 <ComboBox x:Name="LanguageComboBox"
                           DataContext="{Binding FilterVM.Filters[Language], RelativeSource={RelativeSource AncestorType=Window}}"
@@ -627,8 +626,23 @@
                           SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
                 </ComboBox>
 
-                <CheckBox x:Name="CheckBoxCardsForTrade" Margin="10,570,0,0" Content="Filter on cards for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="CheckBoxCardsForTrade_Checked" Unchecked="CheckBoxCardsForTrade_Unchecked"/>
-                <CheckBox x:Name="CheckBoxCardsNotForTrade" Margin="10,590,0,0" Content="Filter on cards NOT for trade" HorizontalAlignment="Left" VerticalAlignment="Top" Checked="CheckBoxCardsNotForTrade_Checked" Unchecked="CheckBoxCardsNotForTrade_Unchecked"/>
+                <!--<CheckBox x:Name="CheckBoxCardsForTrade" 
+                          IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsTradeChecked, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                          Checked="CheckBoxCardsForTrade_Checked" Unchecked="CheckBoxCardsForTrade_Unchecked"
+                          Margin="10,570,0,0" Content="Filter on cards for trade" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                <CheckBox x:Name="CheckBoxCardsNotForTrade" 
+                          IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsNotTradeChecked, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                          Checked="CheckBoxCardsNotForTrade_Checked" Unchecked="CheckBoxCardsNotForTrade_Unchecked"
+                          Margin="10,590,0,0" Content="Filter on cards NOT for trade" HorizontalAlignment="Left" VerticalAlignment="Top"/>-->
+
+                <CheckBox  x:Name="CheckBoxCardsForTrade" Content="Filter on cards for trade"
+          IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsTradeChecked, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+          HorizontalAlignment="Left" Margin="10,570,0,0" VerticalAlignment="Top"/>
+
+                <CheckBox x:Name="CheckBoxCardsNotForTrade" Content="Filter on cards NOT for trade"
+          IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsNotTradeChecked, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+          HorizontalAlignment="Left" Margin="10,590,0,0" VerticalAlignment="Top"/>
+
 
             </Grid>
             <Grid x:Name="GridUtilsMenu" Visibility="Collapsed">

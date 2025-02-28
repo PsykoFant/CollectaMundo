@@ -38,7 +38,7 @@ namespace CollectaMundo.Utilities
 
             // Numeric Filters (Greater/Less/Equal comparisons)
             { "ManaValue", (nameof(CardViewModel.allCards), FilterType.Numeric, [OperatorType.GREATER_THAN, OperatorType.LESS_THAN, OperatorType.EQUALS, OperatorType.GREATER_THAN_OR_EQUALS, OperatorType.LESS_THAN_OR_EQUALS], false) },
-            { "CardsForTrade", (nameof(CardViewModel.myCards), FilterType.Numeric, [OperatorType.GREATER_THAN, OperatorType.LESS_THAN, OperatorType.EQUALS], false) }
+            { "CardsForTrade", (nameof(CardViewModel.myCards), FilterType.Numeric, [OperatorType.GREATER_THAN, OperatorType.EQUALS], false) }
         };
     }
 }

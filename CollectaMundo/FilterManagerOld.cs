@@ -1,6 +1,5 @@
 ﻿using CollectaMundo.Models;
 using ServiceStack;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
@@ -238,79 +237,6 @@ namespace CollectaMundo
         #endregion
 
         #region Filter Helper Methods
-        /// <summary>
-        /// Generic method for getting the data to populate the listbox with, including already selected items
-        /// </summary>
-        /// <param name="listBoxName"></param>
-        /// <param name="filterSelections"></param>
-        /// <param name="filterDefaults"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static (IEnumerable<string> items, HashSet<string> selectedItems) GetDataSetAndSelection(string listBoxName, ObservableCollection<FilterSelections> filterSelections, IEnumerable<FilterDefaults> filterDefaults)
-        {
-            IEnumerable<string> itemsSource;
-            HashSet<string> selectedItemsSet;
-
-            var filterDefault = filterDefaults.FirstOrDefault(fd => $"Filter{fd.CriteriaKey}ListBox" == listBoxName);
-            if (filterDefault != null)
-            {
-                itemsSource = filterDefault.AllCriteria;
-                selectedItemsSet = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == filterDefault.CriteriaKey)?.MultipleCriteria ?? [];
-            }
-            else
-            {
-                throw new InvalidOperationException($"ListBox name not recognized: {listBoxName}");
-            }
-
-            return (itemsSource.Distinct().OrderBy(type => type).ToList(), selectedItemsSet);
-        }
-
-        /// <summary>
-        /// Get default text, textbox name and listboxname for a custom combobox
-        /// </summary>
-        /// <param name="comboBoxName"></param>
-        /// <param name="filterDefaults"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        public static (string defaultText, string textBoxName, string listBoxName) GetComboBoxConfig(string comboBoxName, IEnumerable<FilterDefaults> filterDefaults)
-        {
-            // Extract the CriteriaKey from the ComboBox name
-            var criteriaKey = comboBoxName.Replace("ComboBox", "");
-
-            // Find the matching FilterDefaults object
-            var filterDefault = filterDefaults.FirstOrDefault(fd => fd.CriteriaKey == criteriaKey);
-
-            if (filterDefault != null)
-            {
-                // Dynamically construct TextBox and ListBox names
-                string textBoxName = $"Filter{criteriaKey}TextBox";
-                string listBoxName = $"Filter{criteriaKey}ListBox";
-                string defaultText = filterDefault.DefaultText ?? $"Filter {criteriaKey} ...";
-
-                Debug.WriteLine(textBoxName);
-
-                return (defaultText, textBoxName, listBoxName);
-            }
-            throw new InvalidOperationException($"Configuration not found for ComboBox: {comboBoxName}");
-        }
-
-        /// <summary>
-        /// Finds the parent for an object
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="child"></param>
-        /// <returns></returns>
-        public static T? FindParent<T>(DependencyObject child) where T : DependencyObject
-        {
-            DependencyObject? parentObject = VisualTreeHelper.GetParent(child);
-
-            while (parentObject != null && parentObject is not T)
-            {
-                parentObject = VisualTreeHelper.GetParent(parentObject);
-            }
-
-            return parentObject as T;
-        }
 
         /// <summary>
         /// Find children of a dependency object

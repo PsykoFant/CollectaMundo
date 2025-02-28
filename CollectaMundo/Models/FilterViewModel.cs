@@ -15,10 +15,15 @@ namespace CollectaMundo.Models
             var filterDefaults = FilterManager.GetFilterDefaults(cardViewModel);
             foreach (var filter in filterDefaults)
             {
-                // ✅ Pass `FilterOptions` instead of `AllCriteria`
-                Filters[filter.CriteriaKey] = new FilterItemViewModel(filter.CriteriaKey, filter.FilterOptions, filter.DefaultText);
+                Filters[filter.CriteriaKey] = new FilterItemViewModel(
+                    filter.CriteriaKey,
+                    [.. filter.FilterOptions],
+                    filter.DefaultText,
+                    filter.NumericCriteria // Pass numeric criteria if applicable
+                );
             }
         }
+
 
         // Debug
         public FilterItemViewModel? GetFilterItem(string criteriaKey) => Filters.TryGetValue(criteriaKey, out var filterItem) ? filterItem : null;
@@ -49,18 +54,18 @@ namespace CollectaMundo.Models
                         Debug.WriteLine($"  Selected Value: {filter.SelectedSingleOption}");
                         break;
 
-                        //case FilterType.Multi:
-                        //    Debug.WriteLine($"  Selected Options: {string.Join(", ", filter.SelectedOptions)}");
-                        //    Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
-                        //    break;
+                    case FilterType.Multi:
+                        Debug.WriteLine($"  Selected Options: {string.Join(", ", filter.SelectedOptions)}");
+                        Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
+                        break;
 
-                        //case FilterType.Numeric:
-                        //    Debug.WriteLine($"  Selected Numeric Value: {filter.SelectedNumericValue}");
-                        //    Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
-                        //    break;
+                    case FilterType.Numeric:
+                        Debug.WriteLine($"  Selected Numeric Value: {filter.SelectedNumericValue}");
+                        Debug.WriteLine($"  Operator: {filter.OperatorSelection}");
+                        break;
                 }
 
-                Debug.WriteLine("---------------------------------");
+                Debug.WriteLine("----------------------");
             }
 
             Debug.WriteLine("===================================");

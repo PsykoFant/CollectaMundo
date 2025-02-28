@@ -752,55 +752,8 @@ namespace CollectaMundo
                 }
             }
         }
-        private void FilterTextTextBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
-            {
-                filterItem.HandleKeyPress(e.Key);
-            }
-        }
 
-        // Cards for trade filtering
-        private void CheckBoxCardsForTrade_Checked(object sender, RoutedEventArgs e)
-        {
-            if (CheckBoxCardsNotForTrade.IsChecked == true)
-            {
-                CheckBoxCardsNotForTrade.IsChecked = false;
-            }
-            FilterOnCarsForTrade(OperatorType.GREATER_THAN);
-        }
-        private void CheckBoxCardsForTrade_Unchecked(object sender, RoutedEventArgs e)
-        {
-            FilterOnCarsForTrade(OperatorType.GREATER_THAN_OR_EQUALS);
-        }
-        private void CheckBoxCardsNotForTrade_Checked(object sender, RoutedEventArgs e)
-        {
-            if (CheckBoxCardsForTrade.IsChecked == true)
-            {
-                CheckBoxCardsForTrade.IsChecked = false;
-            }
-            FilterOnCarsForTrade(OperatorType.EQUALS);
-        }
-        private void CheckBoxCardsNotForTrade_Unchecked(object sender, RoutedEventArgs e)
-        {
-            FilterOnCarsForTrade(OperatorType.GREATER_THAN_OR_EQUALS);
-        }
-        private void FilterOnCarsForTrade(OperatorType @operator)
-        {
-            //// Find or create the FilterSelections object for CardsForTrade
-            //var cardsForTrade = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "CardsForTrade");
-            //if (cardsForTrade == null)
-            //{
-            //    cardsForTrade = new FilterSelections { CriteriaKey = "CardsForTrade" };
-            //    filterSelections.Add(cardsForTrade);
-            //    cardsForTrade.NumberCriteria = 0;
-            //}
 
-            //cardsForTrade.Operator = @operator;
-
-            ApplyFiltersToAllLists();
-
-        }
 
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
@@ -818,7 +771,6 @@ namespace CollectaMundo
             {
                 if (string.IsNullOrWhiteSpace(textBox.Text))
                 {
-
                     filterItem._suppressFiltering = true; // Temporarily disable filtering
                     filterItem.FilterText = filterItem.DefaultText; // Restore default text without filtering
                     filterItem._suppressFiltering = false;
@@ -826,6 +778,73 @@ namespace CollectaMundo
                 }
             }
         }
+        private void FilterTextTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
+            {
+                if (e.Key == Key.Escape)
+                {
+                    filterItem.FreetextSearch = filterItem.DefaultText;
+                    textBox.Foreground = new SolidColorBrush(Colors.Gray);
+
+                    // Use Dispatcher to remove focus with a small delay
+                    Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        // Kill logical focus
+                        FocusManager.SetFocusedElement(FocusManager.GetFocusScope(textBox), null);
+                        // Kill keyboard focus
+                        Keyboard.ClearFocus();
+                    }, System.Windows.Threading.DispatcherPriority.Background);
+                }
+
+                filterItem.HandleKeyPress(e.Key);
+            }
+        }
+
+
+        // Cards for trade filtering
+        //private void CheckBoxCardsForTrade_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    if (CheckBoxCardsNotForTrade.IsChecked == true)
+        //    {
+        //        CheckBoxCardsNotForTrade.IsChecked = false;
+        //    }
+        //    FilterOnCarsForTrade(OperatorType.GREATER_THAN);
+        //}
+        //private void CheckBoxCardsForTrade_Unchecked(object sender, RoutedEventArgs e)
+        //{
+        //    FilterOnCarsForTrade(OperatorType.GREATER_THAN_OR_EQUALS);
+        //}
+        //private void CheckBoxCardsNotForTrade_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    if (CheckBoxCardsForTrade.IsChecked == true)
+        //    {
+        //        CheckBoxCardsForTrade.IsChecked = false;
+        //    }
+        //    FilterOnCarsForTrade(OperatorType.EQUALS);
+        //}
+        //private void CheckBoxCardsNotForTrade_Unchecked(object sender, RoutedEventArgs e)
+        //{
+        //    FilterOnCarsForTrade(OperatorType.GREATER_THAN_OR_EQUALS);
+        //}
+        //private void FilterOnCarsForTrade(OperatorType @operator)
+        //{
+        //    //// Find or create the FilterSelections object for CardsForTrade
+        //    //var cardsForTrade = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "CardsForTrade");
+        //    //if (cardsForTrade == null)
+        //    //{
+        //    //    cardsForTrade = new FilterSelections { CriteriaKey = "CardsForTrade" };
+        //    //    filterSelections.Add(cardsForTrade);
+        //    //    cardsForTrade.NumberCriteria = 0;
+        //    //}
+
+        //    //cardsForTrade.Operator = @operator;
+
+        //    ApplyFiltersToAllLists();
+
+        //}
+
+
         public void ApplyFiltersToAllLists()
         {
             //FilterManagerOld.ApplyFilter(allCards, AllCardsDataGrid);
@@ -878,8 +897,8 @@ namespace CollectaMundo
             //ClearListBoxSelections(FilterColorsListBox);
 
             // Uncheck CheckBoxes if necessary
-            CheckBoxCardsForTrade.IsChecked = false;
-            CheckBoxCardsNotForTrade.IsChecked = false;
+            //CheckBoxCardsForTrade.IsChecked = false;
+            //CheckBoxCardsNotForTrade.IsChecked = false;
 
             // Reset card images
             ImagePromoLabel.Content = string.Empty;
