@@ -63,10 +63,10 @@ namespace CollectaMundo
             //    _ = MessageBox.Show($"Error while filtering datagrid: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             //}
         }
-        private static IEnumerable<CardSet> FilterCardsByUnifiedCriteria(IEnumerable<CardSet> cards, IEnumerable<BaseFilterCriteria> filterCriteria)
-        {
-            return cards.Where(card => filterCriteria.All(filter => filter.Matches(card)));
-        }
+        //private static IEnumerable<CardSet> FilterCardsByUnifiedCriteria(IEnumerable<CardSet> cards, IEnumerable<BaseFilterCriteria> filterCriteria)
+        //{
+        //    return cards.Where(card => filterCriteria.All(filter => filter.Matches(card)));
+        //}
         //private static bool PropertyExistsInList(string? criteriaKey, IEnumerable<CardSet> cards)
         //{
         //    if (string.IsNullOrEmpty(criteriaKey))

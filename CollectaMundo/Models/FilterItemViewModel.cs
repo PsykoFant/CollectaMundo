@@ -65,7 +65,6 @@ namespace CollectaMundo.Models
             }
         }
 
-
         // Selection-related properties for multi-criteria
         public ObservableCollection<FilterOption> FilterOptions { get; }
         public ObservableCollection<string> SelectedOptions { get; } = [];
@@ -143,7 +142,7 @@ namespace CollectaMundo.Models
 
         // Resets the typing delay timer for freetext filtering.
 
-        private Timer? _typingTimer;
+        private readonly Timer? _typingTimer;
         private void ResetTypingDelay()
         {
             _typingTimer?.Stop();
@@ -254,26 +253,31 @@ namespace CollectaMundo.Models
             MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
         }
 
-        /// <summary>
-        /// Constructor - Initializes filter options and selection tracking.
-        /// </summary>
-        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, IEnumerable<int>? numericOptions = null)
+        // Constructor - Initializes filter options and selection tracking.
+        private readonly FilterViewModel _filterViewModel;
+        public FilterItemViewModel(
+    string criteriaKey,
+    IEnumerable<FilterOption> filterOptions,
+    string defaultText,
+    FilterViewModel filterViewModel,
+    IEnumerable<int>? numericOptions = null)
         {
+            _filterViewModel = filterViewModel ?? throw new ArgumentNullException(nameof(filterViewModel));
             CriteriaKey = criteriaKey;
             DefaultText = defaultText;
             _filterText = DefaultText;
             _freetextSearch = DefaultText;
 
-            // Use the pre-generated FilterOptions directly
-            FilterOptions = [.. filterOptions];
+            // Initialize FilterOptions (using a concrete collection type)
+            FilterOptions = new ObservableCollection<FilterOption>(filterOptions);
 
             // Initially, show all options
-            _filteredOptions = [.. FilterOptions];
+            _filteredOptions = new ObservableCollection<FilterOption>(FilterOptions);
 
             // Handle Numeric Filters
             if (numericOptions != null)
             {
-                AvailableNumericOptions = [.. numericOptions];
+                AvailableNumericOptions = new ObservableCollection<int>(numericOptions);
             }
 
             // Subscribe to selection changes in checkboxes (for Multi-selection filters)
@@ -290,7 +294,7 @@ namespace CollectaMundo.Models
             if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
             {
                 FilterCategory = mapping.Type;
-                AvailableOperators = mapping.Operators != null ? [.. mapping.Operators] : null;
+                AvailableOperators = mapping.Operators != null ? new ObservableCollection<OperatorType>(mapping.Operators) : null;
                 OperatorSelection = mapping.Operators?.FirstOrDefault() ?? OperatorType.OR;
 
                 // Initialize typing delay timer for Single (freetext) filters
@@ -315,10 +319,8 @@ namespace CollectaMundo.Models
             foreach (var option in FilterOptions.Where(opt => opt.IsSelected))
                 SelectedOptions.Add(option.OptionName);
 
-            MainWindow.CurrentInstance.FilterVM.DebugFullFilterState();
+            _filterViewModel.DebugFullFilterState();
         }
-
-
 
         // Debugging Methods
         public void DebugFilterItem()

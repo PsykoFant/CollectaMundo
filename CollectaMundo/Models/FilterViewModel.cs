@@ -59,9 +59,6 @@ namespace CollectaMundo.Models
 
 }
 
-
-
-
 //private void UpdateFilteredListBoxItems()
 //{
 //    var filter = FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == SelectedCriteriaKey);
