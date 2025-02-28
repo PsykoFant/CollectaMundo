@@ -282,19 +282,11 @@ namespace CollectaMundo
             FilterVM = new FilterViewModel(CardVM);
             OnPropertyChanged(nameof(FilterVM)); // Force UI refresh so bindings update
 
-            //FilterVM.DebugFilterItems("Name");
-
-
-
             Task loadDecks = LoadAllDecksAsync();
             Task populateAllFormatsList = PopulateAllFormatsListAsync();
             await Task.WhenAll(loadDecks, populateAllFormatsList);
 
-
             DBAccess.CloseConnection();
-
-
-            //await PopulateFilterUiElements();
 
             CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
             CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
