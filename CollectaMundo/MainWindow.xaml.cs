@@ -677,47 +677,14 @@ namespace CollectaMundo
             if (sender is ComboBox comboBox)
             {
 
-                //if (comboBox.Name.Contains("Name", StringComparison.OrdinalIgnoreCase))
-                //{
-                //    // Retrieve or create the FilterSelections object for "Name"
-                //    var nameFilterSelection = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "Name");
-                //    if (nameFilterSelection == null)
-                //    {
-                //        nameFilterSelection = new FilterSelections { CriteriaKey = "Name" };
-                //        filterSelections.Add(nameFilterSelection);
-                //    }
+                // Find the parent DataGrid for the current ComboBox
+                DataGrid? parentDataGrid = FindParent<DataGrid>(comboBox);
 
-                //    // Update the SingleCriteria field with the selected value
-                //    nameFilterSelection.SingleCriteria = comboBox.SelectedItem?.ToString();
-                //    // Trigger filtering
-                //    ApplyFiltersToAllLists();
-                //}
-                //else if (comboBox.Name.Contains("Set", StringComparison.OrdinalIgnoreCase))
-                //{
-                //    // Retrieve or create the FilterSelections object for "Set"
-                //    var setFilterSelection = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "SetName");
-                //    if (setFilterSelection == null)
-                //    {
-                //        setFilterSelection = new FilterSelections { CriteriaKey = "SetName" };
-                //        filterSelections.Add(setFilterSelection);
-                //    }
-
-                //    // Update the SingleCriteria field with the selected value
-                //    setFilterSelection.SingleCriteria = comboBox.SelectedItem?.ToString();
-                //    // Trigger filtering
-                //    FilterManagerOld.ApplyFilter(allCards, AllCardsDataGrid);
-                //    FilterManagerOld.ApplyFilter(myCards, MyCollectionDataGrid);
-                //}
-
-                //// Find the parent DataGrid for the current ComboBox
-                //DataGrid? parentDataGrid = FilterManagerOld.FindParent<DataGrid>(comboBox);
-
-                //// If a parent DataGrid is found, reset selections in other DataGrids
-                //if (parentDataGrid != null)
-                //{
-                //    ResetOtherDataGridSelections(parentDataGrid);
-                //}
-
+                // If a parent DataGrid is found, reset selections in other DataGrids
+                if (parentDataGrid != null)
+                {
+                    ResetOtherDataGridSelections(parentDataGrid);
+                }
             }
 
             void ResetOtherDataGridSelections(DataGrid currentDataGrid)
@@ -733,16 +700,50 @@ namespace CollectaMundo
                 // Iterate through other DataGrids and reset their ComboBox selections
                 foreach (DataGrid dataGrid in allDataGrids.Where(dg => dg != currentDataGrid))
                 {
-                    List<ComboBox> headerComboBoxes = FilterManagerOld.FindVisualChildren<ComboBox>(dataGrid);
+                    List<ComboBox> headerComboBoxes = FindVisualChildren<ComboBox>(dataGrid);
                     foreach (ComboBox headerComboBox in headerComboBoxes)
                     {
                         headerComboBox.SelectedIndex = -1;
                     }
                 }
             }
+
+            static T? FindParent<T>(DependencyObject child) where T : DependencyObject
+            {
+                DependencyObject? parentObject = VisualTreeHelper.GetParent(child);
+
+                while (parentObject != null && parentObject is not T)
+                {
+                    parentObject = VisualTreeHelper.GetParent(parentObject);
+                }
+
+                return parentObject as T;
+            }
+
+            static List<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
+            {
+                List<T> children = [];
+                if (depObj != null)
+                {
+                    for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+                    {
+                        DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
+                        if (child != null)
+                        {
+                            if (child is T t)
+                            {
+                                children.Add(t);
+                            }
+
+                            // Recursive call only if child is not null
+                            children.AddRange(FindVisualChildren<T>(child));
+                        }
+                    }
+                }
+
+                return children;
+            }
         }
-
-
 
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)

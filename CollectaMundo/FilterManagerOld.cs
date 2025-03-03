@@ -154,61 +154,6 @@ namespace CollectaMundo
         #endregion
 
         #region Filter UI updates
-
-        // Update the object to which the width of the combobox is bound
-        //public static void DataGrid_LayoutUpdated(int dataGridIndex)
-        //{
-        //    if (dataGridIndex < 0 || dataGridIndex >= MainWindow.CurrentInstance.ColumnWidths.Count)
-        //    {
-        //        return; // Protect against out-of-range errors
-        //    }
-
-        //    // Define paddings for each datagrid. Ensure this list matches the number of columns for each DataGrid.
-        //    List<int[]> paddingsList =
-        //    [
-        //        [65, 50], // Paddings for AllCardsDataGrid
-        //        [65, 50], // Paddings for MyCollectionDataGrid
-        //        [65]      // Padding for AllCardsForDecksDataGrid (only one column to adjust)
-        //    ];
-
-        //    if (dataGridIndex >= paddingsList.Count)
-        //    {
-        //        return; // Protect against out-of-range errors when accessing paddingsList
-        //    }
-
-        //    var paddings = paddingsList[dataGridIndex];
-        //    DataGrid currentDataGrid = dataGridIndex switch
-        //    {
-        //        0 => MainWindow.CurrentInstance.AllCardsDataGrid,
-        //        1 => MainWindow.CurrentInstance.MyCollectionDataGrid,
-        //        2 => MainWindow.CurrentInstance.AllCardsForDecksDataGrid,
-        //        _ => throw new ArgumentOutOfRangeException(nameof(dataGridIndex), "Invalid DataGrid index.")
-        //    };
-
-        //    if (currentDataGrid == null)
-        //    {
-        //        return;
-        //    }
-
-        //    for (int colIndex = 0; colIndex < paddings.Length; colIndex++)
-        //    {
-        //        if (colIndex >= MainWindow.CurrentInstance.ColumnWidths[dataGridIndex].Count || colIndex >= paddings.Length)
-        //        {
-        //            continue; // Protect against out-of-range errors when column widths or paddings list is shorter than the number of actual columns
-        //        }
-
-        //        double currentWidth = currentDataGrid.Columns[colIndex].ActualWidth;
-        //        double newWidth = currentWidth - paddings[colIndex]; // Apply specific padding for each column
-
-        //        // Check for a significant change before updating
-        //        if (newWidth > 0 && Math.Abs(MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][colIndex] - newWidth) > 0.5)
-        //        {
-        //            MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][colIndex] = newWidth;
-        //        }
-        //    }
-        //}
-
-        // Save column sort selections
         public static void SaveAndRestoreSort(DataGrid dataGrid, Action updateItemsSource)
         {
             // Step 1: Save current sort descriptions
