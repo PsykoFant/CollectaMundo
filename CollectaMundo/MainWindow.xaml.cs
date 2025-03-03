@@ -1,3 +1,4 @@
+using CollectaMundo.Behaviors;
 using CollectaMundo.Models;
 using ServiceStack;
 using System.Collections.ObjectModel;
@@ -1169,6 +1170,11 @@ namespace CollectaMundo
                 GridFiltering.Visibility = Visibility.Visible;
                 FilterSummaryScrollViewer.Visibility = Visibility.Visible;
 
+                _ = MyCollectionDataGrid.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    DataGridColumnResizerBehavior.ForceUpdate(MyCollectionDataGrid);
+                }), System.Windows.Threading.DispatcherPriority.Loaded);
+
                 GridDecksOverview.Visibility = Visibility.Collapsed;
                 GridDeckEditor.Visibility = Visibility.Visible;
             }
@@ -1647,6 +1653,12 @@ namespace CollectaMundo
             MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
             FilterSummaryScrollViewer.Visibility = Visibility.Visible;
             LogoSmall.Visibility = Visibility.Visible;
+
+            MyCollectionDataGrid.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                DataGridColumnResizerBehavior.ForceUpdate(AllCardsDataGrid);
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
+
             GridFiltering.Visibility = Visibility.Visible;
             GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
             AddToCollectionManager.AdjustColumnWidths();
@@ -1654,6 +1666,12 @@ namespace CollectaMundo
         private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
+
+            MyCollectionDataGrid.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                DataGridColumnResizerBehavior.ForceUpdate(MyCollectionDataGrid);
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
+
             MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
             FilterSummaryScrollViewer.Visibility = Visibility.Visible;
             LogoSmall.Visibility = Visibility.Visible;

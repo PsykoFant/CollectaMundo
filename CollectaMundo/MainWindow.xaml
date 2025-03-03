@@ -1072,7 +1072,9 @@
                           CanUserAddRows="False"
                           CanUserSortColumns="True"
                           HorizontalAlignment="Stretch"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                          behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
+                          behaviors:DataGridColumnResizerBehavior.DataGridIndex="1">
                     <DataGrid.ContextMenu>
                         <ContextMenu Style="{StaticResource MPlantin}">
                             <MenuItem Header="EDIT selected card(s)" Click="ButtonEditCardsInCollection_Click" Style="{StaticResource BelerenBold}"/>
@@ -1323,7 +1325,9 @@
                                   VirtualizingPanel.IsVirtualizing="True"
                                   CanUserAddRows="False"
                                   CanUserSortColumns="True"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="0,129,0,-129">
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="0,129,0,-129"
+                                  behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
+                                  behaviors:DataGridColumnResizerBehavior.DataGridIndex="2">
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                                     <DataGridTemplateColumn.HeaderTemplate>

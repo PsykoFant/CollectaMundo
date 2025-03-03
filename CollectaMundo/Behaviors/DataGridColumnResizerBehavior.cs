@@ -6,32 +6,17 @@ namespace CollectaMundo.Behaviors
 {
     public static class DataGridColumnResizerBehavior
     {
-        public static readonly DependencyProperty EnableAutoResizeProperty =
-            DependencyProperty.RegisterAttached(
-                "EnableAutoResize",
-                typeof(bool),
-                typeof(DataGridColumnResizerBehavior),
-                new PropertyMetadata(false, OnEnableAutoResizeChanged));
+        public static readonly DependencyProperty EnableAutoResizeProperty = DependencyProperty.RegisterAttached("EnableAutoResize", typeof(bool), typeof(DataGridColumnResizerBehavior), new PropertyMetadata(false, OnEnableAutoResizeChanged));
+        public static void ForceUpdate(DataGrid dataGrid)
+        {
+            UpdateColumnWidths(dataGrid);
+        }
+        public static bool GetEnableAutoResize(DependencyObject obj) => (bool)obj.GetValue(EnableAutoResizeProperty);
+        public static void SetEnableAutoResize(DependencyObject obj, bool value) => obj.SetValue(EnableAutoResizeProperty, value);
 
-        public static bool GetEnableAutoResize(DependencyObject obj) =>
-            (bool)obj.GetValue(EnableAutoResizeProperty);
-
-        public static void SetEnableAutoResize(DependencyObject obj, bool value) =>
-            obj.SetValue(EnableAutoResizeProperty, value);
-
-        public static readonly DependencyProperty DataGridIndexProperty =
-            DependencyProperty.RegisterAttached(
-                "DataGridIndex",
-                typeof(int),
-                typeof(DataGridColumnResizerBehavior),
-                new PropertyMetadata(-1));
-
-        public static int GetDataGridIndex(DependencyObject obj) =>
-            (int)obj.GetValue(DataGridIndexProperty);
-
-        public static void SetDataGridIndex(DependencyObject obj, int value) =>
-            obj.SetValue(DataGridIndexProperty, value);
-
+        public static readonly DependencyProperty DataGridIndexProperty = DependencyProperty.RegisterAttached("DataGridIndex", typeof(int), typeof(DataGridColumnResizerBehavior), new PropertyMetadata(-1));
+        public static int GetDataGridIndex(DependencyObject obj) => (int)obj.GetValue(DataGridIndexProperty);
+        public static void SetDataGridIndex(DependencyObject obj, int value) => obj.SetValue(DataGridIndexProperty, value);
         private static void OnEnableAutoResizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is DataGrid dataGrid)
@@ -57,7 +42,6 @@ namespace CollectaMundo.Behaviors
                 }
             }
         }
-
         private static void DataGrid_Loaded(object sender, RoutedEventArgs e)
         {
             if (sender is DataGrid dataGrid)
@@ -69,15 +53,12 @@ namespace CollectaMundo.Behaviors
                 dataGrid.Loaded -= DataGrid_Loaded;
             }
         }
-
-
         private static void OnDataGridSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (!(sender is DataGrid dataGrid))
+            if (sender is not DataGrid dataGrid)
                 return;
             UpdateColumnWidths(dataGrid);
         }
-
         private static void UpdateColumnWidths(DataGrid dataGrid)
         {
             // Check if running in design mode.
@@ -89,11 +70,11 @@ namespace CollectaMundo.Behaviors
                 return;
 
             List<int[]> paddingsList = new List<int[]>
-    {
-        new int[] {65, 50}, // For AllCardsDataGrid (index 0)
-        new int[] {65, 50}, // For MyCollectionDataGrid (index 1)
-        new int[] {65}      // For AllCardsForDecksDataGrid (index 2)
-    };
+            {
+                new int[] {65, 50}, // For AllCardsDataGrid (index 0)
+                new int[] {65, 50}, // For MyCollectionDataGrid (index 1)
+                new int[] {65}      // For AllCardsForDecksDataGrid (index 2)
+            };
 
             if (dataGridIndex >= paddingsList.Count)
                 return;
