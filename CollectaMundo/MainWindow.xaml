@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CollectaMundo"
         xmlns:converters="clr-namespace:CollectaMundo.Converters"
+        xmlns:behaviors="clr-namespace:CollectaMundo.Behaviors"
         xmlns:System="clr-namespace:System;assembly=System.Runtime" x:Class="CollectaMundo.MainWindow"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
@@ -773,7 +774,9 @@
                           CanUserAddRows="False"
                           CanUserSortColumns="True"
                           HorizontalAlignment="Stretch"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                          behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
+                          behaviors:DataGridColumnResizerBehavior.DataGridIndex="0">
                     <DataGrid.ContextMenu>
                         <ContextMenu Style="{StaticResource MPlantin}">
                             <MenuItem Header="Add selected card(s) to Collection" Click="ButtonAddCardsToMyCollection_Click" Style="{StaticResource BelerenBold}"/>

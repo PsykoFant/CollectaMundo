@@ -157,17 +157,13 @@ namespace CollectaMundo
                 await ShowStatusWindowAsync(true, "Just a quick system integrity check ...");
                 await DownloadAndPrepDB.SystemIntegrityCheckAsync();
                 await LoadDataIntoUiElements();
+
                 _isStartup = false; // Set flag to false after initial load
             };
 
             // Update the statusbox with messages from methods in DownloadAndPrepareDB and UpdateDB
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
-
-            // Subscribe to column width changes
-            AllCardsDataGrid.LayoutUpdated += (s, e) => FilterManagerOld.DataGrid_LayoutUpdated(0);
-            MyCollectionDataGrid.LayoutUpdated += (s, e) => FilterManagerOld.DataGrid_LayoutUpdated(1);
-            AllCardsForDecksDataGrid.LayoutUpdated += (s, e) => FilterManagerOld.DataGrid_LayoutUpdated(2);
         }
 
         #region Tests
