@@ -670,81 +670,6 @@ namespace CollectaMundo
         #endregion
 
         #region Filter elements handling        
-        private void DataGridHeaderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (_isStartup) { return; }
-
-            if (sender is ComboBox comboBox)
-            {
-
-                // Find the parent DataGrid for the current ComboBox
-                DataGrid? parentDataGrid = FindParent<DataGrid>(comboBox);
-
-                // If a parent DataGrid is found, reset selections in other DataGrids
-                if (parentDataGrid != null)
-                {
-                    ResetOtherDataGridSelections(parentDataGrid);
-                }
-            }
-
-            void ResetOtherDataGridSelections(DataGrid currentDataGrid)
-            {
-                // List all DataGrids
-                List<DataGrid> allDataGrids =
-                [
-                    AllCardsDataGrid,
-                    MyCollectionDataGrid,
-                    AllCardsForDecksDataGrid
-                ];
-
-                // Iterate through other DataGrids and reset their ComboBox selections
-                foreach (DataGrid dataGrid in allDataGrids.Where(dg => dg != currentDataGrid))
-                {
-                    List<ComboBox> headerComboBoxes = FindVisualChildren<ComboBox>(dataGrid);
-                    foreach (ComboBox headerComboBox in headerComboBoxes)
-                    {
-                        headerComboBox.SelectedIndex = -1;
-                    }
-                }
-            }
-
-            static T? FindParent<T>(DependencyObject child) where T : DependencyObject
-            {
-                DependencyObject? parentObject = VisualTreeHelper.GetParent(child);
-
-                while (parentObject != null && parentObject is not T)
-                {
-                    parentObject = VisualTreeHelper.GetParent(parentObject);
-                }
-
-                return parentObject as T;
-            }
-
-            static List<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
-            {
-                List<T> children = [];
-                if (depObj != null)
-                {
-                    for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
-                    {
-                        DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
-                        if (child != null)
-                        {
-                            if (child is T t)
-                            {
-                                children.Add(t);
-                            }
-
-                            // Recursive call only if child is not null
-                            children.AddRange(FindVisualChildren<T>(child));
-                        }
-                    }
-                }
-
-                return children;
-            }
-        }
-
         // When combobox textboxes get focus/defocus        
         private void TextBox_GotFocus(object sender, RoutedEventArgs e)
         {
@@ -790,50 +715,6 @@ namespace CollectaMundo
                 filterItem.HandleKeyPress(e.Key);
             }
         }
-
-
-        // Cards for trade filtering
-        //private void CheckBoxCardsForTrade_Checked(object sender, RoutedEventArgs e)
-        //{
-        //    if (CheckBoxCardsNotForTrade.IsChecked == true)
-        //    {
-        //        CheckBoxCardsNotForTrade.IsChecked = false;
-        //    }
-        //    FilterOnCarsForTrade(OperatorType.GREATER_THAN);
-        //}
-        //private void CheckBoxCardsForTrade_Unchecked(object sender, RoutedEventArgs e)
-        //{
-        //    FilterOnCarsForTrade(OperatorType.GREATER_THAN_OR_EQUALS);
-        //}
-        //private void CheckBoxCardsNotForTrade_Checked(object sender, RoutedEventArgs e)
-        //{
-        //    if (CheckBoxCardsForTrade.IsChecked == true)
-        //    {
-        //        CheckBoxCardsForTrade.IsChecked = false;
-        //    }
-        //    FilterOnCarsForTrade(OperatorType.EQUALS);
-        //}
-        //private void CheckBoxCardsNotForTrade_Unchecked(object sender, RoutedEventArgs e)
-        //{
-        //    FilterOnCarsForTrade(OperatorType.GREATER_THAN_OR_EQUALS);
-        //}
-        //private void FilterOnCarsForTrade(OperatorType @operator)
-        //{
-        //    //// Find or create the FilterSelections object for CardsForTrade
-        //    //var cardsForTrade = filterSelections.FirstOrDefault(fs => fs.CriteriaKey == "CardsForTrade");
-        //    //if (cardsForTrade == null)
-        //    //{
-        //    //    cardsForTrade = new FilterSelections { CriteriaKey = "CardsForTrade" };
-        //    //    filterSelections.Add(cardsForTrade);
-        //    //    cardsForTrade.NumberCriteria = 0;
-        //    //}
-
-        //    //cardsForTrade.Operator = @operator;
-
-        //    ApplyFiltersToAllLists();
-
-        //}
-
 
         public void ApplyFiltersToAllLists()
         {
