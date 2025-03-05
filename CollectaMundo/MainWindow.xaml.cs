@@ -724,91 +724,16 @@ namespace CollectaMundo
         }
 
         // Reset filter elements
-        public void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
+        private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_isStartup) { return; }
-
-            // Clear the internal HashSets by re-initializing the object
-            //filterSelections = [];
-
-            // Reset filter TextBoxes for each ComboBox and also free-text filter textbox
-            //SetDefaultText(filterDefaults);
-
-            // Clear filter summary
-            FilterSummaryTextBlock.Text = string.Empty;
-
-            // Clear non-custom comboboxes
-            //ManaValueOperatorComboBox.SelectedIndex = -1;
-            //ManaValueComboBox.SelectedIndex = -1;
-
-            // Find and clear all ComboBoxes in the DataGrid header
-            List<ComboBox> headerComboBoxesAllCards = FilterManagerOld.FindVisualChildren<ComboBox>(AllCardsDataGrid);
-            foreach (ComboBox headerComboBox in headerComboBoxesAllCards)
+            if (FilterVM != null)
             {
-                headerComboBox.SelectedIndex = -1;
-            }
-            List<ComboBox> headerComboBoxesMyCollection = FilterManagerOld.FindVisualChildren<ComboBox>(MyCollectionDataGrid);
-            foreach (ComboBox headerComboBox in headerComboBoxesMyCollection)
-            {
-                headerComboBox.SelectedIndex = -1;
-            }
-            List<ComboBox> headerComboBoxesAllCardsForDecks = FilterManagerOld.FindVisualChildren<ComboBox>(AllCardsForDecksDataGrid);
-            foreach (ComboBox headerComboBox in headerComboBoxesAllCardsForDecks)
-            {
-                headerComboBox.SelectedIndex = -1;
-            }
-
-            // Reset all the operator comboboxes
-            foreach (var cb in FindAllOperatorComboBoxes())
-            {
-                cb.SelectedIndex = 0;
-            }
-
-            // Clear selections in the colors listbox
-            //ClearListBoxSelections(FilterColorsListBox);
-
-            // Uncheck CheckBoxes if necessary
-            //CheckBoxCardsForTrade.IsChecked = false;
-            //CheckBoxCardsNotForTrade.IsChecked = false;
-
-            // Reset card images
-            ImagePromoLabel.Content = string.Empty;
-            ImageSetLabel.Content = string.Empty;
-            ImageSourceUrl = null;
-            ImageSourceUrl2nd = null;
-
-            // Update filter label and apply filters to refresh the DataGrid            
-            ApplyFiltersToAllLists();
-
-            // Local helper functions
-
-            IEnumerable<ComboBox> FindAllOperatorComboBoxes()
-            {
-                var comboBoxes = new List<ComboBox>();
-                TraverseVisualTree(this, comboBoxes);
-                return comboBoxes.Where(cb => cb.Tag?.ToString() == "OperatorComboBox");
-
-                static void TraverseVisualTree(DependencyObject parent, List<ComboBox> comboBoxes)
-                {
-                    if (parent == null)
-                    {
-                        return;
-                    }
-
-                    for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-                    {
-                        var child = VisualTreeHelper.GetChild(parent, i);
-
-                        if (child is ComboBox comboBox)
-                        {
-                            comboBoxes.Add(comboBox);
-                        }
-
-                        TraverseVisualTree(child, comboBoxes);
-                    }
-                }
+                FilterVM.ClearFilters();
+                // Optionally, trigger re-application of filtering logic on your data grids:
+                FilterVM.DebugFullFilterState();
             }
         }
+
 
         #endregion
 

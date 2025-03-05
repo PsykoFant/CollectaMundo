@@ -112,6 +112,44 @@ namespace CollectaMundo.Models
             };
         }
 
+        /// <summary>
+        /// Clears all filter selections, resetting each filter to its default state.
+        /// </summary>
+        public void ClearFilters()
+        {
+            foreach (var filter in Filters.Values)
+            {
+                switch (filter.FilterCategory)
+                {
+                    case FilterType.Single:
+                        filter.SelectedSingleOption = null;
+                        filter.FreetextSearch = filter.DefaultText;
+                        filter.FilterText = filter.DefaultText;
+                        break;
+
+                    case FilterType.Multi:
+                        filter.SelectedOptions.Clear();
+                        // Optionally reset the operator selection to default:
+                        if (filter.AvailableOperators != null && filter.AvailableOperators.Any())
+                        {
+                            filter.OperatorSelection = filter.AvailableOperators.First();
+                        }
+                        break;
+
+                    case FilterType.Numeric:
+                        filter.SelectedNumericValue = null;
+                        if (filter.AvailableOperators != null && filter.AvailableOperators.Any())
+                        {
+                            filter.OperatorSelection = filter.AvailableOperators.First();
+                        }
+                        break;
+                }
+            }
+
+            UpdateFilterSummary();
+        }
+
+
         // Debug
         public void DebugFullFilterState()
         {
