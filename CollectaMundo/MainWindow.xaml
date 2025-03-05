@@ -71,7 +71,7 @@
         <Grid x:Name="GridSideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="Hidden">
             <Grid x:Name="GridFiltering">
 
-                <Button x:Name="ClearFiltersButton" Content="Clear filters" Margin="10,0,0,0" VerticalAlignment="Top" Height="20" Click="ClearFiltersButton_Click" />
+                <Button x:Name="ClearFiltersButton" Content="Clear filters" Margin="10,0,0,0" VerticalAlignment="Top" Height="20" Command="{Binding FilterVM.ClearFiltersCommand}"/>
 
                 <!--Color filtering-->
                 <ListBox ItemsSource="{Binding FilterVM.Filters[Colors].FilterOptions, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -656,7 +656,6 @@
             <Image x:Name="LogoSmall" Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="170" Width="170" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" d:IsHidden="True" />
             <ScrollViewer x:Name="FilterSummaryScrollViewer" HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <TextBlock x:Name="FilterSummaryTextBlock" HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
-                <!--<TextBlock x:Name="FilterSummaryTextBlock" HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="temp..."/>-->
             </ScrollViewer>
             <Grid x:Name="GridSearchAndFilterAllCards" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>

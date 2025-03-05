@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using System.Windows.Input;
 using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Models
@@ -12,6 +13,9 @@ namespace CollectaMundo.Models
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        // ICommand to clear filters
+        public ICommand? ClearFiltersCommand { get; }
 
         private string? _filterSummary;
         public string? FilterSummary
@@ -39,6 +43,9 @@ namespace CollectaMundo.Models
                     filter.NumericCriteria // Pass numeric criteria if applicable
                 );
             }
+
+            // Initialize the command using the ClearFilters method.
+            ClearFiltersCommand = new RelayCommand(ClearFilters);
         }
 
         // This method aggregates the current filter selections into a summary string.
@@ -115,6 +122,9 @@ namespace CollectaMundo.Models
         /// <summary>
         /// Clears all filter selections, resetting each filter to its default state.
         /// </summary>
+        /// <summary>
+        /// Clears all filter selections and updates the summary.
+        /// </summary>
         public void ClearFilters()
         {
             foreach (var filter in Filters.Values)
@@ -126,16 +136,13 @@ namespace CollectaMundo.Models
                         filter.FreetextSearch = filter.DefaultText;
                         filter.FilterText = filter.DefaultText;
                         break;
-
                     case FilterType.Multi:
                         filter.SelectedOptions.Clear();
-                        // Optionally reset the operator selection to default:
                         if (filter.AvailableOperators != null && filter.AvailableOperators.Any())
                         {
                             filter.OperatorSelection = filter.AvailableOperators.First();
                         }
                         break;
-
                     case FilterType.Numeric:
                         filter.SelectedNumericValue = null;
                         if (filter.AvailableOperators != null && filter.AvailableOperators.Any())
@@ -145,8 +152,8 @@ namespace CollectaMundo.Models
                         break;
                 }
             }
-
             UpdateFilterSummary();
+            DebugFullFilterState();
         }
 
 

@@ -723,18 +723,6 @@ namespace CollectaMundo
             //FilterManagerOld.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
         }
 
-        // Reset filter elements
-        private void ClearFiltersButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (FilterVM != null)
-            {
-                FilterVM.ClearFilters();
-                // Optionally, trigger re-application of filtering logic on your data grids:
-                FilterVM.DebugFullFilterState();
-            }
-        }
-
-
         #endregion
 
         #region Show selected card image
