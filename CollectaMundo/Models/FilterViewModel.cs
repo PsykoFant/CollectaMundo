@@ -1,6 +1,8 @@
 ﻿using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text;
+using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Models
 {
@@ -10,6 +12,20 @@ namespace CollectaMundo.Models
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        private string? _filterSummary;
+        public string? FilterSummary
+        {
+            get => _filterSummary;
+            set
+            {
+                if (_filterSummary != value)
+                {
+                    _filterSummary = value;
+                    OnPropertyChanged(nameof(FilterSummary));
+                }
+            }
+        }
         public FilterViewModel(CardViewModel cardViewModel)
         {
             var filterDefaults = FilterManager.GetFilterDefaults(cardViewModel);
@@ -25,10 +41,81 @@ namespace CollectaMundo.Models
             }
         }
 
+        // This method aggregates the current filter selections into a summary string.
+        private void UpdateFilterSummary()
+        {
+            var summary = new StringBuilder();
+
+            foreach (var filter in Filters.Values)
+            {
+                switch (filter.FilterCategory)
+                {
+                    case FilterType.Single:
+                        if (!string.IsNullOrWhiteSpace(filter.SelectedSingleOption) &&
+                            filter.SelectedSingleOption != filter.DefaultText)
+                        {
+                            summary.Append($"{filter.CriteriaKey}: \"{filter.SelectedSingleOption}\" AND ");
+                        }
+                        break;
+
+                    case FilterType.Multi:
+                        if (filter.SelectedOptions != null && filter.SelectedOptions.Any())
+                        {
+                            // Determine the operator symbol.
+                            string operatorSymbol = filter.OperatorSelection switch
+                            {
+                                OperatorType.OR => "OR",
+                                OperatorType.AND => "AND",
+                                OperatorType.NOT => "AND",  // We join with "AND" but prefix each option with "NOT"
+                                _ => ""
+                            };
+
+                            // Build the filter segment. If the operator is NOT, prefix each option with "NOT ".
+                            string filterSegment = filter.OperatorSelection == OperatorType.NOT
+                                ? string.Join($" {operatorSymbol} ", filter.SelectedOptions.Select(opt => $"NOT {opt}"))
+                                : string.Join($" {operatorSymbol} ", filter.SelectedOptions);
+
+                            summary.Append($"{filter.CriteriaKey}: {{{filterSegment}}} AND ");
+                        }
+                        break;
+
+                    case FilterType.Numeric:
+                        if (filter.SelectedNumericValue != null)
+                        {
+                            summary.Append($"{filter.CriteriaKey} {GetOperatorSymbol(filter.OperatorSelection)} {filter.SelectedNumericValue} AND ");
+                        }
+                        break;
+                }
+            }
+
+            // Remove the trailing " AND " if present.
+            if (summary.Length >= 5)
+            {
+                summary.Remove(summary.Length - 5, 5);
+            }
+
+            FilterSummary = summary.ToString();
+        }
+
+        // Helper method to convert operator enum to a symbol.
+        private static string GetOperatorSymbol(OperatorType op)
+        {
+            return op switch
+            {
+                OperatorType.LESS_THAN => "<",
+                OperatorType.LESS_THAN_OR_EQUALS => "<=",
+                OperatorType.GREATER_THAN => ">",
+                OperatorType.GREATER_THAN_OR_EQUALS => ">=",
+                OperatorType.EQUALS => "==",
+                OperatorType.NOT_EQUALS => "!=",
+                _ => ""
+            };
+        }
 
         // Debug
         public void DebugFullFilterState()
         {
+            UpdateFilterSummary();
             Debug.WriteLine("===== DEBUG: FULL FILTER STATE =====");
 
             foreach (var filter in Filters.Values)
@@ -76,34 +163,6 @@ namespace CollectaMundo.Models
 
 }
 
-//private void UpdateFilteredListBoxItems()
-//{
-//    var filter = FilterDefaults.FirstOrDefault(fd => fd.CriteriaKey == SelectedCriteriaKey);
-//    if (filter == null || filter.AllCriteria.Count == 0)
-//    {
-//        _filteredListBoxItems.Clear();
-//        return;
-//    }
-
-//    // Apply filtering
-//    var filteredItems = string.IsNullOrWhiteSpace(FilterText)
-//        ? filter.AllCriteria
-//        : filter.AllCriteria.Where(item => item.IndexOf(FilterText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-
-//    // 🔹 Make sure the UI updates immediately by resetting the collection
-//    Application.Current.Dispatcher.Invoke(() =>
-//    {
-//        _filteredListBoxItems.Clear();
-//        foreach (var item in filteredItems)
-//        {
-//            _filteredListBoxItems.Add(item);
-//        }
-//    }, System.Windows.Threading.DispatcherPriority.Render);
-
-//    // 🔹 Explicitly notify UI
-//    OnPropertyChanged(nameof(FilteredListBoxItems));
-//}
-
 //public void UpdateCardCount(string datagridName, int count)
 //{
 //    if (datagridName == "AllCardsDataGrid")
@@ -116,59 +175,3 @@ namespace CollectaMundo.Models
 //    }
 //}
 
-// `UpdateSummary` updates the UI
-//public void UpdateSummary(IEnumerable<BaseFilterCriteria> filterCriteria)
-//{
-//    var summary = new StringBuilder();
-
-//    foreach (var filter in filterCriteria)
-//    {
-//        if (filter is StringFilterCriteria stringFilter)
-//        {
-//            if (!string.IsNullOrWhiteSpace(stringFilter.SingleValue))
-//            {
-//                summary.Append($"{filter.CriteriaKey}: \"{stringFilter.SingleValue}\" AND ");
-//            }
-
-//            if (stringFilter.MultipleValues is { Count: > 0 })
-//            {
-//                string operatorSymbol = stringFilter.OperatorType switch
-//                {
-//                    OperatorType.OR => "OR",
-//                    OperatorType.AND => "AND",
-//                    OperatorType.NOT => "NOT",
-//                    _ => ""
-//                };
-
-//                var filterSegment = stringFilter.OperatorType == OperatorType.NOT
-//                    ? string.Join(", ", stringFilter.MultipleValues.Select(mv => $"NOT {mv}"))
-//                    : string.Join($" {operatorSymbol} ", stringFilter.MultipleValues);
-
-//                summary.Append($"{filter.CriteriaKey}: {{{filterSegment}}} AND ");
-//            }
-//        }
-//        else if (filter is NumericFilterCriteria numericFilter)
-//        {
-//            string numericOperator = numericFilter.OperatorType switch
-//            {
-//                OperatorType.LESS_THAN => "<",
-//                OperatorType.LESS_THAN_OR_EQUALS => "<=",
-//                OperatorType.GREATER_THAN => ">",
-//                OperatorType.GREATER_THAN_OR_EQUALS => ">=",
-//                OperatorType.EQUALS => "==",
-//                OperatorType.NOT_EQUALS => "!=",
-//                _ => ""
-//            };
-
-//            summary.Append($"{filter.CriteriaKey} {numericOperator} {numericFilter.Value} AND ");
-//        }
-//    }
-
-//    if (summary.Length > 5)
-//    {
-//        summary.Remove(summary.Length - 5, 5);
-//    }
-
-//    // This updates the UI
-//    FilterSummary = summary.ToString();
-//}
