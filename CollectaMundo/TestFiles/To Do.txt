@@ -1,7 +1,10 @@
 TO DO 
 - MVVM refactor
- - Populate listbox med værdier
- - Filtrering af værdier
- - Huske selections
- - Filtrer når der bliver lavet selections
- - Start med sidste svar i Collectamundo 4
+ - Reset default text
+ - Oprydning i FilterViewItemModel
+ - UI oprydning, polish
+ - Kun filtrer på felter, som er på objektet
+ - Color-filtering!
+ - Unit test
+
+ - Add to collectionManager til MVVM!

@@ -62,7 +62,7 @@ namespace CollectaMundo.Models
                 {
                     _selectedNumericValue = value;
                     OnPropertyChanged(nameof(SelectedNumericValue));
-                    _filterViewModel.DebugFullFilterState();
+                    _filterViewModel.ApplyFiltering();
                 }
             }
         }
@@ -146,7 +146,7 @@ namespace CollectaMundo.Models
 
         // Resets the typing delay timer for freetext filtering.
 
-        private Timer? _typingTimer;
+        private readonly Timer? _typingTimer;
         private void TypingTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
             // Ensure we run on the UI thread.
@@ -165,6 +165,7 @@ namespace CollectaMundo.Models
             _typingTimer?.Stop();
             _typingTimer?.Start();
         }
+
         // Handles keypress events for the TextBox.
         public void HandleKeyPress(Key key)
         {
@@ -204,10 +205,7 @@ namespace CollectaMundo.Models
                     _operatorSelection = value;
                     OnPropertyChanged(nameof(OperatorSelection));
 
-                    if (!MainWindow.CurrentInstance._isStartup)
-                    {
-                        _filterViewModel.DebugFullFilterState();
-                    }
+                    _filterViewModel.ApplyFiltering();
                 }
             }
         }
@@ -273,18 +271,12 @@ namespace CollectaMundo.Models
                 SelectedNumericValue = null;
             }
 
-            // Debug output (will later be replaced with actual filtering)
-            _filterViewModel.DebugFullFilterState();
+            _filterViewModel.ApplyFiltering();
         }
 
         // Constructor - Initializes filter options and selection tracking.
         private readonly FilterViewModel _filterViewModel;
-        public FilterItemViewModel(
-        string criteriaKey,
-        IEnumerable<FilterOption> filterOptions,
-        string defaultText,
-        FilterViewModel filterViewModel,
-        IEnumerable<int>? numericOptions = null)
+        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, FilterViewModel filterViewModel, IEnumerable<int>? numericOptions = null)
         {
             _filterViewModel = filterViewModel ?? throw new ArgumentNullException(nameof(filterViewModel));
             CriteriaKey = criteriaKey;
@@ -293,15 +285,15 @@ namespace CollectaMundo.Models
             _freetextSearch = DefaultText;
 
             // Initialize FilterOptions (using a concrete collection type)
-            FilterOptions = new ObservableCollection<FilterOption>(filterOptions);
+            FilterOptions = [.. filterOptions];
 
             // Initially, show all options
-            _filteredOptions = new ObservableCollection<FilterOption>(FilterOptions);
+            _filteredOptions = [.. FilterOptions];
 
             // Handle Numeric Filters
             if (numericOptions != null)
             {
-                AvailableNumericOptions = new ObservableCollection<int>(numericOptions);
+                AvailableNumericOptions = [.. numericOptions];
             }
 
             // Subscribe to selection changes in checkboxes (for Multi-selection filters)
@@ -320,7 +312,7 @@ namespace CollectaMundo.Models
             if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
             {
                 FilterCategory = mapping.Type;
-                AvailableOperators = mapping.Operators != null ? new ObservableCollection<OperatorType>(mapping.Operators) : null;
+                AvailableOperators = mapping.Operators != null ? [.. mapping.Operators] : null;
                 OperatorSelection = mapping.Operators?.FirstOrDefault() ?? OperatorType.OR;
 
                 // Initialize typing delay timer for Single (freetext) filters
@@ -341,7 +333,7 @@ namespace CollectaMundo.Models
                 SelectedOptions.Add(option.OptionName);
             }
 
-            _filterViewModel.DebugFullFilterState();
+            _filterViewModel.ApplyFiltering();
         }
 
         // Determines whether the given card satisfies this filter.

@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.Models;
-using ServiceStack;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
@@ -153,33 +152,6 @@ namespace CollectaMundo
 
         #endregion
 
-        #region Filter UI updates
-        public static void SaveAndRestoreSort(DataGrid dataGrid, Action updateItemsSource)
-        {
-            // Step 1: Save current sort descriptions
-            var sortDescriptions = dataGrid.Items.SortDescriptions.ToList();
-            var sortedColumns = dataGrid.Columns
-                .Where(column => column.SortDirection.HasValue)
-                .ToDictionary(column => column, column => column.SortDirection);
-
-            // Step 2: Perform the update (reset ItemsSource)
-            updateItemsSource?.Invoke();
-
-            // Step 3: Restore sort descriptions
-            dataGrid.Items.SortDescriptions.Clear();
-            foreach (var sortDescription in sortDescriptions)
-            {
-                dataGrid.Items.SortDescriptions.Add(sortDescription);
-            }
-
-            // Restore column sort directions
-            foreach (var column in sortedColumns)
-            {
-                column.Key.SortDirection = column.Value;
-            }
-        }
-
-        #endregion
 
         #region Filter Helper Methods
 

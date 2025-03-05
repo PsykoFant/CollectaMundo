@@ -77,8 +77,6 @@ namespace CollectaMundo.Models
             UpdateFilterSummary();
         }
 
-
-
         // This method aggregates the current filter selections into a summary string.
         private void UpdateFilterSummary()
         {
@@ -162,13 +160,21 @@ namespace CollectaMundo.Models
                         filter.FreetextSearch = filter.DefaultText;
                         filter.FilterText = filter.DefaultText;
                         break;
+
                     case FilterType.Multi:
+                        // Uncheck each option so that the UI updates and SelectedOptions is recalculated.
+                        foreach (var option in filter.FilterOptions)
+                        {
+                            option.IsSelected = false;
+                        }
+                        // Clear the SelectedOptions collection
                         filter.SelectedOptions.Clear();
                         if (filter.AvailableOperators != null && filter.AvailableOperators.Any())
                         {
                             filter.OperatorSelection = filter.AvailableOperators.First();
                         }
                         break;
+
                     case FilterType.Numeric:
                         filter.SelectedNumericValue = null;
                         if (filter.AvailableOperators != null && filter.AvailableOperators.Any())
@@ -178,9 +184,10 @@ namespace CollectaMundo.Models
                         break;
                 }
             }
-            UpdateFilterSummary();
-            DebugFullFilterState();
+            //UpdateFilterSummary();
         }
+
+
 
         // Debug
         public void DebugFullFilterState()
