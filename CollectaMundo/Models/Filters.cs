@@ -35,7 +35,7 @@ namespace CollectaMundo.Models
         {
             return [.. FilterCriteriaMappings.CriteriaMappings.Select(entry =>
             {
-                var sourceCollection = entry.Value.Property == nameof(CardViewModel.allCards) ? cardViewModel.allCards : cardViewModel.myCards;
+                var sourceCollection = entry.Value.Property == nameof(CardViewModel.allCards) ? cardViewModel.allCards : cardViewModel.myCollection;
                 var rawValues = ExtractCriteriaValues(entry.Key, sourceCollection);
                 var removeItems = GetUnwantedItems(entry.Key);
                 bool shouldNotSplit = entry.Value.ShouldNotSplit;
@@ -131,78 +131,6 @@ namespace CollectaMundo.Models
             };
         }
     }
-    // Base class for strongly-typed filter criteria.
-    //public abstract class BaseFilterCriteria : Filters
-    //{
-    //    public OperatorType OperatorType { get; set; }
 
-    //    /// <summary>
-    //    /// Abstract method to check if a card matches the filter.
-    //    /// </summary>
-    //    public abstract bool Matches(CardSet card);
-    //}
-
-    // Strongly-typed filter for string properties.    
-    //public class StringFilterCriteria : BaseFilterCriteria
-    //{
-    //    public required Func<CardSet, string?> PropertySelector { get; set; }
-    //    public string? SingleValue { get; set; }
-    //    public HashSet<string>? MultipleValues { get; set; }
-
-    //    public override bool Matches(CardSet card)
-    //    {
-    //        var propertyValue = PropertySelector(card);
-
-    //        // Check single value criteria
-    //        if (!string.IsNullOrWhiteSpace(SingleValue) &&
-    //            (propertyValue?.Contains(SingleValue, StringComparison.OrdinalIgnoreCase) != true))
-    //        {
-    //            return false;
-    //        }
-
-    //        // Check multiple values criteria
-    //        if (MultipleValues != null && MultipleValues.Count > 0)
-    //        {
-    //            return OperatorType switch
-    //            {
-    //                OperatorType.OR => MultipleValues.Any(mv => propertyValue?.Contains(mv, StringComparison.OrdinalIgnoreCase) == true),
-    //                OperatorType.AND => MultipleValues.All(mv => propertyValue?.Contains(mv, StringComparison.OrdinalIgnoreCase) == true),
-    //                OperatorType.NOT => !MultipleValues.Any(mv => propertyValue?.Contains(mv, StringComparison.OrdinalIgnoreCase) == true),
-    //                _ => true
-    //            };
-    //        }
-
-    //        return true;
-    //    }
-    //}
-
-    // Strongly-typed filter for numeric properties.
-    //public class NumericFilterCriteria : BaseFilterCriteria
-    //{
-    //    public required Func<CardSet, double?> PropertySelector { get; set; }
-    //    public double Value { get; set; }
-
-    //    public override bool Matches(CardSet card)
-    //    {
-    //        var propertyValue = PropertySelector(card);
-
-    //        // Check numeric criteria based on operator type
-    //        if (!propertyValue.HasValue)
-    //        {
-    //            return false;
-    //        }
-
-    //        return OperatorType switch
-    //        {
-    //            OperatorType.LESS_THAN => propertyValue < Value,
-    //            OperatorType.LESS_THAN_OR_EQUALS => propertyValue <= Value,
-    //            OperatorType.GREATER_THAN => propertyValue > Value,
-    //            OperatorType.GREATER_THAN_OR_EQUALS => propertyValue >= Value,
-    //            OperatorType.EQUALS => Math.Abs(propertyValue.Value - Value) < 0.0001,
-    //            OperatorType.NOT_EQUALS => Math.Abs(propertyValue.Value - Value) >= 0.0001,
-    //            _ => false
-    //        };
-    //    }
-    //}
 }
 

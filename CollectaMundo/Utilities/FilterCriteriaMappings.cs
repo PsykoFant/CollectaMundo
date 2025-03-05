@@ -33,12 +33,12 @@ namespace CollectaMundo.Utilities
             { "SubTypes", (nameof(CardViewModel.allCards), FilterType.Multi, [OperatorType.OR, OperatorType.AND, OperatorType.NOT], false) },
             { "Keywords", (nameof(CardViewModel.allCards), FilterType.Multi, [OperatorType.OR, OperatorType.AND, OperatorType.NOT], false) },
             { "Finishes", (nameof(CardViewModel.allCards), FilterType.Multi, [OperatorType.OR, OperatorType.NOT], false) },
-            { "Language", (nameof(CardViewModel.myCards), FilterType.Multi, [OperatorType.OR, OperatorType.NOT], false) },
-            { "SelectedCondition", (nameof(CardViewModel.myCards), FilterType.Multi, [OperatorType.OR, OperatorType.NOT], false) },
+            { "Language", (nameof(CardViewModel.myCollection), FilterType.Multi, [OperatorType.OR, OperatorType.NOT], false) },
+            { "SelectedCondition", (nameof(CardViewModel.myCollection), FilterType.Multi, [OperatorType.OR, OperatorType.NOT], false) },
 
             // Numeric Filters (Greater/Less/Equal comparisons)
             { "ManaValue", (nameof(CardViewModel.allCards), FilterType.Numeric, [OperatorType.GREATER_THAN, OperatorType.LESS_THAN, OperatorType.EQUALS, OperatorType.GREATER_THAN_OR_EQUALS, OperatorType.LESS_THAN_OR_EQUALS], false) },
-            { "CardsForTrade", (nameof(CardViewModel.myCards), FilterType.Numeric, [OperatorType.GREATER_THAN, OperatorType.EQUALS], false) }
+            { "CardsForTrade", (nameof(CardViewModel.myCollection), FilterType.Numeric, [OperatorType.GREATER_THAN, OperatorType.EQUALS], false) }
         };
     }
 }

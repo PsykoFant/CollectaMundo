@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using System.Windows.Data;
 using System.Windows.Input;
 using static CollectaMundo.MainWindow;
 
@@ -30,8 +31,12 @@ namespace CollectaMundo.Models
                 }
             }
         }
+
+        private readonly CardViewModel _cardViewModel;
         public FilterViewModel(CardViewModel cardViewModel)
         {
+            _cardViewModel = cardViewModel ?? throw new ArgumentNullException(nameof(cardViewModel));
+
             var filterDefaults = FilterManager.GetFilterDefaults(cardViewModel);
             foreach (var filter in filterDefaults)
             {
@@ -47,6 +52,32 @@ namespace CollectaMundo.Models
             // Initialize the command using the ClearFilters method.
             ClearFiltersCommand = new RelayCommand(ClearFilters);
         }
+
+        // Applies the current filter criteria to the provided ListCollectionView.
+        private void ApplyFilterToView(ListCollectionView view)
+        {
+            view.Filter = item =>
+            {
+                if (item is CardSet card)
+                {
+                    // Only include the card if it satisfies all active filters.
+                    return Filters.Values.All(filter => filter.Matches(card));
+                }
+                return false;
+            };
+
+            view.Refresh();
+        }
+
+        public void ApplyFiltering()
+        {
+            ApplyFilterToView(_cardViewModel.AllCardsView);
+            ApplyFilterToView(_cardViewModel.MyCollectionView);
+            ApplyFilterToView(_cardViewModel.AllCardsForDecksView);
+            UpdateFilterSummary();
+        }
+
+
 
         // This method aggregates the current filter selections into a summary string.
         private void UpdateFilterSummary()
@@ -119,12 +150,7 @@ namespace CollectaMundo.Models
             };
         }
 
-        /// <summary>
-        /// Clears all filter selections, resetting each filter to its default state.
-        /// </summary>
-        /// <summary>
-        /// Clears all filter selections and updates the summary.
-        /// </summary>
+        // Clears all filter selections, resetting each filter to its default state.
         public void ClearFilters()
         {
             foreach (var filter in Filters.Values)
@@ -155,7 +181,6 @@ namespace CollectaMundo.Models
             UpdateFilterSummary();
             DebugFullFilterState();
         }
-
 
         // Debug
         public void DebugFullFilterState()
@@ -216,7 +241,7 @@ namespace CollectaMundo.Models
 //    }
 //    else if (datagridName == "MyCollectionDataGrid")
 //    {
-//        MyCollectionCount = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCards.Count} cards in your collection.";
+//        MyCollectionCount = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCollection.Count} cards in your collection.";
 //    }
 //}
 

@@ -269,7 +269,7 @@ namespace CollectaMundo
             await DBAccess.OpenConnectionAsync();
 
             await CardViewModel.PopulateCardDataGridAsync(CardVM.allCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
-            await CardViewModel.PopulateCardDataGridAsync(CardVM.myCards, CardVM.MyCardsView, myCollectionQuery, DataGridContext.MyCollection);
+            await CardViewModel.PopulateCardDataGridAsync(CardVM.myCollection, CardVM.MyCollectionView, myCollectionQuery, DataGridContext.MyCollection);
             await CardViewModel.PopulateCardDataGridAsync(CardVM.allCardsForDecks, CardVM.AllCardsForDecksView, allCardsForDecksQuery, DataGridContext.AllCardsForDecks);
             await CardVM.LoadColorIconsAsync();
 
@@ -405,7 +405,7 @@ namespace CollectaMundo
                 //    card.SetIconBytes = GetFieldValue<byte[]>(reader, "KeyRuneImage");
                 //}
 
-                //// Only for myCards and cardsInDecks lists
+                //// Only for myCollection and cardsInDecks lists
                 //if (context == DataGridContext.MyCollection || context == DataGridContext.CardsInDecks)
                 //{
                 //    card.CardId = GetFieldValue<int?>(reader, "CardId");
@@ -719,7 +719,7 @@ namespace CollectaMundo
         public void ApplyFiltersToAllLists()
         {
             //FilterManagerOld.ApplyFilter(allCards, AllCardsDataGrid);
-            //FilterManagerOld.ApplyFilter(myCards, MyCollectionDataGrid);
+            //FilterManagerOld.ApplyFilter(myCollection, MyCollectionDataGrid);
             //FilterManagerOld.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
         }
 
@@ -1320,7 +1320,7 @@ namespace CollectaMundo
             await DownloadAndPrepDB.CreateViews();
 
             Task loadAllCards = CardViewModel.PopulateCardDataGridAsync(CardVM.allCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
-            Task loadMyCollection = CardViewModel.PopulateCardDataGridAsync(CardVM.myCards, CardVM.MyCardsView, myCollectionQuery, DataGridContext.MyCollection);
+            Task loadMyCollection = CardViewModel.PopulateCardDataGridAsync(CardVM.myCollection, CardVM.MyCollectionView, myCollectionQuery, DataGridContext.MyCollection);
 
             await Task.WhenAll(loadAllCards, loadMyCollection);
 

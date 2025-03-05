@@ -1060,7 +1060,7 @@
                 </ListView>
                 <!--The my collection datagrid-->
                 <DataGrid x:Name="MyCollectionDataGrid"
-                          ItemsSource="{Binding CardVM.MyCardsView}"
+                          ItemsSource="{Binding CardVM.MyCollectionView}"
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"

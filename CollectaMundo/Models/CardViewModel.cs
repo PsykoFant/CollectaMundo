@@ -17,7 +17,7 @@ namespace CollectaMundo.Models
         public ObservableCollection<CardSet> ColorIcons { get; } = [];
 
         public List<CardSet> allCards = [];
-        public List<CardSet> myCards = [];
+        public List<CardSet> myCollection = [];
         public List<CardSet> allCardsForDecks = [];
         private List<CardSet> cardsInDecks = [];
 
@@ -26,7 +26,7 @@ namespace CollectaMundo.Models
 
         // `ListCollectionView` for UI binding
         public ListCollectionView AllCardsView { get; }
-        public ListCollectionView MyCardsView { get; }
+        public ListCollectionView MyCollectionView { get; }
         public ListCollectionView AllCardsForDecksView { get; }
         public ListCollectionView CardsInDecksView { get; }
 
@@ -34,7 +34,7 @@ namespace CollectaMundo.Models
         {
             // Bind ListCollectionView to Lists
             AllCardsView = new ListCollectionView(allCards);
-            MyCardsView = new ListCollectionView(myCards);
+            MyCollectionView = new ListCollectionView(myCollection);
             AllCardsForDecksView = new ListCollectionView(allCardsForDecks);
             CardsInDecksView = new ListCollectionView(cardsInDecks);
         }

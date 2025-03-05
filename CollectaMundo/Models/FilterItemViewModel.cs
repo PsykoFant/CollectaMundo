@@ -1,7 +1,8 @@
 ﻿using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
+using System.Reflection;
+using System.Windows;
 using System.Windows.Input;
 using static CollectaMundo.MainWindow;
 using Timer = System.Timers.Timer;
@@ -25,6 +26,7 @@ namespace CollectaMundo.Models
         public string? SelectedSingleOption
         {
             get => _selectedSingleOption;
+
             set
             {
                 if (_selectedSingleOption != value)
@@ -32,16 +34,16 @@ namespace CollectaMundo.Models
                     _selectedSingleOption = value;
                     OnPropertyChanged(nameof(SelectedSingleOption));
 
-                    // Update the text box when the value changes externally
+                    // For single filters, update the associated text field.
                     if (FilterCategory == FilterType.Single)
                     {
                         FreetextSearch = value ?? DefaultText;
                     }
 
-                    // Trigger filtering, but ONLY when the final value is set
+                    // Trigger filtering (now safe because we're on the UI thread).
                     if (!MainWindow.CurrentInstance._isStartup)
                     {
-                        _filterViewModel.DebugFullFilterState();
+                        _filterViewModel.ApplyFiltering();
                     }
                 }
             }
@@ -144,7 +146,20 @@ namespace CollectaMundo.Models
 
         // Resets the typing delay timer for freetext filtering.
 
-        private readonly Timer? _typingTimer;
+        private Timer? _typingTimer;
+        private void TypingTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            // Ensure we run on the UI thread.
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
+                {
+                    // Set the SelectedSingleOption based on the freetext search.
+                    // This setter will in turn trigger filtering.
+                    SelectedSingleOption = FreetextSearch;
+                }
+            });
+        }
         private void ResetTypingDelay()
         {
             _typingTimer?.Stop();
@@ -160,7 +175,7 @@ namespace CollectaMundo.Models
 
             if (key == Key.Enter)
             {
-                _typingTimer?.Stop(); // ✅ Cancel delay, apply filtering immediately
+                _typingTimer?.Stop(); // Cancel delay, apply filtering immediately
                 SelectedSingleOption = string.IsNullOrWhiteSpace(FreetextSearch) || FreetextSearch == DefaultText
                     ? null
                     : FreetextSearch;
@@ -312,13 +327,7 @@ namespace CollectaMundo.Models
                 if (FilterCategory == FilterType.Single)
                 {
                     _typingTimer = new Timer(1500) { AutoReset = false };
-                    _typingTimer.Elapsed += (_, _) =>
-                    {
-                        if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
-                        {
-                            SelectedSingleOption = FreetextSearch; // Assign value before filtering
-                        }
-                    };
+                    _typingTimer.Elapsed += TypingTimer_Elapsed;
                 }
             }
         }
@@ -335,16 +344,80 @@ namespace CollectaMundo.Models
             _filterViewModel.DebugFullFilterState();
         }
 
-        // Debugging Methods
-        public void DebugFilterItem()
+        // Determines whether the given card satisfies this filter.
+        // If no value is selected for this filter, returns true.
+        public bool Matches(CardSet card)
         {
-            Debug.WriteLine($"===== DEBUG: Filter Item ({CriteriaKey}) =====");
-            Debug.WriteLine($"Default Text: {DefaultText}");
-            Debug.WriteLine($"Filter Text: {FilterText}");
-            Debug.WriteLine($"Available Options: {string.Join(", ", FilterOptions.Select(opt => opt.OptionName))}");
-            Debug.WriteLine($"Number of options: {FilterOptions.Count}");
-            Debug.WriteLine($"====================================");
+            // Look up the mapping for this filter.
+            if (!Utilities.FilterCriteriaMappings.CriteriaMappings.TryGetValue(this.CriteriaKey, out var mapping))
+                return true; // No mapping? Then don't filter on this criterion.
+
+            // First, try to get the property using the mapping's Property value.
+            string propertyName = mapping.Property;
+            PropertyInfo? property = typeof(CardSet).GetProperty(propertyName);
+            property = typeof(CardSet).GetProperty(this.CriteriaKey);
+
+            if (property == null)
+                return true; // Still not found – no filtering can be done.
+
+            object? value = property.GetValue(card);
+
+            string cardValue = value?.ToString() ?? "";
+
+            switch (this.FilterCategory)
+            {
+                case Utilities.FilterType.Single:
+                    if (string.IsNullOrWhiteSpace(this.SelectedSingleOption) || this.SelectedSingleOption == this.DefaultText)
+                        return true;
+                    return cardValue.IndexOf(this.SelectedSingleOption, StringComparison.OrdinalIgnoreCase) >= 0;
+
+                case Utilities.FilterType.Multi:
+                    if (this.SelectedOptions == null || !this.SelectedOptions.Any())
+                        return true;
+
+                    if (this.OperatorSelection == MainWindow.OperatorType.AND)
+                    {
+                        return this.SelectedOptions.All(opt => cardValue.IndexOf(opt, StringComparison.OrdinalIgnoreCase) >= 0);
+                    }
+                    else if (this.OperatorSelection == MainWindow.OperatorType.NOT)
+                    {
+                        return !this.SelectedOptions.Any(opt => cardValue.IndexOf(opt, StringComparison.OrdinalIgnoreCase) >= 0);
+                    }
+                    else // default OR
+                    {
+                        return this.SelectedOptions.Any(opt => cardValue.IndexOf(opt, StringComparison.OrdinalIgnoreCase) >= 0);
+                    }
+
+                case Utilities.FilterType.Numeric:
+                    if (this.SelectedNumericValue == null)
+                        return true;
+                    if (double.TryParse(cardValue, out double cardNumeric))
+                    {
+                        switch (this.OperatorSelection)
+                        {
+                            case MainWindow.OperatorType.LESS_THAN:
+                                return cardNumeric < this.SelectedNumericValue;
+                            case MainWindow.OperatorType.LESS_THAN_OR_EQUALS:
+                                return cardNumeric <= this.SelectedNumericValue;
+                            case MainWindow.OperatorType.GREATER_THAN:
+                                return cardNumeric > this.SelectedNumericValue;
+                            case MainWindow.OperatorType.GREATER_THAN_OR_EQUALS:
+                                return cardNumeric >= this.SelectedNumericValue;
+                            case MainWindow.OperatorType.EQUALS:
+                                return Math.Abs(cardNumeric - (double)this.SelectedNumericValue) < 0.0001;
+                            case MainWindow.OperatorType.NOT_EQUALS:
+                                return Math.Abs(cardNumeric - (double)this.SelectedNumericValue) >= 0.0001;
+                            default:
+                                return true;
+                        }
+                    }
+                    return true;
+
+                default:
+                    return true;
+            }
         }
+
     }
 
     /// <summary>
