@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using static CollectaMundo.MainWindow;
 using Timer = System.Timers.Timer;
 
@@ -14,6 +15,9 @@ namespace CollectaMundo.Models
     /// </summary>
     public class FilterItemViewModel : INotifyPropertyChanged
     {
+        public ICommand? TextBoxGotFocusCommand { get; }
+        public ICommand? TextBoxLostFocusCommand { get; }
+
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
@@ -274,6 +278,20 @@ namespace CollectaMundo.Models
             _filterViewModel.ApplyFiltering();
         }
 
+        private Brush _textForeground = Brushes.Gray; // default to gray
+        public Brush TextForeground
+        {
+            get => _textForeground;
+            set
+            {
+                if (_textForeground != value)
+                {
+                    _textForeground = value;
+                    OnPropertyChanged(nameof(TextForeground));
+                }
+            }
+        }
+
         // Constructor - Initializes filter options and selection tracking.
         private readonly FilterViewModel _filterViewModel;
         public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, FilterViewModel filterViewModel, IEnumerable<int>? numericOptions = null)
@@ -307,6 +325,27 @@ namespace CollectaMundo.Models
                     }
                 };
             }
+
+            TextBoxGotFocusCommand = new RelayCommand(() =>
+            {
+                // When the TextBox gets focus, clear the text and set the foreground to Black.
+                FilterText = "";
+                TextForeground = Brushes.Black;
+                IsDropDownOpen = true;
+            });
+
+            TextBoxLostFocusCommand = new RelayCommand(() =>
+            {
+                // When the TextBox loses focus, if the text is empty, reset FilterText to DefaultText
+                // and set the foreground back to Gray.
+                if (string.IsNullOrWhiteSpace(FilterText))
+                {
+                    _suppressFiltering = true;
+                    FilterText = DefaultText;
+                    _suppressFiltering = false;
+                    TextForeground = Brushes.Gray;
+                }
+            });
 
             // Retrieve filter configuration from FilterCriteriaMappings
             if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))

@@ -8,3 +8,9 @@ TO DO
  - Unit test
 
  - Add to collectionManager til MVVM!
+ - Card image brug MVVM (unit test)
+ - Backup restore brug MVVM (unit test) 
+ - Import brug MVVM (unit test)
+ - Deck manager brug MVVM (unit test)
+
+ - Performance - startup

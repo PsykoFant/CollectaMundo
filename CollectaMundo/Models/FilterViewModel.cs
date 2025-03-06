@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
 using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Models
@@ -167,6 +168,11 @@ namespace CollectaMundo.Models
                         {
                             option.IsSelected = false;
                         }
+
+                        // Reset options filter textbox
+                        filter.FilterText = filter.DefaultText;
+                        filter.TextForeground = Brushes.Gray;
+
                         // Clear the SelectedOptions collection
                         filter.SelectedOptions.Clear();
                         if (filter.AvailableOperators != null && filter.AvailableOperators.Any())
@@ -184,7 +190,6 @@ namespace CollectaMundo.Models
                         break;
                 }
             }
-            //UpdateFilterSummary();
         }
 
 

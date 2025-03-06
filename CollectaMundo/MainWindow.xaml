@@ -1,22 +1,25 @@
-<Window 
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:CollectaMundo"
-        xmlns:converters="clr-namespace:CollectaMundo.Converters"
-        xmlns:behaviors="clr-namespace:CollectaMundo.Behaviors"
-        xmlns:System="clr-namespace:System;assembly=System.Runtime" x:Class="CollectaMundo.MainWindow"
-        xmlns:sys="clr-namespace:System;assembly=mscorlib"
-        mc:Ignorable="d"
-        DataContext="{Binding RelativeSource={RelativeSource Self}}"
-        Title="CollectaMundo"
-        Icon="/Resources/Images/Icon.ico" 
-        Width="1920"
-        Height="960"
-        PreviewMouseDown="Window_PreviewMouseDown">
+<Window
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="clr-namespace:CollectaMundo"
+    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:core="clr-namespace:Microsoft.Xaml.Behaviors.Core;assembly=Microsoft.Xaml.Behaviors"
+    xmlns:converters="clr-namespace:CollectaMundo.Converters"
+    xmlns:behaviors="clr-namespace:CollectaMundo.Behaviors"
+    xmlns:System="clr-namespace:System;assembly=System.Runtime" 
+    x:Class="CollectaMundo.MainWindow"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib"
+    mc:Ignorable="d"
+    DataContext="{Binding RelativeSource={RelativeSource Self}}"
+    Title="CollectaMundo"
+    Icon="/Resources/Images/Icon.ico" 
+    Width="1920"
+    Height="960"
+    PreviewMouseDown="Window_PreviewMouseDown">
 
-    <!-- Define resources accessible by all elements in this Window -->
+<!-- Define resources accessible by all elements in this Window -->
     <Window.Resources>
         <converters:StringToImageSourceConverter x:Key="StringToImageSourceConverter"/>
         <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
@@ -139,9 +142,17 @@
                             <Grid>
                                 <TextBox 
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
-                                    GotFocus="TextBox_GotFocus"
-                                    LostFocus="TextBox_LostFocus"/>
+                                    Background="Transparent" Padding="3,3,0,0" Margin="0"
+                                    Foreground="{Binding TextForeground, Mode=TwoWay}">
+                                    <i:Interaction.Triggers>
+                                        <i:EventTrigger EventName="GotFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                        </i:EventTrigger>
+                                        <i:EventTrigger EventName="LostFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                        </i:EventTrigger>
+                                    </i:Interaction.Triggers>
+                                </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
@@ -199,9 +210,17 @@
                             <Grid>
                                 <TextBox 
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
-                                    GotFocus="TextBox_GotFocus"
-                                    LostFocus="TextBox_LostFocus"/>
+                                    Background="Transparent" Padding="3,3,0,0" Margin="0"
+                                    Foreground="{Binding TextForeground, Mode=TwoWay}">
+                                    <i:Interaction.Triggers>
+                                        <i:EventTrigger EventName="GotFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                        </i:EventTrigger>
+                                        <i:EventTrigger EventName="LostFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                        </i:EventTrigger>
+                                    </i:Interaction.Triggers>
+                                </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
@@ -259,9 +278,17 @@
                             <Grid>
                                 <TextBox 
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
-                                    GotFocus="TextBox_GotFocus"
-                                    LostFocus="TextBox_LostFocus"/>
+                                    Background="Transparent" Padding="3,3,0,0" Margin="0"
+                                    Foreground="{Binding TextForeground, Mode=TwoWay}">
+                                    <i:Interaction.Triggers>
+                                        <i:EventTrigger EventName="GotFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                        </i:EventTrigger>
+                                        <i:EventTrigger EventName="LostFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                        </i:EventTrigger>
+                                    </i:Interaction.Triggers>
+                                </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
@@ -319,9 +346,17 @@
                             <Grid>
                                 <TextBox 
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
-                                    GotFocus="TextBox_GotFocus"
-                                    LostFocus="TextBox_LostFocus"/>
+                                    Background="Transparent" Padding="3,3,0,0" Margin="0"
+                                    Foreground="{Binding TextForeground, Mode=TwoWay}">
+                                    <i:Interaction.Triggers>
+                                        <i:EventTrigger EventName="GotFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                        </i:EventTrigger>
+                                        <i:EventTrigger EventName="LostFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                        </i:EventTrigger>
+                                    </i:Interaction.Triggers>
+                                </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
@@ -379,9 +414,17 @@
                             <Grid>
                                 <TextBox 
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
-                                    GotFocus="TextBox_GotFocus"
-                                    LostFocus="TextBox_LostFocus"/>
+                                    Background="Transparent" Padding="3,3,0,0" Margin="0"
+                                    Foreground="{Binding TextForeground, Mode=TwoWay}">
+                                    <i:Interaction.Triggers>
+                                        <i:EventTrigger EventName="GotFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                        </i:EventTrigger>
+                                        <i:EventTrigger EventName="LostFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                        </i:EventTrigger>
+                                    </i:Interaction.Triggers>
+                                </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">                                    
@@ -439,9 +482,17 @@
                             <Grid>
                                 <TextBox 
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
-                                    GotFocus="TextBox_GotFocus"
-                                    LostFocus="TextBox_LostFocus"/>
+                                    Background="Transparent" Padding="3,3,0,0" Margin="0"
+                                    Foreground="{Binding TextForeground, Mode=TwoWay}">
+                                    <i:Interaction.Triggers>
+                                        <i:EventTrigger EventName="GotFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                        </i:EventTrigger>
+                                        <i:EventTrigger EventName="LostFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                        </i:EventTrigger>
+                                    </i:Interaction.Triggers>
+                                </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
@@ -490,18 +541,25 @@
 
                 <!--Rulestext filtering-->
                 <TextBox x:Name="FilterTextTextBox"
-                     DataContext="{Binding FilterVM.Filters[Text], RelativeSource={RelativeSource AncestorType=Window}}"
-                     Text="{Binding FreetextSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                     HorizontalAlignment="Left" 
-                     Margin="10,425,0,0" 
-                     TextWrapping="Wrap" 
-                     Foreground="Gray" 
-                     VerticalAlignment="Top" 
-                     Width="240" Height="45" 
-                     Background="White" 
-                     GotFocus="TextBox_GotFocus" 
-                     LostFocus="TextBox_LostFocus" 
-                     PreviewKeyDown="FilterTextTextBox_KeyDown"/>
+                         DataContext="{Binding FilterVM.Filters[Text], RelativeSource={RelativeSource AncestorType=Window}}"
+                         Text="{Binding FreetextSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                         HorizontalAlignment="Left" 
+                         Margin="10,425,0,0" 
+                         TextWrapping="Wrap" 
+                         Foreground="Gray" 
+                         VerticalAlignment="Top" 
+                         Width="240" Height="45" 
+                         Background="White"
+                         PreviewKeyDown="FilterTextTextBox_KeyDown">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="GotFocus">
+                                <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                            </i:EventTrigger>
+                            <i:EventTrigger EventName="LostFocus">
+                                <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                </TextBox>                
 
                 <!--Language-->
                 <ComboBox x:Name="LanguageComboBox"
@@ -515,9 +573,17 @@
                             <Grid>
                                 <TextBox 
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
-                                    GotFocus="TextBox_GotFocus"
-                                    LostFocus="TextBox_LostFocus"/>
+                                    Background="Transparent" Padding="3,3,0,0" Margin="0"
+                                    Foreground="{Binding TextForeground, Mode=TwoWay}">
+                                    <i:Interaction.Triggers>
+                                        <i:EventTrigger EventName="GotFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                        </i:EventTrigger>
+                                        <i:EventTrigger EventName="LostFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                        </i:EventTrigger>
+                                    </i:Interaction.Triggers>
+                                </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
@@ -577,9 +643,17 @@
                             <Grid>
                                 <TextBox 
                                     Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                    Background="Transparent" Foreground="Gray" Padding="3,3,0,0" Margin="0,0,0,0"
-                                    GotFocus="TextBox_GotFocus"
-                                    LostFocus="TextBox_LostFocus"/>
+                                    Background="Transparent" Padding="3,3,0,0" Margin="0"
+                                    Foreground="{Binding TextForeground, Mode=TwoWay}">
+                                    <i:Interaction.Triggers>
+                                        <i:EventTrigger EventName="GotFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                        </i:EventTrigger>
+                                        <i:EventTrigger EventName="LostFocus">
+                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                        </i:EventTrigger>
+                                    </i:Interaction.Triggers>
+                                </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
