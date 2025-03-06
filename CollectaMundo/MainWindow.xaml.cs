@@ -671,28 +671,6 @@ namespace CollectaMundo
 
         #region Filter elements handling        
         // When combobox textboxes get focus/defocus        
-        private void TextBox_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
-            {
-                textBox.Text = "";
-                textBox.Foreground = new SolidColorBrush(Colors.Black);
-                filterItem.IsDropDownOpen = true;
-            }
-        }
-        private void TextBox_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
-            {
-                if (string.IsNullOrWhiteSpace(textBox.Text))
-                {
-                    filterItem._suppressFiltering = true; // Temporarily disable filtering
-                    filterItem.FilterText = filterItem.DefaultText; // Restore default text without filtering
-                    filterItem._suppressFiltering = false;
-                    textBox.Foreground = new SolidColorBrush(Colors.Gray);
-                }
-            }
-        }
         private void FilterTextTextBox_KeyDown(object sender, KeyEventArgs e)
         {
             if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
@@ -1532,8 +1510,6 @@ namespace CollectaMundo
             ImageSetLabel.Content = string.Empty;
             ImageSourceUrl = null;
             ImageSourceUrl2nd = null;
-
-            ApplyFiltersToAllLists();
         }
         #endregion
         public static async Task ShowStatusWindowAsync(bool statusScreenIsVisible, string? statusLabelContent = null, bool progressBarVisible = false)

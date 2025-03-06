@@ -1,6 +1,7 @@
 TO DO 
 - MVVM refactor
- - Reset default text
+ - Reset is trade checked of mana value
+ - card count
  - Oprydning i FilterViewItemModel
  - UI oprydning, polish
  - Kun filtrer på felter, som er på objektet

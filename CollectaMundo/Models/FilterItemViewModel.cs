@@ -15,15 +15,17 @@ namespace CollectaMundo.Models
     /// </summary>
     public class FilterItemViewModel : INotifyPropertyChanged
     {
-        public ICommand? TextBoxGotFocusCommand { get; }
-        public ICommand? TextBoxLostFocusCommand { get; }
+        // Core properties
+        public string CriteriaKey { get; }
+        public FilterType FilterCategory { get; }
 
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        // Core properties
-        public string CriteriaKey { get; }
-        public FilterType FilterCategory { get; }
+        // Commands
+        public ICommand? TextBoxGotFocusCommand { get; }
+        public ICommand? TextBoxLostFocusCommand { get; }
+
 
         // Selection-related properties for single-criteria
         private string? _selectedSingleOption;
@@ -71,14 +73,27 @@ namespace CollectaMundo.Models
             }
         }
 
+
         // Selection-related properties for multi-criteria
+
         public ObservableCollection<FilterOption> FilterOptions { get; }
+
+        private ObservableCollection<FilterOption> _filteredOptions;
+        public ObservableCollection<FilterOption> FilteredOptions
+        {
+            get => _filteredOptions;
+            private set
+            {
+                _filteredOptions = value;
+                OnPropertyChanged(nameof(FilteredOptions));
+            }
+        }
         public ObservableCollection<string> SelectedOptions { get; } = [];
 
 
         // View model for UI for custom comboboxes
         public bool _suppressFiltering = false; // Used to temporarily disable filtering.
-        public ObservableCollection<string> AvailableOptions => [.. FilterOptions.Select(opt => opt.OptionName)];
+
 
         private string _filterText = string.Empty;
         public string FilterText
@@ -100,16 +115,6 @@ namespace CollectaMundo.Models
         }
         public string DefaultText { get; }
 
-        private ObservableCollection<FilterOption> _filteredOptions;
-        public ObservableCollection<FilterOption> FilteredOptions
-        {
-            get => _filteredOptions;
-            private set
-            {
-                _filteredOptions = value;
-                OnPropertyChanged(nameof(FilteredOptions));
-            }
-        }
 
         private bool _isDropDownOpen;
         public bool IsDropDownOpen
@@ -151,7 +156,7 @@ namespace CollectaMundo.Models
         // Resets the typing delay timer for freetext filtering.
 
         private readonly Timer? _typingTimer;
-        private void TypingTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        private void TypingTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
             // Ensure we run on the UI thread.
             Application.Current.Dispatcher.Invoke(() =>
@@ -451,9 +456,7 @@ namespace CollectaMundo.Models
 
     }
 
-    /// <summary>
-    /// Represents an individual selectable filter option.
-    /// </summary>
+    // Represents an individual selectable filter option.
     public class FilterOption(string optionName, bool isSelected = false) : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
