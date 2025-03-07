@@ -37,7 +37,7 @@ namespace CollectaMundo
 
                     //Fill deck datagrid with cards                    
                     Debug.WriteLine(loadDeckCardsQuery);
-                    await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.cardsInDecks, loadDeckCardsQuery, MainWindow.DataGridContext.CardsInDecks);
+                    //await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.cardsInDecks, loadDeckCardsQuery, MainWindow.DataGridContext.CardsInDecks);
 
                     // Go to deck Editor to edit new deck
                     MainWindow.CurrentInstance.DeckNameTextBox.Text = deckName;
@@ -258,7 +258,7 @@ namespace CollectaMundo
 
                 // Refresh deck datagrid
                 Debug.WriteLine(loadDeckCardsQuery);
-                await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.cardsInDecks, loadDeckCardsQuery, MainWindow.DataGridContext.CardsInDecks);
+                //await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.cardsInDecks, loadDeckCardsQuery, MainWindow.DataGridContext.CardsInDecks);
 
 
             }

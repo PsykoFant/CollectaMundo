@@ -54,6 +54,7 @@ namespace CollectaMundo.Models
                 }
             }
         }
+        public ObservableCollection<string> AvailableOptions => [.. FilterOptions.Select(opt => opt.OptionName)];
 
         // Selection-related properties for mumeric-criteria
         public ObservableCollection<int>? AvailableNumericOptions { get; }
@@ -73,6 +74,66 @@ namespace CollectaMundo.Models
             }
         }
 
+        private bool _isTradeChecked;
+        public bool IsTradeChecked
+        {
+            get => _isTradeChecked;
+            set
+            {
+                if (_isTradeChecked != value)
+                {
+                    _isTradeChecked = value;
+                    OnPropertyChanged(nameof(IsTradeChecked));
+
+                    if (value) // If checked, ensure other checkbox is unchecked
+                    {
+                        IsNotTradeChecked = false;
+                    }
+
+                    ApplyTradeFilter();
+                }
+            }
+        }
+
+        private bool _isNotTradeChecked;
+        public bool IsNotTradeChecked
+        {
+            get => _isNotTradeChecked;
+            set
+            {
+                if (_isNotTradeChecked != value)
+                {
+                    _isNotTradeChecked = value;
+                    OnPropertyChanged(nameof(IsNotTradeChecked));
+
+                    if (value) // If checked, ensure other checkbox is unchecked
+                    {
+                        IsTradeChecked = false;
+                    }
+
+                    ApplyTradeFilter();
+                }
+            }
+        }
+        private void ApplyTradeFilter()
+        {
+            if (IsTradeChecked)
+            {
+                SelectedNumericValue = 0;
+                OperatorSelection = OperatorType.GREATER_THAN; // CardsForTrade > 0
+            }
+            else if (IsNotTradeChecked)
+            {
+                SelectedNumericValue = 0;
+                OperatorSelection = OperatorType.EQUALS; // CardsForTrade == 0
+            }
+            else
+            {
+                SelectedNumericValue = null;
+            }
+
+            _filterViewModel.ApplyFiltering();
+        }
 
         // Selection-related properties for multi-criteria
 
@@ -219,69 +280,7 @@ namespace CollectaMundo.Models
             }
         }
 
-        // Bindable properties for the two checkboxes
-        private bool _isTradeChecked;
-        public bool IsTradeChecked
-        {
-            get => _isTradeChecked;
-            set
-            {
-                if (_isTradeChecked != value)
-                {
-                    _isTradeChecked = value;
-                    OnPropertyChanged(nameof(IsTradeChecked));
 
-                    if (value) // If checked, ensure other checkbox is unchecked
-                    {
-                        IsNotTradeChecked = false;
-                    }
-
-                    ApplyTradeFilter();
-                }
-            }
-        }
-
-        private bool _isNotTradeChecked;
-        public bool IsNotTradeChecked
-        {
-            get => _isNotTradeChecked;
-            set
-            {
-                if (_isNotTradeChecked != value)
-                {
-                    _isNotTradeChecked = value;
-                    OnPropertyChanged(nameof(IsNotTradeChecked));
-
-                    if (value) // If checked, ensure other checkbox is unchecked
-                    {
-                        IsTradeChecked = false;
-                    }
-
-                    ApplyTradeFilter();
-                }
-            }
-        }
-
-        // This applies the filtering logic whenever a checkbox is clicked
-        private void ApplyTradeFilter()
-        {
-            if (IsTradeChecked)
-            {
-                SelectedNumericValue = 0;
-                OperatorSelection = OperatorType.GREATER_THAN; // CardsForTrade > 0
-            }
-            else if (IsNotTradeChecked)
-            {
-                SelectedNumericValue = 0;
-                OperatorSelection = OperatorType.EQUALS; // CardsForTrade == 0
-            }
-            else
-            {
-                SelectedNumericValue = null;
-            }
-
-            _filterViewModel.ApplyFiltering();
-        }
 
         private Brush _textForeground = Brushes.Gray; // default to gray
         public Brush TextForeground

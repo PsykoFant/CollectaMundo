@@ -16,23 +16,6 @@ namespace CollectaMundo.Models
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        // ICommand to clear filters
-        public ICommand? ClearFiltersCommand { get; }
-
-        private string? _filterSummary;
-        public string? FilterSummary
-        {
-            get => _filterSummary;
-            set
-            {
-                if (_filterSummary != value)
-                {
-                    _filterSummary = value;
-                    OnPropertyChanged(nameof(FilterSummary));
-                }
-            }
-        }
-
         private readonly CardViewModel _cardViewModel;
         public FilterViewModel(CardViewModel cardViewModel)
         {
@@ -78,7 +61,20 @@ namespace CollectaMundo.Models
             UpdateFilterSummary();
         }
 
-        // This method aggregates the current filter selections into a summary string.
+        // Update the filter summary
+        private string? _filterSummary;
+        public string? FilterSummary
+        {
+            get => _filterSummary;
+            set
+            {
+                if (_filterSummary != value)
+                {
+                    _filterSummary = value;
+                    OnPropertyChanged(nameof(FilterSummary));
+                }
+            }
+        }
         private void UpdateFilterSummary()
         {
             var summary = new StringBuilder();
@@ -133,8 +129,6 @@ namespace CollectaMundo.Models
 
             FilterSummary = summary.ToString();
         }
-
-        // Helper method to convert operator enum to a symbol.
         private static string GetOperatorSymbol(OperatorType op)
         {
             return op switch
@@ -149,7 +143,9 @@ namespace CollectaMundo.Models
             };
         }
 
+
         // Clears all filter selections, resetting each filter to its default state.
+        public ICommand? ClearFiltersCommand { get; }
         public void ClearFilters()
         {
             foreach (var filter in Filters.Values)
@@ -181,11 +177,23 @@ namespace CollectaMundo.Models
                         }
                         break;
 
+
                     case FilterType.Numeric:
                         filter.SelectedNumericValue = null;
                         if (filter.AvailableOperators != null && filter.AvailableOperators.Any())
                         {
                             filter.OperatorSelection = filter.AvailableOperators.First();
+                        }
+                        // For filters that use checkboxes (e.g. CardsForTrade),
+                        // explicitly reset the trade-related properties.
+                        if (filter.CriteriaKey == "CardsForTrade")
+                        {
+                            filter.IsTradeChecked = false;
+                            filter.IsNotTradeChecked = false;
+                        }
+                        if (filter.CriteriaKey == "ManaValue")
+                        {
+                            filter.OperatorSelection = OperatorType.GREATER_THAN;
                         }
                         break;
                 }
@@ -244,16 +252,4 @@ namespace CollectaMundo.Models
     }
 
 }
-
-//public void UpdateCardCount(string datagridName, int count)
-//{
-//    if (datagridName == "AllCardsDataGrid")
-//    {
-//        AllCardsCount = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.allCards.Count} cards.";
-//    }
-//    else if (datagridName == "MyCollectionDataGrid")
-//    {
-//        MyCollectionCount = $"Showing: {count} cards out of total {MainWindow.CurrentInstance.myCollection.Count} cards in your collection.";
-//    }
-//}
 

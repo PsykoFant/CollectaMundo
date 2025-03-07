@@ -268,8 +268,8 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            await CardViewModel.PopulateCardDataGridAsync(CardVM.allCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
-            await CardViewModel.PopulateCardDataGridAsync(CardVM.myCollection, CardVM.MyCollectionView, myCollectionQuery, DataGridContext.MyCollection);
+            await CardViewModel.PopulateCardDataGridAsync(CardVM.AllCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
+            await CardViewModel.PopulateCardDataGridAsync(CardVM.MyCollection, CardVM.MyCollectionView, myCollectionQuery, DataGridContext.MyCollection);
             await CardViewModel.PopulateCardDataGridAsync(CardVM.allCardsForDecks, CardVM.AllCardsForDecksView, allCardsForDecksQuery, DataGridContext.AllCardsForDecks);
             await CardVM.LoadColorIconsAsync();
 
@@ -300,189 +300,6 @@ namespace CollectaMundo
             FilterSummaryScrollViewer.Visibility = Visibility.Visible;
 
             await ShowStatusWindowAsync(false);
-        }
-        public static async Task PopulateCardDataGridAsync(List<CardSet> cardList, string query, DataGridContext context)
-        {
-            try
-            {
-                cardList.Clear();
-
-                DataGrid dataGrid = new();
-
-                switch (context)
-                {
-                    case DataGridContext.AllCards:
-                        dataGrid = CurrentInstance.AllCardsDataGrid;
-                        break;
-
-                    case DataGridContext.MyCollection:
-                        dataGrid = CurrentInstance.MyCollectionDataGrid;
-                        break;
-
-                    case DataGridContext.AllCardsForDecks:
-                        dataGrid = CurrentInstance.AllCardsForDecksDataGrid;
-                        break;
-
-                    case DataGridContext.CardsInDecks:
-                        dataGrid = CurrentInstance.DeckDataGrid;
-                        break;
-                }
-
-                Debug.WriteLine($"Populating {dataGrid.Name} ...");
-
-                List<CardSet> tempCardList = [];
-                using SQLiteCommand command = new(query, DBAccess.connection);
-                using DbDataReader reader = await command.ExecuteReaderAsync();
-
-                while (await reader.ReadAsync())
-                {
-                    try
-                    {
-                        CardSet card = CreateCardFromReader(reader, context);
-                        tempCardList.Add(card);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Error while creating card: {ex.Message}");
-                        throw;
-                    }
-                }
-
-                cardList.AddRange(tempCardList);
-                dataGrid.ItemsSource = null; // Clear any current binding
-                dataGrid.ItemsSource = cardList; // Bind/rebind
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while loading cards: {ex.Message}");
-                MessageBox.Show($"Error while loading cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-        private static CardSet CreateCardFromReader(DbDataReader reader, DataGridContext context)
-        {
-            try
-            {
-                //// Instantiate appropriate type
-                CardSet card = context switch
-                {
-                    DataGridContext.AllCards => new CardSet(),
-                    DataGridContext.MyCollection => new CardSet(),
-                    DataGridContext.CardsInDecks => new CardSet(),
-                    _ => new CardSet()
-                };
-
-                //// for all CardSet lists 
-                //card.Name = GetFieldValue<string>(reader, "Name") ?? string.Empty;
-                //card.ManaCost = ProcessManaCost(GetFieldValue<string>(reader, "ManaCost") ?? string.Empty);
-                //card.Colors = GetFieldValue<string>(reader, "Colors") ?? string.Empty;
-                //card.Type = GetFieldValue<string>(reader, "Type") ?? string.Empty;
-                //card.ManaValue = GetFieldValue<double?>(reader, "ManaValue") ?? 0;
-                //card.ManaCostImageBytes = GetFieldValue<byte[]>(reader, "ManaCostImage");
-                //card.ManaCostRaw = GetFieldValue<string>(reader, "ManaCost") ?? string.Empty;
-
-                //// for all CardSet lists except cardsInDecks
-                //if (context != DataGridContext.CardsInDecks)
-                //{
-                //    card.Types = GetFieldValue<string>(reader, "Types") ?? string.Empty;
-                //    card.SuperTypes = GetFieldValue<string>(reader, "SuperTypes") ?? string.Empty;
-                //    card.SubTypes = GetFieldValue<string>(reader, "SubTypes") ?? string.Empty;
-                //    card.Keywords = GetFieldValue<string>(reader, "Keywords") ?? string.Empty;
-                //    card.Text = GetFieldValue<string>(reader, "RulesText") ?? string.Empty;
-                //    card.Side = GetFieldValue<string>(reader, "Side") ?? string.Empty;
-                //}
-
-                //// for all CardSet lists except allCardsForDecks or cardsInDecks
-                //if (context != DataGridContext.AllCardsForDecks && context != DataGridContext.CardsInDecks)
-                //{
-                //    card.Language = GetFieldValue<string>(reader, "Language") ?? string.Empty;
-                //    card.Uuid = GetFieldValue<string>(reader, "Uuid") ?? string.Empty;
-                //    card.SetName = GetFieldValue<string>(reader, "SetName") ?? string.Empty;
-                //    card.Rarity = GetFieldValue<string>(reader, "Rarity") ?? string.Empty;
-                //    card.Finishes = GetFieldValue<string>(reader, "Finishes");
-                //    card.ReleaseDate = ParseDate(GetFieldValue<string>(reader, "ReleaseDate"));
-
-                //    // Populate raw data fields for parallel processing
-                //    card.SetIconBytes = GetFieldValue<byte[]>(reader, "KeyRuneImage");
-                //}
-
-                //// Only for myCollection and cardsInDecks lists
-                //if (context == DataGridContext.MyCollection || context == DataGridContext.CardsInDecks)
-                //{
-                //    card.CardId = GetFieldValue<int?>(reader, "CardId");
-                //}
-
-                //// Only fiels specific to certain lists
-                //switch (card)
-                //{
-                //    case PricedCardSet pricedCard:
-                //        pricedCard.NormalPrice = GetFieldValue<decimal?>(reader, "NormalPrice");
-                //        pricedCard.FoilPrice = GetFieldValue<decimal?>(reader, "FoilPrice");
-                //        pricedCard.EtchedPrice = GetFieldValue<decimal?>(reader, "EtchedPrice");
-                //        break;
-
-                //    case CardInCollection cardInCollection:
-                //        cardInCollection.CardsOwned = GetFieldValue<int?>(reader, "CardsOwned") ?? 0;
-                //        cardInCollection.CardsForTrade = GetFieldValue<int?>(reader, "CardsForTrade") ?? 0;
-                //        cardInCollection.SelectedCondition = GetFieldValue<string>(reader, "Condition");
-                //        cardInCollection.SelectedFinish = GetFieldValue<string>(reader, "Finish");
-                //        cardInCollection.CardInCollectionPrice = cardInCollection.SelectedFinish switch
-                //        {
-                //            "foil" => ParsePrice("FoilPrice", reader),
-                //            "etched" => ParsePrice("EtchedPrice", reader),
-                //            _ => ParsePrice("NormalPrice", reader)
-                //        };
-                //        break;
-
-                //    case CardInDeck cardInDeck:
-                //        cardInDeck.Count = GetFieldValue<int?>(reader, "Count") ?? 0;
-                //        break;
-                //}
-
-                return card;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error in CreateCardFromReader when trying to create lists for {context}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                Debug.WriteLine($"Error in CreateCardFromReader: {ex.Message}");
-                throw;
-            }
-            // Utility to process ManaCost string
-            static string ProcessManaCost(string manaCostRaw)
-            {
-                char[] separator = ['{', '}'];
-                return string.Join(",", manaCostRaw.Split(separator, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
-            }
-
-            // Utility to safely retrieve field values
-            static T? GetFieldValue<T>(DbDataReader reader, string columnName)
-            {
-                if (reader[columnName] == DBNull.Value)
-                {
-                    return default;
-                }
-
-                object value = reader[columnName];
-
-                // Explicit conversion for specific cases
-                if (typeof(T) == typeof(int?) && value is long longValue)
-                {
-                    return (T)(object)(int?)longValue;
-                }
-
-                return (T)value;
-            }
-
-            // Utility to parse nullable decimal price fields
-            static decimal? ParsePrice(string priceColumn, DbDataReader reader)
-            {
-                return decimal.TryParse(reader[priceColumn]?.ToString(), out decimal price) ? price : null;
-            }
-
-            // Utility to parse nullable DateTime fields
-            static DateTime? ParseDate(string? dateRaw)
-            {
-                return DateTime.TryParse(dateRaw, out DateTime parsedDate) ? parsedDate : null;
-            }
         }
         public async Task LoadAllDecksAsync()
         {
@@ -608,10 +425,10 @@ namespace CollectaMundo
         //        Dispatcher.Invoke(() =>
         //        {
         //            // Update DataGrid ComboBoxes
-        //            UpdateComboBoxSource(AllCardsDataGrid, "AllCardsName", allCards.Select(card => card.Name).Distinct().ToList());
-        //            UpdateComboBoxSource(AllCardsDataGrid, "AllCardsSet", allCards.Select(card => card.SetName).Distinct().ToList());
-        //            UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionName", allCards.Select(card => card.Name).Distinct().ToList());
-        //            UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionSet", allCards.Select(card => card.SetName).Distinct().ToList());
+        //            UpdateComboBoxSource(AllCardsDataGrid, "AllCardsName", _allCards.Select(card => card.Name).Distinct().ToList());
+        //            UpdateComboBoxSource(AllCardsDataGrid, "AllCardsSet", _allCards.Select(card => card.SetName).Distinct().ToList());
+        //            UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionName", _allCards.Select(card => card.Name).Distinct().ToList());
+        //            UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionSet", _allCards.Select(card => card.SetName).Distinct().ToList());
         //            UpdateComboBoxSource(AllCardsForDecksDataGrid, "AllCardsForDecksName", allCardsForDecks.Select(card => card.Name).Distinct().ToList());
 
 
@@ -696,9 +513,7 @@ namespace CollectaMundo
 
         public void ApplyFiltersToAllLists()
         {
-            //FilterManagerOld.ApplyFilter(allCards, AllCardsDataGrid);
-            //FilterManagerOld.ApplyFilter(myCollection, MyCollectionDataGrid);
-            //FilterManagerOld.ApplyFilter(allCardsForDecks, AllCardsForDecksDataGrid);
+
         }
 
         #endregion
@@ -1297,8 +1112,8 @@ namespace CollectaMundo
             // Update the db views to load prices from the selected retailer
             await DownloadAndPrepDB.CreateViews();
 
-            Task loadAllCards = CardViewModel.PopulateCardDataGridAsync(CardVM.allCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
-            Task loadMyCollection = CardViewModel.PopulateCardDataGridAsync(CardVM.myCollection, CardVM.MyCollectionView, myCollectionQuery, DataGridContext.MyCollection);
+            Task loadAllCards = CardViewModel.PopulateCardDataGridAsync(CardVM.AllCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
+            Task loadMyCollection = CardViewModel.PopulateCardDataGridAsync(CardVM.MyCollection, CardVM.MyCollectionView, myCollectionQuery, DataGridContext.MyCollection);
 
             await Task.WhenAll(loadAllCards, loadMyCollection);
 

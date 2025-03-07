@@ -39,11 +39,6 @@ namespace CollectaMundo
 
                             // Reload cards to get updated prices
 
-
-                            //Task loadAllCards = MainWindow.CurrentInstance.CardVM.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.allCards, MainWindow.CurrentInstance.CardVM.AllCardsView, MainWindow.CurrentInstance.allCardsQuery, DataGridContext.AllCards);
-                            //Task loadMyCollection = MainWindow.CurrentInstance.CardVM.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.myCollection, MainWindow.CurrentInstance.CardVM.MyCollectionView, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
-                            //await Task.WhenAll(loadAllCards, loadMyCollection);
-
                             MainWindow.CurrentInstance.UtilsInfoLabel.Content = "Card prices have been updated ...";
                         }
                         else

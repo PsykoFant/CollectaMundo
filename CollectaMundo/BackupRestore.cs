@@ -10,6 +10,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo
 {
@@ -1814,7 +1815,7 @@ namespace CollectaMundo
         public static async Task EndImportWizard()
         {
             await DBAccess.OpenConnectionAsync();
-            await MainWindow.PopulateCardDataGridAsync(MainWindow.CurrentInstance.myCards, MainWindow.CurrentInstance.myCollectionQuery, MainWindow.DataGridContext.MyCollection);
+            await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.MyCollection, MainWindow.CurrentInstance.CardVM.MyCollectionView, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
             DBAccess.CloseConnection();
 
             EndImport();

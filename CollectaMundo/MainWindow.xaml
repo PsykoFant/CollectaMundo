@@ -24,6 +24,7 @@
         <converters:StringToImageSourceConverter x:Key="StringToImageSourceConverter"/>
         <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
         <converters:ColorlessFontConverter x:Key="ColorlessFontConverter"/>
+        <converters:CountToSummaryConverter x:Key="CountToSummaryConverter"/>
     </Window.Resources>
     <Window.Background>
         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
@@ -704,7 +705,6 @@
                 <CheckBox  x:Name="CheckBoxCardsForTrade" Content="Filter on cards for trade"
                            IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsTradeChecked, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
                            HorizontalAlignment="Left" Margin="10,570,0,0" VerticalAlignment="Top"/>
-
                 <CheckBox x:Name="CheckBoxCardsNotForTrade" Content="Filter on cards NOT for trade"
                           IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsNotTradeChecked, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
                           HorizontalAlignment="Left" Margin="10,590,0,0" VerticalAlignment="Top"/>
@@ -733,8 +733,15 @@
             </ScrollViewer>
             <Grid x:Name="GridSearchAndFilterAllCards" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <!--<Label x:Name="AllCardsCountLabel" Content="{Binding FilterVM.AllCardsCount}" HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30"/>-->
-                <Label x:Name="AllCardsCountLabel" Content="temp ... " HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30"/>
+                <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30">
+                    <Label.Content>
+                        <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
+                            <Binding Path="CardVM.AllCardsView.Count"/>
+                            <Binding Path="CardVM.AllCards.Count"/>
+                        </MultiBinding>
+                    </Label.Content>
+                </Label>
+
                 <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonSubmitCardsToMyCollection_Click"/>
                 <Button x:Name="ButtonClearCardsToAdd" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonClearCardsToAdd_Click"/>
                 <Button x:Name="ButtonAddCardsToMyCollection" Content="Add selected cards to my collection" HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonAddCardsToMyCollection_Click"/>
@@ -1031,8 +1038,14 @@
             </Grid>
             <Grid x:Name="GridMyCollection" d:IsHidden="True">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <!--<Label x:Name="MyCardsCountLabel" Content="{Binding FilterVM.MyCollectionCount}" HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30"/>-->
-                <Label x:Name="MyCardsCountLabel" Content="temp ..." HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30"/>
+                <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30">
+                    <Label.Content>
+                        <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
+                            <Binding Path="CardVM.MyCollectionView.Count"/>
+                            <Binding Path="CardVM.MyCollection.Count"/>
+                        </MultiBinding>
+                    </Label.Content>
+                </Label>
                 <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" Click="SubmitCardEditsInMyCollection_Click" Visibility="Collapsed"/>
                 <Button x:Name="ButtonClearCardsToEdit" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonClearCardsToEdit_Click"/>
                 <Button x:Name="ButtonEditCardsInMyCollection" Content="Edit selected cards" HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top" Width="120" Height="20" Visibility="{Binding ElementName=MyCollectionDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}" Click="ButtonEditCardsInCollection_Click"/>

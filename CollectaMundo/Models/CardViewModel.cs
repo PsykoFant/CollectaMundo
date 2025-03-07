@@ -16,15 +16,19 @@ namespace CollectaMundo.Models
 
         public ObservableCollection<CardSet> ColorIcons { get; } = [];
 
-        public List<CardSet> allCards = [];
-        public List<CardSet> myCollection = [];
+        private readonly List<CardSet> _allCards = [];
+        private readonly List<CardSet> _myCollection = [];
         public List<CardSet> allCardsForDecks = [];
         private List<CardSet> cardsInDecks = [];
 
         private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        // `ListCollectionView` for UI binding
+        // Properties for binding to card count label
+        public List<CardSet> AllCards => _allCards;
+        public List<CardSet> MyCollection => _myCollection;
+
+        // `ListCollectionView` for Datagrid UI binding
         public ListCollectionView AllCardsView { get; }
         public ListCollectionView MyCollectionView { get; }
         public ListCollectionView AllCardsForDecksView { get; }
@@ -33,8 +37,8 @@ namespace CollectaMundo.Models
         public CardViewModel()
         {
             // Bind ListCollectionView to Lists
-            AllCardsView = new ListCollectionView(allCards);
-            MyCollectionView = new ListCollectionView(myCollection);
+            AllCardsView = new ListCollectionView(_allCards);
+            MyCollectionView = new ListCollectionView(_myCollection);
             AllCardsForDecksView = new ListCollectionView(allCardsForDecks);
             CardsInDecksView = new ListCollectionView(cardsInDecks);
         }

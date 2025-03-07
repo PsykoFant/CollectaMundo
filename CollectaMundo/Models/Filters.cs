@@ -35,7 +35,7 @@ namespace CollectaMundo.Models
         {
             return [.. FilterCriteriaMappings.CriteriaMappings.Select(entry =>
             {
-                var sourceCollection = entry.Value.Property == nameof(CardViewModel.allCards) ? cardViewModel.allCards : cardViewModel.myCollection;
+                var sourceCollection = entry.Value.Property == nameof(CardViewModel.AllCards) ? cardViewModel.AllCards : cardViewModel.MyCollection;
                 var rawValues = ExtractCriteriaValues(entry.Key, sourceCollection);
                 var removeItems = GetUnwantedItems(entry.Key);
                 bool shouldNotSplit = entry.Value.ShouldNotSplit;
