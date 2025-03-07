@@ -28,6 +28,7 @@ namespace CollectaMundo.Models
                     filter.CriteriaKey,
                     filter.FilterOptions,
                     filter.DefaultText,
+                    filter.ReadableLabel,
                     this,                  // Passing the FilterViewModel as the source of truth
                     filter.NumericCriteria // Pass numeric criteria if applicable
                 );

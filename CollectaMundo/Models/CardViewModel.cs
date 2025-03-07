@@ -12,7 +12,7 @@ namespace CollectaMundo.Models
 {
     public class CardViewModel : INotifyPropertyChanged
     {
-        public static Dictionary<string, (string Property, FilterType Type, OperatorType[]? Operators, bool ShouldNotSplit)> CriteriaMappings => FilterCriteriaMappings.CriteriaMappings;
+        public static Dictionary<string, (string ReadableLabel, string Property, FilterType Type, OperatorType[]? Operators, bool ShouldNotSplit)> CriteriaMappings => FilterCriteriaMappings.CriteriaMappings;
 
         public ObservableCollection<CardSet> ColorIcons { get; } = [];
 

@@ -136,7 +136,6 @@ namespace CollectaMundo.Models
         }
 
         // Selection-related properties for multi-criteria
-
         public ObservableCollection<FilterOption> FilterOptions { get; }
 
         private ObservableCollection<FilterOption> _filteredOptions;
@@ -151,10 +150,22 @@ namespace CollectaMundo.Models
         }
         public ObservableCollection<string> SelectedOptions { get; } = [];
 
+        // Updates the selected options when checkboxes are toggled.
+        private void UpdateSelectedOptions()
+        {
+            SelectedOptions.Clear();
+            foreach (var option in FilterOptions.Where(opt => opt.IsSelected))
+            {
+                SelectedOptions.Add(option.OptionName);
+            }
 
-        // View model for UI for custom comboboxes
+            _filterViewModel.ApplyFiltering();
+        }
+
+        // Handle UI properties in custom comboboxes (e.g. filtering options in dropdown)
         public bool _suppressFiltering = false; // Used to temporarily disable filtering.
 
+        public string? ReadableLabel;
 
         private string _filterText = string.Empty;
         public string FilterText
@@ -176,7 +187,6 @@ namespace CollectaMundo.Models
         }
         public string DefaultText { get; }
 
-
         private bool _isDropDownOpen;
         public bool IsDropDownOpen
         {
@@ -188,6 +198,19 @@ namespace CollectaMundo.Models
             }
         }
 
+        private Brush _textForeground = Brushes.Gray; // default to gray
+        public Brush TextForeground
+        {
+            get => _textForeground;
+            set
+            {
+                if (_textForeground != value)
+                {
+                    _textForeground = value;
+                    OnPropertyChanged(nameof(TextForeground));
+                }
+            }
+        }
         private void ApplyTextFilter()
         {
             var filtered = FilterOptions.Where(option => string.IsNullOrWhiteSpace(FilterText) || option.OptionName.Contains(FilterText, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -214,7 +237,7 @@ namespace CollectaMundo.Models
             }
         }
 
-        // Resets the typing delay timer for freetext filtering.
+        // Resets the typing delay timer for rulestext freetext filtering.
 
         private readonly Timer? _typingTimer;
         private void TypingTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
@@ -235,8 +258,6 @@ namespace CollectaMundo.Models
             _typingTimer?.Stop();
             _typingTimer?.Start();
         }
-
-        // Handles keypress events for the TextBox.
         public void HandleKeyPress(Key key)
         {
             if (FilterCategory != FilterType.Single)
@@ -280,29 +301,14 @@ namespace CollectaMundo.Models
             }
         }
 
-
-
-        private Brush _textForeground = Brushes.Gray; // default to gray
-        public Brush TextForeground
-        {
-            get => _textForeground;
-            set
-            {
-                if (_textForeground != value)
-                {
-                    _textForeground = value;
-                    OnPropertyChanged(nameof(TextForeground));
-                }
-            }
-        }
-
         // Constructor - Initializes filter options and selection tracking.
         private readonly FilterViewModel _filterViewModel;
-        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, FilterViewModel filterViewModel, IEnumerable<int>? numericOptions = null)
+        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, string readableLabel, FilterViewModel filterViewModel, IEnumerable<int>? numericOptions = null)
         {
             _filterViewModel = filterViewModel ?? throw new ArgumentNullException(nameof(filterViewModel));
             CriteriaKey = criteriaKey;
             DefaultText = defaultText;
+            ReadableLabel = readableLabel;
             _filterText = DefaultText;
             _freetextSearch = DefaultText;
 
@@ -365,18 +371,6 @@ namespace CollectaMundo.Models
                     _typingTimer.Elapsed += TypingTimer_Elapsed;
                 }
             }
-        }
-
-        // Updates the selected options when checkboxes are toggled.
-        private void UpdateSelectedOptions()
-        {
-            SelectedOptions.Clear();
-            foreach (var option in FilterOptions.Where(opt => opt.IsSelected))
-            {
-                SelectedOptions.Add(option.OptionName);
-            }
-
-            _filterViewModel.ApplyFiltering();
         }
 
         // Determines whether the given card satisfies this filter.
@@ -452,7 +446,6 @@ namespace CollectaMundo.Models
                     return true;
             }
         }
-
     }
 
     // Represents an individual selectable filter option.
