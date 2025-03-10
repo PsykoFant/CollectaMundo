@@ -39,6 +39,8 @@ namespace CollectaMundo.Models
         // Commands
         public ICommand? EmbeddedTextBoxGotFocusCommand { get; }
         public ICommand? EmbeddedTextBoxLostFocusCommand { get; }
+        public ICommand? RulesTextBoxGotFocusCommand { get; }
+        public ICommand? RulesTextBoxLostFocusCommand { get; }
 
 
         // Selection-related properties for single-criteria
@@ -348,26 +350,13 @@ namespace CollectaMundo.Models
                 };
             }
 
-            EmbeddedTextBoxGotFocusCommand = new RelayCommand(() =>
-            {
-                // When the TextBox gets focus, clear the text and set the foreground to Black.
-                FilterText = "";
-                TextForeground = Brushes.Black;
-                IsDropDownOpen = true;
-            });
+            // Create commands using the helper methods.
+            EmbeddedTextBoxGotFocusCommand = CreateGotFocusCommand(() => FilterText = "");
+            EmbeddedTextBoxLostFocusCommand = CreateLostFocusCommand(() => FilterText, value => FilterText = value);
 
-            EmbeddedTextBoxLostFocusCommand = new RelayCommand(() =>
-            {
-                // When the TextBox loses focus, if the text is empty, reset FilterText to DefaultText
-                // and set the foreground back to Gray.
-                if (string.IsNullOrWhiteSpace(FilterText))
-                {
-                    _suppressFiltering = true;
-                    FilterText = DefaultText;
-                    _suppressFiltering = false;
-                    TextForeground = Brushes.Gray;
-                }
-            });
+            RulesTextBoxGotFocusCommand = CreateGotFocusCommand(() => FreetextSearch = "");
+            RulesTextBoxLostFocusCommand = CreateLostFocusCommand(() => FreetextSearch, value => FreetextSearch = value);
+
 
             // Retrieve filter configuration from FilterCriteriaMappings
             if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
@@ -383,6 +372,33 @@ namespace CollectaMundo.Models
                     _typingTimer.Elapsed += TypingTimer_Elapsed;
                 }
             }
+        }
+
+        // Helper method for GotFocus commands.
+        private RelayCommand CreateGotFocusCommand(Action clearTextAction)
+        {
+            return new RelayCommand(() =>
+            {
+                clearTextAction();
+                TextForeground = Brushes.Black;
+                IsDropDownOpen = true;
+            });
+        }
+
+        // Helper method for LostFocus commands.
+        // 'getText' returns the current text and 'setText' updates it.
+        private RelayCommand CreateLostFocusCommand(Func<string> getText, Action<string> setText)
+        {
+            return new RelayCommand(() =>
+            {
+                if (string.IsNullOrWhiteSpace(getText()))
+                {
+                    _suppressFiltering = true;
+                    setText(DefaultText);
+                    _suppressFiltering = false;
+                    TextForeground = Brushes.Gray;
+                }
+            });
         }
 
         // Determines whether the given card satisfies this filter.

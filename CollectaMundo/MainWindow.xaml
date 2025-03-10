@@ -547,17 +547,17 @@
                          HorizontalAlignment="Left" 
                          Margin="10,425,0,0" 
                          TextWrapping="Wrap" 
-                         Foreground="Gray" 
+                         Foreground="{Binding TextForeground, Mode=TwoWay}" 
                          VerticalAlignment="Top" 
                          Width="240" Height="45" 
                          Background="White"
                          PreviewKeyDown="FilterTextTextBox_KeyDown">
                         <i:Interaction.Triggers>
                             <i:EventTrigger EventName="GotFocus">
-                                <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxGotFocusCommand}" />
+                                <i:InvokeCommandAction Command="{Binding RulesTextBoxGotFocusCommand}" />
                             </i:EventTrigger>
                             <i:EventTrigger EventName="LostFocus">
-                                <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxLostFocusCommand}" />
+                                <i:InvokeCommandAction Command="{Binding RulesTextBoxLostFocusCommand}" />
                             </i:EventTrigger>
                         </i:Interaction.Triggers>
                 </TextBox>                

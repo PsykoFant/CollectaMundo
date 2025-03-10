@@ -53,7 +53,6 @@ namespace CollectaMundo.Models
 
             view.Refresh();
         }
-
         public void ApplyFiltering()
         {
             ApplyFilterToView(_cardViewModel.AllCardsView);
@@ -155,6 +154,7 @@ namespace CollectaMundo.Models
                 {
                     case FilterType.Single:
                         filter.SelectedSingleOption = null;
+                        filter.TextForeground = Brushes.Gray;
                         filter.FreetextSearch = filter.DefaultText;
                         filter.FilterText = filter.DefaultText;
                         break;
