@@ -15,7 +15,7 @@ namespace CollectaMundo.Models
         public List<FilterOption> FilterOptions { get; set; } = [];  // New list of FilterOption objects
         public List<int>? NumericCriteria { get; set; } = null; // Numeric filters (e.g., ManaValue, CardsForTrade)
 
-        public string? ReadableLabel { get; set; } = string.Empty;
+        public string ReadableLabel { get; set; } = string.Empty;
 
         private string _defaultText = string.Empty;
         public string DefaultText
@@ -54,19 +54,36 @@ namespace CollectaMundo.Models
                 List<int>? numericValues = null;
                 if (entry.Value.Type == FilterType.Numeric)
                 {
-                    numericValues = filteredValues.Where(v => int.TryParse(v, out _)).Select(int.Parse).ToList();
+                    numericValues = [.. filteredValues.Where(v => int.TryParse(v, out _)).Select(int.Parse)];
                 }
 
                 // Convert string options into FilterOption objects
                 var filterOptions = filteredValues.Select(value => new FilterOption(value)).ToList();
+
+                // Determine default text
+                var defaultText = string.Empty;
+                if (entry.Value.Type == FilterType.Multi || entry.Key == "Text")
+                {
+                    if(entry.Value.ReadableLabel == "")
+                    {
+                        defaultText = $"{entry.Key} ...";
+                    }
+                    else
+                    {
+                        defaultText = $"{entry.Value.ReadableLabel} ...";
+                    }
+                }
+
+                // Determine readable label (just use CriteriaKey if emtpy)
+                var readableLabel = entry.Value.ReadableLabel == "" ? entry.Key : entry.Value.ReadableLabel;
 
                 return new FilterDefaults
                 {
                     CriteriaKey = entry.Key,
                     NumericCriteria = numericValues, // Store numeric values for numeric filters
                     FilterOptions = filterOptions, // Store list of filter options
-                    DefaultText = $"{entry.Key} ...",
-                    ReadableLabel = entry.Value.ReadableLabel
+                    DefaultText = defaultText,
+                    ReadableLabel = readableLabel ?? string.Empty
                 };
             })];
         }
@@ -122,7 +139,7 @@ namespace CollectaMundo.Models
                 .OrderBy(v => v)                          // Sort Alphabetically
                 .ToList();
 
-            return [.. numericValues, .. stringValues]; // ✅ Keep numeric values first
+            return [.. numericValues, .. stringValues]; // Keep numeric values first
         }
         private static HashSet<string>? GetUnwantedItems(string criteriaKey)
         {

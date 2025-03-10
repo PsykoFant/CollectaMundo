@@ -22,9 +22,23 @@ namespace CollectaMundo.Models
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
+        private string? _readableLabel;
+        public string? ReadableLabel
+        {
+            get => _readableLabel;
+            set
+            {
+                if (_readableLabel != value)
+                {
+                    _readableLabel = value;
+                    OnPropertyChanged(nameof(ReadableLabel));
+                }
+            }
+        }
+
         // Commands
-        public ICommand? TextBoxGotFocusCommand { get; }
-        public ICommand? TextBoxLostFocusCommand { get; }
+        public ICommand? EmbeddedTextBoxGotFocusCommand { get; }
+        public ICommand? EmbeddedTextBoxLostFocusCommand { get; }
 
 
         // Selection-related properties for single-criteria
@@ -164,8 +178,6 @@ namespace CollectaMundo.Models
 
         // Handle UI properties in custom comboboxes (e.g. filtering options in dropdown)
         public bool _suppressFiltering = false; // Used to temporarily disable filtering.
-
-        public string? ReadableLabel;
 
         private string _filterText = string.Empty;
         public string FilterText
@@ -336,7 +348,7 @@ namespace CollectaMundo.Models
                 };
             }
 
-            TextBoxGotFocusCommand = new RelayCommand(() =>
+            EmbeddedTextBoxGotFocusCommand = new RelayCommand(() =>
             {
                 // When the TextBox gets focus, clear the text and set the foreground to Black.
                 FilterText = "";
@@ -344,7 +356,7 @@ namespace CollectaMundo.Models
                 IsDropDownOpen = true;
             });
 
-            TextBoxLostFocusCommand = new RelayCommand(() =>
+            EmbeddedTextBoxLostFocusCommand = new RelayCommand(() =>
             {
                 // When the TextBox loses focus, if the text is empty, reset FilterText to DefaultText
                 // and set the foreground back to Gray.

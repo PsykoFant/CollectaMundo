@@ -147,17 +147,17 @@
                                     Foreground="{Binding TextForeground, Mode=TwoWay}">
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="GotFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxGotFocusCommand}" />
                                         </i:EventTrigger>
                                         <i:EventTrigger EventName="LostFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxLostFocusCommand}" />
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
                                 </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
-                                    <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
+                                    <TextBlock Text="{Binding ReadableLabel}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
@@ -215,17 +215,17 @@
                                     Foreground="{Binding TextForeground, Mode=TwoWay}">
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="GotFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxGotFocusCommand}" />
                                         </i:EventTrigger>
                                         <i:EventTrigger EventName="LostFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxLostFocusCommand}" />
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
                                 </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
-                                    <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
+                                    <TextBlock Text="{Binding ReadableLabel}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
@@ -283,17 +283,17 @@
                                     Foreground="{Binding TextForeground, Mode=TwoWay}">
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="GotFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxGotFocusCommand}" />
                                         </i:EventTrigger>
                                         <i:EventTrigger EventName="LostFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxLostFocusCommand}" />
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
                                 </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
-                                    <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
+                                    <TextBlock Text="{Binding ReadableLabel}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
@@ -351,17 +351,17 @@
                                     Foreground="{Binding TextForeground, Mode=TwoWay}">
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="GotFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxGotFocusCommand}" />
                                         </i:EventTrigger>
                                         <i:EventTrigger EventName="LostFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxLostFocusCommand}" />
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
                                 </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
-                                    <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
+                                    <TextBlock Text="{Binding ReadableLabel}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
@@ -419,17 +419,17 @@
                                     Foreground="{Binding TextForeground, Mode=TwoWay}">
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="GotFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxGotFocusCommand}" />
                                         </i:EventTrigger>
                                         <i:EventTrigger EventName="LostFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxLostFocusCommand}" />
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
                                 </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">                                    
-                                    <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
+                                    <TextBlock Text="{Binding ReadableLabel}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
@@ -487,17 +487,17 @@
                                     Foreground="{Binding TextForeground, Mode=TwoWay}">
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="GotFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxGotFocusCommand}" />
                                         </i:EventTrigger>
                                         <i:EventTrigger EventName="LostFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxLostFocusCommand}" />
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
                                 </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
-                                    <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
+                                    <TextBlock Text="{Binding ReadableLabel}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
@@ -554,10 +554,10 @@
                          PreviewKeyDown="FilterTextTextBox_KeyDown">
                         <i:Interaction.Triggers>
                             <i:EventTrigger EventName="GotFocus">
-                                <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxGotFocusCommand}" />
                             </i:EventTrigger>
                             <i:EventTrigger EventName="LostFocus">
-                                <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxLostFocusCommand}" />
                             </i:EventTrigger>
                         </i:Interaction.Triggers>
                 </TextBox>                
@@ -578,17 +578,17 @@
                                     Foreground="{Binding TextForeground, Mode=TwoWay}">
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="GotFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxGotFocusCommand}" />
                                         </i:EventTrigger>
                                         <i:EventTrigger EventName="LostFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxLostFocusCommand}" />
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
                                 </TextBox>
                                 <ToggleButton 
                                     Focusable="false"  ClickMode="Press" HorizontalAlignment="Right"
                                     IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource Mode=TemplatedParent}}">
-                                    <TextBlock Text="{Binding CriteriaKey}" Margin="5,0"/>
+                                    <TextBlock Text="{Binding ReadableLabel}" Margin="5,0"/>
                                 </ToggleButton>
                                 <Popup x:Name="Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" StaysOpen="False">
                                     <Border Background="White" BorderThickness="1" BorderBrush="Black">
@@ -648,10 +648,10 @@
                                     Foreground="{Binding TextForeground, Mode=TwoWay}">
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="GotFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxGotFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxGotFocusCommand}" />
                                         </i:EventTrigger>
                                         <i:EventTrigger EventName="LostFocus">
-                                            <i:InvokeCommandAction Command="{Binding TextBoxLostFocusCommand}" />
+                                            <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxLostFocusCommand}" />
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
                                 </TextBox>

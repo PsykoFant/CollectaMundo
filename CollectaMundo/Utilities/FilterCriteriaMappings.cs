@@ -18,19 +18,19 @@ namespace CollectaMundo.Utilities
         /// <summary>
         /// Maps each filter criteria to its corresponding property, filter type, valid operators, and whether it should not split values.
         /// </summary>
-        public static readonly Dictionary<string, (string ReadableLabel, string Property, FilterType Type, OperatorType[]? Operators, bool ShouldNotSplit)> CriteriaMappings = new()
+        public static readonly Dictionary<string, (string? ReadableLabel, string Property, FilterType Type, OperatorType[]? Operators, bool ShouldNotSplit)> CriteriaMappings = new()
         {
             // Single-Criteria Filters (Selection replaces existing selection, no operators)
-            { "Name", ("woop", nameof(CardViewModel.AllCards), FilterType.Single, null, true) },
+            { "Name", ("Card Name", nameof(CardViewModel.AllCards), FilterType.Single, null, true) },
             { "SetName", ("Set Name", nameof(CardViewModel.AllCards), FilterType.Single, null, true) },
-            { "Text", ("", nameof(CardViewModel.AllCards), FilterType.Single,[OperatorType.CONTAINS, OperatorType.DOES_NOT_CONTAIN], false) },
+            { "Text", ("Rulestext", nameof(CardViewModel.AllCards), FilterType.Single,[OperatorType.CONTAINS, OperatorType.DOES_NOT_CONTAIN], false) },
 
             // Multi-Criteria Filters (Checkbox selections, OR/AND/NOT logic)
             { "Colors", ("", nameof(CardViewModel.AllCards), FilterType.Multi,[OperatorType.OR, OperatorType.AND, OperatorType.NOT], false) },
             { "Rarity", ("", nameof(CardViewModel.AllCards), FilterType.Multi,[OperatorType.OR, OperatorType.NOT], false) },
-            { "SuperTypes", ("", nameof(CardViewModel.AllCards), FilterType.Multi,[OperatorType.OR, OperatorType.AND, OperatorType.NOT], false) },
-            { "Types", ("", nameof(CardViewModel.AllCards), FilterType.Multi,[OperatorType.OR, OperatorType.AND, OperatorType.NOT], false) },
-            { "SubTypes", ("", nameof(CardViewModel.AllCards), FilterType.Multi,[OperatorType.OR, OperatorType.AND, OperatorType.NOT], false) },
+            { "SuperTypes", ("Supertypes", nameof(CardViewModel.AllCards), FilterType.Multi,[OperatorType.OR, OperatorType.AND, OperatorType.NOT], false) },
+            { "Types", ("Card type", nameof(CardViewModel.AllCards), FilterType.Multi,[OperatorType.OR, OperatorType.AND, OperatorType.NOT], false) },
+            { "SubTypes", ("Subtypes", nameof(CardViewModel.AllCards), FilterType.Multi,[OperatorType.OR, OperatorType.AND, OperatorType.NOT], false) },
             { "Keywords", ("", nameof(CardViewModel.AllCards), FilterType.Multi,[OperatorType.OR, OperatorType.AND, OperatorType.NOT], false) },
             { "Finishes", ("", nameof(CardViewModel.AllCards), FilterType.Multi,[OperatorType.OR, OperatorType.NOT], false) },
             { "Language", ("", nameof(CardViewModel.MyCollection), FilterType.Multi,[OperatorType.OR, OperatorType.NOT], false) },

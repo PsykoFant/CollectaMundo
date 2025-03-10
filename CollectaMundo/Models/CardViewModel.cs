@@ -1,5 +1,4 @@
-﻿using CollectaMundo.Utilities;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data.Common;
 using System.Data.SQLite;
@@ -12,7 +11,7 @@ namespace CollectaMundo.Models
 {
     public class CardViewModel : INotifyPropertyChanged
     {
-        public static Dictionary<string, (string ReadableLabel, string Property, FilterType Type, OperatorType[]? Operators, bool ShouldNotSplit)> CriteriaMappings => FilterCriteriaMappings.CriteriaMappings;
+        //public static Dictionary<string, (string? ReadableLabel, string Property, FilterType Type, OperatorType[]? Operators, bool ShouldNotSplit)> CriteriaMappings => FilterCriteriaMappings.CriteriaMappings;
 
         public ObservableCollection<CardSet> ColorIcons { get; } = [];
 
