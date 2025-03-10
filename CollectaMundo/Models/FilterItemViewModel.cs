@@ -357,7 +357,6 @@ namespace CollectaMundo.Models
             RulesTextBoxGotFocusCommand = CreateGotFocusCommand(() => FreetextSearch = "");
             RulesTextBoxLostFocusCommand = CreateLostFocusCommand(() => FreetextSearch, value => FreetextSearch = value);
 
-
             // Retrieve filter configuration from FilterCriteriaMappings
             if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
             {

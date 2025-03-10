@@ -14,7 +14,6 @@ namespace CollectaMundo.Models
     {
         public List<FilterOption> FilterOptions { get; set; } = [];  // New list of FilterOption objects
         public List<int>? NumericCriteria { get; set; } = null; // Numeric filters (e.g., ManaValue, CardsForTrade)
-
         public string ReadableLabel { get; set; } = string.Empty;
 
         private string _defaultText = string.Empty;

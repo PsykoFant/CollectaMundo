@@ -143,7 +143,6 @@ namespace CollectaMundo.Models
             };
         }
 
-
         // Clears all filter selections, resetting each filter to its default state.
         public ICommand? ClearFiltersCommand { get; }
         public void ClearFilters()
