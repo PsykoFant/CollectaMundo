@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Windows;
 
 namespace CollectaMundo.Models
 {
@@ -34,59 +35,73 @@ namespace CollectaMundo.Models
     {
         public static List<FilterDefaults> GetFilterDefaults(CardViewModel cardViewModel)
         {
-            return [.. FilterCriteriaMappings.CriteriaMappings.Select(entry =>
+            try
             {
-                var sourceCollection = entry.Value.Property == nameof(CardViewModel.AllCards) ? cardViewModel.AllCards : cardViewModel.MyCollection;
-                var rawValues = ExtractCriteriaValues(entry.Key, sourceCollection);
-                var removeItems = GetUnwantedItems(entry.Key);
-                bool shouldNotSplit = entry.Value.ShouldNotSplit;
-                var filteredValues = CleanAndFilter(rawValues, removeItems, shouldNotSplit);
-
-                // Special handling for "Colors" (add predefined values)
-                if (entry.Key == "Colors")
+                return FilterCriteriaMappings.CriteriaMappings.Select(entry =>
                 {
-                    var predefinedColors = new List<string> { "W", "U", "B", "R", "G", "C", "X", "Colorless" };
-                    filteredValues = [.. predefinedColors.Union(filteredValues)];
-                }
+                    var sourceCollection = entry.Value.Property == nameof(CardViewModel.AllCards)
+                        ? cardViewModel.AllCards
+                        : cardViewModel.MyCollection;
+                    var rawValues = ExtractCriteriaValues(entry.Key, sourceCollection);
+                    var removeItems = GetUnwantedItems(entry.Key);
+                    bool shouldNotSplit = entry.Value.ShouldNotSplit;
+                    var filteredValues = CleanAndFilter(rawValues, removeItems, shouldNotSplit);
 
-                // Convert numeric filters to List<int>
-                List<int>? numericValues = null;
-                if (entry.Value.Type == FilterType.Numeric)
-                {
-                    numericValues = [.. filteredValues.Where(v => int.TryParse(v, out _)).Select(int.Parse)];
-                }
-
-                // Convert string options into FilterOption objects
-                var filterOptions = filteredValues.Select(value => new FilterOption(value)).ToList();
-
-                // Determine default text
-                var defaultText = string.Empty;
-                if (entry.Value.Type == FilterType.Multi || entry.Key == "Text")
-                {
-                    if(entry.Value.ReadableLabel == "")
+                    // Special handling for "Colors" (add predefined values)
+                    if (entry.Key == "Colors")
                     {
-                        defaultText = $"{entry.Key} ...";
+                        var predefinedColors = new List<string> { "W", "U", "B", "R", "G", "C", "X", "Colorless" };
+                        filteredValues = predefinedColors.Union(filteredValues).ToList();
                     }
-                    else
+
+                    // Convert numeric filters to List<int>
+                    List<int>? numericValues = null;
+                    if (entry.Value.Type == FilterType.Numeric)
                     {
-                        defaultText = $"{entry.Value.ReadableLabel} ...";
+                        numericValues = filteredValues.Where(v => int.TryParse(v, out _))
+                                                      .Select(int.Parse)
+                                                      .ToList();
                     }
-                }
 
-                // Determine readable label (just use CriteriaKey if emtpy)
-                var readableLabel = entry.Value.ReadableLabel == "" ? entry.Key : entry.Value.ReadableLabel;
+                    // Convert string options into FilterOption objects
+                    var filterOptions = filteredValues.Select(value => new FilterOption(value)).ToList();
 
-                return new FilterDefaults
-                {
-                    CriteriaKey = entry.Key,
-                    NumericCriteria = numericValues, // Store numeric values for numeric filters
-                    FilterOptions = filterOptions, // Store list of filter options
-                    DefaultText = defaultText,
-                    ReadableLabel = readableLabel ?? string.Empty
-                };
-            })];
+                    // Determine default text
+                    var defaultText = string.Empty;
+                    if (entry.Value.Type == FilterType.Multi || entry.Key == "Text")
+                    {
+                        if (entry.Value.ReadableLabel == "")
+                        {
+                            defaultText = $"{entry.Key} ...";
+                        }
+                        else
+                        {
+                            defaultText = $"{entry.Value.ReadableLabel} ...";
+                        }
+                    }
+
+                    // Determine readable label (just use CriteriaKey if empty)
+                    var readableLabel = string.IsNullOrEmpty(entry.Value.ReadableLabel)
+                        ? entry.Key
+                        : entry.Value.ReadableLabel;
+
+                    return new FilterDefaults
+                    {
+                        CriteriaKey = entry.Key,
+                        NumericCriteria = numericValues, // Store numeric values for numeric filters
+                        FilterOptions = filterOptions,     // Store list of filter options
+                        DefaultText = defaultText,
+                        ReadableLabel = readableLabel
+                    };
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error Getting Filter Defaults: {ex.Message}");
+                MessageBox.Show($"Error Getting Filter Defaults: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return [];  // Return an empty list if an exception occurs.
+            }
         }
-
         private static List<string> ExtractCriteriaValues(string propertyName, List<CardSet> sourceCollection)
         {
             var propertyInfo = typeof(CardSet).GetProperty(propertyName);

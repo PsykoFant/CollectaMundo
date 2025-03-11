@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -77,57 +78,68 @@ namespace CollectaMundo.Models
         }
         private void UpdateFilterSummary()
         {
-            var summary = new StringBuilder();
-
-            foreach (var filter in Filters.Values)
+            try
             {
-                switch (filter.FilterCategory)
+
+
+
+                var summary = new StringBuilder();
+
+                foreach (var filter in Filters.Values)
                 {
-                    case FilterType.Single:
-                        if (!string.IsNullOrWhiteSpace(filter.SelectedSingleOption) &&
-                            filter.SelectedSingleOption != filter.DefaultText)
-                        {
-                            summary.Append($"{filter.CriteriaKey}: \"{filter.SelectedSingleOption}\" AND ");
-                        }
-                        break;
-
-                    case FilterType.Multi:
-                        if (filter.SelectedOptions != null && filter.SelectedOptions.Any())
-                        {
-                            // Determine the operator symbol.
-                            string operatorSymbol = filter.OperatorSelection switch
+                    switch (filter.FilterCategory)
+                    {
+                        case FilterType.Single:
+                            if (!string.IsNullOrWhiteSpace(filter.SelectedSingleOption) &&
+                                filter.SelectedSingleOption != filter.DefaultText)
                             {
-                                OperatorType.OR => "OR",
-                                OperatorType.AND => "AND",
-                                OperatorType.NOT => "AND",  // We join with "AND" but prefix each option with "NOT"
-                                _ => ""
-                            };
+                                summary.Append($"{filter.CriteriaKey}: \"{filter.SelectedSingleOption}\" AND ");
+                            }
+                            break;
 
-                            // Build the filter segment. If the operator is NOT, prefix each option with "NOT ".
-                            string filterSegment = filter.OperatorSelection == OperatorType.NOT
-                                ? string.Join($" {operatorSymbol} ", filter.SelectedOptions.Select(opt => $"NOT {opt}"))
-                                : string.Join($" {operatorSymbol} ", filter.SelectedOptions);
+                        case FilterType.Multi:
+                            if (filter.SelectedOptions != null && filter.SelectedOptions.Any())
+                            {
+                                // Determine the operator symbol.
+                                string operatorSymbol = filter.OperatorSelection switch
+                                {
+                                    OperatorType.OR => "OR",
+                                    OperatorType.AND => "AND",
+                                    OperatorType.NOT => "AND",  // We join with "AND" but prefix each option with "NOT"
+                                    _ => ""
+                                };
 
-                            summary.Append($"{filter.CriteriaKey}: {{{filterSegment}}} AND ");
-                        }
-                        break;
+                                // Build the filter segment. If the operator is NOT, prefix each option with "NOT ".
+                                string filterSegment = filter.OperatorSelection == OperatorType.NOT
+                                    ? string.Join($" {operatorSymbol} ", filter.SelectedOptions.Select(opt => $"NOT {opt}"))
+                                    : string.Join($" {operatorSymbol} ", filter.SelectedOptions);
 
-                    case FilterType.Numeric:
-                        if (filter.SelectedNumericValue != null)
-                        {
-                            summary.Append($"{filter.CriteriaKey} {GetOperatorSymbol(filter.OperatorSelection)} {filter.SelectedNumericValue} AND ");
-                        }
-                        break;
+                                summary.Append($"{filter.CriteriaKey}: {{{filterSegment}}} AND ");
+                            }
+                            break;
+
+                        case FilterType.Numeric:
+                            if (filter.SelectedNumericValue != null)
+                            {
+                                summary.Append($"{filter.CriteriaKey} {GetOperatorSymbol(filter.OperatorSelection)} {filter.SelectedNumericValue} AND ");
+                            }
+                            break;
+                    }
                 }
-            }
 
-            // Remove the trailing " AND " if present.
-            if (summary.Length >= 5)
+                // Remove the trailing " AND " if present.
+                if (summary.Length >= 5)
+                {
+                    summary.Remove(summary.Length - 5, 5);
+                }
+
+                FilterSummary = summary.ToString();
+            }
+            catch (Exception ex)
             {
-                summary.Remove(summary.Length - 5, 5);
+                Debug.WriteLine($"Error updating filter summary: {ex.Message}");
+                MessageBox.Show($"Error updating filter summary: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            FilterSummary = summary.ToString();
         }
         private static string GetOperatorSymbol(OperatorType op)
         {
