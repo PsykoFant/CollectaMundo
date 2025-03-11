@@ -405,16 +405,60 @@ namespace CollectaMundo.Models
             if (!Utilities.FilterCriteriaMappings.CriteriaMappings.TryGetValue(this.CriteriaKey, out var mapping))
                 return true; // No mapping? Then don't filter on this criterion.
 
+            // Special case for color filtering
+            if (this.CriteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
+            {
+                // Build sets for mana cost and colors.
+                var manaCostSymbols = new HashSet<string>(
+                    (card.ManaCost != null ? card.ManaCost.Split(',').Select(s => s.Trim()) : Enumerable.Empty<string>()),
+                    StringComparer.OrdinalIgnoreCase);
+                var colorSymbols = new HashSet<string>(
+                    (card.Colors != null ? card.Colors.Split(',').Select(s => s.Trim()) : Enumerable.Empty<string>()),
+                    StringComparer.OrdinalIgnoreCase);
+
+                // "Colorless" means no colors are specified.
+                bool isColorless = string.IsNullOrWhiteSpace(card.Colors);
+
+                // For multi-select color filtering, use the selected options.
+                if (this.SelectedOptions == null || !this.SelectedOptions.Any())
+                    return true;
+
+                switch (this.OperatorSelection)
+                {
+                    case MainWindow.OperatorType.AND:
+                        // Every selected color must be present (if "Colorless" is selected, card must be colorless).
+                        return this.SelectedOptions.All(opt =>
+                            (opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless) ||
+                            manaCostSymbols.Contains(opt) ||
+                            colorSymbols.Contains(opt)
+                        );
+                    case MainWindow.OperatorType.NOT:
+                        // No selected color should be present.
+                        return !this.SelectedOptions.Any(opt =>
+                            (opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless) ||
+                            manaCostSymbols.Contains(opt) ||
+                            colorSymbols.Contains(opt)
+                        );
+                    default: // OR case (or any other operator)
+                        return this.SelectedOptions.Any(opt =>
+                            (opt.Equals("Colorless", StringComparison.OrdinalIgnoreCase) && isColorless) ||
+                            manaCostSymbols.Contains(opt) ||
+                            colorSymbols.Contains(opt)
+                        );
+                }
+            }
+
+            // For other filter types, use your existing logic.
             // First, try to get the property using the mapping's Property value.
             string propertyName = mapping.Property;
-            PropertyInfo? property = typeof(CardSet).GetProperty(propertyName);
-            property = typeof(CardSet).GetProperty(this.CriteriaKey);
+            // Optionally also try this.CriteriaKey if necessary:
+            PropertyInfo? property = typeof(CardSet).GetProperty(propertyName)
+                                  ?? typeof(CardSet).GetProperty(this.CriteriaKey);
 
             if (property == null)
-                return true; // Still not found – no filtering can be done.
+                return true;
 
             object? value = property.GetValue(card);
-
             string cardValue = value?.ToString() ?? "";
 
             switch (this.FilterCategory)
@@ -422,23 +466,22 @@ namespace CollectaMundo.Models
                 case Utilities.FilterType.Single:
                     if (string.IsNullOrWhiteSpace(this.SelectedSingleOption) || this.SelectedSingleOption == this.DefaultText)
                         return true;
-                    return cardValue.Contains(this.SelectedSingleOption, StringComparison.OrdinalIgnoreCase);
+                    return cardValue.IndexOf(this.SelectedSingleOption, StringComparison.OrdinalIgnoreCase) >= 0;
 
                 case Utilities.FilterType.Multi:
                     if (this.SelectedOptions == null || !this.SelectedOptions.Any())
                         return true;
-
                     if (this.OperatorSelection == MainWindow.OperatorType.AND)
                     {
-                        return this.SelectedOptions.All(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase));
+                        return this.SelectedOptions.All(opt => cardValue.IndexOf(opt, StringComparison.OrdinalIgnoreCase) >= 0);
                     }
                     else if (this.OperatorSelection == MainWindow.OperatorType.NOT)
                     {
-                        return !this.SelectedOptions.Any(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase));
+                        return !this.SelectedOptions.Any(opt => cardValue.IndexOf(opt, StringComparison.OrdinalIgnoreCase) >= 0);
                     }
                     else // default OR
                     {
-                        return this.SelectedOptions.Any(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase));
+                        return this.SelectedOptions.Any(opt => cardValue.IndexOf(opt, StringComparison.OrdinalIgnoreCase) >= 0);
                     }
 
                 case Utilities.FilterType.Numeric:
@@ -470,6 +513,7 @@ namespace CollectaMundo.Models
                     return true;
             }
         }
+
     }
 
     // Represents an individual selectable filter option.
