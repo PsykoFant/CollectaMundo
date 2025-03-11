@@ -373,7 +373,7 @@ namespace CollectaMundo.Models
             }
         }
 
-        // Helper method for GotFocus commands.
+        // Helper methods for GotFocus/Lostfocus commands.
         private RelayCommand CreateGotFocusCommand(Action clearTextAction)
         {
             return new RelayCommand(() =>
@@ -383,9 +383,6 @@ namespace CollectaMundo.Models
                 IsDropDownOpen = true;
             });
         }
-
-        // Helper method for LostFocus commands.
-        // 'getText' returns the current text and 'setText' updates it.
         private RelayCommand CreateLostFocusCommand(Func<string> getText, Action<string> setText)
         {
             return new RelayCommand(() =>
@@ -425,7 +422,7 @@ namespace CollectaMundo.Models
                 case Utilities.FilterType.Single:
                     if (string.IsNullOrWhiteSpace(this.SelectedSingleOption) || this.SelectedSingleOption == this.DefaultText)
                         return true;
-                    return cardValue.IndexOf(this.SelectedSingleOption, StringComparison.OrdinalIgnoreCase) >= 0;
+                    return cardValue.Contains(this.SelectedSingleOption, StringComparison.OrdinalIgnoreCase);
 
                 case Utilities.FilterType.Multi:
                     if (this.SelectedOptions == null || !this.SelectedOptions.Any())
@@ -433,15 +430,15 @@ namespace CollectaMundo.Models
 
                     if (this.OperatorSelection == MainWindow.OperatorType.AND)
                     {
-                        return this.SelectedOptions.All(opt => cardValue.IndexOf(opt, StringComparison.OrdinalIgnoreCase) >= 0);
+                        return this.SelectedOptions.All(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase));
                     }
                     else if (this.OperatorSelection == MainWindow.OperatorType.NOT)
                     {
-                        return !this.SelectedOptions.Any(opt => cardValue.IndexOf(opt, StringComparison.OrdinalIgnoreCase) >= 0);
+                        return !this.SelectedOptions.Any(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase));
                     }
                     else // default OR
                     {
-                        return this.SelectedOptions.Any(opt => cardValue.IndexOf(opt, StringComparison.OrdinalIgnoreCase) >= 0);
+                        return this.SelectedOptions.Any(opt => cardValue.Contains(opt, StringComparison.OrdinalIgnoreCase));
                     }
 
                 case Utilities.FilterType.Numeric:

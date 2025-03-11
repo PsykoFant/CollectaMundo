@@ -970,7 +970,7 @@ namespace CollectaMundo
                     DataGridRow row = (DataGridRow)MainWindow.CurrentInstance.MultipleUuidsDataGrid.ItemContainerGenerator.ContainerFromItem(multipleUuidsItem);
                     if (row != null)
                     {
-                        ComboBox? comboBox = FilterManagerOld.FindVisualChild<ComboBox>(row);
+                        ComboBox? comboBox = FindVisualChild<ComboBox>(row);
                         if (comboBox != null && comboBox.SelectedItem is UuidVersion selectedVersion)
                         {
                             multipleUuidsItem.SelectedUuid = selectedVersion.Uuid;
@@ -1956,6 +1956,33 @@ namespace CollectaMundo
                 Debug.WriteLine($"Error populating field list view: {ex.Message}");
                 MessageBox.Show($"Error populating field list view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+        private static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
+        {
+            try
+            {
+                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
+                {
+                    DependencyObject child = VisualTreeHelper.GetChild(obj, i);
+                    if (child is T correctChild)
+                    {
+                        return correctChild;
+                    }
+
+                    T? childOfChild = FindVisualChild<T>(child);
+                    if (childOfChild != null)
+                    {
+                        return childOfChild;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Optionally log the exception if needed
+                Debug.WriteLine($"An error occurred while searching for visual child: {ex}");
+            }
+
+            return null;
         }
 
         #endregion

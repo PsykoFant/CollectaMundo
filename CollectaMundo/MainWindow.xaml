@@ -25,6 +25,7 @@
         <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
         <converters:ColorlessFontConverter x:Key="ColorlessFontConverter"/>
         <converters:CountToSummaryConverter x:Key="CountToSummaryConverter"/>
+        <converters:OperatorToSymbolConverter x:Key="OperatorToSymbolConverter"/>
     </Window.Resources>
     <Window.Background>
         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
@@ -122,15 +123,28 @@
 
                 <!--Mana value filtering-->
                 <Label x:Name="ManaValueLabel" Content="Mana value is: " HorizontalAlignment="Left" Margin="0,190,0,0" VerticalAlignment="Top" Style="{StaticResource BelerenBold}"/>
-                <StackPanel VerticalAlignment="Top" Orientation="Horizontal"  Margin="10,215,0,0" Height="20">
+                <Grid Margin="10,215,0,0" VerticalAlignment="Top" Height="20" Width="240">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
                     <!-- Operator Selection -->
-                    <ComboBox ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableOperators, RelativeSource={RelativeSource AncestorType=Window}}"
-                              SelectedItem="{Binding FilterVM.Filters[ManaValue].OperatorSelection, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}" />
+                    <ComboBox Grid.Column="0"
+                              ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableOperators, RelativeSource={RelativeSource AncestorType=Window}}"
+                              SelectedItem="{Binding FilterVM.Filters[ManaValue].OperatorSelection, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource OperatorToSymbolConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                     <!-- Numeric Value Selection -->
-                    <ComboBox 
-                        ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableNumericOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                        SelectedItem="{Binding FilterVM.Filters[ManaValue].SelectedNumericValue, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                </StackPanel>
+                    <ComboBox Grid.Column="1"
+                              ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableNumericOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                              SelectedItem="{Binding FilterVM.Filters[ManaValue].SelectedNumericValue, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                              HorizontalAlignment="Right"
+                              Width="80"/>
+                </Grid>
 
                 <!--Rarity-->
                 <ComboBox DataContext="{Binding FilterVM.Filters[Rarity], RelativeSource={RelativeSource AncestorType=Window}}"

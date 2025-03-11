@@ -1,8 +1,5 @@
 ﻿using CollectaMundo.Models;
-using System.Diagnostics;
-using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 
 namespace CollectaMundo
 {
@@ -149,75 +146,6 @@ namespace CollectaMundo
         //        };
         //    });
         //}
-
-        #endregion
-
-
-        #region Filter Helper Methods
-
-        /// <summary>
-        /// Find children of a dependency object
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public static T? FindVisualChild<T>(DependencyObject obj) where T : DependencyObject
-        {
-            try
-            {
-                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(obj); i++)
-                {
-                    DependencyObject child = VisualTreeHelper.GetChild(obj, i);
-                    if (child is T correctChild)
-                    {
-                        return correctChild;
-                    }
-
-                    T? childOfChild = FindVisualChild<T>(child);
-                    if (childOfChild != null)
-                    {
-                        return childOfChild;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // Optionally log the exception if needed
-                Debug.WriteLine($"An error occurred while searching for visual child: {ex}");
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Find all children of a dependency object
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="depObj"></param>
-        /// <returns></returns>
-        public static List<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
-        {
-            List<T> children = [];
-            if (depObj != null)
-            {
-                for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
-                {
-                    DependencyObject child = VisualTreeHelper.GetChild(depObj, i);
-                    if (child != null)
-                    {
-                        if (child is T t)
-                        {
-                            children.Add(t);
-                        }
-
-                        // Recursive call only if child is not null
-                        children.AddRange(FindVisualChildren<T>(child));
-                    }
-                }
-            }
-
-            return children;
-        }
 
         #endregion
     }

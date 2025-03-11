@@ -1,8 +1,5 @@
 TO DO 
 - MVVM refactor
- - Oprydning i FilterViewItemModel
- - UI oprydning, polish
- - Kun filtrer på felter, som er på objektet
  - Color-filtering!
  - Unit test
 
