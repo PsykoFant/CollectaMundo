@@ -1,0 +1,275 @@
+﻿using CollectaMundo.Models;
+using static CollectaMundo.MainWindow;
+
+namespace CollectaMundo.Tests
+{
+    // Dummy subclass to avoid UI side effects during testing.
+    public class DummyFilterViewModel : FilterViewModel
+    {
+        public DummyFilterViewModel() : base(new CardViewModel()) { }
+        public override void ApplyFiltering() { /* no-op */ }
+        public override void DebugFullFilterState() { /* no-op */ }
+    }
+
+    public class FilterByColorTests
+    {
+
+        // Helper method to create a FilterItemViewModel for Colors.
+        private static FilterItemViewModel CreateColorFilter()
+        {
+            var dummyFvm = new DummyFilterViewModel();
+
+            // Define filter options for colors.
+            var options = new List<FilterOption>
+            {
+                new FilterOption("R"),
+                new FilterOption("W"),
+                new FilterOption("G"),
+                new FilterOption("U"),
+                new FilterOption("B"),
+                new FilterOption("C"),
+                new FilterOption("X"),
+                new FilterOption("Colorless")
+            };
+
+            // Construct the FilterItemViewModel for "Colors". 
+            // Here, "Colors ..." is used as DefaultText and ReadableLabel.
+            return new FilterItemViewModel("Colors", options, "Colors ...", "Colors", dummyFvm);
+        }
+
+        // Create a list of test cards
+        private static List<CardSet> GetTestCards()
+        {
+            return
+            [
+                new CardSet { Name = "Black Lotus", Colors = "", ManaCost = "0" },
+                new CardSet { Name = "Sol Ring", Colors = "", ManaCost = "1" },
+                new CardSet { Name = "Lightning Bolt", Colors = "R", ManaCost = "R" },
+                new CardSet { Name = "Traben Inspector", Colors = "W", ManaCost = "W" },
+                new CardSet { Name = "Eldrazi Ravager", Colors = "", ManaCost = "5,C" },
+                new CardSet { Name = "Island", Colors = "", ManaCost = "" },
+                new CardSet { Name = "Dromoka's Command", Colors = "G, W", ManaCost = "G,W" },
+                new CardSet { Name = "Biomass Mutation", Colors = "G, U", ManaCost = "X,G/U,G/U" },
+                new CardSet { Name = "Suffer The Past", Colors = "B", ManaCost = "X,B" },
+                new CardSet { Name = "Kozilek's Command", Colors = "", ManaCost = "X,C,C" },
+            ];
+        }
+
+        [Fact]
+        public void Test_SingleColor_OR_Red()
+        {
+            var cards = GetTestCards();
+            var colorFilter = CreateColorFilter();
+            // For ANY filtering, set operator to OR and select "R".
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("R");
+            colorFilter.OperatorSelection = OperatorType.OR;
+
+            // Filter cards using the Matches method.
+            var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+
+            // Expect only "Lightning Bolt" (which has Colors = "R")
+            Assert.Single(result);
+        }
+
+        [Fact]
+        public void Test_TwoColors_OR_W_R()
+        {
+            var cards = GetTestCards();
+            var colorFilter = CreateColorFilter();
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("W");
+            colorFilter.SelectedOptions.Add("R");
+            colorFilter.OperatorSelection = OperatorType.OR;
+
+            var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+
+            // Expected: "Lightning Bolt" (R) and "Traben Inspector" (W) and "Dromoka's Command" (G,W)
+            Assert.Equal(3, result.Count);
+        }
+
+        [Fact]
+        public void Test_TwoColors_NOT_W_R()
+        {
+            var cards = GetTestCards();
+            var colorFilter = CreateColorFilter();
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("W");
+            colorFilter.SelectedOptions.Add("R");
+            colorFilter.OperatorSelection = OperatorType.NOT;
+
+            var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+
+            // Expected: Cards that do NOT have W or R.
+            Assert.Equal(7, result.Count);
+        }
+
+        [Fact]
+        public void Test_TwoColors_AND_G_U()
+        {
+            var cards = GetTestCards();
+            var colorFilter = CreateColorFilter();
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("G");
+            colorFilter.SelectedOptions.Add("U");
+            colorFilter.OperatorSelection = OperatorType.AND;
+
+            var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+
+            // Expected: "Biomass Mutation" has Colors = "G, U".
+            Assert.Single(result);
+        }
+        [Fact]
+        public void Test_SingleColor_AND_C()
+        {
+            var cards = GetTestCards();
+            var colorFilter = CreateColorFilter();
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("R");
+            colorFilter.SelectedOptions.Add("C");
+            colorFilter.OperatorSelection = OperatorType.OR;
+
+            var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+
+            Assert.Equal(3, result.Count);
+        }
+
+        [Fact]
+        public void Test_NOT_R_NOT_C()
+        {
+            var cards = GetTestCards();
+            var colorFilter = CreateColorFilter();
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("R");
+            colorFilter.SelectedOptions.Add("C");
+            colorFilter.OperatorSelection = OperatorType.NOT;
+
+            var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+
+            Assert.Equal(7, result.Count);
+        }
+
+        [Fact]
+        public void Test_SingleColor_AND_X()
+        {
+            var cards = GetTestCards();
+            var colorFilter = CreateColorFilter();
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("B");
+            colorFilter.SelectedOptions.Add("X");
+            colorFilter.OperatorSelection = OperatorType.AND;
+
+            var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+
+            Assert.Single(result);
+        }
+
+        [Fact]
+        public void Test_TwoColors_AND_X()
+        {
+            var cards = GetTestCards();
+            var colorFilter = CreateColorFilter();
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("G");
+            colorFilter.SelectedOptions.Add("U");
+            colorFilter.SelectedOptions.Add("X");
+            colorFilter.OperatorSelection = OperatorType.AND;
+
+            var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+
+            Assert.Single(result);
+        }
+
+        [Fact]
+        public void Test_ThreeColors_AND_X()
+        {
+            var cards = GetTestCards();
+            var colorFilter = CreateColorFilter();
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("G");
+            colorFilter.SelectedOptions.Add("U");
+            colorFilter.SelectedOptions.Add("B");
+            colorFilter.SelectedOptions.Add("X");
+            colorFilter.OperatorSelection = OperatorType.AND;
+
+            var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void Test_Colorless_OR()
+        {
+            var cards = GetTestCards();
+            var colorFilter = CreateColorFilter();
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("Colorless");
+            colorFilter.OperatorSelection = OperatorType.OR;
+
+            var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+
+            Assert.Equal(5, result.Count);
+        }
+
+        [Fact]
+        public void Test_Colorless_X_NOT()
+        {
+            var cards = GetTestCards();
+            var colorFilter = CreateColorFilter();
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("Colorless");
+            colorFilter.SelectedOptions.Add("X");
+            colorFilter.OperatorSelection = OperatorType.NOT;
+
+            var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+
+            Assert.Equal(3, result.Count);
+        }
+
+        [Fact]
+        public void Test_Colorless_AND_C()
+        {
+            var cards = GetTestCards();
+            var colorFilter = CreateColorFilter();
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("Colorless");
+            colorFilter.SelectedOptions.Add("C");
+            colorFilter.OperatorSelection = OperatorType.AND;
+
+            var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+
+            Assert.Equal(2, result.Count);
+        }
+
+        [Fact]
+        public void Test_Colorless_AND_R()
+        {
+            var cards = GetTestCards();
+            var colorFilter = CreateColorFilter();
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("Colorless");
+            colorFilter.SelectedOptions.Add("R");
+            colorFilter.OperatorSelection = OperatorType.AND;
+
+            var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public void Test_Colorless_AND_C_AND_X()
+        {
+            var cards = GetTestCards();
+            var colorFilter = CreateColorFilter();
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("Colorless");
+            colorFilter.SelectedOptions.Add("C");
+            colorFilter.SelectedOptions.Add("X");
+            colorFilter.OperatorSelection = OperatorType.AND;
+
+            var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+
+            Assert.Single(result);
+        }
+    }
+}

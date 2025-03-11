@@ -53,7 +53,7 @@ namespace CollectaMundo.Models
 
             view.Refresh();
         }
-        public void ApplyFiltering()
+        public virtual void ApplyFiltering()
         {
             ApplyFilterToView(_cardViewModel.AllCardsView);
             ApplyFilterToView(_cardViewModel.MyCollectionView);
@@ -203,7 +203,7 @@ namespace CollectaMundo.Models
 
 
         // Debug
-        public void DebugFullFilterState()
+        public virtual void DebugFullFilterState()
         {
             UpdateFilterSummary();
             Debug.WriteLine("===== DEBUG: FULL FILTER STATE =====");
