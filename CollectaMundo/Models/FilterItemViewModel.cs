@@ -286,7 +286,7 @@ namespace CollectaMundo.Models
                     ? null
                     : FreetextSearch;
 
-                _filterViewModel.DebugFullFilterState();
+                //_filterViewModel.DebugFullFilterState();
             }
             else if (key == Key.Escape)
             {

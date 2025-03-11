@@ -80,7 +80,7 @@ namespace CollectaMundo
         public bool _isStartup = true;
 
         // The CardSet object which holds all the cards read from db
-        public readonly List<CardSet> allCards = [];
+        //public readonly List<CardSet> allCards = [];
         public readonly List<CardSet> myCards = [];
         public readonly List<CardSet> allCardsForDecks = [];
         public readonly List<CardSet> cardsInDecks = [];
@@ -379,111 +379,6 @@ namespace CollectaMundo
             }
         }
 
-        //public Task PopulateFilterUiElements()
-        //{
-        //    try
-        //    {
-        //        // Setup common lists
-        //        List<string> allColors = ["W", "U", "B", "R", "G", "C", "X", "Colorless"];
-        //        List<int> manaValueOptions = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1000000];
-        //        List<string> manaValueCompareOptions = ["less than", "less than/eq", "greater than", "greater than/eq", "equal to"];
-
-        //        // Set up unwanted types and subtypes from unsets etc.
-        //        HashSet<string> typesToRemove = ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards"];
-        //        HashSet<string> subTypesToRemove = ["(creature", "and/or", "type)|Judge", "The"];
-
-        //        // Clear existing filter context lists by re-initializing it
-        //        filterDefaults = [];
-
-        //        var criteriaKeys = CriteriaKeyToPropertyMap.Keys.ToList();
-
-        //        // Initialize the filterDefaults list dynamically
-        //        filterDefaults = criteriaKeys
-        //            .Select(criteriaKey => new FilterDefaults { CriteriaKey = criteriaKey })
-        //            .ToList();
-
-
-        //        // Populate the filtered data dynamically
-        //        foreach (var filter in filterDefaults)
-        //        {
-        //            // Use reflection to dynamically get the property based on CriteriaKey
-        //            var propertyInfo = typeof(CardSet).GetProperty(filter.CriteriaKey)
-        //                             ?? typeof(CardInCollection).GetProperty(filter.CriteriaKey)
-        //                             ?? typeof(CardInDeck).GetProperty(filter.CriteriaKey);
-
-        //            if (propertyInfo == null)
-        //            {
-        //                Debug.WriteLine($"Property '{filter.CriteriaKey}' not found on any supported types.");
-        //                filter.AllCriteria = []; // Fallback to an empty list
-        //                continue;
-        //            }
-
-
-        //        }
-
-
-        //        Dispatcher.Invoke(() =>
-        //        {
-        //            // Update DataGrid ComboBoxes
-        //            UpdateComboBoxSource(AllCardsDataGrid, "AllCardsName", _allCards.Select(card => card.Name).Distinct().ToList());
-        //            UpdateComboBoxSource(AllCardsDataGrid, "AllCardsSet", _allCards.Select(card => card.SetName).Distinct().ToList());
-        //            UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionName", _allCards.Select(card => card.Name).Distinct().ToList());
-        //            UpdateComboBoxSource(MyCollectionDataGrid, "MyCollectionSet", _allCards.Select(card => card.SetName).Distinct().ToList());
-        //            UpdateComboBoxSource(AllCardsForDecksDataGrid, "AllCardsForDecksName", allCardsForDecks.Select(card => card.Name).Distinct().ToList());
-
-
-        //            var colorsFilter = filterDefaults.FirstOrDefault(fc => fc.CriteriaKey == "Colors");
-        //            if (colorsFilter != null)
-        //            {
-        //                FilterColorsListBox.ItemsSource = colorsFilter.AllCriteria;
-        //            }
-
-        //            ManaValueComboBox.ItemsSource = manaValueOptions;
-        //            ManaValueOperatorComboBox.ItemsSource = manaValueCompareOptions;
-
-        //            ManaValueOperatorComboBox.SelectedIndex = -1;
-        //            ManaValueComboBox.SelectedIndex = -1;
-
-        //            // Set default text in all textboxes
-        //            SetDefaultText(filterDefaults);
-
-        //            PriceRetailerUiUpdates();
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"Error while filling comboboxes: {ex.Message}");
-        //        MessageBox.Show($"Error while filling comboboxes: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        //    }
-        //    return Task.CompletedTask;
-
-        //    // Define reusable helper function for cleaning lists
-        //    IEnumerable<string> CleanAndFilter(IEnumerable<string?> input, HashSet<string>? removeItems = null)
-        //    {
-        //        // Split strings by commas and clean data
-        //        char[] separatorArray = [','];
-
-        //        return input
-        //            .Where(item => !string.IsNullOrEmpty(item))
-        //            .SelectMany(item => item!.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries))
-        //            .Select(item => item.Trim())
-        //            .Where(item => removeItems == null || !removeItems.Contains(item))
-        //            .Distinct()
-        //            .OrderBy(item => item);
-        //    }
-
-        //    static void UpdateComboBoxSource(DataGrid dataGrid, string tag, List<string?> dataSource)
-        //    {
-        //        List<ComboBox> headerComboBoxes = FilterManagerOld.FindVisualChildren<ComboBox>(dataGrid);
-        //        foreach (ComboBox comboBox in headerComboBoxes)
-        //        {
-        //            if (comboBox.Tag?.ToString() == tag)
-        //            {
-        //                comboBox.ItemsSource = dataSource.OrderBy(name => name).ToList();
-        //            }
-        //        }
-        //    }
-        //}
         #endregion
 
         #region Filter elements handling        
@@ -509,11 +404,6 @@ namespace CollectaMundo
 
                 filterItem.HandleKeyPress(e.Key);
             }
-        }
-
-        public void ApplyFiltersToAllLists()
-        {
-
         }
 
         #endregion

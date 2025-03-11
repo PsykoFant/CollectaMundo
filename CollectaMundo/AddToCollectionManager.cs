@@ -499,7 +499,7 @@ namespace CollectaMundo
                 await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.MyCollection, MainWindow.CurrentInstance.CardVM.MyCollectionView, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
                 //await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
-                MainWindow.CurrentInstance.ApplyFiltersToAllLists();
+                //MainWindow.CurrentInstance.ApplyFiltersToAllLists();
 
                 DBAccess.connection.Close();
             }
@@ -730,7 +730,7 @@ namespace CollectaMundo
 
                 DBAccess.connection.Close();
 
-                MainWindow.CurrentInstance.ApplyFiltersToAllLists();
+                //MainWindow.CurrentInstance.ApplyFiltersToAllLists();
             }
         }
 
