@@ -923,7 +923,7 @@
                         <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                             <DataGridTemplateColumn.HeaderTemplate>
                                 <DataTemplate>
-                                    <Grid>
+                                    <Grid DataContext="{Binding FilterVM.Filters[Name], RelativeSource={RelativeSource AncestorType=Window}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
@@ -936,7 +936,8 @@
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}"
                                                   ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  SelectedItem="{Binding FilterVM.Filters[Name].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                  SelectedItem="{Binding FilterVM.Filters[Name].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -955,7 +956,7 @@
                         <DataGridTemplateColumn Header="Set" Width="*" SortMemberPath="SetName">
                             <DataGridTemplateColumn.HeaderTemplate>
                                 <DataTemplate>
-                                    <Grid>
+                                    <Grid DataContext="{Binding FilterVM.Filters[SetName], RelativeSource={RelativeSource AncestorType=Window}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
@@ -968,7 +969,8 @@
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[0][1], RelativeSource={RelativeSource AncestorType=Window}}"
                                                   ItemsSource="{Binding FilterVM.Filters[SetName].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  SelectedItem="{Binding FilterVM.Filters[SetName].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                  SelectedItem="{Binding FilterVM.Filters[SetName].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -995,20 +997,6 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Colors" IsReadOnly="True" Width="Auto" SortMemberPath="Colors">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Colors}" TextWrapping="Wrap" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Mana Cost text" IsReadOnly="True" Width="Auto" SortMemberPath="ManaCost">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding ManaCost}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -1187,7 +1175,7 @@
                         <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                             <DataGridTemplateColumn.HeaderTemplate>
                                 <DataTemplate>
-                                    <Grid>
+                                    <Grid DataContext="{Binding FilterVM.Filters[Name], RelativeSource={RelativeSource AncestorType=Window}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
@@ -1200,7 +1188,8 @@
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[1][0], RelativeSource={RelativeSource AncestorType=Window}}"
                                                   ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  SelectedItem="{Binding FilterVM.Filters[Name].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                  SelectedItem="{Binding FilterVM.Filters[Name].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -1219,7 +1208,7 @@
                         <DataGridTemplateColumn Header="Set" Width="*" SortMemberPath="SetName">
                             <DataGridTemplateColumn.HeaderTemplate>
                                 <DataTemplate>
-                                    <Grid>
+                                    <Grid DataContext="{Binding FilterVM.Filters[SetName], RelativeSource={RelativeSource AncestorType=Window}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
@@ -1232,7 +1221,8 @@
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[1][1], RelativeSource={RelativeSource AncestorType=Window}}"
                                                   ItemsSource="{Binding FilterVM.Filters[SetName].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  SelectedItem="{Binding FilterVM.Filters[SetName].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                  SelectedItem="{Binding FilterVM.Filters[SetName].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -1259,13 +1249,6 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Image Source="{Binding ManaCostImage}" Height="20" HorizontalAlignment="Right"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Colors" IsReadOnly="True" Width="Auto" SortMemberPath="Colors">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Colors}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -1432,7 +1415,7 @@
                                 <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                                     <DataGridTemplateColumn.HeaderTemplate>
                                         <DataTemplate>
-                                            <Grid>
+                                            <Grid DataContext="{Binding FilterVM.Filters[Name], RelativeSource={RelativeSource AncestorType=Window}}">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="*"/>
@@ -1445,7 +1428,8 @@
                                                           IsEditable="True"
                                                           Width="{Binding ColumnWidths[2][0], RelativeSource={RelativeSource AncestorType=Window}}"
                                                           ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          SelectedItem="{Binding FilterVM.Filters[Name].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}">
+                                                          SelectedItem="{Binding FilterVM.Filters[Name].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                          Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                                     <ComboBox.ItemsPanel>
                                                         <ItemsPanelTemplate>
                                                             <VirtualizingStackPanel />

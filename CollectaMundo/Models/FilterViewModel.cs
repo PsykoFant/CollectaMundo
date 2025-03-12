@@ -164,11 +164,12 @@ namespace CollectaMundo.Models
                 switch (filter.FilterCategory)
                 {
                     case FilterType.Single:
-                        filter.SelectedSingleOption = null;
-                        filter.TextForeground = Brushes.Gray;
                         filter.FreetextSearch = filter.DefaultText;
                         filter.FilterText = filter.DefaultText;
+                        filter.SelectedSingleOption = null;
+                        filter.TextForeground = Brushes.Gray;
                         break;
+
 
                     case FilterType.Multi:
                         // Uncheck each option so that the UI updates and SelectedOptions is recalculated.
