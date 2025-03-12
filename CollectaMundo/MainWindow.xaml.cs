@@ -206,6 +206,8 @@ namespace CollectaMundo
             FilterSummaryScrollViewer.Visibility = Visibility.Visible;
 
             await ShowStatusWindowAsync(false);
+
+            CardVM.DebugRandomCards();
         }
         public async Task LoadAllDecksAsync()
         {

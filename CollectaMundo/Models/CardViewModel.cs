@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.Text;
 using System.Windows;
 using System.Windows.Data;
 using static CollectaMundo.MainWindow;
@@ -90,7 +91,7 @@ namespace CollectaMundo.Models
                 CardSet card = new()
 
                 {
-                    // ✅ Fields common to all CardSet lists
+                    // Fields common to all CardSet lists
                     Name = GetFieldValue<string>(reader, "Name") ?? string.Empty,
                     ManaCost = ProcessManaCost(GetFieldValue<string>(reader, "ManaCost") ?? string.Empty),
                     Colors = GetFieldValue<string>(reader, "Colors") ?? string.Empty,
@@ -125,13 +126,13 @@ namespace CollectaMundo.Models
                     card.SetIconBytes = GetFieldValue<byte[]>(reader, "KeyRuneImage");
                 }
 
-                // ✅ Fields only for MyCollection & CardsInDecks lists
+                // Fields only for MyCollection & CardsInDecks lists
                 if (context == DataGridContext.MyCollection || context == DataGridContext.CardsInDecks)
                 {
                     card.CardId = GetFieldValue<int?>(reader, "CardId");
                 }
 
-                // ✅ Fields specific for AllCards
+                // Fields specific for AllCards
                 if (context == DataGridContext.AllCards)
                 {
                     card.NormalPrice = GetFieldValue<decimal?>(reader, "NormalPrice");
@@ -139,7 +140,7 @@ namespace CollectaMundo.Models
                     card.EtchedPrice = GetFieldValue<decimal?>(reader, "EtchedPrice");
                 }
 
-                // ✅ Fields specific for CardInCollection
+                // Fields specific for CardInCollection
                 if (context == DataGridContext.MyCollection)
                 {
                     card.CardsOwned = GetFieldValue<int?>(reader, "CardsOwned") ?? 0;
@@ -154,7 +155,7 @@ namespace CollectaMundo.Models
                     };
                 }
 
-                // ✅ Fields specific for CardsInDecks
+                // Fields specific for CardsInDecks
                 if (context == DataGridContext.CardsInDecks)
                 {
                     card.Count = GetFieldValue<int?>(reader, "Count") ?? 0;
@@ -244,6 +245,63 @@ namespace CollectaMundo.Models
                 ManaCostRaw = reader["uniqueManaSymbol"]?.ToString() ?? string.Empty
             };
         }
+
+        // Debug
+        public void DebugRandomCards(int numberOfCards = 20)
+        {
+            if (_allCards == null || _allCards.Count == 0)
+            {
+                Debug.WriteLine("No cards loaded.");
+                return;
+            }
+
+            // Create a new Random instance.
+            Random random = new Random();
+
+            // Take as many cards as we have (up to the specified number)
+            int count = Math.Min(numberOfCards, _allCards.Count);
+
+            // Select 'count' random cards
+            var randomCards = _allCards.OrderBy(card => random.Next()).Take(count);
+
+            Debug.WriteLine($"Displaying {count} random cards out of {_allCards.Count}:");
+
+            // Get all public properties of CardSet using reflection.
+            var properties = typeof(CardSet).GetProperties();
+
+            foreach (var card in randomCards)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine("----- Card -----");
+                foreach (var prop in properties)
+                {
+                    try
+                    {
+                        object? value = prop.GetValue(card);
+                        // If the property is a collection (except string), we could join the items.
+                        if (value is System.Collections.IEnumerable enumerable && !(value is string))
+                        {
+                            List<string> items = new List<string>();
+                            foreach (var item in enumerable)
+                            {
+                                items.Add(item?.ToString() ?? "null");
+                            }
+                            sb.AppendLine($"{prop.Name}: [{string.Join(", ", items)}]");
+                        }
+                        else
+                        {
+                            sb.AppendLine($"{prop.Name}: {value}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        sb.AppendLine($"{prop.Name}: Error retrieving value ({ex.Message})");
+                    }
+                }
+                Debug.WriteLine(sb.ToString());
+            }
+        }
+
     }
 
 
