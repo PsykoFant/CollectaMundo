@@ -4,12 +4,6 @@ using static CollectaMundo.MainWindow;
 namespace CollectaMundo.Tests
 {
     // Dummy subclass to avoid UI side effects during testing.
-    public class DummyFilterViewModel : FilterViewModel
-    {
-        public DummyFilterViewModel() : base(new CardViewModel()) { }
-        public override void ApplyFiltering() { /* no-op */ }
-        public override void DebugFullFilterState() { /* no-op */ }
-    }
 
     public class FilterByColorTests
     {
@@ -37,28 +31,59 @@ namespace CollectaMundo.Tests
             return new FilterItemViewModel("Colors", options, "Colors ...", "Colors", dummyFvm);
         }
 
-        // Create a list of test cards
-        private static List<CardSet> GetTestCards()
+        private static FilterItemViewModel CreateRarityFilter()
         {
-            return
-            [
-                new CardSet { Name = "Black Lotus", Colors = "", ManaCost = "0" },
-                new CardSet { Name = "Sol Ring", Colors = "", ManaCost = "1" },
-                new CardSet { Name = "Lightning Bolt", Colors = "R", ManaCost = "R" },
-                new CardSet { Name = "Traben Inspector", Colors = "W", ManaCost = "W" },
-                new CardSet { Name = "Eldrazi Ravager", Colors = "", ManaCost = "5,C" },
-                new CardSet { Name = "Island", Colors = "", ManaCost = "" },
-                new CardSet { Name = "Dromoka's Command", Colors = "G, W", ManaCost = "G,W" },
-                new CardSet { Name = "Biomass Mutation", Colors = "G, U", ManaCost = "X,G/U,G/U" },
-                new CardSet { Name = "Suffer The Past", Colors = "B", ManaCost = "X,B" },
-                new CardSet { Name = "Kozilek's Command", Colors = "", ManaCost = "X,C,C" },
-            ];
+            var dummyFvm = new DummyFilterViewModel();
+
+            // Define filter options for colors.
+            var options = new List<FilterOption>
+            {
+                new FilterOption("common"),
+                new FilterOption("uncommon"),
+                new FilterOption("rare"),
+                new FilterOption("mythic"),
+                new FilterOption("bonus"),
+            };
+
+            // Construct the FilterItemViewModel for "Colors". 
+            // Here, "Colors ..." is used as DefaultText and ReadableLabel.
+            return new FilterItemViewModel("Rarity", options, "Rarity ...", "Rarity", dummyFvm);
         }
+
+        [Fact]
+        public void Test_MultiSelect_Rarity_OR()
+        {
+            var cards = FilterTestUtilities.GetTestCards();
+            var multiFilter = CreateRarityFilter();
+            multiFilter.SelectedOptions.Clear();
+            multiFilter.SelectedOptions.Add("mythic");
+            multiFilter.SelectedOptions.Add("bonus");
+            multiFilter.OperatorSelection = OperatorType.OR;
+
+            // Filter cards using the Matches method.
+            var result = cards.Where(card => multiFilter.Matches(card)).ToList();
+            Assert.Equal(2, result.Count);
+        }
+        [Fact]
+        public void Test_MultiSelect_Rarity_NOT()
+        {
+            var cards = FilterTestUtilities.GetTestCards();
+            var multiFilter = CreateRarityFilter();
+            multiFilter.SelectedOptions.Clear();
+            multiFilter.SelectedOptions.Add("uncommon");
+            multiFilter.SelectedOptions.Add("common");
+            multiFilter.OperatorSelection = OperatorType.NOT;
+
+            // Filter cards using the Matches method.
+            var result = cards.Where(card => multiFilter.Matches(card)).ToList();
+            Assert.Equal(3, result.Count);
+        }
+
 
         [Fact]
         public void Test_SingleColor_OR_Red()
         {
-            var cards = GetTestCards();
+            var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             // For ANY filtering, set operator to OR and select "R".
             colorFilter.SelectedOptions.Clear();
@@ -75,7 +100,7 @@ namespace CollectaMundo.Tests
         [Fact]
         public void Test_TwoColors_OR_W_R()
         {
-            var cards = GetTestCards();
+            var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             colorFilter.SelectedOptions.Clear();
             colorFilter.SelectedOptions.Add("W");
@@ -91,7 +116,7 @@ namespace CollectaMundo.Tests
         [Fact]
         public void Test_TwoColors_NOT_W_R()
         {
-            var cards = GetTestCards();
+            var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             colorFilter.SelectedOptions.Clear();
             colorFilter.SelectedOptions.Add("W");
@@ -107,7 +132,7 @@ namespace CollectaMundo.Tests
         [Fact]
         public void Test_TwoColors_AND_G_U()
         {
-            var cards = GetTestCards();
+            var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             colorFilter.SelectedOptions.Clear();
             colorFilter.SelectedOptions.Add("G");
@@ -122,7 +147,7 @@ namespace CollectaMundo.Tests
         [Fact]
         public void Test_SingleColor_AND_C()
         {
-            var cards = GetTestCards();
+            var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             colorFilter.SelectedOptions.Clear();
             colorFilter.SelectedOptions.Add("R");
@@ -137,7 +162,7 @@ namespace CollectaMundo.Tests
         [Fact]
         public void Test_NOT_R_NOT_C()
         {
-            var cards = GetTestCards();
+            var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             colorFilter.SelectedOptions.Clear();
             colorFilter.SelectedOptions.Add("R");
@@ -152,7 +177,7 @@ namespace CollectaMundo.Tests
         [Fact]
         public void Test_SingleColor_AND_X()
         {
-            var cards = GetTestCards();
+            var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             colorFilter.SelectedOptions.Clear();
             colorFilter.SelectedOptions.Add("B");
@@ -167,7 +192,7 @@ namespace CollectaMundo.Tests
         [Fact]
         public void Test_TwoColors_AND_X()
         {
-            var cards = GetTestCards();
+            var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             colorFilter.SelectedOptions.Clear();
             colorFilter.SelectedOptions.Add("G");
@@ -183,7 +208,7 @@ namespace CollectaMundo.Tests
         [Fact]
         public void Test_ThreeColors_AND_X()
         {
-            var cards = GetTestCards();
+            var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             colorFilter.SelectedOptions.Clear();
             colorFilter.SelectedOptions.Add("G");
@@ -200,7 +225,7 @@ namespace CollectaMundo.Tests
         [Fact]
         public void Test_Colorless_OR()
         {
-            var cards = GetTestCards();
+            var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             colorFilter.SelectedOptions.Clear();
             colorFilter.SelectedOptions.Add("Colorless");
@@ -214,7 +239,7 @@ namespace CollectaMundo.Tests
         [Fact]
         public void Test_Colorless_X_NOT()
         {
-            var cards = GetTestCards();
+            var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             colorFilter.SelectedOptions.Clear();
             colorFilter.SelectedOptions.Add("Colorless");
@@ -229,7 +254,7 @@ namespace CollectaMundo.Tests
         [Fact]
         public void Test_Colorless_AND_C()
         {
-            var cards = GetTestCards();
+            var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             colorFilter.SelectedOptions.Clear();
             colorFilter.SelectedOptions.Add("Colorless");
@@ -244,7 +269,7 @@ namespace CollectaMundo.Tests
         [Fact]
         public void Test_Colorless_AND_R()
         {
-            var cards = GetTestCards();
+            var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             colorFilter.SelectedOptions.Clear();
             colorFilter.SelectedOptions.Add("Colorless");
@@ -259,7 +284,7 @@ namespace CollectaMundo.Tests
         [Fact]
         public void Test_Colorless_AND_C_AND_X()
         {
-            var cards = GetTestCards();
+            var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             colorFilter.SelectedOptions.Clear();
             colorFilter.SelectedOptions.Add("Colorless");
