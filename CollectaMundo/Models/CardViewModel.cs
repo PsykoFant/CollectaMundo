@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 using System.Windows;
 using System.Windows.Data;
@@ -123,7 +124,7 @@ namespace CollectaMundo.Models
                     card.ReleaseDate = ParseDate(GetFieldValue<string>(reader, "ReleaseDate"));
 
                     // Populate raw data fields for parallel processing
-                    card.SetIconBytes = GetFieldValue<byte[]>(reader, "KeyRuneImage");
+                    card.KeyRuneImage = GetFieldValue<byte[]>(reader, "KeyRuneImage");
                 }
 
                 // Fields only for MyCollection & CardsInDecks lists
@@ -258,27 +259,46 @@ namespace CollectaMundo.Models
             // Create a new Random instance.
             Random random = new Random();
 
-            // Take as many cards as we have (up to the specified number)
+            // Get as many cards as we have (up to numberOfCards)
             int count = Math.Min(numberOfCards, _allCards.Count);
 
-            // Select 'count' random cards
+            // Select count random cards
             var randomCards = _allCards.OrderBy(card => random.Next()).Take(count);
+
+            // Define the list of property names you want to output.
+            string[] propertiesToOutput = new string[]
+            {
+        "Name", "SetName", "ReleaseDate", "KeyRuneImage", "ManaCost", "ManaCostImage",
+        "Types", "Colors", "SuperTypes", "SubTypes", "Type", "Keywords", "Text", // assuming "RulesText" is stored in "Text"
+        "ManaValue", "Language", "Uuid", "Finishes", "Side", "Rarity",
+        "NormalPrice", "FoilPrice", "EtchedPrice"
+            };
 
             Debug.WriteLine($"Displaying {count} random cards out of {_allCards.Count}:");
 
-            // Get all public properties of CardSet using reflection.
-            var properties = typeof(CardSet).GetProperties();
-
+            // Iterate over the random cards.
             foreach (var card in randomCards)
             {
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine("----- Card -----");
-                foreach (var prop in properties)
+                foreach (var propName in propertiesToOutput)
                 {
+                    Debug.WriteLine(propName);
+
+                    // Try to get the property by name.
+                    PropertyInfo? prop = typeof(CardSet).GetProperty(propName);
+
+                    Debug.WriteLine(prop);
+
+                    if (prop == null)
+                    {
+                        sb.AppendLine($"{propName}: <Not found>");
+                        continue;
+                    }
+
                     try
                     {
                         object? value = prop.GetValue(card);
-                        // If the property is a collection (except string), we could join the items.
                         if (value is System.Collections.IEnumerable enumerable && !(value is string))
                         {
                             List<string> items = new List<string>();
@@ -286,21 +306,22 @@ namespace CollectaMundo.Models
                             {
                                 items.Add(item?.ToString() ?? "null");
                             }
-                            sb.AppendLine($"{prop.Name}: [{string.Join(", ", items)}]");
+                            sb.AppendLine($"{propName}: [{string.Join(", ", items)}]");
                         }
                         else
                         {
-                            sb.AppendLine($"{prop.Name}: {value}");
+                            sb.AppendLine($"{propName}: {value?.ToString() ?? "null"}");
                         }
                     }
                     catch (Exception ex)
                     {
-                        sb.AppendLine($"{prop.Name}: Error retrieving value ({ex.Message})");
+                        sb.AppendLine($"{propName}: Error retrieving value ({ex.Message})");
                     }
                 }
                 Debug.WriteLine(sb.ToString());
             }
         }
+
 
     }
 

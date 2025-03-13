@@ -69,15 +69,15 @@ namespace CollectaMundo.Models
         {
             get
             {
-                if (_setIcon == null && SetIconBytes != null)
+                if (_setIcon == null && KeyRuneImage != null)
                 {
-                    _setIcon = ConvertImage(SetIconBytes);
+                    _setIcon = ConvertImage(KeyRuneImage);
                 }
                 return _setIcon;
             }
             set => _setIcon = value;
         }
-        public byte[]? SetIconBytes { get; set; }
+        public byte[]? KeyRuneImage { get; set; }
         public string? ManaCostRaw { get; set; }
 
         private ImageSource? _manaCostImage;
