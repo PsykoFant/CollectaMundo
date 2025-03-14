@@ -124,7 +124,7 @@ namespace CollectaMundo.Models
                     card.ReleaseDate = ParseDate(GetFieldValue<string>(reader, "ReleaseDate"));
 
                     // Populate raw data fields for parallel processing
-                    card.KeyRuneImage = GetFieldValue<byte[]>(reader, "KeyRuneImage");
+                    card.KeyRuneImageBytes = GetFieldValue<byte[]>(reader, "KeyRuneImage");
                 }
 
                 // Fields only for MyCollection & CardsInDecks lists
@@ -248,7 +248,7 @@ namespace CollectaMundo.Models
         }
 
         // Debug
-        public void DebugRandomCards(int numberOfCards = 20)
+        public void DebugRandomCards(int numberOfCards = 1)
         {
             if (_allCards == null || _allCards.Count == 0)
             {
@@ -283,12 +283,8 @@ namespace CollectaMundo.Models
                 sb.AppendLine("----- Card -----");
                 foreach (var propName in propertiesToOutput)
                 {
-                    Debug.WriteLine(propName);
-
                     // Try to get the property by name.
                     PropertyInfo? prop = typeof(CardSet).GetProperty(propName);
-
-                    Debug.WriteLine(prop);
 
                     if (prop == null)
                     {
@@ -321,6 +317,89 @@ namespace CollectaMundo.Models
                 Debug.WriteLine(sb.ToString());
             }
         }
+        public void DebugCardByName(string cardName)
+        {
+            if (string.IsNullOrWhiteSpace(cardName))
+            {
+                Debug.WriteLine("No card name supplied.");
+                return;
+            }
+
+            // Search for a card by name (case-insensitive)
+            var card = _allCards.FirstOrDefault(c =>
+                !string.IsNullOrWhiteSpace(c.Name) &&
+                c.Name.Equals(cardName, StringComparison.OrdinalIgnoreCase));
+
+            if (card == null)
+            {
+                Debug.WriteLine($"No card found with name: {cardName}");
+                return;
+            }
+
+            // Define the list of properties to output.
+            string[] propertiesToOutput = new string[]
+            {
+        "Name",
+        "SetName",
+        "ReleaseDate",
+        "KeyRuneImage", // if applicable (e.g. the property holding the key rune image)
+        "ManaCost",
+        "ManaCostImage", // if applicable
+        "Types",
+        "Colors",
+        "SuperTypes",
+        "SubTypes",
+        "Type",
+        "Keywords",
+        "Text", // assuming this holds the RulesText
+        "ManaValue",
+        "Language",
+        "Uuid",
+        "Finishes",
+        "Side",
+        "Rarity",
+        "NormalPrice",
+        "FoilPrice",
+        "EtchedPrice"
+            };
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("----- Debug Card -----");
+            foreach (var propName in propertiesToOutput)
+            {
+                // Use reflection to get the property.
+                PropertyInfo? prop = typeof(CardSet).GetProperty(propName);
+                if (prop == null)
+                {
+                    sb.AppendLine($"{propName}: <Not found>");
+                    continue;
+                }
+
+                try
+                {
+                    object? value = prop.GetValue(card);
+                    if (value is System.Collections.IEnumerable enumerable && !(value is string))
+                    {
+                        List<string> items = new List<string>();
+                        foreach (var item in enumerable)
+                        {
+                            items.Add(item?.ToString() ?? "null");
+                        }
+                        sb.AppendLine($"{propName}: [{string.Join(", ", items)}]");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"{propName}: {value?.ToString() ?? "null"}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    sb.AppendLine($"{propName}: Error retrieving value ({ex.Message})");
+                }
+            }
+            Debug.WriteLine(sb.ToString());
+        }
+
 
 
     }

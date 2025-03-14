@@ -207,7 +207,7 @@ namespace CollectaMundo
 
             await ShowStatusWindowAsync(false);
 
-            CardVM.DebugRandomCards();
+            CardVM.DebugRandomCards(1);
         }
         public async Task LoadAllDecksAsync()
         {

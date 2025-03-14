@@ -657,14 +657,13 @@ namespace CollectaMundo
                         JOIN sets s ON c.setCode = s.code
                         LEFT JOIN keyruneImages k ON c.setCode = k.setCode
                         LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                        LEFT JOIN cardPrices p ON c.uuid = p.uuid
-                            LEFT JOIN (
-                                SELECT 
-                                    cc.Name, 
-                                    GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                                FROM cards cc
-                                GROUP BY cc.Name
-                            ) cg ON c.Name = cg.Name
+						LEFT JOIN (
+							SELECT 
+								cc.Name, 
+								REPLACE(GROUP_CONCAT(DISTINCT cc.keywords), ',', ', ') AS AggregatedKeywords
+							FROM cards cc
+							GROUP BY cc.Name
+						) cg ON c.Name = cg.Name
                         WHERE c.side IS NULL OR c.side = 'a'
 
                         UNION ALL

@@ -64,20 +64,20 @@ namespace CollectaMundo.Models
         public string? Types { get; set; }
         public string? Uuid { get; set; }
 
-        private ImageSource? _setIcon;
-        public ImageSource? SetIcon
+        private ImageSource? _keyRuneImage;
+        public ImageSource? KeyRuneImage
         {
             get
             {
-                if (_setIcon == null && KeyRuneImage != null)
+                if (_keyRuneImage == null && KeyRuneImageBytes != null)
                 {
-                    _setIcon = ConvertImage(KeyRuneImage);
+                    _keyRuneImage = ConvertImage(KeyRuneImageBytes);
                 }
-                return _setIcon;
+                return _keyRuneImage;
             }
-            set => _setIcon = value;
+            set => _keyRuneImage = value;
         }
-        public byte[]? KeyRuneImage { get; set; }
+        public byte[]? KeyRuneImageBytes { get; set; } // Image blob read from db
         public string? ManaCostRaw { get; set; }
 
         private ImageSource? _manaCostImage;
@@ -93,7 +93,7 @@ namespace CollectaMundo.Models
             }
             set => _manaCostImage = value;
         }
-        public byte[]? ManaCostImageBytes { get; set; }
+        public byte[]? ManaCostImageBytes { get; set; } // Image blob read from db
         private static BitmapImage? ConvertImage(byte[] imageData)
         {
             try

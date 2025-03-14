@@ -1,11 +1,12 @@
 TO DO 
 - MVVM refactor
- - Hvorfor er der forskel på manacost image og keyrune image
+
  - Lav objekter til filter unittest
  - Unit test
 
  - Add to collectionManager til MVVM!
  - Card image brug MVVM (unit test)
+	- Fix meld creatures show bug
  - Backup restore brug MVVM (unit test) 
  - Import brug MVVM (unit test)
  - Deck manager brug MVVM (unit test)

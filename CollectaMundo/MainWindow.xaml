@@ -989,7 +989,7 @@
                         <DataGridTemplateColumn Header="Icon" IsReadOnly="True" Width="Auto" SortMemberPath="ReleaseDate">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Image Source="{Binding SetIcon}" Width="20" Height="20" />
+                                    <Image Source="{Binding KeyRuneImage}" Width="20" Height="20" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -1241,7 +1241,7 @@
                         <DataGridTemplateColumn Header="Icon" IsReadOnly="True" Width="Auto" SortMemberPath="ReleaseDate">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Image Source="{Binding SetIcon}" Width="20" Height="20" />
+                                    <Image Source="{Binding KeyRuneImage}" Width="20" Height="20" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
