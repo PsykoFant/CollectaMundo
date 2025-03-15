@@ -207,7 +207,19 @@ namespace CollectaMundo
 
             await ShowStatusWindowAsync(false);
 
-            CardVM.DebugRandomCards(1);
+            CardVM.DebugRandomCards(5);
+            CardVM.DebugCardByName("Struggle // Survive");
+            CardVM.DebugCardByName("Lovestruck Beast // Hearts Desire");
+            CardVM.DebugCardByName("Garruk Relentless // Garruk, the Veil-Cursed");
+            CardVM.DebugCardByName("Kozilek's Command");
+            CardVM.DebugCardByName("Propagator Drone");
+            CardVM.DebugCardByName("Fire // Ice");
+            CardVM.DebugCardByName("Koma's Coil");
+            CardVM.DebugCardByName("Cat");
+            CardVM.DebugCardByName("Eriana, Wrecking Ball // Wanted!");
+            CardVM.DebugCardByName("Black Lotus");
+            CardVM.DebugCardByName("Headling Salve");
+
         }
         public async Task LoadAllDecksAsync()
         {
