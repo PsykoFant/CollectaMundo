@@ -209,17 +209,18 @@ namespace CollectaMundo
 
             CardVM.DebugRandomCards(5);
             CardVM.DebugCardByName("Struggle // Survive");
-            CardVM.DebugCardByName("Lovestruck Beast // Hearts Desire");
+            CardVM.DebugCardByName("Lovestruck Beast // Heart's Desire");
             CardVM.DebugCardByName("Garruk Relentless // Garruk, the Veil-Cursed");
             CardVM.DebugCardByName("Kozilek's Command");
             CardVM.DebugCardByName("Propagator Drone");
             CardVM.DebugCardByName("Fire // Ice");
             CardVM.DebugCardByName("Koma's Coil");
             CardVM.DebugCardByName("Cat");
-            CardVM.DebugCardByName("Eriana, Wrecking Ball // Wanted!");
+            CardVM.DebugCardByName("Bounty: Eriana, Wrecking Ball // Wanted!");
             CardVM.DebugCardByName("Black Lotus");
-            CardVM.DebugCardByName("Headling Salve");
-
+            CardVM.DebugCardByName("Healing Salve");
+            // Lukka, Bound to Ruin
+            // Begin the Invasion
         }
         public async Task LoadAllDecksAsync()
         {

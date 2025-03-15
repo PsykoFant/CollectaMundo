@@ -657,6 +657,7 @@ namespace CollectaMundo
                         JOIN sets s ON c.setCode = s.code
                         LEFT JOIN keyruneImages k ON c.setCode = k.setCode
                         LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                        LEFT JOIN cardPrices p ON c.uuid = p.uuid
 						LEFT JOIN (
 							SELECT 
 								cc.Name, 
