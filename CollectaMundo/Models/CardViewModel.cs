@@ -271,7 +271,7 @@ namespace CollectaMundo.Models
         "Name", "SetName", "ReleaseDate", "KeyRuneImage", "ManaCost", "ManaCostImage",
         "Types", "Colors", "SuperTypes", "SubTypes", "Type", "Keywords", "Text", // assuming "RulesText" is stored in "Text"
         "ManaValue", "Language", "Uuid", "Finishes", "Side", "Rarity",
-        "NormalPrice", "FoilPrice", "EtchedPrice"
+        "CardsOwned", "CardsForTrade"
             };
 
             Debug.WriteLine($"Displaying {count} random cards out of {_allCards.Count}:");
@@ -358,9 +358,8 @@ namespace CollectaMundo.Models
         "Finishes",
         "Side",
         "Rarity",
-        "NormalPrice",
-        "FoilPrice",
-        "EtchedPrice"
+        "CardsOwned",
+        "CardsForTrade"
             };
 
             StringBuilder sb = new StringBuilder();

@@ -638,7 +638,7 @@ namespace CollectaMundo
                             c.manaCost AS ManaCost, 
                             u.manaCostImage AS ManaCostImage, 
                             c.types AS Types, 
-                            c.colors AS Colors,
+                            COALESCE(ccol.AggregatedColors, c.colors) AS Colors,
                             c.supertypes AS SuperTypes, 
                             c.subtypes AS SubTypes, 
                             c.type AS Type, 
@@ -661,10 +661,17 @@ namespace CollectaMundo
 						LEFT JOIN (
 							SELECT 
 								cc.Name, 
-								REPLACE(GROUP_CONCAT(DISTINCT cc.keywords), ',', ', ') AS AggregatedKeywords
+								REPLACE(GROUP_CONCAT(DISTINCT cc.keywords),',',',') AS AggregatedKeywords
 							FROM cards cc
 							GROUP BY cc.Name
 						) cg ON c.Name = cg.Name
+                        LEFT JOIN (
+                            SELECT 
+                                cc.Name,
+                                REPLACE(GROUP_CONCAT(DISTINCT cc.colors),',',',') AS AggregatedColors
+                            FROM cards cc
+                            GROUP BY cc.Name
+                        ) ccol ON c.Name = ccol.Name
                         WHERE c.side IS NULL OR c.side = 'a'
 
                         UNION ALL
@@ -720,7 +727,7 @@ namespace CollectaMundo
                             c.manaCost AS ManaCost,
                             u.manaCostImage AS ManaCostImage,
                             c.types AS Types,
-                            c.colors AS Colors,
+                            COALESCE(ccol.AggregatedColors, c.colors) AS Colors,
                             c.supertypes AS SuperTypes,
                             c.subtypes AS SubTypes,
                             c.type AS Type,
@@ -752,13 +759,20 @@ namespace CollectaMundo
                             uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
                         LEFT JOIN 
                             cardPrices p ON m.uuid = p.uuid	
+						LEFT JOIN (
+							SELECT 
+								cc.Name, 
+								REPLACE(GROUP_CONCAT(DISTINCT cc.keywords),',',',') AS AggregatedKeywords
+							FROM cards cc
+							GROUP BY cc.Name
+						) cg ON c.Name = cg.Name
                         LEFT JOIN (
-                             SELECT 
-                                cc.Name, 
-                                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                             FROM cards cc
-                             GROUP BY cc.Name
-                            ) cg ON c.Name = cg.Name
+                            SELECT 
+                                cc.Name,
+                                REPLACE(GROUP_CONCAT(DISTINCT cc.colors),',',',') AS AggregatedColors
+                            FROM cards cc
+                            GROUP BY cc.Name
+                        ) ccol ON c.Name = ccol.Name
                         WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
                         UNION ALL
                         SELECT
@@ -820,7 +834,7 @@ namespace CollectaMundo
                             c.manaCost AS ManaCost, 
                             u.manaCostImage AS ManaCostImage, 
                             c.types AS Types, 
-                            c.colors AS Colors,
+                            COALESCE(ccol.AggregatedColors, c.colors) AS Colors,
                             c.supertypes AS SuperTypes, 
                             c.subtypes AS SubTypes, 
                             c.type AS Type, 
@@ -831,13 +845,20 @@ namespace CollectaMundo
                         FROM cards c
                         JOIN sets s ON c.setCode = s.code
                         LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+						LEFT JOIN (
+							SELECT 
+								cc.Name, 
+								REPLACE(GROUP_CONCAT(DISTINCT cc.keywords),',',',') AS AggregatedKeywords
+							FROM cards cc
+							GROUP BY cc.Name
+						) cg ON c.Name = cg.Name
                         LEFT JOIN (
-                             SELECT 
-                                cc.Name, 
-                                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                             FROM cards cc
-                             GROUP BY cc.Name
-                            ) cg ON c.Name = cg.Name
+                            SELECT 
+                                cc.Name,
+                                REPLACE(GROUP_CONCAT(DISTINCT cc.colors),',',',') AS AggregatedColors
+                            FROM cards cc
+                            GROUP BY cc.Name
+                        ) ccol ON c.Name = ccol.Name
                         WHERE c.side IS NULL OR c.side = 'a'
                     ) 
                     ORDER BY Types,
