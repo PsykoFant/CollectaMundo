@@ -747,33 +747,22 @@ namespace CollectaMundo
                             {normalPriceColumn},
                             {foilPriceColumn},
                             {etchedPriceColumn}
-                        FROM
-                            myCollection m
-                        JOIN
-                            cards c ON m.uuid = c.uuid
-                        LEFT JOIN 
-                            sets s ON c.setCode = s.code
-                        LEFT JOIN 
-                            keyruneImages k ON c.setCode = k.setCode
-                        LEFT JOIN 
-                            uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                        LEFT JOIN 
-                            cardPrices p ON m.uuid = p.uuid	
-						LEFT JOIN cardPrices p ON c.uuid = p.uuid
-                            LEFT JOIN (
-                                SELECT 
-                                    cc.Name, 
-                                    GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                        FROM myCollection m
+                        JOIN cards c ON m.uuid = c.uuid
+                        LEFT JOIN sets s ON c.setCode = s.code
+                        LEFT JOIN keyruneImages k ON c.setCode = k.setCode
+                        LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                        LEFT JOIN cardPrices p ON m.uuid = p.uuid
+                        LEFT JOIN (SELECT cc.Name,
+                                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
                                 FROM cards cc
                                 GROUP BY cc.Name
                             ) cg ON c.Name = cg.Name
-                        LEFT JOIN (
-                            SELECT 
-                                cc.Name,
+                        LEFT JOIN (SELECT cc.Name,
                                 REPLACE(GROUP_CONCAT(DISTINCT cc.colors), ' ', '') AS AggregatedColors
-                            FROM cards cc
-                            GROUP BY cc.Name
-                        ) ccol ON c.Name = ccol.Name
+                                FROM cards cc
+                                GROUP BY cc.Name
+                            ) ccol ON c.Name = ccol.Name
                         WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
                         UNION ALL
                         SELECT
@@ -804,18 +793,12 @@ namespace CollectaMundo
                             {normalPriceColumn},
                             {foilPriceColumn},
                             {etchedPriceColumn}
-                        FROM
-                            myCollection m
-                        JOIN
-                            tokens t ON m.uuid = t.uuid
-                        LEFT JOIN 
-                            sets s ON t.setCode = s.tokenSetCode
-                        LEFT JOIN 
-                            keyruneImages k ON t.setCode = k.setCode
-                        LEFT JOIN 
-                            uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-                        LEFT JOIN 
-                            cardPrices p ON m.uuid = p.uuid
+                        FROM myCollection m
+                        JOIN tokens t ON m.uuid = t.uuid
+                        LEFT JOIN sets s ON t.setCode = s.tokenSetCode
+                        LEFT JOIN keyruneImages k ON t.setCode = k.setCode
+                        LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+                        LEFT JOIN cardPrices p ON m.uuid = p.uuid
                         WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
                     ) ORDER BY ReleaseDate DESC, SetName, Types,
                         CASE Colors
