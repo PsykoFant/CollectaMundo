@@ -290,7 +290,7 @@ namespace CollectaMundo.Models
         "Name", "SetName", "ReleaseDate", "KeyRuneImage", "ManaCost", "ManaCostImage",
         "Types", "Colors", "SuperTypes", "SubTypes", "Type", "Keywords", "Text", // assuming "RulesText" is stored in "Text"
         "ManaValue", "Language", "Uuid", "Finishes", "Side", "Rarity",
-        "CardsOwned", "CardsForTrade"
+        "CardsOwned", "CardsForTrade", "SelectedCondition"
             ];
 
             Debug.WriteLine($"Displaying {count} random cards out of {_allCards.Count}:");
@@ -358,27 +358,29 @@ namespace CollectaMundo.Models
             // Define the list of properties to output.
             string[] propertiesToOutput =
             [
-        "Name",
-        "SetName",
-        "ReleaseDate",
-        "KeyRuneImage", // if applicable (e.g. the property holding the key rune image)
-        "ManaCost",
-        "ManaCostImage", // if applicable
-        "Types",
-        "Colors",
-        "SuperTypes",
-        "SubTypes",
-        "Type",
-        "Keywords",
-        "Text", // assuming this holds the RulesText
-        "ManaValue",
-        "Language",
-        "Uuid",
-        "Finishes",
-        "Side",
-        "Rarity",
-        "CardsOwned",
-        "CardsForTrade"
+                "Name",
+                "SetName",
+                "ReleaseDate",
+                "KeyRuneImage", // if applicable (e.g. the property holding the key rune image)
+                "ManaCost",
+                "ManaCostImage", // if applicable
+                "Types",
+                "Colors",
+                "SuperTypes",
+                "SubTypes",
+                "Type",
+                "Keywords",
+                "Text", // assuming this holds the RulesText
+                "ManaValue",
+                "Language",
+                "Uuid",
+                "Finishes",
+                "Side",
+                "Rarity",
+                "CardsOwned",
+                "CardsForTrade",
+                "SelectedCondition",
+                "SelectedFinish"
             ];
 
             StringBuilder sb = new StringBuilder();

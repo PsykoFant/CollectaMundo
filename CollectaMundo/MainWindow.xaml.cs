@@ -208,13 +208,13 @@ namespace CollectaMundo
             await ShowStatusWindowAsync(false);
 
             //CardVM.DebugRandomCards(5);
+
             //CardVM.DebugCardByName("Lovestruck Beast // Heart's Desire");
             //CardVM.DebugCardByName("Lovestruck Beast // Heart's Desire");
-            CardVM.DebugCardByName("Garruk Relentless // Garruk, the Veil-Cursed");
+            CardVM.DebugCardByName("Tundra");
             //CardVM.DebugCardByName("Kozilek's Command");
             //CardVM.DebugCardByName("Propagator Drone");
             //CardVM.DebugCardByName("Fire // Ice");
-            //CardVM.DebugCardByName("Tarfire");
             //CardVM.DebugCardByName("Begin the Invasion");
             //CardVM.DebugCardByName("Lukka, Bound to Ruin");
             //CardVM.DebugCardByName("Cat");

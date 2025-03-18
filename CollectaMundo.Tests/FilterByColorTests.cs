@@ -50,6 +50,7 @@ namespace CollectaMundo.Tests
             return new FilterItemViewModel("Rarity", options, "Rarity ...", "Rarity", dummyFvm);
         }
 
+        // Rarity
         [Fact]
         public void Test_MultiSelect_Rarity_OR()
         {
@@ -57,12 +58,12 @@ namespace CollectaMundo.Tests
             var multiFilter = CreateRarityFilter();
             multiFilter.SelectedOptions.Clear();
             multiFilter.SelectedOptions.Add("mythic");
-            multiFilter.SelectedOptions.Add("bonus");
+            multiFilter.SelectedOptions.Add("rare");
             multiFilter.OperatorSelection = OperatorType.OR;
 
             // Filter cards using the Matches method.
             var result = cards.Where(card => multiFilter.Matches(card)).ToList();
-            Assert.Equal(2, result.Count);
+            Assert.Equal(11, result.Count);
         }
         [Fact]
         public void Test_MultiSelect_Rarity_NOT()
@@ -71,15 +72,15 @@ namespace CollectaMundo.Tests
             var multiFilter = CreateRarityFilter();
             multiFilter.SelectedOptions.Clear();
             multiFilter.SelectedOptions.Add("uncommon");
-            multiFilter.SelectedOptions.Add("common");
+            multiFilter.SelectedOptions.Add("rare");
             multiFilter.OperatorSelection = OperatorType.NOT;
 
             // Filter cards using the Matches method.
             var result = cards.Where(card => multiFilter.Matches(card)).ToList();
-            Assert.Equal(3, result.Count);
+            Assert.Equal(8, result.Count);
         }
 
-
+        // Colors
         [Fact]
         public void Test_SingleColor_OR_Red()
         {
@@ -94,23 +95,22 @@ namespace CollectaMundo.Tests
             var result = cards.Where(card => colorFilter.Matches(card)).ToList();
 
             // Expect only "Lightning Bolt" (which has Colors = "R")
-            Assert.Single(result);
+            Assert.Equal(8, result.Count);
         }
 
         [Fact]
-        public void Test_TwoColors_OR_W_R()
+        public void Test_TwoColors_OR_G_R()
         {
             var cards = FilterTestUtilities.GetTestCards();
             var colorFilter = CreateColorFilter();
             colorFilter.SelectedOptions.Clear();
-            colorFilter.SelectedOptions.Add("W");
+            colorFilter.SelectedOptions.Add("G");
             colorFilter.SelectedOptions.Add("R");
             colorFilter.OperatorSelection = OperatorType.OR;
 
             var result = cards.Where(card => colorFilter.Matches(card)).ToList();
 
-            // Expected: "Lightning Bolt" (R) and "Traben Inspector" (W) and "Dromoka's Command" (G,W)
-            Assert.Equal(3, result.Count);
+            Assert.Equal(12, result.Count);
         }
 
         [Fact]
@@ -126,7 +126,7 @@ namespace CollectaMundo.Tests
             var result = cards.Where(card => colorFilter.Matches(card)).ToList();
 
             // Expected: Cards that do NOT have W or R.
-            Assert.Equal(7, result.Count);
+            Assert.Equal(9, result.Count);
         }
 
         [Fact]
@@ -156,7 +156,7 @@ namespace CollectaMundo.Tests
 
             var result = cards.Where(card => colorFilter.Matches(card)).ToList();
 
-            Assert.Equal(3, result.Count);
+            Assert.Equal(9, result.Count);
         }
 
         [Fact]
@@ -171,7 +171,7 @@ namespace CollectaMundo.Tests
 
             var result = cards.Where(card => colorFilter.Matches(card)).ToList();
 
-            Assert.Equal(7, result.Count);
+            Assert.Equal(9, result.Count);
         }
 
         [Fact]
@@ -219,7 +219,7 @@ namespace CollectaMundo.Tests
 
             var result = cards.Where(card => colorFilter.Matches(card)).ToList();
 
-            Assert.Empty(result);
+            Assert.Single(result);
         }
 
         [Fact]
@@ -248,7 +248,7 @@ namespace CollectaMundo.Tests
 
             var result = cards.Where(card => colorFilter.Matches(card)).ToList();
 
-            Assert.Equal(3, result.Count);
+            Assert.Equal(11, result.Count);
         }
 
         [Fact]
@@ -263,7 +263,7 @@ namespace CollectaMundo.Tests
 
             var result = cards.Where(card => colorFilter.Matches(card)).ToList();
 
-            Assert.Equal(2, result.Count);
+            Assert.Equal(1, result.Count);
         }
 
         [Fact]
