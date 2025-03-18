@@ -668,7 +668,7 @@ namespace CollectaMundo
                         LEFT JOIN (
                             SELECT 
                                 cc.Name,
-                                REPLACE(GROUP_CONCAT(DISTINCT cc.colors),',',',') AS AggregatedColors
+                                REPLACE(GROUP_CONCAT(DISTINCT cc.colors), ' ', '') AS AggregatedColors
                             FROM cards cc
                             GROUP BY cc.Name
                         ) ccol ON c.Name = ccol.Name
@@ -769,7 +769,7 @@ namespace CollectaMundo
                         LEFT JOIN (
                             SELECT 
                                 cc.Name,
-                                REPLACE(GROUP_CONCAT(DISTINCT cc.colors),',',',') AS AggregatedColors
+                                REPLACE(GROUP_CONCAT(DISTINCT cc.colors), ' ', '') AS AggregatedColors
                             FROM cards cc
                             GROUP BY cc.Name
                         ) ccol ON c.Name = ccol.Name
@@ -855,7 +855,7 @@ namespace CollectaMundo
                         LEFT JOIN (
                             SELECT 
                                 cc.Name,
-                                REPLACE(GROUP_CONCAT(DISTINCT cc.colors),',',',') AS AggregatedColors
+                                REPLACE(GROUP_CONCAT(DISTINCT cc.colors), ' ', '') AS AggregatedColors
                             FROM cards cc
                             GROUP BY cc.Name
                         ) ccol ON c.Name = ccol.Name

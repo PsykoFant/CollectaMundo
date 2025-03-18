@@ -95,8 +95,8 @@ namespace CollectaMundo.Models
                     // Fields common to all CardSet lists
                     Name = GetFieldValue<string>(reader, "Name") ?? string.Empty,
                     ManaCost = ProcessManaCost(GetFieldValue<string>(reader, "ManaCost") ?? string.Empty),
-                    Colors = GetFieldValue<string>(reader, "Colors") ?? string.Empty,
-                    Type = GetFieldValue<string>(reader, "Type") ?? string.Empty,
+                    Colors = GetUniqueCommaSeparatedField(reader, "Colors"),
+                    Type = GetUniqueCommaSeparatedField(reader, "Type"),
                     ManaValue = GetFieldValue<double?>(reader, "ManaValue") ?? 0,
                     ManaCostImageBytes = GetFieldValue<byte[]>(reader, "ManaCostImage"),
                     ManaCostRaw = GetFieldValue<string>(reader, "ManaCost") ?? string.Empty
@@ -105,10 +105,10 @@ namespace CollectaMundo.Models
                 // ✅ Fields applicable to all except CardsInDecks
                 if (context != DataGridContext.CardsInDecks)
                 {
-                    card.Types = GetFieldValue<string>(reader, "Types") ?? string.Empty;
-                    card.SuperTypes = GetFieldValue<string>(reader, "SuperTypes") ?? string.Empty;
-                    card.SubTypes = GetFieldValue<string>(reader, "SubTypes") ?? string.Empty;
-                    card.Keywords = GetFieldValue<string>(reader, "Keywords") ?? string.Empty;
+                    card.Types = GetUniqueCommaSeparatedField(reader, "Types");
+                    card.SuperTypes = GetUniqueCommaSeparatedField(reader, "SuperTypes");
+                    card.SubTypes = GetUniqueCommaSeparatedField(reader, "SubTypes");
+                    card.Keywords = GetUniqueCommaSeparatedField(reader, "Keywords");
                     card.Text = GetFieldValue<string>(reader, "RulesText") ?? string.Empty;
                     card.Side = GetFieldValue<string>(reader, "Side") ?? string.Empty;
                 }
@@ -174,6 +174,25 @@ namespace CollectaMundo.Models
             {
                 char[] separator = ['{', '}'];
                 return string.Join(",", manaCostRaw.Split(separator, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
+            }
+
+
+            static string GetUniqueCommaSeparatedField(DbDataReader reader, string columnName)
+            {
+                // Get the raw string (using our existing generic method)
+                string? rawValue = GetFieldValue<string>(reader, columnName);
+                if (string.IsNullOrEmpty(rawValue))
+                {
+                    return string.Empty;
+                }
+
+                // Split on commas, trim, deduplicate (case-insensitive), and rejoin.
+                var uniqueItems = rawValue
+                    .Split([','], StringSplitOptions.RemoveEmptyEntries)
+                    .Select(item => item.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase);
+
+                return string.Join(",", uniqueItems);
             }
 
             // Utility to safely retrieve field values
@@ -266,13 +285,13 @@ namespace CollectaMundo.Models
             var randomCards = _allCards.OrderBy(card => random.Next()).Take(count);
 
             // Define the list of property names you want to output.
-            string[] propertiesToOutput = new string[]
-            {
+            string[] propertiesToOutput =
+            [
         "Name", "SetName", "ReleaseDate", "KeyRuneImage", "ManaCost", "ManaCostImage",
         "Types", "Colors", "SuperTypes", "SubTypes", "Type", "Keywords", "Text", // assuming "RulesText" is stored in "Text"
         "ManaValue", "Language", "Uuid", "Finishes", "Side", "Rarity",
         "CardsOwned", "CardsForTrade"
-            };
+            ];
 
             Debug.WriteLine($"Displaying {count} random cards out of {_allCards.Count}:");
 
@@ -337,8 +356,8 @@ namespace CollectaMundo.Models
             }
 
             // Define the list of properties to output.
-            string[] propertiesToOutput = new string[]
-            {
+            string[] propertiesToOutput =
+            [
         "Name",
         "SetName",
         "ReleaseDate",
@@ -360,7 +379,7 @@ namespace CollectaMundo.Models
         "Rarity",
         "CardsOwned",
         "CardsForTrade"
-            };
+            ];
 
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("----- Debug Card -----");
