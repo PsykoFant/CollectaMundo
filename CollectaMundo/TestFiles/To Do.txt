@@ -1,7 +1,6 @@
 TO DO 
 - MVVM refactor
 
- - Lav objekter til filter unittest
  - Unit test
 
  - Add to collectionManager til MVVM!
