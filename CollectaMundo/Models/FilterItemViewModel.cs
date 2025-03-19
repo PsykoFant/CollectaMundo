@@ -364,7 +364,7 @@ namespace CollectaMundo.Models
                 // Initialize typing delay timer for Single (freetext) filters
                 if (FilterCategory == FilterType.Single)
                 {
-                    _typingTimer = new Timer(1500) { AutoReset = false };
+                    _typingTimer = new Timer(200) { AutoReset = false };
                     _typingTimer.Elapsed += TypingTimer_Elapsed;
                 }
             }
