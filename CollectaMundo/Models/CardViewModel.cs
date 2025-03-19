@@ -13,8 +13,6 @@ namespace CollectaMundo.Models
 {
     public class CardViewModel : INotifyPropertyChanged
     {
-        //public static Dictionary<string, (string? ReadableLabel, string Property, FilterType Type, OperatorType[]? Operators, bool ShouldNotSplit)> CriteriaMappings => FilterCriteriaMappings.CriteriaMappings;
-
         public ObservableCollection<CardSet> ColorIcons { get; } = [];
 
         private readonly List<CardSet> _allCards = [];
@@ -419,8 +417,6 @@ namespace CollectaMundo.Models
             }
             Debug.WriteLine(sb.ToString());
         }
-
-
 
     }
 

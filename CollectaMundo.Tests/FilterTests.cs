@@ -1,8 +1,103 @@
-﻿using static CollectaMundo.MainWindow;
+﻿using CollectaMundo.Models;
+using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Tests
 {
+    public class FilterIntegrationTests
+    {
+        [Fact]
+        public void Test_CombinedNameAndNumericFilter()
+        {
+            // Arrange
+            // Create a CardViewModel and populate it with test cards.
+            var cardVM = new CardViewModel();
+            var testCards = FilterTestUtilities.GetTestCards();
+            // Here we simulate the loading process:
+            cardVM.AllCards.AddRange(testCards);
+            cardVM.AllCardsView.Refresh();
 
+            // Create a FilterViewModel based on the CardViewModel.
+            var filterVM = new FilterViewModel(cardVM);
+
+            // Now, suppose we want to filter by Name containing "Command" AND ManaValue greater than 1.
+            // (Assume that your mapping for "Name" and "ManaValue" exist in your FilterCriteriaMappings.)
+            var nameFilter = filterVM.Filters["Name"];
+            nameFilter.SelectedSingleOption = "Command";
+
+            var numericFilter = filterVM.Filters["ManaValue"];
+            numericFilter.SelectedNumericValue = 1;
+            numericFilter.OperatorSelection = OperatorType.GREATER_THAN;
+
+            // Act
+            filterVM.ApplyFiltering();
+            var filteredCards = cardVM.AllCardsView.Cast<CardSet>().ToList();
+
+            string expectedSummary = "Name: \"Command\" AND ManaValue > 1";
+
+            // Assert: Check that the FilterSummary property equals the expected string.
+            Assert.Equal(expectedSummary, filterVM.FilterSummary);
+
+            // Assert
+            // For example, we expect to see only cards whose Name contains "Command" and whose ManaValue > 1.
+            Assert.All(filteredCards, card =>
+            {
+                Assert.Contains("Command", card.Name, StringComparison.OrdinalIgnoreCase);
+                Assert.True(card.ManaValue > 1);
+            });
+        }
+
+        [Fact]
+        public void Test_Combined_Multi_Single_NumericFilter()
+        {
+            // Arrange
+            // Create a CardViewModel and populate it with test cards.
+            var cardVM = new CardViewModel();
+            var testCards = FilterTestUtilities.GetTestCards();
+            // Here we simulate the loading process:
+            cardVM.AllCards.AddRange(testCards);
+            cardVM.AllCardsView.Refresh();
+
+            // Create a FilterViewModel based on the CardViewModel.
+            var filterVM = new FilterViewModel(cardVM);
+
+            // Filter on rulestext
+            var textFilter = filterVM.Filters["Text"];
+            textFilter.SelectedSingleOption = "damage";
+
+            // Set a multi-select filter on "Colors":
+            // For example, require that a card's Colors include either "R" or "G".
+            var colorFilter = filterVM.Filters["Colors"];
+            colorFilter.SelectedOptions.Clear();
+            colorFilter.SelectedOptions.Add("R");
+            colorFilter.SelectedOptions.Add("G");
+            colorFilter.OperatorSelection = OperatorType.OR;
+
+            var numericFilter = filterVM.Filters["ManaValue"];
+            numericFilter.SelectedNumericValue = 3;
+            numericFilter.OperatorSelection = OperatorType.GREATER_THAN_OR_EQUALS;
+
+            // Act
+            filterVM.ApplyFiltering();
+            var filteredCards = cardVM.AllCardsView.Cast<CardSet>().ToList();
+
+            // Assert
+            Assert.All(filteredCards, card =>
+            {
+                Assert.Equal(5, filteredCards.Count);
+                Assert.Contains("Olivia Voldaren", filteredCards[0].Name, StringComparison.OrdinalIgnoreCase);
+                Assert.Contains("Struggle // Survive", filteredCards[1].Name, StringComparison.OrdinalIgnoreCase);
+                Assert.Contains("Garruk Relentless // Garruk, the Veil-Cursed", filteredCards[2].Name, StringComparison.OrdinalIgnoreCase);
+                Assert.Contains("Fire // Ice", filteredCards[3].Name, StringComparison.OrdinalIgnoreCase);
+                Assert.Contains("Lukka, Bound to Ruin", filteredCards[4].Name, StringComparison.OrdinalIgnoreCase);
+            });
+
+            string expectedSummary = "Text: \"damage\" AND Colors: {R OR G} AND ManaValue >= 3";
+
+            // Assert: Check that the FilterSummary property equals the expected string.
+            Assert.Equal(expectedSummary, filterVM.FilterSummary);
+
+        }
+    }
     public class FilterByNumericOptionsTests
     {
         [Fact]

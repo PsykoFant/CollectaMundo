@@ -1,8 +1,6 @@
 TO DO 
 - MVVM refactor
 
- - Unit test
-
  - Add to collectionManager til MVVM!
  - Card image brug MVVM (unit test)
 	- Fix meld creatures show bug

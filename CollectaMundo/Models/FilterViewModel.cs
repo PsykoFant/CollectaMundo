@@ -80,9 +80,6 @@ namespace CollectaMundo.Models
         {
             try
             {
-
-
-
                 var summary = new StringBuilder();
 
                 foreach (var filter in Filters.Values)
