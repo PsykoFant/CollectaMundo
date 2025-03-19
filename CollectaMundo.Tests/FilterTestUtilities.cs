@@ -155,6 +155,56 @@ namespace CollectaMundo.Tests
                 }
             };
         }
+
+        public static FilterItemViewModel CreateNumericFilter()
+        {
+            // Use a dummy FilterViewModel to avoid UI side‐effects.
+            var dummyFvm = new DummyFilterViewModel();
+
+            // Get the test cards.
+            var testCards = GetTestCards();
+            // Extract unique numeric values from the "ManaValue" field.
+            // (Assuming that ManaValue is effectively an integer value; if not, you might want to adjust accordingly.)
+            var numericOptions = testCards
+                .Select(static card => (int)card.ManaValue)
+                .Distinct()
+                .OrderBy(static x => x)
+                .ToList();
+
+
+            // For numeric filters you typically don't have pre–defined multi–select options,
+            // so we can pass an empty list for the FilterOption collection.
+            var emptyOptions = new List<FilterOption>();
+
+            // Create the filter item view model.
+            // "ManaValue" is used as the criteria key.
+            // The default text is "ManaValue ..." (or "Mana Value ..." for readability),
+            // and we pass the numericOptions as the list of available numeric values.
+            return new FilterItemViewModel("ManaValue", emptyOptions, "ManaValue ...", "Mana Value", dummyFvm, numericOptions);
+        }
+
+
+        public static FilterItemViewModel CreateNameFilter()
+        {
+            // Use the dummy view model to avoid UI side effects.
+            var dummyFvm = new DummyFilterViewModel();
+
+            // Get distinct names from the test cards.
+            var testCards = GetTestCards();
+            var distinctNames = testCards
+                .Select(static card => card.Name)
+                .Where(static name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            // Create FilterOption objects for each distinct name.
+            var options = distinctNames.Select(static name => new FilterOption(name)).ToList();
+
+            // "Name" is a single-selection (free text) filter.
+            // Set the default text to "Name ..." and use "Name" as the readable label.
+            return new FilterItemViewModel("Name", options, "Name ...", "Name", dummyFvm);
+        }
+
         public static FilterItemViewModel CreateColorFilter()
         {
             var dummyFvm = new DummyFilterViewModel();
@@ -211,6 +261,7 @@ namespace CollectaMundo.Tests
 
             return new FilterItemViewModel("Types", options, "Types ...", "Types", dummyFvm);
         }
+
     }
 
     public class DummyFilterViewModel : FilterViewModel

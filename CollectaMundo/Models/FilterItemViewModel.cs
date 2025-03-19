@@ -63,11 +63,7 @@ namespace CollectaMundo.Models
                         FreetextSearch = value ?? DefaultText;
                     }
 
-                    // Trigger filtering (now safe because we're on the UI thread).
-                    if (!MainWindow.CurrentInstance._isStartup)
-                    {
-                        _filterViewModel.ApplyFiltering();
-                    }
+                    _filterViewModel.ApplyFiltering();
                 }
             }
         }

@@ -37,7 +37,7 @@ namespace CollectaMundo.Models
         {
             try
             {
-                return FilterCriteriaMappings.CriteriaMappings.Select(entry =>
+                return [.. FilterCriteriaMappings.CriteriaMappings.Select(entry =>
                 {
                     var sourceCollection = entry.Value.Property == nameof(CardViewModel.AllCards)
                         ? cardViewModel.AllCards
@@ -51,16 +51,14 @@ namespace CollectaMundo.Models
                     if (entry.Key == "Colors")
                     {
                         var predefinedColors = new List<string> { "W", "U", "B", "R", "G", "C", "X", "Colorless" };
-                        filteredValues = predefinedColors.Union(filteredValues).ToList();
+                        filteredValues = [.. predefinedColors.Union(filteredValues)];
                     }
 
                     // Convert numeric filters to List<int>
                     List<int>? numericValues = null;
                     if (entry.Value.Type == FilterType.Numeric)
                     {
-                        numericValues = filteredValues.Where(v => int.TryParse(v, out _))
-                                                      .Select(int.Parse)
-                                                      .ToList();
+                        numericValues = [.. filteredValues.Where(v => int.TryParse(v, out _)).Select(int.Parse)];
                     }
 
                     // Convert string options into FilterOption objects
@@ -93,7 +91,7 @@ namespace CollectaMundo.Models
                         DefaultText = defaultText,
                         ReadableLabel = readableLabel
                     };
-                }).ToList();
+                })];
             }
             catch (Exception ex)
             {
