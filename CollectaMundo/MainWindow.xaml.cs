@@ -82,7 +82,7 @@ namespace CollectaMundo
         // The CardSet object which holds all the cards read from db
         //public readonly List<CardSet> allCards = [];
         public readonly List<CardSet> myCards = [];
-        public readonly List<CardSet> allCardsForDecks = [];
+        //public readonly List<CardSet> allCardsForDecks = [];
         public readonly List<CardSet> cardsInDecks = [];
 
         public enum DataGridContext
@@ -207,22 +207,6 @@ namespace CollectaMundo
 
             await ShowStatusWindowAsync(false);
 
-            //CardVM.DebugRandomCards(5);
-
-            //CardVM.DebugCardByName("Lovestruck Beast // Heart's Desire");
-            //CardVM.DebugCardByName("Lovestruck Beast // Heart's Desire");
-            //CardVM.DebugCardByName("Tundra");
-            //CardVM.DebugCardByName("Kozilek's Command");
-            //CardVM.DebugCardByName("Propagator Drone");
-            //CardVM.DebugCardByName("Fire // Ice");
-            //CardVM.DebugCardByName("Begin the Invasion");
-            //CardVM.DebugCardByName("Lukka, Bound to Ruin");
-            //CardVM.DebugCardByName("Cat");
-            //CardVM.DebugCardByName("Bounty: Eriana, Wrecking Ball // Wanted!");
-            //CardVM.DebugCardByName("Black Lotus");
-            //CardVM.DebugCardByName("Healing Salve");
-            // Lukka, Bound to Ruin
-            // Begin the Invasion
         }
         public async Task LoadAllDecksAsync()
         {
