@@ -935,8 +935,9 @@
                                                   Height="20"
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  ItemsSource="{Binding FilterVM.Filters[Name].FilteredOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  SelectedItem="{Binding FilterVM.Filters[Name].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  ItemsSource="{Binding FilteredOptions}"
+                                                  DisplayMemberPath="OptionName"
+                                                  SelectedItem="OptionName"
                                                   Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
@@ -968,8 +969,9 @@
                                                   Height="20"
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[0][1], RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  ItemsSource="{Binding FilterVM.Filters[SetName].FilteredOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  SelectedItem="{Binding FilterVM.Filters[SetName].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  ItemsSource="{Binding FilteredOptions}"
+                                                  DisplayMemberPath="OptionName"
+                                                  SelectedItem="OptionName"
                                                   Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
@@ -1181,14 +1183,15 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Label Content="Name" VerticalAlignment="Center" Grid.Column="0"/>
-                                        <ComboBox IsTextSearchEnabled="True"
+                                        <ComboBox IsTextSearchEnabled="False"
                                                   Grid.Column="1"
                                                   HorizontalAlignment="Stretch"
                                                   Height="20"
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[1][0], RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  SelectedItem="{Binding FilterVM.Filters[Name].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  ItemsSource="{Binding FilteredOptions}"
+                                                  DisplayMemberPath="OptionName"
+                                                  SelectedItem="OptionName"
                                                   Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
@@ -1214,14 +1217,15 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <Label Content="Set" VerticalAlignment="Center" Grid.Column="0"/>
-                                        <ComboBox IsTextSearchEnabled="True"
+                                        <ComboBox IsTextSearchEnabled="False"
                                                   Grid.Column="1"
                                                   HorizontalAlignment="Stretch"
                                                   Height="20"
                                                   IsEditable="True"
                                                   Width="{Binding ColumnWidths[1][1], RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  ItemsSource="{Binding FilterVM.Filters[SetName].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  SelectedItem="{Binding FilterVM.Filters[SetName].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  ItemsSource="{Binding FilteredOptions}"
+                                                  DisplayMemberPath="OptionName"
+                                                  SelectedItem="OptionName"
                                                   Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
@@ -1421,15 +1425,16 @@
                                                     <ColumnDefinition Width="*"/>
                                                 </Grid.ColumnDefinitions>
                                                 <Label Content="Name" VerticalAlignment="Center" Grid.Column="0"/>
-                                                <ComboBox IsTextSearchEnabled="True"
-                                                          Grid.Column="1"
-                                                          HorizontalAlignment="Stretch"
-                                                          Height="20"
-                                                          IsEditable="True"
-                                                          Width="{Binding ColumnWidths[2][0], RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          ItemsSource="{Binding FilterVM.Filters[Name].AvailableOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          SelectedItem="{Binding FilterVM.Filters[Name].SelectedSingleOption, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                <ComboBox IsTextSearchEnabled="False"
+                                                  Grid.Column="1"
+                                                  HorizontalAlignment="Stretch"
+                                                  Height="20"
+                                                  IsEditable="True"
+                                                  Width="{Binding ColumnWidths[2][0], RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  ItemsSource="{Binding FilteredOptions}"
+                                                  DisplayMemberPath="OptionName"
+                                                  SelectedItem="OptionName"
+                                                  Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                                     <ComboBox.ItemsPanel>
                                                         <ItemsPanelTemplate>
                                                             <VirtualizingStackPanel />

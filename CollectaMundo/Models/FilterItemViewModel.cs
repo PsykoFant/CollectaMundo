@@ -240,6 +240,9 @@ namespace CollectaMundo.Models
                     _freetextSearch = value;
                     OnPropertyChanged(nameof(FreetextSearch));
 
+                    // Update FilterText so the combobox dropdown items are filtered immediately.
+                    FilterText = value;
+
                     if (FilterCategory == FilterType.Single)
                     {
                         ResetTypingDelay();

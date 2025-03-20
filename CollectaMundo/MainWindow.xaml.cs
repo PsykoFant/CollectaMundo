@@ -211,7 +211,7 @@ namespace CollectaMundo
 
             //CardVM.DebugCardByName("Lovestruck Beast // Heart's Desire");
             //CardVM.DebugCardByName("Lovestruck Beast // Heart's Desire");
-            CardVM.DebugCardByName("Tundra");
+            //CardVM.DebugCardByName("Tundra");
             //CardVM.DebugCardByName("Kozilek's Command");
             //CardVM.DebugCardByName("Propagator Drone");
             //CardVM.DebugCardByName("Fire // Ice");

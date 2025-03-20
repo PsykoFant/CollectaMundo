@@ -60,6 +60,7 @@ namespace CollectaMundo.Models
             ApplyFilterToView(_cardViewModel.MyCollectionView);
             ApplyFilterToView(_cardViewModel.AllCardsForDecksView);
             UpdateFilterSummary();
+            DebugFullFilterState();
         }
 
         // Update the filter summary
