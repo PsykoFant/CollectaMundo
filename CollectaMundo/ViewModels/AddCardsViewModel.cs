@@ -8,7 +8,7 @@ using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels
 {
-    public class AddCardsViewModel : INotifyPropertyChanged
+    public class AddCardsViewModel(ICardCollectionService cardCollectionService) : INotifyPropertyChanged
     {
         // INotifyPropertyChanged implementation...
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -18,13 +18,7 @@ namespace CollectaMundo.ViewModels
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
 
         // Business logic manager (injected or instantiated here)
-        private readonly CardCollectionManager _cardCollectionManager;
-
-        public AddCardsViewModel(ICardCollectionService cardCollectionService)
-        {
-            _cardCollectionManager = new CardCollectionManager(cardCollectionService);
-            CardsToAdd.Add(new CardSet { Name = "Test Card", SetName = "Test Set", Uuid = "dummy" });
-        }
+        private readonly CardCollectionManager _cardCollectionManager = new(cardCollectionService);
 
         // Command to add selected cards from the DataGrid to the listview.
         public ICommand AddSelectedCardsCommand => new RelayCommand<object>(async param =>

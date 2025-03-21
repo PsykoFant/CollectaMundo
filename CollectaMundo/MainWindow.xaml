@@ -776,6 +776,27 @@
                         <GridView>
                             <GridViewColumn Header="Card Name" DisplayMemberBinding="{Binding Name}"/>
                             <GridViewColumn Header="Set" DisplayMemberBinding="{Binding SetName}"/>
+                            <GridViewColumn Header="Condition">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding Conditions}" SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}" SelectionChanged="ListViewComboBox_SelectionChanged"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Finish">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding AvailableFinishes}" SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}" SelectionChanged="ListViewComboBox_SelectionChanged"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Language">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ComboBox ItemsSource="{Binding OtherLanguages}" SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}" SelectionChanged="ListViewComboBox_SelectionChanged"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
                             <!-- Additional columns (Condition, Finish, Language, etc.) with corresponding DataTemplates can be defined here -->
                         </GridView>
                     </ListView.View>
