@@ -154,8 +154,6 @@ namespace CollectaMundo
             InitializeComponent();
             _currentInstance = this;
 
-            this.DataContext = this;
-
             CardVM = new CardViewModel();
             ICardCollectionService cardCollectionService = new CardCollectionService();
             AddCardsVM = new AddCardsViewModel(cardCollectionService);
@@ -202,7 +200,7 @@ namespace CollectaMundo
             CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
             CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
 
-            CardsToAddListView.ItemsSource = addToCollectionManager.CardItemsToAdd;
+            //CardsToAddListView.ItemsSource = addToCollectionManager.CardItemsToAdd;
             CardsToEditListView.ItemsSource = addToCollectionManager.CardItemsToEdit;
 
             // Start on the search and filter all cards page            
