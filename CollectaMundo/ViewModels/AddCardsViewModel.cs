@@ -12,11 +12,10 @@ namespace CollectaMundo.ViewModels
     {
         // INotifyPropertyChanged implementation...
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         // Observable collection bound to the ListView (CardsToAddListView)
-        public ObservableCollection<CardSet> CardsToAdd { get; } = new ObservableCollection<CardSet>();
+        public ObservableCollection<CardSet> CardsToAdd { get; } = [];
 
         // Business logic manager (injected or instantiated here)
         private readonly CardCollectionManager _cardCollectionManager;
@@ -24,9 +23,10 @@ namespace CollectaMundo.ViewModels
         public AddCardsViewModel(ICardCollectionService cardCollectionService)
         {
             _cardCollectionManager = new CardCollectionManager(cardCollectionService);
+            CardsToAdd.Add(new CardSet { Name = "Test Card", SetName = "Test Set", Uuid = "dummy" });
         }
 
-        // Command to add selected cards from the DataGrid
+        // Command to add selected cards from the DataGrid to the listview.
         public ICommand AddSelectedCardsCommand => new RelayCommand<object>(async param =>
         {
             // Assuming the parameter is bound to SelectedItems from the DataGrid.
@@ -35,8 +35,7 @@ namespace CollectaMundo.ViewModels
                 var cards = selectedItems.OfType<CardSet>();
                 foreach (var card in cards)
                 {
-                    // Call manager to add or update card in the in-memory collection.
-                    await _cardCollectionManager.AddOrUpdateCardAsync(card, CardsToAdd);
+                    await _cardCollectionManager.AddCardToListViewAsync(card, CardsToAdd);
                 }
             }
         });

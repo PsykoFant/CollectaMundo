@@ -10,6 +10,65 @@ namespace CollectaMundo.Managers
     {
         private readonly ICardCollectionService _dataService = dataService ?? throw new ArgumentNullException(nameof(dataService));
 
+        public async Task AddCardToListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection)
+        {
+            if (selectedCard.Uuid == null)
+            {
+                throw new InvalidOperationException("Card UUID is null, cannot fetch languages.");
+            }
+
+            try
+            {
+                // Check if the card already exists in the target collection.
+                if (targetCollection.Any(card => card.Uuid == selectedCard.Uuid))
+                {
+                    return;
+                }
+
+                await DBAccess.OpenConnectionAsync();
+                var languages = await _dataService.FetchLanguagesForCardAsync(selectedCard.Uuid);
+                var finishes = await _dataService.FetchFinishesForCardAsync(selectedCard.Uuid);
+                DBAccess.CloseConnection();
+
+                var newItem = new CardSet
+                {
+                    Name = selectedCard.Name,
+                    SetName = selectedCard.SetName,
+                    Uuid = selectedCard.Uuid,
+                    CardsOwned = 1,
+                    CardsForTrade = 0,
+                    AvailableFinishes = finishes,
+                    SelectedFinish = finishes.FirstOrDefault(),
+                    Language = selectedCard.Language,
+                    OtherLanguages = languages,
+                    SelectedCondition = "Near Mint",
+                };
+
+                // If editing an existing card item, carry over additional properties.
+                if (selectedCard is CardSet cardItem)
+                {
+                    newItem.CardId = cardItem.CardId;
+                    newItem.CardsOwned = cardItem.CardsOwned;
+                    newItem.CardsForTrade = cardItem.CardsForTrade;
+                    newItem.SelectedFinish = cardItem.SelectedFinish;
+                    newItem.SelectedCondition = cardItem.SelectedCondition;
+                }
+
+                // Ensure that the addition to the target collection happens on the UI thread.
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    targetCollection.Add(newItem);
+                    Debug.WriteLine("New item added; count: " + targetCollection.Count);
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in AddCardToListViewAsync: {ex.Message}");
+                throw;
+            }
+        }
+
+
         // Adds a new card or updates an existing one.
         public async Task AddOrUpdateCardAsync(CardSet card, ObservableCollection<CardSet> inMemoryCollection)
         {

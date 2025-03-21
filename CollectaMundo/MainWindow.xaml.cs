@@ -153,6 +153,9 @@ namespace CollectaMundo
         {
             InitializeComponent();
             _currentInstance = this;
+
+            this.DataContext = this;
+
             CardVM = new CardViewModel();
             ICardCollectionService cardCollectionService = new CardCollectionService();
             AddCardsVM = new AddCardsViewModel(cardCollectionService);
