@@ -35,7 +35,6 @@ namespace CollectaMundo.Services
             }
             return null;
         }
-
         public async Task AddCardAsync(CardSet card)
         {
             string insertSql = @"
@@ -59,7 +58,6 @@ namespace CollectaMundo.Services
                 throw;
             }
         }
-
         public async Task UpdateCardAsync(CardSet card)
         {
             string updateSql = @"
@@ -84,7 +82,6 @@ namespace CollectaMundo.Services
                 throw;
             }
         }
-
         public async Task DeleteCardAsync(CardSet card)
         {
             string deleteSql = "DELETE FROM myCollection WHERE uuid = @uuid";
@@ -100,7 +97,6 @@ namespace CollectaMundo.Services
                 throw;
             }
         }
-
         public async Task<List<string>> FetchLanguagesForCardAsync(string uuid)
         {
             if (string.IsNullOrEmpty(uuid))
@@ -136,7 +132,6 @@ namespace CollectaMundo.Services
             }
             return languages;
         }
-
         public async Task<List<string>> FetchFinishesForCardAsync(string uuid)
         {
             var finishes = new List<string>();

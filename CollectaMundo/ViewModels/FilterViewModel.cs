@@ -1,4 +1,6 @@
-﻿using CollectaMundo.Utilities;
+﻿using CollectaMundo.Managers;
+using CollectaMundo.Models;
+using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
@@ -8,7 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using static CollectaMundo.MainWindow;
 
-namespace CollectaMundo.Models
+namespace CollectaMundo.ViewModels
 {
     public class FilterViewModel : INotifyPropertyChanged
     {
@@ -36,7 +38,7 @@ namespace CollectaMundo.Models
             }
 
             // Initialize the command using the ClearFilters method.
-            ClearFiltersCommand = new RelayCommand(ClearFilters);
+            ClearFiltersCommand = new RelayCommand<object>(_ => ClearFilters());
         }
 
         // Applies the current filter criteria to the provided ListCollectionView.
@@ -60,7 +62,7 @@ namespace CollectaMundo.Models
             ApplyFilterToView(_cardViewModel.MyCollectionView);
             ApplyFilterToView(_cardViewModel.AllCardsForDecksView);
             UpdateFilterSummary();
-            DebugFullFilterState();
+            //DebugFullFilterState();
         }
 
         // Update the filter summary
@@ -155,7 +157,7 @@ namespace CollectaMundo.Models
 
         // Clears all filter selections, resetting each filter to its default state.
         public ICommand? ClearFiltersCommand { get; }
-        public void ClearFilters()
+        private void ClearFilters()
         {
             foreach (var filter in Filters.Values)
             {

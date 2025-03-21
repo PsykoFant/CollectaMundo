@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Models;
+﻿using CollectaMundo.ViewModels;
 using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Utilities

@@ -763,7 +763,26 @@
                     <TextBlock x:Name="AddStatusTextBlock" TextWrapping="Wrap" VerticalAlignment="Top"/>
                 </ScrollViewer>
                 <!--Cards to add listview-->
-                <ListView x:Name="CardsToAddListView" Margin="0,70,0,0" VerticalAlignment="Top" Height="170" Visibility="Collapsed">
+                <ListView x:Name="CardsToAddListView" 
+                  ItemsSource="{Binding AddCardsVM.CardsToAdd, RelativeSource={RelativeSource AncestorType=Window}}" 
+                  Margin="0,70,0,0" VerticalAlignment="Top" Height="170"
+                  Visibility="Visible">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Card Name" DisplayMemberBinding="{Binding Name}"/>
+                            <GridViewColumn Header="Set" DisplayMemberBinding="{Binding SetName}"/>
+                            <!-- Additional columns (Condition, Finish, Language, etc.) with corresponding DataTemplates can be defined here -->
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+
+
+                <!--<ListView x:Name="CardsToAddListView" Margin="0,70,0,0" VerticalAlignment="Top" Height="170" Visibility="Collapsed">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -854,14 +873,13 @@
                             </GridViewColumn>
                         </GridView>
                     </ListView.View>
-                </ListView>
+                </ListView>-->
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
                           ItemsSource="{Binding CardVM.AllCardsView}"
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"
-                          MouseDoubleClick="AddCardsToListView"
                           ScrollViewer.CanContentScroll="True"
                           EnableColumnVirtualization="True"
                           VirtualizingPanel.IsVirtualizing="True"
@@ -871,6 +889,12 @@
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                           behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
                           behaviors:DataGridColumnResizerBehavior.DataGridIndex="0">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="MouseDoubleClick">
+                            <i:InvokeCommandAction Command="{Binding AddCardsVM.AddSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                   CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
                     <DataGrid.ContextMenu>
                         <ContextMenu Style="{StaticResource MPlantin}">
                             <MenuItem Header="Add selected card(s) to Collection" Click="ButtonAddCardsToMyCollection_Click" Style="{StaticResource BelerenBold}"/>

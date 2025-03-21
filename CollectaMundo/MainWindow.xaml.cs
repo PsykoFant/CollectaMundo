@@ -1,5 +1,7 @@
 using CollectaMundo.Behaviors;
 using CollectaMundo.Models;
+using CollectaMundo.Services;
+using CollectaMundo.ViewModels;
 using ServiceStack;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -20,6 +22,7 @@ namespace CollectaMundo
         #region Set up varibales
         public CardViewModel CardVM { get; }
         public FilterViewModel? FilterVM { get; private set; }
+        public AddCardsViewModel AddCardsVM { get; set; }
 
         private static MainWindow? _currentInstance;
         public static MainWindow CurrentInstance
@@ -151,6 +154,8 @@ namespace CollectaMundo
             InitializeComponent();
             _currentInstance = this;
             CardVM = new CardViewModel();
+            ICardCollectionService cardCollectionService = new CardCollectionService();
+            AddCardsVM = new AddCardsViewModel(cardCollectionService);
 
             // Set up system
             Loaded += async (sender, args) =>

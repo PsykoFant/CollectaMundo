@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.Models;
+using CollectaMundo.ViewModels;
 using Microsoft.Win32;
 using ServiceStack;
 using System.Collections.ObjectModel;

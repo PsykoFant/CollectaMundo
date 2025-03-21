@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.Models;
+using CollectaMundo.ViewModels;
 
 namespace CollectaMundo.Tests
 {
