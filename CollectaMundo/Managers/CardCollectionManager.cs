@@ -45,20 +45,20 @@ namespace CollectaMundo.Managers
                 };
 
                 // If editing an existing card item, carry over additional properties.
-                if (selectedCard is CardSet cardItem)
-                {
-                    newItem.CardId = cardItem.CardId;
-                    newItem.CardsOwned = cardItem.CardsOwned;
-                    newItem.CardsForTrade = cardItem.CardsForTrade;
-                    newItem.SelectedFinish = cardItem.SelectedFinish;
-                    newItem.SelectedCondition = cardItem.SelectedCondition;
-                }
+                //if (selectedCard is CardSet cardItem)
+                //{
+                //    newItem.CardId = cardItem.CardId;
+                //    newItem.CardsOwned = cardItem.CardsOwned;
+                //    newItem.CardsForTrade = cardItem.CardsForTrade;
+                //    newItem.SelectedFinish = cardItem.SelectedFinish;
+                //    newItem.SelectedCondition = cardItem.SelectedCondition;
+                //}
 
                 // Ensure that the addition to the target collection happens on the UI thread.
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
                     targetCollection.Add(newItem);
-                    Debug.WriteLine("New item added; count: " + targetCollection.Count);
+                    //Debug.WriteLine("New item added; count: " + targetCollection.Count);
                 });
             }
             catch (Exception ex)
