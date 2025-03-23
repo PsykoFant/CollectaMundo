@@ -44,17 +44,25 @@ namespace CollectaMundo.ViewModels
         // Applies the current filter criteria to the provided ListCollectionView.
         private void ApplyFilterToView(ListCollectionView view)
         {
-            view.Filter = item =>
+            try
             {
-                if (item is CardSet card)
+                view.Filter = item =>
                 {
-                    // Only include the card if it satisfies all active filters.
-                    return Filters.Values.All(filter => filter.Matches(card));
-                }
-                return false;
-            };
+                    if (item is CardSet card)
+                    {
+                        // Only include the card if it satisfies all active filters.
+                        return Filters.Values.All(filter => filter.Matches(card));
+                    }
+                    return false;
+                };
 
-            view.Refresh();
+                view.Refresh();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error applying filter to view: {ex.Message}");
+                MessageBox.Show($"Error applying filter to view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         public virtual void ApplyFiltering()
         {

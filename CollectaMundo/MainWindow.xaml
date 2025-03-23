@@ -907,6 +907,7 @@
                           CanUserAddRows="False"
                           CanUserSortColumns="True"
                           HorizontalAlignment="Stretch"
+                          IsReadOnly="True"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                           behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
                           behaviors:DataGridColumnResizerBehavior.DataGridIndex="0">

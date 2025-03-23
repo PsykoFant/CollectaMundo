@@ -9,7 +9,6 @@ namespace CollectaMundo.Managers
     public class CardCollectionManager(ICardCollectionService dataService)
     {
         private readonly ICardCollectionService _dataService = dataService ?? throw new ArgumentNullException(nameof(dataService));
-
         public async Task AddCardToListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection)
         {
             if (selectedCard.Uuid == null)
@@ -44,22 +43,7 @@ namespace CollectaMundo.Managers
                     SelectedCondition = "Near Mint",
                 };
 
-                // If editing an existing card item, carry over additional properties.
-                //if (selectedCard is CardSet cardItem)
-                //{
-                //    newItem.CardId = cardItem.CardId;
-                //    newItem.CardsOwned = cardItem.CardsOwned;
-                //    newItem.CardsForTrade = cardItem.CardsForTrade;
-                //    newItem.SelectedFinish = cardItem.SelectedFinish;
-                //    newItem.SelectedCondition = cardItem.SelectedCondition;
-                //}
-
-                // Ensure that the addition to the target collection happens on the UI thread.
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                {
-                    targetCollection.Add(newItem);
-                    //Debug.WriteLine("New item added; count: " + targetCollection.Count);
-                });
+                targetCollection.Add(newItem);
             }
             catch (Exception ex)
             {
