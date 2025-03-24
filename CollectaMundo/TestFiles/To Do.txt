@@ -2,6 +2,11 @@ TO DO
 - MVVM refactor
 
  - Add to collectionManager til MVVM!
+	- Async warning
+	- Unselect items i datagrid
+
+
+
  - Card image brug MVVM (unit test)
 	- Fix meld creatures show bug
  - Backup restore brug MVVM (unit test) 
