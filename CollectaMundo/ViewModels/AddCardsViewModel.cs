@@ -4,33 +4,51 @@ using CollectaMundo.Services;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Windows;
 using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels
 {
     public class AddCardsViewModel(ICardCollectionService cardCollectionService) : INotifyPropertyChanged
     {
-        // INotifyPropertyChanged implementation...
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        protected void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        // Observable collection bound to the ListView (CardsToAddListView)
-        public ObservableCollection<CardSet> CardsToAdd { get; } = [];
+        // Collection bound to the ListView.
+        public ObservableCollection<CardSet> CardsToAdd { get; } = new ObservableCollection<CardSet>();
 
-        // Business logic manager (injected or instantiated here)
+        // Controls visibility of the CardsToAdd listview.
+        private Visibility _cardsToAddVisibility = Visibility.Collapsed;
+        public Visibility CardsToAddVisibility
+        {
+            get => _cardsToAddVisibility;
+            set
+            {
+                if (_cardsToAddVisibility != value)
+                {
+                    _cardsToAddVisibility = value;
+                    OnPropertyChanged(nameof(CardsToAddVisibility));
+                }
+            }
+        }
+
+        // Business logic manager.
         private readonly CardCollectionManager _cardCollectionManager = new(cardCollectionService);
 
-        // Command to add selected cards from the DataGrid to the listview.
+        // Command to add selected cards from the DataGrid.
         public ICommand AddSelectedCardsCommand => new RelayCommand<object>(async param =>
         {
-            // Assuming the parameter is bound to SelectedItems from the DataGrid.
             if (param is IEnumerable<object> selectedItems)
             {
                 var cards = selectedItems.OfType<CardSet>();
                 foreach (var card in cards)
                 {
+                    // Call the manager to add the card to the in-memory collection.
                     await _cardCollectionManager.AddCardToListViewAsync(card, CardsToAdd);
                 }
+                // After processing, make the listview visible.
+                CardsToAddVisibility = Visibility.Visible;
             }
         });
     }

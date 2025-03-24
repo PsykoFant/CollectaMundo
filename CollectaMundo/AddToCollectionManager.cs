@@ -249,10 +249,10 @@ namespace CollectaMundo
         }
         public static void ShowCardsToAddListView()
         {
-            MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Visible;
-            MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
-            MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Visible;
+            //MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Collapsed;
+            //MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Visible;
+            //MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
+            //MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Visible;
         }
         public static void ShowCardsToEditListView()
         {
@@ -263,10 +263,10 @@ namespace CollectaMundo
         }
         public static void HideCardsToAddListView(bool showLogo)
         {
-            MainWindow.CurrentInstance.LogoSmall.Visibility = showLogo ? Visibility.Visible : Visibility.Collapsed;
-            MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Collapsed;
+            //MainWindow.CurrentInstance.LogoSmall.Visibility = showLogo ? Visibility.Visible : Visibility.Collapsed;
+            //MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Collapsed;
+            //MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
+            //MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Collapsed;
         }
         public static void HideCardsToEditListView(bool showLogo)
         {

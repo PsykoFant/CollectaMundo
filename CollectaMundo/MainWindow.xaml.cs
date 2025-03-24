@@ -171,6 +171,8 @@ namespace CollectaMundo
             // Update the statusbox with messages from methods in DownloadAndPrepareDB and UpdateDB
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
+
+            Debug.WriteLine($"Visiblity of CardsToAddVisibility: {AddCardsVM.CardsToAddVisibility.ToString()}");
         }
 
         #region Load data and populate UI elements
@@ -420,7 +422,7 @@ namespace CollectaMundo
                 if (grid.SelectedItem is CardSet cardSetCard && grid.Name == "AllCardsDataGrid")
                 {
                     AddToCollectionManager.AddOrEditCardHandler(cardSetCard, addToCollectionManager.CardItemsToAdd);
-                    AddToCollectionManager.ShowCardsToAddListView();
+                    //AddToCollectionManager.ShowCardsToAddListView();
                 }
                 else if (grid.SelectedItem is CardSet cardItemCard && grid.Name == "MyCollectionDataGrid")
                 {
@@ -432,7 +434,7 @@ namespace CollectaMundo
         }
         private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
         {
-            AddToCollectionManager.AddCardsToListView(AllCardsDataGrid, AddToCollectionManager.ShowCardsToAddListView, addToCollectionManager.CardItemsToAdd);
+            //AddToCollectionManager.AddCardsToListView(AllCardsDataGrid, AddToCollectionManager.ShowCardsToAddListView, addToCollectionManager.CardItemsToAdd);
         }
         private void ButtonEditCardsInCollection_Click(object sender, RoutedEventArgs e)
         {
