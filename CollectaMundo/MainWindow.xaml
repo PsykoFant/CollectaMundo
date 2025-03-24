@@ -757,21 +757,31 @@
                 </Label>
 
                 <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonSubmitCardsToMyCollection_Click"/>
-                <Button x:Name="ButtonClearCardsToAdd" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonClearCardsToAdd_Click"/>
+                <!--<Button x:Name="ButtonClearCardsToAdd" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonClearCardsToAdd_Click"/>-->
+
+                <Button x:Name="ButtonClearCardsToAdd"
+                    Content="Clear cards without submitting"
+                    HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top"
+                    Width="200" Height="20"
+                    Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
+                    Command="{Binding DataContext.AddCardsVM.ClearCardsToAddCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+
+
                 <Button x:Name="ButtonAddCardsToMyCollection"
                     Content="Add selected cards to my collection"
                     HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top"
                     Width="200" Height="20"
                     Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
                     Command="{Binding DataContext.AddCardsVM.AddSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                    CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
+                    CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />                
+                
                 <ScrollViewer x:Name="AddStatusScrollViewer" HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Visibility="Collapsed">
                     <TextBlock x:Name="AddStatusTextBlock" TextWrapping="Wrap" VerticalAlignment="Top"/>
                 </ScrollViewer>
                 <!--Cards to add listview-->
                 <ListView x:Name="CardsToAddListView" 
                           ItemsSource="{Binding AddCardsVM.CardsToAdd, RelativeSource={RelativeSource AncestorType=Window}}"
-                          Visibility="{Binding AddCardsVM.CardsToAddVisibility}"
+                          Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
                           Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">

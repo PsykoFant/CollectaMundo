@@ -51,5 +51,18 @@ namespace CollectaMundo.ViewModels
                 CardsToAddVisibility = Visibility.Visible;
             }
         });
+
+        public ICommand ClearCardsToAddCommand => new RelayCommand<object>(async param =>
+        {
+            // Clear the in-memory collection.
+            CardsToAdd.Clear();
+
+            // Hide the add cards list area.
+            CardsToAddVisibility = Visibility.Collapsed;
+
+            // Optionally, update other UI state properties if you exposed them,
+            // such as for a Submit button or a logo.
+        });
+
     }
 }
