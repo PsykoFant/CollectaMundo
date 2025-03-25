@@ -264,9 +264,9 @@ namespace CollectaMundo
         public static void HideCardsToAddListView(bool showLogo)
         {
             MainWindow.CurrentInstance.LogoSmall.Visibility = showLogo ? Visibility.Visible : Visibility.Collapsed;
-            MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Collapsed;
+            //MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Collapsed;
+            //MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Collapsed;
         }
         public static void HideCardsToEditListView(bool showLogo)
         {
@@ -739,8 +739,8 @@ namespace CollectaMundo
         // Adjust listviews column widths so text is not clipped
         public static void AdjustColumnWidths()
         {
-            AdjustListViewColumnWidths(MainWindow.CurrentInstance.CardsToAddListView);
-            AdjustListViewColumnWidths(MainWindow.CurrentInstance.CardsToEditListView);
+            //AdjustListViewColumnWidths(MainWindow.CurrentInstance.CardsToAddListView);
+            //AdjustListViewColumnWidths(MainWindow.CurrentInstance.CardsToEditListView);
         }
         private static void AdjustListViewColumnWidths(ListView listView)
         {

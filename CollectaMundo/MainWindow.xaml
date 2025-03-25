@@ -757,18 +757,15 @@
                 </Label>
 
                 <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonSubmitCardsToMyCollection_Click"/>
-                <!--<Button x:Name="ButtonClearCardsToAdd" Content="Clear cards without submitting" HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed" Click="ButtonClearCardsToAdd_Click"/>-->
 
-                <Button x:Name="ButtonClearCardsToAdd"
-                    Content="Clear cards without submitting"
+                <Button Content="Clear cards without submitting"
                     HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top"
                     Width="200" Height="20"
                     Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
                     Command="{Binding DataContext.AddCardsVM.ClearCardsToAddCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
 
 
-                <Button x:Name="ButtonAddCardsToMyCollection"
-                    Content="Add selected cards to my collection"
+                <Button Content="Add selected cards to my collection"
                     HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top"
                     Width="200" Height="20"
                     Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
@@ -779,9 +776,9 @@
                     <TextBlock x:Name="AddStatusTextBlock" TextWrapping="Wrap" VerticalAlignment="Top"/>
                 </ScrollViewer>
                 <!--Cards to add listview-->
-                <ListView x:Name="CardsToAddListView" 
-                          ItemsSource="{Binding AddCardsVM.CardsToAdd, RelativeSource={RelativeSource AncestorType=Window}}"
+                <ListView ItemsSource="{Binding AddCardsVM.CardsToAdd, RelativeSource={RelativeSource AncestorType=Window}}"
                           Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
+                          behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding AddCardsVM.RefreshColumnsTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"
                           Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
@@ -795,21 +792,21 @@
                             <GridViewColumn Header="Condition">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding Conditions}" SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}" SelectionChanged="ListViewComboBox_SelectionChanged"/>
+                                        <ComboBox ItemsSource="{Binding Conditions}" SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
                             <GridViewColumn Header="Finish">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding AvailableFinishes}" SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}" SelectionChanged="ListViewComboBox_SelectionChanged"/>
+                                        <ComboBox ItemsSource="{Binding AvailableFinishes}" SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
                             <GridViewColumn Header="Language">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding OtherLanguages}" SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}" SelectionChanged="ListViewComboBox_SelectionChanged"/>
+                                        <ComboBox ItemsSource="{Binding OtherLanguages}" SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}"/>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>

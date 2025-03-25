@@ -16,7 +16,7 @@ namespace CollectaMundo.ViewModels
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
 
-        // In trigger to clear datagrid selection
+        // Countertrigger to clear datagrid selection
         private int _clearSelectionTrigger;
         public int ClearSelectionTrigger
         {
@@ -30,6 +30,22 @@ namespace CollectaMundo.ViewModels
                 }
             }
         }
+
+        // Countertrigger to resize listview columns
+        private int _refreshColumnsTrigger;
+        public int RefreshColumnsTrigger
+        {
+            get => _refreshColumnsTrigger;
+            set
+            {
+                if (_refreshColumnsTrigger != value)
+                {
+                    _refreshColumnsTrigger = value;
+                    OnPropertyChanged(nameof(RefreshColumnsTrigger));
+                }
+            }
+        }
+
 
         // Collection bound to the ListView.
         public ObservableCollection<CardSet> CardsToAdd { get; } = new ObservableCollection<CardSet>();
@@ -68,6 +84,13 @@ namespace CollectaMundo.ViewModels
 
                 // Increment the trigger to signal the view to clear selection.
                 ClearSelectionTrigger++;
+
+                // Await layout processing.
+                await Application.Current.Dispatcher.InvokeAsync(() => { },
+                    System.Windows.Threading.DispatcherPriority.Render);
+
+                // Now increment the trigger to signal the view to refresh columns.
+                RefreshColumnsTrigger++;
             }
         });
 
