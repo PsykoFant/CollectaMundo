@@ -831,7 +831,36 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-                            <!-- Additional columns (Condition, Finish, Language, etc.) with corresponding DataTemplates can be defined here -->
+                            <GridViewColumn Header="+">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="+" Width="15" Background="#FFFBF7B4"
+                                            Command="{Binding AddCardsVM.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Count">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBox HorizontalAlignment="Center" Background="White"
+                                            Text="{Binding CardsOwned, Mode=TwoWay, UpdateSourceTrigger=Explicit, ValidatesOnDataErrors=True}">
+                                            <i:Interaction.Behaviors>
+                                                <behaviors:DelayedUpdateBehavior Delay="500"/>
+                                            </i:Interaction.Behaviors>
+                                        </TextBox>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="-">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="-" Width="15" Background="#FFFBF7B4"
+                                            Command="{Binding AddCardsVM.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
                         </GridView>
                     </ListView.View>
                 </ListView>
