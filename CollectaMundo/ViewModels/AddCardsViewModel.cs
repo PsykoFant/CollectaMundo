@@ -15,7 +15,21 @@ namespace CollectaMundo.ViewModels
         protected void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        public ObservableCollection<CardSet> SelectedCards { get; } = new ObservableCollection<CardSet>();
+
+        // In trigger to clear datagrid selection
+        private int _clearSelectionTrigger;
+        public int ClearSelectionTrigger
+        {
+            get => _clearSelectionTrigger;
+            set
+            {
+                if (_clearSelectionTrigger != value)
+                {
+                    _clearSelectionTrigger = value;
+                    OnPropertyChanged(nameof(ClearSelectionTrigger));
+                }
+            }
+        }
 
         // Collection bound to the ListView.
         public ObservableCollection<CardSet> CardsToAdd { get; } = new ObservableCollection<CardSet>();
@@ -52,11 +66,12 @@ namespace CollectaMundo.ViewModels
                 // After processing, make the listview visible.
                 CardsToAddVisibility = Visibility.Visible;
 
-                SelectedCards.Clear();
+                // Increment the trigger to signal the view to clear selection.
+                ClearSelectionTrigger++;
             }
         });
 
-        public ICommand ClearCardsToAddCommand => new RelayCommand<object>(async param =>
+        public ICommand ClearCardsToAddCommand => new RelayCommand<object>(param =>
         {
             // Clear the in-memory collection.
             CardsToAdd.Clear();
@@ -64,8 +79,8 @@ namespace CollectaMundo.ViewModels
             // Hide the add cards list area.
             CardsToAddVisibility = Visibility.Collapsed;
 
-            // Optionally, update other UI state properties if you exposed them,
-            // such as for a Submit button or a logo.
+            // Increment the trigger to signal the view to clear selection.
+            ClearSelectionTrigger++;
         });
 
     }
