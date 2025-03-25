@@ -926,7 +926,8 @@
                           IsReadOnly="True"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                           behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
-                          behaviors:DataGridColumnResizerBehavior.DataGridIndex="0">
+                          behaviors:DataGridColumnResizerBehavior.DataGridIndex="0"
+                          behaviors:DataGridSelectedItemsBehavior.BoundSelectedItems="{Binding AddCardsVM.SelectedCards, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
                     <i:Interaction.Triggers>
                         <i:EventTrigger EventName="MouseDoubleClick">
                             <i:InvokeCommandAction Command="{Binding AddCardsVM.AddSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}"

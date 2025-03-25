@@ -15,6 +15,8 @@ namespace CollectaMundo.ViewModels
         protected void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
+        public ObservableCollection<CardSet> SelectedCards { get; } = new ObservableCollection<CardSet>();
+
         // Collection bound to the ListView.
         public ObservableCollection<CardSet> CardsToAdd { get; } = new ObservableCollection<CardSet>();
 
@@ -49,6 +51,8 @@ namespace CollectaMundo.ViewModels
                 }
                 // After processing, make the listview visible.
                 CardsToAddVisibility = Visibility.Visible;
+
+                SelectedCards.Clear();
             }
         });
 
