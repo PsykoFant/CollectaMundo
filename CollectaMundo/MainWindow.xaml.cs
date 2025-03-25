@@ -398,7 +398,7 @@ namespace CollectaMundo
         }
         private void ListViewComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            AddToCollectionManager.AdjustColumnWidths();
+            //AddToCollectionManager.AdjustColumnWidths();
         }
         private void ButtonClearCardsToAdd_Click(object sender, RoutedEventArgs e)
         {

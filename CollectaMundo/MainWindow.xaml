@@ -799,7 +799,14 @@
                             <GridViewColumn Header="Finish">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <ComboBox ItemsSource="{Binding AvailableFinishes}" SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}"/>
+                                        <ComboBox ItemsSource="{Binding AvailableFinishes}" 
+                                                  SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}">
+                                                    <i:Interaction.Triggers>
+                                                        <i:EventTrigger EventName="SelectionChanged">
+                                                    <i:InvokeCommandAction Command="{Binding AddCardsVM.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                                        </i:EventTrigger>
+                                                    </i:Interaction.Triggers>
+                                        </ComboBox>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -925,12 +932,12 @@
                           behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
                           behaviors:DataGridColumnResizerBehavior.DataGridIndex="0"
                           behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding AddCardsVM.ClearSelectionTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
-                    <i:Interaction.Triggers>
-                        <i:EventTrigger EventName="MouseDoubleClick">
-                            <i:InvokeCommandAction Command="{Binding AddCardsVM.AddSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                   CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
-                        </i:EventTrigger>
-                    </i:Interaction.Triggers>
+                            <i:Interaction.Triggers>
+                                <i:EventTrigger EventName="MouseDoubleClick">
+                                    <i:InvokeCommandAction Command="{Binding AddCardsVM.AddSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                           CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
+                                </i:EventTrigger>
+                            </i:Interaction.Triggers>
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                             <DataGridTemplateColumn.HeaderTemplate>

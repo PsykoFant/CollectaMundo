@@ -106,5 +106,11 @@ namespace CollectaMundo.ViewModels
             ClearSelectionTrigger++;
         });
 
+        public ICommand RefreshColumnsCommand => new RelayCommand<object>(param =>
+        {
+            RefreshColumnsTrigger++;
+        });
+
+
     }
 }
