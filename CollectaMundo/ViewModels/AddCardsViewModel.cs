@@ -93,7 +93,6 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-
         // Controls visibility of the CardsToAdd listview.
         private Visibility _cardsToAddVisibility = Visibility.Collapsed;
         public Visibility CardsToAddVisibility
@@ -109,7 +108,7 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        // Command to add selected cards from the DataGrid.
+        // Commands
         public ICommand AddSelectedCardsCommand => new RelayCommand<object>(async param =>
         {
             if (param is IEnumerable<object> selectedItems)
@@ -130,7 +129,6 @@ namespace CollectaMundo.ViewModels
                 RefreshColumnsTrigger++;
             }
         });
-
         public ICommand ClearCardsToAddCommand => new RelayCommand<object>(param =>
         {
             // Clear the in-memory collection.
@@ -144,10 +142,8 @@ namespace CollectaMundo.ViewModels
         });
         public ICommand RefreshColumnsCommand => new RelayCommand<object>(param =>
         {
-            //System.Windows.Data.CollectionViewSource.GetDefaultView(CardsToAdd).Refresh(); OnPropertyChanged(nameof(CardsToAdd));
             RefreshColumnsTrigger++;
         });
-
         public ICommand IncrementCountCommand => new RelayCommand<object>(param =>
         {
             if (param is CardSet card)
@@ -163,11 +159,19 @@ namespace CollectaMundo.ViewModels
                 if (card.CardsOwned > 0)
                 {
                     card.CardsOwned--;
+
+                    if (card.CardsOwned < card.CardsForTrade)
+                    {
+                        card.CardsForTrade = card.CardsOwned;
+                    }
+
                     // Remove the card if the count reaches zero.
                     if (card.CardsOwned == 0)
                     {
                         CardsToAdd.Remove(card);
                         RefreshColumnsTrigger++;
+
+                        // If the list is empty, hide it.
                         if (CardsToAdd.Count == 0)
                         {
                             CardsToAddVisibility = Visibility.Collapsed;
@@ -175,6 +179,28 @@ namespace CollectaMundo.ViewModels
                     }
                 }
                 System.Windows.Data.CollectionViewSource.GetDefaultView(CardsToAdd).Refresh(); OnPropertyChanged(nameof(CardsToAdd));
+            }
+        });
+        public ICommand IncrementTradeCommand => new RelayCommand<object>(param =>
+        {
+            if (param is CardSet card)
+            {
+                if (card.CardsForTrade < card.CardsOwned)
+                {
+                    card.CardsForTrade++;
+                    System.Windows.Data.CollectionViewSource.GetDefaultView(CardsToAdd).Refresh(); OnPropertyChanged(nameof(CardsToAdd));
+                }
+            }
+        });
+        public ICommand DecrementTradeCommand => new RelayCommand<object>(param =>
+        {
+            if (param is CardSet card)
+            {
+                if (card.CardsForTrade > 0)
+                {
+                    card.CardsForTrade--;
+                    System.Windows.Data.CollectionViewSource.GetDefaultView(CardsToAdd).Refresh(); OnPropertyChanged(nameof(CardsToAdd));
+                }
             }
         });
     }

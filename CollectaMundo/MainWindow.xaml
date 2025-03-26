@@ -871,38 +871,32 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-                        </GridView>
-                    </ListView.View>
-                </ListView>
-
-
-                <!--<ListView x:Name="CardsToAddListView" Margin="0,70,0,0" VerticalAlignment="Top" Height="170" Visibility="Collapsed">
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                        </Style>
-                    </ListView.ItemContainerStyle>
-                    <ListView.View>
-                        <GridView>
 
                             <GridViewColumn Header="+">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="+" Tag="CardsOwned" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15" Background="#FFFBF7B4" Click="IncrementCount_Click"/>
+                                        <Button Content="+" Width="15" Background="#FFFBF7B4"
+                                            Command="{Binding DataContext.AddCardsVM.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-                            <GridViewColumn Header="Count">
+                            <GridViewColumn Header="Trade">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBox Width="Auto" HorizontalAlignment="Center" Background="White" TextChanged="CardsOwnedTextBox_TextChanged">
+                                        <TextBox HorizontalAlignment="Center" Background="White">
                                             <TextBox.Text>
-                                                <Binding Path="CardsOwned" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True" NotifyOnValidationError="True">
+                                                <Binding Path="CardsForTrade" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"
+                                                         ValidatesOnDataErrors="True" NotifyOnValidationError="True">
                                                     <Binding.ValidationRules>
-                                                        <local:IntegerValidationRule />
+                                                        <validation:IntegerValidationRule />
                                                     </Binding.ValidationRules>
                                                 </Binding>
                                             </TextBox.Text>
+                                            <i:Interaction.Behaviors>
+                                                <behaviors:DelayedUpdateBehavior Delay="500"/>
+                                                <behaviors:NumericValidationBehavior />
+                                            </i:Interaction.Behaviors>
                                         </TextBox>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
@@ -910,42 +904,18 @@
                             <GridViewColumn Header="-">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="-" Tag="CardsOwned" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15" Background="#FFFBF7B4" Click="DecrementCount_Click"/>
+                                        <Button Content="-" Width="15" Background="#FFFBF7B4"
+                                            Command="{Binding DataContext.AddCardsVM.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-                            <GridViewColumn Header="+">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="+" Tag="CardsForTrade" VerticalAlignment="Center" Grid.Column="1" HorizontalAlignment="Right" Width="15" Background="#FFFBF7B4" Click="IncrementCount_Click"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="Trade">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBox Width="Auto" HorizontalAlignment="Center" Background="White" TextChanged="CardsForTradeTextBox_TextChanged">
-                                            <TextBox.Text>
-                                                <Binding Path="CardsForTrade" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True" NotifyOnValidationError="True">
-                                                    <Binding.ValidationRules>
-                                                        <local:IntegerValidationRule />
-                                                    </Binding.ValidationRules>
-                                                </Binding>
-                                            </TextBox.Text>
-                                        </TextBox>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
-                            <GridViewColumn Header="-1">
-                                <GridViewColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Button Content="-" Tag="CardsForTrade" VerticalAlignment="Center" Grid.Column="0" HorizontalAlignment="Left" Width="15" Background="#FFFBF7B4" Click="DecrementCount_Click"/>
-                                    </DataTemplate>
-                                </GridViewColumn.CellTemplate>
-                            </GridViewColumn>
+
                         </GridView>
                     </ListView.View>
-                </ListView>-->
+                </ListView>
+                
+
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
                           ItemsSource="{Binding CardVM.AllCardsView}"
