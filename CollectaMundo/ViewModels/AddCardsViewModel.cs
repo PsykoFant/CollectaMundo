@@ -9,12 +9,59 @@ using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels
 {
-    public class AddCardsViewModel(ICardCollectionService cardCollectionService) : INotifyPropertyChanged
+    public class AddCardsViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
+        public ObservableCollection<CardSet> CardsToAdd { get; } = new ObservableCollection<CardSet>();
+
+        private readonly CardCollectionManager _cardCollectionManager;
+
+        // Primary constructor body
+        public AddCardsViewModel(ICardCollectionService cardCollectionService)
+        {
+            _cardCollectionManager = new CardCollectionManager(cardCollectionService);
+            CardsToAdd.CollectionChanged += CardsToAdd_CollectionChanged;
+        }
+        private void CardsToAdd_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            // When new items are added, subscribe to their PropertyChanged event.
+            if (e.NewItems != null)
+            {
+                foreach (var newItem in e.NewItems)
+                {
+                    if (newItem is CardSet card)
+                    {
+                        card.PropertyChanged += Card_PropertyChanged;
+                    }
+                }
+            }
+            // When items are removed, unsubscribe.
+            if (e.OldItems != null)
+            {
+                foreach (var oldItem in e.OldItems)
+                {
+                    if (oldItem is CardSet card)
+                    {
+                        card.PropertyChanged -= Card_PropertyChanged;
+                    }
+                }
+            }
+        }
+        private void Card_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (sender is CardSet card && e.PropertyName == nameof(CardSet.CardsOwned))
+            {
+                // If CardsOwned is zero, remove the card from the collection.
+                if (card.CardsOwned <= 0 && CardsToAdd.Contains(card))
+                {
+                    // Removal must be done on the UI thread.
+                    Application.Current.Dispatcher.Invoke(() => CardsToAdd.Remove(card));
+                }
+            }
+        }
 
         // Countertrigger to clear datagrid selection
         private int _clearSelectionTrigger;
@@ -46,21 +93,6 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        private int _itemsRefreshTrigger;
-        public int ItemsRefreshTrigger
-        {
-            get => _itemsRefreshTrigger;
-            set
-            {
-                if (_itemsRefreshTrigger != value)
-                {
-                    _itemsRefreshTrigger = value;
-                    OnPropertyChanged(nameof(ItemsRefreshTrigger));
-                }
-            }
-        }
-        // Collection bound to the ListView.
-        public ObservableCollection<CardSet> CardsToAdd { get; } = new ObservableCollection<CardSet>();
 
         // Controls visibility of the CardsToAdd listview.
         private Visibility _cardsToAddVisibility = Visibility.Collapsed;
@@ -76,9 +108,6 @@ namespace CollectaMundo.ViewModels
                 }
             }
         }
-
-        // Business logic manager.
-        private readonly CardCollectionManager _cardCollectionManager = new(cardCollectionService);
 
         // Command to add selected cards from the DataGrid.
         public ICommand AddSelectedCardsCommand => new RelayCommand<object>(async param =>
@@ -96,10 +125,6 @@ namespace CollectaMundo.ViewModels
 
                 // Increment the trigger to signal the view to clear selection.
                 ClearSelectionTrigger++;
-
-                // Await layout processing.
-                //await Application.Current.Dispatcher.InvokeAsync(() => { },
-                //    System.Windows.Threading.DispatcherPriority.Render);
 
                 // Now increment the trigger to signal the view to refresh columns.
                 RefreshColumnsTrigger++;
@@ -127,7 +152,7 @@ namespace CollectaMundo.ViewModels
             if (param is CardSet card)
             {
                 card.CardsOwned++;
-                ItemsRefreshTrigger++;
+                System.Windows.Data.CollectionViewSource.GetDefaultView(CardsToAdd).Refresh(); OnPropertyChanged(nameof(CardsToAdd));
             }
         });
         public ICommand DecrementCountCommand => new RelayCommand<object>(param =>
@@ -141,12 +166,14 @@ namespace CollectaMundo.ViewModels
                     if (card.CardsOwned == 0)
                     {
                         CardsToAdd.Remove(card);
+                        if (CardsToAdd.Count == 0)
+                        {
+                            CardsToAddVisibility = Visibility.Collapsed;
+                        }
                     }
                 }
-                ItemsRefreshTrigger++;
+                System.Windows.Data.CollectionViewSource.GetDefaultView(CardsToAdd).Refresh(); OnPropertyChanged(nameof(CardsToAdd));
             }
         });
-
-
     }
 }

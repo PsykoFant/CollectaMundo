@@ -779,8 +779,7 @@
 
                 <ListView ItemsSource="{Binding AddCardsVM.CardsToAdd, RelativeSource={RelativeSource AncestorType=Window}}"
                           Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
-                          behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding AddCardsVM.RefreshColumnsTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"
-                          behaviors:ListViewRefreshBehavior.RefreshTrigger="{Binding AddCardsVM.ItemsRefreshTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"
+                          behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding AddCardsVM.RefreshColumnsTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"                          
                           Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
@@ -845,8 +844,15 @@
                             <GridViewColumn Header="Count">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBox HorizontalAlignment="Center" Background="White"
-                                            Text="{Binding CardsOwned, Mode=TwoWay, ValidatesOnDataErrors=True}">
+                                        <TextBox HorizontalAlignment="Center" Background="White">
+                                            <TextBox.Text>
+                                                <Binding Path="CardsOwned" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"
+                                                         ValidatesOnDataErrors="True" NotifyOnValidationError="True">
+                                                    <Binding.ValidationRules>
+                                                        <local:IntegerValidationRule />
+                                                    </Binding.ValidationRules>
+                                                </Binding>
+                                            </TextBox.Text>
                                             <i:Interaction.Behaviors>
                                                 <behaviors:DelayedUpdateBehavior Delay="500"/>
                                             </i:Interaction.Behaviors>
@@ -854,6 +860,7 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
+
                             <GridViewColumn Header="-">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
