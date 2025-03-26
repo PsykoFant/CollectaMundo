@@ -247,13 +247,8 @@ namespace CollectaMundo
                 Debug.WriteLine($"AddOrEditCardHandler error: {ex.Message}");
             }
         }
-        public static void ShowCardsToAddListView()
-        {
-            //MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Collapsed;
-            //MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Visible;
-            //MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Visible;
-            //MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Visible;
-        }
+
+
         public static void ShowCardsToEditListView()
         {
             MainWindow.CurrentInstance.EditStatusScrollViewer.Visibility = Visibility.Collapsed;
@@ -742,23 +737,7 @@ namespace CollectaMundo
             //AdjustListViewColumnWidths(MainWindow.CurrentInstance.CardsToAddListView);
             //AdjustListViewColumnWidths(MainWindow.CurrentInstance.CardsToEditListView);
         }
-        private static void AdjustListViewColumnWidths(ListView listView)
-        {
-            if (listView.View is GridView gridView)
-            {
-                foreach (var column in gridView.Columns)
-                {
-                    // Measure the width of the column header
-                    if (double.IsNaN(column.Width))
-                    {
-                        column.Width = column.ActualWidth;
-                    }
 
-                    // Reset the width to Auto (NaN) to resize according to content
-                    column.Width = double.NaN;
-                }
-            }
-        }
 
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Windows.Controls;
 
-namespace CollectaMundo
+namespace CollectaMundo.Validation
 {
     public class IntegerValidationRule : ValidationRule
     {

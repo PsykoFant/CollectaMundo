@@ -8,6 +8,7 @@
     xmlns:core="clr-namespace:Microsoft.Xaml.Behaviors.Core;assembly=Microsoft.Xaml.Behaviors"
     xmlns:converters="clr-namespace:CollectaMundo.Converters"
     xmlns:behaviors="clr-namespace:CollectaMundo.Behaviors"
+    xmlns:validation="clr-namespace:CollectaMundo.Validation"
     xmlns:System="clr-namespace:System;assembly=System.Runtime" 
     x:Class="CollectaMundo.MainWindow"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
@@ -775,8 +776,8 @@
                 <ScrollViewer x:Name="AddStatusScrollViewer" HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Visibility="Collapsed">
                     <TextBlock x:Name="AddStatusTextBlock" TextWrapping="Wrap" VerticalAlignment="Top"/>
                 </ScrollViewer>
+                
                 <!--Cards to add listview-->
-
                 <ListView ItemsSource="{Binding AddCardsVM.CardsToAdd, RelativeSource={RelativeSource AncestorType=Window}}"
                           Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
                           behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding AddCardsVM.RefreshColumnsTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"                          
@@ -849,12 +850,13 @@
                                                 <Binding Path="CardsOwned" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"
                                                          ValidatesOnDataErrors="True" NotifyOnValidationError="True">
                                                     <Binding.ValidationRules>
-                                                        <local:IntegerValidationRule />
+                                                        <validation:IntegerValidationRule />
                                                     </Binding.ValidationRules>
                                                 </Binding>
                                             </TextBox.Text>
                                             <i:Interaction.Behaviors>
                                                 <behaviors:DelayedUpdateBehavior Delay="500"/>
+                                                <behaviors:NumericValidationBehavior />
                                             </i:Interaction.Behaviors>
                                         </TextBox>
                                     </DataTemplate>
@@ -1197,9 +1199,9 @@
                                         <TextBox Width="Auto" HorizontalAlignment="Center" Background="White" TextChanged="CardsOwnedTextBox_TextChanged">
                                             <TextBox.Text>
                                                 <Binding Path="CardsOwned" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True" NotifyOnValidationError="True">
-                                                    <Binding.ValidationRules>
+                                                    <!--<Binding.ValidationRules>
                                                         <local:IntegerValidationRule />
-                                                    </Binding.ValidationRules>
+                                                    </Binding.ValidationRules>-->
                                                 </Binding>
                                             </TextBox.Text>
                                         </TextBox>
@@ -1226,9 +1228,9 @@
                                         <TextBox Width="Auto" HorizontalAlignment="Center" Background="White" TextChanged="CardsForTradeTextBox_TextChanged">
                                             <TextBox.Text>
                                                 <Binding Path="CardsForTrade" UpdateSourceTrigger="PropertyChanged" Mode="TwoWay" ValidatesOnDataErrors="True" NotifyOnValidationError="True">
-                                                    <Binding.ValidationRules>
+                                                    <!--<Binding.ValidationRules>
                                                         <local:IntegerValidationRule />
-                                                    </Binding.ValidationRules>
+                                                    </Binding.ValidationRules>-->
                                                 </Binding>
                                             </TextBox.Text>
                                         </TextBox>
