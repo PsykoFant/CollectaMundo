@@ -144,6 +144,7 @@ namespace CollectaMundo.ViewModels
         });
         public ICommand RefreshColumnsCommand => new RelayCommand<object>(param =>
         {
+            //System.Windows.Data.CollectionViewSource.GetDefaultView(CardsToAdd).Refresh(); OnPropertyChanged(nameof(CardsToAdd));
             RefreshColumnsTrigger++;
         });
 
@@ -166,6 +167,7 @@ namespace CollectaMundo.ViewModels
                     if (card.CardsOwned == 0)
                     {
                         CardsToAdd.Remove(card);
+                        RefreshColumnsTrigger++;
                         if (CardsToAdd.Count == 0)
                         {
                             CardsToAddVisibility = Visibility.Collapsed;

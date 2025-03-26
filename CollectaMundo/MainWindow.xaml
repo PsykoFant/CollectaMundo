@@ -864,7 +864,7 @@
                             <GridViewColumn Header="-">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="+" Width="15" Background="#FFFBF7B4"
+                                        <Button Content="-" Width="15" Background="#FFFBF7B4"
                                             Command="{Binding DataContext.AddCardsVM.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                             CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
                                     </DataTemplate>
