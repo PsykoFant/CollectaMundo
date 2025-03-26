@@ -776,9 +776,11 @@
                     <TextBlock x:Name="AddStatusTextBlock" TextWrapping="Wrap" VerticalAlignment="Top"/>
                 </ScrollViewer>
                 <!--Cards to add listview-->
+
                 <ListView ItemsSource="{Binding AddCardsVM.CardsToAdd, RelativeSource={RelativeSource AncestorType=Window}}"
                           Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
                           behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding AddCardsVM.RefreshColumnsTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"
+                          behaviors:ListViewRefreshBehavior.RefreshTrigger="{Binding AddCardsVM.ItemsRefreshTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"
                           Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
@@ -835,8 +837,8 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="+" Width="15" Background="#FFFBF7B4"
-                                            Command="{Binding AddCardsVM.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            CommandParameter="{Binding}"/>
+                                            Command="{Binding DataContext.AddCardsVM.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -844,7 +846,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBox HorizontalAlignment="Center" Background="White"
-                                            Text="{Binding CardsOwned, Mode=TwoWay, UpdateSourceTrigger=Explicit, ValidatesOnDataErrors=True}">
+                                            Text="{Binding CardsOwned, Mode=TwoWay, ValidatesOnDataErrors=True}">
                                             <i:Interaction.Behaviors>
                                                 <behaviors:DelayedUpdateBehavior Delay="500"/>
                                             </i:Interaction.Behaviors>
@@ -855,9 +857,9 @@
                             <GridViewColumn Header="-">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="-" Width="15" Background="#FFFBF7B4"
-                                            Command="{Binding AddCardsVM.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            CommandParameter="{Binding}"/>
+                                        <Button Content="+" Width="15" Background="#FFFBF7B4"
+                                            Command="{Binding DataContext.AddCardsVM.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>

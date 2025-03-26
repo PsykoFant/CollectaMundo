@@ -355,7 +355,8 @@ namespace CollectaMundo
         // Modify values in the listview
         private void IncrementCount_Click(object sender, RoutedEventArgs e)
         {
-            addToCollectionManager.IncrementButtonHandler(sender, e);
+            //addToCollectionManager.IncrementButtonHandler(sender, e);
+            AddCardsVM.CardsToAdd[0].CardsOwned++;
         }
         private void DecrementCount_Click(object sender, RoutedEventArgs e)
         {

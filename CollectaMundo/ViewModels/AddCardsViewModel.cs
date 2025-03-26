@@ -46,7 +46,19 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-
+        private int _itemsRefreshTrigger;
+        public int ItemsRefreshTrigger
+        {
+            get => _itemsRefreshTrigger;
+            set
+            {
+                if (_itemsRefreshTrigger != value)
+                {
+                    _itemsRefreshTrigger = value;
+                    OnPropertyChanged(nameof(ItemsRefreshTrigger));
+                }
+            }
+        }
         // Collection bound to the ListView.
         public ObservableCollection<CardSet> CardsToAdd { get; } = new ObservableCollection<CardSet>();
 
@@ -86,8 +98,8 @@ namespace CollectaMundo.ViewModels
                 ClearSelectionTrigger++;
 
                 // Await layout processing.
-                await Application.Current.Dispatcher.InvokeAsync(() => { },
-                    System.Windows.Threading.DispatcherPriority.Render);
+                //await Application.Current.Dispatcher.InvokeAsync(() => { },
+                //    System.Windows.Threading.DispatcherPriority.Render);
 
                 // Now increment the trigger to signal the view to refresh columns.
                 RefreshColumnsTrigger++;
@@ -105,10 +117,34 @@ namespace CollectaMundo.ViewModels
             // Increment the trigger to signal the view to clear selection.
             ClearSelectionTrigger++;
         });
-
         public ICommand RefreshColumnsCommand => new RelayCommand<object>(param =>
         {
             RefreshColumnsTrigger++;
+        });
+
+        public ICommand IncrementCountCommand => new RelayCommand<object>(param =>
+        {
+            if (param is CardSet card)
+            {
+                card.CardsOwned++;
+                ItemsRefreshTrigger++;
+            }
+        });
+        public ICommand DecrementCountCommand => new RelayCommand<object>(param =>
+        {
+            if (param is CardSet card)
+            {
+                if (card.CardsOwned > 0)
+                {
+                    card.CardsOwned--;
+                    // Remove the card if the count reaches zero.
+                    if (card.CardsOwned == 0)
+                    {
+                        CardsToAdd.Remove(card);
+                    }
+                }
+                ItemsRefreshTrigger++;
+            }
         });
 
 

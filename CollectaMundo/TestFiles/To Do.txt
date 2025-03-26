@@ -2,7 +2,8 @@ TO DO
 - MVVM refactor
 
  - Add to collectionManager til MVVM!
-
+	- Hvad bruger vi CountToVisibilityConverter til?
+	- Når AddCardsVM er nul, set visibility til nul
 
 
  - Card image brug MVVM (unit test)
