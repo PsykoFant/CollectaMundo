@@ -860,7 +860,6 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-
                             <GridViewColumn Header="-">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
