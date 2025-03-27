@@ -12,10 +12,8 @@ namespace CollectaMundo.ViewModels
     public class AddCardsViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
-        public ObservableCollection<CardSet> CardsToAdd { get; } = new ObservableCollection<CardSet>();
+        protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        public ObservableCollection<CardSet> CardsToAdd { get; } = [];
 
         private readonly CardCollectionManager _cardCollectionManager;
 
@@ -160,11 +158,6 @@ namespace CollectaMundo.ViewModels
                 {
                     card.CardsOwned--;
 
-                    if (card.CardsOwned < card.CardsForTrade)
-                    {
-                        card.CardsForTrade = card.CardsOwned;
-                    }
-
                     // Remove the card if the count reaches zero.
                     if (card.CardsOwned == 0)
                     {
@@ -196,11 +189,8 @@ namespace CollectaMundo.ViewModels
         {
             if (param is CardSet card)
             {
-                if (card.CardsForTrade > 0)
-                {
-                    card.CardsForTrade--;
-                    System.Windows.Data.CollectionViewSource.GetDefaultView(CardsToAdd).Refresh(); OnPropertyChanged(nameof(CardsToAdd));
-                }
+                card.CardsForTrade--;
+                System.Windows.Data.CollectionViewSource.GetDefaultView(CardsToAdd).Refresh(); OnPropertyChanged(nameof(CardsToAdd));
             }
         });
     }

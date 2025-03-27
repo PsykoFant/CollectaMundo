@@ -171,8 +171,6 @@ namespace CollectaMundo
             // Update the statusbox with messages from methods in DownloadAndPrepareDB and UpdateDB
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
-
-            Debug.WriteLine($"Visiblity of CardsToAddVisibility: {AddCardsVM.CardsToAddVisibility.ToString()}");
         }
 
         #region Load data and populate UI elements

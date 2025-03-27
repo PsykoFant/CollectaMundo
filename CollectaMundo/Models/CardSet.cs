@@ -135,6 +135,13 @@ namespace CollectaMundo.Models
                 if (_cardsOwned != value)
                 {
                     _cardsOwned = value;
+
+                    // CardsForTrade cannot exceed CardsOwned.
+                    if (CardsForTrade > _cardsOwned)
+                    {
+                        CardsForTrade = _cardsOwned;
+                    }
+
                     OnPropertyChanged(nameof(CardsOwned));
                 }
             }
@@ -148,7 +155,8 @@ namespace CollectaMundo.Models
             {
                 if (_cardsForTrade != value)
                 {
-                    _cardsForTrade = value;
+                    // CardsForTrade cannot be negative.
+                    _cardsForTrade = value < 0 ? 0 : value;
                     OnPropertyChanged(nameof(CardsForTrade));
                 }
             }
