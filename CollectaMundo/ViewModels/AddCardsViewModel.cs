@@ -13,7 +13,10 @@ namespace CollectaMundo.ViewModels
     {
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
+        //public ObservableCollectionEx<CardSet> CardsToAdd { get; } = new ObservableCollectionEx<CardSet>();
+
 
         private readonly CardCollectionManager _cardCollectionManager;
 
@@ -47,6 +50,8 @@ namespace CollectaMundo.ViewModels
                     }
                 }
             }
+
+            OnPropertyChanged(nameof(CardsToAddVisibility));
         }
         private void Card_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
@@ -92,19 +97,7 @@ namespace CollectaMundo.ViewModels
         }
 
         // Controls visibility of the CardsToAdd listview.
-        private Visibility _cardsToAddVisibility = Visibility.Collapsed;
-        public Visibility CardsToAddVisibility
-        {
-            get => _cardsToAddVisibility;
-            set
-            {
-                if (_cardsToAddVisibility != value)
-                {
-                    _cardsToAddVisibility = value;
-                    OnPropertyChanged(nameof(CardsToAddVisibility));
-                }
-            }
-        }
+        public Visibility CardsToAddVisibility => CardsToAdd.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 
         // Commands
         public ICommand AddSelectedCardsCommand => new RelayCommand<object>(async param =>
@@ -117,8 +110,6 @@ namespace CollectaMundo.ViewModels
                     // Call the manager to add the card to the in-memory collection.
                     await _cardCollectionManager.AddCardToListViewAsync(card, CardsToAdd);
                 }
-                // After processing, make the listview visible.
-                CardsToAddVisibility = Visibility.Visible;
 
                 // Increment the trigger to signal the view to clear selection.
                 ClearSelectionTrigger++;
@@ -131,9 +122,6 @@ namespace CollectaMundo.ViewModels
         {
             // Clear the in-memory collection.
             CardsToAdd.Clear();
-
-            // Hide the add cards list area.
-            CardsToAddVisibility = Visibility.Collapsed;
 
             // Increment the trigger to signal the view to clear selection.
             ClearSelectionTrigger++;
@@ -157,19 +145,7 @@ namespace CollectaMundo.ViewModels
                 if (card.CardsOwned > 0)
                 {
                     card.CardsOwned--;
-
-                    // Remove the card if the count reaches zero.
-                    if (card.CardsOwned == 0)
-                    {
-                        CardsToAdd.Remove(card);
-                        RefreshColumnsTrigger++;
-
-                        // If the list is empty, hide it.
-                        if (CardsToAdd.Count == 0)
-                        {
-                            CardsToAddVisibility = Visibility.Collapsed;
-                        }
-                    }
+                    RefreshColumnsTrigger++;
                 }
                 System.Windows.Data.CollectionViewSource.GetDefaultView(CardsToAdd).Refresh(); OnPropertyChanged(nameof(CardsToAdd));
             }

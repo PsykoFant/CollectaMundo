@@ -765,7 +765,6 @@
                     Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
                     Command="{Binding DataContext.AddCardsVM.ClearCardsToAddCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
 
-
                 <Button Content="Add selected cards to my collection"
                     HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top"
                     Width="200" Height="20"

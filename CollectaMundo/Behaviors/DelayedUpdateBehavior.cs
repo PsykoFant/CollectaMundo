@@ -1,4 +1,4 @@
-﻿using Microsoft.Xaml.Behaviors; // Or System.Windows.Interactivity, depending on your package
+﻿using Microsoft.Xaml.Behaviors;
 using System.Windows.Controls;
 using System.Windows.Threading;
 

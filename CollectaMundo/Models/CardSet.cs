@@ -6,7 +6,7 @@ using System.Windows.Media.Imaging;
 
 namespace CollectaMundo.Models
 {
-    public class CardSet
+    public class CardSet : INotifyPropertyChanged
     {
         public string? Artist { get; set; }
         public List<string>? ArtistIds { get; set; }
@@ -140,9 +140,14 @@ namespace CollectaMundo.Models
                     if (CardsForTrade > _cardsOwned)
                     {
                         CardsForTrade = _cardsOwned;
+                        OnPropertyChanged(nameof(CardsForTrade));
                     }
 
                     OnPropertyChanged(nameof(CardsOwned));
+
+                    Debug.WriteLine($"Value of CardsOwned: {_cardsOwned}");
+                    Debug.WriteLine($"Value of CardForTrade: {CardsForTrade}");
+
                 }
             }
         }
