@@ -136,18 +136,14 @@ namespace CollectaMundo.Models
                 {
                     _cardsOwned = value;
 
+                    OnPropertyChanged(nameof(CardsOwned));
+
                     // CardsForTrade cannot exceed CardsOwned.
                     if (CardsForTrade > _cardsOwned)
                     {
                         CardsForTrade = _cardsOwned;
                         OnPropertyChanged(nameof(CardsForTrade));
                     }
-
-                    OnPropertyChanged(nameof(CardsOwned));
-
-                    Debug.WriteLine($"Value of CardsOwned: {_cardsOwned}");
-                    Debug.WriteLine($"Value of CardForTrade: {CardsForTrade}");
-
                 }
             }
         }

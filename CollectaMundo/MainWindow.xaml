@@ -846,8 +846,7 @@
                                     <DataTemplate>
                                         <TextBox HorizontalAlignment="Center" Background="White">
                                             <TextBox.Text>
-                                                <Binding Path="CardsOwned" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"
-                                                         ValidatesOnDataErrors="True" NotifyOnValidationError="True">
+                                                <Binding Path="CardsOwned" Mode="TwoWay" UpdateSourceTrigger="Explicit" ValidatesOnDataErrors="True" NotifyOnValidationError="True">
                                                     <Binding.ValidationRules>
                                                         <validation:IntegerValidationRule />
                                                     </Binding.ValidationRules>
@@ -870,7 +869,6 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-
                             <GridViewColumn Header="+">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
@@ -893,7 +891,6 @@
                                                 </Binding>
                                             </TextBox.Text>
                                             <i:Interaction.Behaviors>
-                                                <behaviors:DelayedUpdateBehavior Delay="500"/>
                                                 <behaviors:NumericValidationBehavior />
                                             </i:Interaction.Behaviors>
                                         </TextBox>
@@ -909,7 +906,6 @@
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
-
                         </GridView>
                     </ListView.View>
                 </ListView>

@@ -15,8 +15,6 @@ namespace CollectaMundo.ViewModels
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
-        //public ObservableCollectionEx<CardSet> CardsToAdd { get; } = new ObservableCollectionEx<CardSet>();
-
 
         private readonly CardCollectionManager _cardCollectionManager;
 
@@ -130,12 +128,11 @@ namespace CollectaMundo.ViewModels
         {
             RefreshColumnsTrigger++;
         });
-        public ICommand IncrementCountCommand => new RelayCommand<object>(param =>
+        public static ICommand IncrementCountCommand => new RelayCommand<object>(param =>
         {
             if (param is CardSet card)
             {
                 card.CardsOwned++;
-                System.Windows.Data.CollectionViewSource.GetDefaultView(CardsToAdd).Refresh(); OnPropertyChanged(nameof(CardsToAdd));
             }
         });
         public ICommand DecrementCountCommand => new RelayCommand<object>(param =>
@@ -147,26 +144,23 @@ namespace CollectaMundo.ViewModels
                     card.CardsOwned--;
                     RefreshColumnsTrigger++;
                 }
-                System.Windows.Data.CollectionViewSource.GetDefaultView(CardsToAdd).Refresh(); OnPropertyChanged(nameof(CardsToAdd));
             }
         });
-        public ICommand IncrementTradeCommand => new RelayCommand<object>(param =>
+        public static ICommand IncrementTradeCommand => new RelayCommand<object>(param =>
         {
             if (param is CardSet card)
             {
                 if (card.CardsForTrade < card.CardsOwned)
                 {
                     card.CardsForTrade++;
-                    System.Windows.Data.CollectionViewSource.GetDefaultView(CardsToAdd).Refresh(); OnPropertyChanged(nameof(CardsToAdd));
                 }
             }
         });
-        public ICommand DecrementTradeCommand => new RelayCommand<object>(param =>
+        public static ICommand DecrementTradeCommand => new RelayCommand<object>(param =>
         {
             if (param is CardSet card)
             {
                 card.CardsForTrade--;
-                System.Windows.Data.CollectionViewSource.GetDefaultView(CardsToAdd).Refresh(); OnPropertyChanged(nameof(CardsToAdd));
             }
         });
     }
