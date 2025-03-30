@@ -18,17 +18,28 @@ namespace CollectaMundo.Managers
 
             try
             {
-                // Check if the card already exists in the target collection.
-                if (targetCollection.Any(card => card.Uuid == selectedCard.Uuid))
-                {
-                    return;
-                }
-
                 await DBAccess.OpenConnectionAsync();
+                // Fetch data from the database.
                 var languages = await _dataService.FetchLanguagesForCardAsync(selectedCard.Uuid);
                 var finishes = await _dataService.FetchFinishesForCardAsync(selectedCard.Uuid);
                 DBAccess.CloseConnection();
 
+                // Determine the default finish and condition.
+                string? defaultFinish = finishes.FirstOrDefault();
+                string defaultCondition = "Near Mint";
+                string language = selectedCard.Language;
+
+                // Check if a card with the same uuid, default finish, default condition, and same language already exists.
+                if (targetCollection.Any(card =>
+                     card.Uuid == selectedCard.Uuid &&
+                     card.SelectedFinish == defaultFinish &&
+                     card.SelectedCondition == defaultCondition &&
+                     card.Language == language))
+                {
+                    return;
+                }
+
+                // Create a new card with default values.
                 var newItem = new CardSet
                 {
                     Name = selectedCard.Name,
@@ -37,10 +48,10 @@ namespace CollectaMundo.Managers
                     CardsOwned = 1,
                     CardsForTrade = 0,
                     AvailableFinishes = finishes,
-                    SelectedFinish = finishes.FirstOrDefault(),
-                    Language = selectedCard.Language,
+                    SelectedFinish = defaultFinish,
+                    Language = language,
                     OtherLanguages = languages,
-                    SelectedCondition = "Near Mint",
+                    SelectedCondition = defaultCondition,
                 };
 
                 targetCollection.Add(newItem);
@@ -51,6 +62,7 @@ namespace CollectaMundo.Managers
                 throw;
             }
         }
+
 
         // Adds a new card or updates an existing one.
         public async Task AddOrUpdateCardAsync(CardSet card, ObservableCollection<CardSet> inMemoryCollection)
