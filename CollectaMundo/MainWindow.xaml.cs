@@ -180,9 +180,8 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            await CardViewModel.PopulateCardDataGridAsync(CardVM.AllCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
-            await CardViewModel.PopulateCardDataGridAsync(CardVM.MyCollection, CardVM.MyCollectionView, myCollectionQuery, DataGridContext.MyCollection);
-            await CardViewModel.PopulateCardDataGridAsync(CardVM.allCardsForDecks, CardVM.AllCardsForDecksView, allCardsForDecksQuery, DataGridContext.AllCardsForDecks);
+            await CardViewModel.PopulateCardDataGridAsync(CardVM.AllCards, allCardsQuery, DataGridContext.AllCards);
+            await CardViewModel.PopulateCardDataGridAsync(CardVM.MyCollection, myCollectionQuery, DataGridContext.MyCollection);
             await CardVM.LoadColorIconsAsync();
 
             OnPropertyChanged(nameof(CardVM)); // This ensures CardVM bindings refresh
@@ -916,8 +915,8 @@ namespace CollectaMundo
             // Update the db views to load prices from the selected retailer
             await DownloadAndPrepDB.CreateViews();
 
-            Task loadAllCards = CardViewModel.PopulateCardDataGridAsync(CardVM.AllCards, CardVM.AllCardsView, allCardsQuery, DataGridContext.AllCards);
-            Task loadMyCollection = CardViewModel.PopulateCardDataGridAsync(CardVM.MyCollection, CardVM.MyCollectionView, myCollectionQuery, DataGridContext.MyCollection);
+            Task loadAllCards = CardViewModel.PopulateCardDataGridAsync(CardVM.AllCards, allCardsQuery, DataGridContext.AllCards);
+            Task loadMyCollection = CardViewModel.PopulateCardDataGridAsync(CardVM.MyCollection, myCollectionQuery, DataGridContext.MyCollection);
 
             await Task.WhenAll(loadAllCards, loadMyCollection);
 

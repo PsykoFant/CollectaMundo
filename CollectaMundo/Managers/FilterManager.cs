@@ -8,6 +8,24 @@ namespace CollectaMundo.Managers
 {
     public static class FilterManager
     {
+        public static List<CardSet> ApplyFilter(IEnumerable<CardSet> cards, IEnumerable<FilterItemViewModel> filterCriteria)
+        {
+            try
+            {
+                if (filterCriteria == null || !filterCriteria.Any())
+                {
+                    return cards.ToList();
+                }
+                // Only include a card if it matches all filter criteria.
+                return cards.Where(card => filterCriteria.All(filter => filter.Matches(card))).ToList();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error while filtering cards: {ex.Message}");
+                return cards.ToList();
+            }
+        }
+
         public static List<FilterDefaults> GetFilterDefaults(CardViewModel cardViewModel)
         {
             try

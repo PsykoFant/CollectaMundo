@@ -751,7 +751,7 @@
                 <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
-                            <Binding Path="CardVM.AllCardsView.Count"/>
+                            <Binding Path="CardVM.AllCards.Count"/>
                             <Binding Path="CardVM.AllCards.Count"/>
                         </MultiBinding>
                     </Label.Content>
@@ -912,7 +912,7 @@
 
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
-                          ItemsSource="{Binding CardVM.AllCardsView}"
+                          ItemsSource="{Binding CardVM.FilteredCards}"
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"
@@ -1111,7 +1111,7 @@
                 <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
-                            <Binding Path="CardVM.MyCollectionView.Count"/>
+                            <Binding Path="CardVM.MyCollection.Count"/>
                             <Binding Path="CardVM.MyCollection.Count"/>
                         </MultiBinding>
                     </Label.Content>
@@ -1217,7 +1217,7 @@
                 </ListView>
                 <!--The my collection datagrid-->
                 <DataGrid x:Name="MyCollectionDataGrid"
-                          ItemsSource="{Binding CardVM.MyCollectionView}"
+                          ItemsSource="{Binding CardVM.MyCollection}"
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"
@@ -1469,7 +1469,7 @@
                     </Grid>
                     <Grid Grid.Row="1">
                         <DataGrid x:Name="AllCardsForDecksDataGrid"
-                                  ItemsSource="{Binding CardVM.AllCardsForDecksView}"
+                                  ItemsSource="{Binding CardVM.AllCardsForDecks}"
                                   AutoGenerateColumns="False"
                                   SelectionChanged="CardImageSelectionChangedHandler"
                                   MouseDoubleClick="AddCardToDeck"

@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using System.Windows;
-using System.Windows.Data;
 using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.ViewModels
@@ -16,44 +15,86 @@ namespace CollectaMundo.ViewModels
     {
         public ObservableCollection<CardSet> ColorIcons { get; } = [];
 
-        private readonly List<CardSet> _allCards = [];
-        private readonly List<CardSet> _myCollection = [];
-        public List<CardSet> allCardsForDecks = [];
-        private List<CardSet> cardsInDecks = [];
-
-        private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         public event PropertyChangedEventHandler? PropertyChanged;
+        private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        // Properties for binding to card count label
-        public List<CardSet> AllCards => _allCards;
-        public List<CardSet> MyCollection => _myCollection;
+        // Instead of ListCollectionView, we now expose plain List<T> properties.
+        // Note: These lists are populated once at startup.
+        private List<CardSet> _allCards = [];
+        public List<CardSet> AllCards
+        {
+            get => _allCards;
+            set
+            {
+                if (_allCards != value)
+                {
+                    _allCards = value;
+                    OnPropertyChanged(nameof(AllCards));
+                }
+            }
+        }
 
-        // `ListCollectionView` for Datagrid UI binding
-        public ListCollectionView AllCardsView { get; }
-        public ListCollectionView MyCollectionView { get; }
-        public ListCollectionView AllCardsForDecksView { get; }
-        public ListCollectionView CardsInDecksView { get; }
 
+
+        private List<CardSet> _filteredCards = [];
+        public List<CardSet> FilteredCards
+        {
+            get => _filteredCards;
+            set
+            {
+                if (_filteredCards != value)
+                {
+                    _filteredCards = value;
+                    OnPropertyChanged(nameof(FilteredCards));
+                }
+            }
+        }
+
+
+
+
+        private List<CardSet> _myCollection = [];
+        public List<CardSet> MyCollection
+        {
+            get => _myCollection;
+            set
+            {
+                if (_myCollection != value)
+                {
+                    _myCollection = value;
+                    OnPropertyChanged(nameof(MyCollection));
+                }
+            }
+        }
+
+        private List<CardSet> _allCardsForDecks = [];
+        public List<CardSet> AllCardsForDecks
+        {
+            get => _allCardsForDecks;
+            set
+            {
+                if (_allCardsForDecks != value)
+                {
+                    _allCardsForDecks = value;
+                    OnPropertyChanged(nameof(AllCardsForDecks));
+                }
+            }
+        }
         public CardViewModel()
         {
-            // Bind ListCollectionView to Lists
-            AllCardsView = new ListCollectionView(_allCards);
-            MyCollectionView = new ListCollectionView(_myCollection);
-            AllCardsForDecksView = new ListCollectionView(allCardsForDecks);
-            CardsInDecksView = new ListCollectionView(cardsInDecks);
+            FilteredCards = [.. _allCards];
         }
 
         // Async method to populate data
-        public static async Task PopulateCardDataGridAsync(List<CardSet> cardList, ListCollectionView view, string query, DataGridContext context)
+        public static async Task PopulateCardDataGridAsync(List<CardSet> cardList, string query, DataGridContext context)
         {
             try
             {
                 cardList.Clear();
-
                 Debug.WriteLine($"Populating {context} ...");
 
                 List<CardSet> tempCardList = [];
-                using SQLiteCommand command = new(query, DBAccess.connection);
+                using SQLiteCommand command = new SQLiteCommand(query, DBAccess.connection);
                 using DbDataReader reader = await command.ExecuteReaderAsync();
 
                 while (await reader.ReadAsync())
@@ -71,12 +112,7 @@ namespace CollectaMundo.ViewModels
                 }
 
                 cardList.AddRange(tempCardList);
-
-                // Refresh the ListCollectionView to reflect new data
-                view.Refresh();
-
                 Debug.WriteLine($"Loaded {cardList.Count} cards into {context}");
-
             }
             catch (Exception ex)
             {
@@ -84,6 +120,7 @@ namespace CollectaMundo.ViewModels
                 MessageBox.Show($"Error while loading cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         private static CardSet CreateCardFromReader(DbDataReader reader, DataGridContext context)
         {
             try
@@ -315,7 +352,7 @@ namespace CollectaMundo.ViewModels
                         object? value = prop.GetValue(card);
                         if (value is System.Collections.IEnumerable enumerable && !(value is string))
                         {
-                            List<string> items = new List<string>();
+                            List<string> items = [];
                             foreach (var item in enumerable)
                             {
                                 items.Add(item?.ToString() ?? "null");
@@ -399,7 +436,7 @@ namespace CollectaMundo.ViewModels
                     object? value = prop.GetValue(card);
                     if (value is System.Collections.IEnumerable enumerable && !(value is string))
                     {
-                        List<string> items = new List<string>();
+                        List<string> items = [];
                         foreach (var item in enumerable)
                         {
                             items.Add(item?.ToString() ?? "null");

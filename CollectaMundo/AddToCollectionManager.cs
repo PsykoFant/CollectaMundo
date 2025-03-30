@@ -1,12 +1,10 @@
 ﻿using CollectaMundo.Models;
-using CollectaMundo.ViewModels;
 using ServiceStack;
 using System.Collections.ObjectModel;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo
 {
@@ -401,7 +399,7 @@ namespace CollectaMundo
 
                 // Reload my collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
-                await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.MyCollection, MainWindow.CurrentInstance.CardVM.MyCollectionView, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
+                //await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.MyCollection, MainWindow.CurrentInstance.CardVM.MyCollectionView, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
                 //await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 DBAccess.connection.Close();
@@ -492,7 +490,7 @@ namespace CollectaMundo
 
                 // Reload my collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
-                await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.MyCollection, MainWindow.CurrentInstance.CardVM.MyCollectionView, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
+                //await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.MyCollection, MainWindow.CurrentInstance.CardVM.MyCollectionView, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
                 //await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 //MainWindow.CurrentInstance.ApplyFiltersToAllLists();
@@ -603,7 +601,7 @@ namespace CollectaMundo
 
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
-                await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.MyCollection, MainWindow.CurrentInstance.CardVM.MyCollectionView, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
+                //await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.MyCollection, MainWindow.CurrentInstance.CardVM.MyCollectionView, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
                 //await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 DBAccess.connection.Close();
@@ -657,7 +655,7 @@ namespace CollectaMundo
 
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
-                await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.MyCollection, MainWindow.CurrentInstance.CardVM.MyCollectionView, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
+                //await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.MyCollection, MainWindow.CurrentInstance.CardVM.MyCollectionView, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
                 //await MainWindow.CurrentInstance.PopulateFilterUiElements();
 
                 DBAccess.connection.Close();
@@ -722,7 +720,7 @@ namespace CollectaMundo
 
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
-                await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.MyCollection, MainWindow.CurrentInstance.CardVM.MyCollectionView, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
+                //await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.MyCollection, MainWindow.CurrentInstance.CardVM.MyCollectionView, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
 
                 DBAccess.connection.Close();
 
