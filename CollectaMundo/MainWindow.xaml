@@ -908,8 +908,7 @@
                             </GridViewColumn>
                         </GridView>
                     </ListView.View>
-                </ListView>
-                
+                </ListView>                
 
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
@@ -1054,8 +1053,12 @@
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                     <DataGrid.ContextMenu>
-                        <ContextMenu Style="{StaticResource MPlantin}">
-                            <MenuItem Header="Add selected card(s) to Collection" Click="ButtonAddCardsToMyCollection_Click" Style="{StaticResource BelerenBold}"/>
+                        <ContextMenu Style="{StaticResource MPlantin}"
+                     DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                            <MenuItem Header="Add selected card(s) to Collection"
+                      Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
+                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      Style="{StaticResource BelerenBold}" />
                             <MenuItem Header="Add selected card(s) with DEFAULT values to Collection" Click="ButtonAddCardsToMyCollectionWithDefaultValues_Click" Style="{StaticResource BelerenBold}"/>
                             <MenuItem Header="">
                                 <MenuItem.Template>
