@@ -52,7 +52,6 @@ namespace CollectaMundo.Managers
             }
         }
 
-
         // Adds a new card or updates an existing one.
         public async Task AddOrUpdateCardAsync(CardSet card, ObservableCollection<CardSet> inMemoryCollection)
         {
