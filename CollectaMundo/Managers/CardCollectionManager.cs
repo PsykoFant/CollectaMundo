@@ -27,7 +27,7 @@ namespace CollectaMundo.Managers
                 // Determine the default finish and condition.
                 string? defaultFinish = finishes.FirstOrDefault();
                 string defaultCondition = "Near Mint";
-                string language = selectedCard.Language;
+                string language = selectedCard.Language ?? "English";
 
                 // Check if a card with the same uuid, default finish, default condition, and same language already exists.
                 if (targetCollection.Any(card =>
