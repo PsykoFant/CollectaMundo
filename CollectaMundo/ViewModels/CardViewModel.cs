@@ -4,8 +4,6 @@ using System.ComponentModel;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
-using System.Reflection;
-using System.Text;
 using System.Windows;
 using static CollectaMundo.MainWindow;
 
@@ -18,22 +16,7 @@ namespace CollectaMundo.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        // Instead of ListCollectionView, we now expose plain List<T> properties.
-        // Note: These lists are populated once at startup.
-        private List<CardSet> _allCards = [];
-        public List<CardSet> AllCards
-        {
-            get => _allCards;
-            set
-            {
-                if (_allCards != value)
-                {
-                    _allCards = value;
-                    OnPropertyChanged(nameof(AllCards));
-                }
-            }
-        }
-
+        public List<CardSet> AllCards { get; set; } = [];
 
 
         private List<CardSet> _filteredCards = [];
@@ -82,7 +65,8 @@ namespace CollectaMundo.ViewModels
         }
         public CardViewModel()
         {
-            FilteredCards = [.. _allCards];
+            //FilteredCards = [.. _allCards];
+            FilteredCards = [.. AllCards];
         }
 
         // Async method to populate data
@@ -303,158 +287,158 @@ namespace CollectaMundo.ViewModels
         }
 
         // Debug
-        public void DebugRandomCards(int numberOfCards = 1)
-        {
-            if (_allCards == null || _allCards.Count == 0)
-            {
-                Debug.WriteLine("No cards loaded.");
-                return;
-            }
+        //public void DebugRandomCards(int numberOfCards = 1)
+        //{
+        //    if (_allCards == null || _allCards.Count == 0)
+        //    {
+        //        Debug.WriteLine("No cards loaded.");
+        //        return;
+        //    }
 
-            // Create a new Random instance.
-            Random random = new Random();
+        //    // Create a new Random instance.
+        //    Random random = new Random();
 
-            // Get as many cards as we have (up to numberOfCards)
-            int count = Math.Min(numberOfCards, _allCards.Count);
+        //    // Get as many cards as we have (up to numberOfCards)
+        //    int count = Math.Min(numberOfCards, _allCards.Count);
 
-            // Select count random cards
-            var randomCards = _allCards.OrderBy(card => random.Next()).Take(count);
+        //    // Select count random cards
+        //    var randomCards = _allCards.OrderBy(card => random.Next()).Take(count);
 
-            // Define the list of property names you want to output.
-            string[] propertiesToOutput =
-            [
-        "Name", "SetName", "ReleaseDate", "KeyRuneImage", "ManaCost", "ManaCostImage",
-        "Types", "Colors", "SuperTypes", "SubTypes", "Type", "Keywords", "Text", // assuming "RulesText" is stored in "Text"
-        "ManaValue", "Language", "Uuid", "Finishes", "Side", "Rarity",
-        "CardsOwned", "CardsForTrade", "SelectedCondition"
-            ];
+        //    // Define the list of property names you want to output.
+        //    string[] propertiesToOutput =
+        //    [
+        //"Name", "SetName", "ReleaseDate", "KeyRuneImage", "ManaCost", "ManaCostImage",
+        //"Types", "Colors", "SuperTypes", "SubTypes", "Type", "Keywords", "Text", // assuming "RulesText" is stored in "Text"
+        //"ManaValue", "Language", "Uuid", "Finishes", "Side", "Rarity",
+        //"CardsOwned", "CardsForTrade", "SelectedCondition"
+        //    ];
 
-            Debug.WriteLine($"Displaying {count} random cards out of {_allCards.Count}:");
+        //    Debug.WriteLine($"Displaying {count} random cards out of {_allCards.Count}:");
 
-            // Iterate over the random cards.
-            foreach (var card in randomCards)
-            {
-                StringBuilder sb = new StringBuilder();
-                sb.AppendLine("----- Card -----");
-                foreach (var propName in propertiesToOutput)
-                {
-                    // Try to get the property by name.
-                    PropertyInfo? prop = typeof(CardSet).GetProperty(propName);
+        //    // Iterate over the random cards.
+        //    foreach (var card in randomCards)
+        //    {
+        //        StringBuilder sb = new StringBuilder();
+        //        sb.AppendLine("----- Card -----");
+        //        foreach (var propName in propertiesToOutput)
+        //        {
+        //            // Try to get the property by name.
+        //            PropertyInfo? prop = typeof(CardSet).GetProperty(propName);
 
-                    if (prop == null)
-                    {
-                        sb.AppendLine($"{propName}: <Not found>");
-                        continue;
-                    }
+        //            if (prop == null)
+        //            {
+        //                sb.AppendLine($"{propName}: <Not found>");
+        //                continue;
+        //            }
 
-                    try
-                    {
-                        object? value = prop.GetValue(card);
-                        if (value is System.Collections.IEnumerable enumerable && !(value is string))
-                        {
-                            List<string> items = [];
-                            foreach (var item in enumerable)
-                            {
-                                items.Add(item?.ToString() ?? "null");
-                            }
-                            sb.AppendLine($"{propName}: [{string.Join(", ", items)}]");
-                        }
-                        else
-                        {
-                            sb.AppendLine($"{propName}: {value?.ToString() ?? "null"}");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        sb.AppendLine($"{propName}: Error retrieving value ({ex.Message})");
-                    }
-                }
-                Debug.WriteLine(sb.ToString());
-            }
-        }
-        public void DebugCardByName(string cardName)
-        {
-            if (string.IsNullOrWhiteSpace(cardName))
-            {
-                Debug.WriteLine("No card name supplied.");
-                return;
-            }
+        //            try
+        //            {
+        //                object? value = prop.GetValue(card);
+        //                if (value is System.Collections.IEnumerable enumerable && !(value is string))
+        //                {
+        //                    List<string> items = [];
+        //                    foreach (var item in enumerable)
+        //                    {
+        //                        items.Add(item?.ToString() ?? "null");
+        //                    }
+        //                    sb.AppendLine($"{propName}: [{string.Join(", ", items)}]");
+        //                }
+        //                else
+        //                {
+        //                    sb.AppendLine($"{propName}: {value?.ToString() ?? "null"}");
+        //                }
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                sb.AppendLine($"{propName}: Error retrieving value ({ex.Message})");
+        //            }
+        //        }
+        //        Debug.WriteLine(sb.ToString());
+        //    }
+        //}
+        //public void DebugCardByName(string cardName)
+        //{
+        //    if (string.IsNullOrWhiteSpace(cardName))
+        //    {
+        //        Debug.WriteLine("No card name supplied.");
+        //        return;
+        //    }
 
-            // Search for a card by name (case-insensitive)
-            var card = _allCards.FirstOrDefault(c =>
-                !string.IsNullOrWhiteSpace(c.Name) &&
-                c.Name.Equals(cardName, StringComparison.OrdinalIgnoreCase));
+        //    // Search for a card by name (case-insensitive)
+        //    var card = _allCards.FirstOrDefault(c =>
+        //        !string.IsNullOrWhiteSpace(c.Name) &&
+        //        c.Name.Equals(cardName, StringComparison.OrdinalIgnoreCase));
 
-            if (card == null)
-            {
-                Debug.WriteLine($"No card found with name: {cardName}");
-                return;
-            }
+        //    if (card == null)
+        //    {
+        //        Debug.WriteLine($"No card found with name: {cardName}");
+        //        return;
+        //    }
 
-            // Define the list of properties to output.
-            string[] propertiesToOutput =
-            [
-                "Name",
-                "SetName",
-                "ReleaseDate",
-                "KeyRuneImage", // if applicable (e.g. the property holding the key rune image)
-                "ManaCost",
-                "ManaCostImage", // if applicable
-                "Types",
-                "Colors",
-                "SuperTypes",
-                "SubTypes",
-                "Type",
-                "Keywords",
-                "Text", // assuming this holds the RulesText
-                "ManaValue",
-                "Language",
-                "Uuid",
-                "Finishes",
-                "Side",
-                "Rarity",
-                "CardsOwned",
-                "CardsForTrade",
-                "SelectedCondition",
-                "SelectedFinish"
-            ];
+        //    // Define the list of properties to output.
+        //    string[] propertiesToOutput =
+        //    [
+        //        "Name",
+        //        "SetName",
+        //        "ReleaseDate",
+        //        "KeyRuneImage", // if applicable (e.g. the property holding the key rune image)
+        //        "ManaCost",
+        //        "ManaCostImage", // if applicable
+        //        "Types",
+        //        "Colors",
+        //        "SuperTypes",
+        //        "SubTypes",
+        //        "Type",
+        //        "Keywords",
+        //        "Text", // assuming this holds the RulesText
+        //        "ManaValue",
+        //        "Language",
+        //        "Uuid",
+        //        "Finishes",
+        //        "Side",
+        //        "Rarity",
+        //        "CardsOwned",
+        //        "CardsForTrade",
+        //        "SelectedCondition",
+        //        "SelectedFinish"
+        //    ];
 
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("----- Debug Card -----");
-            foreach (var propName in propertiesToOutput)
-            {
-                // Use reflection to get the property.
-                PropertyInfo? prop = typeof(CardSet).GetProperty(propName);
-                if (prop == null)
-                {
-                    sb.AppendLine($"{propName}: <Not found>");
-                    continue;
-                }
+        //    StringBuilder sb = new StringBuilder();
+        //    sb.AppendLine("----- Debug Card -----");
+        //    foreach (var propName in propertiesToOutput)
+        //    {
+        //        // Use reflection to get the property.
+        //        PropertyInfo? prop = typeof(CardSet).GetProperty(propName);
+        //        if (prop == null)
+        //        {
+        //            sb.AppendLine($"{propName}: <Not found>");
+        //            continue;
+        //        }
 
-                try
-                {
-                    object? value = prop.GetValue(card);
-                    if (value is System.Collections.IEnumerable enumerable && !(value is string))
-                    {
-                        List<string> items = [];
-                        foreach (var item in enumerable)
-                        {
-                            items.Add(item?.ToString() ?? "null");
-                        }
-                        sb.AppendLine($"{propName}: [{string.Join(", ", items)}]");
-                    }
-                    else
-                    {
-                        sb.AppendLine($"{propName}: {value?.ToString() ?? "null"}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    sb.AppendLine($"{propName}: Error retrieving value ({ex.Message})");
-                }
-            }
-            Debug.WriteLine(sb.ToString());
-        }
+        //        try
+        //        {
+        //            object? value = prop.GetValue(card);
+        //            if (value is System.Collections.IEnumerable enumerable && !(value is string))
+        //            {
+        //                List<string> items = [];
+        //                foreach (var item in enumerable)
+        //                {
+        //                    items.Add(item?.ToString() ?? "null");
+        //                }
+        //                sb.AppendLine($"{propName}: [{string.Join(", ", items)}]");
+        //            }
+        //            else
+        //            {
+        //                sb.AppendLine($"{propName}: {value?.ToString() ?? "null"}");
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            sb.AppendLine($"{propName}: Error retrieving value ({ex.Message})");
+        //        }
+        //    }
+        //    Debug.WriteLine(sb.ToString());
+        //}
 
     }
 
