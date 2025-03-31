@@ -41,7 +41,6 @@ namespace CollectaMundo.ViewModels
             ClearFiltersCommand = new RelayCommand<object>(_ => ClearFilters());
         }
 
-
         // Applies the current filter criteria to the provided ListCollectionView.
         private void ApplyFilterToView(ListCollectionView view)
         {
@@ -68,13 +67,9 @@ namespace CollectaMundo.ViewModels
         // Apply filtering to update the filtered list.
         public virtual void ApplyFiltering()
         {
-            // Build the list of active filter criteria.
-            var activeCriteria = Filters.Values.Select(f => f.ToFilterCriteria()).ToList();
-            // Use the unfiltered list from the view model.
-            var filteredCards = FilterManager.ApplyFilter(_cardViewModel.AllCards, activeCriteria);
-            // Update the filtered list property.
+            var filteredCards = FilterManager.ApplyFilter(_cardViewModel.AllCards, Filters.Values);
             _cardViewModel.FilteredCards = filteredCards;
-
+            OnPropertyChanged(nameof(_cardViewModel.FilteredCards));
             UpdateFilterSummary();
         }
 
@@ -225,8 +220,6 @@ namespace CollectaMundo.ViewModels
                 }
             }
         }
-
-
 
         // Debug
         public virtual void DebugFullFilterState()

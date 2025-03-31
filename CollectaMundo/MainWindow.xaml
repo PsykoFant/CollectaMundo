@@ -751,7 +751,7 @@
                 <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
-                            <Binding Path="CardVM.AllCards.Count"/>
+                            <Binding Path="CardVM.FilteredCards.Count"/>
                             <Binding Path="CardVM.AllCards.Count"/>
                         </MultiBinding>
                     </Label.Content>

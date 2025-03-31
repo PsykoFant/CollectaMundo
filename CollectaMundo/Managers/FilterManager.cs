@@ -14,18 +14,16 @@ namespace CollectaMundo.Managers
             {
                 if (filterCriteria == null || !filterCriteria.Any())
                 {
-                    return cards.ToList();
+                    return [.. cards];
                 }
-                // Only include a card if it matches all filter criteria.
-                return cards.Where(card => filterCriteria.All(filter => filter.Matches(card))).ToList();
+                return [.. cards.Where(card => filterCriteria.All(filter => filter.Matches(card)))];
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error while filtering cards: {ex.Message}");
-                return cards.ToList();
+                return [.. cards];
             }
         }
-
         public static List<FilterDefaults> GetFilterDefaults(CardViewModel cardViewModel)
         {
             try

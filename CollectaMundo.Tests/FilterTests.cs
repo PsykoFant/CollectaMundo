@@ -1,5 +1,4 @@
-﻿using CollectaMundo.Models;
-using CollectaMundo.ViewModels;
+﻿using CollectaMundo.ViewModels;
 using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Tests
@@ -13,15 +12,15 @@ namespace CollectaMundo.Tests
             // Create a CardViewModel and populate it with test cards.
             var cardVM = new CardViewModel();
             var testCards = FilterTestUtilities.GetTestCards();
-            // Here we simulate the loading process:
+            // Simulate the loading process:
             cardVM.AllCards.AddRange(testCards);
-            cardVM.AllCardsView.Refresh();
+            // Initialize the filtered list to the full list initially.
+            cardVM.FilteredCards = [.. cardVM.AllCards];
 
             // Create a FilterViewModel based on the CardViewModel.
             var filterVM = new FilterViewModel(cardVM);
 
-            // Now, suppose we want to filter by Name containing "Command" AND ManaValue greater than 1.
-            // (Assume that your mapping for "Name" and "ManaValue" exist in your FilterCriteriaMappings.)
+            // Set up filters: Name contains "Command" and ManaValue > 1.
             var nameFilter = filterVM.Filters["Name"];
             nameFilter.SelectedSingleOption = "Command";
 
@@ -31,15 +30,14 @@ namespace CollectaMundo.Tests
 
             // Act
             filterVM.ApplyFiltering();
-            var filteredCards = cardVM.AllCardsView.Cast<CardSet>().ToList();
+            var filteredCards = cardVM.FilteredCards;
 
             string expectedSummary = "Name: \"Command\" AND ManaValue > 1";
 
-            // Assert: Check that the FilterSummary property equals the expected string.
+            // Assert that the filter summary equals the expected string.
             Assert.Equal(expectedSummary, filterVM.FilterSummary);
 
-            // Assert
-            // For example, we expect to see only cards whose Name contains "Command" and whose ManaValue > 1.
+            // Assert that every filtered card has a Name containing "Command" and a ManaValue > 1.
             Assert.All(filteredCards, card =>
             {
                 Assert.Contains("Command", card.Name, StringComparison.OrdinalIgnoreCase);
@@ -47,16 +45,17 @@ namespace CollectaMundo.Tests
             });
         }
 
+
         [Fact]
         public void Test_Combined_Multi_Single_NumericFilter()
         {
-            // Arrange
             // Create a CardViewModel and populate it with test cards.
             var cardVM = new CardViewModel();
             var testCards = FilterTestUtilities.GetTestCards();
-            // Here we simulate the loading process:
+            // Simulate the loading process:
             cardVM.AllCards.AddRange(testCards);
-            cardVM.AllCardsView.Refresh();
+            // Initialize the filtered list to the full list initially.
+            cardVM.FilteredCards = [.. cardVM.AllCards];
 
             // Create a FilterViewModel based on the CardViewModel.
             var filterVM = new FilterViewModel(cardVM);
@@ -79,7 +78,7 @@ namespace CollectaMundo.Tests
 
             // Act
             filterVM.ApplyFiltering();
-            var filteredCards = cardVM.AllCardsView.Cast<CardSet>().ToList();
+            var filteredCards = cardVM.FilteredCards;
 
             // Assert
             Assert.All(filteredCards, card =>
