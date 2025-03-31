@@ -751,7 +751,7 @@
                 <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
-                            <Binding Path="CardVM.FilteredCards.Count"/>
+                            <Binding Path="CardVM.FilteredAllCards.Count"/>
                             <Binding Path="CardVM.AllCards.Count"/>
                         </MultiBinding>
                     </Label.Content>
@@ -912,7 +912,7 @@
 
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
-                          ItemsSource="{Binding CardVM.FilteredCards}"
+                          ItemsSource="{Binding CardVM.FilteredAllCards}"
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"
@@ -1111,8 +1111,8 @@
                 <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
-                            <Binding Path="CardVM.MyCollection.Count"/>
-                            <Binding Path="CardVM.MyCollection.Count"/>
+                            <Binding Path="CardVM.FilteredMyCollection.Count"/>
+                            <Binding Path="CardVM.MyCollection.Count"/>                            
                         </MultiBinding>
                     </Label.Content>
                 </Label>
@@ -1217,7 +1217,7 @@
                 </ListView>
                 <!--The my collection datagrid-->
                 <DataGrid x:Name="MyCollectionDataGrid"
-                          ItemsSource="{Binding CardVM.MyCollection}"
+                          ItemsSource="{Binding CardVM.FilteredMyCollection}"
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"

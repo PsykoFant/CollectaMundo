@@ -67,11 +67,29 @@ namespace CollectaMundo.ViewModels
         // Apply filtering to update the filtered list.
         public virtual void ApplyFiltering()
         {
-            var filteredCards = FilterManager.ApplyFilter(_cardViewModel.AllCards, Filters.Values);
-            _cardViewModel.FilteredCards = filteredCards;
-            OnPropertyChanged(nameof(_cardViewModel.FilteredCards));
+            // Determine if any filter is active.
+            bool noFilterActive = Filters.Values.All(f => f.IsDefault);
+
+            if (noFilterActive)
+            {
+                _cardViewModel.FilteredAllCards = new List<CardSet>(_cardViewModel.AllCards);
+                _cardViewModel.FilteredMyCollection = new List<CardSet>(_cardViewModel.MyCollection);
+            }
+            else
+            {
+                var filteredAll = FilterManager.ApplyFilter(_cardViewModel.AllCards, Filters.Values);
+                _cardViewModel.FilteredAllCards = filteredAll;
+
+                var filteredMy = FilterManager.ApplyFilter(_cardViewModel.MyCollection, Filters.Values);
+                _cardViewModel.FilteredMyCollection = filteredMy;
+            }
+
+            // The property setters for FilteredAllCards and FilteredMyCollection raise OnPropertyChanged,
+            // so the UI will update automatically.
             UpdateFilterSummary();
         }
+
+
 
         // Update the filter summary
         private string? _filterSummary;

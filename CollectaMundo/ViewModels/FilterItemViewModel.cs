@@ -316,6 +316,30 @@ namespace CollectaMundo.ViewModels
             }
         }
 
+
+        public bool IsDefault
+        {
+            get
+            {
+                // For a single filter, it's default if no selection has been made or it equals the default text.
+                if (FilterCategory == FilterType.Single)
+                {
+                    return string.IsNullOrWhiteSpace(SelectedSingleOption) || SelectedSingleOption == DefaultText;
+                }
+                // For a multi filter, it's default if no options are selected.
+                if (FilterCategory == FilterType.Multi)
+                {
+                    return SelectedOptions == null || !SelectedOptions.Any();
+                }
+                // For a numeric filter, it's default if no numeric value is selected.
+                if (FilterCategory == FilterType.Numeric)
+                {
+                    return SelectedNumericValue == null;
+                }
+                return true;
+            }
+        }
+
         // Constructor - Initializes filter options and selection tracking.
         private readonly FilterViewModel _filterViewModel;
         public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, string readableLabel, FilterViewModel filterViewModel, IEnumerable<int>? numericOptions = null)
