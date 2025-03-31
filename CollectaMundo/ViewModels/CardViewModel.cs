@@ -18,7 +18,6 @@ namespace CollectaMundo.ViewModels
 
         public List<CardSet> AllCards { get; set; } = [];
 
-
         private List<CardSet> _filteredCards = [];
         public List<CardSet> FilteredCards
         {
@@ -32,9 +31,6 @@ namespace CollectaMundo.ViewModels
                 }
             }
         }
-
-
-
 
         private List<CardSet> _myCollection = [];
         public List<CardSet> MyCollection
@@ -63,11 +59,11 @@ namespace CollectaMundo.ViewModels
                 }
             }
         }
-        public CardViewModel()
-        {
-            //FilteredCards = [.. _allCards];
-            FilteredCards = [.. AllCards];
-        }
+
+        //public CardViewModel()
+        //{
+        //    //FilteredCards = [.. AllCards];
+        //}
 
         // Async method to populate data
         public static async Task PopulateCardDataGridAsync(List<CardSet> cardList, string query, DataGridContext context)
@@ -104,7 +100,6 @@ namespace CollectaMundo.ViewModels
                 MessageBox.Show($"Error while loading cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
         private static CardSet CreateCardFromReader(DbDataReader reader, DataGridContext context)
         {
             try
