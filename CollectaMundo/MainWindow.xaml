@@ -1231,14 +1231,6 @@
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                           behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
                           behaviors:DataGridColumnResizerBehavior.DataGridIndex="1">
-                    <DataGrid.ContextMenu>
-                        <ContextMenu Style="{StaticResource MPlantin}">
-                            <MenuItem Header="EDIT selected card(s)" Click="ButtonEditCardsInCollection_Click" Style="{StaticResource BelerenBold}"/>
-                            <MenuItem Header="UPDATE selected card(s) - put ALL for TRADE" Click="ButtonSetCardsForTrade_Click" Style="{StaticResource BelerenBold}"/>
-                            <MenuItem Header="UPDATE selected card(s) - put NONE for TRADE" Click="ButtonSetNoneForTrade_Click" Style="{StaticResource BelerenBold}"/>
-                            <MenuItem Header="DELETE card(s) from collection" Click="ButtonDeleteCardsFromCollection_Click" Style="{StaticResource BelerenBold}"/>
-                        </ContextMenu>
-                    </DataGrid.ContextMenu>
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                             <DataGridTemplateColumn.HeaderTemplate>
@@ -1372,6 +1364,14 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
+                    <DataGrid.ContextMenu>
+                        <ContextMenu Style="{StaticResource MPlantin}">
+                            <MenuItem Header="EDIT selected card(s)" Click="ButtonEditCardsInCollection_Click" Style="{StaticResource BelerenBold}"/>
+                            <MenuItem Header="UPDATE selected card(s) - put ALL for TRADE" Click="ButtonSetCardsForTrade_Click" Style="{StaticResource BelerenBold}"/>
+                            <MenuItem Header="UPDATE selected card(s) - put NONE for TRADE" Click="ButtonSetNoneForTrade_Click" Style="{StaticResource BelerenBold}"/>
+                            <MenuItem Header="DELETE card(s) from collection" Click="ButtonDeleteCardsFromCollection_Click" Style="{StaticResource BelerenBold}"/>
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
                 </DataGrid>
             </Grid>
             <Grid x:Name="GridDecks" VerticalAlignment="Top">
@@ -1469,7 +1469,7 @@
                     </Grid>
                     <Grid Grid.Row="1">
                         <DataGrid x:Name="AllCardsForDecksDataGrid"
-                                  ItemsSource="{Binding CardVM.AllCardsForDecks}"
+                                  ItemsSource="{Binding CardVM.FilteredAllCardsForDecks}"
                                   AutoGenerateColumns="False"
                                   SelectionChanged="CardImageSelectionChangedHandler"
                                   MouseDoubleClick="AddCardToDeck"

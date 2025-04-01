@@ -11,8 +11,6 @@ namespace CollectaMundo.ViewModels
 {
     public class CardViewModel : INotifyPropertyChanged
     {
-        public ObservableCollection<CardSet> ColorIcons { get; } = [];
-
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
@@ -34,7 +32,7 @@ namespace CollectaMundo.ViewModels
         }
 
 
-        // AllCards lists for AllCardsDataGrid
+        // MyCollecdtion lists for MyCollectionDataGrid
         public List<CardSet> MyCollection { get; set; } = [];
 
         private List<CardSet> _filteredMyCollection = [];
@@ -52,38 +50,26 @@ namespace CollectaMundo.ViewModels
         }
 
 
+        // AllCardsForDecks lists for AllCardsForDecksDataGrid
 
+        public List<CardSet> AllCardsForDecks { get; set; } = [];
 
-
-
-
-        //private List<CardSet> _myCollection = [];
-        //public List<CardSet> MyCollection
-        //{
-        //    get => _myCollection;
-        //    set
-        //    {
-        //        if (_myCollection != value)
-        //        {
-        //            _myCollection = value;
-        //            OnPropertyChanged(nameof(MyCollection));
-        //        }
-        //    }
-        //}
-
-        private List<CardSet> _allCardsForDecks = [];
-        public List<CardSet> AllCardsForDecks
+        private List<CardSet> _filteredAllCardsForDecks = [];
+        public List<CardSet> FilteredAllCardsForDecks
         {
-            get => _allCardsForDecks;
+            get => _filteredAllCardsForDecks;
             set
             {
-                if (_allCardsForDecks != value)
+                if (_filteredAllCardsForDecks != value)
                 {
-                    _allCardsForDecks = value;
-                    OnPropertyChanged(nameof(AllCardsForDecks));
+                    _filteredAllCardsForDecks = value;
+                    OnPropertyChanged(nameof(FilteredAllCardsForDecks));
                 }
             }
         }
+
+        // For displaying list of color icons for color filtering
+        public ObservableCollection<CardSet> ColorIcons { get; } = [];
 
 
         // Async method to populate data

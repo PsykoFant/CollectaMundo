@@ -182,6 +182,7 @@ namespace CollectaMundo
 
             await CardViewModel.PopulateCardDataGridAsync(CardVM.AllCards, allCardsQuery, DataGridContext.AllCards);
             await CardViewModel.PopulateCardDataGridAsync(CardVM.MyCollection, myCollectionQuery, DataGridContext.MyCollection);
+            await CardViewModel.PopulateCardDataGridAsync(CardVM.AllCardsForDecks, allCardsForDecksQuery, DataGridContext.AllCardsForDecks);
             await CardVM.LoadColorIconsAsync();
 
             OnPropertyChanged(nameof(CardVM)); // This ensures CardVM bindings refresh

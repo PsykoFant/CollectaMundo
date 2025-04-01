@@ -1,11 +1,9 @@
 ﻿using CollectaMundo.Managers;
-using CollectaMundo.Models;
 using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using System.Windows;
-using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using static CollectaMundo.MainWindow;
@@ -41,29 +39,6 @@ namespace CollectaMundo.ViewModels
             ClearFiltersCommand = new RelayCommand<object>(_ => ClearFilters());
         }
 
-        // Applies the current filter criteria to the provided ListCollectionView.
-        private void ApplyFilterToView(ListCollectionView view)
-        {
-            try
-            {
-                view.Filter = item =>
-                {
-                    if (item is CardSet card)
-                    {
-                        // Only include the card if it satisfies all active filters.
-                        return Filters.Values.All(filter => filter.Matches(card));
-                    }
-                    return false;
-                };
-
-                view.Refresh();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error applying filter to view: {ex.Message}");
-                MessageBox.Show($"Error applying filter to view: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
         // Apply filtering to update the filtered list.
         public virtual void ApplyFiltering()
         {
@@ -72,8 +47,9 @@ namespace CollectaMundo.ViewModels
 
             if (noFilterActive)
             {
-                _cardViewModel.FilteredAllCards = new List<CardSet>(_cardViewModel.AllCards);
-                _cardViewModel.FilteredMyCollection = new List<CardSet>(_cardViewModel.MyCollection);
+                _cardViewModel.FilteredAllCards = [.. _cardViewModel.AllCards];
+                _cardViewModel.FilteredMyCollection = [.. _cardViewModel.MyCollection];
+                _cardViewModel.FilteredAllCardsForDecks = [.. _cardViewModel.AllCardsForDecks];
             }
             else
             {
@@ -82,6 +58,9 @@ namespace CollectaMundo.ViewModels
 
                 var filteredMy = FilterManager.ApplyFilter(_cardViewModel.MyCollection, Filters.Values);
                 _cardViewModel.FilteredMyCollection = filteredMy;
+
+                var filteredForDecks = FilterManager.ApplyFilter(_cardViewModel.AllCardsForDecks, Filters.Values);
+                _cardViewModel.FilteredAllCardsForDecks = filteredForDecks;
             }
 
             // The property setters for FilteredAllCards and FilteredMyCollection raise OnPropertyChanged,
