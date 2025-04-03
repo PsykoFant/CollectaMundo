@@ -779,6 +779,7 @@
                 <!--Cards to add listview-->
                 <ListView ItemsSource="{Binding AddCardsVM.CardsToAdd, RelativeSource={RelativeSource AncestorType=Window}}"
                           Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
+                          DataContext="{Binding AddCardsVM, RelativeSource={RelativeSource AncestorType=Window}}"
                           behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding AddCardsVM.RefreshColumnsTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"                          
                           Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
                     <ListView.ItemContainerStyle>
@@ -836,7 +837,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="+" Width="15" Background="#FFFBF7B4"
-                                            Command="{Binding DataContext.AddCardsVM.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            Command="{Binding DataContext.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                             CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
@@ -864,7 +865,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="-" Width="15" Background="#FFFBF7B4"
-                                            Command="{Binding DataContext.AddCardsVM.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            Command="{Binding DataContext.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                             CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
@@ -873,7 +874,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="+" Width="15" Background="#FFFBF7B4"
-                                            Command="{Binding DataContext.AddCardsVM.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            Command="{Binding DataContext.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                             CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
@@ -901,7 +902,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="-" Width="15" Background="#FFFBF7B4"
-                                            Command="{Binding DataContext.AddCardsVM.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            Command="{Binding DataContext.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                             CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
