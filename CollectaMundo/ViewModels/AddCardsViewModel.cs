@@ -106,7 +106,7 @@ namespace CollectaMundo.ViewModels
                 foreach (var card in cards)
                 {
                     // Call the manager to add the card to the in-memory collection.
-                    await _cardCollectionManager.AddCardToListViewAsync(card, CardsToAdd);
+                    await _cardCollectionManager.AddCardToAddCardsListViewAsync(card, CardsToAdd);
                 }
 
                 // Increment the trigger to signal the view to clear selection.

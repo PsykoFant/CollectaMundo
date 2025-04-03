@@ -9,7 +9,9 @@ namespace CollectaMundo.Managers
     public class CardCollectionManager(ICardCollectionService dataService)
     {
         private readonly ICardCollectionService _dataService = dataService ?? throw new ArgumentNullException(nameof(dataService));
-        public async Task AddCardToListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection)
+
+        // Add card to CardsToAddListview
+        public async Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection)
         {
             if (selectedCard.Uuid == null)
             {
@@ -58,11 +60,65 @@ namespace CollectaMundo.Managers
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in AddCardToListViewAsync: {ex.Message}");
+                Debug.WriteLine($"Error in AddCardToAddCardsListViewAsync: {ex.Message}");
                 throw;
             }
         }
 
+        // Add card to CardsToEditListview
+        public async Task AddCardToEditCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection)
+        {
+            if (selectedCard.Uuid == null)
+            {
+                throw new InvalidOperationException("Card UUID is null, cannot fetch languages.");
+            }
+
+            try
+            {
+                await DBAccess.OpenConnectionAsync();
+                // Fetch data from the database.
+                var languages = await _dataService.FetchLanguagesForCardAsync(selectedCard.Uuid);
+                var finishes = await _dataService.FetchFinishesForCardAsync(selectedCard.Uuid);
+                DBAccess.CloseConnection();
+
+                // Determine the default finish and condition.
+                string? defaultFinish = finishes.FirstOrDefault();
+                string defaultCondition = "Near Mint";
+                string language = selectedCard.Language ?? "English";
+
+                // Check if a card with the same uuid, default finish, default condition, and same language already exists.
+                if (targetCollection.Any(card =>
+                     card.Uuid == selectedCard.Uuid &&
+                     card.SelectedFinish == defaultFinish &&
+                     card.SelectedCondition == defaultCondition &&
+                     card.Language == language))
+                {
+                    return;
+                }
+
+                // Create a new card with default values.
+                var newItem = new CardSet
+                {
+                    Name = selectedCard.Name,
+                    SetName = selectedCard.SetName,
+                    Uuid = selectedCard.Uuid,
+                    CardsOwned = selectedCard.CardsOwned,
+                    CardsForTrade = selectedCard.CardsOwned,
+                    AvailableFinishes = finishes,
+                    SelectedFinish = selectedCard.SelectedFinish,
+                    Language = selectedCard.Language,
+                    OtherLanguages = languages,
+                    SelectedCondition = selectedCard.SelectedCondition,
+                };
+
+                targetCollection.Add(newItem);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in AddCardToAddCardsListViewAsync: {ex.Message}");
+                throw;
+            }
+        }
 
         // Adds a new card or updates an existing one.
         public async Task AddOrUpdateCardAsync(CardSet card, ObservableCollection<CardSet> inMemoryCollection)
