@@ -250,7 +250,7 @@ namespace CollectaMundo
         public static void ShowCardsToEditListView()
         {
             MainWindow.CurrentInstance.EditStatusScrollViewer.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Visible;
+            //MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.ButtonClearCardsToEdit.Visibility = Visibility.Visible;
         }
@@ -264,7 +264,7 @@ namespace CollectaMundo
         public static void HideCardsToEditListView(bool showLogo)
         {
             MainWindow.CurrentInstance.LogoSmall.Visibility = showLogo ? Visibility.Visible : Visibility.Collapsed;
-            MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Collapsed;
+            //MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.ButtonClearCardsToEdit.Visibility = Visibility.Collapsed;
         }

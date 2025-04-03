@@ -22,8 +22,9 @@ namespace CollectaMundo
         #region Set up varibales
         public CardViewModel CardVM { get; }
         public FilterViewModel? FilterVM { get; private set; }
-        public AddCardsViewModel AddCardsVM { get; set; }
-        public AddCardsViewModel EditCardsVM { get; set; }
+        public AddCardsViewModel AddCardsVM { get; } = new AddCardsViewModel(new CardCollectionService());
+
+        public AddCardsViewModel EditCardsVM { get; } = new AddCardsViewModel(new CardCollectionService());
 
         private static MainWindow? _currentInstance;
         public static MainWindow CurrentInstance
@@ -157,8 +158,8 @@ namespace CollectaMundo
 
             CardVM = new CardViewModel();
             ICardCollectionService cardCollectionService = new CardCollectionService();
-            AddCardsVM = new AddCardsViewModel(cardCollectionService);
-            EditCardsVM = new AddCardsViewModel(cardCollectionService);
+            //AddCardsVM = new AddCardsViewModel(cardCollectionService);
+            //EditCardsVM = new AddCardsViewModel(cardCollectionService);
 
             // Set up system
             Loaded += async (sender, args) =>
@@ -203,7 +204,7 @@ namespace CollectaMundo
             CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
 
             //CardsToAddListView.ItemsSource = addToCollectionManager.CardItemsToAdd;
-            CardsToEditListView.ItemsSource = addToCollectionManager.CardItemsToEdit;
+            //CardsToEditListView.ItemsSource = addToCollectionManager.CardItemsToEdit;
 
             // Start on the search and filter all cards page            
             ResetGrids();
