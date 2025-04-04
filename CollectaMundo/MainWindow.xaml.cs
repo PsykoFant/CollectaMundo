@@ -23,8 +23,10 @@ namespace CollectaMundo
         public CardViewModel CardVM { get; }
         public FilterViewModel? FilterVM { get; private set; }
         public AddCardsViewModel AddCardsVM { get; } = new AddCardsViewModel(new CardCollectionService());
-
-        public AddCardsViewModel EditCardsVM { get; } = new AddCardsViewModel(new CardCollectionService());
+        public AddCardsViewModel EditCardsVM { get; } = new AddCardsViewModel(new CardCollectionService())
+        {
+            RemoveCardWhenCardsOwnedZero = false // Disable removal in edit mode.
+        };
 
         private static MainWindow? _currentInstance;
         public static MainWindow CurrentInstance

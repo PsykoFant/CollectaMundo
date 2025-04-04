@@ -16,6 +16,9 @@ namespace CollectaMundo.ViewModels
 
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
 
+        // Controls removal behavior when CardsOwned reaches zero.
+        public bool RemoveCardWhenCardsOwnedZero { get; set; } = true; // Default: remove card
+
         private readonly CardCollectionManager _cardCollectionManager;
 
         // Primary constructor body
@@ -55,10 +58,10 @@ namespace CollectaMundo.ViewModels
         {
             if (sender is CardSet card && e.PropertyName == nameof(CardSet.CardsOwned))
             {
-                // If CardsOwned is zero, remove the card from the collection.
-                if (card.CardsOwned <= 0 && CardsToAdd.Contains(card))
+                // Only remove the card if the flag is true.
+                if (RemoveCardWhenCardsOwnedZero && card.CardsOwned <= 0 && CardsToAdd.Contains(card))
                 {
-                    // Removal must be done on the UI thread.
+                    // Remove on the UI thread.
                     Application.Current.Dispatcher.Invoke(() => CardsToAdd.Remove(card));
                 }
             }
@@ -116,7 +119,6 @@ namespace CollectaMundo.ViewModels
                 RefreshColumnsTrigger++;
             }
         });
-
         public ICommand EditSelectedCardsCommand => new RelayCommand<object>(async param =>
         {
             if (param is IEnumerable<object> selectedItems)
@@ -125,7 +127,7 @@ namespace CollectaMundo.ViewModels
                 foreach (var card in cards)
                 {
                     // Call the manager to add the card to the in-memory collection.
-                    await _cardCollectionManager.AddCardToAddCardsListViewAsync(card, CardsToAdd);
+                    await _cardCollectionManager.AddCardToEditCardsListViewAsync(card, CardsToAdd);
                 }
 
                 // Increment the trigger to signal the view to clear selection.
@@ -135,8 +137,6 @@ namespace CollectaMundo.ViewModels
                 RefreshColumnsTrigger++;
             }
         });
-
-
 
         public ICommand ClearCardsToAddCommand => new RelayCommand<object>(param =>
         {

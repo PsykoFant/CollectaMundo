@@ -252,7 +252,7 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.EditStatusScrollViewer.Visibility = Visibility.Collapsed;
             //MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Visible;
-            MainWindow.CurrentInstance.ButtonClearCardsToEdit.Visibility = Visibility.Visible;
+            //MainWindow.CurrentInstance.ButtonClearCardsToEdit.Visibility = Visibility.Visible;
         }
         public static void HideCardsToAddListView(bool showLogo)
         {
@@ -266,7 +266,7 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.LogoSmall.Visibility = showLogo ? Visibility.Visible : Visibility.Collapsed;
             //MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.ButtonClearCardsToEdit.Visibility = Visibility.Collapsed;
+            //MainWindow.CurrentInstance.ButtonClearCardsToEdit.Visibility = Visibility.Collapsed;
         }
         private static async Task<List<string>> FetchLanguagesForCardAsync(string? uuid)
         {

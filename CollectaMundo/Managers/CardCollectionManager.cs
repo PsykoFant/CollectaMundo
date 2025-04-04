@@ -81,17 +81,12 @@ namespace CollectaMundo.Managers
                 var finishes = await _dataService.FetchFinishesForCardAsync(selectedCard.Uuid);
                 DBAccess.CloseConnection();
 
-                // Determine the default finish and condition.
-                string? defaultFinish = finishes.FirstOrDefault();
-                string defaultCondition = "Near Mint";
-                string language = selectedCard.Language ?? "English";
-
                 // Check if a card with the same uuid, default finish, default condition, and same language already exists.
                 if (targetCollection.Any(card =>
                      card.Uuid == selectedCard.Uuid &&
-                     card.SelectedFinish == defaultFinish &&
-                     card.SelectedCondition == defaultCondition &&
-                     card.Language == language))
+                     card.SelectedFinish == selectedCard.SelectedFinish &&
+                     card.SelectedCondition == selectedCard.SelectedCondition &&
+                     card.Language == selectedCard.Language))
                 {
                     return;
                 }
