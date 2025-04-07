@@ -100,7 +100,7 @@ namespace CollectaMundo.ViewModels
         // Controls visibility of the CardsToAdd listview.
         public Visibility CardsToAddVisibility => CardsToAdd.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 
-        // Commands
+        // Commands - add to listviews
         public ICommand AddSelectedCardsCommand => new RelayCommand<object>(async param =>
         {
             if (param is IEnumerable<object> selectedItems)
@@ -138,6 +138,7 @@ namespace CollectaMundo.ViewModels
             }
         });
 
+        // Commands - manipulate listviews
         public ICommand ClearCardsToAddCommand => new RelayCommand<object>(param =>
         {
             // Clear the in-memory collection.
@@ -185,5 +186,25 @@ namespace CollectaMundo.ViewModels
                 card.CardsForTrade--;
             }
         });
+
+        // Commands - submit cards from listview
+        public ICommand SubmitSelectedCardsCommand => new RelayCommand<object>(async param =>
+        {
+            // Instead of using 'param', iterate over all cards currently in the in-memory collection.
+            // Make a copy to avoid modification issues during iteration.
+            var cards = CardsToAdd.ToList();
+            foreach (var card in cards)
+            {
+                // Add or update the card in the database.
+                await _cardCollectionManager.AddOrUpdateCardAsync(card, CardsToAdd);
+            }
+            // Clear the in-memory collection after submission.
+            CardsToAdd.Clear();
+
+            // Signal the view to clear selection.
+            ClearSelectionTrigger++;
+        });
+
+
     }
 }

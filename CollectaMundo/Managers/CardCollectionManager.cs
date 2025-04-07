@@ -120,6 +120,8 @@ namespace CollectaMundo.Managers
         {
             try
             {
+                await DBAccess.OpenConnectionAsync();
+
                 // Ensure the database is ready (DBAccess is leveraged within the data service)
                 int? existingId = await _dataService.CheckForExistingCardAsync(card);
 
@@ -138,8 +140,13 @@ namespace CollectaMundo.Managers
 
                     if (existingCard != null)
                     {
+                        Debug.WriteLine("Existing card was not null - incrementing count and trade");
                         existingCard.CardsOwned += card.CardsOwned;
                         existingCard.CardsForTrade += card.CardsForTrade;
+                    }
+                    else
+                    {
+                        Debug.WriteLine("Existing card was null");
                     }
                 }
                 else
@@ -149,6 +156,8 @@ namespace CollectaMundo.Managers
                     // Add the card to the in-memory collection.
                     inMemoryCollection.Add(card);
                 }
+
+                DBAccess.CloseConnection();
             }
             catch (Exception ex)
             {
