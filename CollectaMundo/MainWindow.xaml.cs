@@ -194,8 +194,17 @@ namespace CollectaMundo
             OnPropertyChanged(nameof(ColorIcons));
 
             // Assign the new FilterVM object AFTER data is available
-            FilterVM = new FilterViewModel(AllCardsVM, MyCollectionVM, AllCardsForDecksVM);
+            FilterVM = new FilterViewModel
+            {
+                AllCardsVM = AllCardsVM,
+                MyCollectionVM = MyCollectionVM,
+                AllCardsForDecksVM = AllCardsForDecksVM
+            };
+            await FilterVM.InitializeAsync();
+
             OnPropertyChanged(nameof(FilterVM)); // Force UI refresh so bindings update
+
+
 
             Task loadDecks = LoadAllDecksAsync();
             Task populateAllFormatsList = PopulateAllFormatsListAsync();

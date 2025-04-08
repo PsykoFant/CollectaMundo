@@ -1,8 +1,9 @@
 ﻿using CollectaMundo.Models;
 using CollectaMundo.Utilities;
 using CollectaMundo.ViewModels;
+using System.Data.Common;
+using System.Data.SQLite;
 using System.Diagnostics;
-using System.Windows;
 
 namespace CollectaMundo.Managers
 {
@@ -24,74 +25,124 @@ namespace CollectaMundo.Managers
                 return [.. cards];
             }
         }
-        public static List<FilterDefaults> GetFilterDefaults(CardViewModel allCardsVM, CardViewModel myCollectionVM)
+        public static async Task<List<FilterDefaults>> GetFilterDefaultsFromDBAsync()
         {
-            try
+            var filterDefaultsList = new List<FilterDefaults>();
+
+            // Iterate over each filter criterion defined in your mappings.
+            foreach (var entry in FilterCriteriaMappings.CriteriaMappings)
             {
-                return [.. FilterCriteriaMappings.CriteriaMappings.Select(entry =>
+                string criteriaKey = entry.Key;
+                var mapping = entry.Value;
+
+                // Define the query explicitly using a switch statement on the criteria key.
+                string query = criteriaKey switch
                 {
-                    List<CardSet> sourceCollection = entry.Value.ListName switch{
-                    "AllCards" => allCardsVM.Cards, "MyCollection" => myCollectionVM.Cards, _ =>
-                    throw new Exception($"Invalid list name: {entry.Value.ListName}"), };
+                    "Name" => "SELECT DISTINCT Name FROM view_allCards;",
+                    "SetName" => "SELECT DISTINCT SetName FROM view_allCards;",
+                    "Text" => "SELECT DISTINCT RulesText FROM view_allCards;",
+                    "Colors" => "SELECT DISTINCT Colors FROM view_allCards;", // Adjust if needed.
+                    "Rarity" => "SELECT DISTINCT Rarity FROM view_allCards;",
+                    "SuperTypes" => "SELECT DISTINCT SuperTypes FROM view_allCards;",
+                    "Types" => "SELECT DISTINCT Type FROM view_allCards;",
+                    "SubTypes" => "SELECT DISTINCT SubTypes FROM view_allCards;",
+                    "Keywords" => "SELECT DISTINCT Keywords FROM view_allCards;",
+                    "Finishes" => "SELECT DISTINCT Finishes FROM view_allCards;",
+                    "Language" => "SELECT DISTINCT Language FROM view_myCollection;",
+                    "SelectedCondition" => "SELECT DISTINCT Condition FROM view_myCollection;",
+                    "ManaValue" => "SELECT DISTINCT ManaValue FROM view_allCards;",
+                    "CardsForTrade" => "SELECT DISTINCT CardsForTrade FROM view_myCollection;",
+                    _ => throw new Exception($"Unhandled criteria key: {criteriaKey}")
+                };
 
-                    var rawValues = ExtractCriteriaValues(entry.Key, sourceCollection);
-                    var removeItems = GetUnwantedItems(entry.Key);
-                    bool shouldNotSplit = entry.Value.ShouldNotSplit;
-                    var filteredValues = CleanAndFilter(rawValues, removeItems, shouldNotSplit);
+                var distinctValues = new List<string>();
 
-                    // Special handling for "Colors" (add predefined values)
-                    if (entry.Key == "Colors")
+                try
+                {
+                    using SQLiteCommand command = new(query, DBAccess.connection);
+                    using DbDataReader reader = await command.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
                     {
-                        var predefinedColors = new List<string> { "W", "U", "B", "R", "G", "C", "X", "Colorless" };
-                        filteredValues = [.. predefinedColors.Union(filteredValues)];
-                    }
-
-                    // Convert numeric filters to List<int>
-                    List<int>? numericValues = null;
-                    if (entry.Value.Type == FilterType.Numeric)
-                    {
-                        numericValues = [.. filteredValues.Where(v => int.TryParse(v, out _)).Select(int.Parse)];
-                    }
-
-                    // Convert string options into FilterOption objects
-                    var filterOptions = filteredValues.Select(value => new FilterOption(value)).ToList();
-
-                    // Determine default text
-                    var defaultText = string.Empty;
-                    if (entry.Value.Type == FilterType.Multi || entry.Key == "Text")
-                    {
-                        if (entry.Value.ReadableLabel == "")
+                        // Retrieve the value using the column name that corresponds to the criteria.
+                        // For example, for "Text", we read from "RulesText" column.
+                        string? value = criteriaKey switch
                         {
-                            defaultText = $"{entry.Key} ...";
-                        }
-                        else
+                            "Name" => reader["Name"] as string,
+                            "SetName" => reader["SetName"] as string,
+                            "Text" => reader["RulesText"] as string,
+                            "Colors" => reader["Colors"] as string,
+                            "Rarity" => reader["Rarity"] as string,
+                            "SuperTypes" => reader["SuperTypes"] as string,
+                            "Types" => reader["Type"] as string,
+                            "SubTypes" => reader["SubTypes"] as string,
+                            "Keywords" => reader["Keywords"] as string,
+                            "Finishes" => reader["Finishes"] as string,
+                            "Language" => reader["Language"] as string,
+                            "SelectedCondition" => reader["Condition"] as string,
+                            "ManaValue" => reader["ManaValue"].ToString(),
+                            "CardsForTrade" => reader["CardsForTrade"].ToString(),
+                            _ => null
+                        };
+
+                        if (!string.IsNullOrEmpty(value))
                         {
-                            defaultText = $"{entry.Value.ReadableLabel} ...";
+                            distinctValues.Add(value.Trim());
                         }
                     }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error querying distinct values for {criteriaKey}: {ex.Message}");
+                    continue;
+                }
 
-                    // Determine readable label (just use CriteriaKey if empty)
-                    var readableLabel = string.IsNullOrEmpty(entry.Value.ReadableLabel)
-                        ? entry.Key
-                        : entry.Value.ReadableLabel;
+                // Apply cleaning and filtering.
+                var removeItems = GetUnwantedItems(criteriaKey);
+                bool shouldNotSplit = mapping.ShouldNotSplit;
+                var cleanedValues = CleanAndFilter(distinctValues, removeItems, shouldNotSplit);
 
-                    return new FilterDefaults
-                    {
-                        CriteriaKey = entry.Key,
-                        NumericCriteria = numericValues, // Store numeric values for numeric filters
-                        FilterOptions = filterOptions,     // Store list of filter options
-                        DefaultText = defaultText,
-                        ReadableLabel = readableLabel
-                    };
-                })];
+                // Special handling for Colors: add predefined colors if needed.
+                if (criteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
+                {
+                    var predefinedColors = new List<string> { "W", "U", "B", "R", "G", "C", "X", "Colorless" };
+                    cleanedValues = predefinedColors.Union(cleanedValues).ToList();
+                }
+
+                // Process numeric filters by converting values to int as needed.
+                List<int>? numericValues = null;
+                if (mapping.Type == FilterType.Numeric)
+                {
+                    numericValues = cleanedValues
+                        .Where(v => int.TryParse(v, out _))
+                        .Select(int.Parse)
+                        .ToList();
+                }
+
+                var filterOptions = cleanedValues.Select(value => new FilterOption(value)).ToList();
+
+                // Determine default text.
+                string defaultText = string.IsNullOrWhiteSpace(mapping.ReadableLabel)
+                    ? $"{criteriaKey} ..."
+                    : $"{mapping.ReadableLabel} ...";
+
+                string readableLabel = string.IsNullOrEmpty(mapping.ReadableLabel)
+                    ? criteriaKey
+                    : mapping.ReadableLabel;
+
+                filterDefaultsList.Add(new FilterDefaults
+                {
+                    CriteriaKey = criteriaKey,
+                    FilterOptions = filterOptions,
+                    NumericCriteria = numericValues,
+                    DefaultText = defaultText,
+                    ReadableLabel = readableLabel
+                });
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error Getting Filter Defaults: {ex.Message}");
-                MessageBox.Show($"Error Getting Filter Defaults: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return [];  // Return an empty list if an exception occurs.
-            }
+
+            return filterDefaultsList;
         }
+
+
         private static List<string> ExtractCriteriaValues(string propertyName, List<CardSet> sourceCollection)
         {
             var propertyInfo = typeof(CardSet).GetProperty(propertyName);

@@ -18,17 +18,19 @@ namespace CollectaMundo.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        private readonly CardViewModel _allCardsVM;
-        private readonly CardViewModel _myCollectionVM;
-        private readonly CardViewModel _allCardsForDecksVM;
+        public CardViewModel AllCardsVM { get; set; } = null!;
+        public CardViewModel MyCollectionVM { get; set; } = null!;
+        public CardViewModel AllCardsForDecksVM { get; set; } = null!;
 
-        public FilterViewModel(CardViewModel allCardsVM, CardViewModel myCollectionVM, CardViewModel allCardsForDecksVM)
+        public FilterViewModel()
         {
-            _allCardsVM = allCardsVM ?? throw new ArgumentNullException(nameof(allCardsVM));
-            _myCollectionVM = myCollectionVM ?? throw new ArgumentNullException(nameof(myCollectionVM));
-            _allCardsForDecksVM = allCardsForDecksVM ?? throw new ArgumentNullException(nameof(allCardsForDecksVM));
+            // Initialize the command using the ClearFilters method.
+            ClearFiltersCommand = new RelayCommand<object>(_ => ClearFilters());
+        }
 
-            var filterDefaults = FilterManager.GetFilterDefaults(allCardsVM, myCollectionVM);
+        public async Task InitializeAsync()
+        {
+            var filterDefaults = await FilterManager.GetFilterDefaultsFromDBAsync();
             foreach (var filter in filterDefaults)
             {
                 Filters[filter.CriteriaKey] = new FilterItemViewModel(
@@ -36,37 +38,36 @@ namespace CollectaMundo.ViewModels
                     filter.FilterOptions,
                     filter.DefaultText,
                     filter.ReadableLabel,
-                    this,                  // Passing the FilterViewModel as the source of truth
-                    filter.NumericCriteria // Pass numeric criteria if applicable
+                    this,
+                    filter.NumericCriteria
                 );
             }
 
-            // Initialize the command using the ClearFilters method.
-            ClearFiltersCommand = new RelayCommand<object>(_ => ClearFilters());
         }
 
         // Apply filtering to update the filtered list.
         public virtual void ApplyFiltering()
         {
-            // Determine if all filters are in their default state.
+            // Check the references are not null
+            if (AllCardsVM == null || MyCollectionVM == null || AllCardsForDecksVM == null)
+            {
+                throw new InvalidOperationException("ViewModel dependencies not initialized.");
+            }
+
             bool noFilterActive = Filters.Values.All(f => f.IsDefault);
 
             if (noFilterActive)
             {
-                // If no filter is active, reset the filtered lists to all items.
-                _allCardsVM.FilteredCards = new List<CardSet>(_allCardsVM.Cards);
-                _myCollectionVM.FilteredCards = new List<CardSet>(_myCollectionVM.Cards);
-                _allCardsForDecksVM.FilteredCards = new List<CardSet>(_allCardsForDecksVM.Cards);
+                AllCardsVM.FilteredCards = new List<CardSet>(AllCardsVM.Cards);
+                MyCollectionVM.FilteredCards = new List<CardSet>(MyCollectionVM.Cards);
+                AllCardsForDecksVM.FilteredCards = new List<CardSet>(AllCardsForDecksVM.Cards);
             }
             else
             {
-                // Otherwise, apply filtering logic using FilterManager on each list.
-                _allCardsVM.FilteredCards = FilterManager.ApplyFilter(_allCardsVM.Cards, Filters.Values);
-                _myCollectionVM.FilteredCards = FilterManager.ApplyFilter(_myCollectionVM.Cards, Filters.Values);
-                _allCardsForDecksVM.FilteredCards = FilterManager.ApplyFilter(_allCardsForDecksVM.Cards, Filters.Values);
+                AllCardsVM.FilteredCards = FilterManager.ApplyFilter(AllCardsVM.Cards, Filters.Values);
+                MyCollectionVM.FilteredCards = FilterManager.ApplyFilter(MyCollectionVM.Cards, Filters.Values);
+                AllCardsForDecksVM.FilteredCards = FilterManager.ApplyFilter(AllCardsForDecksVM.Cards, Filters.Values);
             }
-
-            // Notify UI or update filter summary.
             UpdateFilterSummary();
         }
 
