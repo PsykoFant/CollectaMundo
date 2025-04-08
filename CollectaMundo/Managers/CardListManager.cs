@@ -9,10 +9,21 @@ namespace CollectaMundo.Managers
 {
     internal class CardListManager
     {
-        public static async Task CreateCardListObjectAsync(List<CardSet> cardList, string query, DataGridContext context)
+        private static readonly string colorIconsQuery = "SELECT * FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ('W', 'U', 'B', 'R', 'G', 'C', 'X') ORDER BY CASE uniqueManaSymbol WHEN 'W' THEN 1 WHEN 'U' THEN 2 WHEN 'B' THEN 3 WHEN 'R' THEN 4 WHEN 'G' THEN 5 WHEN 'C' THEN 6 WHEN 'X' THEN 7 END;";
+        public static async Task CreateCardListObjectAsync(List<CardSet> cardList, CardListObject context)
         {
             try
             {
+                string query = context switch
+                {
+                    CardListObject.AllCards => "SELECT * FROM view_allCards",
+                    CardListObject.MyCollection => "SELECT * FROM view_myCollection;",
+                    CardListObject.AllCardsForDecks => "SELECT * FROM view_allCardsForDecks;",
+                    CardListObject.CardsInDecks => "SELECT * FROM view_cardsInDecks;",
+                    CardListObject.ColorIcons => colorIconsQuery,
+                    _ => throw new ArgumentOutOfRangeException(nameof(context), $"Invalid context: {context}")
+                };
+
                 cardList.Clear();
                 Debug.WriteLine($"Populating {context} ...");
 
@@ -43,10 +54,20 @@ namespace CollectaMundo.Managers
                 MessageBox.Show($"Error while loading cards: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        private static CardSet CreateCardFromReader(DbDataReader reader, DataGridContext context)
+        private static CardSet CreateCardFromReader(DbDataReader reader, CardListObject context)
         {
             try
             {
+                if (context == CardListObject.ColorIcons)
+                {
+                    // Use the specialized logic for color icons.
+                    return new CardSet
+                    {
+                        ManaCostImageBytes = reader["ManaSymbolImage"] as byte[],
+                        ManaCostRaw = reader["uniqueManaSymbol"]?.ToString() ?? string.Empty
+                    };
+                }
+
                 CardSet card = new()
 
                 {
@@ -61,7 +82,7 @@ namespace CollectaMundo.Managers
                 };
 
                 // ✅ Fields applicable to all except CardsInDecks
-                if (context != DataGridContext.CardsInDecks)
+                if (context != CardListObject.CardsInDecks)
                 {
                     card.Types = GetUniqueCommaSeparatedField(reader, "Types");
                     card.SuperTypes = GetUniqueCommaSeparatedField(reader, "SuperTypes");
@@ -72,7 +93,7 @@ namespace CollectaMundo.Managers
                 }
 
                 // ✅ Fields applicable to all except AllCardsForDecks or CardsInDecks
-                if (context != DataGridContext.AllCardsForDecks && context != DataGridContext.CardsInDecks)
+                if (context != CardListObject.AllCardsForDecks && context != CardListObject.CardsInDecks)
                 {
                     card.Language = GetFieldValue<string>(reader, "Language") ?? string.Empty;
                     card.Uuid = GetFieldValue<string>(reader, "Uuid") ?? string.Empty;
@@ -86,13 +107,13 @@ namespace CollectaMundo.Managers
                 }
 
                 // Fields only for MyCollection & CardsInDecks lists
-                if (context == DataGridContext.MyCollection || context == DataGridContext.CardsInDecks)
+                if (context == CardListObject.MyCollection || context == CardListObject.CardsInDecks)
                 {
                     card.CardId = GetFieldValue<int?>(reader, "CardId");
                 }
 
                 // Fields specific for Cards
-                if (context == DataGridContext.AllCards)
+                if (context == CardListObject.AllCards)
                 {
                     card.NormalPrice = GetFieldValue<decimal?>(reader, "NormalPrice");
                     card.FoilPrice = GetFieldValue<decimal?>(reader, "FoilPrice");
@@ -100,7 +121,7 @@ namespace CollectaMundo.Managers
                 }
 
                 // Fields specific for CardInCollection
-                if (context == DataGridContext.MyCollection)
+                if (context == CardListObject.MyCollection)
                 {
                     card.CardsOwned = GetFieldValue<int?>(reader, "CardsOwned") ?? 0;
                     card.CardsForTrade = GetFieldValue<int?>(reader, "CardsForTrade") ?? 0;
@@ -115,7 +136,7 @@ namespace CollectaMundo.Managers
                 }
 
                 // Fields specific for CardsInDecks
-                if (context == DataGridContext.CardsInDecks)
+                if (context == CardListObject.CardsInDecks)
                 {
                     card.Count = GetFieldValue<int?>(reader, "Count") ?? 0;
                 }

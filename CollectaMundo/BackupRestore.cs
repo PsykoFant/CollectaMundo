@@ -1816,7 +1816,7 @@ namespace CollectaMundo
         public static async Task EndImportWizard()
         {
             await DBAccess.OpenConnectionAsync();
-            await CardListManager.CreateCardListObjectAsync(MainWindow.CurrentInstance.MyCollectionVM.Cards, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
+            await CardListManager.CreateCardListObjectAsync(MainWindow.CurrentInstance.MyCollectionVM.Cards, CardListObject.MyCollection);
             DBAccess.CloseConnection();
 
             EndImport();

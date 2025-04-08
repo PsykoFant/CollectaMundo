@@ -21,10 +21,10 @@ namespace CollectaMundo
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
         #region Set up varibales
-        public CardViewModel AllCardsVM { get; }
-        public CardViewModel MyCollectionVM { get; }
-        public CardViewModel AllCardsForDecksVM { get; }
-
+        public CardViewModel AllCardsVM { get; } = new CardViewModel();
+        public CardViewModel MyCollectionVM { get; } = new CardViewModel();
+        public CardViewModel AllCardsForDecksVM { get; } = new CardViewModel();
+        public CardViewModel ColorIcons { get; } = new CardViewModel();
         public FilterViewModel? FilterVM { get; private set; }
         public AddCardsViewModel AddCardsVM { get; } = new AddCardsViewModel(new CardCollectionService());
         public AddCardsViewModel EditCardsVM { get; } = new AddCardsViewModel(new CardCollectionService())
@@ -82,26 +82,23 @@ namespace CollectaMundo
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        // Query strings to load cards into datagrids
-        public readonly string allCardsQuery = "SELECT * FROM view_allCards";
-        public readonly string myCollectionQuery = "SELECT * FROM view_myCollection;";
-        public readonly string allCardsForDecksQuery = "SELECT * FROM view_allCardsForDecks;";
+
 
         // Flag to track startup phase
         public bool _isStartup = true;
 
-        // The CardSet object which holds all the cards read from db
         //public readonly List<CardSet> allCards = [];
         public readonly List<CardSet> myCards = [];
         //public readonly List<CardSet> allCardsForDecks = [];
-        public readonly List<CardSet> cardsInDecks = [];
+        //public readonly List<CardSet> cardsInDecks = [];
 
-        public enum DataGridContext
+        public enum CardListObject
         {
             AllCards,
             MyCollection,
             AllCardsForDecks,
-            CardsInDecks
+            CardsInDecks,
+            ColorIcons,
         }
         public enum OperatorType
         {
@@ -162,10 +159,6 @@ namespace CollectaMundo
             InitializeComponent();
             _currentInstance = this;
 
-            AllCardsVM = new CardViewModel();
-            MyCollectionVM = new CardViewModel();
-            AllCardsForDecksVM = new CardViewModel();
-
             ICardCollectionService cardCollectionService = new CardCollectionService();
 
             // Set up system
@@ -190,14 +183,17 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            await CardListManager.CreateCardListObjectAsync(AllCardsVM.Cards, allCardsQuery, DataGridContext.AllCards);
-            await CardListManager.CreateCardListObjectAsync(MyCollectionVM.Cards, myCollectionQuery, DataGridContext.MyCollection);
-            await CardListManager.CreateCardListObjectAsync(AllCardsForDecksVM.Cards, allCardsForDecksQuery, DataGridContext.AllCardsForDecks);
-            await AllCardsVM.LoadColorIconsAsync();
+            await CardListManager.CreateCardListObjectAsync(AllCardsVM.Cards, CardListObject.AllCards);
+            await CardListManager.CreateCardListObjectAsync(MyCollectionVM.Cards, CardListObject.MyCollection);
+            await CardListManager.CreateCardListObjectAsync(AllCardsForDecksVM.Cards, CardListObject.AllCardsForDecks);
+            await CardListManager.CreateCardListObjectAsync(ColorIcons.Cards, CardListObject.ColorIcons);
+
+            //await AllCardsVM.LoadColorIconsAsync();
 
             OnPropertyChanged(nameof(AllCardsVM));
             OnPropertyChanged(nameof(MyCollectionVM));
             OnPropertyChanged(nameof(AllCardsForDecksVM));
+            OnPropertyChanged(nameof(ColorIcons));
 
 
             // Assign the new FilterVM object AFTER data is available
@@ -929,8 +925,8 @@ namespace CollectaMundo
             // Update the db views to load prices from the selected retailer
             await DownloadAndPrepDB.CreateViews();
 
-            Task loadAllCards = CardListManager.CreateCardListObjectAsync(AllCardsVM.Cards, allCardsQuery, DataGridContext.AllCards);
-            Task loadMyCollection = CardListManager.CreateCardListObjectAsync(MyCollectionVM.Cards, myCollectionQuery, DataGridContext.MyCollection);
+            Task loadAllCards = CardListManager.CreateCardListObjectAsync(AllCardsVM.Cards, CardListObject.AllCards);
+            Task loadMyCollection = CardListManager.CreateCardListObjectAsync(MyCollectionVM.Cards, CardListObject.MyCollection);
 
             await Task.WhenAll(loadAllCards, loadMyCollection);
 

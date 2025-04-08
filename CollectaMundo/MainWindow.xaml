@@ -100,7 +100,7 @@
                         </Style>
                     </ListBox.Resources>
                 </ListBox>
-                <ListBox ItemsSource="{Binding AllCardsVM.ColorIcons, RelativeSource={RelativeSource AncestorType=Window}}"
+                <ListBox ItemsSource="{Binding ColorIcons.Cards, RelativeSource={RelativeSource AncestorType=Window}}"
                          Margin="20,30,0,0" Width="50" HorizontalAlignment="Left"
                          Height="160" VerticalAlignment="Top" Background="{x:Null}" 
                          BorderBrush="{x:Null}" Foreground="{x:Null}">
