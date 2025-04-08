@@ -1,5 +1,5 @@
-﻿using CollectaMundo.Models;
-using CollectaMundo.ViewModels;
+﻿using CollectaMundo.Managers;
+using CollectaMundo.Models;
 using Microsoft.Win32;
 using ServiceStack;
 using System.Collections.ObjectModel;
@@ -1816,7 +1816,7 @@ namespace CollectaMundo
         public static async Task EndImportWizard()
         {
             await DBAccess.OpenConnectionAsync();
-            await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.MyCollectionVM.Cards, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
+            await CardListManager.CreateCardListObjectAsync(MainWindow.CurrentInstance.MyCollectionVM.Cards, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
             DBAccess.CloseConnection();
 
             EndImport();

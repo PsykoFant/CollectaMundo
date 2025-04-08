@@ -24,7 +24,6 @@ namespace CollectaMundo.Managers
                 return [.. cards];
             }
         }
-
         public static List<FilterDefaults> GetFilterDefaults(CardViewModel allCardsVM, CardViewModel myCollectionVM)
         {
             try
