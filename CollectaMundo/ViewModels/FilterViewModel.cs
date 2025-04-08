@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.Managers;
+using CollectaMundo.Models;
 using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -17,12 +18,17 @@ namespace CollectaMundo.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        private readonly CardViewModel _cardViewModel;
-        public FilterViewModel(CardViewModel cardViewModel)
-        {
-            _cardViewModel = cardViewModel ?? throw new ArgumentNullException(nameof(cardViewModel));
+        private readonly CardViewModel _allCardsVM;
+        private readonly CardViewModel _myCollectionVM;
+        private readonly CardViewModel _allCardsForDecksVM;
 
-            var filterDefaults = FilterManager.GetFilterDefaults(cardViewModel);
+        public FilterViewModel(CardViewModel allCardsVM, CardViewModel myCollectionVM, CardViewModel allCardsForDecksVM)
+        {
+            _allCardsVM = allCardsVM ?? throw new ArgumentNullException(nameof(allCardsVM));
+            _myCollectionVM = myCollectionVM ?? throw new ArgumentNullException(nameof(myCollectionVM));
+            _allCardsForDecksVM = allCardsForDecksVM ?? throw new ArgumentNullException(nameof(allCardsForDecksVM));
+
+            var filterDefaults = FilterManager.GetFilterDefaults(allCardsVM, myCollectionVM);
             foreach (var filter in filterDefaults)
             {
                 Filters[filter.CriteriaKey] = new FilterItemViewModel(
@@ -42,31 +48,28 @@ namespace CollectaMundo.ViewModels
         // Apply filtering to update the filtered list.
         public virtual void ApplyFiltering()
         {
-            // Determine if any filter is active.
+            // Determine if all filters are in their default state.
             bool noFilterActive = Filters.Values.All(f => f.IsDefault);
 
             if (noFilterActive)
             {
-                _cardViewModel.FilteredAllCards = [.. _cardViewModel.AllCards];
-                _cardViewModel.FilteredMyCollection = [.. _cardViewModel.MyCollection];
-                _cardViewModel.FilteredAllCardsForDecks = [.. _cardViewModel.AllCardsForDecks];
+                // If no filter is active, reset the filtered lists to all items.
+                _allCardsVM.FilteredCards = new List<CardSet>(_allCardsVM.Cards);
+                _myCollectionVM.FilteredCards = new List<CardSet>(_myCollectionVM.Cards);
+                _allCardsForDecksVM.FilteredCards = new List<CardSet>(_allCardsForDecksVM.Cards);
             }
             else
             {
-                var filteredAll = FilterManager.ApplyFilter(_cardViewModel.AllCards, Filters.Values);
-                _cardViewModel.FilteredAllCards = filteredAll;
-
-                var filteredMy = FilterManager.ApplyFilter(_cardViewModel.MyCollection, Filters.Values);
-                _cardViewModel.FilteredMyCollection = filteredMy;
-
-                var filteredForDecks = FilterManager.ApplyFilter(_cardViewModel.AllCardsForDecks, Filters.Values);
-                _cardViewModel.FilteredAllCardsForDecks = filteredForDecks;
+                // Otherwise, apply filtering logic using FilterManager on each list.
+                _allCardsVM.FilteredCards = FilterManager.ApplyFilter(_allCardsVM.Cards, Filters.Values);
+                _myCollectionVM.FilteredCards = FilterManager.ApplyFilter(_myCollectionVM.Cards, Filters.Values);
+                _allCardsForDecksVM.FilteredCards = FilterManager.ApplyFilter(_allCardsForDecksVM.Cards, Filters.Values);
             }
 
-            // The property setters for FilteredAllCards and FilteredMyCollection raise OnPropertyChanged,
-            // so the UI will update automatically.
+            // Notify UI or update filter summary.
             UpdateFilterSummary();
         }
+
 
 
 

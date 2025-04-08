@@ -25,15 +25,16 @@ namespace CollectaMundo.Managers
             }
         }
 
-        public static List<FilterDefaults> GetFilterDefaults(CardViewModel cardViewModel)
+        public static List<FilterDefaults> GetFilterDefaults(CardViewModel allCardsVM, CardViewModel myCollectionVM)
         {
             try
             {
                 return [.. FilterCriteriaMappings.CriteriaMappings.Select(entry =>
                 {
-                    var sourceCollection = entry.Value.Property == nameof(CardViewModel.AllCards)
-                        ? cardViewModel.AllCards
-                        : cardViewModel.MyCollection;
+                    List<CardSet> sourceCollection = entry.Value.ListName switch{
+                    "AllCards" => allCardsVM.Cards, "MyCollection" => myCollectionVM.Cards, _ =>
+                    throw new Exception($"Invalid list name: {entry.Value.ListName}"), };
+
                     var rawValues = ExtractCriteriaValues(entry.Key, sourceCollection);
                     var removeItems = GetUnwantedItems(entry.Key);
                     bool shouldNotSplit = entry.Value.ShouldNotSplit;

@@ -14,59 +14,59 @@ namespace CollectaMundo.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        // AllCards lists for AllCardsDataGrid
-        public List<CardSet> AllCards { get; set; } = [];
+        // Cards lists for AllCardsDataGrid
+        public List<CardSet> Cards { get; set; } = [];
 
-        private List<CardSet> _filteredAllCards = [];
-        public List<CardSet> FilteredAllCards
+        private List<CardSet> _filteredCards = [];
+        public List<CardSet> FilteredCards
         {
-            get => _filteredAllCards;
+            get => _filteredCards;
             set
             {
-                if (_filteredAllCards != value)
+                if (_filteredCards != value)
                 {
-                    _filteredAllCards = value;
-                    OnPropertyChanged(nameof(FilteredAllCards));
+                    _filteredCards = value;
+                    OnPropertyChanged(nameof(FilteredCards));
                 }
             }
         }
 
 
         // MyCollecdtion lists for MyCollectionDataGrid
-        public List<CardSet> MyCollection { get; set; } = [];
+        //public List<CardSet> MyCollection { get; set; } = [];
 
-        private List<CardSet> _filteredMyCollection = [];
-        public List<CardSet> FilteredMyCollection
-        {
-            get => _filteredMyCollection;
-            set
-            {
-                if (_filteredMyCollection != value)
-                {
-                    _filteredMyCollection = value;
-                    OnPropertyChanged(nameof(FilteredMyCollection));
-                }
-            }
-        }
+        //private List<CardSet> _filteredMyCollection = [];
+        //public List<CardSet> FilteredMyCollection
+        //{
+        //    get => _filteredMyCollection;
+        //    set
+        //    {
+        //        if (_filteredMyCollection != value)
+        //        {
+        //            _filteredMyCollection = value;
+        //            OnPropertyChanged(nameof(FilteredMyCollection));
+        //        }
+        //    }
+        //}
 
 
-        // AllCardsForDecks lists for AllCardsForDecksDataGrid
+        //// AllCardsForDecks lists for AllCardsForDecksDataGrid
 
-        public List<CardSet> AllCardsForDecks { get; set; } = [];
+        //public List<CardSet> AllCardsForDecks { get; set; } = [];
 
-        private List<CardSet> _filteredAllCardsForDecks = [];
-        public List<CardSet> FilteredAllCardsForDecks
-        {
-            get => _filteredAllCardsForDecks;
-            set
-            {
-                if (_filteredAllCardsForDecks != value)
-                {
-                    _filteredAllCardsForDecks = value;
-                    OnPropertyChanged(nameof(FilteredAllCardsForDecks));
-                }
-            }
-        }
+        //private List<CardSet> _filteredAllCardsForDecks = [];
+        //public List<CardSet> FilteredAllCardsForDecks
+        //{
+        //    get => _filteredAllCardsForDecks;
+        //    set
+        //    {
+        //        if (_filteredAllCardsForDecks != value)
+        //        {
+        //            _filteredAllCardsForDecks = value;
+        //            OnPropertyChanged(nameof(FilteredAllCardsForDecks));
+        //        }
+        //    }
+        //}
 
         // For displaying list of color icons for color filtering
         public ObservableCollection<CardSet> ColorIcons { get; } = [];
@@ -155,7 +155,7 @@ namespace CollectaMundo.ViewModels
                     card.CardId = GetFieldValue<int?>(reader, "CardId");
                 }
 
-                // Fields specific for AllCards
+                // Fields specific for Cards
                 if (context == DataGridContext.AllCards)
                 {
                     card.NormalPrice = GetFieldValue<decimal?>(reader, "NormalPrice");

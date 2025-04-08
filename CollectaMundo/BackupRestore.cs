@@ -1816,7 +1816,7 @@ namespace CollectaMundo
         public static async Task EndImportWizard()
         {
             await DBAccess.OpenConnectionAsync();
-            await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.CardVM.MyCollection, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
+            await CardViewModel.PopulateCardDataGridAsync(MainWindow.CurrentInstance.MyCollectionVM.Cards, MainWindow.CurrentInstance.myCollectionQuery, DataGridContext.MyCollection);
             DBAccess.CloseConnection();
 
             EndImport();

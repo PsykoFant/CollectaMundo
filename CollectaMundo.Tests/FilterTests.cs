@@ -13,9 +13,9 @@ namespace CollectaMundo.Tests
             var cardVM = new CardViewModel();
             var testCards = FilterTestUtilities.GetTestCards();
             // Simulate the loading process:
-            cardVM.AllCards.AddRange(testCards);
+            cardVM.Cards.AddRange(testCards);
             // Initialize the filtered list to the full list initially.
-            cardVM.FilteredAllCards = [.. cardVM.AllCards];
+            cardVM.FilteredCards = [.. cardVM.Cards];
 
             // Create a FilterViewModel based on the CardViewModel.
             var filterVM = new FilterViewModel(cardVM);
@@ -30,7 +30,7 @@ namespace CollectaMundo.Tests
 
             // Act
             filterVM.ApplyFiltering();
-            var filteredCards = cardVM.FilteredAllCards;
+            var filteredCards = cardVM.FilteredCards;
 
             string expectedSummary = "Name: \"Command\" AND ManaValue > 1";
 
@@ -53,9 +53,9 @@ namespace CollectaMundo.Tests
             var cardVM = new CardViewModel();
             var testCards = FilterTestUtilities.GetTestCards();
             // Simulate the loading process:
-            cardVM.AllCards.AddRange(testCards);
+            cardVM.Cards.AddRange(testCards);
             // Initialize the filtered list to the full list initially.
-            cardVM.FilteredAllCards = [.. cardVM.AllCards];
+            cardVM.FilteredCards = [.. cardVM.Cards];
 
             // Create a FilterViewModel based on the CardViewModel.
             var filterVM = new FilterViewModel(cardVM);
@@ -78,7 +78,7 @@ namespace CollectaMundo.Tests
 
             // Act
             filterVM.ApplyFiltering();
-            var filteredCards = cardVM.FilteredAllCards;
+            var filteredCards = cardVM.FilteredCards;
 
             // Assert
             Assert.All(filteredCards, card =>

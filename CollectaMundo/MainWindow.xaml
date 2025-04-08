@@ -100,7 +100,7 @@
                         </Style>
                     </ListBox.Resources>
                 </ListBox>
-                <ListBox ItemsSource="{Binding CardVM.ColorIcons, RelativeSource={RelativeSource AncestorType=Window}}"
+                <ListBox ItemsSource="{Binding AllCardsVM.ColorIcons, RelativeSource={RelativeSource AncestorType=Window}}"
                          Margin="20,30,0,0" Width="50" HorizontalAlignment="Left"
                          Height="160" VerticalAlignment="Top" Background="{x:Null}" 
                          BorderBrush="{x:Null}" Foreground="{x:Null}">
@@ -751,16 +751,15 @@
                 <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
-                            <Binding Path="CardVM.FilteredAllCards.Count"/>
-                            <Binding Path="CardVM.AllCards.Count"/>
+                            <Binding Path="AllCardsVM.FilteredCards.Count"/>
+                            <Binding Path="AllCardsVM.Cards.Count"/>
                         </MultiBinding>
                     </Label.Content>
                 </Label>
 
                 <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" 
                         Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
-                        Command="{Binding DataContext.AddCardsVM.SubmitSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
-                
+                        Command="{Binding DataContext.AddCardsVM.SubmitSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}" />                
                 <Button Content="Clear cards without submitting"
                     HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top"
                     Width="200" Height="20"
@@ -913,7 +912,7 @@
 
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
-                          ItemsSource="{Binding CardVM.FilteredAllCards}"
+                          ItemsSource="{Binding AllCardsVM.FilteredCards}"
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"
@@ -1112,8 +1111,8 @@
                 <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
-                            <Binding Path="CardVM.FilteredMyCollection.Count"/>
-                            <Binding Path="CardVM.MyCollection.Count"/>                            
+                            <Binding Path="MyCollectionVM.FilteredCards.Count"/>
+                            <Binding Path="MyCollectionVM.Cards.Count"/>                            
                         </MultiBinding>
                     </Label.Content>
                 </Label>
@@ -1269,7 +1268,7 @@
                 </ListView>
                 <!--The my collection datagrid-->
                 <DataGrid x:Name="MyCollectionDataGrid"
-                          ItemsSource="{Binding CardVM.FilteredMyCollection}"
+                          ItemsSource="{Binding MyCollectionVM.FilteredCards}"
                           Margin="0,280,0,0"
                           AutoGenerateColumns="False"
                           SelectionChanged="CardImageSelectionChangedHandler"
@@ -1531,7 +1530,7 @@
                     </Grid>
                     <Grid Grid.Row="1">
                         <DataGrid x:Name="AllCardsForDecksDataGrid"
-                                  ItemsSource="{Binding CardVM.FilteredAllCardsForDecks}"
+                                  ItemsSource="{Binding AllCardsForDecksVM.FilteredCards}"
                                   AutoGenerateColumns="False"
                                   SelectionChanged="CardImageSelectionChangedHandler"
                                   MouseDoubleClick="AddCardToDeck"

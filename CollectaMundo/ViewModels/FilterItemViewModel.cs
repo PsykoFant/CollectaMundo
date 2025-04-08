@@ -484,7 +484,7 @@ namespace CollectaMundo.ViewModels
 
                 // For other filter types, use your existing logic.
                 // First, try to get the property using the mapping's Property value.
-                string propertyName = mapping.Property;
+                string propertyName = CriteriaKey;
                 // Optionally also try this.CriteriaKey if necessary:
                 PropertyInfo? property = typeof(CardSet).GetProperty(propertyName)
                                       ?? typeof(CardSet).GetProperty(CriteriaKey);
