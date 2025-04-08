@@ -188,13 +188,10 @@ namespace CollectaMundo
             await CardListManager.CreateCardListObjectAsync(AllCardsForDecksVM.Cards, CardListObject.AllCardsForDecks);
             await CardListManager.CreateCardListObjectAsync(ColorIcons.Cards, CardListObject.ColorIcons);
 
-            //await AllCardsVM.LoadColorIconsAsync();
-
             OnPropertyChanged(nameof(AllCardsVM));
             OnPropertyChanged(nameof(MyCollectionVM));
             OnPropertyChanged(nameof(AllCardsForDecksVM));
             OnPropertyChanged(nameof(ColorIcons));
-
 
             // Assign the new FilterVM object AFTER data is available
             FilterVM = new FilterViewModel(AllCardsVM, MyCollectionVM, AllCardsForDecksVM);
@@ -208,9 +205,6 @@ namespace CollectaMundo
 
             CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
             CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
-
-            //CardsToAddListView.ItemsSource = addToCollectionManager.CardItemsToAdd;
-            //CardsToEditListView.ItemsSource = addToCollectionManager.CardItemsToEdit;
 
             // Start on the search and filter all cards page            
             ResetGrids();
