@@ -8,6 +8,8 @@ TO DO
  - 
 
 
+ Filter defaults took: 1151 ms
+
 
 
  - Card image brug MVVM (unit test)

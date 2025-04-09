@@ -28,8 +28,10 @@ namespace CollectaMundo.ViewModels
             ClearFiltersCommand = new RelayCommand<object>(_ => ClearFilters());
         }
 
-        public async Task InitializeAsync()
+        public async Task InitializeFilterDefaultsAsync()
         {
+            Stopwatch sw = Stopwatch.StartNew();
+
             var filterDefaults = await FilterManager.GetFilterDefaultsFromDBAsync();
             foreach (var filter in filterDefaults)
             {
@@ -43,6 +45,8 @@ namespace CollectaMundo.ViewModels
                 );
             }
 
+            sw.Stop();
+            Debug.WriteLine($"Filter defaults took: {sw.ElapsedMilliseconds} ms");
         }
 
         // Apply filtering to update the filtered list.

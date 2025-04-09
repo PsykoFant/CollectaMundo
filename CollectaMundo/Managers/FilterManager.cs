@@ -27,8 +27,6 @@ namespace CollectaMundo.Managers
         }
         public static async Task<List<FilterDefaults>> GetFilterDefaultsFromDBAsync()
         {
-            Stopwatch sw = Stopwatch.StartNew();
-
             var filterDefaultsList = new List<FilterDefaults>();
 
             // Iterate over each filter criterion defined in your mappings.
@@ -43,17 +41,17 @@ namespace CollectaMundo.Managers
                     "Name" => "SELECT DISTINCT name FROM cards UNION ALL SELECT DISTINCT name FROM tokens AS Name;",
                     "SetName" => "SELECT DISTINCT name AS SetName FROM sets;",
                     "Text" => "SELECT DISTINCT text FROM cards UNION ALL SELECT DISTINCT text FROM tokens AS Text;",
-                    "Colors" => "SELECT DISTINCT Colors FROM view_allCards;", // Adjust if needed.
-                    "Rarity" => "SELECT DISTINCT Rarity FROM view_allCards;",
-                    "SuperTypes" => "SELECT DISTINCT SuperTypes FROM view_allCards;",
-                    "Types" => "SELECT DISTINCT Type FROM view_allCards;",
-                    "SubTypes" => "SELECT DISTINCT SubTypes FROM view_allCards;",
-                    "Keywords" => "SELECT DISTINCT Keywords FROM view_allCards;",
-                    "Finishes" => "SELECT DISTINCT Finishes FROM view_allCards;",
-                    "Language" => "SELECT DISTINCT Language FROM view_myCollection;",
-                    "SelectedCondition" => "SELECT DISTINCT Condition FROM view_myCollection;",
-                    "ManaValue" => "SELECT DISTINCT ManaValue FROM view_allCards;",
-                    "CardsForTrade" => "SELECT DISTINCT CardsForTrade FROM view_myCollection;",
+                    "Colors" => "SELECT DISTINCT colors as Colors FROM cards;", // Adjust if needed.
+                    "Rarity" => "SELECT DISTINCT rarity AS Rarity FROM cards;",
+                    "SuperTypes" => "SELECT DISTINCT supertypes FROM cards UNION ALL SELECT DISTINCT supertypes FROM tokens AS SuperTypes;",
+                    "Types" => "SELECT DISTINCT types FROM cards UNION ALL SELECT DISTINCT types FROM tokens AS Types;",
+                    "SubTypes" => "SELECT DISTINCT subtypes FROM cards UNION ALL SELECT DISTINCT subtypes FROM tokens AS SubTypes;",
+                    "Keywords" => "SELECT DISTINCT keywords FROM cards UNION ALL SELECT DISTINCT keywords FROM tokens AS Keywords;",
+                    "Finishes" => "SELECT DISTINCT finishes FROM cards UNION ALL SELECT DISTINCT finishes FROM tokens AS Finishes;",
+                    "Language" => "SELECT DISTINCT language AS Language FROM myCollection;",
+                    "SelectedCondition" => "SELECT DISTINCT condition AS Condition FROM myCollection;",
+                    "ManaValue" => "SELECT DISTINCT manaValue AS ManaValue FROM cards;",
+                    "CardsForTrade" => "SELECT DISTINCT trade AS CardsForTrade FROM myCollection;",
                     _ => throw new Exception($"Unhandled criteria key: {criteriaKey}")
                 };
 
@@ -72,10 +70,10 @@ namespace CollectaMundo.Managers
                             "Name" => reader["Name"] as string,
                             "SetName" => reader["SetName"] as string,
                             "Text" => reader["Text"] as string,
-                            "Colors" => reader["Colors"] as string,
+                            //"Colors" => reader["Colors"] as string,
                             "Rarity" => reader["Rarity"] as string,
                             "SuperTypes" => reader["SuperTypes"] as string,
-                            "Types" => reader["Type"] as string,
+                            "Types" => reader["Types"] as string,
                             "SubTypes" => reader["SubTypes"] as string,
                             "Keywords" => reader["Keywords"] as string,
                             "Finishes" => reader["Finishes"] as string,
@@ -140,10 +138,6 @@ namespace CollectaMundo.Managers
                     ReadableLabel = readableLabel
                 });
             }
-
-            sw.Stop();
-            Debug.WriteLine($"Filter defaults took: {sw.ElapsedMilliseconds} ms");
-
             return filterDefaultsList;
         }
 
@@ -206,7 +200,7 @@ namespace CollectaMundo.Managers
             return criteriaKey switch
             {
                 "Types" => ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards"],
-                "SubTypes" => ["(creature", "and/or", "type)|Judge", "The"],
+                "SubTypes" => ["(creature", "and/or", "type)|Judge", "The", "pLAnE"],
                 _ => null
             };
         }

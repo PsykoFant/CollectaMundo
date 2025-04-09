@@ -200,7 +200,7 @@ namespace CollectaMundo
                 MyCollectionVM = MyCollectionVM,
                 AllCardsForDecksVM = AllCardsForDecksVM
             };
-            await FilterVM.InitializeAsync();
+            await FilterVM.InitializeFilterDefaultsAsync();
 
             OnPropertyChanged(nameof(FilterVM)); // Force UI refresh so bindings update
 
