@@ -12,13 +12,13 @@ namespace CollectaMundo.Tests
             // Create a CardViewModel and populate it with test cards.
             var cardVM = new CardViewModel();
             var testCards = FilterTestUtilities.GetTestCards();
-            // Simulate the loading process:
+            // Simulate the loading process:            
             cardVM.Cards.AddRange(testCards);
             // Initialize the filtered list to the full list initially.
             cardVM.FilteredCards = [.. cardVM.Cards];
 
             // Create a FilterViewModel based on the CardViewModel.
-            var filterVM = new FilterViewModel(cardVM);
+            var filterVM = new FilterViewModel();
 
             // Set up filters: Name contains "Command" and ManaValue > 1.
             var nameFilter = filterVM.Filters["Name"];
@@ -58,7 +58,7 @@ namespace CollectaMundo.Tests
             cardVM.FilteredCards = [.. cardVM.Cards];
 
             // Create a FilterViewModel based on the CardViewModel.
-            var filterVM = new FilterViewModel(cardVM);
+            var filterVM = new FilterViewModel();
 
             // Filter on rulestext
             var textFilter = filterVM.Filters["Text"];

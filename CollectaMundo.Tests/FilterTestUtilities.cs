@@ -267,7 +267,7 @@ namespace CollectaMundo.Tests
 
     public class DummyFilterViewModel : FilterViewModel
     {
-        public DummyFilterViewModel() : base(new CardViewModel()) { }
+        public DummyFilterViewModel() : base() { }
         public override void ApplyFiltering() { /* no-op */ }
         public override void DebugFullFilterState() { /* no-op */ }
     }
