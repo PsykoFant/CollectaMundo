@@ -16,4 +16,6 @@ TO DO
  - Import brug MVVM (unit test)
  - Deck manager brug MVVM (unit test)
 
+ - Hvorfor er der ingen kort fra Mystery Booster
+
  - Performance - startup

@@ -27,6 +27,8 @@ namespace CollectaMundo.Managers
         }
         public static async Task<List<FilterDefaults>> GetFilterDefaultsFromDBAsync()
         {
+            Stopwatch sw = Stopwatch.StartNew();
+
             var filterDefaultsList = new List<FilterDefaults>();
 
             // Iterate over each filter criterion defined in your mappings.
@@ -38,9 +40,9 @@ namespace CollectaMundo.Managers
                 // Define the query explicitly using a switch statement on the criteria key.
                 string query = criteriaKey switch
                 {
-                    "Name" => "SELECT DISTINCT Name FROM view_allCards;",
-                    "SetName" => "SELECT DISTINCT SetName FROM view_allCards;",
-                    "Text" => "SELECT DISTINCT RulesText FROM view_allCards;",
+                    "Name" => "SELECT DISTINCT name FROM cards UNION ALL SELECT DISTINCT name FROM tokens AS Name;",
+                    "SetName" => "SELECT DISTINCT name AS SetName FROM sets;",
+                    "Text" => "SELECT DISTINCT text FROM cards UNION ALL SELECT DISTINCT text FROM tokens AS Text;",
                     "Colors" => "SELECT DISTINCT Colors FROM view_allCards;", // Adjust if needed.
                     "Rarity" => "SELECT DISTINCT Rarity FROM view_allCards;",
                     "SuperTypes" => "SELECT DISTINCT SuperTypes FROM view_allCards;",
@@ -69,7 +71,7 @@ namespace CollectaMundo.Managers
                         {
                             "Name" => reader["Name"] as string,
                             "SetName" => reader["SetName"] as string,
-                            "Text" => reader["RulesText"] as string,
+                            "Text" => reader["Text"] as string,
                             "Colors" => reader["Colors"] as string,
                             "Rarity" => reader["Rarity"] as string,
                             "SuperTypes" => reader["SuperTypes"] as string,
@@ -138,6 +140,9 @@ namespace CollectaMundo.Managers
                     ReadableLabel = readableLabel
                 });
             }
+
+            sw.Stop();
+            Debug.WriteLine($"Filter defaults took: {sw.ElapsedMilliseconds} ms");
 
             return filterDefaultsList;
         }
