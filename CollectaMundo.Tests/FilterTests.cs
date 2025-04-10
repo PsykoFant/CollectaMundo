@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ViewModels;
+﻿using CollectaMundo.Models;
+using CollectaMundo.ViewModels;
 using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Tests
@@ -45,9 +46,8 @@ namespace CollectaMundo.Tests
             });
         }
 
-
         [Fact]
-        public void Test_Combined_Multi_Single_NumericFilter()
+        public async Task Test_Combined_Multi_Single_NumericFilter()
         {
             // Create a CardViewModel and populate it with test cards.
             var cardVM = new CardViewModel();
@@ -55,11 +55,17 @@ namespace CollectaMundo.Tests
             // Simulate the loading process:
             cardVM.Cards.AddRange(testCards);
             // Initialize the filtered list to the full list initially.
-            cardVM.FilteredCards = [.. cardVM.Cards];
+            cardVM.FilteredCards = new List<CardSet>(cardVM.Cards);
 
             // Create a FilterViewModel based on the CardViewModel.
             var filterVM = new FilterViewModel();
+            // IMPORTANT: Call the async initialization so that the Filters dictionary gets populated.
 
+            await DBAccess.OpenConnectionAsync();
+            await filterVM.InitializeFilterDefaultsAsync();
+            DBAccess.CloseConnection();
+
+            // Now use the filters as expected.
             // Filter on rulestext
             var textFilter = filterVM.Filters["Text"];
             textFilter.SelectedSingleOption = "damage";
@@ -95,8 +101,8 @@ namespace CollectaMundo.Tests
 
             // Assert: Check that the FilterSummary property equals the expected string.
             Assert.Equal(expectedSummary, filterVM.FilterSummary);
-
         }
+
     }
     public class FilterByNumericOptionsTests
     {

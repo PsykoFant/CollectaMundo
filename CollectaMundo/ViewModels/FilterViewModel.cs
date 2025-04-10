@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.Managers;
-using CollectaMundo.Models;
 using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -30,7 +29,7 @@ namespace CollectaMundo.ViewModels
 
         public async Task InitializeFilterDefaultsAsync()
         {
-            Stopwatch sw = Stopwatch.StartNew();
+            //Stopwatch sw = Stopwatch.StartNew();
 
             var filterDefaults = await FilterManager.GetFilterDefaultsFromDBAsync();
             foreach (var filter in filterDefaults)
@@ -45,26 +44,26 @@ namespace CollectaMundo.ViewModels
                 );
             }
 
-            sw.Stop();
-            Debug.WriteLine($"Filter defaults took: {sw.ElapsedMilliseconds} ms");
+            //sw.Stop();
+            //Debug.WriteLine($"Filter defaults took: {sw.ElapsedMilliseconds} ms");
         }
 
         // Apply filtering to update the filtered list.
         public virtual void ApplyFiltering()
         {
             // Check the references are not null
-            if (AllCardsVM == null || MyCollectionVM == null || AllCardsForDecksVM == null)
-            {
-                throw new InvalidOperationException("ViewModel dependencies not initialized.");
-            }
+            //if (AllCardsVM == null || MyCollectionVM == null || AllCardsForDecksVM == null)
+            //{
+            //    throw new InvalidOperationException("ViewModel dependencies not initialized.");
+            //}
 
             bool noFilterActive = Filters.Values.All(f => f.IsDefault);
 
             if (noFilterActive)
             {
-                AllCardsVM.FilteredCards = new List<CardSet>(AllCardsVM.Cards);
-                MyCollectionVM.FilteredCards = new List<CardSet>(MyCollectionVM.Cards);
-                AllCardsForDecksVM.FilteredCards = new List<CardSet>(AllCardsForDecksVM.Cards);
+                AllCardsVM.FilteredCards = [.. AllCardsVM.Cards];
+                MyCollectionVM.FilteredCards = [.. MyCollectionVM.Cards];
+                AllCardsForDecksVM.FilteredCards = [.. AllCardsForDecksVM.Cards];
             }
             else
             {
