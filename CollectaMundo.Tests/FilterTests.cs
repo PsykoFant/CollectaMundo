@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.Managers;
-using CollectaMundo.Models;
 using CollectaMundo.ViewModels;
 using static CollectaMundo.MainWindow;
 
@@ -7,48 +6,47 @@ namespace CollectaMundo.Tests
 {
     public class FilterIntegrationTests
     {
-        //[Fact]
-        //public void Test_CombinedNameAndNumericFilter()
-        //{
-        //    // Arrange
-        //    // Create a CardViewModel and populate it with test cards.
-        //    var cardVM = new CardViewModel();
-        //    var testCards = FilterTestUtilities.GetTestCards();
-        //    // Simulate the loading process:            
-        //    cardVM.Cards.AddRange(testCards);
-        //    // Initialize the filtered list to the full list initially.
-        //    cardVM.FilteredCards = [.. cardVM.Cards];
+        [Fact]
+        public void Test_CombinedNameAndNumericFilter()
+        {
+            // Arrange
+            // Create a CardViewModel and populate it with test cards.
+            var cardVM = new CardViewModel();
+            var testCards = FilterTestUtilities.GetTestCards();
+            // Simulate the loading process:            
+            cardVM.Cards.AddRange(testCards);
+            // Initialize the filtered list to the full list initially.
+            cardVM.FilteredCards = [.. cardVM.Cards];
 
-        //    // Create a FilterViewModel based on the CardViewModel.
-        //    var filterVM = new FilterViewModel();
+            // Create a FilterViewModel based on the CardViewModel.
+            var filterVM = new FilterViewModel();
 
-        //    // Set up filters: Name contains "Command" and ManaValue > 1.
-        //    var nameFilter = filterVM.Filters["Name"];
-        //    nameFilter.SelectedSingleOption = "Command";
+            // Set up filters: Name contains "Command" and ManaValue > 1.
+            var nameFilter = filterVM.Filters["Name"];
+            nameFilter.SelectedSingleOption = "Command";
 
-        //    var numericFilter = filterVM.Filters["ManaValue"];
-        //    numericFilter.SelectedNumericValue = 1;
-        //    numericFilter.OperatorSelection = OperatorType.GREATER_THAN;
+            var numericFilter = filterVM.Filters["ManaValue"];
+            numericFilter.SelectedNumericValue = 1;
+            numericFilter.OperatorSelection = OperatorType.GREATER_THAN;
 
-        //    // Act
-        //    filterVM.ApplyFiltering();
-        //    var filteredCards = cardVM.FilteredCards;
+            // Act            
+            var filteredCards = FilterManager.ApplyFilter(cardVM.Cards, filterVM.Filters.Values);
 
-        //    string expectedSummary = "Name: \"Command\" AND ManaValue > 1";
+            string expectedSummary = "Name: \"Command\" AND ManaValue > 1";
 
-        //    // Assert that the filter summary equals the expected string.
-        //    Assert.Equal(expectedSummary, filterVM.FilterSummary);
+            // Assert that the filter summary equals the expected string.
+            Assert.Equal(expectedSummary, filterVM.FilterSummary);
 
-        //    // Assert that every filtered card has a Name containing "Command" and a ManaValue > 1.
-        //    Assert.All(filteredCards, card =>
-        //    {
-        //        Assert.Contains("Command", card.Name, StringComparison.OrdinalIgnoreCase);
-        //        Assert.True(card.ManaValue > 1);
-        //    });
-        //}
+            // Assert that every filtered card has a Name containing "Command" and a ManaValue > 1.
+            Assert.All(filteredCards, card =>
+            {
+                Assert.Contains("Command", card.Name, StringComparison.OrdinalIgnoreCase);
+                Assert.True(card.ManaValue > 1);
+            });
+        }
 
         [Fact]
-        public async Task Test_Combined_Multi_Single_NumericFilter()
+        public void Test_Combined_Multi_Single_NumericFilter()
         {
             // Create a CardViewModel and populate it with test cards.
             var cardVM = new CardViewModel();
@@ -56,17 +54,11 @@ namespace CollectaMundo.Tests
             // Simulate the loading process:
             cardVM.Cards.AddRange(testCards);
             // Initialize the filtered list to the full list initially.
-            cardVM.FilteredCards = new List<CardSet>(cardVM.Cards);
+            cardVM.FilteredCards = [.. cardVM.Cards];
 
             // Create a FilterViewModel based on the CardViewModel.
             var filterVM = new FilterViewModel();
-            // IMPORTANT: Call the async initialization so that the Filters dictionary gets populated.
 
-            await DBAccess.OpenConnectionAsync();
-            await filterVM.InitializeFilterDefaultsAsync();
-            DBAccess.CloseConnection();
-
-            // Now use the filters as expected.
             // Filter on rulestext
             var textFilter = filterVM.Filters["Text"];
             textFilter.SelectedSingleOption = "damage";
@@ -84,8 +76,7 @@ namespace CollectaMundo.Tests
             numericFilter.OperatorSelection = OperatorType.GREATER_THAN_OR_EQUALS;
 
             // Act
-            //filterVM.ApplyFiltering();
-            FilterManager.ApplyFilter(cardVM.Cards, filterVM.Filters.Values);
+            cardVM.FilteredCards = FilterManager.ApplyFilter(cardVM.Cards, filterVM.Filters.Values);
 
             var filteredCards = cardVM.FilteredCards;
 

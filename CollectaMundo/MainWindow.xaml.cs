@@ -28,8 +28,6 @@ namespace CollectaMundo
         public FilterViewModel FilterVM { get; } = new FilterViewModel();
 
         private readonly ICardFilteringService _filteringService;
-
-
         public AddCardsViewModel AddCardsVM { get; } = new AddCardsViewModel(new CardCollectionService());
         public AddCardsViewModel EditCardsVM { get; } = new AddCardsViewModel(new CardCollectionService())
         {
