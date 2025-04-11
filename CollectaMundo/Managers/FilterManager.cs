@@ -34,12 +34,12 @@ namespace CollectaMundo.Managers
             {
                 string criteriaKey = entry.Key;
                 var mapping = entry.Value;
-                List<string> distinctValues = new List<string>();
+                List<string> distinctValues = [];
 
                 // For colors, skip the query and use hardcoded values.
                 if (criteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
                 {
-                    distinctValues = new List<string> { "W", "U", "B", "R", "G", "C", "X", "Colorless" };
+                    distinctValues = ["W", "U", "B", "R", "G", "C", "X", "Colorless"];
                 }
                 else
                 {

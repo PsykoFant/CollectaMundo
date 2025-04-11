@@ -21,12 +21,14 @@ namespace CollectaMundo.ViewModels
         public CardViewModel MyCollectionVM { get; set; } = null!;
         public CardViewModel AllCardsForDecksVM { get; set; } = null!;
 
+        // Constructor
         public FilterViewModel()
         {
             // Initialize the command using the ClearFilters method.
             ClearFiltersCommand = new RelayCommand<object>(_ => ClearFilters());
         }
 
+        // Initialize the filter defaults from the database.
         public async Task InitializeFilterDefaultsAsync()
         {
             Stopwatch sw = Stopwatch.StartNew();
