@@ -146,32 +146,63 @@ namespace CollectaMundo.Managers
         }
         private static List<string> CleanAndFilter(IEnumerable<string> input, HashSet<string>? removeItems, bool shouldNotSplit)
         {
-            char[] separatorArray = [','];
+            // Use a HashSet for uniqueness; using StringComparer.OrdinalIgnoreCase if needed.
+            var uniqueItems = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            var processedItems = input
-                .Where(item => !string.IsNullOrEmpty(item)) // Ensure we don't process null/empty values
-                .SelectMany<string, string>(item => shouldNotSplit
-                    ? new List<string> { item } // Keep whole string if shouldNotSplit == true
-                    : item.Split(separatorArray, StringSplitOptions.RemoveEmptyEntries)) // Otherwise, split by comma
-                .Select(item => item.Trim())
-                .Where(item => removeItems == null || !removeItems.Contains(item)) // Apply filter
-                .Distinct()
-                .ToList();
+            // Process input in a single loop.
+            foreach (var item in input)
+            {
+                if (string.IsNullOrEmpty(item))
+                    continue;
 
-            // Separate Numeric & Non-Numeric Values
-            var numericValues = processedItems
-                .Where(v => int.TryParse(v, out _))       // Extract integer values
-                .Select(int.Parse)                        // Convert to int
-                .OrderBy(n => n)                          // Sort Numerically
-                .Select(n => n.ToString())                // Convert back to string for compatibility
-                .ToList();
+                IEnumerable<string> parts;
+                if (shouldNotSplit)
+                {
+                    parts = new string[] { item };
+                }
+                else
+                {
+                    parts = item.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                }
 
-            var stringValues = processedItems
-                .Where(v => !int.TryParse(v, out _))      // Extract non-numeric values
-                .OrderBy(v => v)                          // Sort Alphabetically
-                .ToList();
+                foreach (var part in parts)
+                {
+                    string trimmed = part.Trim();
+                    // Skip if the trimmed string is empty or should be removed.
+                    if (string.IsNullOrEmpty(trimmed))
+                        continue;
+                    if (removeItems != null && removeItems.Contains(trimmed))
+                        continue;
 
-            return [.. numericValues, .. stringValues]; // Keep numeric values first
+                    uniqueItems.Add(trimmed);
+                }
+            }
+
+            // Separate unique items into numeric and non-numeric lists.
+            var numericList = new List<int>();
+            var stringList = new List<string>();
+
+            foreach (var item in uniqueItems)
+            {
+                if (int.TryParse(item, out int num))
+                {
+                    numericList.Add(num);
+                }
+                else
+                {
+                    stringList.Add(item);
+                }
+            }
+
+            // Sort numeric values and convert them back to strings.
+            numericList.Sort();
+            var numericStrings = numericList.Select(n => n.ToString());
+
+            // Sort string values alphabetically.
+            stringList.Sort(StringComparer.OrdinalIgnoreCase);
+
+            // Combine numeric values first, then non-numeric.
+            return numericStrings.Concat(stringList).ToList();
         }
         private static HashSet<string>? GetUnwantedItems(string criteriaKey)
         {
