@@ -181,13 +181,6 @@ namespace CollectaMundo
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
         }
-        private void OnFilterChanged(object? sender, EventArgs e)
-        {
-            // Apply filters on each collection.
-            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, FilterVM.Filters.Values);
-            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
-            AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
-        }
 
         #region Load data and populate UI elements
         public async Task LoadDataIntoUiElements()
@@ -304,7 +297,15 @@ namespace CollectaMundo
 
         #endregion
 
-        #region Filter elements handling        
+        #region Filter elements handling 
+        private void OnFilterChanged(object? sender, EventArgs e)
+        {
+            // Apply filters on each collection.
+            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, FilterVM.Filters.Values);
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
+            AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
+        }
+
         // When combobox textboxes get focus/defocus        
         private void FilterTextTextBox_KeyDown(object sender, KeyEventArgs e)
         {

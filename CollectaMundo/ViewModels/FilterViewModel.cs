@@ -39,6 +39,11 @@ namespace CollectaMundo.ViewModels
         // Constructor
         public FilterViewModel()
         {
+            // Prepopulate Filters with empty/stub FilterItemViewModel objects for all keys.
+            foreach (var key in FilterCriteriaMappings.CriteriaMappings.Keys)
+            {
+                Filters[key] = new FilterItemViewModel(key, [], string.Empty, string.Empty, this, null);
+            }
             // Initialize the command using the ClearFilters method.
             ClearFiltersCommand = new RelayCommand<object>(_ => ClearFilters());
         }
@@ -65,43 +70,14 @@ namespace CollectaMundo.ViewModels
             Debug.WriteLine($"Filter defaults took: {sw.ElapsedMilliseconds} ms");
         }
 
-        // Apply filtering to update the filtered list.
-        //public virtual void ApplyFiltering()
-        //{
-        //    // Check the references are not null
-        //    if (AllCardsVM == null || MyCollectionVM == null || AllCardsForDecksVM == null)
-        //    {
-        //        throw new InvalidOperationException("ViewModel dependencies not initialized.");
-        //    }
-
-        //    bool noFilterActive = Filters.Values.All(f => f.IsDefault);
-
-        //    if (noFilterActive)
-        //    {
-        //        AllCardsVM.FilteredCards = [.. AllCardsVM.Cards];
-        //        MyCollectionVM.FilteredCards = [.. MyCollectionVM.Cards];
-        //        AllCardsForDecksVM.FilteredCards = [.. AllCardsForDecksVM.Cards];
-        //    }
-        //    else
-        //    {
-        //        AllCardsVM.FilteredCards = FilterManager.ApplyFilter(AllCardsVM.Cards, Filters.Values);
-        //        MyCollectionVM.FilteredCards = FilterManager.ApplyFilter(MyCollectionVM.Cards, Filters.Values);
-        //        AllCardsForDecksVM.FilteredCards = FilterManager.ApplyFilter(AllCardsForDecksVM.Cards, Filters.Values);
-        //    }
-        //    UpdateFilterSummary();
-        //}
-
-
-        /// <summary>
-        /// Called by FilterItemViewModel instances when a filter value changes.
-        /// This method raises the FilterChanged event.
-        /// </summary>
+        // Called by FilterItemViewModel instances when a filter value changes. This method raises the FilterChanged event.
         public void NotifyFilterChanged()
         {
             UpdateFilterSummary();
             FilterChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        // Update the filter summary based on the current filter selections.
         private void UpdateFilterSummary()
         {
             try
@@ -179,7 +155,6 @@ namespace CollectaMundo.ViewModels
         }
 
         // Clears all filter selections, resetting each filter to its default state.
-
         private void ClearFilters()
         {
             foreach (var filter in Filters.Values)
