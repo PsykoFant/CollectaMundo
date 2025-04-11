@@ -158,11 +158,11 @@ namespace CollectaMundo.Managers
                 IEnumerable<string> parts;
                 if (shouldNotSplit)
                 {
-                    parts = new string[] { item };
+                    parts = [item];
                 }
                 else
                 {
-                    parts = item.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    parts = item.Split([','], StringSplitOptions.RemoveEmptyEntries);
                 }
 
                 foreach (var part in parts)
@@ -202,7 +202,7 @@ namespace CollectaMundo.Managers
             stringList.Sort(StringComparer.OrdinalIgnoreCase);
 
             // Combine numeric values first, then non-numeric.
-            return numericStrings.Concat(stringList).ToList();
+            return [.. numericStrings, .. stringList];
         }
         private static HashSet<string>? GetUnwantedItems(string criteriaKey)
         {
