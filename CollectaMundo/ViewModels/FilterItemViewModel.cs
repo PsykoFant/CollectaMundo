@@ -64,7 +64,7 @@ namespace CollectaMundo.ViewModels
                         FreetextSearch = value ?? DefaultText;
                     }
 
-                    _filterViewModel.ApplyFiltering();
+                    _filterViewModel.NotifyFilterChanged();
                 }
             }
         }
@@ -83,7 +83,7 @@ namespace CollectaMundo.ViewModels
                 {
                     _selectedNumericValue = value;
                     OnPropertyChanged(nameof(SelectedNumericValue));
-                    _filterViewModel.ApplyFiltering();
+                    _filterViewModel.NotifyFilterChanged();
                 }
             }
         }
@@ -146,7 +146,7 @@ namespace CollectaMundo.ViewModels
                 SelectedNumericValue = null;
             }
 
-            _filterViewModel.ApplyFiltering();
+            _filterViewModel.NotifyFilterChanged();
         }
 
         // Selection-related properties for multi-criteria
@@ -173,7 +173,7 @@ namespace CollectaMundo.ViewModels
                 SelectedOptions.Add(option.OptionName);
             }
 
-            _filterViewModel.ApplyFiltering();
+            _filterViewModel.NotifyFilterChanged();
         }
 
         // Handle UI properties in custom comboboxes (e.g. filtering options in dropdown)
@@ -311,7 +311,7 @@ namespace CollectaMundo.ViewModels
                     _operatorSelection = value;
                     OnPropertyChanged(nameof(OperatorSelection));
 
-                    _filterViewModel.ApplyFiltering();
+                    _filterViewModel.NotifyFilterChanged();
                 }
             }
         }
@@ -565,7 +565,6 @@ namespace CollectaMundo.ViewModels
                 return false;
             }
         }
-
     }
 
     // Represents an individual selectable filter option.

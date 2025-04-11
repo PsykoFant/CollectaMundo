@@ -25,7 +25,11 @@ namespace CollectaMundo
         public CardViewModel MyCollectionVM { get; } = new CardViewModel();
         public CardViewModel AllCardsForDecksVM { get; } = new CardViewModel();
         public CardViewModel ColorIcons { get; } = new CardViewModel();
-        public FilterViewModel? FilterVM { get; private set; }
+        public FilterViewModel FilterVM { get; } = new FilterViewModel();
+
+        private readonly ICardFilteringService _filteringService;
+
+
         public AddCardsViewModel AddCardsVM { get; } = new AddCardsViewModel(new CardCollectionService());
         public AddCardsViewModel EditCardsVM { get; } = new AddCardsViewModel(new CardCollectionService())
         {
@@ -81,8 +85,6 @@ namespace CollectaMundo
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
-
-
 
         // Flag to track startup phase
         public bool _isStartup = true;
@@ -160,6 +162,7 @@ namespace CollectaMundo
             _currentInstance = this;
 
             ICardCollectionService cardCollectionService = new CardCollectionService();
+            _filteringService = new CardFilteringService();
 
             // Set up system
             Loaded += async (sender, args) =>
@@ -171,9 +174,19 @@ namespace CollectaMundo
                 _isStartup = false; // Set flag to false after initial load
             };
 
+            // Subscribe to filter changes.
+            FilterVM.FilterChanged += OnFilterChanged;
+
             // Update the statusbox with messages from methods in DownloadAndPrepareDB and UpdateDB
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
+        }
+        private void OnFilterChanged(object? sender, EventArgs e)
+        {
+            // Apply filters on each collection.
+            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, FilterVM.Filters.Values);
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
+            AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
         }
 
         #region Load data and populate UI elements
@@ -188,23 +201,8 @@ namespace CollectaMundo
             await CardListManager.CreateCardListObjectAsync(AllCardsForDecksVM.Cards, CardListObject.AllCardsForDecks);
             await CardListManager.CreateCardListObjectAsync(ColorIcons.Cards, CardListObject.ColorIcons);
 
-            OnPropertyChanged(nameof(AllCardsVM));
-            OnPropertyChanged(nameof(MyCollectionVM));
-            OnPropertyChanged(nameof(AllCardsForDecksVM));
-            OnPropertyChanged(nameof(ColorIcons));
-
-            // Assign the new FilterVM object AFTER data is available
-            FilterVM = new FilterViewModel
-            {
-                AllCardsVM = AllCardsVM,
-                MyCollectionVM = MyCollectionVM,
-                AllCardsForDecksVM = AllCardsForDecksVM
-            };
             await FilterVM.InitializeFilterDefaultsAsync();
-
             OnPropertyChanged(nameof(FilterVM)); // Force UI refresh so bindings update
-
-
 
             Task loadDecks = LoadAllDecksAsync();
             Task populateAllFormatsList = PopulateAllFormatsListAsync();

@@ -17,9 +17,24 @@ namespace CollectaMundo.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        public CardViewModel AllCardsVM { get; set; } = null!;
-        public CardViewModel MyCollectionVM { get; set; } = null!;
-        public CardViewModel AllCardsForDecksVM { get; set; } = null!;
+        // Event that signals the filters have changed.
+        public event EventHandler? FilterChanged;
+
+        // Update the filter summary
+        private string? _filterSummary;
+        public string? FilterSummary
+        {
+            get => _filterSummary;
+            set
+            {
+                if (_filterSummary != value)
+                {
+                    _filterSummary = value;
+                    OnPropertyChanged(nameof(FilterSummary));
+                }
+            }
+        }
+        public ICommand? ClearFiltersCommand { get; }
 
         // Constructor
         public FilterViewModel()
@@ -51,45 +66,42 @@ namespace CollectaMundo.ViewModels
         }
 
         // Apply filtering to update the filtered list.
-        public virtual void ApplyFiltering()
+        //public virtual void ApplyFiltering()
+        //{
+        //    // Check the references are not null
+        //    if (AllCardsVM == null || MyCollectionVM == null || AllCardsForDecksVM == null)
+        //    {
+        //        throw new InvalidOperationException("ViewModel dependencies not initialized.");
+        //    }
+
+        //    bool noFilterActive = Filters.Values.All(f => f.IsDefault);
+
+        //    if (noFilterActive)
+        //    {
+        //        AllCardsVM.FilteredCards = [.. AllCardsVM.Cards];
+        //        MyCollectionVM.FilteredCards = [.. MyCollectionVM.Cards];
+        //        AllCardsForDecksVM.FilteredCards = [.. AllCardsForDecksVM.Cards];
+        //    }
+        //    else
+        //    {
+        //        AllCardsVM.FilteredCards = FilterManager.ApplyFilter(AllCardsVM.Cards, Filters.Values);
+        //        MyCollectionVM.FilteredCards = FilterManager.ApplyFilter(MyCollectionVM.Cards, Filters.Values);
+        //        AllCardsForDecksVM.FilteredCards = FilterManager.ApplyFilter(AllCardsForDecksVM.Cards, Filters.Values);
+        //    }
+        //    UpdateFilterSummary();
+        //}
+
+
+        /// <summary>
+        /// Called by FilterItemViewModel instances when a filter value changes.
+        /// This method raises the FilterChanged event.
+        /// </summary>
+        public void NotifyFilterChanged()
         {
-            // Check the references are not null
-            if (AllCardsVM == null || MyCollectionVM == null || AllCardsForDecksVM == null)
-            {
-                throw new InvalidOperationException("ViewModel dependencies not initialized.");
-            }
-
-            bool noFilterActive = Filters.Values.All(f => f.IsDefault);
-
-            if (noFilterActive)
-            {
-                AllCardsVM.FilteredCards = [.. AllCardsVM.Cards];
-                MyCollectionVM.FilteredCards = [.. MyCollectionVM.Cards];
-                AllCardsForDecksVM.FilteredCards = [.. AllCardsForDecksVM.Cards];
-            }
-            else
-            {
-                AllCardsVM.FilteredCards = FilterManager.ApplyFilter(AllCardsVM.Cards, Filters.Values);
-                MyCollectionVM.FilteredCards = FilterManager.ApplyFilter(MyCollectionVM.Cards, Filters.Values);
-                AllCardsForDecksVM.FilteredCards = FilterManager.ApplyFilter(AllCardsForDecksVM.Cards, Filters.Values);
-            }
             UpdateFilterSummary();
+            FilterChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        // Update the filter summary
-        private string? _filterSummary;
-        public string? FilterSummary
-        {
-            get => _filterSummary;
-            set
-            {
-                if (_filterSummary != value)
-                {
-                    _filterSummary = value;
-                    OnPropertyChanged(nameof(FilterSummary));
-                }
-            }
-        }
         private void UpdateFilterSummary()
         {
             try
@@ -167,7 +179,7 @@ namespace CollectaMundo.ViewModels
         }
 
         // Clears all filter selections, resetting each filter to its default state.
-        public ICommand? ClearFiltersCommand { get; }
+
         private void ClearFilters()
         {
             foreach (var filter in Filters.Values)
