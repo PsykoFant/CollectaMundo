@@ -2,9 +2,9 @@ TO DO
 - MVVM refactor
 
 - Filterdefaults skal ikke hentes fra CardViewModel objekter, men fra sit eget objekt
-	- Fix tests
-	- Performance optimer
-	- Muligt kun at køre enkelt kriterie
+ - BUG: Filtrer på FINISHES, skal filtrere på finish
+
+	
 
  - Add to collectionManager til MVVM!
 
