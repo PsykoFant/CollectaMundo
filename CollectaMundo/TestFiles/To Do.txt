@@ -3,6 +3,7 @@ TO DO
 
 - Filterdefaults skal ikke hentes fra CardViewModel objekter, men fra sit eget objekt
  - BUG: Filtrer på FINISHES, skal filtrere på finish
+ - TEST: Test x out of y cards shown
 
 	
 

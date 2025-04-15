@@ -193,7 +193,12 @@ namespace CollectaMundo
             await CardListManager.CreateCardListObjectAsync(ColorIcons.Cards, CardListObject.ColorIcons);
 
             await FilterVM.InitializeFilterDefaultsAsync();
-            OnPropertyChanged(nameof(FilterVM)); // Force UI refresh so bindings update
+
+            // Force UI refresh so bindings update
+            OnPropertyChanged(nameof(FilterVM));
+            OnPropertyChanged(nameof(AllCardsVM));
+            OnPropertyChanged(nameof(MyCollectionVM));
+            OnPropertyChanged(nameof(AllCardsForDecksVM));
 
             Task loadDecks = LoadAllDecksAsync();
             Task populateAllFormatsList = PopulateAllFormatsListAsync();
