@@ -30,6 +30,7 @@ namespace CollectaMundo.Utilities
             { "SubTypes", ("Subtypes", FilterType.Multi, new[] { OperatorType.OR, OperatorType.AND, OperatorType.NOT }, false) },
             { "Keywords", ("", FilterType.Multi, new[] { OperatorType.OR, OperatorType.AND, OperatorType.NOT }, false) },
             { "Finishes", ("", FilterType.Multi, new[] { OperatorType.OR, OperatorType.NOT }, false) },
+            { "SelectedFinish", ("Chosen finish", FilterType.Multi, new[] { OperatorType.OR, OperatorType.NOT }, false) },
             { "Language", ("", FilterType.Multi, new[] { OperatorType.OR, OperatorType.NOT }, false) },
             { "SelectedCondition", ("Condition", FilterType.Multi, new[] { OperatorType.OR, OperatorType.NOT }, false) },
             { "ManaValue", ("", FilterType.Numeric, new[] { OperatorType.GREATER_THAN, OperatorType.LESS_THAN, OperatorType.EQUALS, OperatorType.GREATER_THAN_OR_EQUALS, OperatorType.LESS_THAN_OR_EQUALS }, false) },

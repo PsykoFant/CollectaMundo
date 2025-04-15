@@ -187,7 +187,20 @@ namespace CollectaMundo.Models
             }
         }
         public List<string> AvailableFinishes { get; set; } = [];
-        public string? SelectedFinish { get; set; }
+
+        private string? _selectedFinish;
+        public string? SelectedFinish
+        {
+            get => _selectedFinish;
+            set
+            {
+                if (_selectedFinish != value)
+                {
+                    _selectedFinish = value;
+                    OnPropertyChanged(nameof(SelectedFinish));
+                }
+            }
+        }
         public decimal? CardInCollectionPrice { get; set; }
 
         // PricedCardSet

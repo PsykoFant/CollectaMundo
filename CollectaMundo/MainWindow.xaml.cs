@@ -1085,6 +1085,8 @@ namespace CollectaMundo
             GridMyCollection.Visibility = Visibility.Visible;
             LanguageComboBox.Visibility = Visibility.Visible;
             LanguageOperatorComboBox.Visibility = Visibility.Visible;
+            SelectedFinishComboBox.Visibility = Visibility.Visible;
+            SelectedFinishOperatorComboBox.Visibility = Visibility.Visible;
             SelectedConditionComboBox.Visibility = Visibility.Visible;
             SelectedConditionOperatorComboBox.Visibility = Visibility.Visible;
             CheckBoxCardsForTrade.Visibility = Visibility.Visible;
@@ -1133,6 +1135,8 @@ namespace CollectaMundo
             // Reset filter UI specific to my collection 
             LanguageComboBox.Visibility = Visibility.Collapsed;
             LanguageOperatorComboBox.Visibility = Visibility.Collapsed;
+            SelectedFinishComboBox.Visibility = Visibility.Collapsed;
+            SelectedFinishOperatorComboBox.Visibility = Visibility.Collapsed;
             SelectedConditionComboBox.Visibility = Visibility.Collapsed;
             SelectedConditionOperatorComboBox.Visibility = Visibility.Collapsed;
             CheckBoxCardsForTrade.Visibility = Visibility.Collapsed;

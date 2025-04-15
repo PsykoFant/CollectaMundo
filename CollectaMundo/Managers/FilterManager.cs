@@ -63,6 +63,7 @@ namespace CollectaMundo.Managers
                         "SubTypes" => "SELECT DISTINCT subtypes FROM cards UNION ALL SELECT DISTINCT subtypes FROM tokens AS SubTypes;",
                         "Keywords" => "SELECT DISTINCT keywords FROM cards UNION ALL SELECT DISTINCT keywords FROM tokens AS Keywords;",
                         "Finishes" => "SELECT DISTINCT finishes FROM cards UNION ALL SELECT DISTINCT finishes FROM tokens AS Finishes;",
+                        "SelectedFinish" => "SELECT DISTINCT finish AS Finish FROM myCollection;",
                         "Language" => "SELECT DISTINCT language AS Language FROM myCollection;",
                         "SelectedCondition" => "SELECT DISTINCT condition AS Condition FROM myCollection;",
                         "ManaValue" => "SELECT DISTINCT manaValue AS ManaValue FROM cards;",
@@ -71,7 +72,7 @@ namespace CollectaMundo.Managers
 
                     try
                     {
-                        using SQLiteCommand command = new SQLiteCommand(query, DBAccess.connection);
+                        using SQLiteCommand command = new(query, DBAccess.connection);
                         using DbDataReader reader = await command.ExecuteReaderAsync();
                         while (await reader.ReadAsync())
                         {
@@ -85,6 +86,7 @@ namespace CollectaMundo.Managers
                                 "SubTypes" => reader["SubTypes"] as string,
                                 "Keywords" => reader["Keywords"] as string,
                                 "Finishes" => reader["Finishes"] as string,
+                                "SelectedFinish" => reader["Finish"] as string,
                                 "Language" => reader["Language"] as string,
                                 "SelectedCondition" => reader["Condition"] as string,
                                 "ManaValue" => reader["ManaValue"].ToString(),
@@ -158,7 +160,9 @@ namespace CollectaMundo.Managers
             foreach (var item in input)
             {
                 if (string.IsNullOrEmpty(item))
+                {
                     continue;
+                }
 
                 IEnumerable<string> parts;
                 if (shouldNotSplit)
@@ -175,9 +179,14 @@ namespace CollectaMundo.Managers
                     string trimmed = part.Trim();
                     // Skip if the trimmed string is empty or should be removed.
                     if (string.IsNullOrEmpty(trimmed))
+                    {
                         continue;
+                    }
+
                     if (removeItems != null && removeItems.Contains(trimmed))
+                    {
                         continue;
+                    }
 
                     uniqueItems.Add(trimmed);
                 }

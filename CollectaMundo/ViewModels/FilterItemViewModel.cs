@@ -482,6 +482,30 @@ namespace CollectaMundo.ViewModels
                     }
                 }
 
+                // Special case for SelectedFinish: perform an exact match.
+                if (CriteriaKey.Equals("SelectedFinish", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (SelectedOptions == null || !SelectedOptions.Any())
+                    {
+                        return true;
+                    }
+
+                    // Use the card's finish value. Adjust this if your card uses a different property.
+                    string cardFinish = card.SelectedFinish ?? string.Empty;
+                    switch (OperatorSelection)
+                    {
+                        case OperatorType.OR:
+                            // Exact match required.
+                            return SelectedOptions.Any(opt =>
+                                string.Equals(opt, cardFinish, StringComparison.OrdinalIgnoreCase));
+                        case OperatorType.NOT:
+                            return !SelectedOptions.Any(opt =>
+                                string.Equals(opt, cardFinish, StringComparison.OrdinalIgnoreCase));
+                        default:
+                            return true;
+                    }
+                }
+
                 // For other filter types, use your existing logic.
                 // First, try to get the property using the mapping's Property value.
                 string propertyName = CriteriaKey;
