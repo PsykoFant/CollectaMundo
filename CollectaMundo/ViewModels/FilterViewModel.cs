@@ -53,17 +53,26 @@ namespace CollectaMundo.ViewModels
         {
             Stopwatch sw = Stopwatch.StartNew();
 
-            var filterDefaults = await FilterManager.GetFilterDefaultsFromDBAsync();
-            foreach (var filter in filterDefaults)
+            try
             {
-                Filters[filter.CriteriaKey] = new FilterItemViewModel(
-                    filter.CriteriaKey,
-                    filter.FilterOptions,
-                    filter.DefaultText,
-                    filter.ReadableLabel,
-                    this,
-                    filter.NumericCriteria
-                );
+                var filterDefaults = await FilterManager.GetFilterDefaultsFromDBAsync();
+                foreach (var filter in filterDefaults)
+                {
+                    Filters[filter.CriteriaKey] = new FilterItemViewModel(
+                        filter.CriteriaKey,
+                        filter.FilterOptions,
+                        filter.DefaultText,
+                        filter.ReadableLabel,
+                        this,
+                        filter.NumericCriteria
+                    );
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error initializing filter defaults: {ex.Message}");
+                MessageBox.Show($"Error initializing filter defaults: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             sw.Stop();

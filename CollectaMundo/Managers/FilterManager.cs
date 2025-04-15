@@ -41,13 +41,22 @@ namespace CollectaMundo.Managers
                 {
                     distinctValues = ["W", "U", "B", "R", "G", "C", "X", "Colorless"];
                 }
+                // Text and CardsForTrade do not need default values
+                else if (criteriaKey.Equals("Text", StringComparison.OrdinalIgnoreCase))
+                {
+                    distinctValues = [];
+                }
+                else if (criteriaKey.Equals("CardsForTrade", StringComparison.OrdinalIgnoreCase))
+                {
+                    distinctValues = [];
+                }
+
                 else
                 {
                     string query = criteriaKey switch
                     {
                         "Name" => "SELECT DISTINCT name FROM cards UNION ALL SELECT DISTINCT name FROM tokens AS Name;",
                         "SetName" => "SELECT DISTINCT name AS SetName FROM sets;",
-                        "Text" => "SELECT DISTINCT text FROM cards UNION ALL SELECT DISTINCT text FROM tokens AS Text;",
                         "Rarity" => "SELECT DISTINCT rarity AS Rarity FROM cards;",
                         "SuperTypes" => "SELECT DISTINCT supertypes FROM cards UNION ALL SELECT DISTINCT supertypes FROM tokens AS SuperTypes;",
                         "Types" => "SELECT DISTINCT types FROM cards UNION ALL SELECT DISTINCT types FROM tokens AS Types;",
@@ -57,7 +66,6 @@ namespace CollectaMundo.Managers
                         "Language" => "SELECT DISTINCT language AS Language FROM myCollection;",
                         "SelectedCondition" => "SELECT DISTINCT condition AS Condition FROM myCollection;",
                         "ManaValue" => "SELECT DISTINCT manaValue AS ManaValue FROM cards;",
-                        "CardsForTrade" => "SELECT DISTINCT trade AS CardsForTrade FROM myCollection;",
                         _ => throw new Exception($"Unhandled criteria key: {criteriaKey}")
                     };
 
@@ -71,7 +79,6 @@ namespace CollectaMundo.Managers
                             {
                                 "Name" => reader["Name"] as string,
                                 "SetName" => reader["SetName"] as string,
-                                "Text" => reader["Text"] as string,
                                 "Rarity" => reader["Rarity"] as string,
                                 "SuperTypes" => reader["SuperTypes"] as string,
                                 "Types" => reader["Types"] as string,
@@ -81,7 +88,6 @@ namespace CollectaMundo.Managers
                                 "Language" => reader["Language"] as string,
                                 "SelectedCondition" => reader["Condition"] as string,
                                 "ManaValue" => reader["ManaValue"].ToString(),
-                                "CardsForTrade" => reader["CardsForTrade"].ToString(),
                                 _ => null
                             };
 
@@ -106,7 +112,6 @@ namespace CollectaMundo.Managers
                 // Special handling for Colors: Here the cleanedValues already match the hardcoded values.
                 if (criteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Optionally you can reassign or log that colors were hardcoded.
                     cleanedValues = distinctValues;
                 }
 

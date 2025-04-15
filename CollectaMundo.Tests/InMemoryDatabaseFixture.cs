@@ -20,7 +20,7 @@ Alan Pollack;70c20ea3-5ad6-4082-a337-6e994ae5828e;;;paper;default;black;;W;;W;;;
 Bastien L. Deharme;798f63ec-41ad-474e-9708-df08193345c6;;;mtgo;;black;;B;;B;;;2517;0.21;;;;;nonfoil, foil;;;;2015;;;;1;1;;;;1;;1;;1;;;;;;;English;normal;;;;{3}{B};4.0;Gixian Puppeteer;105702;;03-01-2023;;;;4;BRO, PBRO, PRM;;rare;;;oval;PRM;;;;;Phyrexian, Warlock;;Whenever you draw your second card each turn, each opponent loses 2 life and you gain 2 life.\nWhen Gixian Puppeteer dies, return another target creature card with mana value 3 or less from your graveyard to the battlefield.;3;Creature — Phyrexian Warlock;Creature;1c1aafc6-e078-5951-a22e-4d386aef8140;;
 Eric Deschamps;37970e22-9cee-44c1-af44-5ee27cf26b76;;;mtgo, paper;default;black;;;;;;;14701;0.11;;;;;nonfoil, foil;;;;2015;;;;1;1;;;;;;;;1;;;;;;;English;normal;;;;{2};2.0;Bubbling Cauldron;213;;;{1}, {T}, Sacrifice a creature: You gain 4 life.\n{1}, {T}, Sacrifice a creature named Festering Newt: Each opponent loses 4 life. You gain life equal to the life lost this way.;Artifact;;;IMA, JMP, M14;;uncommon;;;;IMA;;;""{""foil"": [""6dea76a3-dab9-5707-9181-635f24535a5b""], ""nonfoil"": [""6dea76a3-dab9-5707-9181-635f24535a5b""]}"";;;;{1}, {T}, Sacrifice a creature: You gain 4 life.\n{1}, {T}, Sacrifice a creature named Festering Newt: Each opponent loses 4 life. You gain life equal to the life lost this way.;;Artifact;Artifact;9ce99de8-bbd0-5043-9670-7f69ec41c1eb;;
 James Ryman;3852bbc9-11c0-4fe3-8722-a06ad7e2bcc5;;;paper;;black;;W;;W;;;4829;0.18;;;;;foil;;""Justice isn't done until undeath is undone."";;2003;;;;1;0;;;;;;1;;1;;1;;;;Flying;English;normal;;;;{5}{W}{W};7.0;Angel of Glory's Rise;A9;;01-02-2013;;;;4;AVR, MIC, PAVR;setpromo, resale;rare;;;;PAVR;;;;;Angel;;Flying\nWhen Angel of Glory's Rise enters, exile all Zombies, then return all Human creature cards from your graveyard to the battlefield.;6;Creature — Angel;Creature;aff7557c-2e85-5bda-8231-d8f1e46b43c8;;colorpie
-Lenka Šimečková;c9e04828-8fcb-47ba-aadc-4005d43a79f4;;;paper;;borderless;;G, U;;G, U;;;5226;0.15;;;;;nonfoil, foil;;;showcase, legendary, inverted;2015;;;;1;1;;;;;;;;;;;;;;Paradox, Team TARDIS;English;normal;""{""brawl"": false, ""commander"": true, ""oathbreaker"": false}"";;;{1}{G}{U};3.0;The Thirteenth Doctor;564;;;;;;2;WHO;boosterfun;mythic;;;triangle;WHO;;;""{""foil"": [""2d252e89-9965-5f23-907e-7a98726d7fac"", ""c3727661-aaa8-5fc8-985e-93b619c3ef05""], ""nonfoil"": [""2d252e89-9965-5f23-907e-7a98726d7fac"", ""c3727661-aaa8-5fc8-985e-93b619c3ef05""]}"";;Time Lord, Doctor;Legendary;Paradox — Whenever you cast a spell from anywhere other than your hand, put a +1/+1 counter on target creature.\nTeam TARDIS — At the beginning of your end step, untap each creature you control with a counter on it.;2;Legendary Creature — Time Lord Doctor;Creature;a4072135-41e9-54e1-8905-4a853e6cf9ff;845adf01-30b9-59f5-940b-2200b70f713d, a4d8b55a-7761-5685-a768-d6bcae2809b0, be61e9c2-20bf-59b8-bfae-3a5f64a7fc28, 4f3671e6-6faa-533a-9ba9-f05f5bf09e8b, 47adf329-3c8e-5af4-801a-c361a3e647f9, 6129fe0e-e952-5b75-b5f5-8cb46cc58b77, 882be6aa-fac2-52b8-9b47-a0980d475a11;
+Lenka Šimečková;c9e04828-8fcb-47ba-aadc-4005d43a79f4;;;paper;;borderless;;G, U;;G, U;;;5226;0.15;;;;;nonfoil, foil;;;showcase, legendary, inverted;2015;;;;1;1;;;;;;;;;;;;;;Paradox, Team TARDIS;English;normal;""{""brawl"": false, ""commander"": true, ""oathbreaker"": false}"";;;{1}{G}{U};3.0;The Thirteenth Doctor;564;;;;;;2;WHO;boosterfun;mythic;;;triangle;WHO;;;""{""foil"": [""2d252e89-9965-5f23-907e-7a98726d7fac"", ""c3727661-aaa8-5fc8-985e-93b619c3ef05""], ""nonfoil"": [""2d252e89-9965-5f23-907e-7a98726d7fac"", ""c3727661-aaa8-5fc8-985e-93b619c3ef05""]}"";;Time Lord, Doctor;Legendary;""Paradox — Whenever you cast a spell from anywhere other than your hand, put a +1/+1 counter on target creature.\nTeam TARDIS — At the beginning of your end step, untap each creature you control with a counter on it."";2;Legendary Creature — Time Lord Doctor;Creature;a4072135-41e9-54e1-8905-4a853e6cf9ff;845adf01-30b9-59f5-940b-2200b70f713d, a4d8b55a-7761-5685-a768-d6bcae2809b0, be61e9c2-20bf-59b8-bfae-3a5f64a7fc28, 4f3671e6-6faa-533a-9ba9-f05f5bf09e8b, 47adf329-3c8e-5af4-801a-c361a3e647f9, 6129fe0e-e952-5b75-b5f5-8cb46cc58b77, 882be6aa-fac2-52b8-9b47-a0980d475a11;
 Scott Hampton;1675947d-e663-4200-a6ce-5ad7bb3c83b1;;;mtgo, paper;;black;;G;;G;;a;7057;;;;;;nonfoil;;It hardly weighs anything, but it takes all day to remove.;;2003;;;;0;1;;;;;;;;1;;1;;;;;English;normal;;;;{2}{G};3.0;Spidersilk Armor;32;;;Creatures you control get +0/+1 and have reach. (They can block creatures with flying.);Enchantment;;;DDG, MMQ, PLST;;common;;;;DDG;;;""{""nonfoil"": [""c77159bf-6de4-5324-9226-d0142f6c8b9a""]}"";;;;Creatures you control get +0/+1 and have reach. (They can block creatures with flying.);;Enchantment;Enchantment;e5be8d1c-7e4f-5ee2-a86a-4c4706c5ea9e;;
 Edward P. Beard, Jr.;b845b8ee-aeea-4822-bcf9-7230625ac95c;;;paper;;white;;B;;B;;;17915;;;;;;nonfoil;;;;2003;;;;0;1;1;;;;;;;1;;;;;;;Spanish;normal;;;;{B};1.0;Carrion Rats;A41;;;;;;2;PHUK, PSAL, TOR;mediainsert;common;;;;PSAL;;;;;Rat;;Whenever Carrion Rats attacks or blocks, any player may exile a card from their graveyard. If a player does, Carrion Rats assigns no combat damage this turn.;1;Creature — Rat;Creature;0439faae-bab3-581b-add1-37a73bb1e62c;d01089e0-f1c8-5c96-b20a-a811600573f5, fae79ec1-d110-59c3-909d-f2ee7720331c;
 Camille Alquier;a0670296-0225-4630-95c6-feab68d14df4;;;arena, mtgo, paper;;borderless;;B;;B;;;1171;1.02;5.0;;5.0;Sheoldred;foil;;;legendary;2015;;;;1;0;;1;;;;;;;;1;;;;Menace, Transform;English;transform;""{""brawl"": true, ""commander"": true, ""oathbreaker"": false}"";;;{3}{B}{B};5.0;Sheoldred // The True Scriptures;340;;;;;c153f8a5-0537-5e54-bddd-ef806fbd0af9;4;MOM, PMOM;serialized, doublerainbow, boosterfun;mythic;;;oval;MOM;a;;""{""foil"": [""78441b62-b849-5262-a30f-9039ac252373""]}"";;Phyrexian, Praetor;Legendary;Menace\nWhen Sheoldred enters, each opponent sacrifices a nontoken creature or planeswalker of their choice.\n{4}{B}: Exile Sheoldred, then return it to the battlefield transformed under its owner's control. Activate only as a sorcery and only if an opponent has eight or more cards in their graveyard.;5;Legendary Creature — Phyrexian Praetor;Creature;5fb4cbe9-b370-5205-bb89-101c677eab7e;a08e899a-7d8a-5ee1-932d-e880bcf8ee51, 552ea12c-68a4-5bc6-abcc-7c1356bccca9;
@@ -316,58 +316,58 @@ id;uuid;count;trade;condition;language;finish
 
         private async Task SeedDataAsync()
         {
+            // Path to test resources directory.
+            string basePath = Path.Combine(AppContext.BaseDirectory, "TestResources");
+
             // Seed each table from its CSV seed string.
-            await SeedTableAsync("cards", CardsCsv);
-            await SeedTableAsync("tokens", TokensCsv);
-            await SeedTableAsync("sets", SetsCsv);
-            await SeedTableAsync("myCollection", MyCollectionCsv);
+            await SeedTableAsync("cards", Path.Combine(basePath, "cards.csv"));
+            await SeedTableAsync("tokens", Path.Combine(basePath, "tokens.csv"));
+            await SeedTableAsync("sets", Path.Combine(basePath, "sets.csv"));
+            await SeedTableAsync("myCollection", Path.Combine(basePath, "myCollection.csv"));
         }
 
         // A helper method to seed a table from CSV data.
         // Assumes semicolon ';' as delimiter.
-        private async Task SeedTableAsync(string tableName, string csvData)
+        private async Task SeedTableAsync(string tableName, string filePath)
         {
-            // Use StringReader to read the CSV data.
+            if (!File.Exists(filePath))
+                throw new FileNotFoundException($"CSV file for {tableName} not found at {filePath}");
+
+            string csvData = await File.ReadAllTextAsync(filePath);
+            // Use CsvHelper to parse the CSV.
             using var reader = new StringReader(csvData);
-            // Configure CsvHelper to use semicolon as delimiter.
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
                 Delimiter = ";",
                 HasHeaderRecord = true,
                 Quote = '"',
-                // Log any bad data using RawRecord only.
                 BadDataFound = args => Debug.WriteLine($"Bad data found: {args.RawRecord}")
             };
-
             using var csv = new CsvReader(reader, config);
-            csv.Read();
+            await csv.ReadAsync();
             csv.ReadHeader();
             var headers = csv.HeaderRecord;
             if (headers == null || headers.Length == 0)
                 throw new Exception("CSV file missing headers.");
 
-            // Build parameter names for the INSERT command.
+            // Build the INSERT command.
             var parameters = string.Join(", ", headers.Select((h, i) => $"@p{i}"));
             string insertSql = $"INSERT INTO {tableName} ({string.Join(", ", headers)}) VALUES ({parameters});";
             Debug.WriteLine($"Seeding table '{tableName}' using SQL: {insertSql}");
 
             using var transaction = Connection.BeginTransaction();
             using var cmd = new SQLiteCommand(insertSql, Connection, transaction);
-
-            // Add parameters.
             for (int i = 0; i < headers.Length; i++)
             {
                 cmd.Parameters.Add(new SQLiteParameter($"@p{i}"));
             }
 
-            int rowIndex = 1; // starting after header
+            int rowIndex = 1;
             while (await csv.ReadAsync())
             {
-                // For each header, get the field value.
                 for (int i = 0; i < headers.Length; i++)
                 {
                     string field = csv.GetField(headers[i]);
-                    // Use DBNull if the field is empty.
                     cmd.Parameters[$"@p{i}"].Value = string.IsNullOrWhiteSpace(field) ? (object)DBNull.Value : field;
                 }
 
