@@ -19,3 +19,4 @@ TO DO
  - Hvorfor er der ingen kort fra Mystery Booster
 
  - Performance - startup
+	- Bruger vi AggregatedCardKeywords table til noget?

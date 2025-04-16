@@ -628,7 +628,7 @@ namespace CollectaMundo
                         t.side IS NULL OR t.side = 'a';
                     ";
                 string createAllCardsViewQuery = $@"
-                    CREATE VIEW view_allCards AS
+                CREATE VIEW view_allCards AS
                     SELECT * FROM (
                         SELECT 
                             c.name AS Name, 
@@ -638,11 +638,11 @@ namespace CollectaMundo
                             c.manaCost AS ManaCost, 
                             u.manaCostImage AS ManaCostImage, 
                             c.types AS Types, 
-                            COALESCE(ccol.AggregatedColors, c.colors) AS Colors,
+                            CAST(COALESCE(ccol.AggregatedColors, c.colors) AS TEXT) AS Colors,
                             c.supertypes AS SuperTypes, 
                             c.subtypes AS SubTypes, 
                             c.type AS Type, 
-                            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+                            CAST(COALESCE(cg.AggregatedKeywords, c.keywords) AS TEXT) AS Keywords,
                             c.text AS RulesText, 
                             c.manaValue AS ManaValue, 
                             c.language AS Language,
@@ -714,10 +714,10 @@ namespace CollectaMundo
                             WHEN 'R' THEN 4
                             WHEN 'G' THEN 5
                             ELSE 7
-                        END;
+                        END
                     ";
                 string createMyCollectionViewQuery = $@"
-                    CREATE VIEW view_myCollection AS
+                CREATE VIEW view_myCollection AS
                     SELECT * FROM (
                         SELECT                        
                             c.name AS Name,
@@ -727,11 +727,11 @@ namespace CollectaMundo
                             c.manaCost AS ManaCost,
                             u.manaCostImage AS ManaCostImage,
                             c.types AS Types,
-                            COALESCE(ccol.AggregatedColors, c.colors) AS Colors,
+                            CAST(COALESCE(ccol.AggregatedColors, c.colors) AS TEXT) AS Colors,
                             c.supertypes AS SuperTypes,
                             c.subtypes AS SubTypes,
                             c.type AS Type,
-                            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+                            CAST(COALESCE(cg.AggregatedKeywords, c.keywords) AS TEXT) AS Keywords,
                             c.text AS RulesText,
                             c.manaValue AS ManaValue,
                             c.finishes AS Finishes,
@@ -747,22 +747,32 @@ namespace CollectaMundo
                             {normalPriceColumn},
                             {foilPriceColumn},
                             {etchedPriceColumn}
-                        FROM myCollection m
-                        JOIN cards c ON m.uuid = c.uuid
-                        LEFT JOIN sets s ON c.setCode = s.code
-                        LEFT JOIN keyruneImages k ON c.setCode = k.setCode
-                        LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                        LEFT JOIN cardPrices p ON m.uuid = p.uuid
-                        LEFT JOIN (SELECT cc.Name,
-                                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                        FROM
+                            myCollection m
+                        JOIN
+                            cards c ON m.uuid = c.uuid
+                        LEFT JOIN 
+                            sets s ON c.setCode = s.code
+                        LEFT JOIN 
+                            keyruneImages k ON c.setCode = k.setCode
+                        LEFT JOIN 
+                            uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                        LEFT JOIN 
+                            cardPrices p ON m.uuid = p.uuid	
+                            LEFT JOIN (
+                                SELECT 
+                                    cc.Name, 
+                                    GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
                                 FROM cards cc
                                 GROUP BY cc.Name
                             ) cg ON c.Name = cg.Name
-                        LEFT JOIN (SELECT cc.Name,
+                        LEFT JOIN (
+                            SELECT 
+                                cc.Name,
                                 REPLACE(GROUP_CONCAT(DISTINCT cc.colors), ' ', '') AS AggregatedColors
-                                FROM cards cc
-                                GROUP BY cc.Name
-                            ) ccol ON c.Name = ccol.Name
+                            FROM cards cc
+                            GROUP BY cc.Name
+                        ) ccol ON c.Name = ccol.Name
                         WHERE EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
                         UNION ALL
                         SELECT
@@ -793,12 +803,18 @@ namespace CollectaMundo
                             {normalPriceColumn},
                             {foilPriceColumn},
                             {etchedPriceColumn}
-                        FROM myCollection m
-                        JOIN tokens t ON m.uuid = t.uuid
-                        LEFT JOIN sets s ON t.setCode = s.tokenSetCode
-                        LEFT JOIN keyruneImages k ON t.setCode = k.setCode
-                        LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-                        LEFT JOIN cardPrices p ON m.uuid = p.uuid
+                        FROM
+                            myCollection m
+                        JOIN
+                            tokens t ON m.uuid = t.uuid
+                        LEFT JOIN 
+                            sets s ON t.setCode = s.tokenSetCode
+                        LEFT JOIN 
+                            keyruneImages k ON t.setCode = k.setCode
+                        LEFT JOIN 
+                            uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
+                        LEFT JOIN 
+                            cardPrices p ON m.uuid = p.uuid
                         WHERE NOT EXISTS (SELECT 1 FROM cards WHERE uuid = m.uuid)
                     ) ORDER BY ReleaseDate DESC, SetName, Types,
                         CASE Colors
@@ -808,7 +824,7 @@ namespace CollectaMundo
                             WHEN 'R' THEN 4
                             WHEN 'G' THEN 5
                             ELSE 6
-                        END;
+                        END
                     ";
                 string createAllCardsForDecksViewQuery = $@"
                     CREATE VIEW view_allCardsForDecks AS
@@ -818,11 +834,11 @@ namespace CollectaMundo
                             c.manaCost AS ManaCost, 
                             u.manaCostImage AS ManaCostImage, 
                             c.types AS Types, 
-                            COALESCE(ccol.AggregatedColors, c.colors) AS Colors,
+                            CAST(COALESCE(ccol.AggregatedColors, c.colors) AS TEXT) AS Colors,
                             c.supertypes AS SuperTypes, 
                             c.subtypes AS SubTypes, 
                             c.type AS Type, 
-                            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+                            CAST(COALESCE(cg.AggregatedKeywords, c.keywords) AS TEXT) AS Keywords,
                             c.text AS RulesText, 
                             c.manaValue AS ManaValue, 
                             c.side AS Side
