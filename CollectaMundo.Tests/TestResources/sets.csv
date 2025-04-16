@@ -1,21 +1,52 @@
 ﻿baseSetSize;block;cardsphereSetId;code;isFoilOnly;isForeignOnly;isNonFoilOnly;isOnlineOnly;isPartialPreview;keyruneCode;languages;mcmId;mcmIdExtras;mcmName;mtgoCode;name;parentCode;releaseDate;tcgplayerGroupId;tokenSetCode;totalSetSize;type
-350;Judge Gift Cards;;G99;1;;;0;;DEFAULT;English;;;;;Judge Gift Cards 1999;;01-01-1999;62;;1;promo
-117;;;WC98;0;;1;0;;DEFAULT;English;;;;;World Championship Decks 1998;;12-08-1998;;WC98;107;memorabilia
-18;Commander;792;CM1;1;;;0;;CM1;English;1418;;Commander's Arsenal;;Commander's Arsenal;;02-11-2012;568;;18;arsenal
-4;Khans of Tarkir;805;PTKDF;0;;1;0;;DTK;English;;;;;Tarkir Dragonfury;DTK;03-04-2015;1520;;4;promo
-64;Alchemy 2022;;YMID;0;;1;1;;Y22;English;;;;;Alchemy: Innistrad;;09-12-2021;;;64;alchemy
-243;Portal;900;POR;0;;1;0;;POR;Chinese Simplified, Chinese Traditional, English, French, German, Japanese, Spanish;25;;Portal;;Portal;;01-05-1997;86;;257;starter
-4;Commander;;OC18;1;;;0;;C18;English;;;;;Commander 2018 Oversized;C18;09-08-2018;;;4;memorabilia
-143;Odyssey;933;TOR;0;;;0;;TOR;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Portuguese (Brazil), Spanish;39;;Torment;TOR;Torment;;04-02-2002;112;;143;expansion
-350;Tempest;927;TMP;0;;1;0;;TMP;Chinese Traditional, English, French, German, Italian, Japanese, Korean, Portuguese (Brazil), Spanish;19;;Tempest;TE;Tempest;;14-10-1997;108;;350;expansion
-1;;;PMIC;0;;1;0;;PAST;English;;;;;MicroProse Promos;PAST;01-04-1997;;;1;memorabilia
-8;Judge Gift Cards;;G11;1;;;0;;PARL;English;;;;;Judge Gift Cards 2011;;01-01-2011;62;;8;promo
-248;Zendikar;914;ROE;0;;;0;;ROE;Chinese Simplified, English, French, German, Italian, Japanese, Portuguese (Brazil), Russian, Spanish;120;;Rise of the Eldrazi;ROE;Rise of the Eldrazi;;23-04-2010;98;TROE;248;expansion
-5;Innistrad;;PDKA;0;;;0;;DKA;English;;;;;Dark Ascension Promos;DKA;28-01-2012;;;7;promo
-83;Kaladesh;;PKLD;0;;;0;;KLD;English;;;;;Kaladesh Promos;KLD;30-09-2016;;;83;promo
-88;;817;DDM;0;;;0;;DDM;English, Japanese;1477;;Duel Decks: Jace vs. Vraska;DDM;Duel Decks: Jace vs. Vraska;;14-03-2014;1166;TDDM;88;duel_deck
-456;Alchemy 2022;;HBG;0;;1;1;;HBG;English;;;;;Alchemy Horizons: Baldur's Gate;;07-07-2022;;;424;alchemy
-180;Ravnica;802;DIS;0;;;0;;DIS;Chinese Simplified, English, French, German, Italian, Japanese, Portuguese (Brazil), Russian, Spanish;53;;Dissension;DIS;Dissension;;05-05-2006;28;;190;expansion
-229;;885;MMA;0;;;0;;MMA;English;1444;;Modern Masters;MMA;Modern Masters;;07-06-2013;1111;TMMA;229;masters
-306;Mirrodin;881;MRD;0;;;0;;MRD;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Portuguese (Brazil), Spanish;45;;Mirrodin;MRD;Mirrodin;;02-10-2003;75;;306;expansion
-0;;;PTDMU;0;;1;0;;DMU;English;;;;;Dominaria United Southeast Asia Tokens;DMU;09-09-2022;;PTDMU;0;token
+306;Core Set;913;3ED;0;;1;0;;3ED;English, French, German, Italian;;;;;Revised Edition;;11-04-1994;97;;306;core
+165;Mirrodin;834;5DN;0;;;0;;5DN;Chinese Simplified, English, French, German, Italian, Japanese, Portuguese (Brazil), Spanish;47;;Fifth Dawn;5DN;Fifth Dawn;;04-06-2004;43;;165;expansion
+0;;;ABLB;0;;;0;;BLB;English;;;;;Bloomburrow Art Series;BLB;02-08-2024;;ABLB;0;memorabilia
+0;;;ACLB;0;;;0;;CLB;English;;;;;Battle for Baldur's Gate Art Series;CLB;10-06-2022;;ACLB;0;memorabilia
+0;;;AFDN;0;;;0;;FDN;English;;;;;Foundations Art Series;FDN;15-11-2024;;AFDN;0;memorabilia
+338;;;AKR;0;;1;1;;AKR;English;;;;;Amonkhet Remastered;;13-08-2020;;;364;masters
+54;;;AMH1;0;;1;0;;MH1;English;;;;;Modern Horizons Art Series;MH1;05-06-2019;;AMH1;0;memorabilia
+0;;;AMH2;0;;;0;;MH2;English;;;;;Modern Horizons 2 Art Series;MH2;18-06-2021;;AMH2;0;memorabilia
+0;;;AMH3;0;;;0;;MH3;English;;;;;Modern Horizons 3 Art Series;MH3;14-06-2024;;AMH3;0;memorabilia
+0;Innistrad: Double Feature;;AMID;0;;;0;;MID;English;;;;;Midnight Hunt Art Series;MID;24-09-2021;;AMID;0;memorabilia
+0;;;AONE;0;;;0;;ONE;English;;;;;Phyrexia: All Will Be One Art Series;ONE;03-02-2023;;AONE;0;memorabilia
+0;;;ASTX;0;;;0;;STX;English;;;;;Strixhaven Art Series;STX;23-04-2021;;ASTX;0;memorabilia
+0;Innistrad: Double Feature;;AVOW;0;;;0;;VOW;English;;;;;Crimson Vow Art Series;VOW;19-11-2021;;AVOW;0;memorabilia
+274;Battle for Zendikar;774;BFZ;0;;;0;;BFZ;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Korean, Portuguese (Brazil), Russian, Spanish;1668;;Battle for Zendikar;BFZ;Battle for Zendikar;;02-10-2015;1645;TBFZ;299;expansion
+281;;1847;BLB;0;;;0;;BLB;English, French, German, Italian, Japanese, Spanish;5658;5659;Bloomburrow;BLB;Bloomburrow;;02-08-2024;23447;TBLB;397;expansion
+269;;982;DOM;0;;;0;;DOM;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Korean, Portuguese (Brazil), Russian, Spanish;1822;;Dominaria;DAR;Dominaria;;27-04-2018;2199;TDOM;280;expansion
+40;Commander;1873;DSC;0;;;0;;DSC;English, French, German, Italian, Japanese, Spanish;;;;;Duskmourn: House of Horror Commander;DSK;27-09-2024;23551;TDSC;379;commander
+269;;1089;ELD;0;;;0;;ELD;English;2582;2587;Throne of Eldraine;ELD;Throne of Eldraine;;04-10-2019;2494;TELD;457;expansion
+187;;832;FEM;0;;1;0;;FEM;English;9;;Fallen Empires;;Fallen Empires;;01-11-1994;41;;187;expansion
+0;;;FJ25;0;;1;0;;J25;English;;;;;Foundations Jumpstart Front Cards;J25;15-11-2024;;FJ25;0;memorabilia
+259;Guilds of Ravnica;993;GRN;0;;;0;;GRN;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Korean, Portuguese (Brazil), Russian, Spanish;2348;2371;Guilds of Ravnica;GRN;Guilds of Ravnica;;05-10-2018;2290;TGRN;283;expansion
+140;;852;HML;0;;1;0;;HML;English, French, German, Italian, Portuguese (Brazil), Spanish;14;;Homelands;;Homelands;;01-10-1995;57;;140;expansion
+383;Ice Age;854;ICE;0;;1;0;;ICE;English, French, German, Italian, Portuguese (Brazil), Spanish;11;;Ice Age;;Ice Age;;03-06-1995;58;;383;expansion
+249;;975;IMA;0;;;0;;IMA;Chinese Simplified, English, Japanese;1811;;Iconic Masters;IMA;Iconic Masters;;17-11-2017;2050;TIMA;249;masters
+350;Invasion;858;INV;0;;;0;;INV;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Portuguese (Brazil), Spanish;34;;Invasion;IN;Invasion;;02-10-2000;60;;359;expansion
+779;;1888;J25;0;;1;0;;J25;English, French, German, Italian, Japanese, Spanish;5932;;Foundations Jumpstart;;Foundations Jumpstart;FDN;15-11-2024;23792;;779;draft_innovation
+165;Theros;860;JOU;0;;;0;;JOU;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Korean, Portuguese (Brazil), Russian, Spanish;1481;;Journey into Nyx;JOU;Journey into Nyx;;02-05-2014;1277;TJOU;165;expansion
+301;Lorwyn;871;LRW;0;;;0;;LRW;Chinese Simplified, English, French, German, Italian, Japanese, Portuguese (Brazil), Russian, Spanish;84;;Lorwyn;LRW;Lorwyn;;12-10-2007;67;TLRW;301;expansion
+249;Core Set;873;M11;0;;;0;;M11;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Portuguese (Brazil), Russian, Spanish;1197;;Magic 2011;M11;Magic 2011;;16-07-2010;69;TM11;249;core
+16;Commander;1846;M3C;0;;;0;;M3C;English, French, German, Japanese;;;;;Modern Horizons 3 Commander;MH3;14-06-2024;23445;TM3C;399;commander
+230;;;ME3;0;;;1;;ME3;English;;;;ME3;Masters Edition III;;07-09-2009;;;230;masters
+303;;1326;MH2;0;;;0;;MH2;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Korean, Portuguese (Brazil), Russian, Spanish;4219;4244;Modern Horizons 2;MH2;Modern Horizons 2;;18-06-2021;2809;TMH2;497;draft_innovation
+277;Innistrad: Double Feature;1349;MID;0;;;0;;MID;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Korean, Portuguese (Brazil), Russian, Spanish;4362;4363;Innistrad: Midnight Hunt;MID;Innistrad: Midnight Hunt;;24-09-2021;2864;TMID;471;expansion
+286;;1845;MKM;0;;;0;;MKM;Chinese Simplified, English, French, German, Italian, Japanese, Portuguese (Brazil), Spanish;5561;5599;Murders at Karlov Manor;MKM;Murders at Karlov Manor;;09-02-2024;23361;TMKM;457;expansion
+350;Masques;879;MMQ;0;;;0;;MMQ;Chinese Traditional, English, French, German, Italian, Japanese, Portuguese (Brazil), Spanish;31;;Mercadian Masques;MM;Mercadian Masques;;04-10-1999;73;;350;expansion
+184;Battle for Zendikar;890;OGW;0;;;0;;OGW;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Korean, Portuguese (Brazil), Russian, Spanish;1676;;Oath of the Gatewatch;OGW;Oath of the Gatewatch;;22-01-2016;1693;TOGW;187;expansion
+350;Onslaught;893;ONS;0;;;0;;ONS;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Portuguese (Brazil), Spanish;41;;Onslaught;ONS;Onslaught;;07-10-2002;81;;351;expansion
+6;Innistrad;;PAVR;0;;;0;;AVR;English;;;;;Avacyn Restored Promos;AVR;28-04-2012;;;6;promo
+278;;;PIO;0;;1;1;;PIO;English;;;;;Pioneer Masters;;10-12-2024;;;425;masters
+1;;1310;PKHM;0;;;0;;KHM;English;;;;;Kaldheim Promos;KHM;05-02-2021;;;174;promo
+5013;;1895;PLST;0;;;0;;MB1;English;3494;;The List;;The List;;26-09-2020;2715;PLST;5013;masters
+3110;;;PRM;0;;;1;;MTGO;English;;;;PRM;Magic Online Promos;;24-06-2002;;;3225;promo
+306;Ravnica;909;RAV;0;;;0;;RAV;Chinese Simplified, English, French, German, Italian, Japanese, Portuguese (Brazil), Russian, Spanish;55;;Ravnica: City of Guilds;RAV;Ravnica: City of Guilds;;07-10-2005;95;;306;expansion
+274;Return to Ravnica;912;RTR;0;;;0;;RTR;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Korean, Portuguese (Brazil), Russian, Spanish;1389;;Return to Ravnica;RTR;Return to Ravnica;;05-10-2012;370;TRTR;274;expansion
+0;;1889;SPG;0;;;0;;SPG;English;5523;;Special Guests;;Special Guests;;17-11-2023;23318;;110;masterpiece
+254;;1165;THB;0;;;0;;THB;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Korean, Portuguese (Brazil), Russian, Spanish;2814;2961;Theros Beyond Death;THB;Theros Beyond Death;;24-01-2020;2568;TTHB;358;expansion
+96;;1169;UND;0;;;0;;UND;English;2809;;Unsanctioned;;Unsanctioned;;29-02-2020;2598;TUND;100;funny
+350;Urza;941;USG;0;;;0;;USG;Chinese Simplified, Chinese Traditional, English, French, German, Italian, Japanese, Korean, Portuguese (Brazil), Spanish;26;;Urza's Saga;UZ;Urza's Saga;;12-10-1998;118;;357;expansion
+331;;1878;WHO;0;;;0;;WHO;English, French, German, Japanese;;;;;Doctor Who;;13-10-2023;23165;TWHO;1186;commander
+28;Commander;1698;WOC;0;;;0;;WOC;English, German, Italian, Japanese, Portuguese (Brazil), Spanish;;;;;Wilds of Eldraine Commander;WOE;08-09-2023;23164;TWOC;176;commander
+249;Zendikar;949;ZEN;0;;;0;;ZEN;Chinese Simplified, English, French, German, Italian, Japanese, Portuguese (Brazil), Russian, Spanish;114;;Zendikar;ZEN;Zendikar;;02-10-2009;124;TZEN;269;expansion

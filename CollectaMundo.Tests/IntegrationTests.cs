@@ -1,4 +1,6 @@
-﻿using CollectaMundo.ViewModels;
+﻿using CollectaMundo.Managers;
+using CollectaMundo.ViewModels;
+using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Tests
 {
@@ -11,6 +13,147 @@ namespace CollectaMundo.Tests
             _fixture = fixture;
             // Ensure that the static DBAccess.connection points to our in-memory connection.
             DBAccess.connection = _fixture.Connection;
+        }
+
+        [Fact]
+        public async Task CardListManager_PopulatesCardViewModels_FromViews()
+        {
+            // Arrange: Create fresh CardViewModel instances.
+            var allCardsVM = new CardViewModel();
+            var myCollectionVM = new CardViewModel();
+
+            // Act: Populate the card lists.
+            await CardListManager.CreateCardListObjectAsync(allCardsVM.Cards, CardListObject.AllCards);
+            await CardListManager.CreateCardListObjectAsync(myCollectionVM.Cards, CardListObject.MyCollection);
+
+            // Optional: Refresh any properties if your binding relies on notifications.
+            // For integration tests that work on non-UI objects, you could directly assert on the collection count.
+
+            // Assert: Check that the seed data was loaded.
+            Assert.NotEmpty(allCardsVM.Cards);
+            Assert.NotEmpty(myCollectionVM.Cards);
+
+            //// For example, if your CSV seed for view_allCards contains 20 rows:
+            Assert.Equal(59, allCardsVM.Cards.Count);
+            Assert.Equal(22, myCollectionVM.Cards.Count);
+
+            // 1. Define the expected list of names exactly in the order you want.
+            var expectedAllCardsNames = new List<string>
+            {
+                "Boundary Lands Ranger",
+                "Island // Island",
+                "Ancient Greenwarden",
+                "Warriors",
+                "Devil",
+                "Otter",
+                "Season of Weaving // Season of Weaving",
+                "Rampant Frogantua // Rampant Frogantua",
+                "Goblin",
+                "Dog",
+                "Prismatic Vista",
+                "The Thirteenth Doctor",
+                "Cat",
+                "All Will Be One // All Will Be One",
+                "Jan Jansen, Chaos Crafter // Jan Jansen, Chaos Crafter",
+                "Bloodvial Purveyor // Bloodvial Purveyor",
+                "Forest",
+                "Unblinking Observer // Unblinking Observer",
+                "Prismatic Ending",
+                "Sythis, Harvest's Hand // Sythis, Harvest's Hand",
+                "Blossoming Calm // Blossoming Calm",
+                "Shadrix Silverquill // Shadrix Silverquill",
+                "Realmwalker",
+                "Deftblade Elite",
+                "Snapping Sailback",
+                "Dragonscale Boon",
+                "Flameshot",
+                "Nissa, Steward of Elements",
+                "Staying Power",
+                "Deny the Divine",
+                "Once Upon a Time",
+                "Silent Clearing // Silent Clearing",
+                "Ranger-Captain of Eos // Ranger-Captain of Eos",
+                "Chillerpillar // Chillerpillar",
+                "Dead Weight",
+                "Karox Bladewing",
+                "Bubbling Cauldron",
+                "Thought Harvester",
+                "Culling Drone",
+                "Plummet",
+                "Font of Ire",
+                "Guild Feud",
+                "Angel of Glory's Rise",
+                "Zombie",
+                "Grazing Gladehart",
+                "Plains",
+                "Glarewielder",
+                "Leave No Trace",
+                "Ouphe Vandals",
+                "Syphon Soul",
+                "Gixian Puppeteer",
+                "Hypnotic Cloud",
+                "Crenellated Wall",
+                "Renounce",
+                "Viashino Runner",
+                "Hungry Mist",
+                "Vexing Arcanix",
+                "Thallid Devourer",
+                "Resurrection"
+            };
+
+            // 2. Extract and sort the actual names from allCardsVM.
+            var actualAllCardsNames = allCardsVM.Cards
+                .Select(card => card.Name ?? string.Empty)
+                .OrderBy(name => name)
+                .ToList();
+
+            // 3. Sort the expected list as well.
+            var sortedAllcardsExpected = expectedAllCardsNames
+                .OrderBy(name => name)
+                .ToList();
+
+            // 4. Assert that they match exactly (same elements, same count, same order).
+            Assert.Equal(sortedAllcardsExpected, actualAllCardsNames);
+
+            // Define the expected names.
+            var expectedMyCollectionNames = new List<string>
+            {
+                "Prismatic Ending",
+                "Snapping Sailback",
+                "Dragonscale Boon",
+                "Once Upon a Time",
+                "Chillerpillar // Chillerpillar",
+                "Thought Harvester",
+                "Culling Drone",
+                "Plummet",
+                "Font of Ire",
+                "Guild Feud",
+                "Grazing Gladehart",
+                "Glarewielder",
+                "Leave No Trace",
+                "Ouphe Vandals",
+                "Syphon Soul",
+                "Hypnotic Cloud",
+                "Crenellated Wall",
+                "Viashino Runner",
+                "Hungry Mist",
+                "Vexing Arcanix",
+                "Thallid Devourer",
+                "Resurrection"
+            };
+
+            // Extract the actual names from myCollectionVM's Cards, ensuring non-null values.
+            var actualMyCollectionNames = myCollectionVM.Cards
+                .Select(card => card.Name!) // using null-forgiving operator if you're sure names are non-null
+                .OrderBy(name => name)
+                .ToList();
+
+            // Sort expected names for comparison.
+            var sortedMyCollectionExpected = expectedMyCollectionNames.OrderBy(name => name).ToList();
+
+            // Assert that they are exactly the same.
+            Assert.Equal(sortedMyCollectionExpected, actualMyCollectionNames);
+
         }
 
         [Fact]

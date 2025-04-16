@@ -7,7 +7,7 @@ using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Managers
 {
-    internal class CardListManager
+    public class CardListManager
     {
         private static readonly string colorIconsQuery = "SELECT * FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ('W', 'U', 'B', 'R', 'G', 'C', 'X') ORDER BY CASE uniqueManaSymbol WHEN 'W' THEN 1 WHEN 'U' THEN 2 WHEN 'B' THEN 3 WHEN 'R' THEN 4 WHEN 'G' THEN 5 WHEN 'C' THEN 6 WHEN 'X' THEN 7 END;";
         public static async Task CreateCardListObjectAsync(List<CardSet> cardList, CardListObject context)

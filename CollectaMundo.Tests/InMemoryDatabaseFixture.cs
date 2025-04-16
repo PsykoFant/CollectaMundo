@@ -298,7 +298,9 @@ namespace CollectaMundo.Tests
         private async Task SeedTableAsync(string tableName, string filePath)
         {
             if (!File.Exists(filePath))
+            {
                 throw new FileNotFoundException($"CSV file for {tableName} not found at {filePath}");
+            }
 
             string csvData = await File.ReadAllTextAsync(filePath);
             // Use CsvHelper to parse the CSV.
@@ -313,9 +315,12 @@ namespace CollectaMundo.Tests
             using var csv = new CsvReader(reader, config);
             await csv.ReadAsync();
             csv.ReadHeader();
-            var headers = csv.HeaderRecord;
-            if (headers == null || headers.Length == 0)
+            // Using the null-forgiving operator because we know headers is not null from our check.
+            var headers = csv.HeaderRecord!;
+            if (headers.Length == 0)
+            {
                 throw new Exception("CSV file missing headers.");
+            }
 
             // Build the INSERT command.
             var parameters = string.Join(", ", headers.Select((h, i) => $"@p{i}"));
@@ -334,7 +339,8 @@ namespace CollectaMundo.Tests
             {
                 for (int i = 0; i < headers.Length; i++)
                 {
-                    string field = csv.GetField(headers[i]);
+                    // Get the field and default to string.Empty if it is null.
+                    string field = csv.GetField(headers[i]) ?? string.Empty;
                     cmd.Parameters[$"@p{i}"].Value = string.IsNullOrWhiteSpace(field) ? (object)DBNull.Value : field;
                 }
 
@@ -345,14 +351,14 @@ namespace CollectaMundo.Tests
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"Error inserting row {rowIndex} into table '{tableName}'. Raw row: {csv.Context.Parser.RawRecord}. Exception: {ex.Message}");
+                    // Retrieve the raw record safely.
+                    string rawRecord = csv.Context.Parser?.RawRecord ?? "[no raw record available]";
+                    Debug.WriteLine($"Error inserting row {rowIndex} into table '{tableName}'. Raw row: {rawRecord}. Exception: {ex.Message}");
                     throw;
                 }
             }
             transaction.Commit();
         }
-
-
         public void Dispose()
         {
             Connection?.Close();
