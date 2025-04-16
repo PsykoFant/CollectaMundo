@@ -2,11 +2,11 @@
 
 namespace CollectaMundo.Tests
 {
-    public class FilterDefaultsIntegrationTests : IClassFixture<InMemoryDatabaseFixture>
+    public class IntegrationTests : IClassFixture<InMemoryDatabaseFixture>
     {
         private readonly InMemoryDatabaseFixture _fixture;
 
-        public FilterDefaultsIntegrationTests(InMemoryDatabaseFixture fixture)
+        public IntegrationTests(InMemoryDatabaseFixture fixture)
         {
             _fixture = fixture;
             // Ensure that the static DBAccess.connection points to our in-memory connection.

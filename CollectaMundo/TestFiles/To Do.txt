@@ -1,6 +1,8 @@
 TO DO 
 - MVVM refactor
 
+- Hvorfor Keywords er en blob i view_allCards og view_myCollection?
+
  - TEST: Filtrer på Mycollection only criteria
  - TEST: Test x out of y cards shown
 

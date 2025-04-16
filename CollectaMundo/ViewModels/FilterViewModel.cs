@@ -51,8 +51,6 @@ namespace CollectaMundo.ViewModels
         // Initialize the filter defaults from the database.
         public async Task InitializeFilterDefaultsAsync()
         {
-            Stopwatch sw = Stopwatch.StartNew();
-
             try
             {
                 var filterDefaults = await FilterManager.GetFilterDefaultsFromDBAsync();
@@ -74,9 +72,6 @@ namespace CollectaMundo.ViewModels
                 Debug.WriteLine($"Error initializing filter defaults: {ex.Message}");
                 MessageBox.Show($"Error initializing filter defaults: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            sw.Stop();
-            Debug.WriteLine($"Filter defaults took: {sw.ElapsedMilliseconds} ms");
         }
 
         // Called by FilterItemViewModel instances when a filter value changes. This method raises the FilterChanged event.
