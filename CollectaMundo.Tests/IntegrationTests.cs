@@ -8,6 +8,11 @@ namespace CollectaMundo.Tests
     {
         private readonly InMemoryDatabaseFixture _fixture;
 
+        // Real instances of view model objects.
+        public CardViewModel TestAllCardsVM { get; } = new CardViewModel();
+        public CardViewModel TestMyCollectionVM { get; } = new CardViewModel();
+        public FilterViewModel TestFilterVM { get; } = new FilterViewModel();
+
         public IntegrationTests(InMemoryDatabaseFixture fixture)
         {
             _fixture = fixture;
@@ -15,29 +20,28 @@ namespace CollectaMundo.Tests
             DBAccess.connection = _fixture.Connection;
         }
 
-        [Fact]
-        public async Task CardListManager_PopulatesCardViewModels_FromViews()
+        private async Task InitializeTestObjectsAsync()
         {
-            // Arrange: Create fresh CardViewModel instances.
-            var allCardsVM = new CardViewModel();
-            var myCollectionVM = new CardViewModel();
+            // Populate the AllCards and MyCollection card lists.
+            await CardListManager.CreateCardListObjectAsync(TestAllCardsVM.Cards, CardListObject.AllCards);
+            await CardListManager.CreateCardListObjectAsync(TestMyCollectionVM.Cards, CardListObject.MyCollection);
+            await TestFilterVM.InitializeFilterDefaultsAsync();
+        }
 
-            // Act: Populate the card lists.
-            await CardListManager.CreateCardListObjectAsync(allCardsVM.Cards, CardListObject.AllCards);
-            await CardListManager.CreateCardListObjectAsync(myCollectionVM.Cards, CardListObject.MyCollection);
-
-            // Optional: Refresh any properties if your binding relies on notifications.
-            // For integration tests that work on non-UI objects, you could directly assert on the collection count.
+        [Fact]
+        public async Task CardViewModel_Object_Creation()
+        {
+            await InitializeTestObjectsAsync();
 
             // Assert: Check that the seed data was loaded.
-            Assert.NotEmpty(allCardsVM.Cards);
-            Assert.NotEmpty(myCollectionVM.Cards);
+            Assert.NotEmpty(TestAllCardsVM.Cards);
+            Assert.NotEmpty(TestMyCollectionVM.Cards);
 
-            //// For example, if your CSV seed for view_allCards contains 20 rows:
-            Assert.Equal(59, allCardsVM.Cards.Count);
-            Assert.Equal(22, myCollectionVM.Cards.Count);
+            // Assert: CardViewModel objects have the expected number of cards.
+            Assert.Equal(59, TestAllCardsVM.Cards.Count);
+            Assert.Equal(22, TestMyCollectionVM.Cards.Count);
 
-            // 1. Define the expected list of names exactly in the order you want.
+            // Assert: Both CardViewModel objects have the expected names
             var expectedAllCardsNames = new List<string>
             {
                 "Boundary Lands Ranger",
@@ -101,21 +105,13 @@ namespace CollectaMundo.Tests
                 "Resurrection"
             };
 
-            // 2. Extract and sort the actual names from allCardsVM.
-            var actualAllCardsNames = allCardsVM.Cards
+            var actualAllCardsNames = TestAllCardsVM.Cards
                 .Select(card => card.Name ?? string.Empty)
                 .OrderBy(name => name)
                 .ToList();
-
-            // 3. Sort the expected list as well.
-            var sortedAllcardsExpected = expectedAllCardsNames
-                .OrderBy(name => name)
-                .ToList();
-
-            // 4. Assert that they match exactly (same elements, same count, same order).
+            var sortedAllcardsExpected = expectedAllCardsNames.OrderBy(name => name).ToList();
             Assert.Equal(sortedAllcardsExpected, actualAllCardsNames);
 
-            // Define the expected names.
             var expectedMyCollectionNames = new List<string>
             {
                 "Prismatic Ending",
@@ -141,40 +137,39 @@ namespace CollectaMundo.Tests
                 "Thallid Devourer",
                 "Resurrection"
             };
-
-            // Extract the actual names from myCollectionVM's Cards, ensuring non-null values.
-            var actualMyCollectionNames = myCollectionVM.Cards
-                .Select(card => card.Name!) // using null-forgiving operator if you're sure names are non-null
+            var actualMyCollectionNames = TestMyCollectionVM.Cards
+                .Select(card => card.Name ?? string.Empty)
                 .OrderBy(name => name)
                 .ToList();
-
-            // Sort expected names for comparison.
             var sortedMyCollectionExpected = expectedMyCollectionNames.OrderBy(name => name).ToList();
-
-            // Assert that they are exactly the same.
             Assert.Equal(sortedMyCollectionExpected, actualMyCollectionNames);
+
+            // Assert: total number of cards you physically own in MyCollection is 43
+            var totalCardsOwned = TestMyCollectionVM.Cards.Sum(c => c.CardsOwned);
+            Assert.Equal(43, totalCardsOwned);
+
+            // Assert: total number of cards you physically own in CardsForTrade is 6
+            var totalCardsForTrade = TestMyCollectionVM.Cards.Sum(c => c.CardsForTrade);
+            Assert.Equal(6, totalCardsForTrade);
+
+            // Lav lidt variation på selectedcondion og langugae. Huske begge csv-filter. Husk filter defaults
+            // Check selected condtion, language og finish
+
+            // Lave også cards for decks og lav et check på felt specifik for den liste
 
         }
 
         [Fact]
         public async Task FilterViewModel_InitializeFilterDefaultsAsync_PopulatesFilters()
         {
-            // Arrange: Create the FilterViewModel object.
-            var filterVM = new FilterViewModel();
+            await InitializeTestObjectsAsync();
 
-            // At this point, Filters has been pre-populated with stub FilterItemViewModel objects (if you preseed in the constructor)
-            // or is empty; either way, the asynchronous initialization will update them.
-            // Act: Initialize defaults using the in-memory database.
-            await filterVM.InitializeFilterDefaultsAsync();
-
-            // Assert: Verify that key filters are populated. 
-
-            Assert.True(filterVM.Filters.ContainsKey("Name"), "Expected filter key 'Name' not found.");
-            var nameFilter = filterVM.Filters["Name"];
+            Assert.True(TestFilterVM.Filters.ContainsKey("Name"), "Expected filter key 'Name' not found.");
+            var nameFilter = TestFilterVM.Filters["Name"];
             Assert.NotEmpty(nameFilter.FilterOptions);
 
-            Assert.True(filterVM.Filters.ContainsKey("SetName"), "Expected filter key 'SetName' not found.");
-            var setNameFilter = filterVM.Filters["SetName"];
+            Assert.True(TestFilterVM.Filters.ContainsKey("SetName"), "Expected filter key 'SetName' not found.");
+            var setNameFilter = TestFilterVM.Filters["SetName"];
             Assert.NotEmpty(setNameFilter.FilterOptions);
 
             // Hardcoded lists of all expected names for the test.
@@ -247,7 +242,7 @@ namespace CollectaMundo.Tests
                 "Not all expected filter names were found.");
 
             // Rarity:
-            var rarityFilter = filterVM.Filters["Rarity"];
+            var rarityFilter = TestFilterVM.Filters["Rarity"];
             var expectedRarityOptions = new List<string> { "common", "uncommon", "rare", "mythic" };
 
             var actualRarityOptions = rarityFilter.FilterOptions
@@ -260,7 +255,7 @@ namespace CollectaMundo.Tests
 
 
             // Keywords:
-            var keywordsFilter = filterVM.Filters["Keywords"];
+            var keywordsFilter = TestFilterVM.Filters["Keywords"];
             var expectedKeywordsOptions = new List<string>
             {
                 "Enrage",
@@ -296,7 +291,7 @@ namespace CollectaMundo.Tests
             Assert.Equal(sortedExpectedKeywordsOptions, actualKeywordsOptions);
 
             // Subtypes:
-            var subTypesFilter = filterVM.Filters["SubTypes"];
+            var subTypesFilter = TestFilterVM.Filters["SubTypes"];
             var expectedSubtypesOptions = new List<string>
             {
                 "Angel",
@@ -340,6 +335,37 @@ namespace CollectaMundo.Tests
             var sortedExpectedSubTypesOptions = expectedSubtypesOptions.OrderBy(x => x).ToList();
             Assert.Equal(sortedExpectedSubTypesOptions, actualSubTypesOptions);
 
+        }
+
+        [Fact]
+        public async Task Test_CombinedNameAndNumericFilter_Integration()
+        {
+            // Arrange: Initialize all view models.
+            await InitializeTestObjectsAsync();
+
+            // Set up combined filters:
+            // Filter on "Name" containing "Command".
+            var nameFilter = TestFilterVM.Filters["Name"];
+            nameFilter.SelectedSingleOption = "Command";
+            // Filter on ManaValue > 1.
+            var numericFilter = TestFilterVM.Filters["ManaValue"];
+            numericFilter.SelectedNumericValue = 1;
+            numericFilter.OperatorSelection = OperatorType.GREATER_THAN;
+
+            // Act: Apply filtering to TestAllCardsVM.
+            TestAllCardsVM.FilteredCards = FilterManager.ApplyFilter(TestAllCardsVM.Cards, TestFilterVM.Filters.Values);
+            var filteredCards = TestAllCardsVM.FilteredCards;
+
+            // Expected summary string. Adjust expected string later as needed.
+            string expectedSummary = "Name: \"Command\" AND ManaValue > 1";
+            Assert.Equal(expectedSummary, TestFilterVM.FilterSummary);
+
+            // Assert that every filtered card matches the filter criteria.
+            Assert.All(filteredCards, card =>
+            {
+                Assert.Contains("Command", card.Name, System.StringComparison.OrdinalIgnoreCase);
+                Assert.True(card.ManaValue > 1);
+            });
         }
     }
 }
