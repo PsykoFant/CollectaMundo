@@ -27,7 +27,6 @@ namespace CollectaMundo.Tests
             // Synchronously seed tables with CSV data.
             SeedDataAsync().GetAwaiter().GetResult();
         }
-
         private void SetupSchema()
         {
             using var command = new SQLiteCommand(Connection);
@@ -278,7 +277,6 @@ namespace CollectaMundo.Tests
             ";
             command.ExecuteNonQuery();
         }
-
         private async Task SeedDataAsync()
         {
             // Path to test resources directory.
