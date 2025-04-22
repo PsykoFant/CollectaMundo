@@ -479,10 +479,71 @@ namespace CollectaMundo.Tests
         [Fact]
         public async Task Test_CombinedNameAndNumericFilter_Integration()
         {
-            // Arrange: Initialize all view models.
+            // Arrange: Initialize all models.
             await InitializeTestObjectsAsync();
 
             // Filter on ManaValue > 1.
+            var numericFilter = TestFilterVM.Filters["ManaValue"];
+            numericFilter.SelectedNumericValue = 1;
+            numericFilter.OperatorSelection = OperatorType.GREATER_THAN;
+
+            // Filter on Rarity not being mythic or rare.
+            var rarityFilter = TestFilterVM.Filters["Rarity"];
+            foreach (var opt in rarityFilter.FilterOptions.Where(o => o.OptionName is "mythic" or "rare"))
+            {
+                opt.IsSelected = true;          // this setter calls NotifyFilterChanged
+            }
+            rarityFilter.OperatorSelection = OperatorType.NOT;
+
+            // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
+            TestAllCardsVM.FilteredCards = FilterManager.ApplyFilter(TestAllCardsVM.Cards, TestFilterVM.Filters.Values);
+            var filteredAllCards = TestAllCardsVM.FilteredCards;
+
+            TestMyCollectionVM.FilteredCards = FilterManager.ApplyFilter(TestMyCollectionVM.Cards, TestFilterVM.Filters.Values);
+            var filteredMyCollection = TestMyCollectionVM.FilteredCards;
+
+            // Assert: Expected summary string
+            string expectedSummary = "Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
+            Assert.Equal(expectedSummary, TestFilterVM.FilterSummary);
+
+            // Assert: Number of cards in filteredAllCards and filteredMyCollection.
+            Assert.Equal(22, filteredAllCards.Count);
+            Assert.Equal(17, filteredMyCollection.Count);
+
+            // Arrange: Add color filters to existing filters.
+            var colorFilter = TestFilterVM.Filters["Colors"];
+            foreach (var opt in colorFilter.FilterOptions.Where(o => o.OptionName is "R" or "G"))
+            {
+                opt.IsSelected = true;          // this setter calls NotifyFilterChanged
+            }
+            colorFilter.OperatorSelection = OperatorType.OR;
+
+            // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
+            TestAllCardsVM.FilteredCards = FilterManager.ApplyFilter(TestAllCardsVM.Cards, TestFilterVM.Filters.Values);
+            filteredAllCards = TestAllCardsVM.FilteredCards;
+
+            TestMyCollectionVM.FilteredCards = FilterManager.ApplyFilter(TestMyCollectionVM.Cards, TestFilterVM.Filters.Values);
+            filteredMyCollection = TestMyCollectionVM.FilteredCards;
+
+            // Assert: Expected summary string
+            expectedSummary = "Colors: {R OR G} AND Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
+            Assert.Equal(expectedSummary, TestFilterVM.FilterSummary);
+
+            // Assert: Number of cards in filteredAllCards and filteredMyCollection.
+            Assert.Equal(12, filteredAllCards.Count);
+            Assert.Equal(10, filteredMyCollection.Count);
+        }
+
+        [Fact]
+        public async Task Test_CombinedNameSearch()
+        {
+            // Arrange: Initialize all models.
+            await InitializeTestObjectsAsync();
+
+            // Filter on ManaValue > 1.
+
+
+
             var numericFilter = TestFilterVM.Filters["ManaValue"];
             numericFilter.SelectedNumericValue = 1;
             numericFilter.OperatorSelection = OperatorType.GREATER_THAN;
