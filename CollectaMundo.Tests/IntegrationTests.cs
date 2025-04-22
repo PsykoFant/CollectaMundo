@@ -477,7 +477,7 @@ namespace CollectaMundo.Tests
         }
 
         [Fact]
-        public async Task Test_CombinedNameAndNumericFilter_Integration()
+        public async Task Filter_Integration_Test_Simple()
         {
             // Arrange: Initialize all models.
             await InitializeTestObjectsAsync();
@@ -535,64 +535,101 @@ namespace CollectaMundo.Tests
         }
 
         [Fact]
-        public async Task Test_CombinedNameSearch()
+        public async Task Filter_Integration_Test_Scenario_With_Event_Subscription()
         {
-            // Arrange: Initialize all models.
-            await InitializeTestObjectsAsync();
+            // Arrange: Initialise view‑models and seed data
+            await InitializeTestObjectsAsync();   // populates: TestAllCardsVM / TestMyCollectionVM / TestFilterVM
 
-            // Filter on ManaValue > 1.
-
-
-
-            var numericFilter = TestFilterVM.Filters["ManaValue"];
-            numericFilter.SelectedNumericValue = 1;
-            numericFilter.OperatorSelection = OperatorType.GREATER_THAN;
-
-            // Filter on Rarity not being mythic or rare.
-            var rarityFilter = TestFilterVM.Filters["Rarity"];
-            foreach (var opt in rarityFilter.FilterOptions.Where(o => o.OptionName is "mythic" or "rare"))
+            // Subscribe once: whenever TestFilterVM raises FilterChanged we recompute the filtered lists
+            void RefreshFilteredLists(object? sender, EventArgs e)
             {
-                opt.IsSelected = true;          // this setter calls NotifyFilterChanged
+                TestAllCardsVM.FilteredCards =
+                    FilterManager.ApplyFilter(TestAllCardsVM.Cards, TestFilterVM.Filters.Values);
+
+                TestMyCollectionVM.FilteredCards =
+                    FilterManager.ApplyFilter(TestMyCollectionVM.Cards, TestFilterVM.Filters.Values);
             }
-            rarityFilter.OperatorSelection = OperatorType.NOT;
+            TestFilterVM.FilterChanged += RefreshFilteredLists;
 
-            // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
-            TestAllCardsVM.FilteredCards = FilterManager.ApplyFilter(TestAllCardsVM.Cards, TestFilterVM.Filters.Values);
-            var filteredAllCards = TestAllCardsVM.FilteredCards;
+            // Act: Apply first filter – Name contains "Ranger"
+            var nameFilter = TestFilterVM.Filters["Name"];
+            nameFilter.SelectedSingleOption = "Ranger";
+            TestFilterVM.NotifyFilterChanged();      // raises FilterChanged → handler refreshes lists
 
-            TestMyCollectionVM.FilteredCards = FilterManager.ApplyFilter(TestMyCollectionVM.Cards, TestFilterVM.Filters.Values);
-            var filteredMyCollection = TestMyCollectionVM.FilteredCards;
+            // Assert: only the two “Ranger” cards appear, none in MyCollection
+            var expectedNames = new List<string> { "Boundary Lands Ranger", "Ranger-Captain of Eos // Ranger-Captain of Eos" }.OrderBy(n => n).ToList();
 
-            // Assert: Expected summary string
-            string expectedSummary = "Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
-            Assert.Equal(expectedSummary, TestFilterVM.FilterSummary);
+            var actualNames = TestAllCardsVM.FilteredCards
+                               .Select(c => c.Name!)   // names are non‑null in seed data
+                               .OrderBy(n => n)
+                               .ToList();
 
-            // Assert: Number of cards in filteredAllCards and filteredMyCollection.
-            Assert.Equal(22, filteredAllCards.Count);
-            Assert.Equal(17, filteredMyCollection.Count);
+            Assert.Equal(expectedNames, actualNames);
+            Assert.Empty(TestMyCollectionVM.FilteredCards);
 
-            // Arrange: Add color filters to existing filters.
-            var colorFilter = TestFilterVM.Filters["Colors"];
-            foreach (var opt in colorFilter.FilterOptions.Where(o => o.OptionName is "R" or "G"))
+            // Arrange: Clear all filters via the command 
+            TestFilterVM.ClearFiltersCommand?.Execute(null);   // raises FilterChanged again
+
+            // Assert: lists are back to their full size and summary text is empty
+            Assert.Equal(59, TestAllCardsVM.FilteredCards.Count);
+            Assert.Equal(22, TestMyCollectionVM.FilteredCards.Count);
+            Assert.True(string.IsNullOrEmpty(TestFilterVM.FilterSummary));
+
+            // Act: Start over with filtering – filter on rules text
+            var rulesFilter = TestFilterVM.Filters["Text"];
+            rulesFilter.SelectedSingleOption = "+1/+1 counter";
+            TestFilterVM.NotifyFilterChanged();
+
+            // Assert: three cards in AllCards, two in MyCollection with +1/+1 counter in their rules text
+            Assert.Equal(3, TestAllCardsVM.FilteredCards.Count);
+            Assert.Equal(2, TestMyCollectionVM.FilteredCards.Count);
+
+            // Act: Add one more filter - SetName contains "The List"
+            var setFilter = TestFilterVM.Filters["SetName"];
+            setFilter.SelectedSingleOption = "The List";
+            TestFilterVM.NotifyFilterChanged();
+
+            // Assert: two cards in AllCards, two in MyCollection with +1/+1 counter in their rules text and from the set "The List"
+            Assert.Equal(2, TestAllCardsVM.FilteredCards.Count);
+            Assert.Equal(2, TestMyCollectionVM.FilteredCards.Count);
+            Assert.Equal("SetName: \"The List\" AND Text: \"+1/+1 counter\"", TestFilterVM.FilterSummary);
+
+            // Arrange: Clear all filters via the command for the second time
+            TestFilterVM.ClearFiltersCommand?.Execute(null);   // raises FilterChanged again
+
+            // Assert: lists are back to their full size and summary text is empty
+            Assert.Equal(59, TestAllCardsVM.FilteredCards.Count);
+            Assert.Equal(22, TestMyCollectionVM.FilteredCards.Count);
+            Assert.True(string.IsNullOrEmpty(TestFilterVM.FilterSummary));
+
+            // Act: Add a filter on the "Types" filter - select "Creature" and "Planeswalker"
+            var typesFilter = TestFilterVM.Filters["Types"];
+            foreach (var opt in typesFilter.FilterOptions.Where(o => o.OptionName is "Creature" or "Planeswalker"))
             {
-                opt.IsSelected = true;          // this setter calls NotifyFilterChanged
+                opt.IsSelected = true;
             }
-            colorFilter.OperatorSelection = OperatorType.OR;
+            typesFilter.OperatorSelection = OperatorType.OR;
 
-            // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
-            TestAllCardsVM.FilteredCards = FilterManager.ApplyFilter(TestAllCardsVM.Cards, TestFilterVM.Filters.Values);
-            filteredAllCards = TestAllCardsVM.FilteredCards;
+            // Assert: 25 cards in AllCards, 10 in MyCollection with type "Creature" or "Planeswalker"
+            Assert.Equal(25, TestAllCardsVM.FilteredCards.Count);
+            Assert.Equal(10, TestMyCollectionVM.FilteredCards.Count);
 
-            TestMyCollectionVM.FilteredCards = FilterManager.ApplyFilter(TestMyCollectionVM.Cards, TestFilterVM.Filters.Values);
-            filteredMyCollection = TestMyCollectionVM.FilteredCards;
+            // Act: Add a filter on the "SuperTypes" filter - select "Legendary"
+            var superTypesFilter = TestFilterVM.Filters["SuperTypes"];
+            foreach (var opt in superTypesFilter.FilterOptions.Where(o => o.OptionName is "Legendary"))
+            {
+                opt.IsSelected = true;
+            }
 
-            // Assert: Expected summary string
-            expectedSummary = "Colors: {R OR G} AND Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
-            Assert.Equal(expectedSummary, TestFilterVM.FilterSummary);
+            // Assert: 3 cards in AllCards, none in MyCollection with type "Creature" or "Planeswalker" and supertype "Legendary"
+            Assert.Equal(3, TestAllCardsVM.FilteredCards.Count);
+            Assert.Empty(TestMyCollectionVM.FilteredCards);
+            Assert.Equal("SuperTypes: {Legendary} AND Types: {Creature OR Planeswalker}", TestFilterVM.FilterSummary);
 
-            // Assert: Number of cards in filteredAllCards and filteredMyCollection.
-            Assert.Equal(12, filteredAllCards.Count);
-            Assert.Equal(10, filteredMyCollection.Count);
+            // Clean‑up: unsubscribe the handler (good practice in long‑running suites) ─
+            TestFilterVM.FilterChanged -= RefreshFilteredLists;
         }
+
     }
 }
+
