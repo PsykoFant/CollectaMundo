@@ -29,7 +29,7 @@ namespace CollectaMundo.Tests
         }
 
         [Fact]
-        public async Task CardViewModel_Object_Creation()
+        public async Task CardViewModel_Object_Creation_Initialization()
         {
             await InitializeTestObjectsAsync();
 
@@ -152,15 +152,45 @@ namespace CollectaMundo.Tests
             var totalCardsForTrade = TestMyCollectionVM.Cards.Sum(c => c.CardsForTrade);
             Assert.Equal(6, totalCardsForTrade);
 
-            // Lav lidt variation på selectedcondion og langugae. Huske begge csv-filter. Husk filter defaults
-            // Check selected condtion, language og finish
+            // Assert: 15 entries are marked as Near Mint condition
+            var nearMintCount = TestMyCollectionVM.Cards
+                .Count(c => string.Equals(c.SelectedCondition, "Near Mint", StringComparison.OrdinalIgnoreCase));
 
-            // Lave også cards for decks og lav et check på felt specifik for den liste
+            Assert.Equal(15, nearMintCount);
 
+            // Assert: 2 entries are marked as Good condition
+            var goodCount = TestMyCollectionVM.Cards
+                .Count(c => string.Equals(c.SelectedCondition, "Good", StringComparison.OrdinalIgnoreCase));
+
+            Assert.Equal(2, goodCount);
+
+            // Assert: 19 entries are marked as English language
+            var englishCount = TestMyCollectionVM.Cards
+                .Count(c => string.Equals(c.Language, "English", StringComparison.OrdinalIgnoreCase));
+
+            Assert.Equal(19, englishCount);
+
+            // Assert: 2 entries are marked as French language
+            var frenchCount = TestMyCollectionVM.Cards
+                .Count(c => string.Equals(c.Language, "French", StringComparison.OrdinalIgnoreCase));
+
+            Assert.Equal(2, frenchCount);
+
+            // Assert: 18 entries are marked as nonfoil finish
+            var nonfoilCount = TestMyCollectionVM.Cards
+                .Count(c => string.Equals(c.SelectedFinish, "nonfoil", StringComparison.OrdinalIgnoreCase));
+
+            Assert.Equal(18, nonfoilCount);
+
+            // Assert: 3 entries are marked as foil finish
+            var foilCount = TestMyCollectionVM.Cards
+                .Count(c => string.Equals(c.SelectedFinish, "foil", StringComparison.OrdinalIgnoreCase));
+
+            Assert.Equal(3, foilCount);
         }
 
         [Fact]
-        public async Task FilterViewModel_InitializeFilterDefaultsAsync_PopulatesFilters()
+        public async Task FilterViewModel_Object_Creation_Initialization()
         {
             await InitializeTestObjectsAsync();
 
@@ -281,6 +311,12 @@ namespace CollectaMundo.Tests
                 "Ingest",
                 "Prowess"
             };
+            var expectedKeyWordsOperators = new[]
+            {
+                OperatorType.OR,
+                OperatorType.AND,
+                OperatorType.NOT
+            };
 
             var actualKeywordsOptions = keywordsFilter.FilterOptions
                 .Select(opt => opt.OptionName)
@@ -289,6 +325,7 @@ namespace CollectaMundo.Tests
 
             var sortedExpectedKeywordsOptions = expectedKeywordsOptions.OrderBy(x => x).ToList();
             Assert.Equal(sortedExpectedKeywordsOptions, actualKeywordsOptions);
+            Assert.Equal(expectedKeyWordsOperators, [.. keywordsFilter.AvailableOperators!]);
 
             // Subtypes:
             var subTypesFilter = TestFilterVM.Filters["SubTypes"];
@@ -335,6 +372,108 @@ namespace CollectaMundo.Tests
             var sortedExpectedSubTypesOptions = expectedSubtypesOptions.OrderBy(x => x).ToList();
             Assert.Equal(sortedExpectedSubTypesOptions, actualSubTypesOptions);
 
+            // Assert: the readable label for the "SubTypes" filter is "Subtypes"
+            var subTypesLabelFilter = TestFilterVM.Filters["SubTypes"];
+            Assert.Equal("Subtypes", subTypesLabelFilter.ReadableLabel);
+
+
+            // SelectedCondition:
+            var selectedConditionFilter = TestFilterVM.Filters["SelectedCondition"];
+            var expectedSelectedConditionsOptions = new List<string>
+            {
+                "Near Mint",
+                "Excellent",
+                "Light Played",
+                "Good",
+                "Poor",
+                "Mint"
+            };
+
+            var actualSelectedConditionsOptions = selectedConditionFilter.FilterOptions
+                .Select(opt => opt.OptionName)
+                .OrderBy(x => x)
+                .ToList();
+
+            var sortedExpectedSelectedConditionsOptions = expectedSelectedConditionsOptions.OrderBy(x => x).ToList();
+            Assert.Equal(sortedExpectedSelectedConditionsOptions, actualSelectedConditionsOptions);
+
+            // SelectedFinish:
+            var selectedFinishFilter = TestFilterVM.Filters["SelectedFinish"];
+            var expectedSelectedFinishOptions = new List<string>
+            {
+                "etched",
+                "nonfoil",
+                "foil"
+            };
+
+            var actualSelectedFinishOptions = selectedFinishFilter.FilterOptions
+                .Select(opt => opt.OptionName)
+                .OrderBy(x => x)
+                .ToList();
+
+            var sortedExpectedSelectedFinishOptions = expectedSelectedFinishOptions.OrderBy(x => x).ToList();
+            Assert.Equal(sortedExpectedSelectedFinishOptions, actualSelectedFinishOptions);
+
+            // Assert: the readable label for the "SelectedFinish" filter is "Chosen finish"
+            var selectedFinishLabelFilter = TestFilterVM.Filters["SelectedFinish"];
+            Assert.Equal("Chosen finish", selectedFinishLabelFilter.ReadableLabel);
+
+            // Language:
+            var selectedLanguageFilter = TestFilterVM.Filters["Language"];
+            var expectedLanguageOptions = new List<string>
+            {
+                "French",
+                "English",
+                "German"
+            };
+
+            var actualLanguageOptions = selectedLanguageFilter.FilterOptions
+                .Select(opt => opt.OptionName)
+                .OrderBy(x => x)
+                .ToList();
+
+            var sortedExpectedLanguageOptions = expectedLanguageOptions.OrderBy(x => x).ToList();
+            Assert.Equal(sortedExpectedLanguageOptions, actualLanguageOptions);
+
+            // Colors:
+            var colorFilter = TestFilterVM.Filters["Colors"];
+            var expectedColorOptions = new List<string>
+            {
+                "W", "U", "B", "R", "G", "C", "X", "Colorless"
+            };
+
+            var actualColorOptions = colorFilter.FilterOptions
+                .Select(opt => opt.OptionName)
+                .OrderBy(x => x)
+                .ToList();
+
+            var sortedExpectedColorOptions = expectedColorOptions.OrderBy(x => x).ToList();
+            Assert.Equal(sortedExpectedColorOptions, actualColorOptions);
+
+            // ManaValue:
+            var manaValueFilter = TestFilterVM.Filters["ManaValue"];
+            var expectedManaValueOptions = new List<string>
+            {
+                "0", "1", "2", "3", "4", "5", "6", "7"
+            };
+
+            var expectedManaValueOperators = new[]
+            {
+                OperatorType.GREATER_THAN,
+                OperatorType.LESS_THAN,
+                OperatorType.EQUALS,
+                OperatorType.GREATER_THAN_OR_EQUALS,
+                OperatorType.LESS_THAN_OR_EQUALS
+            };
+
+            var actualManaValueOptions = manaValueFilter.FilterOptions
+                .Select(opt => opt.OptionName)
+                .OrderBy(x => x)
+                .ToList();
+
+            var sortedExpectedManavalueOptions = expectedManaValueOptions.OrderBy(x => x).ToList();
+            Assert.Equal(sortedExpectedManavalueOptions, actualManaValueOptions);
+            Assert.Equal(expectedManaValueOperators, [.. manaValueFilter.AvailableOperators!]);
         }
 
         [Fact]
@@ -343,29 +482,56 @@ namespace CollectaMundo.Tests
             // Arrange: Initialize all view models.
             await InitializeTestObjectsAsync();
 
-            // Set up combined filters:
-            // Filter on "Name" containing "Command".
-            var nameFilter = TestFilterVM.Filters["Name"];
-            nameFilter.SelectedSingleOption = "Command";
             // Filter on ManaValue > 1.
             var numericFilter = TestFilterVM.Filters["ManaValue"];
             numericFilter.SelectedNumericValue = 1;
             numericFilter.OperatorSelection = OperatorType.GREATER_THAN;
 
-            // Act: Apply filtering to TestAllCardsVM.
-            TestAllCardsVM.FilteredCards = FilterManager.ApplyFilter(TestAllCardsVM.Cards, TestFilterVM.Filters.Values);
-            var filteredCards = TestAllCardsVM.FilteredCards;
+            // Filter on Rarity not being mythic or rare.
+            var rarityFilter = TestFilterVM.Filters["Rarity"];
+            foreach (var opt in rarityFilter.FilterOptions.Where(o => o.OptionName is "mythic" or "rare"))
+            {
+                opt.IsSelected = true;          // this setter calls NotifyFilterChanged
+            }
+            rarityFilter.OperatorSelection = OperatorType.NOT;
 
-            // Expected summary string. Adjust expected string later as needed.
-            string expectedSummary = "Name: \"Command\" AND ManaValue > 1";
+            // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
+            TestAllCardsVM.FilteredCards = FilterManager.ApplyFilter(TestAllCardsVM.Cards, TestFilterVM.Filters.Values);
+            var filteredAllCards = TestAllCardsVM.FilteredCards;
+
+            TestMyCollectionVM.FilteredCards = FilterManager.ApplyFilter(TestMyCollectionVM.Cards, TestFilterVM.Filters.Values);
+            var filteredMyCollection = TestMyCollectionVM.FilteredCards;
+
+            // Assert: Expected summary string
+            string expectedSummary = "Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
             Assert.Equal(expectedSummary, TestFilterVM.FilterSummary);
 
-            // Assert that every filtered card matches the filter criteria.
-            Assert.All(filteredCards, card =>
+            // Assert: Number of cards in filteredAllCards and filteredMyCollection.
+            Assert.Equal(22, filteredAllCards.Count);
+            Assert.Equal(17, filteredMyCollection.Count);
+
+            // Arrange: Add color filters to existing filters.
+            var colorFilter = TestFilterVM.Filters["Colors"];
+            foreach (var opt in colorFilter.FilterOptions.Where(o => o.OptionName is "R" or "G"))
             {
-                Assert.Contains("Command", card.Name, System.StringComparison.OrdinalIgnoreCase);
-                Assert.True(card.ManaValue > 1);
-            });
+                opt.IsSelected = true;          // this setter calls NotifyFilterChanged
+            }
+            colorFilter.OperatorSelection = OperatorType.OR;
+
+            // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
+            TestAllCardsVM.FilteredCards = FilterManager.ApplyFilter(TestAllCardsVM.Cards, TestFilterVM.Filters.Values);
+            filteredAllCards = TestAllCardsVM.FilteredCards;
+
+            TestMyCollectionVM.FilteredCards = FilterManager.ApplyFilter(TestMyCollectionVM.Cards, TestFilterVM.Filters.Values);
+            filteredMyCollection = TestMyCollectionVM.FilteredCards;
+
+            // Assert: Expected summary string
+            expectedSummary = "Colors: {R OR G} AND Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
+            Assert.Equal(expectedSummary, TestFilterVM.FilterSummary);
+
+            // Assert: Number of cards in filteredAllCards and filteredMyCollection.
+            Assert.Equal(12, filteredAllCards.Count);
+            Assert.Equal(10, filteredMyCollection.Count);
         }
     }
 }

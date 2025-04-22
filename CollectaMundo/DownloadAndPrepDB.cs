@@ -759,17 +759,15 @@ namespace CollectaMundo
                             uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
                         LEFT JOIN 
                             cardPrices p ON m.uuid = p.uuid	
-                            LEFT JOIN (
-                                SELECT 
-                                    cc.Name, 
-                                    GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                                FROM cards cc
-                                GROUP BY cc.Name
-                            ) cg ON c.Name = cg.Name
+						LEFT JOIN (
+							SELECT 
+								cc.Name, 
+								REPLACE(GROUP_CONCAT(DISTINCT cc.keywords),',',',') AS AggregatedKeywords
+							FROM cards cc
+							GROUP BY cc.Name
+						) cg ON c.Name = cg.Name
                         LEFT JOIN (
-                            SELECT 
-                                cc.Name,
-                                REPLACE(GROUP_CONCAT(DISTINCT cc.colors), ' ', '') AS AggregatedColors
+                            SELECT cc.Name, REPLACE(GROUP_CONCAT(DISTINCT cc.colors), ' ', '') AS AggregatedColors
                             FROM cards cc
                             GROUP BY cc.Name
                         ) ccol ON c.Name = ccol.Name
@@ -825,7 +823,7 @@ namespace CollectaMundo
                             WHEN 'G' THEN 5
                             ELSE 6
                         END
-                    ";
+                ";
                 string createAllCardsForDecksViewQuery = $@"
                     CREATE VIEW view_allCardsForDecks AS
                     SELECT * FROM (
