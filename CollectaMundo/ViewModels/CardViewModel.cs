@@ -8,7 +8,6 @@ namespace CollectaMundo.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        // Cards lists for AllCardsDataGrid
         public List<CardSet> Cards { get; set; } = [];
 
         private List<CardSet> _filteredCards = [];
