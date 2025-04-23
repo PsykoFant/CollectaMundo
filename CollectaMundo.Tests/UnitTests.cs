@@ -7,7 +7,6 @@ using static CollectaMundo.MainWindow;
 using static CollectaMundo.Tests.FilterTestUtilities;
 
 
-
 namespace CollectaMundo.Tests
 {
     public class UnitTests
@@ -385,61 +384,42 @@ namespace CollectaMundo.Tests
             }
 
             // StringToImageSourceConverter
-            [Fact]
+            [WpfFact]
             public void Convert_NullOrEmpty_ReturnsNull()
             {
                 // arrange
                 var converter = new StringToImageSourceConverter();
 
                 // act  (runs on an STA thread)
-                var img1 = RunOnSta(() => converter.Convert(null, typeof(BitmapImage), null, CultureInfo.InvariantCulture));
-                var img2 = RunOnSta(() => converter.Convert(string.Empty, typeof(BitmapImage), null, CultureInfo.InvariantCulture));
+                var img1 = converter.Convert(null, typeof(BitmapImage), null, CultureInfo.InvariantCulture);
+                var img2 = converter.Convert(string.Empty, typeof(BitmapImage), null, CultureInfo.InvariantCulture);
 
                 // assert
                 Assert.Null(img1);
                 Assert.Null(img2);
             }
 
-            [Fact]
+            [WpfFact]
             public void Convert_InvalidUri_ReturnsNull()
             {
                 var converter = new StringToImageSourceConverter();
                 const string bogus = "this-is-not-a-valid-uri";
 
-                var result = RunOnSta(() => converter.Convert(bogus, typeof(BitmapImage), null, CultureInfo.InvariantCulture));
+                var result = converter.Convert(bogus, typeof(BitmapImage), null, CultureInfo.InvariantCulture);
 
                 Assert.Null(result);
             }
 
-            [Fact]
+            [WpfFact]
             public void Convert_ValidAbsoluteUri_ReturnsBitmapImageWithSameUri()
             {
                 var converter = new StringToImageSourceConverter();
-                const string url = "https://via.placeholder.com/50";   // any small, valid image URL
+                const string url = "https://via.placeholder.com/50";
 
-                var obj = RunOnSta(() => converter.Convert(url, typeof(BitmapImage), null, CultureInfo.InvariantCulture));
+                var obj = converter.Convert(url, typeof(BitmapImage), null, CultureInfo.InvariantCulture);
 
                 var bmp = Assert.IsType<BitmapImage>(obj);
                 Assert.Equal(url, bmp.UriSource!.AbsoluteUri);
-            }
-
-            private static T RunOnSta<T>(Func<T> action)
-            {
-                T? result = default;
-                Exception? captured = null;
-                var sta = new Thread(() =>
-                {
-                    try { result = action(); }
-                    catch (Exception ex) { captured = ex; }
-                });
-
-                sta.SetApartmentState(ApartmentState.STA);
-                sta.Start();
-                sta.Join();
-
-                // If the action threw on the STA thread, re-throw it here
-                if (captured != null) throw captured;
-                return result!;
             }
         }
     }
