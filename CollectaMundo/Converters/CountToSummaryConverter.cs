@@ -5,7 +5,7 @@ namespace CollectaMundo.Converters
 {
     public class CountToSummaryConverter : IMultiValueConverter
     {
-        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        public object Convert(object[] values, Type targetType, object? parameter, CultureInfo culture)
         {
             // Ensure we have two values.
             if (values.Length < 2)

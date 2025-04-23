@@ -6,7 +6,7 @@ namespace CollectaMundo.Converters
 {
     public class StringToImageSourceConverter : IValueConverter
     {
-        public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             var imageUrl = value as string;
             if (string.IsNullOrEmpty(imageUrl))
