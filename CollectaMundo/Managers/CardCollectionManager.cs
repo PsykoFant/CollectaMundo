@@ -10,109 +10,53 @@ namespace CollectaMundo.Managers
     {
         private readonly ICardCollectionService _dataService = dataService ?? throw new ArgumentNullException(nameof(dataService));
 
-        // Add card to CardsToAddListview
-        public async Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection)
+        // Public wrappers
+        public Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewAsync(selectedCard, targetCollection, isEdit: false);
+
+        public Task AddCardToEditCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewAsync(selectedCard, targetCollection, isEdit: true);
+
+        // Common implementation
+        private async Task AddCardToListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection, bool isEdit)
         {
             if (selectedCard.Uuid == null)
+                throw new InvalidOperationException("Card UUID is null, cannot fetch metadata.");
+
+            // 1) Fetch languages & finishes
+            await DBAccess.OpenConnectionAsync();
+            var languages = await _dataService.FetchLanguagesForCardAsync(selectedCard.Uuid);
+            var finishes = await _dataService.FetchFinishesForCardAsync(selectedCard.Uuid);
+            DBAccess.CloseConnection();
+
+            // 2) Decide parameters based on mode
+            string selectedFinish = isEdit ? selectedCard.SelectedFinish : finishes.FirstOrDefault();
+            string selectedCondition = isEdit ? selectedCard.SelectedCondition : "Near Mint";
+            string language = isEdit ? selectedCard.Language : (selectedCard.Language ?? "English");
+            int cardsOwned = isEdit ? selectedCard.CardsOwned : 1;
+            int cardsForTrade = isEdit ? selectedCard.CardsOwned : 0;
+
+            // 3) Skip if already present
+            bool exists = targetCollection.Any(c =>
+                c.Uuid == selectedCard.Uuid &&
+                c.SelectedFinish == selectedFinish &&
+                c.SelectedCondition == selectedCondition &&
+                c.Language == language);
+            if (exists) return;
+
+            // 4) Create & add
+            var newItem = new CardSet
             {
-                throw new InvalidOperationException("Card UUID is null, cannot fetch languages.");
-            }
-
-            try
-            {
-                await DBAccess.OpenConnectionAsync();
-                // Fetch data from the database.
-                var languages = await _dataService.FetchLanguagesForCardAsync(selectedCard.Uuid);
-                var finishes = await _dataService.FetchFinishesForCardAsync(selectedCard.Uuid);
-                DBAccess.CloseConnection();
-
-                // Determine the default finish and condition.
-                string? defaultFinish = finishes.FirstOrDefault();
-                string defaultCondition = "Near Mint";
-                string language = selectedCard.Language ?? "English";
-
-                // Check if a card with the same uuid, default finish, default condition, and same language already exists.
-                if (targetCollection.Any(card =>
-                     card.Uuid == selectedCard.Uuid &&
-                     card.SelectedFinish == defaultFinish &&
-                     card.SelectedCondition == defaultCondition &&
-                     card.Language == language))
-                {
-                    return;
-                }
-
-                // Create a new card with default values.
-                var newItem = new CardSet
-                {
-                    Name = selectedCard.Name,
-                    SetName = selectedCard.SetName,
-                    Uuid = selectedCard.Uuid,
-                    CardsOwned = 1,
-                    CardsForTrade = 0,
-                    AvailableFinishes = finishes,
-                    SelectedFinish = defaultFinish,
-                    Language = language,
-                    OtherLanguages = languages,
-                    SelectedCondition = defaultCondition,
-                };
-
-                targetCollection.Add(newItem);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in AddCardToAddCardsListViewAsync: {ex.Message}");
-                throw;
-            }
-        }
-
-        // Add card to CardsToEditListview
-        public async Task AddCardToEditCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection)
-        {
-            if (selectedCard.Uuid == null)
-            {
-                throw new InvalidOperationException("Card UUID is null, cannot fetch languages.");
-            }
-
-            try
-            {
-                await DBAccess.OpenConnectionAsync();
-                // Fetch data from the database.
-                var languages = await _dataService.FetchLanguagesForCardAsync(selectedCard.Uuid);
-                var finishes = await _dataService.FetchFinishesForCardAsync(selectedCard.Uuid);
-                DBAccess.CloseConnection();
-
-                // Check if a card with the same uuid, default finish, default condition, and same language already exists.
-                if (targetCollection.Any(card =>
-                     card.Uuid == selectedCard.Uuid &&
-                     card.SelectedFinish == selectedCard.SelectedFinish &&
-                     card.SelectedCondition == selectedCard.SelectedCondition &&
-                     card.Language == selectedCard.Language))
-                {
-                    return;
-                }
-
-                // Create a new card with default values.
-                var newItem = new CardSet
-                {
-                    Name = selectedCard.Name,
-                    SetName = selectedCard.SetName,
-                    Uuid = selectedCard.Uuid,
-                    CardsOwned = selectedCard.CardsOwned,
-                    CardsForTrade = selectedCard.CardsOwned,
-                    AvailableFinishes = finishes,
-                    SelectedFinish = selectedCard.SelectedFinish,
-                    Language = selectedCard.Language,
-                    OtherLanguages = languages,
-                    SelectedCondition = selectedCard.SelectedCondition,
-                };
-
-                targetCollection.Add(newItem);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in AddCardToAddCardsListViewAsync: {ex.Message}");
-                throw;
-            }
+                Name = selectedCard.Name,
+                SetName = selectedCard.SetName,
+                Uuid = selectedCard.Uuid,
+                CardsOwned = cardsOwned,
+                CardsForTrade = cardsForTrade,
+                AvailableFinishes = finishes,
+                SelectedFinish = selectedFinish,
+                Language = language,
+                OtherLanguages = languages,
+                SelectedCondition = selectedCondition,
+            };
+            targetCollection.Add(newItem);
         }
 
         // Adds a new card or updates an existing one.
