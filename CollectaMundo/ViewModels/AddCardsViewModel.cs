@@ -206,9 +206,44 @@ namespace CollectaMundo.ViewModels
 
             // Signal the view to clear selection.
             ClearSelectionTrigger++;
+
+            // --- New: build and expose summary ---
+            StatusMessage =
+                "Added the following cards to your collection:\n\n" +
+                string.Join("\n", cards.Select(c =>
+                    $"- {c.Name} (Condition: {c.SelectedCondition}, " +
+                    $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
+                    $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
+            // --------------------------------------
         });
 
+
+        private string _statusMessage = string.Empty;
+        public string StatusMessage
+        {
+            get => _statusMessage;
+            set
+            {
+                if (_statusMessage != value)
+                {
+                    _statusMessage = value;
+                    OnPropertyChanged(nameof(StatusMessage));
+                    OnPropertyChanged(nameof(StatusVisibility));
+                }
+            }
+        }
+
+        // Collapse when no message
+        public Visibility StatusVisibility
+            => string.IsNullOrEmpty(StatusMessage)
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+
     }
+
+
+
+
 
     public class CardProcessedEventArgs : EventArgs
     {

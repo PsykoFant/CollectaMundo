@@ -391,8 +391,8 @@ namespace CollectaMundo
                     $"- {card.Name} (Condition: {card.SelectedCondition}, Language: {card.Language}, Finish: {card.SelectedFinish}, Cards owned: {card.CardsOwned}, Cards for trade: {card.CardsForTrade})")
                     .Aggregate((current, next) => current + "\n" + next);
 
-                MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Visible;
-                MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards to your collection:\n\n" + cardDetails;
+                //MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Visible;
+                //MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards to your collection:\n\n" + cardDetails;
                 HideCardsToAddListView(false);
 
                 CardItemsToAdd.Clear();
@@ -596,8 +596,8 @@ namespace CollectaMundo
                 var cardDetails = selectedCards.Select(card =>
                     $"- {card.Name}").Aggregate((current, next) => current + "\n" + next);
 
-                MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Visible;
-                MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards with default values to your collection:\n\n" + cardDetails;
+                //MainWindow.CurrentInstance.AddStatusScrollViewer.Visibility = Visibility.Visible;
+                //MainWindow.CurrentInstance.AddStatusTextBlock.Text = "Added the following cards with default values to your collection:\n\n" + cardDetails;
 
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;

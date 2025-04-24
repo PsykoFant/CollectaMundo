@@ -841,10 +841,18 @@
                     Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
                     Command="{Binding DataContext.AddCardsVM.AddSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                     CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
-                <ScrollViewer x:Name="AddStatusScrollViewer" HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Visibility="Collapsed">
-                    <TextBlock x:Name="AddStatusTextBlock" TextWrapping="Wrap" VerticalAlignment="Top"/>
+                <ScrollViewer 
+                    HorizontalAlignment="Left" Margin="0,40,0,0"
+                    VerticalAlignment="Top" Height="187"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Auto"
+                    Visibility="{Binding AddCardsVM.StatusVisibility, RelativeSource={RelativeSource AncestorType=Window}}">
+                    <TextBlock TextWrapping="Wrap"
+                               VerticalAlignment="Top"
+                               Text="{Binding AddCardsVM.StatusMessage, RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </ScrollViewer>
-                
+
+
                 <!--Cards to add listview-->
                 <ListView ItemsSource="{Binding AddCardsVM.CardsToAdd, RelativeSource={RelativeSource AncestorType=Window}}"
                           Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"

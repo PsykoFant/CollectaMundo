@@ -1159,7 +1159,7 @@ namespace CollectaMundo
 
             // Reset filtering and add/edit cards UI
             EditStatusTextBlock.Text = string.Empty;
-            AddStatusTextBlock.Text = string.Empty;
+            //AddStatusTextBlock.Text = string.Empty;
             UtilsInfoLabel.Content = "";
             FilterSummaryScrollViewer.Visibility = Visibility.Collapsed;
             LogoSmall.Visibility = Visibility.Collapsed;
