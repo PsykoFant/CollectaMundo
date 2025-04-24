@@ -116,7 +116,7 @@ namespace CollectaMundo.Managers
         }
 
         // Adds a new card or updates an existing one.
-        public async Task AddOrUpdateCardAsync(CardSet card, ObservableCollection<CardSet> inMemoryCollection)
+        public async Task AddOrUpdateCardAsync(CardSet card)
         {
             try
             {
@@ -129,32 +129,13 @@ namespace CollectaMundo.Managers
                 {
                     // Card exists in DB. Update card details.
                     card.CardId = existingId.Value;
+
                     await _dataService.UpdateCardAsync(card);
-
-                    // Find the corresponding card in the in-memory collection and update it.
-                    var existingCard = inMemoryCollection.FirstOrDefault(c =>
-                        c.Uuid == card.Uuid &&
-                        c.SelectedCondition == card.SelectedCondition &&
-                        c.Language == card.Language &&
-                        c.SelectedFinish == card.SelectedFinish);
-
-                    if (existingCard != null)
-                    {
-                        Debug.WriteLine("Existing card was not null - incrementing count and trade");
-                        existingCard.CardsOwned += card.CardsOwned;
-                        existingCard.CardsForTrade += card.CardsForTrade;
-                    }
-                    else
-                    {
-                        Debug.WriteLine("Existing card was null");
-                    }
                 }
                 else
                 {
                     // Card does not exist. Insert new record in DB.
                     await _dataService.AddCardAsync(card);
-                    // Add the card to the in-memory collection.
-                    inMemoryCollection.Add(card);
                 }
 
                 DBAccess.CloseConnection();

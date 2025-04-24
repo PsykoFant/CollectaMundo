@@ -60,21 +60,27 @@ namespace CollectaMundo.Services
         }
         public async Task UpdateCardAsync(CardSet card)
         {
+            // We treat card.CardsOwned and card.CardsForTrade as the *increment* amounts.
             string updateSql = @"
                 UPDATE myCollection 
-                SET count = @count, trade = @trade, condition = @condition, language = @language, finish = @finish 
+                SET 
+                  count     = count + @addCount,
+                  trade     = trade + @addTrade,
+                  condition = @condition,
+                  language  = @language,
+                  finish    = @finish 
                 WHERE id = @cardId";
             try
             {
-                using var updateCommand = new SQLiteCommand(updateSql, DBAccess.connection);
-                updateCommand.Parameters.AddWithValue("@count", card.CardsOwned);
-                updateCommand.Parameters.AddWithValue("@trade", card.CardsForTrade);
-                updateCommand.Parameters.AddWithValue("@condition", card.SelectedCondition);
-                updateCommand.Parameters.AddWithValue("@language", card.Language);
-                updateCommand.Parameters.AddWithValue("@finish", card.SelectedFinish);
-                updateCommand.Parameters.AddWithValue("@cardId", card.CardId);
+                using var cmd = new SQLiteCommand(updateSql, DBAccess.connection);
+                cmd.Parameters.AddWithValue("@addCount", card.CardsOwned);
+                cmd.Parameters.AddWithValue("@addTrade", card.CardsForTrade);
+                cmd.Parameters.AddWithValue("@condition", card.SelectedCondition);
+                cmd.Parameters.AddWithValue("@language", card.Language);
+                cmd.Parameters.AddWithValue("@finish", card.SelectedFinish);
+                cmd.Parameters.AddWithValue("@cardId", card.CardId);
 
-                await updateCommand.ExecuteNonQueryAsync();
+                await cmd.ExecuteNonQueryAsync();
             }
             catch (Exception ex)
             {
@@ -82,6 +88,7 @@ namespace CollectaMundo.Services
                 throw;
             }
         }
+
         public async Task DeleteCardAsync(CardSet card)
         {
             string deleteSql = "DELETE FROM myCollection WHERE uuid = @uuid";

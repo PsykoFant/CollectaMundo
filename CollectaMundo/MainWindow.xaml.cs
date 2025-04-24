@@ -175,10 +175,42 @@ namespace CollectaMundo
             // Subscribe to filter changes.
             FilterVM.FilterChanged += OnFilterChanged;
 
+            AddCardsVM.CardProcessed += OnCardProcessed;
+            EditCardsVM.CardProcessed += OnCardProcessed;
+
             // Update the statusbox with messages from methods in DownloadAndPrepareDB and UpdateDB
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
         }
+
+        private void OnCardProcessed(object? sender, CardProcessedEventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                var card = e.Card;
+                // 1. Find or add in MyCollectionVM.Cards
+                var existing = MyCollectionVM.Cards.FirstOrDefault(c =>
+                    c.Uuid == card.Uuid &&
+                    c.SelectedCondition == card.SelectedCondition &&
+                    c.Language == card.Language &&
+                    c.SelectedFinish == card.SelectedFinish);
+
+                if (existing != null)
+                {
+                    existing.CardsOwned += card.CardsOwned;
+                    existing.CardsForTrade += card.CardsForTrade;
+                }
+                else
+                {
+                    MyCollectionVM.Cards.Add(card);
+                }
+
+                // 2. Reapply filters
+                MyCollectionVM.FilteredCards = _filteringService
+                    .ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);  // (*)
+            });
+        }
+
 
         #region Load data and populate UI elements
         public async Task LoadDataIntoUiElements()

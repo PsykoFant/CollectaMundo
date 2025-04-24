@@ -14,6 +14,7 @@ namespace CollectaMundo.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
+        public event EventHandler<CardProcessedEventArgs>? CardProcessed;
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
 
         // Controls removal behavior when CardsOwned reaches zero.
@@ -196,7 +197,9 @@ namespace CollectaMundo.ViewModels
             foreach (var card in cards)
             {
                 // Add or update the card in the database.
-                await _cardCollectionManager.AddOrUpdateCardAsync(card, CardsToAdd);
+                await _cardCollectionManager.AddOrUpdateCardAsync(card);
+
+                CardProcessed?.Invoke(this, new CardProcessedEventArgs(card));
             }
             // Clear the in-memory collection after submission.
             CardsToAdd.Clear();
@@ -205,6 +208,11 @@ namespace CollectaMundo.ViewModels
             ClearSelectionTrigger++;
         });
 
+    }
 
+    public class CardProcessedEventArgs : EventArgs
+    {
+        public CardSet Card { get; }
+        public CardProcessedEventArgs(CardSet card) => Card = card;
     }
 }
