@@ -1,5 +1,4 @@
-﻿using CollectaMundo.Data;
-using CollectaMundo.Models;
+﻿using CollectaMundo.Models;
 using CollectaMundo.UICoordinators;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
@@ -20,12 +19,11 @@ namespace CollectaMundo.ViewModels
         // Controls removal behavior when CardsOwned reaches zero.
         public bool RemoveCardWhenCardsOwnedZero { get; set; } = true; // Default: remove card
 
-        private readonly CardCollectionCoordinator _cardCollectionManager;
-
-        // Primary constructor body
-        public AddCardsViewModel(ICardRepository cardCollectionService)
+        private readonly ICardCollectionCoordinator _coordinator;
+        // Inject the UI-coordinator interface
+        public AddCardsViewModel(ICardCollectionCoordinator coordinator)
         {
-            _cardCollectionManager = new CardCollectionCoordinator(cardCollectionService);
+            _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
             CardsToAdd.CollectionChanged += CardsToAdd_CollectionChanged;
         }
         private void CardsToAdd_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -110,7 +108,7 @@ namespace CollectaMundo.ViewModels
                 foreach (var card in cards)
                 {
                     // Call the manager to add the card to the in-memory collection.
-                    await _cardCollectionManager.AddCardToAddCardsListViewAsync(card, CardsToAdd);
+                    await _coordinator.AddCardToAddCardsListViewAsync(card, CardsToAdd);
                 }
 
                 // Increment the trigger to signal the view to clear selection.
@@ -130,7 +128,7 @@ namespace CollectaMundo.ViewModels
                 foreach (var card in cards)
                 {
                     // Call the manager to add the card to the in-memory collection.
-                    await _cardCollectionManager.AddCardToEditCardsListViewAsync(card, CardsToAdd);
+                    await _coordinator.AddCardToAddCardsListViewAsync(card, CardsToAdd);
                 }
 
                 // Increment the trigger to signal the view to clear selection.
@@ -199,7 +197,7 @@ namespace CollectaMundo.ViewModels
             foreach (var card in cards)
             {
                 // Add or update the card in the database.
-                await _cardCollectionManager.AddOrUpdateCardAsync(card);
+                await _coordinator.AddCardToAddCardsListViewAsync(card, CardsToAdd);
 
                 CardProcessed?.Invoke(this, new CardProcessedEventArgs(card));
             }

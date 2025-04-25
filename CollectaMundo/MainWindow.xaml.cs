@@ -29,11 +29,8 @@ namespace CollectaMundo
         public FilterViewModel FilterVM { get; } = new FilterViewModel();
 
         private readonly ICardFilteringService _filteringService;
-        public AddCardsViewModel AddCardsVM { get; } = new AddCardsViewModel(new SqliteCardRepository());
-        public AddCardsViewModel EditCardsVM { get; } = new AddCardsViewModel(new SqliteCardRepository())
-        {
-            RemoveCardWhenCardsOwnedZero = false // Disable removal in edit mode.
-        };
+        public AddCardsViewModel AddCardsVM { get; }
+        public AddCardsViewModel EditCardsVM { get; }
 
         private static MainWindow? _currentInstance;
         public static MainWindow CurrentInstance
@@ -175,6 +172,16 @@ namespace CollectaMundo
 
             // Subscribe to filter changes.
             FilterVM.FilterChanged += OnFilterChanged;
+
+            // 1. Create the low?level repository
+            var repo = new SqliteCardRepository();
+
+            // 2. Wrap it in your UI?coordinator
+            var coordinator = new CardCollectionCoordinator(repo);
+
+            // 3. Inject that into both VMs
+            AddCardsVM = new AddCardsViewModel(coordinator);
+            EditCardsVM = new AddCardsViewModel(coordinator);
 
             AddCardsVM.CardProcessed += OnCardProcessed;
             EditCardsVM.CardProcessed += OnCardProcessed;
