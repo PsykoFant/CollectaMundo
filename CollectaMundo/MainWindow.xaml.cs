@@ -173,12 +173,8 @@ namespace CollectaMundo
             // Subscribe to filter changes.
             FilterVM.FilterChanged += OnFilterChanged;
 
-            // 1. Create the low?level repository
-            var repo = new SqliteCardRepository();
-
-            // 2. Wrap it in your UI?coordinator
-            var coordinator = new CardCollectionCoordinator(repo);
-
+            var repo = new SqliteCardRepository(); // 1. Create the low?level repository            
+            var coordinator = new CardCollectionCoordinator(repo); // 2. Wrap it in your UI?coordinator
             // 3. Inject that into both VMs
             AddCardsVM = new AddCardsViewModel(coordinator);
             EditCardsVM = new AddCardsViewModel(coordinator);

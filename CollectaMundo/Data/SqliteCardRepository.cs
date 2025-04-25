@@ -88,7 +88,6 @@ namespace CollectaMundo.Data
                 throw;
             }
         }
-
         public async Task DeleteCardAsync(CardSet card)
         {
             string deleteSql = "DELETE FROM myCollection WHERE uuid = @uuid";
