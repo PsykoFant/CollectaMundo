@@ -5,22 +5,16 @@ using System.Diagnostics;
 
 namespace CollectaMundo.UICoordinators
 {
-    public class CardCollectionCoordinator : ICardCollectionCoordinator
+    public class CardCollectionCoordinator(ICardRepository dataService) : ICardCollectionCoordinator
     {
-        private readonly ICardRepository _repository;
+        private readonly ICardRepository _repository = dataService ?? throw new ArgumentNullException(nameof(dataService));
 
-        // 1) Constructor injection
-        public CardCollectionCoordinator(ICardRepository dataService)
-        {
-            _repository = dataService ?? throw new ArgumentNullException(nameof(dataService));
-        }
-
-        // 2) Public wrappers
+        // Public wrappers
         public Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewAsync(selectedCard, targetCollection, isEdit: false);
 
         public Task AddCardToEditCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewAsync(selectedCard, targetCollection, isEdit: true);
 
-        // 3) Common implementation (unchanged)
+        // 3) Common implementation
         private async Task AddCardToListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection, bool isEdit)
         {
             if (selectedCard.Uuid == null)
