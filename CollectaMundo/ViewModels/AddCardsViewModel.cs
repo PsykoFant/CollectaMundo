@@ -118,6 +118,8 @@ namespace CollectaMundo.ViewModels
 
                 // Now increment the trigger to signal the view to refresh columns.
                 RefreshColumnsTrigger++;
+
+                StatusMessage = String.Empty; // Clear status message
             }
         });
         public ICommand EditSelectedCardsCommand => new RelayCommand<object>(async param =>
@@ -207,16 +209,13 @@ namespace CollectaMundo.ViewModels
             // Signal the view to clear selection.
             ClearSelectionTrigger++;
 
-            // --- New: build and expose summary ---
-            StatusMessage =
-                "Added the following cards to your collection:\n\n" +
-                string.Join("\n", cards.Select(c =>
-                    $"- {c.Name} (Condition: {c.SelectedCondition}, " +
-                    $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
-                    $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
-            // --------------------------------------
+            // build and expose summary
+            StatusMessage = "Added the following cards to your collection:\n\n" +
+            string.Join("\n", cards.Select(c =>
+                $"- {c.Name} (Condition: {c.SelectedCondition}, " +
+                $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
+                $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
         });
-
 
         private string _statusMessage = string.Empty;
         public string StatusMessage
@@ -240,11 +239,6 @@ namespace CollectaMundo.ViewModels
                 : Visibility.Visible;
 
     }
-
-
-
-
-
     public class CardProcessedEventArgs : EventArgs
     {
         public CardSet Card { get; }

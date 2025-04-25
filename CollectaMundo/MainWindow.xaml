@@ -812,13 +812,25 @@
             </Grid>
         </Grid>
         <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="Hidden">
-            <Image x:Name="LogoSmall" Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="170" Width="170" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" d:IsHidden="True" />
+            <Image x:Name="LogoSmall" Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="170" Width="170" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" />
             <ScrollViewer x:Name="FilterSummaryScrollViewer" HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <TextBlock x:Name="FilterSummaryTextBlock" HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
             </ScrollViewer>
             <Grid x:Name="GridSearchAndFilterAllCards" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30">
+                    <Label.Style>
+                        <Style TargetType="Label">
+                            <!-- default: shown -->
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <!-- when StatusVisibility is Visible, collapse this label -->
+                                <DataTrigger Binding="{Binding AddCardsVM.StatusVisibility, RelativeSource={RelativeSource AncestorType=Window}}" Value="Visible">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Label.Style>
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
                             <Binding Path="AllCardsVM.FilteredCards.Count"/>
@@ -826,7 +838,6 @@
                         </MultiBinding>
                     </Label.Content>
                 </Label>
-
                 <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" 
                         Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
                         Command="{Binding DataContext.AddCardsVM.SubmitSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}" />                
@@ -847,12 +858,10 @@
                     VerticalScrollBarVisibility="Auto"
                     HorizontalScrollBarVisibility="Auto"
                     Visibility="{Binding AddCardsVM.StatusVisibility, RelativeSource={RelativeSource AncestorType=Window}}">
-                    <TextBlock TextWrapping="Wrap"
-                               VerticalAlignment="Top"
+                    <TextBlock TextWrapping="Wrap" VerticalAlignment="Top"
                                Text="{Binding AddCardsVM.StatusMessage, RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </ScrollViewer>
-
-
+                
                 <!--Cards to add listview-->
                 <ListView ItemsSource="{Binding AddCardsVM.CardsToAdd, RelativeSource={RelativeSource AncestorType=Window}}"
                           Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"

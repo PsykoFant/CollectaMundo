@@ -183,35 +183,6 @@ namespace CollectaMundo
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
         }
 
-        private void OnCardProcessed(object? sender, CardProcessedEventArgs e)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                var card = e.Card;
-                // 1. Find or add in MyCollectionVM.Cards
-                var existing = MyCollectionVM.Cards.FirstOrDefault(c =>
-                    c.Uuid == card.Uuid &&
-                    c.SelectedCondition == card.SelectedCondition &&
-                    c.Language == card.Language &&
-                    c.SelectedFinish == card.SelectedFinish);
-
-                if (existing != null)
-                {
-                    existing.CardsOwned += card.CardsOwned;
-                    existing.CardsForTrade += card.CardsForTrade;
-                }
-                else
-                {
-                    MyCollectionVM.Cards.Add(card);
-                }
-
-                // 2. Reapply filters
-                MyCollectionVM.FilteredCards = _filteringService
-                    .ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);  // (*)
-            });
-        }
-
-
         #region Load data and populate UI elements
         public async Task LoadDataIntoUiElements()
         {
@@ -395,107 +366,31 @@ namespace CollectaMundo
         #endregion
 
         #region Pick up events for add to or edit collection 
-
-        // Modify values in the listview
-        //private void IncrementCount_Click(object sender, RoutedEventArgs e)
-        //{
-        //    //addToCollectionManager.IncrementButtonHandler(sender, e);
-        //    AddCardsVM.CardsToAdd[0].CardsOwned++;
-        //}
-        //private void DecrementCount_Click(object sender, RoutedEventArgs e)
-        //{
-        //    if (sender is Button button)  // This checks if sender is a Button and assigns it to button if true
-        //    {
-        //        if (button.DataContext is CardSet cardItem)
-        //        {
-        //            // Determine which ListView initiated the event and pass the appropriate collection
-        //            ObservableCollection<CardSet> targetCollection =
-        //                (CardsToEditListView.Items.Contains(cardItem)) ? addToCollectionManager.CardItemsToEdit : addToCollectionManager.CardItemsToAdd;
-
-        //            // Only decrement for CardItemsToEdit if count is above 0
-        //            if (targetCollection == addToCollectionManager.CardItemsToEdit)
-        //            {
-        //                if (cardItem.CardsOwned > 0)
-        //                {
-        //                    addToCollectionManager.DecrementButtonHandler(sender, targetCollection);
-        //                }
-        //            }
-        //            else
-        //            {
-        //                addToCollectionManager.DecrementButtonHandler(sender, targetCollection);
-
-        //                // If there is nothing in CardItemsToAdd, hide listview and button
-        //                if (targetCollection.Count == 0)
-        //                {
-        //                    AddToCollectionManager.HideCardsToAddListView(true);
-        //                }
-        //            }
-        //        }
-        //    }
-        //}
-        //private void CardsOwnedTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        //{
-        //    addToCollectionManager.CardsOwnedTextHandler(sender, addToCollectionManager.CardItemsToAdd);
-        //}
-        //private void CardsForTradeTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        //{
-        //    AddToCollectionManager.CardsForTradeTextHandler(sender);
-        //}
-        //private void ListViewComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        //{
-        //    //AddToCollectionManager.AdjustColumnWidths();
-        //}
-        //private void ButtonClearCardsToAdd_Click(object sender, RoutedEventArgs e)
-        //{
-        //    addToCollectionManager.CardItemsToAdd.Clear();
-        //    AddToCollectionManager.HideCardsToAddListView(true);
-        //}
-        //private void ButtonClearCardsToEdit_Click(object sender, RoutedEventArgs e)
-        //{
-        //    addToCollectionManager.CardItemsToEdit.Clear();
-        //    AddToCollectionManager.HideCardsToEditListView(true);
-        //}
-
-
-        // Add cards to add or edit listview
-        private void AddCardsToListView(object sender, MouseButtonEventArgs e)
+        private void OnCardProcessed(object? sender, CardProcessedEventArgs e)
         {
-            // Check if the sender is a DataGrid and has a selected item
-            if (sender is DataGrid grid && grid.SelectedItem != null)
+            Dispatcher.Invoke(() =>
             {
-                // If the source is AllCardsDataGrid, add to CardItemsToAdd. Else, add to CardItemsToEdit
-                if (grid.SelectedItem is CardSet cardSetCard && grid.Name == "AllCardsDataGrid")
-                {
-                    AddToCollectionManager.AddOrEditCardHandler(cardSetCard, addToCollectionManager.CardItemsToAdd);
-                    //AddToCollectionManager.ShowCardsToAddListView();
-                }
-                else if (grid.SelectedItem is CardSet cardItemCard && grid.Name == "MyCollectionDataGrid")
-                {
-                    AddToCollectionManager.AddOrEditCardHandler(cardItemCard, addToCollectionManager.CardItemsToEdit);
-                    AddToCollectionManager.ShowCardsToEditListView();
-                }
-                grid.UnselectAll();
-            }
-        }
-        private void ButtonAddCardsToMyCollection_Click(object sender, RoutedEventArgs e)
-        {
-            //AddToCollectionManager.AddCardsToListView(AllCardsDataGrid, AddToCollectionManager.ShowCardsToAddListView, addToCollectionManager.CardItemsToAdd);
-        }
-        private void ButtonEditCardsInCollection_Click(object sender, RoutedEventArgs e)
-        {
-            AddToCollectionManager.AddCardsToListView(MyCollectionDataGrid, AddToCollectionManager.ShowCardsToEditListView, addToCollectionManager.CardItemsToEdit);
-        }
+                var card = e.Card;
+                // 1. Find or add in MyCollectionVM.Cards
+                var existing = MyCollectionVM.Cards.FirstOrDefault(c =>
+                    c.Uuid == card.Uuid &&
+                    c.SelectedCondition == card.SelectedCondition &&
+                    c.Language == card.Language &&
+                    c.SelectedFinish == card.SelectedFinish);
 
-        // Submit cards in add or edit listviews
-        private void ButtonSubmitCardsToMyCollection_Click(object sender, RoutedEventArgs e)
-        {
-            LogoSmall.Visibility = Visibility.Collapsed;
-            addToCollectionManager.SubmitNewCardsToCollection(sender, e);
-        }
-        private void SubmitCardEditsInMyCollection_Click(object sender, RoutedEventArgs e)
-        {
-            LogoSmall.Visibility = Visibility.Collapsed;
-            addToCollectionManager.SubmitEditedCardsToCollection(sender, e);
+                if (existing != null)
+                {
+                    existing.CardsOwned += card.CardsOwned;
+                    existing.CardsForTrade += card.CardsForTrade;
+                }
+                else
+                {
+                    MyCollectionVM.Cards.Add(card);
+                }
+
+                // 2. Reapply filters
+                MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
+            });
         }
 
         // Right-click actions 
@@ -1159,6 +1054,7 @@ namespace CollectaMundo
 
             // Reset filtering and add/edit cards UI
             EditStatusTextBlock.Text = string.Empty;
+            AddCardsVM.StatusMessage = string.Empty;
             //AddStatusTextBlock.Text = string.Empty;
             UtilsInfoLabel.Content = "";
             FilterSummaryScrollViewer.Visibility = Visibility.Collapsed;

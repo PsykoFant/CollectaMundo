@@ -2,7 +2,6 @@ TO DO
 - MVVM refactor
 
  - Add to collectionManager til MVVM!
-	- Fjern tekst fra add status
 	- Add with default values
 
 	- Og så er det edit tid ... 
