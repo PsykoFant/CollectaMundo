@@ -1,7 +1,8 @@
 using CollectaMundo.Behaviors;
-using CollectaMundo.Managers;
+using CollectaMundo.Data;
 using CollectaMundo.Models;
 using CollectaMundo.Services;
+using CollectaMundo.UICoordinators;
 using CollectaMundo.ViewModels;
 using ServiceStack;
 using System.Collections.ObjectModel;
@@ -28,8 +29,8 @@ namespace CollectaMundo
         public FilterViewModel FilterVM { get; } = new FilterViewModel();
 
         private readonly ICardFilteringService _filteringService;
-        public AddCardsViewModel AddCardsVM { get; } = new AddCardsViewModel(new CardCollectionService());
-        public AddCardsViewModel EditCardsVM { get; } = new AddCardsViewModel(new CardCollectionService())
+        public AddCardsViewModel AddCardsVM { get; } = new AddCardsViewModel(new SqliteCardRepository());
+        public AddCardsViewModel EditCardsVM { get; } = new AddCardsViewModel(new SqliteCardRepository())
         {
             RemoveCardWhenCardsOwnedZero = false // Disable removal in edit mode.
         };
@@ -159,7 +160,7 @@ namespace CollectaMundo
             InitializeComponent();
             _currentInstance = this;
 
-            ICardCollectionService cardCollectionService = new CardCollectionService();
+            ICardRepository cardCollectionService = new SqliteCardRepository();
             _filteringService = new CardFilteringService();
 
             // Set up system

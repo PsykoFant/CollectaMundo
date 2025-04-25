@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Windows;
 using static CollectaMundo.MainWindow;
 
-namespace CollectaMundo.Managers
+namespace CollectaMundo.UICoordinators
 {
     public class CardListManager
     {

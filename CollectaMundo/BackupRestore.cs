@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Managers;
+﻿using CollectaMundo.UICoordinators;
 using CollectaMundo.Models;
 using Microsoft.Win32;
 using ServiceStack;

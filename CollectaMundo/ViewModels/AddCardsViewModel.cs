@@ -1,6 +1,6 @@
-﻿using CollectaMundo.Managers;
+﻿using CollectaMundo.Data;
 using CollectaMundo.Models;
-using CollectaMundo.Services;
+using CollectaMundo.UICoordinators;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -20,12 +20,12 @@ namespace CollectaMundo.ViewModels
         // Controls removal behavior when CardsOwned reaches zero.
         public bool RemoveCardWhenCardsOwnedZero { get; set; } = true; // Default: remove card
 
-        private readonly CardCollectionManager _cardCollectionManager;
+        private readonly CardCollectionCoordinator _cardCollectionManager;
 
         // Primary constructor body
-        public AddCardsViewModel(ICardCollectionService cardCollectionService)
+        public AddCardsViewModel(ICardRepository cardCollectionService)
         {
-            _cardCollectionManager = new CardCollectionManager(cardCollectionService);
+            _cardCollectionManager = new CardCollectionCoordinator(cardCollectionService);
             CardsToAdd.CollectionChanged += CardsToAdd_CollectionChanged;
         }
         private void CardsToAdd_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)

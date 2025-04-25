@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Managers;
+﻿using CollectaMundo.UICoordinators;
 using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Diagnostics;
