@@ -357,7 +357,7 @@ namespace CollectaMundo.ViewModels
             // Initially, show all options
             _filteredOptions = [.. FilterOptions];
 
-            // Handle Numeric Filters
+            // Handle Numeric FilterBase
             if (numericOptions != null)
             {
                 AvailableNumericOptions = [.. numericOptions];
@@ -587,30 +587,6 @@ namespace CollectaMundo.ViewModels
                 Debug.WriteLine($"Error getting matches: {ex.Message}");
                 MessageBox.Show($"Error getting matches: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
-            }
-        }
-    }
-
-    // Represents an individual selectable filter option.
-    public class FilterOption(string optionName, bool isSelected = false) : INotifyPropertyChanged
-    {
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged(string propertyName) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
-        public string OptionName { get; } = optionName;
-
-        private bool _isSelected = isSelected;
-        public bool IsSelected
-        {
-            get => _isSelected;
-            set
-            {
-                if (_isSelected != value)
-                {
-                    _isSelected = value;
-                    OnPropertyChanged(nameof(IsSelected));
-                }
             }
         }
     }

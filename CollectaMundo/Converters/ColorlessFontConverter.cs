@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ViewModels;
+﻿using CollectaMundo.Models;
 using System.Globalization;
 using System.Windows.Data;
 

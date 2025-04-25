@@ -1,4 +1,4 @@
-﻿using CollectaMundo.UICoordinators;
+﻿using CollectaMundo.Models;
 using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -12,15 +12,12 @@ namespace CollectaMundo.ViewModels
 {
     public class FilterViewModel : INotifyPropertyChanged
     {
-        public Dictionary<string, FilterItemViewModel> Filters { get; } = [];
+        // Injected dependencies
+        private readonly IFilterDefaultsRepository _defaultsRepo;
+        private readonly IFilterService _filterService;
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
-        // Event that signals the filters have changed.
-        public event EventHandler? FilterChanged;
-
-        // Update the filter summary
+        // Exposed filters and summary
+        public Dictionary<string, FilterItemViewModel> Filters { get; } = new();
         private string? _filterSummary;
         public string? FilterSummary
         {
@@ -34,47 +31,62 @@ namespace CollectaMundo.ViewModels
                 }
             }
         }
-        public ICommand? ClearFiltersCommand { get; }
 
-        // Constructor
-        public FilterViewModel()
+        public ICommand ClearFiltersCommand { get; }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        public event EventHandler? FilterChanged;
+        protected void OnPropertyChanged(string name)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+        // Constructor now takes interfaces
+        public FilterViewModel(
+            IFilterDefaultsRepository defaultsRepo,
+            IFilterService filterService)
         {
-            // Prepopulate Filters with empty/stub FilterItemViewModel objects for all keys.
+            _defaultsRepo = defaultsRepo ?? throw new ArgumentNullException(nameof(defaultsRepo));
+            _filterService = filterService ?? throw new ArgumentNullException(nameof(filterService));
+
+            // Prepopulate with “empty” items so UI can bind before defaults load
             foreach (var key in FilterCriteriaMappings.CriteriaMappings.Keys)
             {
-                Filters[key] = new FilterItemViewModel(key, [], string.Empty, string.Empty, this, null);
+                Filters[key] = new FilterItemViewModel(key,
+                    Enumerable.Empty<FilterOption>(),
+                    defaultText: string.Empty,
+                    readableLabel: string.Empty,
+                    this,
+                    numericOptions: null);
             }
-            // Initialize the command using the ClearFilters method.
+
             ClearFiltersCommand = new RelayCommand<object>(_ => ClearFilters());
         }
 
-        // Initialize the filter defaults from the database.
+        // Loads defaults from the repository instead of FilterManager
         public async Task InitializeFilterDefaultsAsync()
         {
             try
             {
-                var filterDefaults = await FilterManager.GetFilterDefaultsFromDBAsync();
-                foreach (var filter in filterDefaults)
+                var defaults = await _defaultsRepo.GetFilterDefaultsAsync();
+                foreach (var def in defaults)
                 {
-                    Filters[filter.CriteriaKey] = new FilterItemViewModel(
-                        filter.CriteriaKey,
-                        filter.FilterOptions,
-                        filter.DefaultText,
-                        filter.ReadableLabel,
+                    Filters[def.CriteriaKey] = new FilterItemViewModel(
+                        def.CriteriaKey,
+                        def.FilterOptions,
+                        def.DefaultText,
+                        def.ReadableLabel,
                         this,
-                        filter.NumericCriteria
-                    );
+                        def.NumericCriteria);
                 }
-
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error initializing filter defaults: {ex.Message}");
-                MessageBox.Show($"Error initializing filter defaults: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error initializing filters: {ex.Message}",
+                    "Error", MessageBoxImage.Error);
             }
         }
 
-        // Called by FilterItemViewModel instances when a filter value changes. This method raises the FilterChanged event.
+        // Called by each FilterItemViewModel on change
         public void NotifyFilterChanged()
         {
             UpdateFilterSummary();
