@@ -1,4 +1,5 @@
-﻿using CollectaMundo.Models;
+﻿using CollectaMundo.Data;
+using CollectaMundo.UICoordinators;
 using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -40,9 +41,7 @@ namespace CollectaMundo.ViewModels
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         // Constructor now takes interfaces
-        public FilterViewModel(
-            IFilterDefaultsRepository defaultsRepo,
-            IFilterService filterService)
+        public FilterViewModel(IFilterDefaultsRepository defaultsRepo, IFilterService filterService)
         {
             _defaultsRepo = defaultsRepo ?? throw new ArgumentNullException(nameof(defaultsRepo));
             _filterService = filterService ?? throw new ArgumentNullException(nameof(filterService));
@@ -50,12 +49,7 @@ namespace CollectaMundo.ViewModels
             // Prepopulate with “empty” items so UI can bind before defaults load
             foreach (var key in FilterCriteriaMappings.CriteriaMappings.Keys)
             {
-                Filters[key] = new FilterItemViewModel(key,
-                    Enumerable.Empty<FilterOption>(),
-                    defaultText: string.Empty,
-                    readableLabel: string.Empty,
-                    this,
-                    numericOptions: null);
+                Filters[key] = new FilterItemViewModel(key, [], defaultText: string.Empty, readableLabel: string.Empty, this, numericOptions: null);
             }
 
             ClearFiltersCommand = new RelayCommand<object>(_ => ClearFilters());
@@ -81,8 +75,7 @@ namespace CollectaMundo.ViewModels
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error initializing filter defaults: {ex.Message}");
-                MessageBox.Show($"Error initializing filters: {ex.Message}",
-                    "Error", MessageBoxImage.Error);
+                MessageBox.Show($"Error initializing filters: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

@@ -5,9 +5,9 @@ using System.Diagnostics;
 
 namespace CollectaMundo.UICoordinators
 {
-    public class CardCollectionCoordinator(ICardRepository dataService) : ICardCollectionCoordinator
+    public class CardCollectionCoordinator(IEditCollectionRepository dataService) : ICardCollectionCoordinator
     {
-        private readonly ICardRepository _repository = dataService ?? throw new ArgumentNullException(nameof(dataService));
+        private readonly IEditCollectionRepository _repository = dataService ?? throw new ArgumentNullException(nameof(dataService));
 
         // Public wrappers
         public Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewAsync(selectedCard, targetCollection, isEdit: false);

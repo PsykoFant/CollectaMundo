@@ -6,8 +6,8 @@ namespace CollectaMundo.Domain
 {
     public class CardCollectionService : ICardCollectionService
     {
-        private readonly ICardRepository _repo;
-        public CardCollectionService(ICardRepository repo) { _repo = repo; }
+        private readonly IEditCollectionRepository _repo;
+        public CardCollectionService(IEditCollectionRepository repo) { _repo = repo; }
 
         public async Task AddOrUpdateCardAsync(CardSet card)
         {

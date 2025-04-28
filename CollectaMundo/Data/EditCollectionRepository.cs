@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace CollectaMundo.Data
 {
-    public class SqliteCardRepository : ICardRepository
+    public class EditCollectionRepository : IEditCollectionRepository
     {
         public async Task<int?> CheckForExistingCardAsync(CardSet card)
         {

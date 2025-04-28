@@ -1,7 +1,6 @@
 using CollectaMundo.Behaviors;
 using CollectaMundo.Data;
 using CollectaMundo.Models;
-using CollectaMundo.Services;
 using CollectaMundo.UICoordinators;
 using CollectaMundo.ViewModels;
 using ServiceStack;
@@ -26,9 +25,9 @@ namespace CollectaMundo
         public CardViewModel MyCollectionVM { get; } = new CardViewModel();
         public CardViewModel AllCardsForDecksVM { get; } = new CardViewModel();
         public CardViewModel ColorIcons { get; } = new CardViewModel();
-        public FilterViewModel FilterVM { get; } = new FilterViewModel();
+        public FilterViewModel FilterVM { get; }
 
-        private readonly ICardFilteringService _filteringService;
+        private readonly IFilterService _filteringService;
         public AddCardsViewModel AddCardsVM { get; }
         public AddCardsViewModel EditCardsVM { get; }
 
@@ -157,8 +156,8 @@ namespace CollectaMundo
             InitializeComponent();
             _currentInstance = this;
 
-            ICardRepository cardCollectionService = new SqliteCardRepository();
-            _filteringService = new CardFilteringService();
+            IEditCollectionRepository cardCollectionService = new EditCollectionRepository();
+            _filteringService = new FilterService();
 
             // Set up system
             Loaded += async (sender, args) =>
@@ -170,15 +169,23 @@ namespace CollectaMundo
                 _isStartup = false; // Set flag to false after initial load
             };
 
-            // Subscribe to filter changes.
-            FilterVM.FilterChanged += OnFilterChanged;
 
-            var repo = new SqliteCardRepository(); // 1. Create the low?level repository            
+
+            var defaultsRepo = new FilterDefaultsRepository();
+            var filterService = new FilterService();
+
+            FilterVM = new FilterViewModel(defaultsRepo, filterService);
+
+
+            var repo = new EditCollectionRepository(); // 1. Create the low?level repository            
             var coordinator = new CardCollectionCoordinator(repo); // 2. Wrap it in your UI?coordinator
             // 3. Inject that into both VMs
             AddCardsVM = new AddCardsViewModel(coordinator);
             EditCardsVM = new AddCardsViewModel(coordinator);
 
+
+            // Subscribe to filter changes.
+            FilterVM.FilterChanged += OnFilterChanged;
             AddCardsVM.CardProcessed += OnCardProcessed;
             EditCardsVM.CardProcessed += OnCardProcessed;
 

@@ -47,8 +47,8 @@ namespace CollectaMundo.Tests
         }
         private void RefreshFilteredLists(object? sender, EventArgs e)
         {
-            _allCardsVM.FilteredCards = FilterManager.ApplyFilter(_allCardsVM.Cards, _filterVM.Filters.Values);
-            _myCollectionVM.FilteredCards = FilterManager.ApplyFilter(_myCollectionVM.Cards, _filterVM.Filters.Values);
+            _allCardsVM.FilteredCards = FilterEngine.ApplyFilter(_allCardsVM.Cards, _filterVM.Filters.Values);
+            _myCollectionVM.FilteredCards = FilterEngine.ApplyFilter(_myCollectionVM.Cards, _filterVM.Filters.Values);
         }
         public Task DisposeAsync() => Task.CompletedTask;
 
@@ -499,10 +499,10 @@ namespace CollectaMundo.Tests
             rarityFilter.OperatorSelection = OperatorType.NOT;
 
             // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
-            _allCardsVM.FilteredCards = FilterManager.ApplyFilter(_allCardsVM.Cards, _filterVM.Filters.Values);
+            _allCardsVM.FilteredCards = FilterEngine.ApplyFilter(_allCardsVM.Cards, _filterVM.Filters.Values);
             var filteredAllCards = _allCardsVM.FilteredCards;
 
-            _myCollectionVM.FilteredCards = FilterManager.ApplyFilter(_myCollectionVM.Cards, _filterVM.Filters.Values);
+            _myCollectionVM.FilteredCards = FilterEngine.ApplyFilter(_myCollectionVM.Cards, _filterVM.Filters.Values);
             var filteredMyCollection = _myCollectionVM.FilteredCards;
 
             // Assert: Expected summary string
@@ -522,10 +522,10 @@ namespace CollectaMundo.Tests
             colorFilter.OperatorSelection = OperatorType.OR;
 
             // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
-            _allCardsVM.FilteredCards = FilterManager.ApplyFilter(_allCardsVM.Cards, _filterVM.Filters.Values);
+            _allCardsVM.FilteredCards = FilterEngine.ApplyFilter(_allCardsVM.Cards, _filterVM.Filters.Values);
             filteredAllCards = _allCardsVM.FilteredCards;
 
-            _myCollectionVM.FilteredCards = FilterManager.ApplyFilter(_myCollectionVM.Cards, _filterVM.Filters.Values);
+            _myCollectionVM.FilteredCards = FilterEngine.ApplyFilter(_myCollectionVM.Cards, _filterVM.Filters.Values);
             filteredMyCollection = _myCollectionVM.FilteredCards;
 
             // Assert: Expected summary string

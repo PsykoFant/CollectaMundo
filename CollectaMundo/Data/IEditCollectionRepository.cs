@@ -2,7 +2,7 @@
 
 namespace CollectaMundo.Data
 {
-    public interface ICardRepository
+    public interface IEditCollectionRepository
     {
 
         // Raw lookups

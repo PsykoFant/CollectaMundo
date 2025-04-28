@@ -6,7 +6,7 @@ using System.Diagnostics;
 
 namespace CollectaMundo.Data
 {
-    public class SqliteFilterDefaultsRepository : IFilterDefaultsRepository
+    public class FilterDefaultsRepository : IFilterDefaultsRepository
     {
         public async Task<List<FilterDefaults>> GetFilterDefaultsAsync()
         {
