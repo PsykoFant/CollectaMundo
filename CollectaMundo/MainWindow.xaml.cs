@@ -28,7 +28,7 @@ namespace CollectaMundo
         public CardViewModel ColorIcons { get; } = new CardViewModel();
         public FilterViewModel FilterVM { get; }
 
-        private readonly IFilterService _filteringService;
+        private readonly IFilteringCoordinator _filteringService;
         public AddCardsViewModel AddCardsVM { get; }
         public AddCardsViewModel EditCardsVM { get; }
 
@@ -158,7 +158,7 @@ namespace CollectaMundo
             _currentInstance = this;
 
             IEditCollectionRepository cardCollectionService = new EditCollectionRepository();
-            _filteringService = new FilterService();
+            _filteringService = new FilteringCoordinator();
 
             // Set up system
             Loaded += async (sender, args) =>
@@ -173,7 +173,7 @@ namespace CollectaMundo
 
 
             var defaultsRepo = new FilterDefaultsRepository();
-            var filterService = new FilterService();
+            var filterService = new FilteringCoordinator();
 
             FilterVM = new FilterViewModel(defaultsRepo, filterService);
 

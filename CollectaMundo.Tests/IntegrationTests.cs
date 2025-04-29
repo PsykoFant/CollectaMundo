@@ -16,20 +16,20 @@ namespace CollectaMundo.Tests
         private readonly InMemoryDatabaseFixture _fx;
         private readonly EventHandler _refreshHandler;
         private static bool _isInitialised;
-        private readonly IFilterService _filterService;
+        private readonly IFilteringCoordinator _filterService;
 
 
         // Shared state (one copy for the whole class/run)
         private static readonly CardViewModel _allCardsVM = new();
         private static readonly CardViewModel _myCollectionVM = new();
-        private static readonly FilterViewModel _filterVM = new(new FilterDefaultsRepository(), new FilterService());
+        private static readonly FilterViewModel _filterVM = new(new FilterDefaultsRepository(), new FilteringCoordinator());
 
         public IntegrationTests(InMemoryDatabaseFixture fixture)
         {
             _refreshHandler = RefreshFilteredLists;
             _fx = fixture;
             DBAccess.connection = _fx.Connection;     // point app code to the same connection
-            _filterService = new FilterService();
+            _filterService = new FilteringCoordinator();
         }
 
         // IAsyncLifetime implementation

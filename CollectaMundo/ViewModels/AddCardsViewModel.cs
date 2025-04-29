@@ -19,9 +19,9 @@ namespace CollectaMundo.ViewModels
         // Controls removal behavior when CardsOwned reaches zero.
         public bool RemoveCardWhenCardsOwnedZero { get; set; } = true; // Default: remove card
 
-        private readonly ICardCollectionCoordinator _coordinator;
+        private readonly IEditCollectionCoordinator _coordinator;
         // Inject the UI-coordinator interface
-        public AddCardsViewModel(ICardCollectionCoordinator coordinator)
+        public AddCardsViewModel(IEditCollectionCoordinator coordinator)
         {
             _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
             CardsToAdd.CollectionChanged += CardsToAdd_CollectionChanged;

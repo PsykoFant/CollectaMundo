@@ -11,14 +11,21 @@ namespace CollectaMundo.Domain
         {
             var existing = await _repo.CheckForExistingCardAsync(card);
             if (existing.HasValue)
+            {
                 await _repo.UpdateCardAsync(card);
+            }
             else
+            {
                 await _repo.AddCardAsync(card);
+            }
         }
         public async Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit)
         {
             if (selectedCard.Uuid == null)
+            {
                 throw new ArgumentException("UUID cannot be null", nameof(selectedCard));
+            }
+
             await DBAccess.OpenConnectionAsync();
             var languages = await _repo.FetchLanguagesForCardAsync(selectedCard.Uuid);
             var finishes = await _repo.FetchFinishesForCardAsync(selectedCard.Uuid);
@@ -44,5 +51,6 @@ namespace CollectaMundo.Domain
                 SelectedCondition = chosenCondition,
             };
         }
+
     }
 }

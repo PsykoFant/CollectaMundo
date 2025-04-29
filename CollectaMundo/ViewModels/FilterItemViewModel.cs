@@ -427,8 +427,6 @@ namespace CollectaMundo.ViewModels
         {
             try
             {
-
-
                 // Look up the mapping for this filter.
                 if (!FilterCriteriaMappings.CriteriaMappings.TryGetValue(CriteriaKey, out var mapping))
                 {

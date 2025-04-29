@@ -244,21 +244,27 @@ namespace CollectaMundo.Tests
         }
     }
 
-    // 1) A no-op defaults repository
+    // 1) A no‐op defaults repo
     public class DummyDefaultsRepo : IFilterDefaultsRepository
     {
         public Task<List<FilterDefaults>> GetFilterDefaultsAsync() => Task.FromResult(new List<FilterDefaults>());
     }
 
-    // 2) A no-op filter service
-    public class DummyFilterService : IFilterService
+    // 2) A no‐op filter coordinator
+    public class DummyFilterService : IFilteringCoordinator
     {
         public List<CardSet> ApplyFilters(IEnumerable<CardSet> cards, IEnumerable<FilterItemViewModel> criteria) => [.. cards];
+
+        public void ResetAllFilters(IEnumerable<FilterItemViewModel> filters) { }
+
+        public string BuildSummary(IEnumerable<FilterItemViewModel> filters) => string.Empty;
     }
 
-    // 3) Your dummy ViewModel
+    // 3) A no-op FilterViewModel you can new up directly
     public class DummyFilterViewModel : FilterViewModel
     {
-        public DummyFilterViewModel() : base(new DummyDefaultsRepo(), new DummyFilterService()) { }
+        public DummyFilterViewModel() : base(new DummyDefaultsRepo(), new DummyFilterService())
+        { }
     }
+
 }
