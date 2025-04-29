@@ -4,11 +4,10 @@ namespace CollectaMundo.Domain
 {
     namespace CollectaMundo.Domain
     {
-        public interface ICardCollectionService
+        public interface IEditCollectionLogic
         {
             Task AddOrUpdateCardAsync(CardSet card);
-            Task DeleteCardAsync(CardSet card);
-            Task UpdateCardDetailsAsync(CardSet card);
+            Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit);
         }
     }
 

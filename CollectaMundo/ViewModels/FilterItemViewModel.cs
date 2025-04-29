@@ -315,8 +315,6 @@ namespace CollectaMundo.ViewModels
                 }
             }
         }
-
-
         public bool IsDefault
         {
             get

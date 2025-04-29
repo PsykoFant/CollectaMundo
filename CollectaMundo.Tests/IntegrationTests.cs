@@ -1,4 +1,5 @@
-﻿using CollectaMundo.UICoordinators;
+﻿using CollectaMundo.Data;
+using CollectaMundo.UICoordinators;
 using CollectaMundo.ViewModels;
 using static CollectaMundo.MainWindow;
 
@@ -15,40 +16,46 @@ namespace CollectaMundo.Tests
         private readonly InMemoryDatabaseFixture _fx;
         private readonly EventHandler _refreshHandler;
         private static bool _isInitialised;
+        private readonly IFilterService _filterService;
 
 
         // Shared state (one copy for the whole class/run)
         private static readonly CardViewModel _allCardsVM = new();
         private static readonly CardViewModel _myCollectionVM = new();
-        private static readonly FilterViewModel _filterVM = new();
+        private static readonly FilterViewModel _filterVM = new(new FilterDefaultsRepository(), new FilterService());
 
         public IntegrationTests(InMemoryDatabaseFixture fixture)
         {
             _refreshHandler = RefreshFilteredLists;
             _fx = fixture;
             DBAccess.connection = _fx.Connection;     // point app code to the same connection
-
+            _filterService = new FilterService();
         }
 
         // IAsyncLifetime implementation
         public async Task InitializeAsync()
         {
-
             if (!_isInitialised)
             {
                 _isInitialised = true;
+
+                // populate your source lists
                 await CardListManager.CreateCardListObjectAsync(_allCardsVM.Cards, CardListObject.AllCards);
                 await CardListManager.CreateCardListObjectAsync(_myCollectionVM.Cards, CardListObject.MyCollection);
+
+                // load filter defaults from the same in-memory DB
                 await _filterVM.InitializeFilterDefaultsAsync();
                 _filterVM.FilterChanged += _refreshHandler;
             }
-            _filterVM.ClearFiltersCommand?.Execute(null);
-            _refreshHandler(null, EventArgs.Empty);   // ensure FilteredCards are in sync
+
+            // always start tests with a clean filter slate
+            _filterVM.ClearFiltersCommand.Execute(null);
+            _refreshHandler(null, EventArgs.Empty);
         }
         private void RefreshFilteredLists(object? sender, EventArgs e)
         {
-            _allCardsVM.FilteredCards = FilterEngine.ApplyFilter(_allCardsVM.Cards, _filterVM.Filters.Values);
-            _myCollectionVM.FilteredCards = FilterEngine.ApplyFilter(_myCollectionVM.Cards, _filterVM.Filters.Values);
+            _allCardsVM.FilteredCards = _filterService.ApplyFilters(_allCardsVM.Cards, _filterVM.Filters.Values);
+            _myCollectionVM.FilteredCards = _filterService.ApplyFilters(_myCollectionVM.Cards, _filterVM.Filters.Values);
         }
         public Task DisposeAsync() => Task.CompletedTask;
 
@@ -499,10 +506,10 @@ namespace CollectaMundo.Tests
             rarityFilter.OperatorSelection = OperatorType.NOT;
 
             // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
-            _allCardsVM.FilteredCards = FilterEngine.ApplyFilter(_allCardsVM.Cards, _filterVM.Filters.Values);
+            _allCardsVM.FilteredCards = _filterService.ApplyFilters(_allCardsVM.Cards, _filterVM.Filters.Values);
             var filteredAllCards = _allCardsVM.FilteredCards;
 
-            _myCollectionVM.FilteredCards = FilterEngine.ApplyFilter(_myCollectionVM.Cards, _filterVM.Filters.Values);
+            _myCollectionVM.FilteredCards = _filterService.ApplyFilters(_myCollectionVM.Cards, _filterVM.Filters.Values);
             var filteredMyCollection = _myCollectionVM.FilteredCards;
 
             // Assert: Expected summary string
@@ -522,10 +529,10 @@ namespace CollectaMundo.Tests
             colorFilter.OperatorSelection = OperatorType.OR;
 
             // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
-            _allCardsVM.FilteredCards = FilterEngine.ApplyFilter(_allCardsVM.Cards, _filterVM.Filters.Values);
+            _allCardsVM.FilteredCards = _filterService.ApplyFilters(_allCardsVM.Cards, _filterVM.Filters.Values);
             filteredAllCards = _allCardsVM.FilteredCards;
 
-            _myCollectionVM.FilteredCards = FilterEngine.ApplyFilter(_myCollectionVM.Cards, _filterVM.Filters.Values);
+            _myCollectionVM.FilteredCards = _filterService.ApplyFilters(_myCollectionVM.Cards, _filterVM.Filters.Values);
             filteredMyCollection = _myCollectionVM.FilteredCards;
 
             // Assert: Expected summary string

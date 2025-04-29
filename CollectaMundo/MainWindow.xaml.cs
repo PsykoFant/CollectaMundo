@@ -1,5 +1,6 @@
 using CollectaMundo.Behaviors;
 using CollectaMundo.Data;
+using CollectaMundo.Domain;
 using CollectaMundo.Models;
 using CollectaMundo.UICoordinators;
 using CollectaMundo.ViewModels;
@@ -176,9 +177,9 @@ namespace CollectaMundo
 
             FilterVM = new FilterViewModel(defaultsRepo, filterService);
 
-
-            var repo = new EditCollectionRepository(); // 1. Create the low?level repository            
-            var coordinator = new CardCollectionCoordinator(repo); // 2. Wrap it in your UI?coordinator
+            var repo = new EditCollectionRepository(); // 1. Create the low?level repo
+            var domain = new EditCollectionLogic(repo); // 1. Create the low?level repo            
+            var coordinator = new EditCollectionCoordinator(domain); // 2. Wrap it in your UI?coordinator
             // 3. Inject that into both VMs
             AddCardsVM = new AddCardsViewModel(coordinator);
             EditCardsVM = new AddCardsViewModel(coordinator);

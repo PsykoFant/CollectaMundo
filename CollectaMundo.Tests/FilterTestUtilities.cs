@@ -1,4 +1,6 @@
-﻿using CollectaMundo.Models;
+﻿using CollectaMundo.Data;
+using CollectaMundo.Models;
+using CollectaMundo.UICoordinators;
 using CollectaMundo.ViewModels;
 
 namespace CollectaMundo.Tests
@@ -240,11 +242,23 @@ namespace CollectaMundo.Tests
 
             return new FilterItemViewModel("Types", options, "Types ...", "Types", dummyFvm);
         }
-
     }
 
+    // 1) A no-op defaults repository
+    public class DummyDefaultsRepo : IFilterDefaultsRepository
+    {
+        public Task<List<FilterDefaults>> GetFilterDefaultsAsync() => Task.FromResult(new List<FilterDefaults>());
+    }
+
+    // 2) A no-op filter service
+    public class DummyFilterService : IFilterService
+    {
+        public List<CardSet> ApplyFilters(IEnumerable<CardSet> cards, IEnumerable<FilterItemViewModel> criteria) => [.. cards];
+    }
+
+    // 3) Your dummy ViewModel
     public class DummyFilterViewModel : FilterViewModel
     {
-        public DummyFilterViewModel() : base() { }
+        public DummyFilterViewModel() : base(new DummyDefaultsRepo(), new DummyFilterService()) { }
     }
 }
