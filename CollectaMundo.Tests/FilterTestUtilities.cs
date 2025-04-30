@@ -140,32 +140,6 @@ namespace CollectaMundo.Tests
                 }
             ];
         }
-        public static FilterItemViewModel CreateNumericFilter()
-        {
-            // Use a dummy FilterViewModel to avoid UI side‐effects.
-            var dummyFvm = new DummyFilterViewModel();
-
-            // Get the test cards.
-            var testCards = GetTestCards();
-            // Extract unique numeric values from the "ManaValue" field.
-            // (Assuming that ManaValue is effectively an integer value; if not, you might want to adjust accordingly.)
-            var numericOptions = testCards
-                .Select(static card => (int)card.ManaValue)
-                .Distinct()
-                .OrderBy(static x => x)
-                .ToList();
-
-
-            // For numeric filters you typically don't have pre–defined multi–select options,
-            // so we can pass an empty list for the FilterOption collection.
-            var emptyOptions = new List<FilterOption>();
-
-            // Create the filter item view model.
-            // "ManaValue" is used as the criteria key.
-            // The default text is "ManaValue ..." (or "Mana Value ..." for readability),
-            // and we pass the numericOptions as the list of available numeric values.
-            return new FilterItemViewModel("ManaValue", emptyOptions, "ManaValue ...", "Mana Value", dummyFvm, numericOptions);
-        }
         public static FilterItemViewModel CreateNameFilter()
         {
             // Use the dummy view model to avoid UI side effects.
@@ -258,12 +232,13 @@ namespace CollectaMundo.Tests
         public void ResetAllFilters(IEnumerable<FilterItemViewModel> filters) { }
 
         public string BuildSummary(IEnumerable<FilterItemViewModel> filters) => string.Empty;
+        public Task<List<FilterDefaults>> LoadDefaultsAsync() => Task.FromResult(new List<FilterDefaults>());
     }
 
     // 3) A no-op FilterViewModel you can new up directly
     public class DummyFilterViewModel : FilterViewModel
     {
-        public DummyFilterViewModel() : base(new DummyDefaultsRepo(), new DummyFilterService())
+        public DummyFilterViewModel() : base(new DummyFilterService())
         { }
     }
 

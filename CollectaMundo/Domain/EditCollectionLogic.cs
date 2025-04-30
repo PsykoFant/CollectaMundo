@@ -51,6 +51,5 @@ namespace CollectaMundo.Domain
                 SelectedCondition = chosenCondition,
             };
         }
-
     }
 }

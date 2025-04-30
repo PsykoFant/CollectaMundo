@@ -1,5 +1,7 @@
 ﻿using CollectaMundo.Converters;
+using CollectaMundo.Domain;
 using CollectaMundo.Models;
+using CollectaMundo.Utilities;
 using CollectaMundo.ViewModels;
 using System.Globalization;
 using System.Windows.Media.Imaging;
@@ -20,27 +22,40 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_NumericFilter_ManaValueGreaterThan3()
                 {
-                    var numericFilter = CreateNumericFilter();
-                    numericFilter.SelectedNumericValue = 3;
-                    numericFilter.OperatorSelection = OperatorType.GREATER_THAN;
+                    // Arrange: build the domain criterion right here
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "ManaValue",
+                        filterCategory: FilterType.Numeric,
+                        selectedOptions: [],
+                        selectedSingleOption: null,
+                        selectedNumericValue: 3,
+                        operatorSelection: OperatorType.GREATER_THAN,
+                        defaultText: "ManaValue ..."
+                    );
 
-                    // Apply the filter using the Matches method.
-                    var result = cards.Where(card => numericFilter.Matches(card)).ToList();
+                    // Act: run it over your test cards
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
-                    // Assert something about the resulting list.
-                    Assert.True(result.All(card => card.ManaValue > 3));
+                    // Assert
+                    Assert.All(result, card => Assert.True(card.ManaValue > 3));
                     Assert.Equal(9, result.Count);
                 }
 
                 [Fact]
                 public void Test_NumericFilter_ManaValueEqual_To_Zero()
                 {
-                    var numericFilter = CreateNumericFilter();
-                    numericFilter.SelectedNumericValue = 0;
-                    numericFilter.OperatorSelection = OperatorType.EQUALS;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "ManaValue",
+                        filterCategory: FilterType.Numeric,
+                        selectedOptions: [],
+                        selectedSingleOption: null,
+                        selectedNumericValue: 0,
+                        operatorSelection: OperatorType.EQUALS,
+                        defaultText: "ManaValue ..."
+                    );
 
                     // Apply the filter using the Matches method.
-                    var result = cards.Where(card => numericFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     // Assert something about the resulting list.
                     Assert.True(result.All(card => card.ManaValue == 0));

@@ -1,4 +1,6 @@
-﻿using CollectaMundo.Models;
+﻿using CollectaMundo.Data;
+using CollectaMundo.Domain;
+using CollectaMundo.Models;
 using CollectaMundo.Utilities;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
@@ -9,24 +11,39 @@ using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.UICoordinators
 {
-    public class FilteringCoordinator : IFilteringCoordinator
+    public class FilteringCoordinator(IFilterDefaultsRepository repo) : IFilteringCoordinator
     {
-        public List<CardSet> ApplyFilters(IEnumerable<CardSet> cards, IEnumerable<FilterItemViewModel> criteria)
+        private readonly IFilterDefaultsRepository _repo = repo;
+        public Task<List<FilterDefaults>> LoadDefaultsAsync() => _repo.GetFilterDefaultsAsync();
+        public List<CardSet> ApplyFilters(IEnumerable<CardSet> cards, IEnumerable<FilterItemViewModel> vmFilters)
         {
-            if (criteria == null || !criteria.Any())
-            {
+            // nothing to do if no filters selected
+            if (vmFilters == null || !vmFilters.Any())
                 return [.. cards];
-            }
+
+            // map UI-state → domain criteria
+            var criteria = vmFilters.Select(vm => new FilterCriterion(
+                    vm.CriteriaKey,
+                    vm.FilterCategory,
+                    vm.SelectedOptions,
+                    vm.SelectedSingleOption,
+                    vm.SelectedNumericValue,
+                    vm.OperatorSelection,
+                    vm.DefaultText)).ToList();
+
+            // if after mapping we still have no active criteria, bail out
+            if (criteria.Count == 0)
+                return [.. cards];
 
             try
             {
-                // Only cards for which *all* filters match get through
-                return [.. cards.Where(card => criteria.All(f => f.Matches(card)))];
+                // only cards matching *all* domain criteria survive
+                return [.. cards.Where(card => criteria.All(c => c.Matches(card)))];
             }
-            catch (Exception ex)
+            catch
             {
-                Debug.WriteLine($"Error while filtering cards: {ex.Message}");
-                return [.. cards];  // on error, show everything rather than crash
+                // on error, show everything rather than crash
+                return [.. cards];
             }
         }
         public void ResetAllFilters(IEnumerable<FilterItemViewModel> allFilters)

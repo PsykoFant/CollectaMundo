@@ -1,9 +1,7 @@
-﻿using CollectaMundo.Data;
+﻿using CollectaMundo.Models;
 using CollectaMundo.UICoordinators;
 using CollectaMundo.Utilities;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Windows;
 using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels
@@ -11,7 +9,6 @@ namespace CollectaMundo.ViewModels
     public class FilterViewModel : INotifyPropertyChanged
     {
         // Injected dependencies
-        private readonly IFilterDefaultsRepository _defaultsRepo;
         private readonly IFilteringCoordinator _coord;
 
         // Exposed filters and summary
@@ -34,20 +31,22 @@ namespace CollectaMundo.ViewModels
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler? FilterChanged;
-        protected void OnPropertyChanged(string name)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         // Constructor now takes interfaces
-        public FilterViewModel(IFilterDefaultsRepository defaultsRepo, IFilteringCoordinator filterService)
+        public FilterViewModel(IFilteringCoordinator coord)
         {
-            _defaultsRepo = defaultsRepo ?? throw new ArgumentNullException(nameof(defaultsRepo));
-            _coord = filterService ?? throw new ArgumentNullException(nameof(filterService));
-
-            // Prepopulate with “empty” items so UI can bind before defaults load
+            _coord = coord;
+            // pre-populate empty so bindings don’t break…
             foreach (var key in FilterCriteriaMappings.CriteriaMappings.Keys)
-            {
-                Filters[key] = new FilterItemViewModel(key, [], defaultText: string.Empty, readableLabel: string.Empty, this, numericOptions: null);
-            }
+                Filters[key] = new FilterItemViewModel(
+                  key,
+                  Enumerable.Empty<FilterOption>(),
+                  defaultText: string.Empty,
+                  readableLabel: string.Empty,
+                  filterViewModel: this,
+                  numericOptions: null
+                );
 
             ClearFiltersCommand = new RelayCommand<object>(_ =>
             {
@@ -56,28 +55,22 @@ namespace CollectaMundo.ViewModels
             });
         }
 
-        // Loads defaults from the repository instead of FilterManager
+
         public async Task InitializeFilterDefaultsAsync()
         {
-            try
+            var defs = await _coord.LoadDefaultsAsync();
+            foreach (var d in defs)
             {
-                var defaults = await _defaultsRepo.GetFilterDefaultsAsync();
-                foreach (var def in defaults)
-                {
-                    Filters[def.CriteriaKey] = new FilterItemViewModel(
-                        def.CriteriaKey,
-                        def.FilterOptions,
-                        def.DefaultText,
-                        def.ReadableLabel,
-                        this,
-                        def.NumericCriteria);
-                }
+                Filters[d.CriteriaKey] = new FilterItemViewModel(
+                    d.CriteriaKey,
+                    d.FilterOptions,
+                    d.DefaultText,
+                    d.ReadableLabel,
+                    filterViewModel: this,
+                    numericOptions: d.NumericCriteria
+                );
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error initializing filter defaults: {ex.Message}");
-                MessageBox.Show($"Error initializing filters: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            NotifyFilterChanged();
         }
 
         // Called by each FilterItemViewModel on change

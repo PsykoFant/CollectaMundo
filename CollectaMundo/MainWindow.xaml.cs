@@ -157,40 +157,31 @@ namespace CollectaMundo
             InitializeComponent();
             _currentInstance = this;
 
-            IEditCollectionRepository cardCollectionService = new EditCollectionRepository();
-            _filteringService = new FilteringCoordinator();
-
-            // Set up system
+            // 1) System-wide startup checks (hooked into Loaded)
             Loaded += async (sender, args) =>
             {
-                await ShowStatusWindowAsync(true, "Just a quick system integrity check ...");
+                await ShowStatusWindowAsync(true, "Just a quick system integrity check …");
                 await DownloadAndPrepDB.SystemIntegrityCheckAsync();
                 await LoadDataIntoUiElements();
-
-                _isStartup = false; // Set flag to false after initial load
+                _isStartup = false;
             };
 
-
-
-            var defaultsRepo = new FilterDefaultsRepository();
-            var filterService = new FilteringCoordinator();
-
-            FilterVM = new FilterViewModel(defaultsRepo, filterService);
-
-            var repo = new EditCollectionRepository(); // 1. Create the low?level repo
-            var domain = new EditCollectionLogic(repo); // 1. Create the low?level repo            
-            var coordinator = new EditCollectionCoordinator(domain); // 2. Wrap it in your UI?coordinator
-            // 3. Inject that into both VMs
-            AddCardsVM = new AddCardsViewModel(coordinator);
-            EditCardsVM = new AddCardsViewModel(coordinator);
-
-
-            // Subscribe to filter changes.
-            FilterVM.FilterChanged += OnFilterChanged;
+            // 2) "Edit collection" stack: repository --> domain logic --> UI coordinator --> view-models
+            var editRepo = new EditCollectionRepository();
+            var editLogic = new EditCollectionLogic(editRepo);
+            var editCoordinator = new EditCollectionCoordinator(editLogic);
+            AddCardsVM = new AddCardsViewModel(editCoordinator);
+            EditCardsVM = new AddCardsViewModel(editCoordinator);
             AddCardsVM.CardProcessed += OnCardProcessed;
             EditCardsVM.CardProcessed += OnCardProcessed;
 
-            // Update the statusbox with messages from methods in DownloadAndPrepareDB and UpdateDB
+            // 3) "Filtering" stack: defaults repo --> filtering coordinator --> view-model
+            var filterDefaultsRepo = new FilterDefaultsRepository();
+            var filteringCoordinator = new FilteringCoordinator(filterDefaultsRepo);
+            _filteringService = filteringCoordinator;
+            FilterVM = new FilterViewModel(filteringCoordinator);
+            FilterVM.FilterChanged += OnFilterChanged;
+
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
         }
@@ -318,7 +309,6 @@ namespace CollectaMundo
         #region Filter elements handling 
         private void OnFilterChanged(object? sender, EventArgs e)
         {
-            // Apply filters on each collection.
             AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, FilterVM.Filters.Values);
             MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
             AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
