@@ -30,7 +30,7 @@ namespace CollectaMundo.Tests
                         selectedSingleOption: null,
                         selectedNumericValue: 3,
                         operatorSelection: OperatorType.GREATER_THAN,
-                        defaultText: "ManaValue ..."
+                        defaultText: String.Empty
                     );
 
                     // Act: run it over your test cards
@@ -51,7 +51,7 @@ namespace CollectaMundo.Tests
                         selectedSingleOption: null,
                         selectedNumericValue: 0,
                         operatorSelection: OperatorType.EQUALS,
-                        defaultText: "ManaValue ..."
+                        defaultText: String.Empty
                     );
 
                     // Apply the filter using the Matches method.
@@ -67,11 +67,18 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_SingleNameContains_Part_Of_Name()
                 {
-                    var nameFilter = CreateNameFilter();
-                    nameFilter.SelectedSingleOption = "fire";
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Name",
+                        filterCategory: FilterType.Single,
+                        selectedOptions: [],
+                        selectedSingleOption: "fire",
+                        selectedNumericValue: 0,
+                        operatorSelection: OperatorType.OR,
+                        defaultText: String.Empty
+                    );
 
                     // Now filter the list
-                    var result = cards.Where(card => nameFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     // Assert that only cards with "Lightning" in their name are returned.
                     Assert.Equal(2, result.Count);
@@ -82,11 +89,18 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_SingleNameContains_Whole_Name()
                 {
-                    var nameFilter = CreateNameFilter();
-                    nameFilter.SelectedSingleOption = "Davros, Dalek Creator";
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Name",
+                        filterCategory: FilterType.Single,
+                        selectedOptions: [],
+                        selectedSingleOption: "Davros, Dalek Creator",
+                        selectedNumericValue: 0,
+                        operatorSelection: OperatorType.OR,
+                        defaultText: String.Empty
+                    );
 
                     // Now filter the list
-                    var result = cards.Where(card => nameFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     // Assert that only cards with "Lightning" in their name are returned.
                     Assert.Single(result);
