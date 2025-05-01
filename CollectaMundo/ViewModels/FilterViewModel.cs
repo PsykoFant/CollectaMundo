@@ -1,8 +1,8 @@
-﻿using CollectaMundo.Models;
-using CollectaMundo.UICoordinators;
+﻿using CollectaMundo.UICoordinators;
 using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Windows.Input;
+
 
 namespace CollectaMundo.ViewModels
 {
@@ -41,7 +41,7 @@ namespace CollectaMundo.ViewModels
             foreach (var key in FilterCriteriaMappings.CriteriaMappings.Keys)
                 Filters[key] = new FilterItemViewModel(
                   key,
-                  Enumerable.Empty<FilterOption>(),
+                  [],
                   defaultText: string.Empty,
                   readableLabel: string.Empty,
                   filterViewModel: this,
@@ -54,8 +54,6 @@ namespace CollectaMundo.ViewModels
                 NotifyFilterChanged();
             });
         }
-
-
         public async Task InitializeFilterDefaultsAsync()
         {
             var defs = await _coord.LoadDefaultsAsync();

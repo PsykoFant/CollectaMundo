@@ -62,7 +62,7 @@ namespace CollectaMundo.Tests
                     Assert.Equal(3, result.Count);
                 }
             }
-            public class FilterByNameTests
+            public class FilterBySingleOptionTests
             {
                 [Fact]
                 public void Test_SingleNameContains_Part_Of_Name()
@@ -107,78 +107,60 @@ namespace CollectaMundo.Tests
                     Assert.Contains("Davros, Dalek Creator", result[0].Name);
                 }
             }
-            public class FilterByTypesTests
+            public class FilterByMultiOptionsTests
             {
 
                 [Fact]
-                public void Test_MultiSelect_Types_OR()
+                public void Test_MultiSelect_OR()
                 {
-                    var multiFilter = CreateTypesFilter();
-                    multiFilter.SelectedOptions.Clear();
-                    multiFilter.SelectedOptions.Add("Sorcery");
-                    multiFilter.SelectedOptions.Add("Instant");
-                    multiFilter.OperatorSelection = OperatorType.OR;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Types",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["Sorcery", "Instant"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.OR,
+                        defaultText: String.Empty
+                    );
 
                     // Filter cards using the Matches method.
-                    var result = cards.Where(card => multiFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
                     Assert.Equal(6, result.Count);
                 }
 
                 [Fact]
-                public void Test_MultiSelect_Types_AND()
+                public void Test_MultiSelect_AND()
                 {
-                    var multiFilter = CreateTypesFilter();
-                    multiFilter.SelectedOptions.Clear();
-                    multiFilter.SelectedOptions.Add("Artifact");
-                    multiFilter.SelectedOptions.Add("Creature");
-                    multiFilter.OperatorSelection = OperatorType.AND;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Types",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["Artifact", "Creature"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.AND,
+                        defaultText: String.Empty
+                    );
 
                     // Filter cards using the Matches method.
-                    var result = cards.Where(card => multiFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
                     Assert.Equal(2, result.Count);
                 }
 
                 [Fact]
-                public void Test_MultiSelect_Types_NOT()
+                public void Test_MultiSelect_NOT()
                 {
-                    var multiFilter = CreateTypesFilter();
-                    multiFilter.SelectedOptions.Clear();
-                    multiFilter.SelectedOptions.Add("Planeswalker");
-                    multiFilter.SelectedOptions.Add("Creature");
-                    multiFilter.OperatorSelection = OperatorType.NOT;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Rarity",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["uncommon", "rare"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.NOT,
+                        defaultText: String.Empty
+                    );
 
                     // Filter cards using the Matches method.
-                    var result = cards.Where(card => multiFilter.Matches(card)).ToList();
-                    Assert.Equal(9, result.Count);
-                }
-            }
-            public class FilterByRarityTests
-            {
-
-                [Fact]
-                public void Test_MultiSelect_Rarity_OR()
-                {
-                    var multiFilter = CreateRarityFilter();
-                    multiFilter.SelectedOptions.Clear();
-                    multiFilter.SelectedOptions.Add("mythic");
-                    multiFilter.SelectedOptions.Add("rare");
-                    multiFilter.OperatorSelection = OperatorType.OR;
-
-                    // Filter cards using the Matches method.
-                    var result = cards.Where(card => multiFilter.Matches(card)).ToList();
-                    Assert.Equal(11, result.Count);
-                }
-                [Fact]
-                public void Test_MultiSelect_Rarity_NOT()
-                {
-                    var multiFilter = CreateRarityFilter();
-                    multiFilter.SelectedOptions.Clear();
-                    multiFilter.SelectedOptions.Add("uncommon");
-                    multiFilter.SelectedOptions.Add("rare");
-                    multiFilter.OperatorSelection = OperatorType.NOT;
-
-                    // Filter cards using the Matches method.
-                    var result = cards.Where(card => multiFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
                     Assert.Equal(8, result.Count);
                 }
             }
@@ -188,29 +170,35 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_SingleColor_OR_Red()
                 {
-                    var colorFilter = CreateColorFilter();
-                    // For ANY filtering, set operator to OR and select "R".
-                    colorFilter.SelectedOptions.Clear();
-                    colorFilter.SelectedOptions.Add("R");
-                    colorFilter.OperatorSelection = OperatorType.OR;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Colors",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["R"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.OR,
+                        defaultText: String.Empty
+                    );
 
-                    // Filter cards using the Matches method.
-                    var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
-                    // Expect only "Lightning Bolt" (which has Colors = "R")
                     Assert.Equal(8, result.Count);
                 }
 
                 [Fact]
                 public void Test_TwoColors_OR_G_R()
                 {
-                    var colorFilter = CreateColorFilter();
-                    colorFilter.SelectedOptions.Clear();
-                    colorFilter.SelectedOptions.Add("G");
-                    colorFilter.SelectedOptions.Add("R");
-                    colorFilter.OperatorSelection = OperatorType.OR;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Colors",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["R", "G"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.OR,
+                        defaultText: String.Empty
+                    );
 
-                    var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     Assert.Equal(12, result.Count);
                 }
@@ -218,13 +206,17 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_TwoColors_NOT_W_R()
                 {
-                    var colorFilter = CreateColorFilter();
-                    colorFilter.SelectedOptions.Clear();
-                    colorFilter.SelectedOptions.Add("W");
-                    colorFilter.SelectedOptions.Add("R");
-                    colorFilter.OperatorSelection = OperatorType.NOT;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Colors",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["R", "W"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.NOT,
+                        defaultText: String.Empty
+                    );
 
-                    var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     // Expected: Cards that do NOT have W or R.
                     Assert.Equal(9, result.Count);
@@ -233,27 +225,35 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_TwoColors_AND_G_U()
                 {
-                    var colorFilter = CreateColorFilter();
-                    colorFilter.SelectedOptions.Clear();
-                    colorFilter.SelectedOptions.Add("G");
-                    colorFilter.SelectedOptions.Add("U");
-                    colorFilter.OperatorSelection = OperatorType.AND;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Colors",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["G", "U"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.AND,
+                        defaultText: String.Empty
+                    );
 
-                    var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     // Expected: "Biomass Mutation" has Colors = "G, U".
                     Assert.Single(result);
                 }
                 [Fact]
-                public void Test_SingleColor_AND_C()
+                public void Test_SingleColor_OR_C()
                 {
-                    var colorFilter = CreateColorFilter();
-                    colorFilter.SelectedOptions.Clear();
-                    colorFilter.SelectedOptions.Add("R");
-                    colorFilter.SelectedOptions.Add("C");
-                    colorFilter.OperatorSelection = OperatorType.OR;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Colors",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["R", "C"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.OR,
+                        defaultText: String.Empty
+                    );
 
-                    var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     Assert.Equal(9, result.Count);
                 }
@@ -261,13 +261,17 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_NOT_R_NOT_C()
                 {
-                    var colorFilter = CreateColorFilter();
-                    colorFilter.SelectedOptions.Clear();
-                    colorFilter.SelectedOptions.Add("R");
-                    colorFilter.SelectedOptions.Add("C");
-                    colorFilter.OperatorSelection = OperatorType.NOT;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Colors",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["R", "C"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.NOT,
+                        defaultText: String.Empty
+                    );
 
-                    var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     Assert.Equal(9, result.Count);
                 }
@@ -275,13 +279,17 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_SingleColor_AND_X()
                 {
-                    var colorFilter = CreateColorFilter();
-                    colorFilter.SelectedOptions.Clear();
-                    colorFilter.SelectedOptions.Add("B");
-                    colorFilter.SelectedOptions.Add("X");
-                    colorFilter.OperatorSelection = OperatorType.AND;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Colors",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["B", "X"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.AND,
+                        defaultText: String.Empty
+                    );
 
-                    var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     Assert.Single(result);
                 }
@@ -289,14 +297,17 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_TwoColors_AND_X()
                 {
-                    var colorFilter = CreateColorFilter();
-                    colorFilter.SelectedOptions.Clear();
-                    colorFilter.SelectedOptions.Add("G");
-                    colorFilter.SelectedOptions.Add("U");
-                    colorFilter.SelectedOptions.Add("X");
-                    colorFilter.OperatorSelection = OperatorType.AND;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Colors",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["G", "U", "X"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.AND,
+                        defaultText: String.Empty
+                    );
 
-                    var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     Assert.Single(result);
                 }
@@ -304,15 +315,17 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_ThreeColors_AND_X()
                 {
-                    var colorFilter = CreateColorFilter();
-                    colorFilter.SelectedOptions.Clear();
-                    colorFilter.SelectedOptions.Add("G");
-                    colorFilter.SelectedOptions.Add("U");
-                    colorFilter.SelectedOptions.Add("B");
-                    colorFilter.SelectedOptions.Add("X");
-                    colorFilter.OperatorSelection = OperatorType.AND;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Colors",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["G", "U", "B", "X"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.AND,
+                        defaultText: String.Empty
+                    );
 
-                    var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     Assert.Single(result);
                 }
@@ -320,12 +333,17 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_Colorless_OR()
                 {
-                    var colorFilter = CreateColorFilter();
-                    colorFilter.SelectedOptions.Clear();
-                    colorFilter.SelectedOptions.Add("Colorless");
-                    colorFilter.OperatorSelection = OperatorType.OR;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Colors",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["Colorless"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.OR,
+                        defaultText: String.Empty
+                    );
 
-                    var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     Assert.Equal(5, result.Count);
                 }
@@ -333,13 +351,17 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_Colorless_X_NOT()
                 {
-                    var colorFilter = CreateColorFilter();
-                    colorFilter.SelectedOptions.Clear();
-                    colorFilter.SelectedOptions.Add("Colorless");
-                    colorFilter.SelectedOptions.Add("X");
-                    colorFilter.OperatorSelection = OperatorType.NOT;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Colors",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["Colorless", "X"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.NOT,
+                        defaultText: String.Empty
+                    );
 
-                    var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     Assert.Equal(11, result.Count);
                 }
@@ -347,13 +369,17 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_Colorless_AND_C()
                 {
-                    var colorFilter = CreateColorFilter();
-                    colorFilter.SelectedOptions.Clear();
-                    colorFilter.SelectedOptions.Add("Colorless");
-                    colorFilter.SelectedOptions.Add("C");
-                    colorFilter.OperatorSelection = OperatorType.AND;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Colors",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["Colorless", "C"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.AND,
+                        defaultText: String.Empty
+                    );
 
-                    var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     Assert.Single(result);
                 }
@@ -361,13 +387,17 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_Colorless_AND_R()
                 {
-                    var colorFilter = CreateColorFilter();
-                    colorFilter.SelectedOptions.Clear();
-                    colorFilter.SelectedOptions.Add("Colorless");
-                    colorFilter.SelectedOptions.Add("R");
-                    colorFilter.OperatorSelection = OperatorType.AND;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Colors",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["Colorless", "R"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.AND,
+                        defaultText: String.Empty
+                    );
 
-                    var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     Assert.Empty(result);
                 }
@@ -375,14 +405,17 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_Colorless_AND_C_AND_X()
                 {
-                    var colorFilter = CreateColorFilter();
-                    colorFilter.SelectedOptions.Clear();
-                    colorFilter.SelectedOptions.Add("Colorless");
-                    colorFilter.SelectedOptions.Add("C");
-                    colorFilter.SelectedOptions.Add("X");
-                    colorFilter.OperatorSelection = OperatorType.AND;
+                    var criterion = new FilterCriterion(
+                        criteriaKey: "Colors",
+                        filterCategory: FilterType.Multi,
+                        selectedOptions: ["Colorless", "C", "X"],
+                        selectedSingleOption: null,
+                        selectedNumericValue: null,
+                        operatorSelection: OperatorType.AND,
+                        defaultText: String.Empty
+                    );
 
-                    var result = cards.Where(card => colorFilter.Matches(card)).ToList();
+                    var result = cards.Where(card => criterion.Matches(card)).ToList();
 
                     Assert.Single(result);
                 }

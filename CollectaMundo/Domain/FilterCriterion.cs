@@ -7,33 +7,16 @@ using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Domain
 {
-    public class FilterCriterion : IFilterCriterion
+    public class FilterCriterion(string criteriaKey, FilterType filterCategory, IEnumerable<string> selectedOptions, string? selectedSingleOption, int? selectedNumericValue, MainWindow.OperatorType operatorSelection, string defaultText) : IFilterCriterion
     {
-        public string CriteriaKey { get; }
-        public FilterType FilterCategory { get; }
-        public IEnumerable<string> SelectedOptions { get; }
-        public string? SelectedSingleOption { get; }
-        public int? SelectedNumericValue { get; }
-        public OperatorType OperatorSelection { get; }
-        public string DefaultText { get; }
+        public string CriteriaKey { get; } = criteriaKey;
+        public FilterType FilterCategory { get; } = filterCategory;
+        public IEnumerable<string> SelectedOptions { get; } = selectedOptions;
+        public string? SelectedSingleOption { get; } = selectedSingleOption;
+        public int? SelectedNumericValue { get; } = selectedNumericValue;
+        public OperatorType OperatorSelection { get; } = operatorSelection;
+        public string DefaultText { get; } = defaultText;
 
-        public FilterCriterion(
-            string criteriaKey,
-            FilterType filterCategory,
-            IEnumerable<string> selectedOptions,
-            string? selectedSingleOption,
-            int? selectedNumericValue,
-            OperatorType operatorSelection,
-            string defaultText)
-        {
-            CriteriaKey = criteriaKey;
-            FilterCategory = filterCategory;
-            SelectedOptions = selectedOptions;
-            SelectedSingleOption = selectedSingleOption;
-            SelectedNumericValue = selectedNumericValue;
-            OperatorSelection = operatorSelection;
-            DefaultText = defaultText;
-        }
         public bool Matches(CardSet card)
         {
             try
