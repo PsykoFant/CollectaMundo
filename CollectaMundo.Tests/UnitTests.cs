@@ -22,8 +22,8 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_NumericFilter_ManaValueGreaterThan3()
                 {
-                    // Arrange: build the domain criterion right here
-                    var criterion = new FilterCriterion(
+                    // Arrange: build the domain filterLogic right here
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "ManaValue",
                         filterCategory: FilterType.Numeric,
                         selectedOptions: [],
@@ -34,7 +34,7 @@ namespace CollectaMundo.Tests
                     );
 
                     // Act: run it over your test cards
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     // Assert
                     Assert.All(result, card => Assert.True(card.ManaValue > 3));
@@ -44,7 +44,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_NumericFilter_ManaValueEqual_To_Zero()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "ManaValue",
                         filterCategory: FilterType.Numeric,
                         selectedOptions: [],
@@ -55,7 +55,7 @@ namespace CollectaMundo.Tests
                     );
 
                     // Apply the filter using the Matches method.
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     // Assert something about the resulting list.
                     Assert.True(result.All(card => card.ManaValue == 0));
@@ -67,7 +67,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_SingleNameContains_Part_Of_Name()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Name",
                         filterCategory: FilterType.Single,
                         selectedOptions: [],
@@ -78,7 +78,7 @@ namespace CollectaMundo.Tests
                     );
 
                     // Now filter the list
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     // Assert that only cards with "Lightning" in their name are returned.
                     Assert.Equal(2, result.Count);
@@ -89,7 +89,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_SingleNameContains_Whole_Name()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Name",
                         filterCategory: FilterType.Single,
                         selectedOptions: [],
@@ -100,7 +100,7 @@ namespace CollectaMundo.Tests
                     );
 
                     // Now filter the list
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     // Assert that only cards with "Lightning" in their name are returned.
                     Assert.Single(result);
@@ -113,7 +113,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_MultiSelect_OR()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Types",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["Sorcery", "Instant"],
@@ -124,14 +124,14 @@ namespace CollectaMundo.Tests
                     );
 
                     // Filter cards using the Matches method.
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
                     Assert.Equal(6, result.Count);
                 }
 
                 [Fact]
                 public void Test_MultiSelect_AND()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Types",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["Artifact", "Creature"],
@@ -142,14 +142,14 @@ namespace CollectaMundo.Tests
                     );
 
                     // Filter cards using the Matches method.
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
                     Assert.Equal(2, result.Count);
                 }
 
                 [Fact]
                 public void Test_MultiSelect_NOT()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Rarity",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["uncommon", "rare"],
@@ -160,7 +160,7 @@ namespace CollectaMundo.Tests
                     );
 
                     // Filter cards using the Matches method.
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
                     Assert.Equal(8, result.Count);
                 }
             }
@@ -170,7 +170,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_SingleColor_OR_Red()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Colors",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["R"],
@@ -180,7 +180,7 @@ namespace CollectaMundo.Tests
                         defaultText: String.Empty
                     );
 
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     Assert.Equal(8, result.Count);
                 }
@@ -188,7 +188,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_TwoColors_OR_G_R()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Colors",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["R", "G"],
@@ -198,7 +198,7 @@ namespace CollectaMundo.Tests
                         defaultText: String.Empty
                     );
 
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     Assert.Equal(12, result.Count);
                 }
@@ -206,7 +206,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_TwoColors_NOT_W_R()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Colors",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["R", "W"],
@@ -216,7 +216,7 @@ namespace CollectaMundo.Tests
                         defaultText: String.Empty
                     );
 
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     // Expected: Cards that do NOT have W or R.
                     Assert.Equal(9, result.Count);
@@ -225,7 +225,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_TwoColors_AND_G_U()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Colors",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["G", "U"],
@@ -235,7 +235,7 @@ namespace CollectaMundo.Tests
                         defaultText: String.Empty
                     );
 
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     // Expected: "Biomass Mutation" has Colors = "G, U".
                     Assert.Single(result);
@@ -243,7 +243,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_SingleColor_OR_C()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Colors",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["R", "C"],
@@ -253,7 +253,7 @@ namespace CollectaMundo.Tests
                         defaultText: String.Empty
                     );
 
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     Assert.Equal(9, result.Count);
                 }
@@ -261,7 +261,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_NOT_R_NOT_C()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Colors",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["R", "C"],
@@ -271,7 +271,7 @@ namespace CollectaMundo.Tests
                         defaultText: String.Empty
                     );
 
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     Assert.Equal(9, result.Count);
                 }
@@ -279,7 +279,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_SingleColor_AND_X()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Colors",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["B", "X"],
@@ -289,7 +289,7 @@ namespace CollectaMundo.Tests
                         defaultText: String.Empty
                     );
 
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     Assert.Single(result);
                 }
@@ -297,7 +297,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_TwoColors_AND_X()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Colors",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["G", "U", "X"],
@@ -307,7 +307,7 @@ namespace CollectaMundo.Tests
                         defaultText: String.Empty
                     );
 
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     Assert.Single(result);
                 }
@@ -315,7 +315,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_ThreeColors_AND_X()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Colors",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["G", "U", "B", "X"],
@@ -325,7 +325,7 @@ namespace CollectaMundo.Tests
                         defaultText: String.Empty
                     );
 
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     Assert.Single(result);
                 }
@@ -333,7 +333,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_Colorless_OR()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Colors",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["Colorless"],
@@ -343,7 +343,7 @@ namespace CollectaMundo.Tests
                         defaultText: String.Empty
                     );
 
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     Assert.Equal(5, result.Count);
                 }
@@ -351,7 +351,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_Colorless_X_NOT()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Colors",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["Colorless", "X"],
@@ -361,7 +361,7 @@ namespace CollectaMundo.Tests
                         defaultText: String.Empty
                     );
 
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     Assert.Equal(11, result.Count);
                 }
@@ -369,7 +369,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_Colorless_AND_C()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Colors",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["Colorless", "C"],
@@ -379,7 +379,7 @@ namespace CollectaMundo.Tests
                         defaultText: String.Empty
                     );
 
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     Assert.Single(result);
                 }
@@ -387,7 +387,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_Colorless_AND_R()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Colors",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["Colorless", "R"],
@@ -397,7 +397,7 @@ namespace CollectaMundo.Tests
                         defaultText: String.Empty
                     );
 
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     Assert.Empty(result);
                 }
@@ -405,7 +405,7 @@ namespace CollectaMundo.Tests
                 [Fact]
                 public void Test_Colorless_AND_C_AND_X()
                 {
-                    var criterion = new FilterCriterion(
+                    var filterLogic = new FilterLogic(
                         criteriaKey: "Colors",
                         filterCategory: FilterType.Multi,
                         selectedOptions: ["Colorless", "C", "X"],
@@ -415,7 +415,7 @@ namespace CollectaMundo.Tests
                         defaultText: String.Empty
                     );
 
-                    var result = cards.Where(card => criterion.Matches(card)).ToList();
+                    var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
                     Assert.Single(result);
                 }

@@ -22,7 +22,7 @@ namespace CollectaMundo.UICoordinators
                 return [.. cards];
 
             // map UI-state → domain criteria
-            var criteria = vmFilters.Select(vm => new FilterCriterion(
+            var criteria = vmFilters.Select(vm => new FilterLogic(
                     vm.CriteriaKey,
                     vm.FilterCategory,
                     vm.SelectedOptions,
