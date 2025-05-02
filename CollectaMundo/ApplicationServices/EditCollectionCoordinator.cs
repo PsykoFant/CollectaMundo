@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.Domain.CollectaMundo.Domain;
-using CollectaMundo.Models;
+using CollectaMundo.DomainLogic.Models;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.UICoordinators

@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Models;
+﻿using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Utilities;
 using System.Data.Common;
 using System.Data.SQLite;

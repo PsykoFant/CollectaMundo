@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.Data;
 using CollectaMundo.Domain.CollectaMundo.Domain;
-using CollectaMundo.Models;
+using CollectaMundo.DomainLogic.Models;
 
 namespace CollectaMundo.Domain
 {

@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Models;
+﻿using CollectaMundo.DomainLogic.Models;
 
 namespace CollectaMundo.Domain
 {

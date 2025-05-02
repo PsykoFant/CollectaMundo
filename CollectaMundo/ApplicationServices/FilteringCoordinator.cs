@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.Data;
 using CollectaMundo.Domain;
-using CollectaMundo.Models;
+using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Utilities;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;

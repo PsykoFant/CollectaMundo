@@ -1,7 +1,7 @@
 using CollectaMundo.Behaviors;
 using CollectaMundo.Data;
 using CollectaMundo.Domain;
-using CollectaMundo.Models;
+using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.UICoordinators;
 using CollectaMundo.ViewModels;
 using ServiceStack;

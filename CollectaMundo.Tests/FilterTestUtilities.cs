@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.Data;
-using CollectaMundo.Models;
+using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.UICoordinators;
 using CollectaMundo.ViewModels;
 

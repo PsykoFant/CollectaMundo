@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.UICoordinators;
-using CollectaMundo.Models;
 using Microsoft.Win32;
 using ServiceStack;
 using System.Collections.ObjectModel;
@@ -12,6 +11,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using static CollectaMundo.MainWindow;
+using CollectaMundo.DomainLogic.Models;
 
 namespace CollectaMundo
 {
