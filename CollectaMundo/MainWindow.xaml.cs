@@ -1,3 +1,4 @@
+using CollectaMundo.ApplicationServices;
 using CollectaMundo.Data;
 using CollectaMundo.Domain;
 using CollectaMundo.DomainLogic.Models;
@@ -22,7 +23,12 @@ namespace CollectaMundo
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
         #region Set up varibales
-        public CardViewModel AllCardsVM { get; } = new CardViewModel();
+        public CardViewModel AllCardsVM { get; }
+
+        // these two fields back the new, slimmed-down flow:
+        private readonly ICardListRepository _cardListRepo;
+        private readonly ICardListCoordinator _cardListCoordinator;
+
         public CardViewModel MyCollectionVM { get; } = new CardViewModel();
         public CardViewModel AllCardsForDecksVM { get; } = new CardViewModel();
         public CardViewModel ColorIcons { get; } = new CardViewModel();
@@ -157,7 +163,11 @@ namespace CollectaMundo
             InitializeComponent();
             _currentInstance = this;
 
-            // 1) System-wide startup checks (hooked into Loaded)
+            // instantiate your new Data->Coordinator pipeline
+            AllCardsVM = new CardViewModel();
+            _cardListRepo = new CardListRepository();
+            _cardListCoordinator = new CardListCoordinator(_cardListRepo);
+
             Loaded += async (sender, args) =>
             {
                 await ShowStatusWindowAsync(true, "Just a quick system integrity check …");
@@ -193,8 +203,11 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            await CardListManager.CreateCardListObjectAsync(AllCardsVM.Cards, CardListObject.AllCards);
-            await CardListManager.CreateCardListObjectAsync(MyCollectionVM.Cards, CardListObject.MyCollection);
+            await _cardListCoordinator.LoadAllCardsAsync(AllCardsVM.Cards);
+            await _cardListCoordinator.LoadMyCollectionAsync(MyCollectionVM.Cards);
+
+            //await CardListManager.CreateCardListObjectAsync(AllCardsVM.Cards, CardListObject.AllCards);
+            //await CardListManager.CreateCardListObjectAsync(MyCollectionVM.Cards, CardListObject.MyCollection);
             await CardListManager.CreateCardListObjectAsync(AllCardsForDecksVM.Cards, CardListObject.AllCardsForDecks);
             await CardListManager.CreateCardListObjectAsync(ColorIcons.Cards, CardListObject.ColorIcons);
 
