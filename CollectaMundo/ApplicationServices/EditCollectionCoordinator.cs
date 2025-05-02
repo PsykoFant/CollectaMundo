@@ -1,8 +1,8 @@
-﻿using CollectaMundo.Domain.CollectaMundo.Domain;
+﻿using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
 using System.Collections.ObjectModel;
 
-namespace CollectaMundo.UICoordinators
+namespace CollectaMundo.ApplicationServices
 {
     public class EditCollectionCoordinator(IEditCollectionLogic domain) : IEditCollectionCoordinator
     {
@@ -31,6 +31,8 @@ namespace CollectaMundo.UICoordinators
 
             targetCollection.Add(newItem);
         }
+
+        public Task AddOrUpdateCardAsync(CardSet card) => _domain.AddOrUpdateCardAsync(card);
 
         //public async Task UpdateCardDetailsAsync(CardSet card, ObservableCollection<CardSet> inMemoryCollection)
         //{

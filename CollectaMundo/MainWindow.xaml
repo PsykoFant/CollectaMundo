@@ -1500,7 +1500,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Price" Width="*" SortMemberPath="CardItemPrice">
+                        <DataGridTemplateColumn Header="Price" Width="*" SortMemberPath="CardInCollectionPrice">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding CardInCollectionPrice}" TextWrapping="Wrap" />

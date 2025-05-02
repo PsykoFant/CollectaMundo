@@ -1,5 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Models;
-using CollectaMundo.UICoordinators;
+﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -197,7 +197,7 @@ namespace CollectaMundo.ViewModels
             foreach (var card in cards)
             {
                 // Add or update the card in the database.
-                await _coordinator.AddCardToAddCardsListViewAsync(card, CardsToAdd);
+                await _coordinator.AddOrUpdateCardAsync(card);
 
                 CardProcessed?.Invoke(this, new CardProcessedEventArgs(card));
             }

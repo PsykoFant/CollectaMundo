@@ -1,14 +1,12 @@
 ﻿using CollectaMundo.DomainLogic.Models;
 
-namespace CollectaMundo.Domain
+namespace CollectaMundo.DomainLogic
 {
-    namespace CollectaMundo.Domain
+    public interface IEditCollectionLogic
     {
-        public interface IEditCollectionLogic
-        {
-            Task AddOrUpdateCardAsync(CardSet card);
-            Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit);
-        }
+        Task AddOrUpdateCardAsync(CardSet card);
+        Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit);
     }
+
 
 }

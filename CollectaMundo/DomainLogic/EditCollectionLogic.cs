@@ -1,8 +1,7 @@
 ﻿using CollectaMundo.Data;
-using CollectaMundo.Domain.CollectaMundo.Domain;
 using CollectaMundo.DomainLogic.Models;
 
-namespace CollectaMundo.Domain
+namespace CollectaMundo.DomainLogic
 {
     public class EditCollectionLogic(IEditCollectionRepository repo) : IEditCollectionLogic
     {
@@ -26,10 +25,8 @@ namespace CollectaMundo.Domain
                 throw new ArgumentException("UUID cannot be null", nameof(selectedCard));
             }
 
-            await DBAccess.OpenConnectionAsync();
             var languages = await _repo.FetchLanguagesForCardAsync(selectedCard.Uuid);
             var finishes = await _repo.FetchFinishesForCardAsync(selectedCard.Uuid);
-            DBAccess.CloseConnection();
 
             var chosenFinish = isEdit ? selectedCard.SelectedFinish : finishes.FirstOrDefault();
             var chosenCondition = isEdit ? selectedCard.SelectedCondition : "Near Mint";

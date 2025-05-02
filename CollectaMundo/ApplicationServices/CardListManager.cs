@@ -101,8 +101,6 @@ namespace CollectaMundo.UICoordinators
                     card.Rarity = GetFieldValue<string>(reader, "Rarity") ?? string.Empty;
                     card.Finishes = GetFieldValue<string>(reader, "Finishes");
                     card.ReleaseDate = ParseDate(GetFieldValue<string>(reader, "ReleaseDate"));
-
-                    // Populate raw data fields for parallel processing
                     card.KeyRuneImageBytes = GetFieldValue<byte[]>(reader, "KeyRuneImage");
                 }
 

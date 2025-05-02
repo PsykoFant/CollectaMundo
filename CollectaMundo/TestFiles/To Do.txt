@@ -2,6 +2,9 @@ TO DO
 - MVVM refactor
 
  - Add to collectionManager til MVVM!
+	- BUG: submit kort opdaterer ikke in memory MyCollection liste
+	- Gør CardListManager refac færdig... 
+
 	- Add with default values
 
 	- Og så er det edit tid ... 

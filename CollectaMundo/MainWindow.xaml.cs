@@ -1,6 +1,6 @@
 using CollectaMundo.ApplicationServices;
 using CollectaMundo.Data;
-using CollectaMundo.Domain;
+using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Presentation.Behaviors;
 using CollectaMundo.UICoordinators;

@@ -8,6 +8,8 @@ namespace CollectaMundo.Data
     {
         public async Task<int?> CheckForExistingCardAsync(CardSet card)
         {
+            await DBAccess.OpenConnectionAsync();
+
             string selectSql = @"
                 SELECT id FROM myCollection 
                 WHERE uuid = @uuid 
@@ -33,6 +35,10 @@ namespace CollectaMundo.Data
                 Debug.WriteLine($"Error in CheckForExistingCardAsync: {ex.Message}");
                 throw;
             }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
             return null;
         }
         public async Task AddCardAsync(CardSet card)
@@ -42,6 +48,8 @@ namespace CollectaMundo.Data
                 VALUES (@uuid, @count, @trade, @condition, @language, @finish)";
             try
             {
+                await DBAccess.OpenConnectionAsync();
+
                 using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
                 insertCommand.Parameters.AddWithValue("@uuid", card.Uuid);
                 insertCommand.Parameters.AddWithValue("@count", card.CardsOwned);
@@ -56,6 +64,10 @@ namespace CollectaMundo.Data
             {
                 Debug.WriteLine($"Error in AddCardAsync: {ex.Message}");
                 throw;
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
             }
         }
         public async Task UpdateCardAsync(CardSet card)
@@ -72,6 +84,8 @@ namespace CollectaMundo.Data
                 WHERE id = @cardId";
             try
             {
+                await DBAccess.OpenConnectionAsync();
+
                 using var cmd = new SQLiteCommand(updateSql, DBAccess.connection);
                 cmd.Parameters.AddWithValue("@addCount", card.CardsOwned);
                 cmd.Parameters.AddWithValue("@addTrade", card.CardsForTrade);
@@ -87,9 +101,15 @@ namespace CollectaMundo.Data
                 Debug.WriteLine($"Error in UpdateCardAsync: {ex.Message}");
                 throw;
             }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
         }
         public async Task DeleteCardAsync(CardSet card)
         {
+            await DBAccess.OpenConnectionAsync();
+
             string deleteSql = "DELETE FROM myCollection WHERE uuid = @uuid";
             try
             {
@@ -101,6 +121,10 @@ namespace CollectaMundo.Data
             {
                 Debug.WriteLine($"Error in DeleteCardAsync: {ex.Message}");
                 throw;
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
             }
         }
         public async Task<List<string>> FetchLanguagesForCardAsync(string uuid)
@@ -119,6 +143,8 @@ namespace CollectaMundo.Data
                 SELECT language FROM tokens WHERE uuid = @uuid";
             try
             {
+                await DBAccess.OpenConnectionAsync();
+
                 using var command = new SQLiteCommand(query, DBAccess.connection);
                 command.Parameters.AddWithValue("@uuid", uuid);
                 using var reader = await command.ExecuteReaderAsync();
@@ -136,6 +162,10 @@ namespace CollectaMundo.Data
                 Debug.WriteLine($"Error in FetchLanguagesForCardAsync: {ex.Message}");
                 throw;
             }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
             return languages;
         }
         public async Task<List<string>> FetchFinishesForCardAsync(string uuid)
@@ -147,6 +177,8 @@ namespace CollectaMundo.Data
                 SELECT finishes FROM tokens WHERE uuid = @uuid";
             try
             {
+                await DBAccess.OpenConnectionAsync();
+
                 using var command = new SQLiteCommand(query, DBAccess.connection);
                 command.Parameters.AddWithValue("@uuid", uuid);
                 using var reader = await command.ExecuteReaderAsync();
@@ -173,6 +205,10 @@ namespace CollectaMundo.Data
             {
                 Debug.WriteLine($"Error in FetchFinishesForCardAsync: {ex.Message}");
                 throw;
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
             }
             return finishes;
         }
