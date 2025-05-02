@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace CollectaMundo.Behaviors
+namespace CollectaMundo.Presentation.Behaviors
 {
     public static class DataGridColumnResizerBehavior
     {

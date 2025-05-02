@@ -2,7 +2,7 @@
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
 
-namespace CollectaMundo.Converters
+namespace CollectaMundo.Presentation.Converters
 {
     public class StringToImageSourceConverter : IValueConverter
     {

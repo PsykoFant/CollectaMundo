@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace CollectaMundo.Converters
+namespace CollectaMundo.Presentation.Converters
 {
     // Sets the font for the Colorless option in FilterColorsListBox
     public class ColorlessFontConverter : IValueConverter

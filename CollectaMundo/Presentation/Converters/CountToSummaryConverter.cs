@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Windows.Data;
 
-namespace CollectaMundo.Converters
+namespace CollectaMundo.Presentation.Converters
 {
     public class CountToSummaryConverter : IMultiValueConverter
     {

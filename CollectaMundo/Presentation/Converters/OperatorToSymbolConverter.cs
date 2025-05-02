@@ -2,7 +2,7 @@
 using System.Windows.Data;
 using static CollectaMundo.MainWindow;
 
-namespace CollectaMundo.Converters
+namespace CollectaMundo.Presentation.Converters
 {
     public class OperatorToSymbolConverter : IValueConverter
     {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xaml.Behaviors; // or System.Windows.Interactivity
 using System.Windows.Controls;
 
-namespace CollectaMundo.Behaviors
+namespace CollectaMundo.Presentation.Behaviors
 {
     public class NumericValidationBehavior : Behavior<TextBox>
     {

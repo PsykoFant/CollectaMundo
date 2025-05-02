@@ -1,6 +1,6 @@
-﻿using CollectaMundo.Converters;
-using CollectaMundo.Domain;
+﻿using CollectaMundo.Domain;
 using CollectaMundo.DomainLogic.Models;
+using CollectaMundo.Presentation.Converters;
 using CollectaMundo.Utilities;
 using CollectaMundo.ViewModels;
 using System.Globalization;
