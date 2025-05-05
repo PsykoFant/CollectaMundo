@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Models;
+﻿using CollectaMundo.DomainLogic;
+using CollectaMundo.DomainLogic.Models;
 using System.Data.SQLite;
 using System.Diagnostics;
 
@@ -191,14 +192,12 @@ namespace CollectaMundo.Data
                     }
                 }
                 // Remove unwanted finish types and resolve conflicts
-                finishes = finishes.Distinct()
-                                   .Where(f => !f.Equals("signed", StringComparison.OrdinalIgnoreCase))
-                                   .ToList();
+                finishes = [.. finishes.Distinct().Where(f => !f.Equals("signed", StringComparison.OrdinalIgnoreCase))];
 
                 if (finishes.Contains("foil", StringComparer.OrdinalIgnoreCase) &&
                     finishes.Contains("etched", StringComparer.OrdinalIgnoreCase))
                 {
-                    finishes = finishes.Where(f => !f.Equals("foil", StringComparison.OrdinalIgnoreCase)).ToList();
+                    finishes = [.. finishes.Where(f => !f.Equals("foil", StringComparison.OrdinalIgnoreCase))];
                 }
             }
             catch (Exception ex)
@@ -212,5 +211,43 @@ namespace CollectaMundo.Data
             }
             return finishes;
         }
+        public async Task<CardSet> GetMyCollectionRecordAsync(string uuid, string condition, string language, string finish)
+        {
+            const string sql = @"
+          SELECT * FROM view_myCollection
+           WHERE uuid=@uuid AND condition=@cond
+             AND language=@lang AND finish=@fin
+          LIMIT 1";
+            CardSet card;
+
+            try
+            {
+                await DBAccess.OpenConnectionAsync();
+
+                using var cmd = new SQLiteCommand(sql, DBAccess.connection);
+                cmd.Parameters.AddWithValue("@uuid", uuid);
+                cmd.Parameters.AddWithValue("@cond", condition);
+                cmd.Parameters.AddWithValue("@lang", language);
+                cmd.Parameters.AddWithValue("@fin", finish);
+
+                using var rdr = await cmd.ExecuteReaderAsync();
+                if (!await rdr.ReadAsync())
+                    throw new InvalidOperationException("Card not found after upsert.");
+
+                // map into your local variable:
+                card = CardFactory.FromMyCollectionRow(rdr);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in GetMyCollectionRecordAsync: {ex}");
+                throw;
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
+            return card;
+        }
+
     }
 }

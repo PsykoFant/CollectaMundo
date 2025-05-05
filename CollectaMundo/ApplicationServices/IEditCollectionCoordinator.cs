@@ -7,7 +7,7 @@ namespace CollectaMundo.ApplicationServices
     {
         Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection);
         Task AddCardToEditCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection);
-        Task AddOrUpdateCardAsync(CardSet card);
+        Task<CardSet> AddOrUpdateAndFetchCardAsync(CardSet card);
         //Task UpdateCardDetailsAsync(CardSet card, ObservableCollection<CardSet> inMemoryCollection);
         //Task DeleteCardAsync(CardSet card, ObservableCollection<CardSet> inMemoryCollection);
     }

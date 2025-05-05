@@ -9,6 +9,11 @@ namespace CollectaMundo.Data
         Task<int?> CheckForExistingCardAsync(CardSet card);
         Task<List<string>> FetchLanguagesForCardAsync(string uuid);
         Task<List<string>> FetchFinishesForCardAsync(string uuid);
+        Task<CardSet> GetMyCollectionRecordAsync(
+        string uuid,
+        string condition,
+        string language,
+        string finish);
 
         // Raw CRUD
         Task AddCardAsync(CardSet card);

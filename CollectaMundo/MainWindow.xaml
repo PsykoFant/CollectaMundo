@@ -1458,10 +1458,10 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Card Types" Width="*" SortMemberPath="Types">
+                        <DataGridTemplateColumn Header="Card Types" Width="*" SortMemberPath="Type">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Types}" TextWrapping="Wrap" />
+                                    <TextBlock Text="{Binding Type}" TextWrapping="Wrap" />
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

@@ -1,12 +1,14 @@
-﻿using CollectaMundo.DomainLogic;
+﻿using CollectaMundo.Data;
+using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class EditCollectionCoordinator(IEditCollectionLogic domain) : IEditCollectionCoordinator
+    public class EditCollectionCoordinator(IEditCollectionLogic domainLogic, IEditCollectionRepository repo) : IEditCollectionCoordinator
     {
-        private readonly IEditCollectionLogic _domain = domain ?? throw new ArgumentNullException(nameof(domain));
+        private readonly IEditCollectionLogic _domainLogic = domainLogic ?? throw new ArgumentNullException(nameof(domainLogic));
+        private readonly IEditCollectionRepository _repo = repo ?? throw new ArgumentNullException(nameof(repo));
 
         // Public wrappers
         public Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewAsync(selectedCard, targetCollection, false);
@@ -14,8 +16,8 @@ namespace CollectaMundo.ApplicationServices
         // Common implementation
         private async Task AddCardToListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection, bool isEdit)
         {
-            // Delegate “prep” logic to your domain service
-            var newItem = await _domain.PrepareCardForListAsync(selectedCard, isEdit);
+            // Delegate “prep” logic to your domainLogic service
+            var newItem = await _domainLogic.PrepareCardForListAsync(selectedCard, isEdit);
 
             // Skip if already present
             bool exists = targetCollection.Any(c =>
@@ -32,7 +34,33 @@ namespace CollectaMundo.ApplicationServices
             targetCollection.Add(newItem);
         }
 
-        public Task AddOrUpdateCardAsync(CardSet card) => _domain.AddOrUpdateCardAsync(card);
+        public async Task<CardSet> AddOrUpdateAndFetchCardAsync(CardSet card)
+        {
+            // 1) persist changes
+            await _domainLogic.AddOrUpdateCardAsync(card);
+
+            // 2) make sure our “key” fields are set
+            if (card.Uuid is null ||
+                card.SelectedCondition is null ||
+                card.Language is null ||
+                card.SelectedFinish is null)
+            {
+                throw new InvalidOperationException(
+                    "Cannot fetch persisted card because one or more key fields are null: " +
+                    $"Uuid={card.Uuid}, Condition={card.SelectedCondition}, " +
+                    $"Language={card.Language}, Finish={card.SelectedFinish}"
+                );
+            }
+
+            // 3) fetch the fully-populated row
+            return await _repo.GetMyCollectionRecordAsync(
+                card.Uuid,
+                card.SelectedCondition,
+                card.Language,
+                card.SelectedFinish
+            );
+        }
+
 
         //public async Task UpdateCardDetailsAsync(CardSet card, ObservableCollection<CardSet> inMemoryCollection)
         //{

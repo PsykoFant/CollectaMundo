@@ -15,7 +15,7 @@ namespace CollectaMundo.Data
             MapAsync(new SQLiteCommand("select * from view_myCollection", DBAccess.connection),
                 reader => CardFactory.FromMyCollectionRow(reader));
 
-        private async Task<IReadOnlyList<CardSet>> MapAsync(SQLiteCommand cmd, Func<DbDataReader, CardSet> mapRow)
+        private static async Task<IReadOnlyList<CardSet>> MapAsync(SQLiteCommand cmd, Func<DbDataReader, CardSet> mapRow)
         {
             var cards = new List<CardSet>();
             using var rdr = await cmd.ExecuteReaderAsync();
