@@ -200,16 +200,13 @@ namespace CollectaMundo
         {
             await ShowStatusWindowAsync(true, "Loading ALL the cards ...");
 
-
+            await DBAccess.OpenConnectionAsync();
 
             await _cardListCoordinator.LoadAllCardsAsync(AllCardsVM.Cards);
             await _cardListCoordinator.LoadMyCollectionAsync(MyCollectionVM.Cards);
             await _cardListCoordinator.LoadAllCardsForDecksAsync(AllCardsForDecksVM.Cards);
             await _cardListCoordinator.LoadAllCardsInDecksAsync(AllCardsInDecksVM.Cards);
             await _cardListCoordinator.LoadColorIconsAsync(ColorIcons.Cards);
-
-            await DBAccess.OpenConnectionAsync();
-            //await CardListManager.CreateCardListObjectAsync(ColorIcons.Cards, CardListObject.ColorIcons);
 
             await FilterVM.InitializeFilterDefaultsAsync();
 

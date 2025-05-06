@@ -131,7 +131,7 @@ namespace CollectaMundo.Data
         {
             if (string.IsNullOrEmpty(uuid))
             {
-                return new List<string> { "English" };
+                return ["English"];
             }
 
             var languages = new List<string>();
@@ -150,7 +150,7 @@ namespace CollectaMundo.Data
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    string language = reader["language"] as string;
+                    string? language = reader["language"] as string;
                     if (!string.IsNullOrEmpty(language))
                     {
                         languages.Add(language);
@@ -193,8 +193,7 @@ namespace CollectaMundo.Data
                 // Remove unwanted finish types and resolve conflicts
                 finishes = [.. finishes.Distinct().Where(f => !f.Equals("signed", StringComparison.OrdinalIgnoreCase))];
 
-                if (finishes.Contains("foil", StringComparer.OrdinalIgnoreCase) &&
-                    finishes.Contains("etched", StringComparer.OrdinalIgnoreCase))
+                if (finishes.Contains("foil", StringComparer.OrdinalIgnoreCase) && finishes.Contains("etched", StringComparer.OrdinalIgnoreCase))
                 {
                     finishes = [.. finishes.Where(f => !f.Equals("foil", StringComparison.OrdinalIgnoreCase))];
                 }
@@ -231,7 +230,9 @@ namespace CollectaMundo.Data
 
                 using var rdr = await cmd.ExecuteReaderAsync();
                 if (!await rdr.ReadAsync())
+                {
                     throw new InvalidOperationException("Card not found after upsert.");
+                }
 
                 // map into your local variable:
                 card = CardFactory.FromMyCollectionRow(rdr);
