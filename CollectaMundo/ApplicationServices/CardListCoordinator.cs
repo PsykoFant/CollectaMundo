@@ -3,12 +3,9 @@ using CollectaMundo.DomainLogic.Models;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class CardListCoordinator : ICardListCoordinator
+    public class CardListCoordinator(ICardListRepository repo) : ICardListCoordinator
     {
-        private readonly ICardListRepository _repo;
-
-        public CardListCoordinator(ICardListRepository repo)
-            => _repo = repo;
+        private readonly ICardListRepository _repo = repo;
         public async Task LoadAllCardsAsync(List<CardSet> target)
         {
             var cards = await _repo.GetAllCardsAsync();    // Data layer call

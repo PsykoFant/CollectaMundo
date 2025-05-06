@@ -833,8 +833,8 @@
             <Grid x:Name="GridSearchAndFilterAllCards" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" Visibility="{Binding AddCardsVM.StatusVisibility,
- RelativeSource={RelativeSource AncestorType=Window},
- Converter={StaticResource InverseVisibility}}">
+                    RelativeSource={RelativeSource AncestorType=Window},
+                    Converter={StaticResource InverseVisibility}}">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
                             <Binding Path="AllCardsVM.FilteredCards.Count"/>
@@ -1150,7 +1150,10 @@
                                       Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
                                       CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                       Style="{StaticResource BelerenBold}" />
-                            <MenuItem Header="Add selected card(s) with DEFAULT values to Collection" Click="ButtonAddCardsToMyCollectionWithDefaultValues_Click" Style="{StaticResource BelerenBold}"/>
+                            <MenuItem Header="Add selected card(s) with DEFAULT values to Collection" 
+                                      Command="{Binding AddCardsVM.AddCardsWithDefaultsCommand}"
+                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                      Style="{StaticResource BelerenBold}"/>
                             <MenuItem Header="">
                                 <MenuItem.Template>
                                     <ControlTemplate>

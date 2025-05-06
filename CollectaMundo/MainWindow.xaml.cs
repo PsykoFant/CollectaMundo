@@ -406,15 +406,7 @@ namespace CollectaMundo
         }
 
         // Right-click actions 
-        private void ButtonAddCardsToMyCollectionWithDefaultValues_Click(object sender, RoutedEventArgs e)
-        {
-            List<CardSet> selectedCards = AllCardsDataGrid.SelectedItems.Cast<CardSet>().ToList();
-            if (selectedCards.Count > 0)
-            {
-                AddToCollectionManager.SubmitNewCardsToCollectionWithDefaultValues(selectedCards);
-                AllCardsDataGrid.UnselectAll();
-            }
-        }
+
         private void ButtonDeleteCardsFromCollection_Click(object sender, RoutedEventArgs e)
         {
             List<CardSet> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardSet>().ToList();

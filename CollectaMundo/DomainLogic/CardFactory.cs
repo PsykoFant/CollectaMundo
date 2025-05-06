@@ -37,7 +37,6 @@ namespace CollectaMundo.DomainLogic
         {
             var c = MapCommon(r);
 
-
             // Fields only for MyCollection & CardsInDecks lists
             c.CardId = GetFieldValue<int?>(r, "CardId");
 
@@ -101,17 +100,12 @@ namespace CollectaMundo.DomainLogic
         {
             return new CardSet
             {
-                // bytes of the icon blob
                 ManaCostImageBytes = GetFieldValue<byte[]>(r, "ManaSymbolImage"),
-
-                // so you can bind to ManaCostRaw if you need the letter,
-                // e.g. to set ToolTip or a debug label
                 ManaCostRaw = GetFieldValue<string>(r, "uniqueManaSymbol") ?? string.Empty
             };
         }
-
         private static CardSet MapCommon(DbDataReader r)
-          => new CardSet
+          => new()
           {
               // Fields common to all CardSet lists
               Name = GetFieldValue<string>(r, "Name") ?? string.Empty,

@@ -33,7 +33,6 @@ namespace CollectaMundo.ApplicationServices
 
             targetCollection.Add(newItem);
         }
-
         public async Task<CardSet> AddOrUpdateAndFetchCardAsync(CardSet card)
         {
             // 1) persist changes

@@ -20,7 +20,8 @@ namespace CollectaMundo.ViewModels
         public bool RemoveCardWhenCardsOwnedZero { get; set; } = true; // Default: remove card
 
         private readonly IEditCollectionCoordinator _coordinator;
-        // Inject the UI-coordinator interface
+
+        // Constructor
         public AddCardsViewModel(IEditCollectionCoordinator coordinator)
         {
             _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
@@ -191,7 +192,6 @@ namespace CollectaMundo.ViewModels
         // Commands - submit cards from listview
         public ICommand SubmitSelectedCardsCommand => new RelayCommand<object>(async param =>
         {
-            // Instead of using 'param', iterate over all cards currently in the in-memory collection.
             // Make a copy to avoid modification issues during iteration.
             var cards = CardsToAdd.ToList();
             foreach (var card in cards)
@@ -213,6 +213,57 @@ namespace CollectaMundo.ViewModels
                 $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
                 $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
         });
+        public ICommand AddCardsWithDefaultsCommand => new RelayCommand<object>(async param =>
+        {
+            // 1) Pull out the selected items
+            if (!(param is IEnumerable<object> selectedItems))
+            {
+                return;
+            }
+
+            var cards = selectedItems.OfType<CardSet>().ToList();
+            if (cards.Count == 0)
+            {
+                return;
+            }
+
+            // 2) For each, clone and assign defaults, then write & fetch the persisted record
+            var persistedCards = new List<CardSet>();
+            foreach (var original in cards)
+            {
+                // clone so we don't modify the grid's in-memory version
+                var toSave = new CardSet
+                {
+                    Uuid = original.Uuid,
+                    Name = original.Name,
+                    SelectedCondition = "Near Mint",
+                    Language = "English",
+                    SelectedFinish = "nonfoil",
+                    CardsOwned = 1,
+                    CardsForTrade = 0
+                };
+
+                // 3) let the coordinator handle insert-or-update and give us back the fully populated card
+                var saved = await _coordinator.AddOrUpdateAndFetchCardAsync(toSave);
+                persistedCards.Add(saved);
+
+                // 4) fire the CardProcessed event so MainWindow merges it into MyCollectionVM
+                CardProcessed?.Invoke(this, new CardProcessedEventArgs(saved));
+            }
+
+            // 5) Clear your “to add” pane (if that’s desired)
+            CardsToAdd.Clear();
+            ClearSelectionTrigger++;
+
+            // 6) Build up your status message
+            StatusMessage = "Added the following cards with default values:\n\n"
+                + string.Join("\n", persistedCards.Select(c =>
+                    $"- {c.Name} (Condition: {c.SelectedCondition}, " +
+                    $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
+                    $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
+        });
+
+
 
         private string _statusMessage = string.Empty;
         public string StatusMessage
@@ -236,9 +287,8 @@ namespace CollectaMundo.ViewModels
                 : Visibility.Visible;
 
     }
-    public class CardProcessedEventArgs : EventArgs
+    public class CardProcessedEventArgs(CardSet card) : EventArgs
     {
-        public CardSet Card { get; }
-        public CardProcessedEventArgs(CardSet card) => Card = card;
+        public CardSet Card { get; } = card;
     }
 }
