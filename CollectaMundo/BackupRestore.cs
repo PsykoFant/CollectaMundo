@@ -1,4 +1,5 @@
-﻿using CollectaMundo.UICoordinators;
+﻿using CollectaMundo.DomainLogic.Models;
+using CollectaMundo.UICoordinators;
 using Microsoft.Win32;
 using ServiceStack;
 using System.Collections.ObjectModel;
@@ -11,7 +12,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using static CollectaMundo.MainWindow;
-using CollectaMundo.DomainLogic.Models;
 
 namespace CollectaMundo
 {
@@ -1825,7 +1825,7 @@ namespace CollectaMundo
             MainWindow.CurrentInstance.ResetGrids();
             MainWindow.CurrentInstance.MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
             MainWindow.CurrentInstance.GridFiltering.Visibility = Visibility.Visible;
-            MainWindow.CurrentInstance.LogoSmall.Visibility = Visibility.Visible;
+            //MainWindow.CurrentInstance.LogoSmall.Visibility = Visibility.Visible;
             MainWindow.CurrentInstance.GridMyCollection.Visibility = Visibility.Visible;
         }
 

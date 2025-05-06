@@ -231,7 +231,7 @@ namespace CollectaMundo
             // Start on the search and filter all cards page            
             ResetGrids();
             MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
-            LogoSmall.Visibility = Visibility.Visible;
+            //LogoSmall.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Visible;
             GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
             FilterSummaryScrollViewer.Visibility = Visibility.Visible;
@@ -1000,7 +1000,7 @@ namespace CollectaMundo
             ResetGrids();
             MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
             FilterSummaryScrollViewer.Visibility = Visibility.Visible;
-            LogoSmall.Visibility = Visibility.Visible;
+            //LogoSmall.Visibility = Visibility.Visible;
 
             MyCollectionDataGrid.Dispatcher.BeginInvoke(new Action(() =>
             {
@@ -1022,7 +1022,7 @@ namespace CollectaMundo
 
             MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
             FilterSummaryScrollViewer.Visibility = Visibility.Visible;
-            LogoSmall.Visibility = Visibility.Visible;
+            //LogoSmall.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Visible;
             LanguageComboBox.Visibility = Visibility.Visible;
@@ -1073,7 +1073,7 @@ namespace CollectaMundo
             //AddStatusTextBlock.Text = string.Empty;
             UtilsInfoLabel.Content = "";
             FilterSummaryScrollViewer.Visibility = Visibility.Collapsed;
-            LogoSmall.Visibility = Visibility.Collapsed;
+            //LogoSmall.Visibility = Visibility.Collapsed;
 
             // Reset filter UI specific to my collection 
             LanguageComboBox.Visibility = Visibility.Collapsed;

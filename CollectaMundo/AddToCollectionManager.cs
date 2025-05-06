@@ -256,14 +256,14 @@ namespace CollectaMundo
         }
         public static void HideCardsToAddListView(bool showLogo)
         {
-            MainWindow.CurrentInstance.LogoSmall.Visibility = showLogo ? Visibility.Visible : Visibility.Collapsed;
+            //MainWindow.CurrentInstance.LogoSmall.Visibility = showLogo ? Visibility.Visible : Visibility.Collapsed;
             //MainWindow.CurrentInstance.CardsToAddListView.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.ButtonSubmitCardsToMyCollection.Visibility = Visibility.Collapsed;
             //MainWindow.CurrentInstance.ButtonClearCardsToAdd.Visibility = Visibility.Collapsed;
         }
         public static void HideCardsToEditListView(bool showLogo)
         {
-            MainWindow.CurrentInstance.LogoSmall.Visibility = showLogo ? Visibility.Visible : Visibility.Collapsed;
+            //MainWindow.CurrentInstance.LogoSmall.Visibility = showLogo ? Visibility.Visible : Visibility.Collapsed;
             //MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Collapsed;
             //MainWindow.CurrentInstance.ButtonClearCardsToEdit.Visibility = Visibility.Collapsed;

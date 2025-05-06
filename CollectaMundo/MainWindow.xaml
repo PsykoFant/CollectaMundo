@@ -27,6 +27,8 @@
         <converters:ColorlessFontConverter x:Key="ColorlessFontConverter"/>
         <converters:CountToSummaryConverter x:Key="CountToSummaryConverter"/>
         <converters:OperatorToSymbolConverter x:Key="OperatorToSymbolConverter"/>
+        <converters:InverseVisibilityConverter x:Key="InverseVisibility"/>
+
     </Window.Resources>
     <Window.Background>
         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
@@ -812,25 +814,27 @@
             </Grid>
         </Grid>
         <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="Hidden">
-            <Image x:Name="LogoSmall" Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="170" Width="170" RenderTransformOrigin="0.5,0.5" Margin="0,70,0,0" Opacity="0.8" />
+            <Image Source="/Resources/Images/Logo.png"
+                   Stretch="Fill"
+                   VerticalAlignment="Top"
+                   HorizontalAlignment="Center"
+                   Height="170"
+                   Width="170"
+                   RenderTransformOrigin="0.5,0.5"
+                   Margin="0,70,0,0"
+                   Opacity="0.8" 
+                   Visibility="{Binding AddCardsVM.StatusVisibility,
+                    RelativeSource={RelativeSource AncestorType=Window},
+                    Converter={StaticResource InverseVisibility}}"/>
+            
             <ScrollViewer x:Name="FilterSummaryScrollViewer" HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <TextBlock x:Name="FilterSummaryTextBlock" HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
             </ScrollViewer>
             <Grid x:Name="GridSearchAndFilterAllCards" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30">
-                    <Label.Style>
-                        <Style TargetType="Label">
-                            <!-- default: shown -->
-                            <Setter Property="Visibility" Value="Visible"/>
-                            <Style.Triggers>
-                                <!-- when StatusVisibility is Visible, collapse this label -->
-                                <DataTrigger Binding="{Binding AddCardsVM.StatusVisibility, RelativeSource={RelativeSource AncestorType=Window}}" Value="Visible">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Label.Style>
+                <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" Visibility="{Binding AddCardsVM.StatusVisibility,
+ RelativeSource={RelativeSource AncestorType=Window},
+ Converter={StaticResource InverseVisibility}}">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
                             <Binding Path="AllCardsVM.FilteredCards.Count"/>
