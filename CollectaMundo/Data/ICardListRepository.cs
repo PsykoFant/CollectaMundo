@@ -6,6 +6,8 @@ namespace CollectaMundo.Data
     {
         Task<IReadOnlyList<CardSet>> GetAllCardsAsync();
         Task<IReadOnlyList<CardSet>> GetMyCollectionAsync();
+        Task<IReadOnlyList<CardSet>> GetCardsForDecksAsync();
+        Task<IReadOnlyList<CardSet>> GetCardsInDecksAsync();
     }
 
 }

@@ -15,6 +15,14 @@ namespace CollectaMundo.Data
             MapAsync(new SQLiteCommand("select * from view_myCollection", DBAccess.connection),
                 reader => CardFactory.FromMyCollectionRow(reader));
 
+        public Task<IReadOnlyList<CardSet>> GetCardsForDecksAsync() =>
+            MapAsync(new SQLiteCommand("select * from view_allCardsForDecks", DBAccess.connection),
+                reader => CardFactory.FromAllCardsForDecksRow(reader));
+
+        public Task<IReadOnlyList<CardSet>> GetCardsInDecksAsync() =>
+            MapAsync(new SQLiteCommand("select * from view_allCardsForDecks", DBAccess.connection),
+                reader => CardFactory.FromAllCardsInDecksRow(reader));
+
         private static async Task<IReadOnlyList<CardSet>> MapAsync(SQLiteCommand cmd, Func<DbDataReader, CardSet> mapRow)
         {
             var cards = new List<CardSet>();

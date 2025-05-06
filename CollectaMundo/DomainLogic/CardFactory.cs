@@ -33,7 +33,6 @@ namespace CollectaMundo.DomainLogic
             c.EtchedPrice = GetFieldValue<decimal?>(r, "EtchedPrice");
             return c;
         }
-
         public static CardSet FromMyCollectionRow(DbDataReader r)
         {
             var c = MapCommon(r);
@@ -70,6 +69,32 @@ namespace CollectaMundo.DomainLogic
                 "etched" => ParsePrice("EtchedPrice", r),
                 _ => ParsePrice("NormalPrice", r)
             };
+            return c;
+        }
+        public static CardSet FromAllCardsForDecksRow(DbDataReader r)
+        {
+            var c = MapCommon(r);
+
+            // Fields applicable to all except CardsInDecks
+            c.Types = GetUniqueCommaSeparatedField(r, "Types");
+            c.SuperTypes = GetUniqueCommaSeparatedField(r, "SuperTypes");
+            c.SubTypes = GetUniqueCommaSeparatedField(r, "SubTypes");
+            c.Keywords = GetUniqueCommaSeparatedField(r, "Keywords");
+            c.Text = GetFieldValue<string>(r, "RulesText") ?? string.Empty;
+            c.Side = GetFieldValue<string>(r, "Side") ?? string.Empty;
+
+            return c;
+        }
+        public static CardSet FromAllCardsInDecksRow(DbDataReader r)
+        {
+            var c = MapCommon(r);
+
+            // Fields only for MyCollection & CardsInDecks lists
+            c.CardId = GetFieldValue<int?>(r, "CardId");
+
+            // Fields specific for CardsInDecks
+            c.Count = GetFieldValue<int?>(r, "Count") ?? 0;
+
             return c;
         }
 

@@ -1,4 +1,5 @@
-﻿using CollectaMundo.Data;
+﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.Data;
 using CollectaMundo.UICoordinators;
 using CollectaMundo.ViewModels;
 using static CollectaMundo.MainWindow;
@@ -17,6 +18,8 @@ namespace CollectaMundo.Tests
         private readonly EventHandler _refreshHandler;
         private static bool _isInitialised;
         private readonly IFilteringCoordinator _filteringCoordinator;
+        private readonly ICardListRepository _cardListRepo;
+        private readonly ICardListCoordinator _cardListCoordinator;
 
 
         // Shared state (one copy for the whole class/run)
@@ -31,6 +34,10 @@ namespace CollectaMundo.Tests
             DBAccess.connection = _fx.Connection;     // point app code to the same connection
             var filterDefaultsRepo = new FilterDefaultsRepository();
             _filteringCoordinator = new FilteringCoordinator(filterDefaultsRepo);
+
+            _cardListRepo = new CardListRepository();
+            _cardListCoordinator = new CardListCoordinator(_cardListRepo);
+
         }
 
         // IAsyncLifetime implementation
@@ -41,8 +48,8 @@ namespace CollectaMundo.Tests
                 _isInitialised = true;
 
                 // populate your source lists
-                await CardListManager.CreateCardListObjectAsync(_allCardsVM.Cards, CardListObject.AllCards);
-                await CardListManager.CreateCardListObjectAsync(_myCollectionVM.Cards, CardListObject.MyCollection);
+                await _cardListCoordinator.LoadAllCardsAsync(_allCardsVM.Cards);
+                await _cardListCoordinator.LoadMyCollectionAsync(_myCollectionVM.Cards);
 
                 // load filter defaults from the same in-memory DB
                 await _filterVM.InitializeFilterDefaultsAsync();

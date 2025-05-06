@@ -25,5 +25,19 @@ namespace CollectaMundo.ApplicationServices
             foreach (var c in cards)
                 target.Add(c);
         }
+        public async Task LoadAllCardsForDecksAsync(List<CardSet> target)
+        {
+            var cards = await _repo.GetCardsForDecksAsync(); // Data layer call
+            target.Clear();
+            foreach (var c in cards)
+                target.Add(c);
+        }
+        public async Task LoadAllCardsInDecksAsync(List<CardSet> target)
+        {
+            var cards = await _repo.GetCardsInDecksAsync(); // Data layer call
+            target.Clear();
+            foreach (var c in cards)
+                target.Add(c);
+        }
     }
 }

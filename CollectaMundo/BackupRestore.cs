@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.DomainLogic.Models;
-using CollectaMundo.UICoordinators;
 using Microsoft.Win32;
 using ServiceStack;
 using System.Collections.ObjectModel;
@@ -11,7 +10,6 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo
 {
@@ -1816,7 +1814,7 @@ namespace CollectaMundo
         public static async Task EndImportWizard()
         {
             await DBAccess.OpenConnectionAsync();
-            await CardListManager.CreateCardListObjectAsync(MainWindow.CurrentInstance.MyCollectionVM.Cards, CardListObject.MyCollection);
+            //await CardListManager.CreateCardListObjectAsync(MainWindow.CurrentInstance.MyCollectionVM.Cards, CardListObject.MyCollection);
             DBAccess.CloseConnection();
 
             EndImport();

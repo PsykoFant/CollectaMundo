@@ -24,13 +24,9 @@ namespace CollectaMundo
     {
         #region Set up varibales
         public CardViewModel AllCardsVM { get; }
-
-        // these two fields back the new, slimmed-down flow:
-        private readonly ICardListRepository _cardListRepo;
-        private readonly ICardListCoordinator _cardListCoordinator;
-
         public CardViewModel MyCollectionVM { get; } = new CardViewModel();
         public CardViewModel AllCardsForDecksVM { get; } = new CardViewModel();
+        public CardViewModel AllCardsInDecksVM { get; } = new CardViewModel();
         public CardViewModel ColorIcons { get; } = new CardViewModel();
         public FilterViewModel FilterVM { get; }
 
@@ -51,6 +47,9 @@ namespace CollectaMundo
             }
             private set => _currentInstance = value;
         }
+
+        private readonly ICardListRepository _cardListRepo;
+        private readonly ICardListCoordinator _cardListCoordinator;
 
         // Used for displaying images
         private string? _imageSourceUrl = string.Empty;
@@ -205,10 +204,12 @@ namespace CollectaMundo
 
             await _cardListCoordinator.LoadAllCardsAsync(AllCardsVM.Cards);
             await _cardListCoordinator.LoadMyCollectionAsync(MyCollectionVM.Cards);
+            await _cardListCoordinator.LoadAllCardsForDecksAsync(AllCardsForDecksVM.Cards);
+            await _cardListCoordinator.LoadAllCardsInDecksAsync(AllCardsInDecksVM.Cards);
 
             //await CardListManager.CreateCardListObjectAsync(AllCardsVM.Cards, CardListObject.AllCards);
             //await CardListManager.CreateCardListObjectAsync(MyCollectionVM.Cards, CardListObject.MyCollection);
-            await CardListManager.CreateCardListObjectAsync(AllCardsForDecksVM.Cards, CardListObject.AllCardsForDecks);
+            //await CardListManager.CreateCardListObjectAsync(AllCardsForDecksVM.Cards, CardListObject.AllCardsForDecks);
             await CardListManager.CreateCardListObjectAsync(ColorIcons.Cards, CardListObject.ColorIcons);
 
             await FilterVM.InitializeFilterDefaultsAsync();
@@ -872,8 +873,8 @@ namespace CollectaMundo
             // Update the db views to load prices from the selected retailer
             await DownloadAndPrepDB.CreateViews();
 
-            Task loadAllCards = CardListManager.CreateCardListObjectAsync(AllCardsVM.Cards, CardListObject.AllCards);
-            Task loadMyCollection = CardListManager.CreateCardListObjectAsync(MyCollectionVM.Cards, CardListObject.MyCollection);
+            Task loadAllCards = _cardListCoordinator.LoadAllCardsAsync(AllCardsVM.Cards);
+            Task loadMyCollection = _cardListCoordinator.LoadAllCardsAsync(MyCollectionVM.Cards);
 
             await Task.WhenAll(loadAllCards, loadMyCollection);
 
