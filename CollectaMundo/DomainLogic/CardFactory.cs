@@ -97,6 +97,18 @@ namespace CollectaMundo.DomainLogic
 
             return c;
         }
+        public static CardSet FromColorIconsRow(DbDataReader r)
+        {
+            return new CardSet
+            {
+                // bytes of the icon blob
+                ManaCostImageBytes = GetFieldValue<byte[]>(r, "ManaSymbolImage"),
+
+                // so you can bind to ManaCostRaw if you need the letter,
+                // e.g. to set ToolTip or a debug label
+                ManaCostRaw = GetFieldValue<string>(r, "uniqueManaSymbol") ?? string.Empty
+            };
+        }
 
         private static CardSet MapCommon(DbDataReader r)
           => new CardSet
