@@ -196,9 +196,6 @@ namespace CollectaMundo.ViewModels
             var cards = CardsToAdd.ToList();
             foreach (var card in cards)
             {
-                // Add or update the card in the database.
-                await _coordinator.AddOrUpdateAndFetchCardAsync(card);
-
                 // get back the *complete* persisted record
                 var persisted = await _coordinator.AddOrUpdateAndFetchCardAsync(card);
                 CardProcessed?.Invoke(this, new CardProcessedEventArgs(persisted));

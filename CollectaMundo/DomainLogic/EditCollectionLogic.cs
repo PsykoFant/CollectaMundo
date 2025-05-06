@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.Data;
 using CollectaMundo.DomainLogic.Models;
+using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic
 {
@@ -11,10 +12,13 @@ namespace CollectaMundo.DomainLogic
             var existing = await _repo.CheckForExistingCardAsync(card);
             if (existing.HasValue)
             {
+                Debug.WriteLine($"Opdaterer eksisterende kort...");
+                card.CardId = existing.Value;
                 await _repo.UpdateCardAsync(card);
             }
             else
             {
+                Debug.WriteLine($"Fandt ikke eksisterende kort - tilføjer nyt kort");
                 await _repo.AddCardAsync(card);
             }
         }

@@ -28,6 +28,7 @@ namespace CollectaMundo.Data
                 using var reader = await selectCommand.ExecuteReaderAsync();
                 if (await reader.ReadAsync())
                 {
+                    Debug.WriteLine($"Fandt et eksisterende kort i samlingen!");
                     return reader.GetInt32(0); // Return the id if found
                 }
             }
@@ -45,16 +46,16 @@ namespace CollectaMundo.Data
         public async Task AddCardAsync(CardSet card)
         {
             string insertSql = @"
-                INSERT INTO myCollection (uuid, count, trade, condition, language, finish)
-                VALUES (@uuid, @count, @trade, @condition, @language, @finish)";
+                INSERT INTO myCollection (uuid, cardsOwned, cardsForTrade, condition, language, finish)
+                VALUES (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish)";
             try
             {
                 await DBAccess.OpenConnectionAsync();
 
                 using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
                 insertCommand.Parameters.AddWithValue("@uuid", card.Uuid);
-                insertCommand.Parameters.AddWithValue("@count", card.CardsOwned);
-                insertCommand.Parameters.AddWithValue("@trade", card.CardsForTrade);
+                insertCommand.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
+                insertCommand.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
                 insertCommand.Parameters.AddWithValue("@condition", card.SelectedCondition);
                 insertCommand.Parameters.AddWithValue("@language", card.Language);
                 insertCommand.Parameters.AddWithValue("@finish", card.SelectedFinish);
@@ -77,22 +78,20 @@ namespace CollectaMundo.Data
             string updateSql = @"
                 UPDATE myCollection 
                 SET 
-                  count     = count + @addCount,
-                  trade     = trade + @addTrade,
-                  condition = @condition,
-                  language  = @language,
-                  finish    = @finish 
+                  cardsOwned = cardsOwned + @addCount,
+                  cardsForTrade = cardsForTrade + @addTrade
                 WHERE id = @cardId";
             try
             {
                 await DBAccess.OpenConnectionAsync();
 
+                Debug.WriteLine($"CardsOwned we are trying to add: {card.CardsOwned}");
+                Debug.WriteLine($"CardsForTrade we are trying to add: {card.CardsForTrade}");
+                Debug.WriteLine($"Card id we are trying to update: {card.CardId}");
+
                 using var cmd = new SQLiteCommand(updateSql, DBAccess.connection);
                 cmd.Parameters.AddWithValue("@addCount", card.CardsOwned);
                 cmd.Parameters.AddWithValue("@addTrade", card.CardsForTrade);
-                cmd.Parameters.AddWithValue("@condition", card.SelectedCondition);
-                cmd.Parameters.AddWithValue("@language", card.Language);
-                cmd.Parameters.AddWithValue("@finish", card.SelectedFinish);
                 cmd.Parameters.AddWithValue("@cardId", card.CardId);
 
                 await cmd.ExecuteNonQueryAsync();
@@ -214,10 +213,10 @@ namespace CollectaMundo.Data
         public async Task<CardSet> GetMyCollectionRecordAsync(string uuid, string condition, string language, string finish)
         {
             const string sql = @"
-          SELECT * FROM view_myCollection
-           WHERE uuid=@uuid AND condition=@cond
-             AND language=@lang AND finish=@fin
-          LIMIT 1";
+              SELECT * FROM view_myCollection
+               WHERE uuid=@uuid AND condition=@cond
+                 AND language=@lang AND finish=@fin
+              LIMIT 1";
             CardSet card;
 
             try

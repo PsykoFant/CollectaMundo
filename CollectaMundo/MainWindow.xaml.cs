@@ -395,8 +395,8 @@ namespace CollectaMundo
 
                 if (existing != null)
                 {
-                    existing.CardsOwned += card.CardsOwned;
-                    existing.CardsForTrade += card.CardsForTrade;
+                    existing.CardsOwned = card.CardsOwned;
+                    existing.CardsForTrade = card.CardsForTrade;
                 }
                 else
                 {
