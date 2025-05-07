@@ -2,6 +2,7 @@
 using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices
 {
@@ -16,23 +17,29 @@ namespace CollectaMundo.ApplicationServices
         // Common implementation
         private async Task AddCardToListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection, bool isEdit)
         {
-            // Delegate “prep” logic to your domainLogic service
+            // 1) Let your domain‐logic prepare the fully populated CardSet
             var newItem = await _domainLogic.PrepareCardForListAsync(selectedCard, isEdit);
 
-            // Skip if already present
-            bool exists = targetCollection.Any(c =>
+            Debug.WriteLine($"Nyt kort id: {newItem.CardId}");
+
+            // 2) If any item in the collection already has the same database ID, skip.
+            if (newItem.CardId != null && targetCollection.Any(c => c.CardId == newItem.CardId))
+                return;
+
+            // 3) Otherwise, fall back to matching on the other unique properties
+            bool existsByKey = targetCollection.Any(c =>
                 c.Uuid == newItem.Uuid &&
                 c.SelectedFinish == newItem.SelectedFinish &&
                 c.SelectedCondition == newItem.SelectedCondition &&
                 c.Language == newItem.Language);
 
-            if (exists)
-            {
+            if (existsByKey)
                 return;
-            }
 
+            // 4) If it really is new, add it to the in‐memory list
             targetCollection.Add(newItem);
         }
+
         public async Task<CardSet> AddOrUpdateAndFetchCardAsync(CardSet card)
         {
             // 1) persist changes

@@ -29,6 +29,7 @@ namespace CollectaMundo.DomainLogic
                 throw new ArgumentException("UUID cannot be null", nameof(selectedCard));
             }
 
+            var cardId = isEdit ? selectedCard.CardId : null;
             var languages = await _repo.FetchLanguagesForCardAsync(selectedCard.Uuid);
             var finishes = await _repo.FetchFinishesForCardAsync(selectedCard.Uuid);
 
@@ -40,6 +41,7 @@ namespace CollectaMundo.DomainLogic
 
             return new CardSet
             {
+                CardId = cardId,
                 Name = selectedCard.Name,
                 SetName = selectedCard.SetName,
                 Uuid = selectedCard.Uuid,
