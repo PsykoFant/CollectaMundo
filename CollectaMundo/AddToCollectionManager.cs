@@ -9,8 +9,6 @@ namespace CollectaMundo
 {
     public class AddToCollectionManager
     {
-        private static AddToCollectionManager? _instance;
-        public static AddToCollectionManager Instance => _instance ??= new AddToCollectionManager();
         public ObservableCollection<CardSet> CardItemsToAdd { get; private set; }
         public ObservableCollection<CardSet> CardItemsToEdit { get; private set; }
 
@@ -26,47 +24,6 @@ namespace CollectaMundo
             CardItemsToEdit = [];
         }
 
-        private void TypingTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs? e)
-        {
-            if (sender == null || e == null)
-            {
-                return; // Safeguard against potential nulls, though they shouldn't be null
-            }
-
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                CardsOwnedTextChangedLogic(_lastTextBox, _lastTargetCollection);
-            });
-        }
-        private static void CardsOwnedTextChangedLogic(TextBox? textBox, ObservableCollection<CardSet>? targetCollection)
-        {
-            if (textBox?.DataContext is CardSet cardItem)
-            {
-                // Try parsing the new value
-                if (int.TryParse(textBox.Text, out int newCount) && newCount >= 0)
-                {
-                    // Update CardsOwned with the parsed value
-                    cardItem.CardsOwned = newCount;
-
-                    // Adjust CardsForTrade if necessary
-                    if (cardItem.CardsOwned < cardItem.CardsForTrade)
-                    {
-                        cardItem.CardsForTrade = cardItem.CardsOwned;
-                    }
-
-                    // If CardsOwned drops to zero or below, remove the item
-                    if (cardItem.CardsOwned <= 0 && targetCollection != null)
-                    {
-                        targetCollection.Remove(cardItem);
-                    }
-                }
-                else
-                {
-                    // If not valid, reset to the previous valid value
-                    textBox.Text = cardItem.CardsOwned.ToString();
-                }
-            }
-        }
         public static void HideCardsToEditListView(bool showLogo)
         {
             //MainWindow.CurrentInstance.LogoSmall.Visibility = showLogo ? Visibility.Visible : Visibility.Collapsed;
