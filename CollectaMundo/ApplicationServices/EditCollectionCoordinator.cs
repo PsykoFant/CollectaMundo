@@ -2,7 +2,6 @@
 using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices
 {
@@ -19,8 +18,6 @@ namespace CollectaMundo.ApplicationServices
         {
             // 1) Let your domain‐logic prepare the fully populated CardSet
             var newItem = await _domainLogic.PrepareCardForListAsync(selectedCard, isEdit);
-
-            Debug.WriteLine($"Nyt kort id: {newItem.CardId}");
 
             // 2) If any item in the collection already has the same database ID, skip.
             if (newItem.CardId != null && targetCollection.Any(c => c.CardId == newItem.CardId))
