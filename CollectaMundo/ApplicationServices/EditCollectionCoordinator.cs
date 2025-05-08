@@ -21,7 +21,9 @@ namespace CollectaMundo.ApplicationServices
 
             // 2) If any item in the collection already has the same database ID, skip.
             if (newItem.CardId != null && targetCollection.Any(c => c.CardId == newItem.CardId))
+            {
                 return;
+            }
 
             // 3) Otherwise, fall back to matching on the other unique properties
             bool existsByKey = targetCollection.Any(c =>
@@ -31,12 +33,13 @@ namespace CollectaMundo.ApplicationServices
                 c.Language == newItem.Language);
 
             if (existsByKey)
+            {
                 return;
+            }
 
             // 4) If it really is new, add it to the in‐memory list
             targetCollection.Add(newItem);
         }
-
         public async Task<CardSet> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit)
         {
             // 1) persist changes
@@ -62,6 +65,21 @@ namespace CollectaMundo.ApplicationServices
                 card.Language,
                 card.SelectedFinish
             );
+        }
+        public async Task<CardSet> SubmitNewCardsWithDefaultsAsync(CardSet raw, bool isEdit)
+        {
+            // 1) prepare a fully‐populated CardSet (language/finish chosen correctly)
+            var toSave = await _domainLogic.PrepareNewCardWithDefaultsAsync(raw);
+
+            // 2) now persist
+            await _domainLogic.AddOrUpdateCardAsync(toSave, isEdit);
+
+            // 3) re‐fetch the fully‐populated record
+            return await _repo.GetMyCollectionRecordAsync(
+                toSave.Uuid!,
+                toSave.SelectedCondition!,
+                toSave.Language!,
+                toSave.SelectedFinish!);
         }
 
 

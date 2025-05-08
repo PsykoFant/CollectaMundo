@@ -69,5 +69,48 @@ namespace CollectaMundo.DomainLogic
                 SelectedCondition = chosenCondition,
             };
         }
+
+        /// <summary>
+        /// Given a “raw” selectedCard (with only Uuid, Name populated), fetch 
+        /// languages + finishes from db, pick sensible defaults (nonfoil if present,
+        /// else first finish; English if present, else first language; NM condition),
+        /// and set count=1, trade=0.
+        /// </summary>
+        public async Task<CardSet> PrepareNewCardWithDefaultsAsync(CardSet selectedCard)
+        {
+            if (selectedCard.Uuid == null)
+            {
+                throw new ArgumentException("UUID is required", nameof(selectedCard));
+            }
+
+            // 1) grab all finishes / languages
+            await DBAccess.OpenConnectionAsync();
+            var finishes = await _repo.FetchFinishesForCardAsync(selectedCard.Uuid);
+            var languages = await _repo.FetchLanguagesForCardAsync(selectedCard.Uuid);
+            DBAccess.CloseConnection();
+
+            // 2) pick “nonfoil” if available, else first; same for English
+            string chosenFinish = finishes
+                .FirstOrDefault(f => f.Equals("nonfoil", StringComparison.OrdinalIgnoreCase))
+                ?? finishes.FirstOrDefault()
+                ?? "nonfoil";
+
+            string chosenLanguage = languages
+                .FirstOrDefault(l => l.Equals("English", StringComparison.OrdinalIgnoreCase))
+                ?? languages.FirstOrDefault()
+                ?? "English";
+
+            // 3) build your CardSet
+            return new CardSet
+            {
+                Uuid = selectedCard.Uuid,
+                Name = selectedCard.Name,
+                SelectedFinish = chosenFinish,
+                SelectedCondition = "Near Mint",
+                Language = chosenLanguage,
+                CardsOwned = 1,
+                CardsForTrade = 0
+            };
+        }
     }
 }

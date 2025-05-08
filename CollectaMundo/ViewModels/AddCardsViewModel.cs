@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices;
 using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Utilities;
+using ServiceStack;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
@@ -215,54 +216,34 @@ namespace CollectaMundo.ViewModels
         });
         public ICommand SubmitNewCardsWithDefaultsCommand => new RelayCommand<object>(async param =>
         {
-            // 1) Pull out the selected items
-            if (!(param is IEnumerable<object> selectedItems))
+            if (param is not IEnumerable<object> sel)
             {
                 return;
             }
 
-            var cards = selectedItems.OfType<CardSet>().ToList();
-            if (cards.Count == 0)
+            var originals = sel.OfType<CardSet>().ToList();
+            if (!originals.Any())
             {
                 return;
             }
 
-            // 2) For each, clone and assign defaults, then write & fetch the persisted record
-            var persistedCards = new List<CardSet>();
-            foreach (var original in cards)
+            var persisted = new List<CardSet>();
+            foreach (var o in originals)
             {
-                // clone so we don't modify the grid's in-memory version
-                var toSave = new CardSet
-                {
-                    Uuid = original.Uuid,
-                    Name = original.Name,
-                    SelectedCondition = "Near Mint",
-                    Language = "English",
-                    SelectedFinish = "nonfoil",
-                    CardsOwned = 1,
-                    CardsForTrade = 0
-                };
+                // 1) hand off to your coordinator, get back fully-populated saved card:
+                var saved = await _coordinator.SubmitNewCardsWithDefaultsAsync(o, isEdit: false);
 
-                // 3) let the coordinator handle insert-or-update and give us back the fully populated card
-                var saved = await _coordinator.SubmitCollectionUpdatesAsync(toSave, false);
-                persistedCards.Add(saved);
-
-                // 4) fire the CardProcessed event so MainWindow merges it into MyCollectionVM
+                // 2) raise event so MainWindow merges into MyCollection
                 CardProcessed?.Invoke(this, new CardProcessedEventArgs(saved));
+                persisted.Add(saved);
             }
-
-            // 5) Clear your “to add” pane (if that’s desired)
-            CardsToAdd.Clear();
-            ClearSelectionTrigger++;
-
-            // 6) Build up your status message
-            StatusMessage = "Added the following cards with default values:\n\n"
-                + string.Join("\n", persistedCards.Select(c =>
-                    $"- {c.Name} (Condition: {c.SelectedCondition}, " +
-                    $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
-                    $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
+            // build and expose summary
+            StatusMessage = "Added the following cards to your collection:\n\n" +
+            string.Join("\n", persisted.Select(c =>
+                $"- {c.Name} (Condition: {c.SelectedCondition}, " +
+                $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
+                $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
         });
-
         public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async param =>
         {
             // Make a copy to avoid modification issues during iteration.

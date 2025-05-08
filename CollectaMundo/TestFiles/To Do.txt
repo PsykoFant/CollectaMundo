@@ -3,7 +3,6 @@ TO DO
 
  - Add to collectionManager til MVVM!
 
- - Bug: Add with default, non-foil
  - Bug: Nul count skal ikke fjerne item i edit listview 
  - Merge lists i db og memory
  - Visibility crap
