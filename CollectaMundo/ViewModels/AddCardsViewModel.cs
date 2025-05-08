@@ -191,29 +191,47 @@ namespace CollectaMundo.ViewModels
         });
 
         // Commands - submit cards from listview
-        public ICommand SubmitNewCardsCommand => new RelayCommand<object>(async param =>
+        // 1) The shared helper:
+        private async Task SubmitCardsAsync(IEnumerable<CardSet> toSubmit, Func<CardSet, Task<CardSet>> persistAndFetch, bool clearAfter = true, string summaryTitle = "Added the following cards to your collection:")
         {
-            // Make a copy to avoid modification issues during iteration.
-            var cards = CardsToAdd.ToList();
-            foreach (var card in cards)
+            var originals = toSubmit.ToList();
+            var persisted = new List<CardSet>();
+
+            // 1a) Persist each one & raise the event
+            foreach (var o in originals)
             {
-                // get back the *complete* persisted record
-                var persisted = await _coordinator.SubmitCollectionUpdatesAsync(card, false);
-                CardProcessed?.Invoke(this, new CardProcessedEventArgs(persisted));
+                var saved = await persistAndFetch(o);
+                CardProcessed?.Invoke(this, new CardProcessedEventArgs(saved));
+                persisted.Add(saved);
             }
-            // Clear the in-memory collection after submission.
-            CardsToAdd.Clear();
 
-            // Signal the view to clear selection.
-            ClearSelectionTrigger++;
+            // 1b) Clear the “to add” pane if requested
+            if (clearAfter)
+            {
+                CardsToAdd.Clear();
+                ClearSelectionTrigger++;
+            }
 
-            // build and expose summary
-            StatusMessage = "Added the following cards to your collection:\n\n" +
-            string.Join("\n", cards.Select(c =>
-                $"- {c.Name} (Condition: {c.SelectedCondition}, " +
-                $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
-                $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
-        });
+            // 1c) Build your single summary string
+            StatusMessage = summaryTitle + "\n\n"
+                + string.Join("\n", persisted.Select(c =>
+                    $"- {c.Name} (Condition: {c.SelectedCondition}, " +
+                    $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
+                    $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
+        }
+
+        // 2) Now each command is just a thin call into that helper:
+
+        public ICommand SubmitNewCardsCommand => new RelayCommand<object>(async _ =>
+            await SubmitCardsAsync(
+                CardsToAdd,
+                card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: false)
+            )
+        );
+
+        public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async _ => await SubmitCardsAsync(CardsToAdd, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), true, "Updated the following cards withthese values:")
+        );
+
         public ICommand SubmitNewCardsWithDefaultsCommand => new RelayCommand<object>(async param =>
         {
             if (param is not IEnumerable<object> sel)
@@ -221,51 +239,18 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
-            var originals = sel.OfType<CardSet>().ToList();
+            var originals = sel.OfType<CardSet>();
             if (!originals.Any())
             {
                 return;
             }
 
-            var persisted = new List<CardSet>();
-            foreach (var o in originals)
-            {
-                // 1) hand off to your coordinator, get back fully-populated saved card:
-                var saved = await _coordinator.SubmitNewCardsWithDefaultsAsync(o, isEdit: false);
-
-                // 2) raise event so MainWindow merges into MyCollection
-                CardProcessed?.Invoke(this, new CardProcessedEventArgs(saved));
-                persisted.Add(saved);
-            }
-            // build and expose summary
-            StatusMessage = "Added the following cards to your collection:\n\n" +
-            string.Join("\n", persisted.Select(c =>
-                $"- {c.Name} (Condition: {c.SelectedCondition}, " +
-                $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
-                $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
-        });
-        public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async param =>
-        {
-            // Make a copy to avoid modification issues during iteration.
-            var cards = CardsToAdd.ToList();
-            foreach (var card in cards)
-            {
-                // get back the *complete* persisted record
-                var persisted = await _coordinator.SubmitCollectionUpdatesAsync(card, true);
-                CardProcessed?.Invoke(this, new CardProcessedEventArgs(persisted));
-            }
-            // Clear the in-memory collection after submission.
-            CardsToAdd.Clear();
-
-            // Signal the view to clear selection.
-            ClearSelectionTrigger++;
-
-            // build and expose summary
-            StatusMessage = "Added the following cards to your collection:\n\n" +
-            string.Join("\n", cards.Select(c =>
-                $"- {c.Name} (Condition: {c.SelectedCondition}, " +
-                $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
-                $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
+            await SubmitCardsAsync(
+                originals,
+                card => _coordinator.SubmitNewCardsWithDefaultsAsync(card, isEdit: false),
+                clearAfter: false,                        // maybe you don’t want to clear CardsToAdd here
+                summaryTitle: "Added the following cards with default values:"
+            );
         });
 
         private string _statusMessage = string.Empty;
