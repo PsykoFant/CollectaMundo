@@ -840,33 +840,28 @@
                         </MultiBinding>
                     </Label.Content>
                 </Label>
-                <Button x:Name="ButtonSubmitCardsToMyCollection" Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" 
-                        Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
-                        Command="{Binding DataContext.AddCardsVM.SubmitSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}" />                
+                <Button Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" 
+                        Visibility="{Binding AddCardsVM.CollectionEditVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
+                        Command="{Binding AddCardsVM.SubmitNewCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}" />                
                 <Button Content="Clear cards without submitting"
                     HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top"
                     Width="200" Height="20"
-                    Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
-                    Command="{Binding DataContext.AddCardsVM.ClearCardsToAddCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                    Visibility="{Binding AddCardsVM.CollectionEditVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
+                    Command="{Binding AddCardsVM.ClearCardsToAddCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
                 <Button Content="Add selected cards to my collection"
                     HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top"
                     Width="200" Height="20"
                     Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
-                    Command="{Binding DataContext.AddCardsVM.AddSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                    Command="{Binding AddCardsVM.AddSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                     CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
-                <ScrollViewer 
-                    HorizontalAlignment="Left" Margin="0,40,0,0"
-                    VerticalAlignment="Top" Height="187"
-                    VerticalScrollBarVisibility="Auto"
-                    HorizontalScrollBarVisibility="Auto"
+                <ScrollViewer HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
                     Visibility="{Binding AddCardsVM.StatusVisibility, RelativeSource={RelativeSource AncestorType=Window}}">
-                    <TextBlock TextWrapping="Wrap" VerticalAlignment="Top"
-                               Text="{Binding AddCardsVM.StatusMessage, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <TextBlock TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding AddCardsVM.StatusMessage, RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </ScrollViewer>
                 
                 <!--Cards to add listview-->
                 <ListView ItemsSource="{Binding AddCardsVM.CardsToAdd, RelativeSource={RelativeSource AncestorType=Window}}"
-                          Visibility="{Binding AddCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
+                          Visibility="{Binding AddCardsVM.CollectionEditVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
                           DataContext="{Binding AddCardsVM, RelativeSource={RelativeSource AncestorType=Window}}"
                           behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding AddCardsVM.RefreshColumnsTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"                          
                           Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
@@ -1149,7 +1144,7 @@
                                       CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                       Style="{StaticResource BelerenBold}" />
                             <MenuItem Header="Add selected card(s) with DEFAULT values to Collection" 
-                                      Command="{Binding AddCardsVM.AddCardsWithDefaultsCommand}"
+                                      Command="{Binding AddCardsVM.SubmitNewCardsWithDefaultsCommand}"
                                       CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                       Style="{StaticResource BelerenBold}"/>
                             <MenuItem Header="">
@@ -1208,25 +1203,28 @@
                         </MultiBinding>
                     </Label.Content>
                 </Label>
-                <Button x:Name="ButtonSubmitCardEditsInMyCollection" Content="Update selected cards" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" Visibility="Collapsed"/>
+                <Button Content="Update selected cards" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20"
+                        Visibility="{Binding EditCardsVM.CollectionEditVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
+                        Command="{Binding EditCardsVM.SubmitCardEditsCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
                 <Button Content="Clear cards without submitting"
                         HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top"
                         Width="200" Height="20"
-                        Visibility="{Binding EditCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
-                        Command="{Binding DataContext.EditCardsVM.ClearCardsToAddCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                        Visibility="{Binding EditCardsVM.CollectionEditVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
+                        Command="{Binding EditCardsVM.ClearCardsToAddCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
                 <Button Content="Edit selected cards"
                     HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top"
                     Width="120" Height="20"
                     Visibility="{Binding ElementName=MyCollectionDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
-                    Command="{Binding DataContext.EditCardsVM.EditSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                    Command="{Binding EditCardsVM.EditSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                     CommandParameter="{Binding SelectedItems, ElementName=MyCollectionDataGrid}" />
-                <ScrollViewer x:Name="EditStatusScrollViewer" HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Visibility="Collapsed">
-                    <TextBlock x:Name="EditStatusTextBlock" HorizontalAlignment="Left" Margin="0,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top"/>
+                <ScrollViewer HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                    Visibility="{Binding EditCardsVM.StatusVisibility, RelativeSource={RelativeSource AncestorType=Window}}">
+                    <TextBlock TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding EditCardsVM.StatusMessage, RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </ScrollViewer>
 
                 <!--Cards to edit-->
                 <ListView ItemsSource="{Binding EditCardsVM.CardsToAdd, RelativeSource={RelativeSource AncestorType=Window}}"
-                          Visibility="{Binding EditCardsVM.CardsToAddVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
+                          Visibility="{Binding EditCardsVM.CollectionEditVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
                           DataContext="{Binding EditCardsVM, RelativeSource={RelativeSource AncestorType=Window}}"
                           behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding EditCardsVM.RefreshColumnsTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"    
                           Margin="0,70,0,0" VerticalAlignment="Top" Height="170">

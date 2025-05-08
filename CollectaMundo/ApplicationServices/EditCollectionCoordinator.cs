@@ -37,10 +37,10 @@ namespace CollectaMundo.ApplicationServices
             targetCollection.Add(newItem);
         }
 
-        public async Task<CardSet> AddOrUpdateAndFetchCardAsync(CardSet card)
+        public async Task<CardSet> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit)
         {
             // 1) persist changes
-            await _domainLogic.AddOrUpdateCardAsync(card);
+            await _domainLogic.AddOrUpdateCardAsync(card, isEdit);
 
             // 2) make sure our “key” fields are set
             if (card.Uuid is null ||
@@ -65,41 +65,5 @@ namespace CollectaMundo.ApplicationServices
         }
 
 
-        //public async Task UpdateCardDetailsAsync(CardSet card, ObservableCollection<CardSet> inMemoryCollection)
-        //{
-
-        //    try
-        //    {
-        //        await _repository.UpdateCardAsync(card);
-        //        var existingCard = inMemoryCollection.FirstOrDefault(c => c.CardId == card.CardId);
-        //        if (existingCard != null)
-        //        {
-        //            existingCard.CardsOwned = card.CardsOwned;
-        //            existingCard.CardsForTrade = card.CardsForTrade;
-        //            existingCard.SelectedCondition = card.SelectedCondition;
-        //            existingCard.Language = card.Language;
-        //            existingCard.SelectedFinish = card.SelectedFinish;
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"Error in UpdateCardDetailsAsync: {ex.Message}");
-        //        throw;
-        //    }
-
-        //}
-        //public async Task DeleteCardAsync(CardSet card, ObservableCollection<CardSet> inMemoryCollection)
-        //{
-        //    try
-        //    {
-        //        await _repository.DeleteCardAsync(card);
-        //        inMemoryCollection.Remove(card);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"Error in DeleteCardAsync: {ex.Message}");
-        //        throw;
-        //    }
-        //}
     }
 }

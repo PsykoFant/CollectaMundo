@@ -52,7 +52,7 @@ namespace CollectaMundo.ViewModels
                 }
             }
 
-            OnPropertyChanged(nameof(CardsToAddVisibility));
+            OnPropertyChanged(nameof(CollectionEditVisibility));
         }
         private void Card_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
@@ -97,8 +97,8 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        // Controls visibility of the CardsToAdd listview.
-        public Visibility CardsToAddVisibility => CardsToAdd.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+        // Controls visibility of the listviews.
+        public Visibility CollectionEditVisibility => CardsToAdd.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 
         // Commands - add to listviews
         public ICommand AddSelectedCardsCommand => new RelayCommand<object>(async param =>
@@ -190,14 +190,14 @@ namespace CollectaMundo.ViewModels
         });
 
         // Commands - submit cards from listview
-        public ICommand SubmitSelectedCardsCommand => new RelayCommand<object>(async param =>
+        public ICommand SubmitNewCardsCommand => new RelayCommand<object>(async param =>
         {
             // Make a copy to avoid modification issues during iteration.
             var cards = CardsToAdd.ToList();
             foreach (var card in cards)
             {
                 // get back the *complete* persisted record
-                var persisted = await _coordinator.AddOrUpdateAndFetchCardAsync(card);
+                var persisted = await _coordinator.SubmitCollectionUpdatesAsync(card, false);
                 CardProcessed?.Invoke(this, new CardProcessedEventArgs(persisted));
             }
             // Clear the in-memory collection after submission.
@@ -213,7 +213,7 @@ namespace CollectaMundo.ViewModels
                 $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
                 $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
         });
-        public ICommand AddCardsWithDefaultsCommand => new RelayCommand<object>(async param =>
+        public ICommand SubmitNewCardsWithDefaultsCommand => new RelayCommand<object>(async param =>
         {
             // 1) Pull out the selected items
             if (!(param is IEnumerable<object> selectedItems))
@@ -244,7 +244,7 @@ namespace CollectaMundo.ViewModels
                 };
 
                 // 3) let the coordinator handle insert-or-update and give us back the fully populated card
-                var saved = await _coordinator.AddOrUpdateAndFetchCardAsync(toSave);
+                var saved = await _coordinator.SubmitCollectionUpdatesAsync(toSave, false);
                 persistedCards.Add(saved);
 
                 // 4) fire the CardProcessed event so MainWindow merges it into MyCollectionVM
@@ -263,7 +263,29 @@ namespace CollectaMundo.ViewModels
                     $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
         });
 
+        public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async param =>
+        {
+            // Make a copy to avoid modification issues during iteration.
+            var cards = CardsToAdd.ToList();
+            foreach (var card in cards)
+            {
+                // get back the *complete* persisted record
+                var persisted = await _coordinator.SubmitCollectionUpdatesAsync(card, true);
+                CardProcessed?.Invoke(this, new CardProcessedEventArgs(persisted));
+            }
+            // Clear the in-memory collection after submission.
+            CardsToAdd.Clear();
 
+            // Signal the view to clear selection.
+            ClearSelectionTrigger++;
+
+            // build and expose summary
+            StatusMessage = "Added the following cards to your collection:\n\n" +
+            string.Join("\n", cards.Select(c =>
+                $"- {c.Name} (Condition: {c.SelectedCondition}, " +
+                $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
+                $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
+        });
 
         private string _statusMessage = string.Empty;
         public string StatusMessage

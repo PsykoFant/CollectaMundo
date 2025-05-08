@@ -5,7 +5,7 @@ namespace CollectaMundo.Data
     public interface IEditCollectionRepository
     {
 
-        // Raw lookups
+        // Lookups
         Task<int?> CheckForExistingCardAsync(CardSet card);
         Task<List<string>> FetchLanguagesForCardAsync(string uuid);
         Task<List<string>> FetchFinishesForCardAsync(string uuid);
@@ -15,9 +15,10 @@ namespace CollectaMundo.Data
         string language,
         string finish);
 
-        // Raw CRUD
+        // CRUD
         Task AddCardAsync(CardSet card);
-        Task UpdateCardAsync(CardSet card);
+        Task EditCardAsync(CardSet card);
+        Task UpdateCardCountsAsync(CardSet card);
         Task DeleteCardAsync(CardSet card);
     }
 }

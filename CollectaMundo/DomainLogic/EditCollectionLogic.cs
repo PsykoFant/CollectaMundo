@@ -7,19 +7,34 @@ namespace CollectaMundo.DomainLogic
     public class EditCollectionLogic(IEditCollectionRepository repo) : IEditCollectionLogic
     {
         private readonly IEditCollectionRepository _repo = repo;
-        public async Task AddOrUpdateCardAsync(CardSet card)
+        public async Task AddOrUpdateCardAsync(CardSet card, bool isEdit)
         {
-            var existing = await _repo.CheckForExistingCardAsync(card);
-            if (existing.HasValue)
+            // If CardsOwned is zero, delete card
+            if (isEdit && card.CardsOwned == 0)
             {
-                Debug.WriteLine($"Opdaterer eksisterende kort...");
-                card.CardId = existing.Value;
-                await _repo.UpdateCardAsync(card);
+                Debug.WriteLine($"Nul kort tilbage - sletter kort...");
+                await _repo.DeleteCardAsync(card);
+            }
+
+            else if (isEdit)
+            {
+                Debug.WriteLine($"Vi redigerer kort med id: {card.CardId}...");
+                await _repo.EditCardAsync(card);
             }
             else
             {
-                Debug.WriteLine($"Fandt ikke eksisterende kort - tilføjer nyt kort");
-                await _repo.AddCardAsync(card);
+                var existing = await _repo.CheckForExistingCardAsync(card);
+                if (existing.HasValue)
+                {
+                    Debug.WriteLine($"Opdaterer eksisterende kort...");
+                    card.CardId = existing.Value;
+                    await _repo.UpdateCardCountsAsync(card);
+                }
+                else
+                {
+                    Debug.WriteLine($"Fandt ikke eksisterende kort - tilføjer nyt kort");
+                    await _repo.AddCardAsync(card);
+                }
             }
         }
         public async Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit)

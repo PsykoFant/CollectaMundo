@@ -52,15 +52,15 @@ namespace CollectaMundo.Data
             {
                 await DBAccess.OpenConnectionAsync();
 
-                using var insertCommand = new SQLiteCommand(insertSql, DBAccess.connection);
-                insertCommand.Parameters.AddWithValue("@uuid", card.Uuid);
-                insertCommand.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
-                insertCommand.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
-                insertCommand.Parameters.AddWithValue("@condition", card.SelectedCondition);
-                insertCommand.Parameters.AddWithValue("@language", card.Language);
-                insertCommand.Parameters.AddWithValue("@finish", card.SelectedFinish);
+                using var cmd = new SQLiteCommand(insertSql, DBAccess.connection);
+                cmd.Parameters.AddWithValue("@uuid", card.Uuid);
+                cmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
+                cmd.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
+                cmd.Parameters.AddWithValue("@condition", card.SelectedCondition);
+                cmd.Parameters.AddWithValue("@language", card.Language);
+                cmd.Parameters.AddWithValue("@finish", card.SelectedFinish);
 
-                await insertCommand.ExecuteNonQueryAsync();
+                await cmd.ExecuteNonQueryAsync();
             }
             catch (Exception ex)
             {
@@ -72,7 +72,43 @@ namespace CollectaMundo.Data
                 DBAccess.CloseConnection();
             }
         }
-        public async Task UpdateCardAsync(CardSet card)
+        public async Task EditCardAsync(CardSet card)
+        {
+
+            string updateSql = @"
+                UPDATE myCollection 
+                SET 
+                    condition = @condition,
+                    language = @language,
+                    finish = @finish,
+                    cardsOwned = @cardsOwned,
+                    cardsForTrade = @cardsForTrade
+                WHERE id = @cardId";
+            try
+            {
+                await DBAccess.OpenConnectionAsync();
+
+                using var cmd = new SQLiteCommand(updateSql, DBAccess.connection);
+                cmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
+                cmd.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
+                cmd.Parameters.AddWithValue("@condition", card.SelectedCondition);
+                cmd.Parameters.AddWithValue("@language", card.Language);
+                cmd.Parameters.AddWithValue("@finish", card.SelectedFinish);
+                cmd.Parameters.AddWithValue("@cardId", card.CardId);
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in UpdateCardCountsAsync: {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
+        }
+        public async Task UpdateCardCountsAsync(CardSet card)
         {
             // We treat card.CardsOwned and card.CardsForTrade as the *increment* amounts.
             string updateSql = @"
@@ -85,10 +121,6 @@ namespace CollectaMundo.Data
             {
                 await DBAccess.OpenConnectionAsync();
 
-                Debug.WriteLine($"CardsOwned we are trying to add: {card.CardsOwned}");
-                Debug.WriteLine($"CardsForTrade we are trying to add: {card.CardsForTrade}");
-                Debug.WriteLine($"Card id we are trying to update: {card.CardId}");
-
                 using var cmd = new SQLiteCommand(updateSql, DBAccess.connection);
                 cmd.Parameters.AddWithValue("@addCount", card.CardsOwned);
                 cmd.Parameters.AddWithValue("@addTrade", card.CardsForTrade);
@@ -98,7 +130,7 @@ namespace CollectaMundo.Data
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in UpdateCardAsync: {ex.Message}");
+                Debug.WriteLine($"Error in UpdateCardCountsAsync: {ex.Message}");
                 throw;
             }
             finally

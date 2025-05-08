@@ -28,7 +28,7 @@ namespace CollectaMundo
         {
             //MainWindow.CurrentInstance.LogoSmall.Visibility = showLogo ? Visibility.Visible : Visibility.Collapsed;
             //MainWindow.CurrentInstance.CardsToEditListView.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Collapsed;
+            //MainWindow.CurrentInstance.ButtonSubmitCardEditsInMyCollection.Visibility = Visibility.Collapsed;
             //MainWindow.CurrentInstance.ButtonClearCardsToEdit.Visibility = Visibility.Collapsed;
         }
 
@@ -76,8 +76,8 @@ namespace CollectaMundo
                 var cardDetails = selectedCards.Select(card =>
                     $"- {card.Name}").Aggregate((current, next) => current + "\n" + next);
 
-                MainWindow.CurrentInstance.EditStatusScrollViewer.Visibility = Visibility.Visible;
-                MainWindow.CurrentInstance.EditStatusTextBlock.Text = "Deleted the following cards from your collection:\n\n" + cardDetails;
+                //MainWindow.CurrentInstance.EditStatusScrollViewer.Visibility = Visibility.Visible;
+                //MainWindow.CurrentInstance.EditStatusTextBlock.Text = "Deleted the following cards from your collection:\n\n" + cardDetails;
 
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;
@@ -141,8 +141,8 @@ namespace CollectaMundo
                 var cardDetails = selectedCards.Select(card =>
                     $"- {card.Name}").Aggregate((current, next) => current + "\n" + next);
 
-                MainWindow.CurrentInstance.EditStatusScrollViewer.Visibility = Visibility.Visible;
-                MainWindow.CurrentInstance.EditStatusTextBlock.Text = "Updated trade status for the collowing cards:\n\n" + cardDetails;
+                //MainWindow.CurrentInstance.EditStatusScrollViewer.Visibility = Visibility.Visible;
+                //MainWindow.CurrentInstance.EditStatusTextBlock.Text = "Updated trade status for the collowing cards:\n\n" + cardDetails;
 
                 // Reload the collection
                 MainWindow.CurrentInstance.MyCollectionDataGrid.ItemsSource = null;

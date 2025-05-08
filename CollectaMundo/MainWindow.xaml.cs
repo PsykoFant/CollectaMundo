@@ -383,27 +383,28 @@ namespace CollectaMundo
             Dispatcher.Invoke(() =>
             {
                 var card = e.Card;
-                // 1. Find or add in MyCollectionVM.Cards
-                var existing = MyCollectionVM.Cards.FirstOrDefault(c =>
-                    c.Uuid == card.Uuid &&
-                    c.SelectedCondition == card.SelectedCondition &&
-                    c.Language == card.Language &&
-                    c.SelectedFinish == card.SelectedFinish);
+
+                // 1) Try to match by CardId (the true DB identity)
+                var existing = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == card.CardId);
 
                 if (existing != null)
                 {
                     existing.CardsOwned = card.CardsOwned;
                     existing.CardsForTrade = card.CardsForTrade;
+                    existing.SelectedCondition = card.SelectedCondition;
+                    existing.SelectedFinish = card.SelectedFinish;
+                    existing.Language = card.Language;
                 }
                 else
                 {
                     MyCollectionVM.Cards.Add(card);
                 }
 
-                // 2. Reapply filters
+                // 2) Reapply filters
                 MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
             });
         }
+
 
         // Right-click actions 
 
@@ -1057,7 +1058,7 @@ namespace CollectaMundo
             GridUtilsMenu.Visibility = Visibility.Collapsed;
 
             // Reset filtering and add/edit cards UI
-            EditStatusTextBlock.Text = string.Empty;
+            //EditStatusTextBlock.Text = string.Empty;
             AddCardsVM.StatusMessage = string.Empty;
             //AddStatusTextBlock.Text = string.Empty;
             UtilsInfoLabel.Content = "";
