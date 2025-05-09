@@ -3,7 +3,6 @@ TO DO
 
  - Add to collectionManager til MVVM!
 
- - Bug: Nul count skal ikke fjerne item i edit listview 
  - Merge lists i db og memory
 
 
@@ -13,6 +12,8 @@ TO DO
  - Backup restore brug MVVM (unit test) 
  - Import brug MVVM (unit test)
  - Deck manager brug MVVM (unit test)
+
+ - Fix logo synlighed problem ved eks. MainWindowViewModel
 
  - Hvorfor er der ingen kort fra Mystery Booster
 

@@ -222,7 +222,6 @@ namespace CollectaMundo
             //LogoSmall.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Visible;
             GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
-            FilterSummaryScrollViewer.Visibility = Visibility.Visible;
 
             await ShowStatusWindowAsync(false);
 
@@ -373,37 +372,78 @@ namespace CollectaMundo
         {
             Dispatcher.Invoke(() =>
             {
-                var card = e.Card;
+                var incoming = e.Card;
+                Debug.WriteLine($"[OnCardProcessed] Incoming --> CardId={incoming.CardId}, " +
+                                $"Key=[{incoming.Uuid}/{incoming.SelectedCondition}/" +
+                                $"{incoming.Language}/{incoming.SelectedFinish}]");
 
-                // find by CardId
-                var existing = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == card.CardId);
+                // 1) Upsert by CardId...
+                var existing = MyCollectionVM.Cards
+                    .FirstOrDefault(c => c.CardId == incoming.CardId);
 
-                if (card.CardsOwned == 0)
+                if (existing != null)
                 {
-                    // deletion: remove from the in-memory list
-                    if (existing != null)
-                        MyCollectionVM.Cards.Remove(existing);
-                }
-                else if (existing != null)
-                {
-                    // update
-                    existing.CardsOwned = card.CardsOwned;
-                    existing.CardsForTrade = card.CardsForTrade;
-                    existing.SelectedCondition = card.SelectedCondition;
-                    existing.SelectedFinish = card.SelectedFinish;
-                    existing.Language = card.Language;
+                    Debug.WriteLine($"[OnCardProcessed] Updating existing CardId={incoming.CardId}");
+                    existing.CardsOwned = incoming.CardsOwned;
+                    existing.CardsForTrade = incoming.CardsForTrade;
+                    existing.SelectedCondition = incoming.SelectedCondition;
+                    existing.Language = incoming.Language;
+                    existing.SelectedFinish = incoming.SelectedFinish;
                 }
                 else
                 {
-                    // brand new
-                    MyCollectionVM.Cards.Add(card);
+                    Debug.WriteLine($"[OnCardProcessed] Adding new CardId={incoming.CardId}");
+                    MyCollectionVM.Cards.Add(incoming);
                 }
 
-                // reapply any filters
+                // 2) Purge only *true* duplicates (same uuid+condition+language+finish)
+                var duplicates = MyCollectionVM.Cards
+                    .Where(c =>
+                        c.CardId != incoming.CardId
+                     && c.Uuid == incoming.Uuid
+                     && c.SelectedCondition == incoming.SelectedCondition
+                     && c.Language == incoming.Language
+                     && c.SelectedFinish == incoming.SelectedFinish)
+                    .ToList();
+
+                Debug.WriteLine($"[OnCardProcessed] Purging {duplicates.Count} true duplicate(s)");
+                foreach (var dup in duplicates)
+                {
+                    Debug.WriteLine($"  • Removing CardId={dup.CardId}");
+                    MyCollectionVM.Cards.Remove(dup);
+                }
+
+                // 3) Reapply filters
                 MyCollectionVM.FilteredCards =
-                  _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
+                    _filteringService.ApplyFilters(
+                        MyCollectionVM.Cards,
+                        FilterVM.Filters.Values);
+
+                Debug.WriteLine($"[OnCardProcessed] After purge --> Total={MyCollectionVM.Cards.Count}, " +
+                                $"Filtered={MyCollectionVM.FilteredCards.Count}");
             });
         }
+
+
+
+        private void ReapplyFiltersAndLog()
+        {
+            MyCollectionVM.FilteredCards =
+                _filteringService.ApplyFilters(
+                    MyCollectionVM.Cards,
+                    FilterVM.Filters.Values
+                );
+
+            Debug.WriteLine(
+                $"[OnCardProcessed] After purge --> Total={MyCollectionVM.Cards.Count}, " +
+                $"Filtered={MyCollectionVM.FilteredCards.Count}"
+            );
+        }
+
+
+
+
+
 
 
         #endregion
@@ -477,7 +517,6 @@ namespace CollectaMundo
                 HeadlineDecks.Content = "Deck Editor";
                 GridTopMenu.IsEnabled = false;
                 GridFiltering.Visibility = Visibility.Visible;
-                FilterSummaryScrollViewer.Visibility = Visibility.Visible;
 
                 _ = MyCollectionDataGrid.Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -960,7 +999,6 @@ namespace CollectaMundo
         {
             ResetGrids();
             MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
-            FilterSummaryScrollViewer.Visibility = Visibility.Visible;
 
             MyCollectionDataGrid.Dispatcher.BeginInvoke(new Action(() =>
             {
@@ -980,7 +1018,6 @@ namespace CollectaMundo
             }), System.Windows.Threading.DispatcherPriority.Loaded);
 
             MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
-            FilterSummaryScrollViewer.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Visible;
             LanguageComboBox.Visibility = Visibility.Visible;
@@ -1024,13 +1061,10 @@ namespace CollectaMundo
             GridUtilsMenu.Visibility = Visibility.Collapsed;
 
             // Reset filtering and add/edit cards UI
-            //EditStatusTextBlock.Text = string.Empty;
             AddCardsVM.StatusMessage = string.Empty;
             EditCardsVM.StatusMessage = string.Empty;
-            //AddStatusTextBlock.Text = string.Empty;
             UtilsInfoLabel.Content = "";
-            FilterSummaryScrollViewer.Visibility = Visibility.Collapsed;
-            //LogoSmall.Visibility = Visibility.Collapsed;
+
 
             // Reset filter UI specific to my collection 
             LanguageComboBox.Visibility = Visibility.Collapsed;

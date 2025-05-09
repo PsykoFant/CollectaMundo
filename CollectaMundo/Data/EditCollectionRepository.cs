@@ -159,6 +159,93 @@ namespace CollectaMundo.Data
                 DBAccess.CloseConnection();
             }
         }
+        public async Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish)
+        {
+            const string selectSql = @"
+                SELECT id, cardsOwned, cardsForTrade
+                  FROM myCollection
+                 WHERE uuid      = @uuid
+                   AND condition = @cond
+                   AND language  = @lang
+                   AND finish    = @fin;
+            ";
+
+            const string updateSql = @"
+                UPDATE myCollection
+                   SET cardsOwned    = @sumOwned,
+                       cardsForTrade = @sumTrade
+                 WHERE id = @keepId;
+            ";
+
+            const string deleteSql = @"
+                DELETE FROM myCollection
+                 WHERE uuid      = @uuid
+                   AND condition = @cond
+                   AND language  = @lang
+                   AND finish    = @fin
+                   AND id       <> @keepId;
+            ";
+
+            await DBAccess.OpenConnectionAsync();
+            try
+            {
+                // 1) pull all matching rows
+                var rows = new List<(int id, int owned, int trade)>();
+                using (var cmd = new SQLiteCommand(selectSql, DBAccess.connection))
+                {
+                    cmd.Parameters.AddWithValue("@uuid", uuid);
+                    cmd.Parameters.AddWithValue("@cond", condition);
+                    cmd.Parameters.AddWithValue("@lang", language);
+                    cmd.Parameters.AddWithValue("@fin", finish);
+
+                    using var rdr = await cmd.ExecuteReaderAsync();
+                    while (await rdr.ReadAsync())
+                    {
+                        rows.Add((
+                            rdr.GetInt32(0),
+                            rdr.GetInt32(1),
+                            rdr.GetInt32(2)));
+                    }
+                }
+
+                if (rows.Count <= 1)
+                    return; // nothing to merge
+
+                // 2) sum
+                var sumOwned = rows.Sum(r => r.owned);
+                var sumTrade = rows.Sum(r => r.trade);
+                var keepId = rows[0].id;  // choose the first as survivor
+
+                // 3) update survivor
+                using (var upd = new SQLiteCommand(updateSql, DBAccess.connection))
+                {
+                    upd.Parameters.AddWithValue("@sumOwned", sumOwned);
+                    upd.Parameters.AddWithValue("@sumTrade", sumTrade);
+                    upd.Parameters.AddWithValue("@keepId", keepId);
+                    await upd.ExecuteNonQueryAsync();
+                }
+
+                // 4) delete the rest
+                using (var del = new SQLiteCommand(deleteSql, DBAccess.connection))
+                {
+                    del.Parameters.AddWithValue("@uuid", uuid);
+                    del.Parameters.AddWithValue("@cond", condition);
+                    del.Parameters.AddWithValue("@lang", language);
+                    del.Parameters.AddWithValue("@fin", finish);
+                    del.Parameters.AddWithValue("@keepId", keepId);
+                    await del.ExecuteNonQueryAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in MergeDuplicateRecordsAsync: {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
+        }
         public async Task<List<string>> FetchLanguagesForCardAsync(string uuid)
         {
             if (string.IsNullOrEmpty(uuid))
