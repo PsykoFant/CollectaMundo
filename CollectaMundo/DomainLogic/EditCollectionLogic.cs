@@ -100,7 +100,7 @@ namespace CollectaMundo.DomainLogic
                 ?? languages.FirstOrDefault()
                 ?? "English";
 
-            // 3) build your CardSet
+            // 3) build CardSet
             return new CardSet
             {
                 Uuid = selectedCard.Uuid,

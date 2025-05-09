@@ -1,7 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices;
 using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Utilities;
-using ServiceStack;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
@@ -17,15 +16,13 @@ namespace CollectaMundo.ViewModels
         public event EventHandler<CardProcessedEventArgs>? CardProcessed;
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
 
-        // Controls removal behavior when CardsOwned reaches zero.
-        public bool RemoveCardWhenCardsOwnedZero { get; set; } = true; // Default: remove card
-
         private readonly IEditCollectionCoordinator _coordinator;
-
+        private readonly bool _removeCardWhenZero;
         // Constructor
-        public AddCardsViewModel(IEditCollectionCoordinator coordinator)
+        public AddCardsViewModel(IEditCollectionCoordinator coordinator, bool removeCardWhenZero)
         {
             _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
+            _removeCardWhenZero = removeCardWhenZero;
             CardsToAdd.CollectionChanged += CardsToAdd_CollectionChanged;
         }
         private void CardsToAdd_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -60,7 +57,7 @@ namespace CollectaMundo.ViewModels
             if (sender is CardSet card && e.PropertyName == nameof(CardSet.CardsOwned))
             {
                 // Only remove the card if the flag is true.
-                if (RemoveCardWhenCardsOwnedZero && card.CardsOwned <= 0 && CardsToAdd.Contains(card))
+                if (_removeCardWhenZero && card.CardsOwned <= 0 && CardsToAdd.Contains(card))
                 {
                     // Remove on the UI thread.
                     Application.Current.Dispatcher.Invoke(() => CardsToAdd.Remove(card));
@@ -191,7 +188,35 @@ namespace CollectaMundo.ViewModels
         });
 
         // Commands - submit cards from listview
-        // 1) The shared helper:
+        public ICommand SubmitNewCardsCommand => new RelayCommand<object>(async _ =>
+            await SubmitCardsAsync(
+                CardsToAdd,
+                card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: false)
+            )
+        );
+        public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async _ => await SubmitCardsAsync(CardsToAdd, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), true, "Updated the following cards withthese values:")
+        );
+        public ICommand SubmitNewCardsWithDefaultsCommand => new RelayCommand<object>(async param =>
+        {
+            if (param is not IEnumerable<object> sel)
+            {
+                return;
+            }
+
+            var originals = sel.OfType<CardSet>();
+            if (!originals.Any())
+            {
+                return;
+            }
+
+            await SubmitCardsAsync(
+                originals,
+                card => _coordinator.SubmitNewCardsWithDefaultsAsync(card, isEdit: false),
+                clearAfter: false,                        // maybe you don’t want to clear CardsToAdd here
+                summaryTitle: "Added the following cards with default values:"
+            );
+        });
+        // Shared helper
         private async Task SubmitCardsAsync(IEnumerable<CardSet> toSubmit, Func<CardSet, Task<CardSet>> persistAndFetch, bool clearAfter = true, string summaryTitle = "Added the following cards to your collection:")
         {
             var originals = toSubmit.ToList();
@@ -219,39 +244,6 @@ namespace CollectaMundo.ViewModels
                     $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
                     $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
         }
-
-        // 2) Now each command is just a thin call into that helper:
-
-        public ICommand SubmitNewCardsCommand => new RelayCommand<object>(async _ =>
-            await SubmitCardsAsync(
-                CardsToAdd,
-                card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: false)
-            )
-        );
-
-        public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async _ => await SubmitCardsAsync(CardsToAdd, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), true, "Updated the following cards withthese values:")
-        );
-
-        public ICommand SubmitNewCardsWithDefaultsCommand => new RelayCommand<object>(async param =>
-        {
-            if (param is not IEnumerable<object> sel)
-            {
-                return;
-            }
-
-            var originals = sel.OfType<CardSet>();
-            if (!originals.Any())
-            {
-                return;
-            }
-
-            await SubmitCardsAsync(
-                originals,
-                card => _coordinator.SubmitNewCardsWithDefaultsAsync(card, isEdit: false),
-                clearAfter: false,                        // maybe you don’t want to clear CardsToAdd here
-                summaryTitle: "Added the following cards with default values:"
-            );
-        });
 
         private string _statusMessage = string.Empty;
         public string StatusMessage

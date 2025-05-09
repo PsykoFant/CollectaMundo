@@ -10,11 +10,11 @@ namespace CollectaMundo.ApplicationServices
         private readonly IEditCollectionLogic _domainLogic = domainLogic ?? throw new ArgumentNullException(nameof(domainLogic));
         private readonly IEditCollectionRepository _repo = repo ?? throw new ArgumentNullException(nameof(repo));
 
-        // Public wrappers
-        public Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewAsync(selectedCard, targetCollection, false);
-        public Task AddCardToEditCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewAsync(selectedCard, targetCollection, true);
-        // Common implementation
-        private async Task AddCardToListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection, bool isEdit)
+        // Adding cards to listview
+        public Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewHelperAsync(selectedCard, targetCollection, false);
+        public Task AddCardToEditCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewHelperAsync(selectedCard, targetCollection, true);
+        // Common helper
+        private async Task AddCardToListViewHelperAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection, bool isEdit)
         {
             // 1) Let your domain‐logic prepare the fully populated CardSet
             var newItem = await _domainLogic.PrepareCardForListAsync(selectedCard, isEdit);
@@ -40,7 +40,22 @@ namespace CollectaMundo.ApplicationServices
             // 4) If it really is new, add it to the in‐memory list
             targetCollection.Add(newItem);
         }
+
+        // Submitting cards to database
         public async Task<CardSet> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit)
+        {
+            return await SaveAndFetchHelperAsync(card, isEdit);
+        }
+        public async Task<CardSet> SubmitNewCardsWithDefaultsAsync(CardSet raw, bool isEdit)
+        {
+            // first prepare “defaults” card
+            var toSave = await _domainLogic.PrepareNewCardWithDefaultsAsync(raw);
+
+            // then use the same save+fetch helper
+            return await SaveAndFetchHelperAsync(toSave, isEdit);
+        }
+        // Common helper
+        private async Task<CardSet> SaveAndFetchHelperAsync(CardSet card, bool isEdit)
         {
             // 1) persist changes
             await _domainLogic.AddOrUpdateCardAsync(card, isEdit);
@@ -58,7 +73,7 @@ namespace CollectaMundo.ApplicationServices
                 );
             }
 
-            // 3) fetch the fully-populated row
+            // 3) fetch the fully‐populated row
             return await _repo.GetMyCollectionRecordAsync(
                 card.Uuid,
                 card.SelectedCondition,
@@ -66,22 +81,6 @@ namespace CollectaMundo.ApplicationServices
                 card.SelectedFinish
             );
         }
-        public async Task<CardSet> SubmitNewCardsWithDefaultsAsync(CardSet raw, bool isEdit)
-        {
-            // 1) prepare a fully‐populated CardSet (language/finish chosen correctly)
-            var toSave = await _domainLogic.PrepareNewCardWithDefaultsAsync(raw);
-
-            // 2) now persist
-            await _domainLogic.AddOrUpdateCardAsync(toSave, isEdit);
-
-            // 3) re‐fetch the fully‐populated record
-            return await _repo.GetMyCollectionRecordAsync(
-                toSave.Uuid!,
-                toSave.SelectedCondition!,
-                toSave.Language!,
-                toSave.SelectedFinish!);
-        }
-
 
     }
 }

@@ -5,7 +5,6 @@ using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Presentation.Behaviors;
 using CollectaMundo.UICoordinators;
 using CollectaMundo.ViewModels;
-using ServiceStack;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
@@ -89,12 +88,6 @@ namespace CollectaMundo
 
         // Flag to track startup phase
         public bool _isStartup = true;
-
-        //public readonly List<CardSet> allCards = [];
-        public readonly List<CardSet> myCards = [];
-        //public readonly List<CardSet> allCardsForDecks = [];
-        //public readonly List<CardSet> cardsInDecks = [];
-
         public enum CardListObject
         {
             AllCards,
@@ -148,8 +141,6 @@ namespace CollectaMundo
         Button cancelButton = new();
         string columnToEdit = string.Empty;
 
-        // Object of AddToCollectionManager class to access that functionality
-        private readonly AddToCollectionManager addToCollectionManager = new();
         public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [[50, 50], [50, 50], [50]];
 
         // Read the price retailer from appsettings.json
@@ -179,8 +170,8 @@ namespace CollectaMundo
             var editRepo = new EditCollectionRepository();
             var editLogic = new EditCollectionLogic(editRepo);
             var editCoordinator = new EditCollectionCoordinator(editLogic, editRepo);
-            AddCardsVM = new AddCardsViewModel(editCoordinator);
-            EditCardsVM = new AddCardsViewModel(editCoordinator);
+            AddCardsVM = new AddCardsViewModel(editCoordinator, removeCardWhenZero: true);
+            EditCardsVM = new AddCardsViewModel(editCoordinator, removeCardWhenZero: false);
             AddCardsVM.CardProcessed += OnCardProcessed;
             EditCardsVM.CardProcessed += OnCardProcessed;
 
@@ -403,36 +394,6 @@ namespace CollectaMundo
                 // 2) Reapply filters
                 MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
             });
-        }
-
-
-        // Right-click actions 
-
-        private void ButtonDeleteCardsFromCollection_Click(object sender, RoutedEventArgs e)
-        {
-            List<CardSet> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardSet>().ToList();
-            if (selectedCards.Count > 0)
-            {
-                addToCollectionManager.DeleteCardsFromCollection(selectedCards);
-            }
-        }
-        private void ButtonSetCardsForTrade_Click(object sender, RoutedEventArgs e)
-        {
-            List<CardSet> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardSet>().ToList();
-            if (selectedCards.Count > 0)
-            {
-                addToCollectionManager.SetCardsForTrade(selectedCards, true);
-                MyCollectionDataGrid.UnselectAll();
-            }
-        }
-        private void ButtonSetNoneForTrade_Click(object sender, RoutedEventArgs e)
-        {
-            List<CardSet> selectedCards = MyCollectionDataGrid.SelectedItems.Cast<CardSet>().ToList();
-            if (selectedCards.Count > 0)
-            {
-                addToCollectionManager.SetCardsForTrade(selectedCards, false);
-                MyCollectionDataGrid.UnselectAll();
-            }
         }
 
         #endregion
@@ -999,7 +960,6 @@ namespace CollectaMundo
 
             GridFiltering.Visibility = Visibility.Visible;
             GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
-            AddToCollectionManager.AdjustColumnWidths();
         }
         private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
         {
@@ -1012,7 +972,6 @@ namespace CollectaMundo
 
             MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
             FilterSummaryScrollViewer.Visibility = Visibility.Visible;
-            //LogoSmall.Visibility = Visibility.Visible;
             GridFiltering.Visibility = Visibility.Visible;
             GridMyCollection.Visibility = Visibility.Visible;
             LanguageComboBox.Visibility = Visibility.Visible;
@@ -1023,8 +982,6 @@ namespace CollectaMundo
             SelectedConditionOperatorComboBox.Visibility = Visibility.Visible;
             CheckBoxCardsForTrade.Visibility = Visibility.Visible;
             CheckBoxCardsNotForTrade.Visibility = Visibility.Visible;
-
-            AddToCollectionManager.AdjustColumnWidths();
         }
         private void MenuDecks_Click(object sender, RoutedEventArgs e)
         {

@@ -5,7 +5,6 @@ TO DO
 
  - Bug: Nul count skal ikke fjerne item i edit listview 
  - Merge lists i db og memory
- - Visibility crap
 
 
 
