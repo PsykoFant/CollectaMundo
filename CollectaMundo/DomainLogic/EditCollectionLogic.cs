@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.Data;
 using CollectaMundo.DomainLogic.Models;
+using CollectaMundo.ViewModels;
 using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic
@@ -112,5 +113,81 @@ namespace CollectaMundo.DomainLogic
                 CardsForTrade = 0
             };
         }
+
+
+        public async Task<CardSet> SaveAndFetchAsync(CardSet card, bool isEdit)
+        {
+            // 1) insert/update/delete
+            await AddOrUpdateCardAsync(card, isEdit);
+
+            // 2) if delete‐by‐zero, return the delete marker so UI can remove it
+            if (isEdit && card.CardsOwned == 0)
+                return card;
+
+            // 3) merge any duplicates down in the DB
+            await _repo.MergeDuplicateRecordsAsync(
+              card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!);
+
+            // 4) fetch the one “winner” back
+            return await _repo.GetMyCollectionRecordAsync(
+              card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!);
+        }
+
+        public async Task<CardSet> SaveWithDefaultsAsync(CardSet raw)
+        {
+            // 1) pick defaults (nonfoil/Near Mint/English)
+            var toSave = await PrepareNewCardWithDefaultsAsync(raw);
+            // 2) persist & fetch
+            return await SaveAndFetchAsync(toSave, isEdit: false);
+        }
+
+        public async Task<CardChangeEventArgs> SaveAndReturnChangesAsync(
+            CardSet raw, bool isEdit)
+        {
+            // 1) perform the single‐row operation (insert / update / delete)
+            await AddOrUpdateCardAsync(raw, isEdit);
+
+            // 2) if we just deleted by setting CardsOwned=0
+            if (isEdit && raw.CardsOwned == 0)
+            {
+                return new CardChangeEventArgs(raw.CardId);
+            }
+
+            // 3) in the DB, find all matching IDs by the business key
+            var allIds = await _repo.GetMatchingRecordIdsAsync(
+                raw.Uuid!,
+                raw.SelectedCondition!,
+                raw.Language!,
+                raw.SelectedFinish!);
+
+            // if there’s more than one, merge them
+            int[] removedIds = Array.Empty<int>();
+            if (allIds.Count > 1)
+            {
+                // choose the first as the survivor
+                var keepId = allIds[0];
+                removedIds = allIds.Skip(1).ToArray();
+
+                // perform the merge in the DB
+                await _repo.MergeDuplicateRecordsAsync(
+                    raw.Uuid!,
+                    raw.SelectedCondition!,
+                    raw.Language!,
+                    raw.SelectedFinish!);
+            }
+
+            // 4) fetch the one true survivor from the view
+            var survivor = await _repo.GetMyCollectionRecordAsync(
+                raw.Uuid!,
+                raw.SelectedCondition!,
+                raw.Language!,
+                raw.SelectedFinish!);
+
+            // 5) return both the survivor and any removed IDs
+            return new CardChangeEventArgs(survivor, removedIds);
+        }
+
+
+
     }
 }

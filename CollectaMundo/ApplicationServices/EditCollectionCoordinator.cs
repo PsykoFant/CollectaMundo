@@ -42,43 +42,7 @@ namespace CollectaMundo.ApplicationServices
         }
 
         // Submitting cards to database
-        public async Task<CardSet> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit)
-        {
-            return await SaveAndFetchHelperAsync(card, isEdit);
-        }
-        public async Task<CardSet> SubmitNewCardsWithDefaultsAsync(CardSet raw, bool isEdit)
-        {
-            // first prepare “defaults” card
-            var toSave = await _domainLogic.PrepareNewCardWithDefaultsAsync(raw);
-
-            // then use the same save+fetch helper
-            return await SaveAndFetchHelperAsync(toSave, isEdit);
-        }
-        // Common helper
-        private async Task<CardSet> SaveAndFetchHelperAsync(CardSet card, bool isEdit)
-        {
-            // 1) persist (insert/update/delete)
-            await _domainLogic.AddOrUpdateCardAsync(card, isEdit);
-
-            // 2) if we just deleted it, hand it back as a delete-marker
-            if (isEdit && card.CardsOwned == 0)
-                return card;
-
-            // 3) merge any duplicates in the database
-            await _repo.MergeDuplicateRecordsAsync(
-                card.Uuid!,
-                card.SelectedCondition!,
-                card.Language!,
-                card.SelectedFinish!);
-
-            // 4) fetch the one true survivor
-            return await _repo.GetMyCollectionRecordAsync(
-                card.Uuid!,
-                card.SelectedCondition!,
-                card.Language!,
-                card.SelectedFinish!);
-        }
-
-
+        public Task<CardSet> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit) => _domainLogic.SaveAndFetchAsync(card, isEdit);
+        public Task<CardSet> SubmitNewCardsWithDefaultsAsync(CardSet raw) => _domainLogic.SaveWithDefaultsAsync(raw);
     }
 }

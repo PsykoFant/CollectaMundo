@@ -211,31 +211,35 @@ namespace CollectaMundo.ViewModels
 
             await SubmitCardsAsync(
                 originals,
-                card => _coordinator.SubmitNewCardsWithDefaultsAsync(card, isEdit: false),
+                card => _coordinator.SubmitNewCardsWithDefaultsAsync(card),
                 clearAfter: false,                        // maybe you don’t want to clear CardsToAdd here
                 summaryTitle: "Added the following cards with default values:"
             );
         });
         // Shared helper
-        private async Task SubmitCardsAsync(IEnumerable<CardSet> toSubmit, Func<CardSet, Task<CardSet>> persistAndFetch, bool clearAfter = true, string summaryTitle = "Added the following cards to your collection:")
+        private async Task SubmitCardsAsync(
+            IEnumerable<CardSet> toSubmit,
+            Func<CardSet, Task<CardChangeEventArgs>> persistAndFetch,
+            bool clearAfter = true,
+            string summaryTitle = "Added the following cards to your collection:")
         {
             var originals = toSubmit.ToList();
-            var persisted = new List<CardSet>();
+            var changes = new List<CardChangeEventArgs>();
 
-            // 1a) Persist each one & raise the event
             foreach (var o in originals)
             {
-                var saved = await persistAndFetch(o);
-                CardProcessed?.Invoke(this, new CardProcessedEventArgs(saved));
-                persisted.Add(saved);
+                var change = await persistAndFetch(o);
+                changes.Add(change);
             }
 
-            // 1b) Clear the “to add” pane if requested
             if (clearAfter)
             {
                 CardsToAdd.Clear();
                 ClearSelectionTrigger++;
             }
+
+            foreach (var change in changes)
+                CardChanged?.Invoke(this, change);
 
             // 1c) Build your single summary string
             StatusMessage = summaryTitle + "\n\n"
@@ -271,4 +275,30 @@ namespace CollectaMundo.ViewModels
     {
         public CardSet Card { get; } = card;
     }
+
+    public class CardChangeEventArgs : EventArgs
+    {
+        public enum ChangeType { Upsert, Delete }
+        public ChangeType Type { get; }
+        public CardSet? Card { get; }     // the survivor for Upsert
+        public int[] Removed { get; }     // any CardId(s) we need to purge
+
+        // upsert (add/update/merge) constructor
+        public CardChangeEventArgs(CardSet card, int[] removed = null)
+        {
+            Type = ChangeType.Upsert;
+            Card = card;
+            Removed = removed ?? Array.Empty<int>();
+        }
+
+        // delete-by-zero constructor
+        public CardChangeEventArgs(int deletedCardId)
+        {
+            Type = ChangeType.Delete;
+            Card = null;
+            Removed = new[] { deletedCardId };
+        }
+    }
+
+
 }

@@ -367,6 +367,44 @@ namespace CollectaMundo.Data
             }
             return card;
         }
+        public async Task<List<int>> GetMatchingRecordIdsAsync(string uuid, string condition, string language, string finish)
+        {
+            const string sql = @"
+                SELECT id
+                  FROM myCollection
+                 WHERE uuid      = @uuid
+                   AND condition = @cond
+                   AND language  = @lang
+                   AND finish    = @fin;
+            ";
+
+            var ids = new List<int>();
+            await DBAccess.OpenConnectionAsync();
+            try
+            {
+                using var cmd = new SQLiteCommand(sql, DBAccess.connection);
+                cmd.Parameters.AddWithValue("@uuid", uuid);
+                cmd.Parameters.AddWithValue("@cond", condition);
+                cmd.Parameters.AddWithValue("@lang", language);
+                cmd.Parameters.AddWithValue("@fin", finish);
+
+                using var rdr = await cmd.ExecuteReaderAsync();
+                while (await rdr.ReadAsync())
+                {
+                    ids.Add(rdr.GetInt32(0));
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in GetMatchingRecordIdsAsync: {ex}");
+                throw;
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
+            return ids;
+        }
 
     }
 }
