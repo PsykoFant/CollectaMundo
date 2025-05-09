@@ -57,23 +57,29 @@ namespace CollectaMundo.ApplicationServices
         // Common helper
         private async Task<CardSet> SaveAndFetchHelperAsync(CardSet card, bool isEdit)
         {
-            // 1) persist changes
+            // 1) persist (insert/update/delete) via domain
             await _domainLogic.AddOrUpdateCardAsync(card, isEdit);
 
-            // 2) make sure our “key” fields are set
+            // 2) if we just deleted it, try to re-read it from the DB,
+            //    instead hand back the card with CardsOwned==0 as a “delete marker”
+            if (isEdit && card.CardsOwned == 0)
+            {
+                // We know card.CardId is set, so UI can find and remove it
+                return card;
+            }
+
+            // 3) otherwise re-fetch the full row
             if (card.Uuid is null ||
                 card.SelectedCondition is null ||
                 card.Language is null ||
                 card.SelectedFinish is null)
             {
                 throw new InvalidOperationException(
-                    "Cannot fetch persisted card because one or more key fields are null: " +
-                    $"Uuid={card.Uuid}, Condition={card.SelectedCondition}, " +
-                    $"Language={card.Language}, Finish={card.SelectedFinish}"
+                    "Cannot fetch card because a key field is null: " +
+                    $"Uuid={card.Uuid},Condition={card.SelectedCondition},Language={card.Language},Finish={card.SelectedFinish}"
                 );
             }
 
-            // 3) fetch the fully‐populated row
             return await _repo.GetMyCollectionRecordAsync(
                 card.Uuid,
                 card.SelectedCondition,

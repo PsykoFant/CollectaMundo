@@ -30,8 +30,8 @@ namespace CollectaMundo
         public FilterViewModel FilterVM { get; }
 
         private readonly IFilteringCoordinator _filteringService;
-        public AddCardsViewModel AddCardsVM { get; }
-        public AddCardsViewModel EditCardsVM { get; }
+        public EditCollectionViewModel AddCardsVM { get; }
+        public EditCollectionViewModel EditCardsVM { get; }
 
         private static MainWindow? _currentInstance;
         public static MainWindow CurrentInstance
@@ -170,8 +170,8 @@ namespace CollectaMundo
             var editRepo = new EditCollectionRepository();
             var editLogic = new EditCollectionLogic(editRepo);
             var editCoordinator = new EditCollectionCoordinator(editLogic, editRepo);
-            AddCardsVM = new AddCardsViewModel(editCoordinator, removeCardWhenZero: true);
-            EditCardsVM = new AddCardsViewModel(editCoordinator, removeCardWhenZero: false);
+            AddCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: true);
+            EditCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: false);
             AddCardsVM.CardProcessed += OnCardProcessed;
             EditCardsVM.CardProcessed += OnCardProcessed;
 
@@ -375,11 +375,18 @@ namespace CollectaMundo
             {
                 var card = e.Card;
 
-                // 1) Try to match by CardId (the true DB identity)
+                // find by CardId
                 var existing = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == card.CardId);
 
-                if (existing != null)
+                if (card.CardsOwned == 0)
                 {
+                    // deletion: remove from the in-memory list
+                    if (existing != null)
+                        MyCollectionVM.Cards.Remove(existing);
+                }
+                else if (existing != null)
+                {
+                    // update
                     existing.CardsOwned = card.CardsOwned;
                     existing.CardsForTrade = card.CardsForTrade;
                     existing.SelectedCondition = card.SelectedCondition;
@@ -388,13 +395,16 @@ namespace CollectaMundo
                 }
                 else
                 {
+                    // brand new
                     MyCollectionVM.Cards.Add(card);
                 }
 
-                // 2) Reapply filters
-                MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
+                // reapply any filters
+                MyCollectionVM.FilteredCards =
+                  _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
             });
         }
+
 
         #endregion
 
@@ -951,7 +961,6 @@ namespace CollectaMundo
             ResetGrids();
             MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
             FilterSummaryScrollViewer.Visibility = Visibility.Visible;
-            //LogoSmall.Visibility = Visibility.Visible;
 
             MyCollectionDataGrid.Dispatcher.BeginInvoke(new Action(() =>
             {
@@ -1017,6 +1026,7 @@ namespace CollectaMundo
             // Reset filtering and add/edit cards UI
             //EditStatusTextBlock.Text = string.Empty;
             AddCardsVM.StatusMessage = string.Empty;
+            EditCardsVM.StatusMessage = string.Empty;
             //AddStatusTextBlock.Text = string.Empty;
             UtilsInfoLabel.Content = "";
             FilterSummaryScrollViewer.Visibility = Visibility.Collapsed;

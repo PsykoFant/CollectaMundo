@@ -823,8 +823,7 @@
                    Opacity="0.8" 
                    Visibility="{Binding AddCardsVM.StatusVisibility,
                     RelativeSource={RelativeSource AncestorType=Window},
-                    Converter={StaticResource InverseVisibility}}"/>
-            
+                    Converter={StaticResource InverseVisibility}}"/>            
             <ScrollViewer x:Name="FilterSummaryScrollViewer" HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <TextBlock x:Name="FilterSummaryTextBlock" HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
             </ScrollViewer>
@@ -992,8 +991,7 @@
                             </GridViewColumn>
                         </GridView>
                     </ListView.View>
-                </ListView>                
-
+                </ListView>
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
                           ItemsSource="{Binding AllCardsVM.FilteredCards}"
@@ -1195,7 +1193,9 @@
             </Grid>
             <Grid x:Name="GridMyCollection" d:IsHidden="True">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30">
+                <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" Visibility="{Binding EditCardsVM.StatusVisibility,
+                    RelativeSource={RelativeSource AncestorType=Window},
+                    Converter={StaticResource InverseVisibility}}">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
                             <Binding Path="MyCollectionVM.FilteredCards.Count"/>
