@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.Data;
 using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
+using CollectaMundo.ViewModels;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices
@@ -42,7 +43,18 @@ namespace CollectaMundo.ApplicationServices
         }
 
         // Submitting cards to database
-        public Task<CardSet> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit) => _domainLogic.SaveAndFetchAsync(card, isEdit);
-        public Task<CardSet> SubmitNewCardsWithDefaultsAsync(CardSet raw) => _domainLogic.SaveWithDefaultsAsync(raw);
+        //public Task<CardSet> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit) => _domainLogic.SaveAndFetchAsync(card, isEdit);
+        //public Task<CardSet> SubmitNewCardsWithDefaultsAsync(CardSet raw) => _domainLogic.SaveWithDefaultsAsync(raw);
+
+        public Task<CardChangeEventArgs> SubmitCollectionUpdatesAsync(CardSet c, bool isEdit) => _domainLogic.SaveAndReturnChangesAsync(c, isEdit);
+
+        public Task<CardChangeEventArgs> SubmitNewCardsWithDefaultsAsync(CardSet raw)
+        {
+            // e.g. call PrepareNewCardWithDefaultsAsync(raw) first…
+            // then:
+            return _domainLogic.SaveAndReturnChangesAsync(prepared, isEdit: false);
+        }
+
+
     }
 }

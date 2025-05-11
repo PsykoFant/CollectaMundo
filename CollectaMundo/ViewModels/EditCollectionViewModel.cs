@@ -217,19 +217,15 @@ namespace CollectaMundo.ViewModels
             );
         });
         // Shared helper
-        private async Task SubmitCardsAsync(
-            IEnumerable<CardSet> toSubmit,
-            Func<CardSet, Task<CardChangeEventArgs>> persistAndFetch,
-            bool clearAfter = true,
-            string summaryTitle = "Added the following cards to your collection:")
+
+        private async Task SubmitCardsAsync(IEnumerable<CardSet> toSubmit, Func<CardSet, Task<CardChangeEventArgs>> persistAndFetch, bool clearAfter = true, string summaryTitle = "Added the following cards to your collection:")
         {
             var originals = toSubmit.ToList();
             var changes = new List<CardChangeEventArgs>();
 
             foreach (var o in originals)
             {
-                var change = await persistAndFetch(o);
-                changes.Add(change);
+                changes.Add(await persistAndFetch(o));
             }
 
             if (clearAfter)
@@ -238,15 +234,18 @@ namespace CollectaMundo.ViewModels
                 ClearSelectionTrigger++;
             }
 
-            foreach (var change in changes)
-                CardChanged?.Invoke(this, change);
+            // raise one event per change
+            foreach (var ch in changes)
+            {
+                CardChanged?.Invoke(this, ch);
+            }
 
-            // 1c) Build your single summary string
-            StatusMessage = summaryTitle + "\n\n"
-                + string.Join("\n", persisted.Select(c =>
-                    $"- {c.Name} (Condition: {c.SelectedCondition}, " +
-                    $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
-                    $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
+            //// 1c) Build your single summary string
+            //StatusMessage = summaryTitle + "\n\n"
+            //    + string.Join("\n", persisted.Select(c =>
+            //        $"- {c.Name} (Condition: {c.SelectedCondition}, " +
+            //        $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
+            //        $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
         }
 
         private string _statusMessage = string.Empty;
@@ -279,26 +278,37 @@ namespace CollectaMundo.ViewModels
     public class CardChangeEventArgs : EventArgs
     {
         public enum ChangeType { Upsert, Delete }
-        public ChangeType Type { get; }
-        public CardSet? Card { get; }     // the survivor for Upsert
-        public int[] Removed { get; }     // any CardId(s) we need to purge
 
-        // upsert (add/update/merge) constructor
-        public CardChangeEventArgs(CardSet card, int[] removed = null)
+        /// <summary>Whether we just upserted (add/update/merge) or deleted by zero.</summary>
+        public ChangeType Type { get; }
+
+        /// <summary>The one true survivor after add/update/merge. Null if Type==Delete.</summary>
+        public CardSet? Survivor { get; }
+
+        /// <summary>
+        /// The CardId(s) that should be removed from any in-memory list.
+        /// If you deleted by zero, this is the single CardId that was deleted.
+        /// If you merged duplicates, these are the extra IDs you collapsed.
+        /// </summary>
+        public IReadOnlyList<int> Removed { get; }
+
+        // Upsert constructor
+        public CardChangeEventArgs(CardSet survivor, IReadOnlyList<int>? removed = null)
         {
             Type = ChangeType.Upsert;
-            Card = card;
+            Survivor = survivor;
             Removed = removed ?? Array.Empty<int>();
         }
 
-        // delete-by-zero constructor
+        // Delete-by-zero constructor
         public CardChangeEventArgs(int deletedCardId)
         {
             Type = ChangeType.Delete;
-            Card = null;
+            Survivor = null;
             Removed = new[] { deletedCardId };
         }
     }
+
 
 
 }

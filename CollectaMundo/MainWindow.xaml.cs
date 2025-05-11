@@ -424,59 +424,6 @@ namespace CollectaMundo
             });
         }
 
-        void OnCardChanged(object? _, CardChangeEventArgs e)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                if (e.Type == CardChangeEventArgs.ChangeType.Delete)
-                {
-                    // delete-by-zero
-                    foreach (var id in e.Removed)
-                        MyCollectionVM.Cards.RemoveAll(c => c.CardId == id);
-                }
-                else
-                {
-                    // upsert the survivor
-                    var c = e.Card!;
-                    var existing = MyCollectionVM.Cards
-                                      .FirstOrDefault(x => x.CardId == c.CardId);
-                    if (existing != null)
-                        existing.UpdateFrom(c);
-                    else
-                        MyCollectionVM.Cards.Add(c);
-
-                    // purge any old duplicates
-                    foreach (var dupId in e.Removed)
-                        MyCollectionVM.Cards.RemoveAll(x => x.CardId == dupId);
-                }
-
-                // reapply filters...
-                MyCollectionVM.FilteredCards = _filteringService
-                    .ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
-            });
-        }
-
-
-
-        private void ReapplyFiltersAndLog()
-        {
-            MyCollectionVM.FilteredCards =
-                _filteringService.ApplyFilters(
-                    MyCollectionVM.Cards,
-                    FilterVM.Filters.Values
-                );
-
-            Debug.WriteLine(
-                $"[OnCardProcessed] After purge --> Total={MyCollectionVM.Cards.Count}, " +
-                $"Filtered={MyCollectionVM.FilteredCards.Count}"
-            );
-        }
-
-
-
-
-
-
 
         #endregion
 
