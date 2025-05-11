@@ -172,8 +172,10 @@ namespace CollectaMundo
             var editCoordinator = new EditCollectionCoordinator(editLogic, editRepo);
             AddCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: true);
             EditCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: false);
-            AddCardsVM.CardProcessed += OnCardProcessed;
-            EditCardsVM.CardProcessed += OnCardProcessed;
+            //AddCardsVM.CardProcessed += OnCardProcessed;
+            //EditCardsVM.CardProcessed += OnCardProcessed;
+            AddCardsVM.CardChanged += OnCardChanged;
+            EditCardsVM.CardChanged += OnCardChanged;
 
             // 3) "Filtering" stack: defaults repo --> filtering coordinator --> view-model
             var filterDefaultsRepo = new FilterDefaultsRepository();
@@ -368,61 +370,114 @@ namespace CollectaMundo
         #endregion
 
         #region Pick up events for add to or edit collection 
-        private void OnCardProcessed(object? sender, CardProcessedEventArgs e)
+        private void OnCardChanged(object? sender, CardChangeEventArgs e)
         {
             Dispatcher.Invoke(() =>
             {
-                var incoming = e.Card;
-                Debug.WriteLine($"[OnCardProcessed] Incoming --> CardId={incoming.CardId}, " +
-                                $"Key=[{incoming.Uuid}/{incoming.SelectedCondition}/" +
-                                $"{incoming.Language}/{incoming.SelectedFinish}]");
-
-                // 1) Upsert by CardId...
-                var existing = MyCollectionVM.Cards
-                    .FirstOrDefault(c => c.CardId == incoming.CardId);
-
-                if (existing != null)
+                switch (e.Type)
                 {
-                    Debug.WriteLine($"[OnCardProcessed] Updating existing CardId={incoming.CardId}");
-                    existing.CardsOwned = incoming.CardsOwned;
-                    existing.CardsForTrade = incoming.CardsForTrade;
-                    existing.SelectedCondition = incoming.SelectedCondition;
-                    existing.Language = incoming.Language;
-                    existing.SelectedFinish = incoming.SelectedFinish;
-                }
-                else
-                {
-                    Debug.WriteLine($"[OnCardProcessed] Adding new CardId={incoming.CardId}");
-                    MyCollectionVM.Cards.Add(incoming);
+                    case CardChangeEventArgs.ChangeType.Delete:
+                        var deletedId = e.Removed.Single();
+                        var toRemove = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == deletedId);
+                        if (toRemove != null)
+                        {
+                            MyCollectionVM.Cards.Remove(toRemove);
+                        }
+
+                        break;
+
+                    case CardChangeEventArgs.ChangeType.Upsert:
+                        var incoming = e.Survivor!; // guaranteed non-null in Upsert
+                        var existing = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == incoming.CardId);
+
+                        if (existing != null)
+                        {
+                            existing.CardsOwned = incoming.CardsOwned;
+                            existing.CardsForTrade = incoming.CardsForTrade;
+                            existing.SelectedCondition = incoming.SelectedCondition;
+                            existing.Language = incoming.Language;
+                            existing.SelectedFinish = incoming.SelectedFinish;
+                        }
+                        else
+                        {
+                            MyCollectionVM.Cards.Add(incoming);
+                        }
+
+                        // drop any merged-away IDs
+                        foreach (var removedId in e.Removed)
+                        {
+                            var dup = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == removedId);
+                            if (dup != null)
+                            {
+                                MyCollectionVM.Cards.Remove(dup);
+                            }
+                        }
+                        break;
                 }
 
-                // 2) Purge only *true* duplicates (same uuid+condition+language+finish)
-                var duplicates = MyCollectionVM.Cards
-                    .Where(c =>
-                        c.CardId != incoming.CardId
-                     && c.Uuid == incoming.Uuid
-                     && c.SelectedCondition == incoming.SelectedCondition
-                     && c.Language == incoming.Language
-                     && c.SelectedFinish == incoming.SelectedFinish)
-                    .ToList();
-
-                Debug.WriteLine($"[OnCardProcessed] Purging {duplicates.Count} true duplicate(s)");
-                foreach (var dup in duplicates)
-                {
-                    Debug.WriteLine($"  • Removing CardId={dup.CardId}");
-                    MyCollectionVM.Cards.Remove(dup);
-                }
-
-                // 3) Reapply filters
+                // 3) reapply filters
                 MyCollectionVM.FilteredCards =
                     _filteringService.ApplyFilters(
                         MyCollectionVM.Cards,
                         FilterVM.Filters.Values);
-
-                Debug.WriteLine($"[OnCardProcessed] After purge --> Total={MyCollectionVM.Cards.Count}, " +
-                                $"Filtered={MyCollectionVM.FilteredCards.Count}");
             });
         }
+
+        //private void OnCardProcessed(object? sender, CardProcessedEventArgs e)
+        //{
+        //    Dispatcher.Invoke(() =>
+        //    {
+        //        // e.Card is now your “survivor” for upserts, 
+        //        // or a dummy with CardsOwned==0 for deletes.
+        //        var incoming = e.Card;
+
+        //        switch (e.Type)
+        //        {
+        //            case CardChangeEventArgs.ChangeType.Delete:
+        //                // Remove exactly the one ID that was deleted
+        //                var toDelete = MyCollectionVM.Cards
+        //                    .FirstOrDefault(c => c.CardId == incoming.CardId);
+        //                if (toDelete != null)
+        //                    MyCollectionVM.Cards.Remove(toDelete);
+        //                break;
+
+        //            case CardChangeEventArgs.ChangeType.Upsert:
+        //                // 1) Add or update the survivor
+        //                var existing = MyCollectionVM.Cards
+        //                    .FirstOrDefault(c => c.CardId == incoming.CardId);
+
+        //                if (existing != null)
+        //                {
+        //                    existing.CardsOwned = incoming.CardsOwned;
+        //                    existing.CardsForTrade = incoming.CardsForTrade;
+        //                    existing.SelectedCondition = incoming.SelectedCondition;
+        //                    existing.Language = incoming.Language;
+        //                    existing.SelectedFinish = incoming.SelectedFinish;
+        //                }
+        //                else
+        //                {
+        //                    MyCollectionVM.Cards.Add(incoming);
+        //                }
+
+        //                // 2) Remove any extra IDs that were merged away
+        //                foreach (var removedId in e.Removed)
+        //                {
+        //                    var dup = MyCollectionVM.Cards
+        //                        .FirstOrDefault(c => c.CardId == removedId);
+        //                    if (dup != null)
+        //                        MyCollectionVM.Cards.Remove(dup);
+        //                }
+        //                break;
+        //        }
+
+        //        // 3) Reapply filters
+        //        MyCollectionVM.FilteredCards =
+        //            _filteringService.ApplyFilters(
+        //                MyCollectionVM.Cards,
+        //                FilterVM.Filters.Values);
+        //    });
+        //}
+
 
 
         #endregion

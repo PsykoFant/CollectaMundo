@@ -13,7 +13,9 @@ namespace CollectaMundo.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        public event EventHandler<CardProcessedEventArgs>? CardProcessed;
+        //public event EventHandler<CardProcessedEventArgs>? CardProcessed;
+        public event EventHandler<CardChangeEventArgs>? CardChanged;
+
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
 
         private readonly IEditCollectionCoordinator _coordinator;
@@ -209,44 +211,54 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
-            await SubmitCardsAsync(
-                originals,
-                card => _coordinator.SubmitNewCardsWithDefaultsAsync(card),
-                clearAfter: false,                        // maybe you don’t want to clear CardsToAdd here
-                summaryTitle: "Added the following cards with default values:"
-            );
+            await SubmitCardsAsync(originals, card => _coordinator.SubmitNewCardsWithDefaultsAsync(card), clearAfter: false, summaryTitle: "Added the following cards with default values:");
         });
-        // Shared helper
 
+        // Shared helper
         private async Task SubmitCardsAsync(IEnumerable<CardSet> toSubmit, Func<CardSet, Task<CardChangeEventArgs>> persistAndFetch, bool clearAfter = true, string summaryTitle = "Added the following cards to your collection:")
         {
             var originals = toSubmit.ToList();
             var changes = new List<CardChangeEventArgs>();
 
+            // 1) Persist & collect change info
             foreach (var o in originals)
             {
                 changes.Add(await persistAndFetch(o));
             }
 
+            // 2) Clear the “to add” pane if requested
             if (clearAfter)
             {
                 CardsToAdd.Clear();
                 ClearSelectionTrigger++;
             }
 
-            // raise one event per change
-            foreach (var ch in changes)
+            // 3) Fire CardProcessed events (for deletes and upserts)
+            foreach (var change in changes)
             {
-                CardChanged?.Invoke(this, ch);
+                if (change.Type == CardChangeEventArgs.ChangeType.Delete)
+                {
+                    CardChanged?.Invoke(this, change);
+                }
+                else
+                {
+                    CardChanged?.Invoke(this, change);
+                }
             }
 
-            //// 1c) Build your single summary string
-            //StatusMessage = summaryTitle + "\n\n"
-            //    + string.Join("\n", persisted.Select(c =>
-            //        $"- {c.Name} (Condition: {c.SelectedCondition}, " +
-            //        $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
-            //        $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
+            // 4) Build your summary out of the upserted survivors
+            var survivors = changes
+                .Where(ch => ch.Type == CardChangeEventArgs.ChangeType.Upsert)
+                .Select(ch => ch.Survivor!)
+                .ToList();
+
+            StatusMessage = summaryTitle + "\n\n"
+                + string.Join("\n", survivors.Select(c =>
+                    $"- {c.Name} (Condition: {c.SelectedCondition}, " +
+                    $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
+                    $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
         }
+
 
         private string _statusMessage = string.Empty;
         public string StatusMessage

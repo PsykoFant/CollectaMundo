@@ -46,15 +46,19 @@ namespace CollectaMundo.ApplicationServices
         //public Task<CardSet> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit) => _domainLogic.SaveAndFetchAsync(card, isEdit);
         //public Task<CardSet> SubmitNewCardsWithDefaultsAsync(CardSet raw) => _domainLogic.SaveWithDefaultsAsync(raw);
 
-        public Task<CardChangeEventArgs> SubmitCollectionUpdatesAsync(CardSet c, bool isEdit) => _domainLogic.SaveAndReturnChangesAsync(c, isEdit);
-
-        public Task<CardChangeEventArgs> SubmitNewCardsWithDefaultsAsync(CardSet raw)
+        public async Task<CardChangeEventArgs> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit)
         {
-            // e.g. call PrepareNewCardWithDefaultsAsync(raw) first…
-            // then:
-            return _domainLogic.SaveAndReturnChangesAsync(prepared, isEdit: false);
+            return await _domainLogic.SaveAndReturnChangesAsync(card, isEdit);
         }
 
 
+        public async Task<CardChangeEventArgs> SubmitNewCardsWithDefaultsAsync(CardSet raw)
+        {
+            // 1) prepare the new card (this returns Task<CardSet>)
+            var toSave = await _domainLogic.PrepareNewCardWithDefaultsAsync(raw);
+
+            // 2) now pass the real CardSet into your SaveAndReturnChangesAsync
+            return await _domainLogic.SaveAndReturnChangesAsync(toSave, isEdit: false);
+        }
     }
 }
