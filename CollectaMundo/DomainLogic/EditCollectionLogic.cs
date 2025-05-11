@@ -8,36 +8,6 @@ namespace CollectaMundo.DomainLogic
     public class EditCollectionLogic(IEditCollectionRepository repo) : IEditCollectionLogic
     {
         private readonly IEditCollectionRepository _repo = repo;
-        public async Task AddOrUpdateCardAsync(CardSet card, bool isEdit)
-        {
-            // If CardsOwned is zero, delete card
-            if (isEdit && card.CardsOwned == 0)
-            {
-                Debug.WriteLine($"Nul kort tilbage - sletter kort...");
-                await _repo.DeleteCardAsync(card);
-            }
-
-            else if (isEdit)
-            {
-                Debug.WriteLine($"Vi redigerer kort med id: {card.CardId}...");
-                await _repo.EditCardAsync(card);
-            }
-            else
-            {
-                var existing = await _repo.CheckForExistingCardAsync(card);
-                if (existing.HasValue)
-                {
-                    Debug.WriteLine($"Opdaterer eksisterende kort...");
-                    card.CardId = existing.Value;
-                    await _repo.UpdateCardCountsAsync(card);
-                }
-                else
-                {
-                    Debug.WriteLine($"Fandt ikke eksisterende kort - tilføjer nyt kort");
-                    await _repo.AddCardAsync(card);
-                }
-            }
-        }
         public async Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit)
         {
             if (selectedCard.Uuid == null)
@@ -71,12 +41,7 @@ namespace CollectaMundo.DomainLogic
             };
         }
 
-        /// <summary>
-        /// Given a “raw” selectedCard (with only Uuid, Name populated), fetch 
-        /// languages + finishes from db, pick sensible defaults (nonfoil if present,
-        /// else first finish; English if present, else first language; NM condition),
-        /// and set count=1, trade=0.
-        /// </summary>
+        // Prepare a new card directly for submission to db with defaults (taking into account non-English or non-nonfoil cards)
         public async Task<CardSet> PrepareNewCardWithDefaultsAsync(CardSet selectedCard)
         {
             if (selectedCard.Uuid == null)
@@ -85,10 +50,8 @@ namespace CollectaMundo.DomainLogic
             }
 
             // 1) grab all finishes / languages
-            await DBAccess.OpenConnectionAsync();
             var finishes = await _repo.FetchFinishesForCardAsync(selectedCard.Uuid);
             var languages = await _repo.FetchLanguagesForCardAsync(selectedCard.Uuid);
-            DBAccess.CloseConnection();
 
             // 2) pick “nonfoil” if available, else first; same for English
             string chosenFinish = finishes
@@ -114,87 +77,72 @@ namespace CollectaMundo.DomainLogic
             };
         }
 
-
-        public async Task<CardSet> SaveAndFetchAsync(CardSet card, bool isEdit)
+        // Save a card and return the changes to viewmodel
+        public async Task<CardChangeEventArgs> SaveAndReturnChangesAsync(CardSet input, bool isEdit)
         {
-            // 1) insert/update/delete
-            await AddOrUpdateCardAsync(card, isEdit);
+            // 1) Insert, update, or delete the single row
+            await AddOrUpdateCardAsync(input, isEdit);
 
-            // 2) if delete‐by‐zero, return the delete marker so UI can remove it
-            if (isEdit && card.CardsOwned == 0)
+            // 2) If they zero’d it out, we only need to delete that one ID
+            if (isEdit && input.CardsOwned == 0)
             {
-                return card;
+                return new CardChangeEventArgs(input.CardId!.Value);
             }
 
-            // 3) merge any duplicates down in the DB
-            await _repo.MergeDuplicateRecordsAsync(
-              card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!);
-
-            // 4) fetch the one “winner” back
-            return await _repo.GetMyCollectionRecordAsync(
-              card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!);
-        }
-
-        public async Task<CardSet> SaveWithDefaultsAsync(CardSet raw)
-        {
-            // 1) pick defaults (nonfoil/Near Mint/English)
-            var toSave = await PrepareNewCardWithDefaultsAsync(raw);
-            // 2) persist & fetch
-            return await SaveAndFetchAsync(toSave, isEdit: false);
-        }
-
-        public async Task<CardChangeEventArgs> SaveAndReturnChangesAsync(CardSet raw, bool isEdit)
-        {
-            // 1) Persist (add, update, or delete-by-zero).
-            await AddOrUpdateCardAsync(raw, isEdit);
-
-            // 2) If delete-by-zero, tell the UI to remove that one ID.
-            if (isEdit && raw.CardsOwned == 0)
-            {
-                if (raw.CardId == null)
-                {
-                    throw new InvalidOperationException(
-                        "Cannot delete card: CardId was null on delete‐by‐zero.");
-                }
-
-                return new CardChangeEventArgs(raw.CardId.Value);
-            }
-
-            // 3) Gather all matching IDs in the DB by business key.
+            // 3) Find all IDs with matching properties
             var allIds = await _repo.GetMatchingRecordIdsAsync(
-                raw.Uuid!,
-                raw.SelectedCondition!,
-                raw.Language!,
-                raw.SelectedFinish!);
+                input.Uuid!, input.SelectedCondition!, input.Language!, input.SelectedFinish!);
 
-            // 4) If more than one, collapse them.
-            int[] removed = Array.Empty<int>();
+            // 4) If there’s more than one, choose one to keep and merge
+            int[] removed = [];
             if (allIds.Count > 1)
             {
-                // pick one survivor (here: the first)
+                // keep the smallest ID
+                allIds.Sort();
                 var keepId = allIds[0];
-                removed = allIds.Skip(1).ToArray();
+                removed = [.. allIds.Skip(1)];
 
-                // let the repo merge sums into keepId and delete the rest
+                // collapse sums into keepId, delete the rest
                 await _repo.MergeDuplicateRecordsAsync(
-                    raw.Uuid!,
-                    raw.SelectedCondition!,
-                    raw.Language!,
-                    raw.SelectedFinish!);
+                    input.Uuid!, input.SelectedCondition!, input.Language!, input.SelectedFinish!, keepId);
             }
 
-            // 5) Fetch the one true survivor from your view.
+            // 5) Re-fetch the one true survivor
             var survivor = await _repo.GetMyCollectionRecordAsync(
-                raw.Uuid!,
-                raw.SelectedCondition!,
-                raw.Language!,
-                raw.SelectedFinish!);
+                input.Uuid!, input.SelectedCondition!, input.Language!, input.SelectedFinish!);
 
-            // 6) Return both the upserted survivor and any removed IDs.
+            // 6) Tell the UI both who survived and whose IDs to purge
             return new CardChangeEventArgs(survivor, removed);
         }
+        private async Task AddOrUpdateCardAsync(CardSet card, bool isEdit)
+        {
+            // If CardsOwned is zero, delete card
+            if (isEdit && card.CardsOwned == 0)
+            {
+                Debug.WriteLine($"Nul kort tilbage - sletter kort...");
+                await _repo.DeleteCardAsync(card);
+            }
 
-
-
+            else if (isEdit)
+            {
+                Debug.WriteLine($"Vi redigerer kort med id: {card.CardId}...");
+                await _repo.EditCardAsync(card);
+            }
+            else
+            {
+                var existing = await _repo.CheckForExistingCardAsync(card);
+                if (existing.HasValue)
+                {
+                    Debug.WriteLine($"Opdaterer eksisterende kort...");
+                    card.CardId = existing.Value;
+                    await _repo.UpdateCardCountsAsync(card);
+                }
+                else
+                {
+                    Debug.WriteLine($"Fandt ikke eksisterende kort - tilføjer nyt kort");
+                    await _repo.AddCardAsync(card);
+                }
+            }
+        }
     }
 }

@@ -159,24 +159,24 @@ namespace CollectaMundo.Data
                 DBAccess.CloseConnection();
             }
         }
-        public async Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish)
+        public async Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId)
         {
-            const string selectSql = @"
-                SELECT id, cardsOwned, cardsForTrade
+            const string sumSql = @"
+                SELECT 
+                    COALESCE(SUM(cardsOwned), 0)    AS TotalOwned,
+                    COALESCE(SUM(cardsForTrade), 0) AS TotalTrade
                   FROM myCollection
                  WHERE uuid      = @uuid
                    AND condition = @cond
                    AND language  = @lang
                    AND finish    = @fin;
             ";
-
             const string updateSql = @"
                 UPDATE myCollection
                    SET cardsOwned    = @sumOwned,
                        cardsForTrade = @sumTrade
                  WHERE id = @keepId;
             ";
-
             const string deleteSql = @"
                 DELETE FROM myCollection
                  WHERE uuid      = @uuid
@@ -189,56 +189,44 @@ namespace CollectaMundo.Data
             await DBAccess.OpenConnectionAsync();
             try
             {
-                // 1) pull all matching rows
-                var rows = new List<(int id, int owned, int trade)>();
-                using (var cmd = new SQLiteCommand(selectSql, DBAccess.connection))
+                // 1) Get the totals
+                long totalOwned = 0, totalTrade = 0;
+                using (var sumCmd = new SQLiteCommand(sumSql, DBAccess.connection))
                 {
-                    cmd.Parameters.AddWithValue("@uuid", uuid);
-                    cmd.Parameters.AddWithValue("@cond", condition);
-                    cmd.Parameters.AddWithValue("@lang", language);
-                    cmd.Parameters.AddWithValue("@fin", finish);
+                    sumCmd.Parameters.AddWithValue("@uuid", uuid);
+                    sumCmd.Parameters.AddWithValue("@cond", condition);
+                    sumCmd.Parameters.AddWithValue("@lang", language);
+                    sumCmd.Parameters.AddWithValue("@fin", finish);
 
-                    using var rdr = await cmd.ExecuteReaderAsync();
-                    while (await rdr.ReadAsync())
+                    using var rdr = await sumCmd.ExecuteReaderAsync();
+                    if (await rdr.ReadAsync())
                     {
-                        rows.Add((
-                            rdr.GetInt32(0),
-                            rdr.GetInt32(1),
-                            rdr.GetInt32(2)));
+                        totalOwned = rdr.GetInt64(0);
+                        totalTrade = rdr.GetInt64(1);
                     }
                 }
 
-                if (rows.Count <= 1)
-                    return; // nothing to merge
-
-                // 2) sum
-                var sumOwned = rows.Sum(r => r.owned);
-                var sumTrade = rows.Sum(r => r.trade);
-                var keepId = rows[0].id;  // choose the first as survivor
-
-                // 3) update survivor
+                // 2) Update the survivor
                 using (var upd = new SQLiteCommand(updateSql, DBAccess.connection))
                 {
-                    upd.Parameters.AddWithValue("@sumOwned", sumOwned);
-                    upd.Parameters.AddWithValue("@sumTrade", sumTrade);
+                    upd.Parameters.AddWithValue("@sumOwned", totalOwned);
+                    upd.Parameters.AddWithValue("@sumTrade", totalTrade);
                     upd.Parameters.AddWithValue("@keepId", keepId);
                     await upd.ExecuteNonQueryAsync();
                 }
 
-                // 4) delete the rest
-                using (var del = new SQLiteCommand(deleteSql, DBAccess.connection))
-                {
-                    del.Parameters.AddWithValue("@uuid", uuid);
-                    del.Parameters.AddWithValue("@cond", condition);
-                    del.Parameters.AddWithValue("@lang", language);
-                    del.Parameters.AddWithValue("@fin", finish);
-                    del.Parameters.AddWithValue("@keepId", keepId);
-                    await del.ExecuteNonQueryAsync();
-                }
+                // 3) Delete the rest
+                using var del = new SQLiteCommand(deleteSql, DBAccess.connection);
+                del.Parameters.AddWithValue("@uuid", uuid);
+                del.Parameters.AddWithValue("@cond", condition);
+                del.Parameters.AddWithValue("@lang", language);
+                del.Parameters.AddWithValue("@fin", finish);
+                del.Parameters.AddWithValue("@keepId", keepId);
+                await del.ExecuteNonQueryAsync();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in MergeDuplicateRecordsAsync: {ex.Message}");
+                Debug.WriteLine($"Error in MergeDuplicateRecordsAsync: {ex}");
                 throw;
             }
             finally

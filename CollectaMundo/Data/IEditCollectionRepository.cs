@@ -27,10 +27,6 @@ namespace CollectaMundo.Data
             string finish);
 
         /// <summary>Merges duplicates in the DB into one survivor.</summary>
-        Task MergeDuplicateRecordsAsync(
-            string uuid,
-            string condition,
-            string language,
-            string finish);
+        Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId);
     }
 }

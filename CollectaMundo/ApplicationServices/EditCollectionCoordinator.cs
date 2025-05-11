@@ -43,15 +43,10 @@ namespace CollectaMundo.ApplicationServices
         }
 
         // Submitting cards to database
-        //public Task<CardSet> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit) => _domainLogic.SaveAndFetchAsync(card, isEdit);
-        //public Task<CardSet> SubmitNewCardsWithDefaultsAsync(CardSet raw) => _domainLogic.SaveWithDefaultsAsync(raw);
-
         public async Task<CardChangeEventArgs> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit)
         {
             return await _domainLogic.SaveAndReturnChangesAsync(card, isEdit);
         }
-
-
         public async Task<CardChangeEventArgs> SubmitNewCardsWithDefaultsAsync(CardSet raw)
         {
             // 1) prepare the new card (this returns Task<CardSet>)
