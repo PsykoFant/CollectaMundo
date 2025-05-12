@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.Data;
 using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
+using CollectaMundo.ViewModels;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices
@@ -37,31 +38,17 @@ namespace CollectaMundo.ApplicationServices
             targetCollection.Add(newItem);
         }
 
-        public async Task<CardSet> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit)
+        public async Task<CardChangeEventArgs> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit)
         {
-            // 1) persist changes
-            await _domainLogic.SaveAndReturnChangesAsync(card, isEdit);
+            return await _domainLogic.SaveAndReturnChangesAsync(card, isEdit);
+        }
+        public async Task<CardChangeEventArgs> SubmitNewCardsWithDefaultsAsync(CardSet raw)
+        {
+            // 1) prepare the new card (this returns Task<CardSet>)
+            var toSave = await _domainLogic.PrepareNewCardWithDefaultsAsync(raw);
 
-            // 2) make sure our “key” fields are set
-            if (card.Uuid is null ||
-                card.SelectedCondition is null ||
-                card.Language is null ||
-                card.SelectedFinish is null)
-            {
-                throw new InvalidOperationException(
-                    "Cannot fetch persisted card because one or more key fields are null: " +
-                    $"Uuid={card.Uuid}, Condition={card.SelectedCondition}, " +
-                    $"Language={card.Language}, Finish={card.SelectedFinish}"
-                );
-            }
-
-            // 3) fetch the fully-populated row
-            return await _repo.FindExistingCardReturnRecordAsync(
-                card.Uuid,
-                card.SelectedCondition,
-                card.Language,
-                card.SelectedFinish
-            );
+            // 2) now pass the real CardSet into your SaveAndReturnChangesAsync
+            return await _domainLogic.SaveAndReturnChangesAsync(toSave, isEdit: false);
         }
 
 

@@ -190,14 +190,8 @@ namespace CollectaMundo.ViewModels
         });
 
         // Commands - submit cards from listview
-        public ICommand SubmitNewCardsCommand => new RelayCommand<object>(async _ =>
-            await SubmitCardsAsync(
-                CardsToAdd,
-                card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: false)
-            )
-        );
-        public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async _ => await SubmitCardsAsync(CardsToAdd, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), true, "Updated the following cards withthese values:")
-        );
+        public ICommand SubmitNewCardsCommand => new RelayCommand<object>(async _ => await SubmitCardsAsync(CardsToAdd, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: false)));
+        public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async _ => await SubmitCardsAsync(CardsToAdd, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), true, "Updated the following cards withthese values:"));
         public ICommand SubmitNewCardsWithDefaultsCommand => new RelayCommand<object>(async param =>
         {
             if (param is not IEnumerable<object> sel)
@@ -282,10 +276,6 @@ namespace CollectaMundo.ViewModels
                 : Visibility.Visible;
 
     }
-    public class CardProcessedEventArgs(CardSet card) : EventArgs
-    {
-        public CardSet Card { get; } = card;
-    }
 
     public class CardChangeEventArgs : EventArgs
     {
@@ -309,7 +299,7 @@ namespace CollectaMundo.ViewModels
         {
             Type = ChangeType.Upsert;
             Survivor = survivor;
-            Removed = removed ?? Array.Empty<int>();
+            Removed = removed ?? [];
         }
 
         // Delete-by-zero constructor
@@ -317,7 +307,7 @@ namespace CollectaMundo.ViewModels
         {
             Type = ChangeType.Delete;
             Survivor = null;
-            Removed = new[] { deletedCardId };
+            Removed = [deletedCardId];
         }
     }
 
