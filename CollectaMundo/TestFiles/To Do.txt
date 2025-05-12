@@ -3,10 +3,7 @@ TO DO
 
  - Add to collectionManager til MVVM!
 
- - Bug: Showing 2 out of 1 cards
- - Check repository metoder
  - Delete og sæt til salg fra UI
-
  - Tests!!!
 
 

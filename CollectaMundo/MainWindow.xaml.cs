@@ -172,8 +172,6 @@ namespace CollectaMundo
             var editCoordinator = new EditCollectionCoordinator(editLogic, editRepo);
             AddCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: true);
             EditCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: false);
-            //AddCardsVM.CardProcessed += OnCardProcessed;
-            //EditCardsVM.CardProcessed += OnCardProcessed;
             AddCardsVM.CardChanged += OnCardChanged;
             EditCardsVM.CardChanged += OnCardChanged;
 

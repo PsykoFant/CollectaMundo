@@ -834,8 +834,8 @@
                     Converter={StaticResource InverseVisibility}}">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
-                            <Binding Path="AllCardsVM.FilteredCards.Count"/>
-                            <Binding Path="AllCardsVM.Cards.Count"/>
+                            <Binding Path="AllCardsVM.FilteredCount"/>
+                            <Binding Path="AllCardsVM.TotalCount"/>
                         </MultiBinding>
                     </Label.Content>
                 </Label>
@@ -1198,8 +1198,8 @@
                     Converter={StaticResource InverseVisibility}}">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
-                            <Binding Path="MyCollectionVM.FilteredCards.Count"/>
-                            <Binding Path="MyCollectionVM.Cards.Count"/>                            
+                            <Binding Path="MyCollectionVM.FilteredCount"/>
+                            <Binding Path="MyCollectionVM.TotalCount"/>
                         </MultiBinding>
                     </Label.Content>
                 </Label>

@@ -19,8 +19,12 @@ namespace CollectaMundo.ViewModels
                 {
                     _filteredCards = value;
                     OnPropertyChanged(nameof(FilteredCards));
+                    OnPropertyChanged(nameof(FilteredCount));
+                    OnPropertyChanged(nameof(TotalCount));
                 }
             }
         }
+        public int FilteredCount => FilteredCards.Count;
+        public int TotalCount => Cards.Count;
     }
 }
