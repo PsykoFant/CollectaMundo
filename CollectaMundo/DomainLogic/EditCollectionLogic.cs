@@ -78,71 +78,99 @@ namespace CollectaMundo.DomainLogic
         }
 
         // Save a card and return the changes to viewmodel
-        public async Task<CardChangeEventArgs> SaveAndReturnChangesAsync(CardSet input, bool isEdit)
+        public async Task<CardChangeEventArgs> SaveAndReturnChangesAsync(CardSet raw, bool isEdit)
         {
-            // 1) Insert, update, or delete the single row
-            await AddOrUpdateCardAsync(input, isEdit);
+            // 1) Persist (insert/update/delete-by-zero)
+            await PersistAsync(raw, isEdit);
 
-            // 2) If they zero’d it out, we only need to delete that one ID
-            if (isEdit && input.CardsOwned == 0)
-            {
-                return new CardChangeEventArgs(input.CardId!.Value);
-            }
+            // 2) If they zero’d it out, return a delete‐marker
+            if (IsDeletion(raw, isEdit))
+                return CreateDeleteChange(raw);
 
-            // 3) Find all IDs with matching properties
-            var allIds = await _repo.GetMatchingRecordIdsAsync(
-                input.Uuid!, input.SelectedCondition!, input.Language!, input.SelectedFinish!);
+            // 3) Pull all matching record-IDs from the db
+            var allIds = await FetchMatchingIdsAsync(raw);
 
-            // 4) If there’s more than one, choose one to keep and merge
-            int[] removed = [];
-            if (allIds.Count > 1)
-            {
-                // keep the smallest ID
-                allIds.Sort();
-                var keepId = allIds[0];
-                removed = [.. allIds.Skip(1)];
+            // 4) Collapse any duplicates and get the list of removed IDs
+            var removed = await MergeDuplicatesIfNeededAsync(raw, allIds);
 
-                // collapse sums into keepId, delete the rest
-                await _repo.MergeDuplicateRecordsAsync(
-                    input.Uuid!, input.SelectedCondition!, input.Language!, input.SelectedFinish!, keepId);
-            }
+            // 5) Re-fetch the one true “survivor” row
+            var survivor = await FetchSurvivorAsync(raw);
 
-            // 5) Re-fetch the one true survivor
-            var survivor = await _repo.GetMyCollectionRecordAsync(
-                input.Uuid!, input.SelectedCondition!, input.Language!, input.SelectedFinish!);
-
-            // 6) Tell the UI both who survived and whose IDs to purge
+            // 6) Package up the upsert event
             return new CardChangeEventArgs(survivor, removed);
         }
-        private async Task AddOrUpdateCardAsync(CardSet card, bool isEdit)
+        // 1) Persist the single incoming CardSet (insert / update / delete)
+        private async Task PersistAsync(CardSet card, bool isEdit)
         {
-            // If CardsOwned is zero, delete card
             if (isEdit && card.CardsOwned == 0)
             {
-                Debug.WriteLine($"Nul kort tilbage - sletter kort...");
-                await _repo.DeleteCardAsync(card);
+                Debug.WriteLine("CardsOwned == 0 --> delete");
+                await _repo.DeleteCardByIdAsync(card);
             }
-
             else if (isEdit)
             {
-                Debug.WriteLine($"Vi redigerer kort med id: {card.CardId}...");
-                await _repo.EditCardAsync(card);
+                Debug.WriteLine($"Editing CardId={card.CardId}");
+                await _repo.UpdateCardAsync(card);
             }
             else
             {
-                var existing = await _repo.CheckForExistingCardAsync(card);
-                if (existing.HasValue)
+                var existingId = await _repo.FindExistingCardReturnIdAsync(card);
+                if (existingId.HasValue)
                 {
-                    Debug.WriteLine($"Opdaterer eksisterende kort...");
-                    card.CardId = existing.Value;
+                    Debug.WriteLine($"Found existing --> increment counts");
+                    card.CardId = existingId.Value;
                     await _repo.UpdateCardCountsAsync(card);
                 }
                 else
                 {
-                    Debug.WriteLine($"Fandt ikke eksisterende kort - tilføjer nyt kort");
+                    Debug.WriteLine("New card --> insert");
                     await _repo.AddCardAsync(card);
                 }
             }
         }
+
+        // 2a) Did we just delete-by-zero?
+        private static bool IsDeletion(CardSet card, bool isEdit)
+            => isEdit && card.CardsOwned == 0;
+
+        // 2b) Build a CardChangeEventArgs for delete
+        private static CardChangeEventArgs CreateDeleteChange(CardSet card)
+            => new(card.CardId!.Value);
+
+        // 3) Fetch all record-IDs sharing the same business key
+        private Task<List<int>> FetchMatchingIdsAsync(CardSet card)
+            => _repo.FindRecordByIdAsync(
+                   card.Uuid!,
+                   card.SelectedCondition!,
+                   card.Language!,
+                   card.SelectedFinish!);
+
+        // 4) If there are duplicates, merge sums in DB and return the IDs we deleted
+        private async Task<int[]> MergeDuplicatesIfNeededAsync(CardSet card, List<int> allIds)
+        {
+            if (allIds.Count <= 1)
+                return [];
+
+            allIds.Sort();
+            var keepId = allIds[0];
+            var removed = allIds.Skip(1).ToArray();
+
+            await _repo.MergeDuplicateRecordsAsync(
+                card.Uuid!,
+                card.SelectedCondition!,
+                card.Language!,
+                card.SelectedFinish!,
+                keepId);
+
+            return removed;
+        }
+
+        // 5) Re-fetch the one true survivor from your materialized view
+        private Task<CardSet> FetchSurvivorAsync(CardSet card)
+            => _repo.FindExistingCardReturnRecordAsync(
+                   card.Uuid!,
+                   card.SelectedCondition!,
+                   card.Language!,
+                   card.SelectedFinish!);
     }
 }

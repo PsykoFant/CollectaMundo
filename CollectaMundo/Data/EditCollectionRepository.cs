@@ -7,7 +7,8 @@ namespace CollectaMundo.Data
 {
     public class EditCollectionRepository : IEditCollectionRepository
     {
-        public async Task<int?> CheckForExistingCardAsync(CardSet card)
+        // Lookups
+        public async Task<int?> FindExistingCardReturnIdAsync(CardSet card)
         {
             await DBAccess.OpenConnectionAsync();
 
@@ -34,7 +35,7 @@ namespace CollectaMundo.Data
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in CheckForExistingCardAsync: {ex.Message}");
+                Debug.WriteLine($"Error in FindExistingCardReturnIdAsync: {ex.Message}");
                 throw;
             }
             finally
@@ -42,197 +43,6 @@ namespace CollectaMundo.Data
                 DBAccess.CloseConnection();
             }
             return null;
-        }
-        public async Task AddCardAsync(CardSet card)
-        {
-            string insertSql = @"
-                INSERT INTO myCollection (uuid, cardsOwned, cardsForTrade, condition, language, finish)
-                VALUES (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish)";
-            try
-            {
-                await DBAccess.OpenConnectionAsync();
-
-                using var cmd = new SQLiteCommand(insertSql, DBAccess.connection);
-                cmd.Parameters.AddWithValue("@uuid", card.Uuid);
-                cmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
-                cmd.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
-                cmd.Parameters.AddWithValue("@condition", card.SelectedCondition);
-                cmd.Parameters.AddWithValue("@language", card.Language);
-                cmd.Parameters.AddWithValue("@finish", card.SelectedFinish);
-
-                await cmd.ExecuteNonQueryAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in AddCardAsync: {ex.Message}");
-                throw;
-            }
-            finally
-            {
-                DBAccess.CloseConnection();
-            }
-        }
-        public async Task EditCardAsync(CardSet card)
-        {
-
-            string updateSql = @"
-                UPDATE myCollection 
-                SET 
-                    condition = @condition,
-                    language = @language,
-                    finish = @finish,
-                    cardsOwned = @cardsOwned,
-                    cardsForTrade = @cardsForTrade
-                WHERE id = @cardId";
-            try
-            {
-                await DBAccess.OpenConnectionAsync();
-
-                using var cmd = new SQLiteCommand(updateSql, DBAccess.connection);
-                cmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
-                cmd.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
-                cmd.Parameters.AddWithValue("@condition", card.SelectedCondition);
-                cmd.Parameters.AddWithValue("@language", card.Language);
-                cmd.Parameters.AddWithValue("@finish", card.SelectedFinish);
-                cmd.Parameters.AddWithValue("@cardId", card.CardId);
-
-                await cmd.ExecuteNonQueryAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in UpdateCardCountsAsync: {ex.Message}");
-                throw;
-            }
-            finally
-            {
-                DBAccess.CloseConnection();
-            }
-        }
-        public async Task UpdateCardCountsAsync(CardSet card)
-        {
-            // We treat card.CardsOwned and card.CardsForTrade as the *increment* amounts.
-            string updateSql = @"
-                UPDATE myCollection 
-                SET 
-                  cardsOwned = cardsOwned + @addCount,
-                  cardsForTrade = cardsForTrade + @addTrade
-                WHERE id = @cardId";
-            try
-            {
-                await DBAccess.OpenConnectionAsync();
-
-                using var cmd = new SQLiteCommand(updateSql, DBAccess.connection);
-                cmd.Parameters.AddWithValue("@addCount", card.CardsOwned);
-                cmd.Parameters.AddWithValue("@addTrade", card.CardsForTrade);
-                cmd.Parameters.AddWithValue("@cardId", card.CardId);
-
-                await cmd.ExecuteNonQueryAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in UpdateCardCountsAsync: {ex.Message}");
-                throw;
-            }
-            finally
-            {
-                DBAccess.CloseConnection();
-            }
-        }
-        public async Task DeleteCardAsync(CardSet card)
-        {
-            await DBAccess.OpenConnectionAsync();
-
-            string deleteSql = "DELETE FROM myCollection WHERE uuid = @uuid";
-            try
-            {
-                using var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection);
-                deleteCommand.Parameters.AddWithValue("@uuid", card.Uuid);
-                await deleteCommand.ExecuteNonQueryAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in DeleteCardAsync: {ex.Message}");
-                throw;
-            }
-            finally
-            {
-                DBAccess.CloseConnection();
-            }
-        }
-        public async Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId)
-        {
-            const string sumSql = @"
-                SELECT 
-                    COALESCE(SUM(cardsOwned), 0)    AS TotalOwned,
-                    COALESCE(SUM(cardsForTrade), 0) AS TotalTrade
-                  FROM myCollection
-                 WHERE uuid      = @uuid
-                   AND condition = @cond
-                   AND language  = @lang
-                   AND finish    = @fin;
-            ";
-            const string updateSql = @"
-                UPDATE myCollection
-                   SET cardsOwned    = @sumOwned,
-                       cardsForTrade = @sumTrade
-                 WHERE id = @keepId;
-            ";
-            const string deleteSql = @"
-                DELETE FROM myCollection
-                 WHERE uuid      = @uuid
-                   AND condition = @cond
-                   AND language  = @lang
-                   AND finish    = @fin
-                   AND id       <> @keepId;
-            ";
-
-            await DBAccess.OpenConnectionAsync();
-            try
-            {
-                // 1) Get the totals
-                long totalOwned = 0, totalTrade = 0;
-                using (var sumCmd = new SQLiteCommand(sumSql, DBAccess.connection))
-                {
-                    sumCmd.Parameters.AddWithValue("@uuid", uuid);
-                    sumCmd.Parameters.AddWithValue("@cond", condition);
-                    sumCmd.Parameters.AddWithValue("@lang", language);
-                    sumCmd.Parameters.AddWithValue("@fin", finish);
-
-                    using var rdr = await sumCmd.ExecuteReaderAsync();
-                    if (await rdr.ReadAsync())
-                    {
-                        totalOwned = rdr.GetInt64(0);
-                        totalTrade = rdr.GetInt64(1);
-                    }
-                }
-
-                // 2) Update the survivor
-                using (var upd = new SQLiteCommand(updateSql, DBAccess.connection))
-                {
-                    upd.Parameters.AddWithValue("@sumOwned", totalOwned);
-                    upd.Parameters.AddWithValue("@sumTrade", totalTrade);
-                    upd.Parameters.AddWithValue("@keepId", keepId);
-                    await upd.ExecuteNonQueryAsync();
-                }
-
-                // 3) Delete the rest
-                using var del = new SQLiteCommand(deleteSql, DBAccess.connection);
-                del.Parameters.AddWithValue("@uuid", uuid);
-                del.Parameters.AddWithValue("@cond", condition);
-                del.Parameters.AddWithValue("@lang", language);
-                del.Parameters.AddWithValue("@fin", finish);
-                del.Parameters.AddWithValue("@keepId", keepId);
-                await del.ExecuteNonQueryAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in MergeDuplicateRecordsAsync: {ex}");
-                throw;
-            }
-            finally
-            {
-                DBAccess.CloseConnection();
-            }
         }
         public async Task<List<string>> FetchLanguagesForCardAsync(string uuid)
         {
@@ -316,7 +126,7 @@ namespace CollectaMundo.Data
             }
             return finishes;
         }
-        public async Task<CardSet> GetMyCollectionRecordAsync(string uuid, string condition, string language, string finish)
+        public async Task<CardSet> FindExistingCardReturnRecordAsync(string uuid, string condition, string language, string finish)
         {
             const string sql = @"
               SELECT * FROM view_myCollection
@@ -346,7 +156,7 @@ namespace CollectaMundo.Data
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in GetMyCollectionRecordAsync: {ex}");
+                Debug.WriteLine($"Error in FindExistingCardReturnRecordAsync: {ex}");
                 throw;
             }
             finally
@@ -355,7 +165,7 @@ namespace CollectaMundo.Data
             }
             return card;
         }
-        public async Task<List<int>> GetMatchingRecordIdsAsync(string uuid, string condition, string language, string finish)
+        public async Task<List<int>> FindRecordByIdAsync(string uuid, string condition, string language, string finish)
         {
             const string sql = @"
                 SELECT id
@@ -384,7 +194,7 @@ namespace CollectaMundo.Data
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in GetMatchingRecordIdsAsync: {ex}");
+                Debug.WriteLine($"Error in FindRecordByIdAsync: {ex}");
                 throw;
             }
             finally
@@ -392,6 +202,199 @@ namespace CollectaMundo.Data
                 DBAccess.CloseConnection();
             }
             return ids;
+        }
+
+
+        public async Task AddCardAsync(CardSet card)
+        {
+            string insertSql = @"
+                INSERT INTO myCollection (uuid, cardsOwned, cardsForTrade, condition, language, finish)
+                VALUES (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish)";
+            try
+            {
+                await DBAccess.OpenConnectionAsync();
+
+                using var cmd = new SQLiteCommand(insertSql, DBAccess.connection);
+                cmd.Parameters.AddWithValue("@uuid", card.Uuid);
+                cmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
+                cmd.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
+                cmd.Parameters.AddWithValue("@condition", card.SelectedCondition);
+                cmd.Parameters.AddWithValue("@language", card.Language);
+                cmd.Parameters.AddWithValue("@finish", card.SelectedFinish);
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in AddCardAsync: {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
+        }
+        public async Task UpdateCardAsync(CardSet card)
+        {
+
+            string updateSql = @"
+                UPDATE myCollection 
+                SET 
+                    condition = @condition,
+                    language = @language,
+                    finish = @finish,
+                    cardsOwned = @cardsOwned,
+                    cardsForTrade = @cardsForTrade
+                WHERE id = @cardId";
+            try
+            {
+                await DBAccess.OpenConnectionAsync();
+
+                using var cmd = new SQLiteCommand(updateSql, DBAccess.connection);
+                cmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
+                cmd.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
+                cmd.Parameters.AddWithValue("@condition", card.SelectedCondition);
+                cmd.Parameters.AddWithValue("@language", card.Language);
+                cmd.Parameters.AddWithValue("@finish", card.SelectedFinish);
+                cmd.Parameters.AddWithValue("@cardId", card.CardId);
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in UpdateCardCountsAsync: {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
+        }
+        public async Task UpdateCardCountsAsync(CardSet card)
+        {
+            // We treat card.CardsOwned and card.CardsForTrade as the *increment* amounts.
+            string updateSql = @"
+                UPDATE myCollection 
+                SET 
+                  cardsOwned = cardsOwned + @addCount,
+                  cardsForTrade = cardsForTrade + @addTrade
+                WHERE id = @cardId";
+            try
+            {
+                await DBAccess.OpenConnectionAsync();
+
+                using var cmd = new SQLiteCommand(updateSql, DBAccess.connection);
+                cmd.Parameters.AddWithValue("@addCount", card.CardsOwned);
+                cmd.Parameters.AddWithValue("@addTrade", card.CardsForTrade);
+                cmd.Parameters.AddWithValue("@cardId", card.CardId);
+
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in UpdateCardCountsAsync: {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
+        }
+        public async Task DeleteCardByIdAsync(CardSet card)
+        {
+            await DBAccess.OpenConnectionAsync();
+
+            string deleteSql = "DELETE FROM myCollection WHERE id = @id";
+            try
+            {
+                using var deleteCommand = new SQLiteCommand(deleteSql, DBAccess.connection);
+                deleteCommand.Parameters.AddWithValue("@id", card.CardId);
+                await deleteCommand.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in DeleteCardByIdAsync: {ex.Message}");
+                throw;
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
+        }
+        public async Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId)
+        {
+            const string sumSql = @"
+                SELECT 
+                    COALESCE(SUM(cardsOwned), 0)    AS TotalOwned,
+                    COALESCE(SUM(cardsForTrade), 0) AS TotalTrade
+                  FROM myCollection
+                 WHERE uuid      = @uuid
+                   AND condition = @cond
+                   AND language  = @lang
+                   AND finish    = @fin;
+            ";
+            const string updateSql = @"
+                UPDATE myCollection
+                   SET cardsOwned    = @sumOwned,
+                       cardsForTrade = @sumTrade
+                 WHERE id = @keepId;
+            ";
+            const string deleteSql = @"
+                DELETE FROM myCollection
+                 WHERE uuid      = @uuid
+                   AND condition = @cond
+                   AND language  = @lang
+                   AND finish    = @fin
+                   AND id       <> @keepId;
+            ";
+
+            await DBAccess.OpenConnectionAsync();
+            try
+            {
+                // 1) Get the totals
+                long totalOwned = 0, totalTrade = 0;
+                using (var sumCmd = new SQLiteCommand(sumSql, DBAccess.connection))
+                {
+                    sumCmd.Parameters.AddWithValue("@uuid", uuid);
+                    sumCmd.Parameters.AddWithValue("@cond", condition);
+                    sumCmd.Parameters.AddWithValue("@lang", language);
+                    sumCmd.Parameters.AddWithValue("@fin", finish);
+
+                    using var rdr = await sumCmd.ExecuteReaderAsync();
+                    if (await rdr.ReadAsync())
+                    {
+                        totalOwned = rdr.GetInt64(0);
+                        totalTrade = rdr.GetInt64(1);
+                    }
+                }
+
+                // 2) Update the survivor
+                using (var upd = new SQLiteCommand(updateSql, DBAccess.connection))
+                {
+                    upd.Parameters.AddWithValue("@sumOwned", totalOwned);
+                    upd.Parameters.AddWithValue("@sumTrade", totalTrade);
+                    upd.Parameters.AddWithValue("@keepId", keepId);
+                    await upd.ExecuteNonQueryAsync();
+                }
+
+                // 3) Delete the rest
+                using var del = new SQLiteCommand(deleteSql, DBAccess.connection);
+                del.Parameters.AddWithValue("@uuid", uuid);
+                del.Parameters.AddWithValue("@cond", condition);
+                del.Parameters.AddWithValue("@lang", language);
+                del.Parameters.AddWithValue("@fin", finish);
+                del.Parameters.AddWithValue("@keepId", keepId);
+                await del.ExecuteNonQueryAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in MergeDuplicateRecordsAsync: {ex}");
+                throw;
+            }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
         }
 
     }
