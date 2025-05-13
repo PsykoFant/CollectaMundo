@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.DomainLogic.Models;
-using CollectaMundo.ViewModels;
 
 namespace CollectaMundo.DomainLogic
 {
@@ -7,7 +6,9 @@ namespace CollectaMundo.DomainLogic
     {
         Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit);
         Task<CardSet> PrepareNewCardWithDefaultsAsync(CardSet selectedCard);
-        Task<CardChangeEventArgs> SaveAndReturnChangesAsync(CardSet raw, bool isEdit);
 
+
+
+        Task<IReadOnlyList<CardChangeEventArgs>> SaveBatchAsync(IEnumerable<CardSet> raws, bool isEdit);
     }
 }

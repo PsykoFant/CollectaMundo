@@ -1,7 +1,5 @@
 ﻿using CollectaMundo.Data;
 using CollectaMundo.DomainLogic.Models;
-using CollectaMundo.ViewModels;
-using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic
 {
@@ -78,14 +76,16 @@ namespace CollectaMundo.DomainLogic
         }
 
         // Save a card and return the changes to viewmodel
-        public async Task<CardChangeEventArgs> SaveAndReturnChangesAsync(CardSet raw, bool isEdit)
+        private async Task<CardChangeEventArgs> SaveAndReturnChangesAsync(CardSet raw, bool isEdit)
         {
             // 1) Persist (insert/update/delete-by-zero)
             await PersistAsync(raw, isEdit);
 
             // 2) If they zero’d it out, return a delete‐marker
             if (IsDeletion(raw, isEdit))
+            {
                 return CreateDeleteChange(raw);
+            }
 
             // 3) Pull all matching record-IDs from the db
             var allIds = await FetchMatchingIdsAsync(raw);
@@ -99,17 +99,58 @@ namespace CollectaMundo.DomainLogic
             // 6) Package up the upsert event
             return new CardChangeEventArgs(survivor, removed);
         }
+
+
+        /// <summary>
+        /// NEW: batch‐save a list of cards in one DB transaction.
+        /// Returns a list of CardChangeEventArgs, one per input card.
+        /// </summary>
+        public async Task<IReadOnlyList<CardChangeEventArgs>> SaveBatchAsync(IEnumerable<CardSet> raws, bool isEdit)
+        {
+            var changes = new List<CardChangeEventArgs>();
+
+            // 1) Open the connection once
+            await DBAccess.OpenConnectionAsync();
+
+            // 2) Begin a transaction
+            using var tx = DBAccess.connection.BeginTransaction();
+
+            try
+            {
+                // 3) For each card, invoke your existing logic
+                foreach (var raw in raws)
+                {
+                    var change = await SaveAndReturnChangesAsync(raw, isEdit);
+                    changes.Add(change);
+                }
+
+                // 4) Commit if all succeeded
+                tx.Commit();
+            }
+            catch
+            {
+                // 5) Roll back on any failure
+                tx.Rollback();
+                throw;
+            }
+            finally
+            {
+                // 6) Close connection
+                DBAccess.CloseConnection();
+            }
+
+            return changes;
+        }
+
         // 1) Persist the single incoming CardSet (insert / update / delete)
         private async Task PersistAsync(CardSet card, bool isEdit)
         {
             if (isEdit && card.CardsOwned == 0)
             {
-                Debug.WriteLine("CardsOwned == 0 --> delete");
                 await _repo.DeleteCardByIdAsync(card);
             }
             else if (isEdit)
             {
-                Debug.WriteLine($"Editing CardId={card.CardId}");
                 await _repo.UpdateCardAsync(card);
             }
             else
@@ -117,25 +158,21 @@ namespace CollectaMundo.DomainLogic
                 var existingId = await _repo.FindExistingCardReturnIdAsync(card);
                 if (existingId.HasValue)
                 {
-                    Debug.WriteLine($"Found existing --> increment counts");
                     card.CardId = existingId.Value;
                     await _repo.UpdateCardCountsAsync(card);
                 }
                 else
                 {
-                    Debug.WriteLine("New card --> insert");
                     await _repo.AddCardAsync(card);
                 }
             }
         }
 
         // 2a) Did we just delete-by-zero?
-        private static bool IsDeletion(CardSet card, bool isEdit)
-            => isEdit && card.CardsOwned == 0;
+        private static bool IsDeletion(CardSet card, bool isEdit) => isEdit && card.CardsOwned == 0;
 
         // 2b) Build a CardChangeEventArgs for delete
-        private static CardChangeEventArgs CreateDeleteChange(CardSet card)
-            => new(card.CardId!.Value);
+        private static CardChangeEventArgs CreateDeleteChange(CardSet card) => new(card.CardId!.Value);
 
         // 3) Fetch all record-IDs sharing the same business key
         private Task<List<int>> FetchMatchingIdsAsync(CardSet card)
@@ -149,7 +186,9 @@ namespace CollectaMundo.DomainLogic
         private async Task<int[]> MergeDuplicatesIfNeededAsync(CardSet card, List<int> allIds)
         {
             if (allIds.Count <= 1)
+            {
                 return [];
+            }
 
             allIds.Sort();
             var keepId = allIds[0];

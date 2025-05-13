@@ -8,42 +8,7 @@ namespace CollectaMundo.Data
     public class EditCollectionRepository : IEditCollectionRepository
     {
         // Lookups
-        public async Task<int?> FindExistingCardReturnIdAsync(CardSet card)
-        {
-            await DBAccess.OpenConnectionAsync();
 
-            string selectSql = @"
-                SELECT id FROM myCollection 
-                WHERE uuid = @uuid 
-                  AND condition = @condition 
-                  AND language = @language 
-                  AND finish = @finish";
-            try
-            {
-                using var selectCommand = new SQLiteCommand(selectSql, DBAccess.connection);
-                selectCommand.Parameters.AddWithValue("@uuid", card.Uuid);
-                selectCommand.Parameters.AddWithValue("@condition", card.SelectedCondition);
-                selectCommand.Parameters.AddWithValue("@language", card.Language);
-                selectCommand.Parameters.AddWithValue("@finish", card.SelectedFinish);
-
-                using var reader = await selectCommand.ExecuteReaderAsync();
-                if (await reader.ReadAsync())
-                {
-                    Debug.WriteLine($"Fandt et eksisterende kort i samlingen!");
-                    return reader.GetInt32(0); // Return the id if found
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in FindExistingCardReturnIdAsync: {ex.Message}");
-                throw;
-            }
-            finally
-            {
-                DBAccess.CloseConnection();
-            }
-            return null;
-        }
         public async Task<List<string>> FetchLanguagesForCardAsync(string uuid)
         {
             if (string.IsNullOrEmpty(uuid))
@@ -58,10 +23,10 @@ namespace CollectaMundo.Data
                 SELECT language FROM cards WHERE uuid = @uuid
                 UNION
                 SELECT language FROM tokens WHERE uuid = @uuid";
+
+            await DBAccess.OpenConnectionAsync();
             try
             {
-                await DBAccess.OpenConnectionAsync();
-
                 using var command = new SQLiteCommand(query, DBAccess.connection);
                 command.Parameters.AddWithValue("@uuid", uuid);
                 using var reader = await command.ExecuteReaderAsync();
@@ -83,6 +48,7 @@ namespace CollectaMundo.Data
             {
                 DBAccess.CloseConnection();
             }
+
             return languages;
         }
         public async Task<List<string>> FetchFinishesForCardAsync(string uuid)
@@ -92,10 +58,10 @@ namespace CollectaMundo.Data
                 SELECT finishes FROM cards WHERE uuid = @uuid 
                 UNION 
                 SELECT finishes FROM tokens WHERE uuid = @uuid";
+
+            await DBAccess.OpenConnectionAsync();
             try
             {
-                await DBAccess.OpenConnectionAsync();
-
                 using var command = new SQLiteCommand(query, DBAccess.connection);
                 command.Parameters.AddWithValue("@uuid", uuid);
                 using var reader = await command.ExecuteReaderAsync();
@@ -124,7 +90,41 @@ namespace CollectaMundo.Data
             {
                 DBAccess.CloseConnection();
             }
+
             return finishes;
+        }
+
+
+        public async Task<int?> FindExistingCardReturnIdAsync(CardSet card)
+        {
+
+            string selectSql = @"
+                SELECT id FROM myCollection 
+                WHERE uuid = @uuid 
+                  AND condition = @condition 
+                  AND language = @language 
+                  AND finish = @finish";
+            try
+            {
+                using var selectCommand = new SQLiteCommand(selectSql, DBAccess.connection);
+                selectCommand.Parameters.AddWithValue("@uuid", card.Uuid);
+                selectCommand.Parameters.AddWithValue("@condition", card.SelectedCondition);
+                selectCommand.Parameters.AddWithValue("@language", card.Language);
+                selectCommand.Parameters.AddWithValue("@finish", card.SelectedFinish);
+
+                using var reader = await selectCommand.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    Debug.WriteLine($"Fandt et eksisterende kort i samlingen!");
+                    return reader.GetInt32(0); // Return the id if found
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in FindExistingCardReturnIdAsync: {ex.Message}");
+                throw;
+            }
+            return null;
         }
         public async Task<CardSet> FindExistingCardReturnRecordAsync(string uuid, string condition, string language, string finish)
         {
@@ -137,8 +137,6 @@ namespace CollectaMundo.Data
 
             try
             {
-                await DBAccess.OpenConnectionAsync();
-
                 using var cmd = new SQLiteCommand(sql, DBAccess.connection);
                 cmd.Parameters.AddWithValue("@uuid", uuid);
                 cmd.Parameters.AddWithValue("@cond", condition);
@@ -159,10 +157,7 @@ namespace CollectaMundo.Data
                 Debug.WriteLine($"Error in FindExistingCardReturnRecordAsync: {ex}");
                 throw;
             }
-            finally
-            {
-                DBAccess.CloseConnection();
-            }
+
             return card;
         }
         public async Task<List<int>> FindRecordByIdAsync(string uuid, string condition, string language, string finish)
@@ -177,7 +172,6 @@ namespace CollectaMundo.Data
             ";
 
             var ids = new List<int>();
-            await DBAccess.OpenConnectionAsync();
             try
             {
                 using var cmd = new SQLiteCommand(sql, DBAccess.connection);
@@ -197,10 +191,6 @@ namespace CollectaMundo.Data
                 Debug.WriteLine($"Error in FindRecordByIdAsync: {ex}");
                 throw;
             }
-            finally
-            {
-                DBAccess.CloseConnection();
-            }
             return ids;
         }
 
@@ -212,8 +202,6 @@ namespace CollectaMundo.Data
                 VALUES (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish)";
             try
             {
-                await DBAccess.OpenConnectionAsync();
-
                 using var cmd = new SQLiteCommand(insertSql, DBAccess.connection);
                 cmd.Parameters.AddWithValue("@uuid", card.Uuid);
                 cmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
@@ -228,10 +216,6 @@ namespace CollectaMundo.Data
             {
                 Debug.WriteLine($"Error in AddCardAsync: {ex.Message}");
                 throw;
-            }
-            finally
-            {
-                DBAccess.CloseConnection();
             }
         }
         public async Task UpdateCardAsync(CardSet card)
@@ -248,8 +232,6 @@ namespace CollectaMundo.Data
                 WHERE id = @cardId";
             try
             {
-                await DBAccess.OpenConnectionAsync();
-
                 using var cmd = new SQLiteCommand(updateSql, DBAccess.connection);
                 cmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
                 cmd.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
@@ -265,10 +247,6 @@ namespace CollectaMundo.Data
                 Debug.WriteLine($"Error in UpdateCardCountsAsync: {ex.Message}");
                 throw;
             }
-            finally
-            {
-                DBAccess.CloseConnection();
-            }
         }
         public async Task UpdateCardCountsAsync(CardSet card)
         {
@@ -281,8 +259,6 @@ namespace CollectaMundo.Data
                 WHERE id = @cardId";
             try
             {
-                await DBAccess.OpenConnectionAsync();
-
                 using var cmd = new SQLiteCommand(updateSql, DBAccess.connection);
                 cmd.Parameters.AddWithValue("@addCount", card.CardsOwned);
                 cmd.Parameters.AddWithValue("@addTrade", card.CardsForTrade);
@@ -295,15 +271,9 @@ namespace CollectaMundo.Data
                 Debug.WriteLine($"Error in UpdateCardCountsAsync: {ex.Message}");
                 throw;
             }
-            finally
-            {
-                DBAccess.CloseConnection();
-            }
         }
         public async Task DeleteCardByIdAsync(CardSet card)
         {
-            await DBAccess.OpenConnectionAsync();
-
             string deleteSql = "DELETE FROM myCollection WHERE id = @id";
             try
             {
@@ -315,10 +285,6 @@ namespace CollectaMundo.Data
             {
                 Debug.WriteLine($"Error in DeleteCardByIdAsync: {ex.Message}");
                 throw;
-            }
-            finally
-            {
-                DBAccess.CloseConnection();
             }
         }
         public async Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId)
@@ -348,7 +314,6 @@ namespace CollectaMundo.Data
                    AND id       <> @keepId;
             ";
 
-            await DBAccess.OpenConnectionAsync();
             try
             {
                 // 1) Get the totals
@@ -390,10 +355,6 @@ namespace CollectaMundo.Data
             {
                 Debug.WriteLine($"Error in MergeDuplicateRecordsAsync: {ex}");
                 throw;
-            }
-            finally
-            {
-                DBAccess.CloseConnection();
             }
         }
 

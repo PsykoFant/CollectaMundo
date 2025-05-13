@@ -1,7 +1,6 @@
 ﻿using CollectaMundo.Data;
 using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
-using CollectaMundo.ViewModels;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices
@@ -21,7 +20,9 @@ namespace CollectaMundo.ApplicationServices
 
             // 2) If any item in the collection already has the same database ID, skip.
             if (newItem.CardId != null && targetCollection.Any(c => c.CardId == newItem.CardId))
+            {
                 return;
+            }
 
             // 3) Otherwise, fall back to matching on the other unique properties
             bool existsByKey = targetCollection.Any(c =>
@@ -31,24 +32,40 @@ namespace CollectaMundo.ApplicationServices
                 c.Language == newItem.Language);
 
             if (existsByKey)
+            {
                 return;
+            }
 
             // 4) If it really is new, add it to the in‐memory list
             targetCollection.Add(newItem);
         }
 
         // Submitting cards to the database
-        public async Task<CardChangeEventArgs> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit)
+        /// <summary>
+        /// Prepare defaults for a batch of new cards, then SubmitCardBatchAsync them all at once.
+        /// </summary>
+        public async Task<List<CardChangeEventArgs>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<CardSet> raws)
         {
-            return await _domainLogic.SaveAndReturnChangesAsync(card, isEdit);
-        }
-        public async Task<CardChangeEventArgs> SubmitNewCardsWithDefaultsAsync(CardSet raw)
-        {
-            // 1) prepare the new card (this returns Task<CardSet>)
-            var toSave = await _domainLogic.PrepareNewCardWithDefaultsAsync(raw);
+            // 1) Prepare each raw into a fully populated CardSet
+            var prepared = new List<CardSet>();
+            foreach (var raw in raws)
+            {
+                prepared.Add(await _domainLogic.PrepareNewCardWithDefaultsAsync(raw));
+            }
 
-            // 2) now pass the real CardSet into your SaveAndReturnChangesAsync
-            return await _domainLogic.SaveAndReturnChangesAsync(toSave, isEdit: false);
+            // 2) Save them all in one transaction/batch
+            return await SubmitCardBatchAsync(prepared);
+        }
+        public async Task<List<CardChangeEventArgs>> SubmitCardBatchAsync(IEnumerable<CardSet> cards)
+        {
+            // decide edit/new once per batch
+            bool isEdit = cards.Any(c => c.CardId != null);
+
+            // call into your domain logic batch
+            var changes = await _domainLogic.SaveBatchAsync(cards, isEdit);
+
+            // IReadOnlyList → List
+            return [.. changes];
         }
     }
 }

@@ -191,150 +191,160 @@ namespace CollectaMundo.ViewModels
         });
 
         // Commands - submit cards from listview
-        public ICommand SubmitNewCardsCommand => new RelayCommand<object>(async _ => await SubmitCardsAsync(CardsToAdd, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: false)));
-        public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async _ => await SubmitCardsAsync(CardsToAdd, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), true, "Updated the following cards with these values:"));
+        public ICommand SubmitNewCardsCommand => new RelayCommand<object>(async _ => await SubmitBatchAsync(CardsToAdd, cards => _coordinator.SubmitCardBatchAsync(cards), clearAfter: true, summaryTitle: "Added the following cards to your collection:"));
+        public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async _ => await SubmitBatchAsync(CardsToAdd, cards => _coordinator.SubmitCardBatchAsync(cards), clearAfter: true, summaryTitle: "Updated the following cards with these values:"));
         public ICommand SubmitNewCardsWithDefaultsCommand => new RelayCommand<object>(async param =>
+          {
+              if (param is not IEnumerable<object> sel) { return; }
+
+              var originals = sel.OfType<CardSet>().ToList();
+              if (originals.Count == 0) { return; }
+
+              await SubmitBatchAsync(originals, cards => _coordinator.SubmitNewCardsWithDefaultsBatchAsync(cards), clearAfter: false, summaryTitle: "Added the following cards with default values:");
+          });
+        private async Task SubmitBatchAsync(IEnumerable<CardSet> originals, Func<IEnumerable<CardSet>, Task<List<CardChangeEventArgs>>> persistBatch, bool clearAfter, string summaryTitle)
         {
-            if (param is not IEnumerable<object> sel)
-            {
-                return;
-            }
+            var list = originals.ToList();
+            var changes = await persistBatch(list);
 
-            var originals = sel.OfType<CardSet>();
-            if (!originals.Any())
-            {
-                return;
-            }
-
-            await SubmitCardsAsync(originals, card => _coordinator.SubmitNewCardsWithDefaultsAsync(card), clearAfter: false, summaryTitle: "Added the following cards with default values:");
-        });
-        public ICommand DeleteSelectedCardsCommand => new RelayCommand<object>(async param =>
-        {
-            if (param is not IEnumerable<object> sel) return;
-
-            // 1) Pull out the selected CardSet instances
-            var originals = sel.OfType<CardSet>().ToList();
-            if (originals.Count == 0) return;
-
-            // 2) Clone each one and force CardsOwned=0 (so we don’t stomp on the ListView’s binding)
-            var toDelete = originals
-              .Select(o => new CardSet
-              {
-                  CardId = o.CardId,
-                  Name = o.Name,
-                  SelectedCondition = o.SelectedCondition,
-                  Language = o.Language,
-                  SelectedFinish = o.SelectedFinish,
-                  CardsOwned = 0,
-              }).ToList();
-
-            // 3) Reuse your SubmitCardsAsync helper,  
-            await SubmitCardsAsync(toDelete, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), clearAfter: true, summaryTitle: "Deleted the following cards from your collection:");
-        });
-        public ICommand PutAllForTradeCommand => new RelayCommand<object>(async param =>
-        {
-            if (param is not IEnumerable<object> sel) return;
-
-            // 1) Grab the selected CardSet instances
-            var cards = sel.OfType<CardSet>().ToList();
-            if (cards.Count == 0) return;
-
-            // 2) Mutate each one in-memory
-            foreach (var c in cards)
-            {
-                c.CardsForTrade = c.CardsOwned;
-            }
-
-            // 3) Call SubmitCardsAsync helper to persist & raise events
-            await SubmitCardsAsync(cards, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
-        });
-        public ICommand SetNoneForTradeCommand => new RelayCommand<object>(async param =>
-        {
-            if (param is not IEnumerable<object> sel) return;
-
-            // 1) Grab the selected CardSet instances
-            var cards = sel.OfType<CardSet>().ToList();
-            if (cards.Count == 0) return;
-
-            // 2) Mutate each one in-memory
-            foreach (var c in cards)
-            {
-                c.CardsForTrade = 0;
-            }
-
-            // 3) Call SubmitCardsAsync helper to persist & raise events
-            await SubmitCardsAsync(cards, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
-        });
-
-        // Shared helper
-        private async Task SubmitCardsAsync(IEnumerable<CardSet> toSubmit, Func<CardSet, Task<CardChangeEventArgs>> persistAndFetch, bool clearAfter = true, string summaryTitle = "Added the following cards to your collection:")
-        {
-            var originals = toSubmit.ToList();
-            var changes = new List<CardChangeEventArgs>();
-
-            // 1) Persist & collect change info
-            foreach (var o in originals)
-            {
-                changes.Add(await persistAndFetch(o));
-            }
-
-            // 2) Clear the "to add" pane if requested
             if (clearAfter)
             {
                 CardsToAdd.Clear();
                 ClearSelectionTrigger++;
             }
 
-            // 3) Fire CardProcessed events so the UI list updates
+            // 3) Fire UI updates
             foreach (var change in changes)
             {
-                CardChanged?.Invoke(this, change);
-            }
-
-            // 4) Build separate lists of survivors (upserts) and deletions
-            var survivors = changes
-                .Where(ch => ch.Type == CardChangeEventArgs.ChangeType.Upsert)
-                .Select(ch => ch.Survivor!)
-                .ToList();
-
-            // For deletions, pull the original CardSet(s) that matched the deleted IDs
-            var deletedIds = changes
-                .Where(ch => ch.Type == CardChangeEventArgs.ChangeType.Delete)
-                .SelectMany(ch => ch.Removed)
-                .ToHashSet();
-
-            var deletedCards = originals.Where(o => o.CardId.HasValue && deletedIds.Contains(o.CardId.Value)).ToList();
-
-
-            // 5) Build the summary string
-            var sb = new StringBuilder();
-
-            if (survivors.Count != 0)
-            {
-                sb.AppendLine(summaryTitle);
-                sb.AppendLine();
-                foreach (var c in survivors)
+                // turn delete-marker into a dummy CardSet so the handler can remove it
+                if (change.Type == CardChangeEventArgs.ChangeType.Delete)
                 {
-                    sb.AppendLine($"- {c.Name} (Condition: {c.SelectedCondition}, " +
-                                  $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
-                                  $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})");
+                    var deletedId = change.Removed.Single();
+                    CardChanged?.Invoke(this, new CardChangeEventArgs(new CardSet { CardId = deletedId, CardsOwned = 0, CardsForTrade = 0 }));
+                }
+                else
+                {
+                    CardChanged?.Invoke(this, new CardChangeEventArgs(change.Survivor!));
                 }
             }
 
+            // 4) Build summary
+            var sb = new StringBuilder();
+
+            var ups = changes.Where(c => c.Type == CardChangeEventArgs.ChangeType.Upsert).Select(c => c.Survivor!).ToList();
+            if (ups.Count != 0)
+            {
+                sb.AppendLine(summaryTitle).AppendLine();
+                foreach (var c in ups)
+                {
+                    sb.AppendLine($"- {c.Name} (Condition: {c.SelectedCondition}, Language: {c.Language}, Finish: {c.SelectedFinish}, Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})");
+                }
+            }
+
+            var deletedIds = changes.Where(c => c.Type == CardChangeEventArgs.ChangeType.Delete).SelectMany(c => c.Removed).ToHashSet();
+            var deletedCards = list.Where(c => c.CardId.HasValue && deletedIds.Contains(c.CardId.Value)).ToList();
             if (deletedCards.Count != 0)
             {
-                if (sb.Length > 0) sb.AppendLine(); // blank line between sections
-                sb.AppendLine("Deleted the following cards from your collection:");
-                sb.AppendLine();
+                if (sb.Length > 0)
+                {
+                    sb.AppendLine();
+                }
+
+                sb.AppendLine("Deleted the following cards from your collection:").AppendLine();
                 foreach (var c in deletedCards)
                 {
-                    sb.AppendLine($"- {c.Name} (Condition: {c.SelectedCondition}, " +
-                                  $"Language: {c.Language}, Finish: {c.SelectedFinish})");
+                    sb.AppendLine($"- {c.Name} (Condition: {c.SelectedCondition}, Language: {c.Language}, Finish: {c.SelectedFinish})");
                 }
             }
 
             StatusMessage = sb.ToString().TrimEnd();
         }
+
+
+
+
+
+        //public ICommand DeleteSelectedCardsCommand => new RelayCommand<object>(async param =>
+        //{
+        //    if (param is not IEnumerable<object> sel)
+        //    {
+        //        return;
+        //    }
+
+        //    // 1) Pull out the selected CardSet instances
+        //    var originals = sel.OfType<CardSet>().ToList();
+        //    if (originals.Count == 0)
+        //    {
+        //        return;
+        //    }
+
+        //    // 2) Clone each one and force CardsOwned=0 (so we don’t stomp on the ListView’s binding)
+        //    var toDelete = originals
+        //      .Select(o => new CardSet
+        //      {
+        //          CardId = o.CardId,
+        //          Name = o.Name,
+        //          SelectedCondition = o.SelectedCondition,
+        //          Language = o.Language,
+        //          SelectedFinish = o.SelectedFinish,
+        //          CardsOwned = 0,
+        //      }).ToList();
+
+        //    // 3) Reuse your SubmitCardsAsync helper,  
+        //    await SubmitCardsAsync(toDelete, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), clearAfter: true, summaryTitle: "Deleted the following cards from your collection:");
+        //});
+        //public ICommand PutAllForTradeCommand => new RelayCommand<object>(async param =>
+        //{
+        //    if (param is not IEnumerable<object> sel)
+        //    {
+        //        return;
+        //    }
+
+        //    // 1) Grab the selected CardSet instances
+        //    var cards = sel.OfType<CardSet>().ToList();
+        //    if (cards.Count == 0)
+        //    {
+        //        return;
+        //    }
+
+        //    // 2) Mutate each one in-memory
+        //    foreach (var c in cards)
+        //    {
+        //        c.CardsForTrade = c.CardsOwned;
+        //    }
+
+        //    // 3) Call SubmitCardsAsync helper to persist & raise events
+        //    await SubmitCardsAsync(cards, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
+        //});
+        //public ICommand SetNoneForTradeCommand => new RelayCommand<object>(async param =>
+        //{
+        //    if (param is not IEnumerable<object> sel)
+        //    {
+        //        return;
+        //    }
+
+        //    // 1) Grab the selected CardSet instances
+        //    var cards = sel.OfType<CardSet>().ToList();
+        //    if (cards.Count == 0)
+        //    {
+        //        return;
+        //    }
+
+        //    // 2) Mutate each one in-memory
+        //    foreach (var c in cards)
+        //    {
+        //        c.CardsForTrade = 0;
+        //    }
+
+        //    // 3) Call SubmitCardsAsync helper to persist & raise events
+        //    await SubmitCardsAsync(cards, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
+        //});
+
+        // Shared helper
+
+
+
+
 
         private string _statusMessage = string.Empty;
         public string StatusMessage
