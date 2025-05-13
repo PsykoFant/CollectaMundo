@@ -11,11 +11,10 @@ namespace CollectaMundo.ApplicationServices
         private readonly IEditCollectionLogic _domainLogic = domainLogic ?? throw new ArgumentNullException(nameof(domainLogic));
         private readonly IEditCollectionRepository _repo = repo ?? throw new ArgumentNullException(nameof(repo));
 
-        // Public wrappers
-        public Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewAsync(selectedCard, targetCollection, false);
-        public Task AddCardToEditCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewAsync(selectedCard, targetCollection, true);
-        // Common implementation
-        private async Task AddCardToListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection, bool isEdit)
+        // Adding cards to an add or edit listview
+        public Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewHelperAsync(selectedCard, targetCollection, false);
+        public Task AddCardToEditCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewHelperAsync(selectedCard, targetCollection, true);
+        private async Task AddCardToListViewHelperAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection, bool isEdit)
         {
             // 1) Let your domain‐logic prepare the fully populated CardSet
             var newItem = await _domainLogic.PrepareCardForListAsync(selectedCard, isEdit);
@@ -38,6 +37,7 @@ namespace CollectaMundo.ApplicationServices
             targetCollection.Add(newItem);
         }
 
+        // Submitting cards to the database
         public async Task<CardChangeEventArgs> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit)
         {
             return await _domainLogic.SaveAndReturnChangesAsync(card, isEdit);
@@ -50,7 +50,5 @@ namespace CollectaMundo.ApplicationServices
             // 2) now pass the real CardSet into your SaveAndReturnChangesAsync
             return await _domainLogic.SaveAndReturnChangesAsync(toSave, isEdit: false);
         }
-
-
     }
 }

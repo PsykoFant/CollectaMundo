@@ -3,6 +3,7 @@ using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 
@@ -191,7 +192,7 @@ namespace CollectaMundo.ViewModels
 
         // Commands - submit cards from listview
         public ICommand SubmitNewCardsCommand => new RelayCommand<object>(async _ => await SubmitCardsAsync(CardsToAdd, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: false)));
-        public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async _ => await SubmitCardsAsync(CardsToAdd, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), true, "Updated the following cards withthese values:"));
+        public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async _ => await SubmitCardsAsync(CardsToAdd, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), true, "Updated the following cards with these values:"));
         public ICommand SubmitNewCardsWithDefaultsCommand => new RelayCommand<object>(async param =>
         {
             if (param is not IEnumerable<object> sel)
@@ -207,6 +208,63 @@ namespace CollectaMundo.ViewModels
 
             await SubmitCardsAsync(originals, card => _coordinator.SubmitNewCardsWithDefaultsAsync(card), clearAfter: false, summaryTitle: "Added the following cards with default values:");
         });
+        public ICommand DeleteSelectedCardsCommand => new RelayCommand<object>(async param =>
+        {
+            if (param is not IEnumerable<object> sel) return;
+
+            // 1) Pull out the selected CardSet instances
+            var originals = sel.OfType<CardSet>().ToList();
+            if (originals.Count == 0) return;
+
+            // 2) Clone each one and force CardsOwned=0 (so we don’t stomp on the ListView’s binding)
+            var toDelete = originals
+              .Select(o => new CardSet
+              {
+                  CardId = o.CardId,
+                  Name = o.Name,
+                  SelectedCondition = o.SelectedCondition,
+                  Language = o.Language,
+                  SelectedFinish = o.SelectedFinish,
+                  CardsOwned = 0,
+              }).ToList();
+
+            // 3) Reuse your SubmitCardsAsync helper,  
+            await SubmitCardsAsync(toDelete, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), clearAfter: true, summaryTitle: "Deleted the following cards from your collection:");
+        });
+        public ICommand PutAllForTradeCommand => new RelayCommand<object>(async param =>
+        {
+            if (param is not IEnumerable<object> sel) return;
+
+            // 1) Grab the selected CardSet instances
+            var cards = sel.OfType<CardSet>().ToList();
+            if (cards.Count == 0) return;
+
+            // 2) Mutate each one in-memory
+            foreach (var c in cards)
+            {
+                c.CardsForTrade = c.CardsOwned;
+            }
+
+            // 3) Call SubmitCardsAsync helper to persist & raise events
+            await SubmitCardsAsync(cards, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
+        });
+        public ICommand SetNoneForTradeCommand => new RelayCommand<object>(async param =>
+        {
+            if (param is not IEnumerable<object> sel) return;
+
+            // 1) Grab the selected CardSet instances
+            var cards = sel.OfType<CardSet>().ToList();
+            if (cards.Count == 0) return;
+
+            // 2) Mutate each one in-memory
+            foreach (var c in cards)
+            {
+                c.CardsForTrade = 0;
+            }
+
+            // 3) Call SubmitCardsAsync helper to persist & raise events
+            await SubmitCardsAsync(cards, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
+        });
 
         // Shared helper
         private async Task SubmitCardsAsync(IEnumerable<CardSet> toSubmit, Func<CardSet, Task<CardChangeEventArgs>> persistAndFetch, bool clearAfter = true, string summaryTitle = "Added the following cards to your collection:")
@@ -220,39 +278,63 @@ namespace CollectaMundo.ViewModels
                 changes.Add(await persistAndFetch(o));
             }
 
-            // 2) Clear the “to add” pane if requested
+            // 2) Clear the "to add" pane if requested
             if (clearAfter)
             {
                 CardsToAdd.Clear();
                 ClearSelectionTrigger++;
             }
 
-            // 3) Fire CardProcessed events (for deletes and upserts)
+            // 3) Fire CardProcessed events so the UI list updates
             foreach (var change in changes)
             {
-                if (change.Type == CardChangeEventArgs.ChangeType.Delete)
-                {
-                    CardChanged?.Invoke(this, change);
-                }
-                else
-                {
-                    CardChanged?.Invoke(this, change);
-                }
+                CardChanged?.Invoke(this, change);
             }
 
-            // 4) Build your summary out of the upserted survivors
+            // 4) Build separate lists of survivors (upserts) and deletions
             var survivors = changes
                 .Where(ch => ch.Type == CardChangeEventArgs.ChangeType.Upsert)
                 .Select(ch => ch.Survivor!)
                 .ToList();
 
-            StatusMessage = summaryTitle + "\n\n"
-                + string.Join("\n", survivors.Select(c =>
-                    $"- {c.Name} (Condition: {c.SelectedCondition}, " +
-                    $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
-                    $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})"));
-        }
+            // For deletions, pull the original CardSet(s) that matched the deleted IDs
+            var deletedIds = changes
+                .Where(ch => ch.Type == CardChangeEventArgs.ChangeType.Delete)
+                .SelectMany(ch => ch.Removed)
+                .ToHashSet();
 
+            var deletedCards = originals.Where(o => o.CardId.HasValue && deletedIds.Contains(o.CardId.Value)).ToList();
+
+
+            // 5) Build the summary string
+            var sb = new StringBuilder();
+
+            if (survivors.Count != 0)
+            {
+                sb.AppendLine(summaryTitle);
+                sb.AppendLine();
+                foreach (var c in survivors)
+                {
+                    sb.AppendLine($"- {c.Name} (Condition: {c.SelectedCondition}, " +
+                                  $"Language: {c.Language}, Finish: {c.SelectedFinish}, " +
+                                  $"Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})");
+                }
+            }
+
+            if (deletedCards.Count != 0)
+            {
+                if (sb.Length > 0) sb.AppendLine(); // blank line between sections
+                sb.AppendLine("Deleted the following cards from your collection:");
+                sb.AppendLine();
+                foreach (var c in deletedCards)
+                {
+                    sb.AppendLine($"- {c.Name} (Condition: {c.SelectedCondition}, " +
+                                  $"Language: {c.Language}, Finish: {c.SelectedFinish})");
+                }
+            }
+
+            StatusMessage = sb.ToString().TrimEnd();
+        }
 
         private string _statusMessage = string.Empty;
         public string StatusMessage
@@ -274,43 +356,5 @@ namespace CollectaMundo.ViewModels
             => string.IsNullOrEmpty(StatusMessage)
                 ? Visibility.Collapsed
                 : Visibility.Visible;
-
     }
-
-    public class CardChangeEventArgs : EventArgs
-    {
-        public enum ChangeType { Upsert, Delete }
-
-        /// <summary>Whether we just upserted (add/update/merge) or deleted by zero.</summary>
-        public ChangeType Type { get; }
-
-        /// <summary>The one true survivor after add/update/merge. Null if Type==Delete.</summary>
-        public CardSet? Survivor { get; }
-
-        /// <summary>
-        /// The CardId(s) that should be removed from any in-memory list.
-        /// If you deleted by zero, this is the single CardId that was deleted.
-        /// If you merged duplicates, these are the extra IDs you collapsed.
-        /// </summary>
-        public IReadOnlyList<int> Removed { get; }
-
-        // Upsert constructor
-        public CardChangeEventArgs(CardSet survivor, IReadOnlyList<int>? removed = null)
-        {
-            Type = ChangeType.Upsert;
-            Survivor = survivor;
-            Removed = removed ?? [];
-        }
-
-        // Delete-by-zero constructor
-        public CardChangeEventArgs(int deletedCardId)
-        {
-            Type = ChangeType.Delete;
-            Survivor = null;
-            Removed = [deletedCardId];
-        }
-    }
-
-
-
 }

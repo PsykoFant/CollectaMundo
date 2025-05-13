@@ -4,7 +4,6 @@ namespace CollectaMundo.Data
 {
     public interface IEditCollectionRepository
     {
-
         // Lookups
         Task<int?> FindExistingCardReturnIdAsync(CardSet card);
         Task<List<string>> FetchLanguagesForCardAsync(string uuid);

@@ -1514,13 +1514,18 @@
                     <DataGrid.ContextMenu>
                         <ContextMenu Style="{StaticResource MPlantin}"
                                      DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                            <MenuItem Header="Add selected card(s) to Collection"
+                            <MenuItem Header="Edit selected card(s)" Style="{StaticResource BelerenBold}"
                                       Command="{Binding EditCardsVM.AddSelectedCardsCommand}"
-                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      Style="{StaticResource BelerenBold}" />
-                            <MenuItem Header="UPDATE selected card(s) - put ALL for TRADE" Style="{StaticResource BelerenBold}"/>
-                            <MenuItem Header="UPDATE selected card(s) - put NONE for TRADE" Style="{StaticResource BelerenBold}"/>
-                            <MenuItem Header="DELETE card(s) from collection" Style="{StaticResource BelerenBold}"/>
+                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                            <MenuItem Header="UPDATE selected card(s) - put ALL for TRADE" Style="{StaticResource BelerenBold}"
+                                      Command="{Binding EditCardsVM.PutAllForTradeCommand}"
+                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>                            
+                            <MenuItem Header="UPDATE selected card(s) - put NONE for TRADE" Style="{StaticResource BelerenBold}"
+                                      Command="{Binding EditCardsVM.SetNoneForTradeCommand}"
+                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>                            
+                            <MenuItem Header="DELETE card(s) from collection" Style="{StaticResource BelerenBold}"
+                                      Command="{Binding EditCardsVM.DeleteSelectedCardsCommand}"
+                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                         </ContextMenu>
                     </DataGrid.ContextMenu>
                 </DataGrid>
