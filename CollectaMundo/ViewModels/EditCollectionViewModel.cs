@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices;
 using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Utilities;
+using ServiceStack;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Text;
@@ -202,6 +203,77 @@ namespace CollectaMundo.ViewModels
 
               await SubmitBatchAsync(originals, cards => _coordinator.SubmitNewCardsWithDefaultsBatchAsync(cards), clearAfter: false, summaryTitle: "Added the following cards with default values:");
           });
+        public ICommand DeleteSelectedCardsCommand => new RelayCommand<object>(async param =>
+        {
+            if (param is not IEnumerable<object> sel) { return; }
+
+            // 1) Pull out the selected CardSet instances
+            var originals = sel.OfType<CardSet>().ToList();
+            if (originals.Count == 0) { return; }
+
+            // 2) Clone each one and force CardsOwned=0 (so we don’t stomp on the ListView’s binding)
+            var toDelete = originals.Select(o => new CardSet
+            {
+                CardId = o.CardId,
+                Name = o.Name,
+                SelectedCondition = o.SelectedCondition,
+                Language = o.Language,
+                SelectedFinish = o.SelectedFinish,
+                CardsOwned = 0,
+            }).ToList();
+
+            // 3) Reuse SubmitBatchAsync helper,  
+            await SubmitBatchAsync(toDelete, cards => _coordinator.SubmitCardBatchAsync(cards), clearAfter: true, summaryTitle: "Deleted the following cards from your collection:");
+        });
+        public ICommand PutAllForTradeCommand => new RelayCommand<object>(async param =>
+        {
+            if (param is not IEnumerable<object> sel)
+            {
+                return;
+            }
+
+            // 1) Grab the selected CardSet instances
+            var cards = sel.OfType<CardSet>().ToList();
+            if (cards.Count == 0)
+            {
+                return;
+            }
+
+            // 2) Mutate each one in-memory
+            foreach (var c in cards)
+            {
+                c.CardsForTrade = c.CardsOwned;
+            }
+
+            // 3) Call SubmitBatchAsync helper to persist & raise events
+            await SubmitBatchAsync(cards, cards => _coordinator.SubmitCardBatchAsync(cards), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
+        });
+        public ICommand SetNoneForTradeCommand => new RelayCommand<object>(async param =>
+        {
+            if (param is not IEnumerable<object> sel)
+            {
+                return;
+            }
+
+            // 1) Grab the selected CardSet instances
+            var cards = sel.OfType<CardSet>().ToList();
+            if (cards.Count == 0)
+            {
+                return;
+            }
+
+            // 2) Mutate each one in-memory
+            foreach (var c in cards)
+            {
+                c.CardsForTrade = 0;
+            }
+
+            // 3) Call SubmitBatchAsync helper to persist & raise events
+            await SubmitBatchAsync(cards, cards => _coordinator.SubmitCardBatchAsync(cards), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
+
+        });
+
+        // Shared helper
         private async Task SubmitBatchAsync(IEnumerable<CardSet> originals, Func<IEnumerable<CardSet>, Task<List<CardChangeEventArgs>>> persistBatch, bool clearAfter, string summaryTitle)
         {
             var list = originals.ToList();
@@ -214,18 +286,10 @@ namespace CollectaMundo.ViewModels
             }
 
             // 3) Fire UI updates
+            // 3) Fire UI updates
             foreach (var change in changes)
             {
-                // turn delete-marker into a dummy CardSet so the handler can remove it
-                if (change.Type == CardChangeEventArgs.ChangeType.Delete)
-                {
-                    var deletedId = change.Removed.Single();
-                    CardChanged?.Invoke(this, new CardChangeEventArgs(new CardSet { CardId = deletedId, CardsOwned = 0, CardsForTrade = 0 }));
-                }
-                else
-                {
-                    CardChanged?.Invoke(this, new CardChangeEventArgs(change.Survivor!));
-                }
+                CardChanged?.Invoke(this, change);
             }
 
             // 4) Build summary
@@ -241,7 +305,7 @@ namespace CollectaMundo.ViewModels
                 }
             }
 
-            var deletedIds = changes.Where(c => c.Type == CardChangeEventArgs.ChangeType.Delete).SelectMany(c => c.Removed).ToHashSet();
+            var deletedIds = System.Linq.Enumerable.ToHashSet(changes.Where(ch => ch.Type == CardChangeEventArgs.ChangeType.Delete).SelectMany(ch => ch.Removed));
             var deletedCards = list.Where(c => c.CardId.HasValue && deletedIds.Contains(c.CardId.Value)).ToList();
             if (deletedCards.Count != 0)
             {
@@ -259,92 +323,6 @@ namespace CollectaMundo.ViewModels
 
             StatusMessage = sb.ToString().TrimEnd();
         }
-
-
-
-
-
-        //public ICommand DeleteSelectedCardsCommand => new RelayCommand<object>(async param =>
-        //{
-        //    if (param is not IEnumerable<object> sel)
-        //    {
-        //        return;
-        //    }
-
-        //    // 1) Pull out the selected CardSet instances
-        //    var originals = sel.OfType<CardSet>().ToList();
-        //    if (originals.Count == 0)
-        //    {
-        //        return;
-        //    }
-
-        //    // 2) Clone each one and force CardsOwned=0 (so we don’t stomp on the ListView’s binding)
-        //    var toDelete = originals
-        //      .Select(o => new CardSet
-        //      {
-        //          CardId = o.CardId,
-        //          Name = o.Name,
-        //          SelectedCondition = o.SelectedCondition,
-        //          Language = o.Language,
-        //          SelectedFinish = o.SelectedFinish,
-        //          CardsOwned = 0,
-        //      }).ToList();
-
-        //    // 3) Reuse your SubmitCardsAsync helper,  
-        //    await SubmitCardsAsync(toDelete, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), clearAfter: true, summaryTitle: "Deleted the following cards from your collection:");
-        //});
-        //public ICommand PutAllForTradeCommand => new RelayCommand<object>(async param =>
-        //{
-        //    if (param is not IEnumerable<object> sel)
-        //    {
-        //        return;
-        //    }
-
-        //    // 1) Grab the selected CardSet instances
-        //    var cards = sel.OfType<CardSet>().ToList();
-        //    if (cards.Count == 0)
-        //    {
-        //        return;
-        //    }
-
-        //    // 2) Mutate each one in-memory
-        //    foreach (var c in cards)
-        //    {
-        //        c.CardsForTrade = c.CardsOwned;
-        //    }
-
-        //    // 3) Call SubmitCardsAsync helper to persist & raise events
-        //    await SubmitCardsAsync(cards, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
-        //});
-        //public ICommand SetNoneForTradeCommand => new RelayCommand<object>(async param =>
-        //{
-        //    if (param is not IEnumerable<object> sel)
-        //    {
-        //        return;
-        //    }
-
-        //    // 1) Grab the selected CardSet instances
-        //    var cards = sel.OfType<CardSet>().ToList();
-        //    if (cards.Count == 0)
-        //    {
-        //        return;
-        //    }
-
-        //    // 2) Mutate each one in-memory
-        //    foreach (var c in cards)
-        //    {
-        //        c.CardsForTrade = 0;
-        //    }
-
-        //    // 3) Call SubmitCardsAsync helper to persist & raise events
-        //    await SubmitCardsAsync(cards, card => _coordinator.SubmitCollectionUpdatesAsync(card, isEdit: true), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
-        //});
-
-        // Shared helper
-
-
-
-
 
         private string _statusMessage = string.Empty;
         public string StatusMessage
