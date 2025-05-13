@@ -1,7 +1,6 @@
 ﻿using CollectaMundo.Data;
 using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
-using CollectaMundo.ViewModels;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices
@@ -50,5 +49,37 @@ namespace CollectaMundo.ApplicationServices
             // 2) now pass the real CardSet into your SaveAndReturnChangesAsync
             return await _domainLogic.SaveAndReturnChangesAsync(toSave, isEdit: false);
         }
+
+
+
+        /// <summary>
+        /// Persist N cards (add/update/delete) all under one DB connection/transaction,
+        /// by calling your existing DomainLogic.SaveAndReturnChangesAsync for each one.
+        /// </summary>
+        public async Task<IReadOnlyList<CardChangeEventArgs>> SubmitCollectionBatchAsync(
+            IEnumerable<(CardSet card, bool isEdit)> items)
+        {
+            // 1) Open the DB once
+            await DBAccess.OpenConnectionAsync();
+            var results = new List<CardChangeEventArgs>();
+
+            try
+            {
+                foreach (var (card, isEdit) in items)
+                {
+                    // 2) re-use your existing per-card logic
+                    var change = await _domainLogic.SaveAndReturnChangesAsync(card, isEdit);
+                    results.Add(change);
+                }
+
+                return results;
+            }
+            finally
+            {
+                // 3) close it once
+                DBAccess.CloseConnection();
+            }
+        }
+
     }
 }
