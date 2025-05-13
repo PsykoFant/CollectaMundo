@@ -269,9 +269,14 @@ namespace CollectaMundo.ViewModels
         // Shared helper
         private async Task SubmitCardsAsync(IEnumerable<CardSet> toSubmit, Func<CardSet, Task<CardChangeEventArgs>> persistAndFetch, bool clearAfter = true, string summaryTitle = "Added the following cards to your collection:")
         {
-            var originals = CardsToAdd.ToList();
-            var batch = originals.Select(c => (c, isEdit: false));
-            var changes = await _coordinator.SubmitCollectionBatchAsync(batch);
+            var originals = toSubmit.ToList();
+            var changes = new List<CardChangeEventArgs>();
+
+            // 1) Persist & collect change info
+            foreach (var o in originals)
+            {
+                changes.Add(await persistAndFetch(o));
+            }
 
             // 2) Clear the "to add" pane if requested
             if (clearAfter)

@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.Models;
+using CollectaMundo.ViewModels;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices
@@ -9,7 +10,5 @@ namespace CollectaMundo.ApplicationServices
         Task AddCardToEditCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection);
         Task<CardChangeEventArgs> SubmitCollectionUpdatesAsync(CardSet card, bool isEdit);
         Task<CardChangeEventArgs> SubmitNewCardsWithDefaultsAsync(CardSet raw);
-        Task<IReadOnlyList<CardChangeEventArgs>> SubmitCollectionBatchAsync(
-            IEnumerable<(CardSet card, bool isEdit)> items);
     }
 }

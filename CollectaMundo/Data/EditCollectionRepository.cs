@@ -210,9 +210,10 @@ namespace CollectaMundo.Data
             string insertSql = @"
                 INSERT INTO myCollection (uuid, cardsOwned, cardsForTrade, condition, language, finish)
                 VALUES (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish)";
-
             try
             {
+                await DBAccess.OpenConnectionAsync();
+
                 using var cmd = new SQLiteCommand(insertSql, DBAccess.connection);
                 cmd.Parameters.AddWithValue("@uuid", card.Uuid);
                 cmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
@@ -228,8 +229,11 @@ namespace CollectaMundo.Data
                 Debug.WriteLine($"Error in AddCardAsync: {ex.Message}");
                 throw;
             }
+            finally
+            {
+                DBAccess.CloseConnection();
+            }
         }
-
         public async Task UpdateCardAsync(CardSet card)
         {
 
