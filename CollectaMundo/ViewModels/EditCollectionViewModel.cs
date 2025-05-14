@@ -286,7 +286,6 @@ namespace CollectaMundo.ViewModels
             }
 
             // 3) Fire UI updates
-            // 3) Fire UI updates
             foreach (var change in changes)
             {
                 CardChanged?.Invoke(this, change);

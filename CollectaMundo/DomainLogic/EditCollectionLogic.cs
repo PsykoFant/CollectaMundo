@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.Data;
 using CollectaMundo.DomainLogic.Models;
+using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic
 {
@@ -9,35 +10,73 @@ namespace CollectaMundo.DomainLogic
         public async Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit)
         {
             if (selectedCard.Uuid == null)
-            {
                 throw new ArgumentException("UUID cannot be null", nameof(selectedCard));
-            }
 
-            var cardId = isEdit ? selectedCard.CardId : null;
+            // 1) Pull the metadata you still need for a new vs. edit
             var languages = await _repo.FetchLanguagesForCardAsync(selectedCard.Uuid);
             var finishes = await _repo.FetchFinishesForCardAsync(selectedCard.Uuid);
 
-            var chosenFinish = isEdit ? selectedCard.SelectedFinish : finishes.FirstOrDefault();
-            var chosenCondition = isEdit ? selectedCard.SelectedCondition : "Near Mint";
-            var language = isEdit ? selectedCard.Language : (selectedCard.Language ?? "English");
-            var ownedCount = isEdit ? selectedCard.CardsOwned : 1;
-            var tradeCount = isEdit ? selectedCard.CardsForTrade : 0;
+            // 2) Decide which values to use in edit vs. add
+            string chosenFinish = isEdit
+                                        ? selectedCard.SelectedFinish!
+                                        : finishes.FirstOrDefault()!;
+            string chosenCondition = isEdit
+                                        ? selectedCard.SelectedCondition!
+                                        : "Near Mint";
+            string language = isEdit
+                                        ? selectedCard.Language!
+                                        : (selectedCard.Language ?? "English");
+            int ownedCount = isEdit
+                                        ? selectedCard.CardsOwned
+                                        : 1;
+            int tradeCount = isEdit
+                                        ? selectedCard.CardsForTrade
+                                        : 0;
+            int? cardId = isEdit
+                                        ? selectedCard.CardId
+                                        : null;
 
-            return new CardSet
+            // 3) Clone everything else verbatim
+            var clone = new CardSet
             {
-                CardId = cardId,
+                // --- common / view fields ---
                 Name = selectedCard.Name,
-                SetName = selectedCard.SetName,
+                ManaCostRaw = selectedCard.ManaCostRaw,
+                ManaValue = selectedCard.ManaValue,
+                Colors = selectedCard.Colors,
+                Type = selectedCard.Type,
+                ManaCostImageBytes = selectedCard.ManaCostImageBytes,
+
+                Types = selectedCard.Types,
+                SuperTypes = selectedCard.SuperTypes,
+                SubTypes = selectedCard.SubTypes,
+                Keywords = selectedCard.Keywords,
+                Text = selectedCard.Text,
+                Side = selectedCard.Side,
+
+                Language = language,
                 Uuid = selectedCard.Uuid,
+                SetName = selectedCard.SetName,
+                Rarity = selectedCard.Rarity,
+                Finishes = selectedCard.Finishes,
+                ReleaseDate = selectedCard.ReleaseDate,
+                KeyRuneImageBytes = selectedCard.KeyRuneImageBytes,
+                CardInCollectionPrice = selectedCard.CardInCollectionPrice,
+
+                // --- collection-specific fields ---
+                CardId = cardId,
                 CardsOwned = ownedCount,
                 CardsForTrade = tradeCount,
-                AvailableFinishes = finishes,
-                SelectedFinish = chosenFinish,
-                Language = language,
-                OtherLanguages = languages,
                 SelectedCondition = chosenCondition,
+                SelectedFinish = chosenFinish,
+
+                AvailableFinishes = finishes,
+                OtherLanguages = languages
             };
+
+            return clone;
         }
+
 
         // Prepare a new card directly for submission to db with defaults (taking into account non-English or non-nonfoil cards)
         public async Task<CardSet> PrepareNewCardWithDefaultsAsync(CardSet selectedCard)
@@ -95,8 +134,11 @@ namespace CollectaMundo.DomainLogic
 
             // 2) If delete-by-zero, short-circuit
             if (isEdit && raw.CardsOwned == 0)
+            {
+                Debug.WriteLine($"[SaveAndReturnChangesAsync] Deletion: CardId={raw.CardId}");
+                Debug.WriteLine($"[SaveAndReturnChangesAsync] Full raw: {DumpCardSet(raw)}");
                 return new CardChangeEventArgs(raw.CardId!.Value);
-
+            }
             // 3) Get all matching IDs
             var allIds = await FetchMatchingIdsAsync(raw);
 
@@ -108,9 +150,50 @@ namespace CollectaMundo.DomainLogic
             raw.CardsOwned = sumOwned;
             raw.CardsForTrade = sumTrade;
 
+            //  Add debug dump of the *entire* CardSet so you can see what's missing:
+            Debug.WriteLine($"[SaveAndReturnChangesAsync] Upsert: keepId={keepId}, removed=[{string.Join(",", removed)}]");
+            Debug.WriteLine($"[SaveAndReturnChangesAsync] Full raw after merge: {DumpCardSet(raw)}");
+
             // 6) Fire the upsert event
             return new CardChangeEventArgs(raw, removed);
         }
+
+        private static string DumpCardSet(CardSet c)
+        {
+            return $@"
+            CardId:              {c.CardId}
+            Name:                {c.Name}
+            ManaCostRaw:         {c.ManaCostRaw}
+            ManaValue:           {c.ManaValue}
+            Colors:              {c.Colors}
+            Type:                {c.Type}
+            ManaCostImageBytes:  {(c.ManaCostImageBytes?.Length.ToString() ?? "null")}
+            ---------------- Common end
+            Types:               {c.Types}
+            SuperTypes:          {c.SuperTypes}
+            SubTypes:            {c.SubTypes}
+            Keywords:            {c.Keywords}
+            Text (RulesText):    {c.Text}
+            Side:                {c.Side}
+            Language:            {c.Language}
+            Uuid:                {c.Uuid}
+            SetName:             {c.SetName}
+            Rarity:              {c.Rarity}
+            Finishes:            {c.Finishes}
+            ReleaseDate:         {c.ReleaseDate:yyyy-MM-dd}
+            KeyRuneImageBytes:   {(c.KeyRuneImageBytes?.Length.ToString() ?? "null")}
+            ---------------- MyCollection
+            CardsOwned:          {c.CardsOwned}
+            CardsForTrade:       {c.CardsForTrade}
+            SelectedCondition:   {c.SelectedCondition}
+            SelectedFinish:      {c.SelectedFinish}
+            CardInCollectionPrice:{c.CardInCollectionPrice:C}
+            ".Replace("\r\n", "\n");  // normalize line endings
+        }
+
+
+
+
 
         // Persist the single incoming CardSet (insert / update / delete)
         private async Task PersistAsync(CardSet card, bool isEdit)

@@ -64,7 +64,7 @@ namespace CollectaMundo.ApplicationServices
 
             try
             {
-                // 2) hand off to pure domain logic (no DB calls here)
+                // 2) hand off to pure domain logic
                 var results = await _domainLogic.SaveBatchAsync(cards, isEdit);
 
                 // 3) commit
