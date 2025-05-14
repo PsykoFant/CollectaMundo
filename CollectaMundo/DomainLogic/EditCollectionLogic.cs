@@ -80,37 +80,10 @@ namespace CollectaMundo.DomainLogic
         {
             var changes = new List<CardChangeEventArgs>();
 
-            // 1) Open the connection once
-            await DBAccess.OpenConnectionAsync();
-
-            // 2) Grab the connection and null‐check it
-            var conn = DBAccess.connection ?? throw new InvalidOperationException("Database connection was null after opening.");
-
-            // 3) Begin a transaction on that guaranteed‐non‐null conn
-            using var tx = conn.BeginTransaction();
-
-            try
+            foreach (var raw in raws)
             {
-                // 3) For each card, invoke your existing logic
-                foreach (var raw in raws)
-                {
-                    var change = await SaveAndReturnChangesAsync(raw, isEdit);
-                    changes.Add(change);
-                }
-
-                // 4) Commit if all succeeded
-                tx.Commit();
-            }
-            catch
-            {
-                // 5) Roll back on any failure
-                tx.Rollback();
-                throw;
-            }
-            finally
-            {
-                // 6) Close connection
-                DBAccess.CloseConnection();
+                var change = await SaveAndReturnChangesAsync(raw, isEdit);
+                changes.Add(change);
             }
 
             return changes;

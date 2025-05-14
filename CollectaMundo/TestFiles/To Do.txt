@@ -3,10 +3,11 @@ TO DO
 
  - Add to collectionManager til MVVM!
 
- - Delete og sæt til salg fra UI
+ - Bug: sum bliver ikke opdateret i frontend
+ - Bug: Kort bliver ikke tilføjet med set, ikoner osv. 
+ - Improvement: Brug unit of work til de sidste lookups
+
  - Tests!!!
-
-
 
   - Card image brug MVVM (unit test)
 	- Fix meld creatures show bug

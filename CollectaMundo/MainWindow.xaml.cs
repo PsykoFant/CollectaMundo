@@ -169,7 +169,8 @@ namespace CollectaMundo
             // 2) "Edit collection" stack: repository --> domain logic --> UI coordinator --> view-models
             var editRepo = new EditCollectionRepository();
             var editLogic = new EditCollectionLogic(editRepo);
-            var editCoordinator = new EditCollectionCoordinator(editLogic, editRepo);
+            var editUow = new UnitOfWork();
+            var editCoordinator = new EditCollectionCoordinator(editUow, editLogic);
             AddCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: true);
             EditCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: false);
             AddCardsVM.CardChanged += OnCardChanged;

@@ -1,14 +1,13 @@
-﻿using CollectaMundo.Data;
-using CollectaMundo.DomainLogic;
+﻿using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class EditCollectionCoordinator(IEditCollectionLogic domainLogic, IEditCollectionRepository repo) : IEditCollectionCoordinator
+    public class EditCollectionCoordinator(IUnitOfWork uow, IEditCollectionLogic domainLogic) : IEditCollectionCoordinator
     {
         private readonly IEditCollectionLogic _domainLogic = domainLogic ?? throw new ArgumentNullException(nameof(domainLogic));
-        private readonly IEditCollectionRepository _repo = repo ?? throw new ArgumentNullException(nameof(repo));
+        private readonly IUnitOfWork _uow = uow ?? throw new ArgumentNullException(nameof(uow));
 
         // Adding cards to an add or edit listview
         public Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewHelperAsync(selectedCard, targetCollection, false);
@@ -58,14 +57,33 @@ namespace CollectaMundo.ApplicationServices
         }
         public async Task<List<CardChangeEventArgs>> SubmitCardBatchAsync(IEnumerable<CardSet> cards)
         {
-            // decide edit/new once per batch
             bool isEdit = cards.Any(c => c.CardId != null);
 
-            // call into your domain logic batch
-            var changes = await _domainLogic.SaveBatchAsync(cards, isEdit);
+            // 1) start transaction
+            await _uow.BeginAsync();
 
-            // IReadOnlyList --> List
-            return [.. changes];
+            try
+            {
+                // 2) hand off to pure domain logic (no DB calls here)
+                var results = await _domainLogic.SaveBatchAsync(cards, isEdit);
+
+                // 3) commit
+                await _uow.CommitAsync();
+
+                // 4) return
+                return [.. results];
+            }
+            catch
+            {
+                // 5) rollback on any error
+                await _uow.RollbackAsync();
+                throw;
+            }
+            finally
+            {
+                // 6) tear down connection
+                await _uow.DisposeAsync();
+            }
         }
     }
 }
