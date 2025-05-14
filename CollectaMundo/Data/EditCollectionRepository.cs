@@ -1,5 +1,4 @@
-﻿using CollectaMundo.DomainLogic;
-using CollectaMundo.DomainLogic.Models;
+﻿using CollectaMundo.DomainLogic.Models;
 using System.Data.SQLite;
 using System.Diagnostics;
 
@@ -7,8 +6,7 @@ namespace CollectaMundo.Data
 {
     public class EditCollectionRepository : IEditCollectionRepository
     {
-        // Lookups
-
+        // Lookups (with db open/closed)        
         public async Task<List<string>> FetchLanguagesForCardAsync(string uuid)
         {
             if (string.IsNullOrEmpty(uuid))
@@ -94,7 +92,7 @@ namespace CollectaMundo.Data
             return finishes;
         }
 
-
+        // Lookups (without db open/closed)
         public async Task<int?> FindExistingCardReturnIdAsync(CardSet card)
         {
 
@@ -125,40 +123,6 @@ namespace CollectaMundo.Data
                 throw;
             }
             return null;
-        }
-        public async Task<CardSet> FindExistingCardReturnRecordAsync(string uuid, string condition, string language, string finish)
-        {
-            const string sql = @"
-              SELECT * FROM view_myCollection
-               WHERE uuid=@uuid AND condition=@cond
-                 AND language=@lang AND finish=@fin
-              LIMIT 1";
-            CardSet card;
-
-            try
-            {
-                using var cmd = new SQLiteCommand(sql, DBAccess.connection);
-                cmd.Parameters.AddWithValue("@uuid", uuid);
-                cmd.Parameters.AddWithValue("@cond", condition);
-                cmd.Parameters.AddWithValue("@lang", language);
-                cmd.Parameters.AddWithValue("@fin", finish);
-
-                using var rdr = await cmd.ExecuteReaderAsync();
-                if (!await rdr.ReadAsync())
-                {
-                    throw new InvalidOperationException("Card not found after upsert.");
-                }
-
-                // map into your local variable:
-                card = CardFactory.FromMyCollectionRow(rdr);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in FindExistingCardReturnRecordAsync: {ex}");
-                throw;
-            }
-
-            return card;
         }
         public async Task<List<int>> FindRecordByIdAsync(string uuid, string condition, string language, string finish)
         {
@@ -194,7 +158,7 @@ namespace CollectaMundo.Data
             return ids;
         }
 
-
+        // CRUD
         public async Task AddCardAsync(CardSet card)
         {
             string insertSql = @"
@@ -287,24 +251,26 @@ namespace CollectaMundo.Data
                 throw;
             }
         }
-        public async Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId)
+        public async Task<(int sumOwned, int sumTrade)> MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId)
         {
             const string sumSql = @"
                 SELECT 
-                    COALESCE(SUM(cardsOwned), 0)    AS TotalOwned,
-                    COALESCE(SUM(cardsForTrade), 0) AS TotalTrade
+                  COALESCE(SUM(cardsOwned),   0) AS TotalOwned,
+                  COALESCE(SUM(cardsForTrade),0) AS TotalTrade
                   FROM myCollection
                  WHERE uuid      = @uuid
                    AND condition = @cond
                    AND language  = @lang
                    AND finish    = @fin;
             ";
+
             const string updateSql = @"
                 UPDATE myCollection
                    SET cardsOwned    = @sumOwned,
                        cardsForTrade = @sumTrade
                  WHERE id = @keepId;
             ";
+
             const string deleteSql = @"
                 DELETE FROM myCollection
                  WHERE uuid      = @uuid
@@ -316,8 +282,8 @@ namespace CollectaMundo.Data
 
             try
             {
-                // 1) Get the totals
-                long totalOwned = 0, totalTrade = 0;
+                // 1) fetch the totals
+                int totalOwned = 0, totalTrade = 0;
                 using (var sumCmd = new SQLiteCommand(sumSql, DBAccess.connection))
                 {
                     sumCmd.Parameters.AddWithValue("@uuid", uuid);
@@ -328,12 +294,12 @@ namespace CollectaMundo.Data
                     using var rdr = await sumCmd.ExecuteReaderAsync();
                     if (await rdr.ReadAsync())
                     {
-                        totalOwned = rdr.GetInt64(0);
-                        totalTrade = rdr.GetInt64(1);
+                        totalOwned = Convert.ToInt32(rdr["TotalOwned"]);
+                        totalTrade = Convert.ToInt32(rdr["TotalTrade"]);
                     }
                 }
 
-                // 2) Update the survivor
+                // 2) write them back to the survivor
                 using (var upd = new SQLiteCommand(updateSql, DBAccess.connection))
                 {
                     upd.Parameters.AddWithValue("@sumOwned", totalOwned);
@@ -342,7 +308,7 @@ namespace CollectaMundo.Data
                     await upd.ExecuteNonQueryAsync();
                 }
 
-                // 3) Delete the rest
+                // 3) delete the extras
                 using var del = new SQLiteCommand(deleteSql, DBAccess.connection);
                 del.Parameters.AddWithValue("@uuid", uuid);
                 del.Parameters.AddWithValue("@cond", condition);
@@ -350,6 +316,9 @@ namespace CollectaMundo.Data
                 del.Parameters.AddWithValue("@fin", finish);
                 del.Parameters.AddWithValue("@keepId", keepId);
                 await del.ExecuteNonQueryAsync();
+
+                // return our new in-memory survivor totals
+                return (totalOwned, totalTrade);
             }
             catch (Exception ex)
             {
@@ -357,6 +326,7 @@ namespace CollectaMundo.Data
                 throw;
             }
         }
+
 
     }
 }

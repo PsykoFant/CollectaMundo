@@ -76,35 +76,6 @@ namespace CollectaMundo.DomainLogic
         }
 
         // Save a card and return the changes to viewmodel
-        private async Task<CardChangeEventArgs> SaveAndReturnChangesAsync(CardSet raw, bool isEdit)
-        {
-            // 1) Persist (insert/update/delete-by-zero)
-            await PersistAsync(raw, isEdit);
-
-            // 2) If they zero’d it out, return a delete‐marker
-            if (IsDeletion(raw, isEdit))
-            {
-                return CreateDeleteChange(raw);
-            }
-
-            // 3) Pull all matching record-IDs from the db
-            var allIds = await FetchMatchingIdsAsync(raw);
-
-            // 4) Collapse any duplicates and get the list of removed IDs
-            var removed = await MergeDuplicatesIfNeededAsync(raw, allIds);
-
-            // 5) Re-fetch the one true “survivor” row
-            var survivor = await FetchSurvivorAsync(raw);
-
-            // 6) Package up the upsert event
-            return new CardChangeEventArgs(survivor, removed);
-        }
-
-
-        /// <summary>
-        /// NEW: batch‐save a list of cards in one DB transaction.
-        /// Returns a list of CardChangeEventArgs, one per input card.
-        /// </summary>
         public async Task<IReadOnlyList<CardChangeEventArgs>> SaveBatchAsync(IEnumerable<CardSet> raws, bool isEdit)
         {
             var changes = new List<CardChangeEventArgs>();
@@ -112,8 +83,11 @@ namespace CollectaMundo.DomainLogic
             // 1) Open the connection once
             await DBAccess.OpenConnectionAsync();
 
-            // 2) Begin a transaction
-            using var tx = DBAccess.connection.BeginTransaction();
+            // 2) Grab the connection and null‐check it
+            var conn = DBAccess.connection ?? throw new InvalidOperationException("Database connection was null after opening.");
+
+            // 3) Begin a transaction on that guaranteed‐non‐null conn
+            using var tx = conn.BeginTransaction();
 
             try
             {
@@ -141,8 +115,31 @@ namespace CollectaMundo.DomainLogic
 
             return changes;
         }
+        private async Task<CardChangeEventArgs> SaveAndReturnChangesAsync(CardSet raw, bool isEdit)
+        {
+            // 1) Persist (insert/update/delete-by-zero)
+            await PersistAsync(raw, isEdit);
 
-        // 1) Persist the single incoming CardSet (insert / update / delete)
+            // 2) If delete-by-zero, short-circuit
+            if (isEdit && raw.CardsOwned == 0)
+                return new CardChangeEventArgs(raw.CardId!.Value);
+
+            // 3) Get all matching IDs
+            var allIds = await FetchMatchingIdsAsync(raw);
+
+            // 4) Merge duplicates *and* return our new totals
+            var (keepId, sumOwned, sumTrade, removed) = await MergeDuplicatesIfNeededAsync(raw, allIds);
+
+            // 5) Build the survivor in-memory
+            raw.CardId = keepId;
+            raw.CardsOwned = sumOwned;
+            raw.CardsForTrade = sumTrade;
+
+            // 6) Fire the upsert event
+            return new CardChangeEventArgs(raw, removed);
+        }
+
+        // Persist the single incoming CardSet (insert / update / delete)
         private async Task PersistAsync(CardSet card, bool isEdit)
         {
             if (isEdit && card.CardsOwned == 0)
@@ -168,48 +165,27 @@ namespace CollectaMundo.DomainLogic
             }
         }
 
-        // 2a) Did we just delete-by-zero?
-        private static bool IsDeletion(CardSet card, bool isEdit) => isEdit && card.CardsOwned == 0;
+        // Fetch all record-IDs sharing the same business key
+        private Task<List<int>> FetchMatchingIdsAsync(CardSet card) => _repo.FindRecordByIdAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!);
 
-        // 2b) Build a CardChangeEventArgs for delete
-        private static CardChangeEventArgs CreateDeleteChange(CardSet card) => new(card.CardId!.Value);
-
-        // 3) Fetch all record-IDs sharing the same business key
-        private Task<List<int>> FetchMatchingIdsAsync(CardSet card)
-            => _repo.FindRecordByIdAsync(
-                   card.Uuid!,
-                   card.SelectedCondition!,
-                   card.Language!,
-                   card.SelectedFinish!);
-
-        // 4) If there are duplicates, merge sums in DB and return the IDs we deleted
-        private async Task<int[]> MergeDuplicatesIfNeededAsync(CardSet card, List<int> allIds)
+        // If there are duplicates, merge sums in DB and return the IDs we deleted
+        private async Task<(int keepId, int sumOwned, int sumTrade, int[] removed)> MergeDuplicatesIfNeededAsync(CardSet card, List<int> allIds)
         {
             if (allIds.Count <= 1)
             {
-                return [];
+                // no merge needed:
+                var id = allIds.Count == 1 ? allIds[0] : card.CardId!.Value;
+                return (id, card.CardsOwned, card.CardsForTrade, Array.Empty<int>());
             }
 
             allIds.Sort();
             var keepId = allIds[0];
             var removed = allIds.Skip(1).ToArray();
 
-            await _repo.MergeDuplicateRecordsAsync(
-                card.Uuid!,
-                card.SelectedCondition!,
-                card.Language!,
-                card.SelectedFinish!,
-                keepId);
+            // repo call returns the new sums:
+            var (sumOwned, sumTrade) = await _repo.MergeDuplicateRecordsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, keepId);
 
-            return removed;
+            return (keepId, sumOwned, sumTrade, removed);
         }
-
-        // 5) Re-fetch the one true survivor from your materialized view
-        private Task<CardSet> FetchSurvivorAsync(CardSet card)
-            => _repo.FindExistingCardReturnRecordAsync(
-                   card.Uuid!,
-                   card.SelectedCondition!,
-                   card.Language!,
-                   card.SelectedFinish!);
     }
 }

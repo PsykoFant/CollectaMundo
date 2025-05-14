@@ -64,7 +64,7 @@ namespace CollectaMundo.ApplicationServices
             // call into your domain logic batch
             var changes = await _domainLogic.SaveBatchAsync(cards, isEdit);
 
-            // IReadOnlyList → List
+            // IReadOnlyList --> List
             return [.. changes];
         }
     }

@@ -4,11 +4,12 @@ namespace CollectaMundo.Data
 {
     public interface IEditCollectionRepository
     {
-        // Lookups
-        Task<int?> FindExistingCardReturnIdAsync(CardSet card);
+        // Lookups (with db open/closed)        
         Task<List<string>> FetchLanguagesForCardAsync(string uuid);
         Task<List<string>> FetchFinishesForCardAsync(string uuid);
-        Task<CardSet> FindExistingCardReturnRecordAsync(string uuid, string condition, string language, string finish);
+
+        // Lookups (without db open/closed)
+        Task<int?> FindExistingCardReturnIdAsync(CardSet card);
         Task<List<int>> FindRecordByIdAsync(string uuid, string condition, string language, string finish);
 
         // CRUD
@@ -16,6 +17,6 @@ namespace CollectaMundo.Data
         Task UpdateCardAsync(CardSet card);
         Task UpdateCardCountsAsync(CardSet card);
         Task DeleteCardByIdAsync(CardSet card);
-        Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId);
+        Task<(int sumOwned, int sumTrade)> MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId);
     }
 }
