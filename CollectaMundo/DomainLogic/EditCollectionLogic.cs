@@ -158,43 +158,6 @@ namespace CollectaMundo.DomainLogic
             return new CardChangeEventArgs(raw, removed);
         }
 
-        private static string DumpCardSet(CardSet c)
-        {
-            return $@"
-            CardId:              {c.CardId}
-            Name:                {c.Name}
-            ManaCostRaw:         {c.ManaCostRaw}
-            ManaValue:           {c.ManaValue}
-            Colors:              {c.Colors}
-            Type:                {c.Type}
-            ManaCostImageBytes:  {(c.ManaCostImageBytes?.Length.ToString() ?? "null")}
-            ---------------- Common end
-            Types:               {c.Types}
-            SuperTypes:          {c.SuperTypes}
-            SubTypes:            {c.SubTypes}
-            Keywords:            {c.Keywords}
-            Text (RulesText):    {c.Text}
-            Side:                {c.Side}
-            Language:            {c.Language}
-            Uuid:                {c.Uuid}
-            SetName:             {c.SetName}
-            Rarity:              {c.Rarity}
-            Finishes:            {c.Finishes}
-            ReleaseDate:         {c.ReleaseDate:yyyy-MM-dd}
-            KeyRuneImageBytes:   {(c.KeyRuneImageBytes?.Length.ToString() ?? "null")}
-            ---------------- MyCollection
-            CardsOwned:          {c.CardsOwned}
-            CardsForTrade:       {c.CardsForTrade}
-            SelectedCondition:   {c.SelectedCondition}
-            SelectedFinish:      {c.SelectedFinish}
-            CardInCollectionPrice:{c.CardInCollectionPrice:C}
-            ".Replace("\r\n", "\n");  // normalize line endings
-        }
-
-
-
-
-
         // Persist the single incoming CardSet (insert / update / delete)
         private async Task PersistAsync(CardSet card, bool isEdit)
         {
@@ -242,6 +205,39 @@ namespace CollectaMundo.DomainLogic
             var (sumOwned, sumTrade) = await _repo.MergeDuplicateRecordsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, keepId);
 
             return (keepId, sumOwned, sumTrade, removed);
+        }
+
+        private static string DumpCardSet(CardSet c)
+        {
+            return $@"
+            CardId:              {c.CardId}
+            Name:                {c.Name}
+            ManaCostRaw:         {c.ManaCostRaw}
+            ManaValue:           {c.ManaValue}
+            Colors:              {c.Colors}
+            Type:                {c.Type}
+            ManaCostImageBytes:  {(c.ManaCostImageBytes?.Length.ToString() ?? "null")}
+            ---------------- Common end
+            Types:               {c.Types}
+            SuperTypes:          {c.SuperTypes}
+            SubTypes:            {c.SubTypes}
+            Keywords:            {c.Keywords}
+            Text (RulesText):    {c.Text}
+            Side:                {c.Side}
+            Language:            {c.Language}
+            Uuid:                {c.Uuid}
+            SetName:             {c.SetName}
+            Rarity:              {c.Rarity}
+            Finishes:            {c.Finishes}
+            ReleaseDate:         {c.ReleaseDate:yyyy-MM-dd}
+            KeyRuneImageBytes:   {(c.KeyRuneImageBytes?.Length.ToString() ?? "null")}
+            ---------------- MyCollection
+            CardsOwned:          {c.CardsOwned}
+            CardsForTrade:       {c.CardsForTrade}
+            SelectedCondition:   {c.SelectedCondition}
+            SelectedFinish:      {c.SelectedFinish}
+            CardInCollectionPrice:{c.CardInCollectionPrice:C}
+            ".Replace("\r\n", "\n");  // normalize line endings
         }
     }
 }

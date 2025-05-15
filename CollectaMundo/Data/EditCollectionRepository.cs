@@ -113,7 +113,6 @@ namespace CollectaMundo.Data
                 using var reader = await selectCommand.ExecuteReaderAsync();
                 if (await reader.ReadAsync())
                 {
-                    Debug.WriteLine($"Fandt et eksisterende kort i samlingen!");
                     return reader.GetInt32(0); // Return the id if found
                 }
             }
