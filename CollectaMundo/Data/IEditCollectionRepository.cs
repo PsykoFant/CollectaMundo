@@ -11,12 +11,14 @@ namespace CollectaMundo.Data
         // Lookups (without db open/closed)
         Task<int?> FindExistingCardReturnIdAsync(CardSet card);
         Task<List<int>> FindRecordByIdAsync(string uuid, string condition, string language, string finish);
+        Task<(int TotalOwned, int TotalTrade)> GetTotalsAsync(string uuid, string condition, string language, string finish);
+
 
         // CRUD
         Task AddCardAsync(CardSet card);
         Task UpdateCardAsync(CardSet card);
         Task UpdateCardCountsAsync(CardSet card);
         Task DeleteCardByIdAsync(CardSet card);
-        Task<(int sumOwned, int sumTrade)> MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId);
+        Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId);
     }
 }

@@ -1,6 +1,5 @@
 ﻿using CollectaMundo.Data;
 using CollectaMundo.DomainLogic.Models;
-using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic
 {
@@ -10,7 +9,9 @@ namespace CollectaMundo.DomainLogic
         public async Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit)
         {
             if (selectedCard.Uuid == null)
+            {
                 throw new ArgumentException("UUID cannot be null", nameof(selectedCard));
+            }
 
             // 1) Pull the metadata you still need for a new vs. edit
             var languages = await _repo.FetchLanguagesForCardAsync(selectedCard.Uuid);
@@ -127,85 +128,128 @@ namespace CollectaMundo.DomainLogic
 
             return changes;
         }
-        private async Task<CardChangeEventArgs> SaveAndReturnChangesAsync(CardSet raw, bool isEdit)
+        public async Task<CardChangeEventArgs> SaveAndReturnChangesAsync(CardSet raw, bool isEdit)
         {
-            // 1) Persist (insert/update/delete-by-zero)
-            await PersistAsync(raw, isEdit);
-
-            // 2) If delete-by-zero, short-circuit
+            // 1) Deletion-by-zero?
             if (isEdit && raw.CardsOwned == 0)
             {
-                Debug.WriteLine($"[SaveAndReturnChangesAsync] Deletion: CardId={raw.CardId}");
-                Debug.WriteLine($"[SaveAndReturnChangesAsync] Full raw: {DumpCardSet(raw)}");
-                return new CardChangeEventArgs(raw.CardId!.Value);
+                // delete in DB
+                await _repo.DeleteCardByIdAsync(raw);
+
+                // make sure we have an ID
+                var deletedId = raw.CardId
+                    ?? throw new InvalidOperationException("Cannot delete a card without an ID");
+
+                // safe to use .Value now
+                return new CardChangeEventArgs(deletedId);
             }
-            // 3) Get all matching IDs
-            var allIds = await FetchMatchingIdsAsync(raw);
 
-            // 4) Merge duplicates *and* return our new totals
-            var (keepId, sumOwned, sumTrade, removed) = await MergeDuplicatesIfNeededAsync(raw, allIds);
+            // 2) Upsert path
+            // 2a) Do we already have a DB row?
+            var existingId = await _repo.FindExistingCardReturnIdAsync(raw);
+            if (existingId.HasValue)
+            {
+                // update counts
+                raw.CardId = existingId.Value;
+                await _repo.UpdateCardCountsAsync(raw);
+            }
+            else
+            {
+                // new insert
+                await _repo.AddCardAsync(raw);
+                // then fetch the newly‐inserted id
+                raw.CardId = (await _repo.FindExistingCardReturnIdAsync(raw))!.Value;
+            }
 
-            // 5) Build the survivor in-memory
+            // 3) Deduplicate *and* compute new sums
+            var allIds = await _repo.FindRecordByIdAsync(raw.Uuid!, raw.SelectedCondition!, raw.Language!, raw.SelectedFinish!);
+
+            // if no dupes → just one survivor, no sums or removals
+            int keepId = raw.CardId.Value;
+            int sumOwned = raw.CardsOwned;
+            int sumTrade = raw.CardsForTrade;
+            int[] removedIds = Array.Empty<int>();
+
+            if (allIds.Count > 1)
+            {
+                // pick lowest‐PK as “keeper”
+                allIds.Sort();
+                keepId = allIds[0];
+                removedIds = [.. allIds.Skip(1)];
+
+                // get the total sums in one shot
+                (sumOwned, sumTrade) = await _repo.GetTotalsAsync(
+                    raw.Uuid!,
+                    raw.SelectedCondition!,
+                    raw.Language!,
+                    raw.SelectedFinish!);
+
+                // merge in DB
+                await _repo.MergeDuplicateRecordsAsync(
+                    raw.Uuid!,
+                    raw.SelectedCondition!,
+                    raw.Language!,
+                    raw.SelectedFinish!,
+                    keepId);
+            }
+
+            // 4) Build the final in‐memory survivor
             raw.CardId = keepId;
             raw.CardsOwned = sumOwned;
             raw.CardsForTrade = sumTrade;
 
-            //  Add debug dump of the *entire* CardSet so you can see what's missing:
-            Debug.WriteLine($"[SaveAndReturnChangesAsync] Upsert: keepId={keepId}, removed=[{string.Join(",", removed)}]");
-            Debug.WriteLine($"[SaveAndReturnChangesAsync] Full raw after merge: {DumpCardSet(raw)}");
-
-            // 6) Fire the upsert event
-            return new CardChangeEventArgs(raw, removed);
+            // 5) Return upsert event
+            return new CardChangeEventArgs(raw, removedIds);
         }
 
         // Persist the single incoming CardSet (insert / update / delete)
-        private async Task PersistAsync(CardSet card, bool isEdit)
-        {
-            if (isEdit && card.CardsOwned == 0)
-            {
-                await _repo.DeleteCardByIdAsync(card);
-            }
-            else if (isEdit)
-            {
-                await _repo.UpdateCardAsync(card);
-            }
-            else
-            {
-                var existingId = await _repo.FindExistingCardReturnIdAsync(card);
-                if (existingId.HasValue)
-                {
-                    card.CardId = existingId.Value;
-                    await _repo.UpdateCardCountsAsync(card);
-                }
-                else
-                {
-                    await _repo.AddCardAsync(card);
-                }
-            }
-        }
+        //private async Task PersistAsync(CardSet card, bool isEdit)
+        //{
+        //    if (isEdit && card.CardsOwned == 0)
+        //    {
+        //        await _repo.DeleteCardByIdAsync(card);
+        //    }
+        //    else if (isEdit)
+        //    {
+        //        await _repo.UpdateCardAsync(card);
+        //    }
+        //    else
+        //    {
+        //        var existingId = await _repo.FindExistingCardReturnIdAsync(card);
+        //        if (existingId.HasValue)
+        //        {
+        //            card.CardId = existingId.Value;
+        //            await _repo.UpdateCardCountsAsync(card);
+        //        }
+        //        else
+        //        {
+        //            await _repo.AddCardAsync(card);
+        //        }
+        //    }
+        //}
 
         // Fetch all record-IDs sharing the same business key
-        private Task<List<int>> FetchMatchingIdsAsync(CardSet card) => _repo.FindRecordByIdAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!);
+        //private Task<List<int>> FetchMatchingIdsAsync(CardSet card) => _repo.FindRecordByIdAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!);
 
         // If there are duplicates, merge sums in DB and return the IDs we deleted
-        private async Task<(int keepId, int sumOwned, int sumTrade, int[] removed)> MergeDuplicatesIfNeededAsync(CardSet card, List<int> allIds)
-        {
-            if (allIds.Count <= 1)
-            {
-                // no merge needed:
-                var id = allIds.Count == 1 ? allIds[0] : card.CardId!.Value;
-                return (id, card.CardsOwned, card.CardsForTrade, Array.Empty<int>());
-            }
+        //private async Task<(int keepId, int sumOwned, int sumTrade, int[] removed)> MergeDuplicatesIfNeededAsync(CardSet card, List<int> allIds)
+        //{
+        //    if (allIds.Count <= 1)
+        //    {
+        //        // no merge needed:
+        //        var id = allIds.Count == 1 ? allIds[0] : card.CardId!.Value;
+        //        return (id, card.CardsOwned, card.CardsForTrade, Array.Empty<int>());
+        //    }
 
-            allIds.Sort();
-            var keepId = allIds[0];
-            var removed = allIds.Skip(1).ToArray();
+        //    allIds.Sort();
+        //    var keepId = allIds[0];
+        //    var removed = allIds.Skip(1).ToArray();
 
-            // repo call returns the new sums:
-            var (sumOwned, sumTrade) = await _repo.MergeDuplicateRecordsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, keepId);
+        //    // repo call returns the new sums:
+        //    var (sumOwned, sumTrade) = await _repo.MergeDuplicateRecordsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, keepId);
 
-            return (keepId, sumOwned, sumTrade, removed);
-        }
+        //    return (keepId, sumOwned, sumTrade, removed);
+        //}
 
         private static string DumpCardSet(CardSet c)
         {

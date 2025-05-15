@@ -156,6 +156,36 @@ namespace CollectaMundo.Data
             }
             return ids;
         }
+        public async Task<(int TotalOwned, int TotalTrade)> GetTotalsAsync(string uuid, string condition, string language, string finish)
+        {
+            const string sql = @"
+                SELECT 
+                  COALESCE(SUM(cardsOwned), 0)    AS TotalOwned,
+                  COALESCE(SUM(cardsForTrade), 0) AS TotalTrade
+                FROM myCollection
+                WHERE uuid      = @uuid
+                  AND condition = @cond
+                  AND language  = @lang
+                  AND finish    = @fin;
+            ";
+
+            using var cmd = new SQLiteCommand(sql, DBAccess.connection);
+            cmd.Parameters.AddWithValue("@uuid", uuid);
+            cmd.Parameters.AddWithValue("@cond", condition);
+            cmd.Parameters.AddWithValue("@lang", language);
+            cmd.Parameters.AddWithValue("@fin", finish);
+
+            using var rdr = await cmd.ExecuteReaderAsync();
+            if (!await rdr.ReadAsync())
+            {
+                return (0, 0);
+            }
+
+            int totalOwned = rdr.GetInt32(0);
+            int totalTrade = rdr.GetInt32(1);
+            return (totalOwned, totalTrade);
+        }
+
 
         // CRUD
         public async Task AddCardAsync(CardSet card)
@@ -250,55 +280,29 @@ namespace CollectaMundo.Data
                 throw;
             }
         }
-        public async Task<(int sumOwned, int sumTrade)> MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId)
+        // In your repository:
+        public async Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId)
         {
-            const string sumSql = @"
-                SELECT 
-                  COALESCE(SUM(cardsOwned),   0) AS TotalOwned,
-                  COALESCE(SUM(cardsForTrade),0) AS TotalTrade
-                  FROM myCollection
-                 WHERE uuid      = @uuid
-                   AND condition = @cond
-                   AND language  = @lang
-                   AND finish    = @fin;
-            ";
-
             const string updateSql = @"
-                UPDATE myCollection
-                   SET cardsOwned    = @sumOwned,
-                       cardsForTrade = @sumTrade
-                 WHERE id = @keepId;
-            ";
-
+                    UPDATE myCollection
+                       SET cardsOwned    = @sumOwned,
+                           cardsForTrade = @sumTrade
+                     WHERE id = @keepId;
+                ";
             const string deleteSql = @"
-                DELETE FROM myCollection
-                 WHERE uuid      = @uuid
-                   AND condition = @cond
-                   AND language  = @lang
-                   AND finish    = @fin
-                   AND id       <> @keepId;
-            ";
-
+                    DELETE FROM myCollection
+                     WHERE uuid      = @uuid
+                       AND condition = @cond
+                       AND language  = @lang
+                       AND finish    = @fin
+                       AND id       <> @keepId;
+                ";
             try
             {
-                // 1) fetch the totals
-                int totalOwned = 0, totalTrade = 0;
-                using (var sumCmd = new SQLiteCommand(sumSql, DBAccess.connection))
-                {
-                    sumCmd.Parameters.AddWithValue("@uuid", uuid);
-                    sumCmd.Parameters.AddWithValue("@cond", condition);
-                    sumCmd.Parameters.AddWithValue("@lang", language);
-                    sumCmd.Parameters.AddWithValue("@fin", finish);
+                // 1) Compute the new totals via your helper
+                var (totalOwned, totalTrade) = await GetTotalsAsync(uuid, condition, language, finish);
 
-                    using var rdr = await sumCmd.ExecuteReaderAsync();
-                    if (await rdr.ReadAsync())
-                    {
-                        totalOwned = Convert.ToInt32(rdr["TotalOwned"]);
-                        totalTrade = Convert.ToInt32(rdr["TotalTrade"]);
-                    }
-                }
-
-                // 2) write them back to the survivor
+                // 2) Update the survivor row
                 using (var upd = new SQLiteCommand(updateSql, DBAccess.connection))
                 {
                     upd.Parameters.AddWithValue("@sumOwned", totalOwned);
@@ -307,17 +311,16 @@ namespace CollectaMundo.Data
                     await upd.ExecuteNonQueryAsync();
                 }
 
-                // 3) delete the extras
-                using var del = new SQLiteCommand(deleteSql, DBAccess.connection);
-                del.Parameters.AddWithValue("@uuid", uuid);
-                del.Parameters.AddWithValue("@cond", condition);
-                del.Parameters.AddWithValue("@lang", language);
-                del.Parameters.AddWithValue("@fin", finish);
-                del.Parameters.AddWithValue("@keepId", keepId);
-                await del.ExecuteNonQueryAsync();
-
-                // return our new in-memory survivor totals
-                return (totalOwned, totalTrade);
+                // 3) Delete the duplicates
+                using (var del = new SQLiteCommand(deleteSql, DBAccess.connection))
+                {
+                    del.Parameters.AddWithValue("@uuid", uuid);
+                    del.Parameters.AddWithValue("@cond", condition);
+                    del.Parameters.AddWithValue("@lang", language);
+                    del.Parameters.AddWithValue("@fin", finish);
+                    del.Parameters.AddWithValue("@keepId", keepId);
+                    await del.ExecuteNonQueryAsync();
+                }
             }
             catch (Exception ex)
             {
