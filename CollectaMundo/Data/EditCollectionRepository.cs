@@ -6,7 +6,7 @@ namespace CollectaMundo.Data
 {
     public class EditCollectionRepository : IEditCollectionRepository
     {
-        // Lookups (with db open/closed)        
+        // Lookups
         public async Task<List<string>> FetchLanguagesForCardAsync(string uuid)
         {
             if (string.IsNullOrEmpty(uuid))
@@ -22,7 +22,6 @@ namespace CollectaMundo.Data
                 UNION
                 SELECT language FROM tokens WHERE uuid = @uuid";
 
-            await DBAccess.OpenConnectionAsync();
             try
             {
                 using var command = new SQLiteCommand(query, DBAccess.connection);
@@ -42,10 +41,6 @@ namespace CollectaMundo.Data
                 Debug.WriteLine($"Error in FetchLanguagesForCardAsync: {ex.Message}");
                 throw;
             }
-            finally
-            {
-                DBAccess.CloseConnection();
-            }
 
             return languages;
         }
@@ -56,8 +51,6 @@ namespace CollectaMundo.Data
                 SELECT finishes FROM cards WHERE uuid = @uuid 
                 UNION 
                 SELECT finishes FROM tokens WHERE uuid = @uuid";
-
-            await DBAccess.OpenConnectionAsync();
             try
             {
                 using var command = new SQLiteCommand(query, DBAccess.connection);
@@ -84,15 +77,9 @@ namespace CollectaMundo.Data
                 Debug.WriteLine($"Error in FetchFinishesForCardAsync: {ex.Message}");
                 throw;
             }
-            finally
-            {
-                DBAccess.CloseConnection();
-            }
 
             return finishes;
         }
-
-        // Lookups (without db open/closed)
         public async Task<int?> FindExistingCardReturnIdAsync(CardSet card)
         {
 
@@ -188,26 +175,32 @@ namespace CollectaMundo.Data
 
 
         // CRUD
-        public async Task AddCardAsync(CardSet card)
+        public async Task<int> AddCardAndReturnIdAsync(CardSet card)
         {
-            string insertSql = @"
+            const string insertSql = @"
                 INSERT INTO myCollection (uuid, cardsOwned, cardsForTrade, condition, language, finish)
                 VALUES (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish)";
             try
             {
-                using var cmd = new SQLiteCommand(insertSql, DBAccess.connection);
-                cmd.Parameters.AddWithValue("@uuid", card.Uuid);
-                cmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
-                cmd.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
-                cmd.Parameters.AddWithValue("@condition", card.SelectedCondition);
-                cmd.Parameters.AddWithValue("@language", card.Language);
-                cmd.Parameters.AddWithValue("@finish", card.SelectedFinish);
+                // 1) Perform the insert
+                using var insertCmd = new SQLiteCommand(insertSql, DBAccess.connection);
+                insertCmd.Parameters.AddWithValue("@uuid", card.Uuid);
+                insertCmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
+                insertCmd.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
+                insertCmd.Parameters.AddWithValue("@condition", card.SelectedCondition);
+                insertCmd.Parameters.AddWithValue("@language", card.Language);
+                insertCmd.Parameters.AddWithValue("@finish", card.SelectedFinish);
 
-                await cmd.ExecuteNonQueryAsync();
+                await insertCmd.ExecuteNonQueryAsync();
+
+                // 2) Retrieve the newly-generated rowid
+                using var idCmd = new SQLiteCommand("SELECT last_insert_rowid()", DBAccess.connection);
+                var result = await idCmd.ExecuteScalarAsync();
+                return Convert.ToInt32(result);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error in AddCardAsync: {ex.Message}");
+                Debug.WriteLine($"Error in AddCardAndReturnIdAsync: {ex}");
                 throw;
             }
         }
@@ -280,7 +273,6 @@ namespace CollectaMundo.Data
                 throw;
             }
         }
-        // In your repository:
         public async Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId)
         {
             const string updateSql = @"

@@ -20,10 +20,10 @@ namespace CollectaMundo.ViewModels
 
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
 
-        private readonly IEditCollectionCoordinator _coordinator;
+        private readonly IEditCollectionService _coordinator;
         private readonly bool _removeCardWhenZero;
         // Constructor
-        public EditCollectionViewModel(IEditCollectionCoordinator coordinator, bool removeCardWhenZero)
+        public EditCollectionViewModel(IEditCollectionService coordinator, bool removeCardWhenZero)
         {
             _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
             _removeCardWhenZero = removeCardWhenZero;

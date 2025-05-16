@@ -170,7 +170,7 @@ namespace CollectaMundo
             var editRepo = new EditCollectionRepository();
             var editLogic = new EditCollectionLogic(editRepo);
             var editUow = new UnitOfWork();
-            var editCoordinator = new EditCollectionCoordinator(editUow, editLogic);
+            var editCoordinator = new EditCollectionService(editUow, editLogic);
             AddCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: true);
             EditCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: false);
             AddCardsVM.CardChanged += OnCardChanged;
@@ -421,62 +421,6 @@ namespace CollectaMundo
                         FilterVM.Filters.Values);
             });
         }
-
-        //private void OnCardProcessed(object? sender, CardProcessedEventArgs e)
-        //{
-        //    Dispatcher.Invoke(() =>
-        //    {
-        //        // e.Card is now your “survivor” for upserts, 
-        //        // or a dummy with CardsOwned==0 for deletes.
-        //        var incoming = e.Card;
-
-        //        switch (e.Type)
-        //        {
-        //            case CardChangeEventArgs.ChangeType.Delete:
-        //                // Remove exactly the one ID that was deleted
-        //                var toDelete = MyCollectionVM.Cards
-        //                    .FirstOrDefault(c => c.CardId == incoming.CardId);
-        //                if (toDelete != null)
-        //                    MyCollectionVM.Cards.Remove(toDelete);
-        //                break;
-
-        //            case CardChangeEventArgs.ChangeType.Upsert:
-        //                // 1) Add or update the survivor
-        //                var existing = MyCollectionVM.Cards
-        //                    .FirstOrDefault(c => c.CardId == incoming.CardId);
-
-        //                if (existing != null)
-        //                {
-        //                    existing.CardsOwned = incoming.CardsOwned;
-        //                    existing.CardsForTrade = incoming.CardsForTrade;
-        //                    existing.SelectedCondition = incoming.SelectedCondition;
-        //                    existing.Language = incoming.Language;
-        //                    existing.SelectedFinish = incoming.SelectedFinish;
-        //                }
-        //                else
-        //                {
-        //                    MyCollectionVM.Cards.Add(incoming);
-        //                }
-
-        //                // 2) Remove any extra IDs that were merged away
-        //                foreach (var removedId in e.Removed)
-        //                {
-        //                    var dup = MyCollectionVM.Cards
-        //                        .FirstOrDefault(c => c.CardId == removedId);
-        //                    if (dup != null)
-        //                        MyCollectionVM.Cards.Remove(dup);
-        //                }
-        //                break;
-        //        }
-
-        //        // 3) Reapply filters
-        //        MyCollectionVM.FilteredCards =
-        //            _filteringService.ApplyFilters(
-        //                MyCollectionVM.Cards,
-        //                FilterVM.Filters.Values);
-        //    });
-        //}
-
 
 
         #endregion
