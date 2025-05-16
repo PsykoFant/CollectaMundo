@@ -110,7 +110,7 @@ namespace CollectaMundo.DomainLogic
             var results = await Task.WhenAll(cards.Select(r => persister(r)));
             return results;
         }
-        public async Task<CardChangeEventArgs> PersistAddedCardsAndReturnChangesAsync(CardSet card)
+        private async Task<CardChangeEventArgs> PersistAddedCardsAndReturnChangesAsync(CardSet card)
         {
 
 
@@ -137,7 +137,7 @@ namespace CollectaMundo.DomainLogic
             }
             return new CardChangeEventArgs(card, []);
         }
-        public async Task<CardChangeEventArgs> PersistEditedCardsAndReturnChangesAsync(CardSet card)
+        private async Task<CardChangeEventArgs> PersistEditedCardsAndReturnChangesAsync(CardSet card)
         {
             // 1) Deletion-by-zero?
             if (card.CardsOwned == 0)

@@ -17,15 +17,15 @@ namespace CollectaMundo.Tests
         private readonly InMemoryDatabaseFixture _fx;
         private readonly EventHandler _refreshHandler;
         private static bool _isInitialised;
-        private readonly IFilteringCoordinator _filteringCoordinator;
+        private readonly IFilteringService _filteringCoordinator;
         private readonly ICardListRepository _cardListRepo;
-        private readonly ICardListCoordinator _cardListCoordinator;
+        private readonly ICardListService _cardListCoordinator;
 
 
         // Shared state (one copy for the whole class/run)
         private static readonly CardViewModel _allCardsVM = new();
         private static readonly CardViewModel _myCollectionVM = new();
-        private static readonly FilterViewModel _filterVM = new(new FilteringCoordinator(new FilterDefaultsRepository()));
+        private static readonly FilterViewModel _filterVM = new(new FilteringService(new FilterDefaultsRepository()));
 
         public IntegrationTests(InMemoryDatabaseFixture fixture)
         {
@@ -33,10 +33,10 @@ namespace CollectaMundo.Tests
             _fx = fixture;
             DBAccess.connection = _fx.Connection;     // point app code to the same connection
             var filterDefaultsRepo = new FilterDefaultsRepository();
-            _filteringCoordinator = new FilteringCoordinator(filterDefaultsRepo);
+            _filteringCoordinator = new FilteringService(filterDefaultsRepo);
 
             _cardListRepo = new CardListRepository();
-            _cardListCoordinator = new CardListCoordinator(_cardListRepo);
+            _cardListCoordinator = new CardListService(_cardListRepo);
 
         }
 

@@ -11,7 +11,7 @@ using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.UICoordinators
 {
-    public class FilteringCoordinator(IFilterDefaultsRepository repo) : IFilteringCoordinator
+    public class FilteringService(IFilterDefaultsRepository repo) : IFilteringService
     {
         private readonly IFilterDefaultsRepository _repo = repo;
         public Task<List<FilterDefaults>> LoadDefaultsAsync() => _repo.GetFilterDefaultsAsync();

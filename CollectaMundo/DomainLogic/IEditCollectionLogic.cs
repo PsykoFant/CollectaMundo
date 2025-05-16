@@ -6,9 +6,6 @@ namespace CollectaMundo.DomainLogic
     {
         Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit);
         Task<CardSet> PrepareNewCardWithDefaultsAsync(CardSet selectedCard);
-
-
-
         Task<IReadOnlyList<CardChangeEventArgs>> SaveBatchAsync(IEnumerable<CardSet> raws, bool isEdit);
     }
 }

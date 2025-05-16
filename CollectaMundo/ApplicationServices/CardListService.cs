@@ -3,7 +3,7 @@ using CollectaMundo.DomainLogic.Models;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class CardListCoordinator(ICardListRepository repo) : ICardListCoordinator
+    public class CardListService(ICardListRepository repo) : ICardListService
     {
         private readonly ICardListRepository _repo = repo;
         public async Task LoadAllCardsAsync(List<CardSet> target)

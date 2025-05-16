@@ -3,10 +3,6 @@ TO DO
 
  - Add to collectionManager til MVVM!
 
- - Bug: sum bliver ikke opdateret i frontend
- - Bug: Kort bliver ikke tilføjet med set, ikoner osv. 
- - Improvement: Brug unit of work til de sidste lookups
-
  - Tests!!!
 
   - Card image brug MVVM (unit test)

@@ -9,7 +9,7 @@ namespace CollectaMundo.ViewModels
     public class FilterViewModel : INotifyPropertyChanged
     {
         // Injected dependencies
-        private readonly IFilteringCoordinator _coord;
+        private readonly IFilteringService _coord;
 
         // Exposed filters and summary
         public Dictionary<string, FilterItemViewModel> Filters { get; } = [];
@@ -34,7 +34,7 @@ namespace CollectaMundo.ViewModels
         protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         // Constructor now takes interfaces
-        public FilterViewModel(IFilteringCoordinator coord)
+        public FilterViewModel(IFilteringService coord)
         {
             _coord = coord;
             // pre-populate empty so bindings don’t break…

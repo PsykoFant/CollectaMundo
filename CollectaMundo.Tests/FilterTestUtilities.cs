@@ -149,7 +149,7 @@ namespace CollectaMundo.Tests
     }
 
     // 2) A no‐op filter coordinator
-    public class DummyFilterService : IFilteringCoordinator
+    public class DummyFilterService : IFilteringService
     {
         public List<CardSet> ApplyFilters(IEnumerable<CardSet> cards, IEnumerable<FilterItemViewModel> criteria) => [.. cards];
 

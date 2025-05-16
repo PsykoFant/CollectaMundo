@@ -29,7 +29,7 @@ namespace CollectaMundo
         public CardViewModel ColorIcons { get; } = new CardViewModel();
         public FilterViewModel FilterVM { get; }
 
-        private readonly IFilteringCoordinator _filteringService;
+        private readonly IFilteringService _filteringService;
         public EditCollectionViewModel AddCardsVM { get; }
         public EditCollectionViewModel EditCardsVM { get; }
 
@@ -48,7 +48,7 @@ namespace CollectaMundo
         }
 
         private readonly ICardListRepository _cardListRepo;
-        private readonly ICardListCoordinator _cardListCoordinator;
+        private readonly ICardListService _cardListCoordinator;
 
         // Used for displaying images
         private string? _imageSourceUrl = string.Empty;
@@ -156,7 +156,7 @@ namespace CollectaMundo
             // instantiate your new Data->Coordinator pipeline
             AllCardsVM = new CardViewModel();
             _cardListRepo = new CardListRepository();
-            _cardListCoordinator = new CardListCoordinator(_cardListRepo);
+            _cardListCoordinator = new CardListService(_cardListRepo);
 
             Loaded += async (sender, args) =>
             {
@@ -178,7 +178,7 @@ namespace CollectaMundo
 
             // 3) "Filtering" stack: defaults repo --> filtering coordinator --> view-model
             var filterDefaultsRepo = new FilterDefaultsRepository();
-            var filteringCoordinator = new FilteringCoordinator(filterDefaultsRepo);
+            var filteringCoordinator = new FilteringService(filterDefaultsRepo);
             _filteringService = filteringCoordinator;
             FilterVM = new FilterViewModel(filteringCoordinator);
             FilterVM.FilterChanged += OnFilterChanged;

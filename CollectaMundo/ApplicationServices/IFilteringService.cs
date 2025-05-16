@@ -3,7 +3,7 @@ using CollectaMundo.ViewModels;
 
 namespace CollectaMundo.UICoordinators
 {
-    public interface IFilteringCoordinator
+    public interface IFilteringService
     {
         List<CardSet> ApplyFilters(IEnumerable<CardSet> cards, IEnumerable<FilterItemViewModel> vmFilters);
         void ResetAllFilters(IEnumerable<FilterItemViewModel> filters);
