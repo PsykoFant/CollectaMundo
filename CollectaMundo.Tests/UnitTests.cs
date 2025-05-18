@@ -6,7 +6,7 @@ using CollectaMundo.ViewModels;
 using System.Globalization;
 using System.Windows.Media.Imaging;
 using static CollectaMundo.MainWindow;
-using static CollectaMundo.Tests.FilterTestUtilities;
+using static CollectaMundo.Tests.TestUtilities;
 
 
 namespace CollectaMundo.Tests
@@ -429,7 +429,7 @@ namespace CollectaMundo.Tests
             {
                 // Arrange – populate the view‑model exactly as you already do in other tests
                 var vm = new CardViewModel();
-                vm.Cards.AddRange(FilterTestUtilities.GetTestCards());
+                vm.Cards.AddRange(TestUtilities.GetTestCards());
 
                 // pretend the user applied a filter that left 7 cards
                 vm.FilteredCards = [.. vm.Cards.Take(7)];
