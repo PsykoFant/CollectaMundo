@@ -3,6 +3,7 @@ using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Presentation.Converters;
 using CollectaMundo.Utilities;
 using CollectaMundo.ViewModels;
+using Moq;
 using System.Globalization;
 using System.Windows.Media.Imaging;
 using static CollectaMundo.MainWindow;
@@ -482,6 +483,38 @@ namespace CollectaMundo.Tests
 
                 var bmp = Assert.IsType<BitmapImage>(obj);
                 Assert.Equal(url, bmp.UriSource!.AbsoluteUri);
+            }
+        }
+        public class EditCollectionLogicTests
+        {
+            [Fact]
+            public async Task SaveBatchAsync_AddsNewCard_WhenNotExisting()
+            {
+                // Arrange
+                var (repoMock, logic) = TestUtilities.CreateEditCollectionLogicWithMocks();
+                var newCard = new CardSet
+                {
+                    Uuid = "foo-uuid",
+                    SelectedCondition = "Near Mint",
+                    SelectedFinish = "nonfoil",
+                    Language = "English",
+                    CardsOwned = 2,
+                    CardsForTrade = 1
+                };
+
+                // Act
+                var results = await logic.SaveBatchAsync(new[] { newCard }, isEdit: false);
+
+                // Assert
+                var evt = Assert.Single(results);
+                Assert.Equal(CardChangeEventArgs.ChangeType.Upsert, evt.Type);
+                Assert.NotNull(evt.Survivor);
+                Assert.Equal(123, evt.Survivor.CardId);
+                Assert.Equal(2, evt.Survivor.CardsOwned);
+                Assert.Equal(1, evt.Survivor.CardsForTrade);
+
+                // verify repo was called
+                repoMock.Verify(r => r.AddCardAndReturnIdAsync(newCard), Times.Once);
             }
         }
     }

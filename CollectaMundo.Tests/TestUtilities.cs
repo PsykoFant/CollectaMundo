@@ -1,7 +1,10 @@
-﻿using CollectaMundo.Data;
+﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.Data;
+using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.UICoordinators;
 using CollectaMundo.ViewModels;
+using Moq;
 
 namespace CollectaMundo.Tests
 {
@@ -139,6 +142,42 @@ namespace CollectaMundo.Tests
                     ManaValue = 0,Language = "English",Finishes = "nonfoil",Rarity = "rare",CardsOwned=0,CardsForTrade=0, SelectedCondition=null, SelectedFinish=null
                 }
             ];
+        }
+
+        // Creates a mocked IEditCollectionRepository plus an EditCollectionLogic wired to it.
+        public static (Mock<IEditCollectionRepository> RepoMock, EditCollectionLogic Logic) CreateEditCollectionLogicWithMocks()
+        {
+            var repo = new Mock<IEditCollectionRepository>();
+
+            // When we ask “find existing?”, default to “no”
+            repo.Setup(r => r.FindExistingCardReturnIdAsync(It.IsAny<CardSet>())).ReturnsAsync((int?)null);
+
+            // When we add, return PK 123
+            repo.Setup(r => r.AddCardAndReturnIdAsync(It.IsAny<CardSet>())).ReturnsAsync(123);
+
+            // When we update/delete/merge/etc, just complete
+            repo.Setup(r => r.UpdateCardCountsAsync(It.IsAny<CardSet>())).Returns(Task.CompletedTask);
+            repo.Setup(r => r.DeleteCardByIdAsync(It.IsAny<CardSet>())).Returns(Task.CompletedTask);
+            repo.Setup(r => r.GetTotalsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync((1, 0));
+            repo.Setup(r => r.FindRecordByIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(new List<int> { 123 });
+            repo.Setup(r => r.MergeDuplicateRecordsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>())).Returns(Task.CompletedTask);
+
+            var logic = new EditCollectionLogic(repo.Object);
+            return (repo, logic);
+        }
+
+        // Creates a mocked unit of work and ties it to a no‐op commit/rollback.
+        public static (Mock<IUnitOfWork> UowMock, Func<IUnitOfWork> UowFactory) CreateUnitOfWorkWithMocks()
+        {
+            var uow = new Mock<IUnitOfWork>();
+            uow.Setup(u => u.BeginAsync()).Returns(Task.CompletedTask);
+            uow.Setup(u => u.CommitAsync()).Returns(Task.CompletedTask);
+            uow.Setup(u => u.RollbackAsync()).Returns(Task.CompletedTask);
+            uow.Setup(u => u.DisposeAsync()).Returns(ValueTask.CompletedTask);
+
+            // If your SubmitCardBatchAsync takes a factory
+            Func<IUnitOfWork> factory = () => uow.Object;
+            return (uow, factory);
         }
     }
 
