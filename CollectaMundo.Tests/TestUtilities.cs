@@ -145,6 +145,21 @@ namespace CollectaMundo.Tests
         }
 
         // Creates a mocked IEditCollectionRepository plus an EditCollectionLogic wired to it.
+
+        public static (Mock<IEditCollectionRepository> RepoMock, EditCollectionLogic Logic) AddNewCardRepoMocks()
+        {
+            var repo = new Mock<IEditCollectionRepository>();
+
+            // When we ask “find existing?”, default to “no”
+            repo.Setup(r => r.FindExistingCardReturnIdAsync(It.IsAny<CardSet>())).ReturnsAsync((int?)null);
+
+            // When we add, return card id 123
+            repo.Setup(r => r.AddCardAndReturnIdAsync(It.IsAny<CardSet>())).ReturnsAsync(123);
+
+            var logic = new EditCollectionLogic(repo.Object);
+            return (repo, logic);
+        }
+
         public static (Mock<IEditCollectionRepository> RepoMock, EditCollectionLogic Logic) CreateEditCollectionLogicWithMocks()
         {
             var repo = new Mock<IEditCollectionRepository>();
@@ -176,7 +191,7 @@ namespace CollectaMundo.Tests
             uow.Setup(u => u.DisposeAsync()).Returns(ValueTask.CompletedTask);
 
             // If your SubmitCardBatchAsync takes a factory
-            Func<IUnitOfWork> factory = () => uow.Object;
+            IUnitOfWork factory() => uow.Object;
             return (uow, factory);
         }
     }
