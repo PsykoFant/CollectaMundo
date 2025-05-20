@@ -4,6 +4,7 @@ using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.UICoordinators;
 using CollectaMundo.ViewModels;
+using System.Data.SQLite;
 using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Tests
@@ -46,15 +47,14 @@ namespace CollectaMundo.Tests
             _cardListCoordinator = new CardListService(_cardListRepo);
 
             // **2)** wire up the “write” side, *passing in* the same connection
+            var editUow = new NoCloseUnitOfWork(_fx.Connection);
             var editRepo = new EditCollectionRepository(_fx.Connection);
             var editLogic = new EditCollectionLogic(editRepo);
-            var editUow = new UnitOfWork(_fx.Connection);
             var editService = new EditCollectionService(editUow, editLogic);
 
             _addVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);
             _editVM = new EditCollectionViewModel(editService, removeCardWhenZero: false);
 
-            // capture CardChanged events from both VMs
             _addVM.CardChanged += (_, e) => _changedEvents.Add(e);
             _editVM.CardChanged += (_, e) => _changedEvents.Add(e);
         }
@@ -678,6 +678,48 @@ namespace CollectaMundo.Tests
 
         }
 
+        // inside your IntegrationTests class:
+        private sealed class NoCloseUnitOfWork : IUnitOfWork, IAsyncDisposable
+        {
+            private SQLiteTransaction? _txn;
+
+            public NoCloseUnitOfWork(SQLiteConnection conn)
+            {
+                // hijack the static DBAccess.connection so all repos see the same in-memory DB
+                DBAccess.connection = conn;
+            }
+
+            public async Task BeginAsync()
+            {
+                // re-open if needed (fixture Connection is already Open, but just in case)
+                await DBAccess.OpenConnectionAsync();
+                var c = DBAccess.connection
+                        ?? throw new InvalidOperationException("DBAccess.connection was null");
+                _txn = c.BeginTransaction();
+            }
+
+            public Task CommitAsync()
+            {
+                _txn?.Commit();
+                return Task.CompletedTask;
+            }
+
+            public Task RollbackAsync()
+            {
+                _txn?.Rollback();
+                return Task.CompletedTask;
+            }
+
+            public ValueTask DisposeAsync()
+            {
+                // **do not** close DBAccess.connection here!
+                // that way the in-memory schema survives
+                return ValueTask.CompletedTask;
+            }
+        }
+
     }
+
+
 }
 
