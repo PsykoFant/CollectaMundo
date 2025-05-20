@@ -6,6 +6,13 @@ namespace CollectaMundo.Data
 {
     public class EditCollectionRepository : IEditCollectionRepository
     {
+        // Constructor
+        public EditCollectionRepository(SQLiteConnection connection)
+        {
+            // force the static DBAccess.connection to be *this* connection
+            DBAccess.connection = connection;
+        }
+
         // Lookups
         public async Task<List<string>> FetchLanguagesForCardAsync(string uuid)
         {

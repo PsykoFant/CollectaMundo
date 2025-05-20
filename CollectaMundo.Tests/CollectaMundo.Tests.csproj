@@ -37,6 +37,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="TestResources\cardForeignData.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestResources\cards.csv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

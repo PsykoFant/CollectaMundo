@@ -6,6 +6,12 @@ namespace CollectaMundo.ApplicationServices
     {
         private SQLiteTransaction? _txn;
 
+        public UnitOfWork(SQLiteConnection connection)
+        {
+            // Force all DBAccess.* calls to use *this* connection
+            DBAccess.connection = connection;
+        }
+
         public async Task BeginAsync()
         {
             // 1) ensure the connection is open
@@ -38,5 +44,4 @@ namespace CollectaMundo.ApplicationServices
             return ValueTask.CompletedTask;
         }
     }
-
 }

@@ -1,5 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices;
 using CollectaMundo.Data;
+using CollectaMundo.DomainLogic;
+using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.UICoordinators;
 using CollectaMundo.ViewModels;
 using static CollectaMundo.MainWindow;
@@ -20,7 +22,9 @@ namespace CollectaMundo.Tests
         private readonly IFilteringService _filteringCoordinator;
         private readonly ICardListRepository _cardListRepo;
         private readonly ICardListService _cardListCoordinator;
-
+        private readonly EditCollectionViewModel _addVM;
+        private readonly EditCollectionViewModel _editVM;
+        private readonly List<CardChangeEventArgs> _changedEvents = [];
 
         // Shared state (one copy for the whole class/run)
         private static readonly CardViewModel _allCardsVM = new();
@@ -29,15 +33,30 @@ namespace CollectaMundo.Tests
 
         public IntegrationTests(InMemoryDatabaseFixture fixture)
         {
-            _refreshHandler = RefreshFilteredLists;
             _fx = fixture;
-            DBAccess.connection = _fx.Connection;     // point app code to the same connection
+            _refreshHandler = RefreshFilteredLists;
+
+            // **1)** point all DBAccess calls to the single in-memory connection
+            DBAccess.connection = _fx.Connection;
+
+            // your existing “read” wiring
             var filterDefaultsRepo = new FilterDefaultsRepository();
             _filteringCoordinator = new FilteringService(filterDefaultsRepo);
-
             _cardListRepo = new CardListRepository();
             _cardListCoordinator = new CardListService(_cardListRepo);
 
+            // **2)** wire up the “write” side, *passing in* the same connection
+            var editRepo = new EditCollectionRepository(_fx.Connection);
+            var editLogic = new EditCollectionLogic(editRepo);
+            var editUow = new UnitOfWork(_fx.Connection);
+            var editService = new EditCollectionService(editUow, editLogic);
+
+            _addVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);
+            _editVM = new EditCollectionViewModel(editService, removeCardWhenZero: false);
+
+            // capture CardChanged events from both VMs
+            _addVM.CardChanged += (_, e) => _changedEvents.Add(e);
+            _editVM.CardChanged += (_, e) => _changedEvents.Add(e);
         }
 
         // IAsyncLifetime implementation
@@ -70,7 +89,7 @@ namespace CollectaMundo.Tests
         [Fact]
         public void Seed_has_expected_counts()
         {
-            Assert.Equal(59, _allCardsVM.Cards.Count);
+            Assert.Equal(61, _allCardsVM.Cards.Count);
             Assert.Equal(22, _myCollectionVM.Cards.Count);
         }
 
@@ -139,7 +158,9 @@ namespace CollectaMundo.Tests
                 "Hungry Mist",
                 "Vexing Arcanix",
                 "Thallid Devourer",
-                "Resurrection"
+                "Resurrection",
+                "Gisela, the Broken Blade // Brisela, Voice of Nightmares",
+                "Sokrates, Athenian Teacher"
             };
 
             var actualAllCardsNames = _allCardsVM.Cards
@@ -285,7 +306,9 @@ namespace CollectaMundo.Tests
                 "Karox Bladewing",
                 "Blossoming Calm // Blossoming Calm",
                 "Goblin",
-                "Jan Jansen, Chaos Crafter // Jan Jansen, Chaos Crafter"
+                "Jan Jansen, Chaos Crafter // Jan Jansen, Chaos Crafter",
+                "Gisela, the Broken Blade // Brisela, Voice of Nightmares",
+                "Sokrates, Athenian Teacher"
             };
 
             // Assert that the filter options contain all expected names.
@@ -312,6 +335,7 @@ namespace CollectaMundo.Tests
             {
                 "Enrage",
                 "Flash",
+                "First strike",
                 "Devoid",
                 "Flying",
                 "Evoke",
@@ -319,6 +343,8 @@ namespace CollectaMundo.Tests
                 "Kicker",
                 "Enchant",
                 "Landfall",
+                "Lifelink",
+                "Meld",
                 "Radiance",
                 "Changeling",
                 "Reach",
@@ -330,6 +356,7 @@ namespace CollectaMundo.Tests
                 "Fight",
                 "Defender",
                 "Scry",
+                "Sokratic Dialogue",
                 "Ingest",
                 "Prowess"
             };
@@ -353,6 +380,7 @@ namespace CollectaMundo.Tests
             var subTypesFilter = _filterVM.Filters["SubTypes"];
             var expectedSubtypesOptions = new List<string>
             {
+                "Advisor",
                 "Angel",
                 "Antelope",
                 "Aura",
@@ -368,6 +396,7 @@ namespace CollectaMundo.Tests
                 "Forest",
                 "Fungus",
                 "Goblin",
+                "Horror",
                 "Human",
                 "Lizard",
                 "Nissa",
@@ -575,7 +604,7 @@ namespace CollectaMundo.Tests
             _filterVM.ClearFiltersCommand?.Execute(null);   // raises FilterChanged again
 
             // Assert: lists are back to their full size and summary text is empty
-            Assert.Equal(59, _allCardsVM.FilteredCards.Count);
+            Assert.Equal(61, _allCardsVM.FilteredCards.Count);
             Assert.Equal(22, _myCollectionVM.FilteredCards.Count);
             Assert.True(string.IsNullOrEmpty(_filterVM.FilterSummary));
 
@@ -602,7 +631,7 @@ namespace CollectaMundo.Tests
             _filterVM.ClearFiltersCommand?.Execute(null);   // raises FilterChanged again
 
             // Assert: lists are back to their full size and summary text is empty
-            Assert.Equal(59, _allCardsVM.FilteredCards.Count);
+            Assert.Equal(61, _allCardsVM.FilteredCards.Count);
             Assert.Equal(22, _myCollectionVM.FilteredCards.Count);
             Assert.True(string.IsNullOrEmpty(_filterVM.FilterSummary));
 
@@ -615,7 +644,7 @@ namespace CollectaMundo.Tests
             typesFilter.OperatorSelection = OperatorType.OR;
 
             // Assert: 25 cards in AllCards, 10 in MyCollection with type "Creature" or "Planeswalker"
-            Assert.Equal(25, _allCardsVM.FilteredCards.Count);
+            Assert.Equal(27, _allCardsVM.FilteredCards.Count);
             Assert.Equal(10, _myCollectionVM.FilteredCards.Count);
 
             // Act: Add a filter on the "SuperTypes" filter - select "Legendary"
@@ -626,9 +655,27 @@ namespace CollectaMundo.Tests
             }
 
             // Assert: 3 cards in AllCards, none in MyCollection with type "Creature" or "Planeswalker" and supertype "Legendary"
-            Assert.Equal(3, _allCardsVM.FilteredCards.Count);
+            Assert.Equal(5, _allCardsVM.FilteredCards.Count);
             Assert.Empty(_myCollectionVM.FilteredCards);
             Assert.Equal("SuperTypes: {Legendary} AND Types: {Creature OR Planeswalker}", _filterVM.FilterSummary);
+
+
+            // 1) pick the one FilteredCards item you want
+            var uuidToAdd = "e4dcfe4f-8441-5eec-9f74-a7b3672e90e0";
+            var cardToAdd = _allCardsVM.FilteredCards.Single(c => c.Uuid == uuidToAdd);
+
+            // 2) “fake” the DataGrid selection by wrapping it in an object‐array
+            var selection = new object[] { cardToAdd };
+
+            // 3) call the command exactly as the UI would
+            _addVM.AddSelectedCardsCommand.Execute(selection);
+
+            // at that point addVM.CardsToAdd contains your card
+            Assert.Single(_addVM.CardsToAdd, c => c.Uuid == uuidToAdd);
+
+            _addVM.SubmitNewCardsCommand.Execute(null);
+            Assert.Equal(23, _myCollectionVM.Cards.Count);
+
         }
 
     }

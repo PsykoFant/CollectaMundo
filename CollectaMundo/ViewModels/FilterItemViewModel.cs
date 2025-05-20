@@ -2,6 +2,7 @@
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Timers;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -253,19 +254,25 @@ namespace CollectaMundo.ViewModels
         // Resets the typing delay timer for rulestext freetext filtering.
 
         private readonly Timer? _typingTimer;
-        private void TypingTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
+        private void TypingTimer_Elapsed(object? sender, ElapsedEventArgs e)
         {
-            // Ensure we run on the UI thread.
-            Application.Current.Dispatcher.Invoke(() =>
+            var disp = Application.Current?.Dispatcher;
+            if (disp != null)
             {
-                if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
+                disp.Invoke(() =>
                 {
-                    // Set the SelectedSingleOption based on the freetext search.
-                    // This setter will in turn trigger filtering.
+                    if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
+                        SelectedSingleOption = FreetextSearch;
+                });
+            }
+            else
+            {
+                // fallback: just apply the selection directly
+                if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
                     SelectedSingleOption = FreetextSearch;
-                }
-            });
+            }
         }
+
         private void ResetTypingDelay()
         {
             _typingTimer?.Stop();

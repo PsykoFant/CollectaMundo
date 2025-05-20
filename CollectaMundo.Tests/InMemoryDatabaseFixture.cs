@@ -200,6 +200,22 @@ namespace CollectaMundo.Tests
             ";
             command.ExecuteNonQuery();
 
+            // Create table: cardForeignData
+            command.CommandText = @"
+                CREATE TABLE cardForeignData (
+	            faceName TEXT,
+	            flavorText TEXT,
+	            identifiers TEXT,
+	            language TEXT,
+	            multiverseId INTEGER,
+	            name TEXT,
+	            text TEXT,
+	            type TEXT,
+	            uuid TEXT
+            )
+            ";
+            command.ExecuteNonQuery();
+
             // Create table: myCollection
             command.CommandText = @"
                 CREATE TABLE myCollection (
@@ -286,6 +302,7 @@ namespace CollectaMundo.Tests
             await SeedTableAsync("cards", Path.Combine(basePath, "cards.csv"));
             await SeedTableAsync("tokens", Path.Combine(basePath, "tokens.csv"));
             await SeedTableAsync("sets", Path.Combine(basePath, "sets.csv"));
+            await SeedTableAsync("cardForeignData", Path.Combine(basePath, "cardForeignData.csv"));
             await SeedTableAsync("myCollection", Path.Combine(basePath, "myCollection.csv"));
             await SeedTableAsync("view_myCollection", Path.Combine(basePath, "view_myCollection.csv"));
             await SeedTableAsync("view_allCards", Path.Combine(basePath, "view_allCards.csv"));
