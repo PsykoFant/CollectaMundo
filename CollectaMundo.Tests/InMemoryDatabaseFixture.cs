@@ -221,8 +221,8 @@ namespace CollectaMundo.Tests
                 CREATE TABLE myCollection (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     uuid TEXT,
-                    count INTEGER,
-                    trade INTEGER,
+                    cardsOwned INTEGER,
+                    cardsForTrade INTEGER,
                     condition TEXT,
                     language TEXT,
                     finish TEXT
