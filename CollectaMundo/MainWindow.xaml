@@ -12,14 +12,15 @@
     xmlns:System="clr-namespace:System;assembly=System.Runtime" 
     x:Class="CollectaMundo.MainWindow"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
-    mc:Ignorable="d"
-    DataContext="{Binding RelativeSource={RelativeSource Self}}"
+    mc:Ignorable="d"    
     Title="CollectaMundo"
     Icon="/Resources/Images/Icon.ico" 
     Width="1920"
     Height="960"
     PreviewMouseDown="Window_PreviewMouseDown">
 
+    <!--DataContext="{Binding RelativeSource={RelativeSource Self}}"-->
+    
 <!-- Define resources accessible by all elements in this Window -->
     <Window.Resources>
         <converters:StringToImageSourceConverter x:Key="StringToImageSourceConverter"/>
@@ -80,7 +81,7 @@
                 <Button x:Name="ClearFiltersButton" Content="Clear filters" Margin="10,0,0,0" VerticalAlignment="Top" Height="20" Command="{Binding FilterVM.ClearFiltersCommand}"/>
 
                 <!--Color filtering-->
-                <ListBox ItemsSource="{Binding FilterVM.Filters[Colors].FilterOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                <ListBox ItemsSource="{Binding FilterVM.Filters[Colors].FilterOptions}"
                          SelectionMode="Extended" Margin="0,30,0,0" Width="120" HorizontalAlignment="Left"
                          Height="170" VerticalAlignment="Top" Background="{x:Null}" 
                          BorderBrush="{x:Null}" Foreground="{x:Null}">
@@ -100,7 +101,7 @@
                         </Style>
                     </ListBox.Resources>
                 </ListBox>
-                <ListBox ItemsSource="{Binding ColorIcons.Cards, RelativeSource={RelativeSource AncestorType=Window}}"
+                <ListBox ItemsSource="{Binding ColorIcons.Cards}"
                          Margin="20,30,0,0" Width="50" HorizontalAlignment="Left"
                          Height="160" VerticalAlignment="Top" Background="{x:Null}" 
                          BorderBrush="{x:Null}" Foreground="{x:Null}">
@@ -113,7 +114,7 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <ComboBox DataContext="{Binding FilterVM.Filters[Colors], RelativeSource={RelativeSource AncestorType=Window}}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[Colors]}"
                           Width="60"
                           Margin="190,35,0,0"
                           VerticalAlignment="Top"
@@ -131,8 +132,8 @@
                     </Grid.ColumnDefinitions>
                     <!-- Operator Selection -->
                     <ComboBox Grid.Column="0"
-                              ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableOperators, RelativeSource={RelativeSource AncestorType=Window}}"
-                              SelectedItem="{Binding FilterVM.Filters[ManaValue].OperatorSelection, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}">
+                              ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableOperators}"
+                              SelectedItem="{Binding FilterVM.Filters[ManaValue].OperatorSelection, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Converter={StaticResource OperatorToSymbolConverter}}" />
@@ -141,14 +142,14 @@
                     </ComboBox>
                     <!-- Numeric Value Selection -->
                     <ComboBox Grid.Column="1"
-                              ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableNumericOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                              SelectedItem="{Binding FilterVM.Filters[ManaValue].SelectedNumericValue, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                              ItemsSource="{Binding FilterVM.Filters[ManaValue].AvailableNumericOptions}"
+                              SelectedItem="{Binding FilterVM.Filters[ManaValue].SelectedNumericValue, Mode=TwoWay}"
                               HorizontalAlignment="Right"
                               Width="80"/>
                 </Grid>
 
                 <!--Rarity-->
-                <ComboBox DataContext="{Binding FilterVM.Filters[Rarity], RelativeSource={RelativeSource AncestorType=Window}}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[Rarity]}"
                           IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                           HorizontalAlignment="Left" VerticalAlignment="Top" 
                           Margin="10,245,0,0" 
@@ -206,7 +207,7 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox DataContext="{Binding FilterVM.Filters[Rarity], RelativeSource={RelativeSource AncestorType=Window}}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[Rarity]}"
                           Width="60"
                           Margin="190,245,0,0"
                           VerticalAlignment="Top"
@@ -216,7 +217,7 @@
                 </ComboBox>
 
                 <!--SuperTypes-->
-                <ComboBox DataContext="{Binding FilterVM.Filters[SuperTypes], RelativeSource={RelativeSource AncestorType=Window}}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[SuperTypes]}"
                           IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                           HorizontalAlignment="Left" VerticalAlignment="Top" 
                           Margin="10,275,0,0" 
@@ -274,7 +275,7 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox DataContext="{Binding FilterVM.Filters[SuperTypes], RelativeSource={RelativeSource AncestorType=Window}}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[SuperTypes]}"
                           Width="60"
                           Margin="190,275,0,0"
                           VerticalAlignment="Top"
@@ -284,7 +285,7 @@
                 </ComboBox>
 
                 <!--Types-->
-                <ComboBox DataContext="{Binding FilterVM.Filters[Types], RelativeSource={RelativeSource AncestorType=Window}}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[Types]}"
                           IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                           HorizontalAlignment="Left" VerticalAlignment="Top" 
                           Margin="10,305,0,0" 
@@ -342,7 +343,7 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox DataContext="{Binding FilterVM.Filters[Types], RelativeSource={RelativeSource AncestorType=Window}}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[Types]}"
                           Width="60"
                           Margin="190,305,0,0"
                           VerticalAlignment="Top"
@@ -352,7 +353,7 @@
                 </ComboBox>
 
                 <!--SubTypes-->
-                <ComboBox DataContext="{Binding FilterVM.Filters[SubTypes], RelativeSource={RelativeSource AncestorType=Window}}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[SubTypes]}"
                           IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                           HorizontalAlignment="Left" VerticalAlignment="Top" 
                           Margin="10,335,0,0" 
@@ -410,7 +411,7 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox DataContext="{Binding FilterVM.Filters[SubTypes], RelativeSource={RelativeSource AncestorType=Window}}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[SubTypes]}"
                           Width="60"
                           Margin="190,335,0,0"
                           VerticalAlignment="Top"
@@ -420,7 +421,7 @@
                 </ComboBox>
 
                 <!--Keywords-->
-                <ComboBox DataContext="{Binding FilterVM.Filters[Keywords], RelativeSource={RelativeSource AncestorType=Window}}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[Keywords]}"
                           IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                           HorizontalAlignment="Left" VerticalAlignment="Top" 
                           Margin="10,365,0,0" 
@@ -478,7 +479,7 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox DataContext="{Binding FilterVM.Filters[Keywords], RelativeSource={RelativeSource AncestorType=Window}}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[Keywords]}"
                           Width="60"
                           Margin="190,365,0,0"
                           VerticalAlignment="Top"
@@ -488,7 +489,7 @@
                 </ComboBox>
 
                 <!--Finishes-->
-                <ComboBox DataContext="{Binding FilterVM.Filters[Finishes], RelativeSource={RelativeSource AncestorType=Window}}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[Finishes]}"
                           IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                           HorizontalAlignment="Left" VerticalAlignment="Top" 
                           Margin="10,395,0,0" 
@@ -546,7 +547,7 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox DataContext="{Binding FilterVM.Filters[Finishes], RelativeSource={RelativeSource AncestorType=Window}}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[Finishes]}"
                           Width="60"
                           Margin="190,395,0,0"
                           VerticalAlignment="Top"
@@ -557,7 +558,7 @@
 
                 <!--Rulestext filtering-->
                 <TextBox x:Name="FilterTextTextBox"
-                         DataContext="{Binding FilterVM.Filters[Text], RelativeSource={RelativeSource AncestorType=Window}}"
+                         DataContext="{Binding FilterVM.Filters[Text]}"
                          Text="{Binding FreetextSearch, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                          HorizontalAlignment="Left" 
                          Margin="10,425,0,0" 
@@ -579,7 +580,7 @@
 
                 <!--Language-->
                 <ComboBox x:Name="LanguageComboBox"
-                          DataContext="{Binding FilterVM.Filters[Language], RelativeSource={RelativeSource AncestorType=Window}}"
+                          DataContext="{Binding FilterVM.Filters[Language]}"
                           IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                           HorizontalAlignment="Left" VerticalAlignment="Top" 
                           Margin="10,515,0,0" 
@@ -638,7 +639,7 @@
                     </ComboBox.Template>
                 </ComboBox>
                 <ComboBox x:Name="LanguageOperatorComboBox"
-                          DataContext="{Binding FilterVM.Filters[Language], RelativeSource={RelativeSource AncestorType=Window}}"
+                          DataContext="{Binding FilterVM.Filters[Language]}"
                           Width="60"
                           Margin="190,515,0,0"
                           VerticalAlignment="Top"
@@ -649,7 +650,7 @@
 
                 <!--SelectedCondition-->
                 <ComboBox x:Name="SelectedConditionComboBox"
-                          DataContext="{Binding FilterVM.Filters[SelectedCondition], RelativeSource={RelativeSource AncestorType=Window}}"
+                          DataContext="{Binding FilterVM.Filters[SelectedCondition]}"
                           IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                           HorizontalAlignment="Left" VerticalAlignment="Top" 
                           Margin="10,545,0,0" 
@@ -708,7 +709,7 @@
                     </ComboBox.Template>
                 </ComboBox>
                 <ComboBox x:Name="SelectedConditionOperatorComboBox"
-                          DataContext="{Binding FilterVM.Filters[SelectedCondition], RelativeSource={RelativeSource AncestorType=Window}}"
+                          DataContext="{Binding FilterVM.Filters[SelectedCondition]}"
                           Width="60"
                           Margin="190,545,0,0"
                           VerticalAlignment="Top"
@@ -719,7 +720,7 @@
 
                 <!--SelectedFinish-->
                 <ComboBox x:Name="SelectedFinishComboBox"
-                          DataContext="{Binding FilterVM.Filters[SelectedFinish], RelativeSource={RelativeSource AncestorType=Window}}"
+                          DataContext="{Binding FilterVM.Filters[SelectedFinish]}"
                           IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                           HorizontalAlignment="Left" VerticalAlignment="Top" 
                           Margin="10,485,0,0" 
@@ -778,7 +779,7 @@
                     </ComboBox.Template>
                 </ComboBox>
                 <ComboBox x:Name="SelectedFinishOperatorComboBox"
-                          DataContext="{Binding FilterVM.Filters[SelectedFinish], RelativeSource={RelativeSource AncestorType=Window}}"
+                          DataContext="{Binding FilterVM.Filters[SelectedFinish]}"
                           Width="60"
                           Margin="190,485,0,0"
                           VerticalAlignment="Top"
@@ -788,10 +789,10 @@
                 </ComboBox>
 
                 <CheckBox  x:Name="CheckBoxCardsForTrade" Content="Filter on cards for trade"
-                           IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsTradeChecked, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                           IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsTradeChecked, Mode=TwoWay}"
                            HorizontalAlignment="Left" Margin="10,570,0,0" VerticalAlignment="Top"/>
                 <CheckBox x:Name="CheckBoxCardsNotForTrade" Content="Filter on cards NOT for trade"
-                          IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsNotTradeChecked, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                          IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsNotTradeChecked, Mode=TwoWay}"
                           HorizontalAlignment="Left" Margin="10,590,0,0" VerticalAlignment="Top"/>
 
             </Grid>
@@ -821,17 +822,13 @@
                    RenderTransformOrigin="0.5,0.5"
                    Margin="0,70,0,0"
                    Opacity="0.8" 
-                   Visibility="{Binding AddCardsVM.StatusVisibility,
-                    RelativeSource={RelativeSource AncestorType=Window},
-                    Converter={StaticResource InverseVisibility}}"/>
+                   Visibility="{Binding AddCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}"/>
             <ScrollViewer HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <TextBlock HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
             </ScrollViewer>
             <Grid x:Name="GridSearchAndFilterAllCards" d:IsHidden="True">
                 <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" Visibility="{Binding AddCardsVM.StatusVisibility,
-                    RelativeSource={RelativeSource AncestorType=Window},
-                    Converter={StaticResource InverseVisibility}}">
+                <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" Visibility="{Binding AddCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
                             <Binding Path="AllCardsVM.FilteredCount"/>
@@ -840,29 +837,29 @@
                     </Label.Content>
                 </Label>
                 <Button Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" 
-                        Visibility="{Binding AddCardsVM.CollectionEditVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
-                        Command="{Binding AddCardsVM.SubmitNewCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}" />                
+                        Visibility="{Binding AddCardsVM.CollectionEditVisibility}"
+                        Command="{Binding AddCardsVM.SubmitNewCardsCommand}" />                
                 <Button Content="Clear cards without submitting"
                     HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top"
                     Width="200" Height="20"
-                    Visibility="{Binding AddCardsVM.CollectionEditVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
-                    Command="{Binding AddCardsVM.ClearCardsToAddCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                    Visibility="{Binding AddCardsVM.CollectionEditVisibility}"
+                    Command="{Binding AddCardsVM.ClearCardsToAddCommand}" />
                 <Button Content="Add selected cards to my collection"
                     HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top"
                     Width="200" Height="20"
                     Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
-                    Command="{Binding AddCardsVM.AddSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                    Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
                     CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
                 <ScrollViewer HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                    Visibility="{Binding AddCardsVM.StatusVisibility, RelativeSource={RelativeSource AncestorType=Window}}">
-                    <TextBlock TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding AddCardsVM.StatusMessage, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    Visibility="{Binding AddCardsVM.StatusVisibility}">
+                    <TextBlock TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding AddCardsVM.StatusMessage}"/>
                 </ScrollViewer>
                 
                 <!--Cards to add listview-->
-                <ListView ItemsSource="{Binding AddCardsVM.CardsToAdd, RelativeSource={RelativeSource AncestorType=Window}}"
-                          Visibility="{Binding AddCardsVM.CollectionEditVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
-                          DataContext="{Binding AddCardsVM, RelativeSource={RelativeSource AncestorType=Window}}"
-                          behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding AddCardsVM.RefreshColumnsTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"                          
+                <ListView DataContext="{Binding AddCardsVM}"
+                          ItemsSource="{Binding CardsToAdd}"
+                          Visibility="{Binding CollectionEditVisibility}"                          
+                          behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding RefreshColumnsTrigger, Mode=OneWay}"                          
                           Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
@@ -1008,10 +1005,10 @@
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                           behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
                           behaviors:DataGridColumnResizerBehavior.DataGridIndex="0"
-                          behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding AddCardsVM.ClearSelectionTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
+                          behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding AddCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
                             <i:Interaction.Triggers>
                                 <i:EventTrigger EventName="MouseDoubleClick">
-                                    <i:InvokeCommandAction Command="{Binding AddCardsVM.AddSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    <i:InvokeCommandAction Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
                                            CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
                                 </i:EventTrigger>
                             </i:Interaction.Triggers>
@@ -1019,7 +1016,7 @@
                         <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                             <DataGridTemplateColumn.HeaderTemplate>
                                 <DataTemplate>
-                                    <Grid DataContext="{Binding FilterVM.Filters[Name], RelativeSource={RelativeSource AncestorType=Window}}">
+                                    <Grid DataContext="{Binding DataContext.FilterVM.Filters[Name],RelativeSource={RelativeSource AncestorType=Window}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
@@ -1030,7 +1027,7 @@
                                                   HorizontalAlignment="Stretch"
                                                   Height="20"
                                                   IsEditable="True"
-                                                  Width="{Binding ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  Width="{Binding DataContext.ColumnWidths[0][0],RelativeSource={RelativeSource AncestorType=Window}}"
                                                   ItemsSource="{Binding FilteredOptions}"
                                                   DisplayMemberPath="OptionName"
                                                   SelectedItem="OptionName"
@@ -1053,7 +1050,7 @@
                         <DataGridTemplateColumn Header="Set" Width="*" SortMemberPath="SetName">
                             <DataGridTemplateColumn.HeaderTemplate>
                                 <DataTemplate>
-                                    <Grid DataContext="{Binding FilterVM.Filters[SetName], RelativeSource={RelativeSource AncestorType=Window}}">
+                                    <Grid DataContext="{Binding DataContext.FilterVM.Filters[SetName],RelativeSource={RelativeSource AncestorType=Window}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
@@ -1064,7 +1061,7 @@
                                                   HorizontalAlignment="Stretch"
                                                   Height="20"
                                                   IsEditable="True"
-                                                  Width="{Binding ColumnWidths[0][1], RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  Width="{Binding DataContext.ColumnWidths[0][1],RelativeSource={RelativeSource AncestorType=Window}}"
                                                   ItemsSource="{Binding FilteredOptions}"
                                                   DisplayMemberPath="OptionName"
                                                   SelectedItem="OptionName"
@@ -1193,9 +1190,7 @@
             </Grid>
             <Grid x:Name="GridMyCollection" d:IsHidden="True">
                 <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" Visibility="{Binding EditCardsVM.StatusVisibility,
-                    RelativeSource={RelativeSource AncestorType=Window},
-                    Converter={StaticResource InverseVisibility}}">
+                <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" Visibility="{Binding EditCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
                             <Binding Path="MyCollectionVM.FilteredCount"/>
@@ -1204,29 +1199,29 @@
                     </Label.Content>
                 </Label>
                 <Button Content="Update selected cards" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20"
-                        Visibility="{Binding EditCardsVM.CollectionEditVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
-                        Command="{Binding EditCardsVM.SubmitCardEditsCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                        Visibility="{Binding EditCardsVM.CollectionEditVisibility}"
+                        Command="{Binding EditCardsVM.SubmitCardEditsCommand}" />
                 <Button Content="Clear cards without submitting"
                         HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top"
                         Width="200" Height="20"
-                        Visibility="{Binding EditCardsVM.CollectionEditVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
-                        Command="{Binding EditCardsVM.ClearCardsToAddCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                        Visibility="{Binding EditCardsVM.CollectionEditVisibility}"
+                        Command="{Binding EditCardsVM.ClearCardsToAddCommand}" />
                 <Button Content="Edit selected cards"
                     HorizontalAlignment="Right" Margin="0,255,0,0" VerticalAlignment="Top"
                     Width="120" Height="20"
                     Visibility="{Binding ElementName=MyCollectionDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
-                    Command="{Binding EditCardsVM.EditSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                    Command="{Binding EditCardsVM.EditSelectedCardsCommand}"
                     CommandParameter="{Binding SelectedItems, ElementName=MyCollectionDataGrid}" />
                 <ScrollViewer HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                    Visibility="{Binding EditCardsVM.StatusVisibility, RelativeSource={RelativeSource AncestorType=Window}}">
-                    <TextBlock TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding EditCardsVM.StatusMessage, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    Visibility="{Binding EditCardsVM.StatusVisibility}">
+                    <TextBlock TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding EditCardsVM.StatusMessage}"/>
                 </ScrollViewer>
 
                 <!--Cards to edit-->
-                <ListView ItemsSource="{Binding EditCardsVM.CardsToAdd, RelativeSource={RelativeSource AncestorType=Window}}"
-                          Visibility="{Binding EditCardsVM.CollectionEditVisibility, RelativeSource={RelativeSource AncestorType=Window}}"
-                          DataContext="{Binding EditCardsVM, RelativeSource={RelativeSource AncestorType=Window}}"
-                          behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding EditCardsVM.RefreshColumnsTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}"    
+                <ListView DataContext="{Binding EditCardsVM}"
+                          ItemsSource="{Binding CardsToAdd}"
+                          Visibility="{Binding CollectionEditVisibility}"                          
+                          behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding RefreshColumnsTrigger, Mode=OneWay}"    
                           Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
@@ -1371,10 +1366,10 @@
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                           behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
                           behaviors:DataGridColumnResizerBehavior.DataGridIndex="1"
-                          behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding EditCardsVM.ClearSelectionTrigger, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}">
+                          behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding EditCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
                             <i:Interaction.Triggers>
                                 <i:EventTrigger EventName="MouseDoubleClick">
-                                    <i:InvokeCommandAction Command="{Binding EditCardsVM.EditSelectedCardsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    <i:InvokeCommandAction Command="{Binding EditCardsVM.EditSelectedCardsCommand}"
                                               CommandParameter="{Binding SelectedItems, ElementName=MyCollectionDataGrid}" />
                                 </i:EventTrigger>
                             </i:Interaction.Triggers>
@@ -1382,7 +1377,7 @@
                         <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                             <DataGridTemplateColumn.HeaderTemplate>
                                 <DataTemplate>
-                                    <Grid DataContext="{Binding FilterVM.Filters[Name], RelativeSource={RelativeSource AncestorType=Window}}">
+                                    <Grid DataContext="{Binding DataContext.FilterVM.Filters[Name],RelativeSource={RelativeSource AncestorType=Window}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
@@ -1393,7 +1388,7 @@
                                                   HorizontalAlignment="Stretch"
                                                   Height="20"
                                                   IsEditable="True"
-                                                  Width="{Binding ColumnWidths[1][0], RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  Width="{Binding DataContext.ColumnWidths[1][0],RelativeSource={RelativeSource AncestorType=Window}}"
                                                   ItemsSource="{Binding FilteredOptions}"
                                                   DisplayMemberPath="OptionName"
                                                   SelectedItem="OptionName"
@@ -1416,7 +1411,7 @@
                         <DataGridTemplateColumn Header="Set" Width="*" SortMemberPath="SetName">
                             <DataGridTemplateColumn.HeaderTemplate>
                                 <DataTemplate>
-                                    <Grid DataContext="{Binding FilterVM.Filters[SetName], RelativeSource={RelativeSource AncestorType=Window}}">
+                                    <Grid DataContext="{Binding DataContext.FilterVM.Filters[SetName],RelativeSource={RelativeSource AncestorType=Window}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
@@ -1427,7 +1422,7 @@
                                                   HorizontalAlignment="Stretch"
                                                   Height="20"
                                                   IsEditable="True"
-                                                  Width="{Binding ColumnWidths[1][1], RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  Width="{Binding DataContext.ColumnWidths[1][1],RelativeSource={RelativeSource AncestorType=Window}}"
                                                   ItemsSource="{Binding FilteredOptions}"
                                                   DisplayMemberPath="OptionName"
                                                   SelectedItem="OptionName"
@@ -1641,7 +1636,7 @@
                                 <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                                     <DataGridTemplateColumn.HeaderTemplate>
                                         <DataTemplate>
-                                            <Grid DataContext="{Binding FilterVM.Filters[Name], RelativeSource={RelativeSource AncestorType=Window}}">
+                                            <Grid DataContext="{Binding DataContext.FilterVM.Filters[Name],RelativeSource={RelativeSource AncestorType=Window}}">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="*"/>
@@ -1652,7 +1647,7 @@
                                                   HorizontalAlignment="Stretch"
                                                   Height="20"
                                                   IsEditable="True"
-                                                  Width="{Binding ColumnWidths[2][0], RelativeSource={RelativeSource AncestorType=Window}}"
+                                                  Width="{Binding DataContext.ColumnWidths[2][0],RelativeSource={RelativeSource AncestorType=Window}}"
                                                   ItemsSource="{Binding FilteredOptions}"
                                                   DisplayMemberPath="OptionName"
                                                   SelectedItem="OptionName"

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using CollectaMundo.ViewModels;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -66,7 +67,10 @@ namespace CollectaMundo.Presentation.Behaviors
                 return;
 
             int dataGridIndex = GetDataGridIndex(dataGrid);
-            if (dataGridIndex < 0 || dataGridIndex >= MainWindow.CurrentInstance.ColumnWidths.Count)
+            if (dataGrid.DataContext is not MainWindowViewModel vm)
+                return;
+            var list = vm.ColumnWidths;
+            if (dataGridIndex < 0 || dataGridIndex >= list.Count)
                 return;
 
             List<int[]> paddingsList = new List<int[]>
@@ -82,15 +86,15 @@ namespace CollectaMundo.Presentation.Behaviors
             int[] paddings = paddingsList[dataGridIndex];
             for (int colIndex = 0; colIndex < paddings.Length; colIndex++)
             {
-                if (colIndex >= MainWindow.CurrentInstance.ColumnWidths[dataGridIndex].Count)
+                if (colIndex >= list[dataGridIndex].Count)
                     continue;
 
                 double currentWidth = dataGrid.Columns[colIndex].ActualWidth;
                 double newWidth = currentWidth - paddings[colIndex];
 
-                if (newWidth > 0 && Math.Abs(MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][colIndex] - newWidth) > 0.5)
+                if (newWidth > 0 && Math.Abs(list[dataGridIndex][colIndex] - newWidth) > 0.5)
                 {
-                    MainWindow.CurrentInstance.ColumnWidths[dataGridIndex][colIndex] = newWidth;
+                    list[dataGridIndex][colIndex] = newWidth;
                 }
             }
         }

@@ -1,11 +1,8 @@
 using CollectaMundo.ApplicationServices;
 using CollectaMundo.Data;
-using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Presentation.Behaviors;
-using CollectaMundo.UICoordinators;
 using CollectaMundo.ViewModels;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
@@ -22,16 +19,6 @@ namespace CollectaMundo
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
         #region Set up varibales
-        public CardViewModel AllCardsVM { get; }
-        public CardViewModel MyCollectionVM { get; } = new CardViewModel();
-        public CardViewModel AllCardsForDecksVM { get; } = new CardViewModel();
-        public CardViewModel AllCardsInDecksVM { get; } = new CardViewModel();
-        public CardViewModel ColorIcons { get; } = new CardViewModel();
-        public FilterViewModel FilterVM { get; }
-
-        private readonly IFilteringService _filteringService;
-        public EditCollectionViewModel AddCardsVM { get; }
-        public EditCollectionViewModel EditCardsVM { get; }
 
         private static MainWindow? _currentInstance;
         public static MainWindow CurrentInstance
@@ -47,8 +34,10 @@ namespace CollectaMundo
             private set => _currentInstance = value;
         }
 
-        private readonly ICardListRepository _cardListRepo;
-        private readonly ICardListService _cardListCoordinator;
+        private MainWindowViewModel VM => (MainWindowViewModel)DataContext;
+
+        private readonly ICardListService _cardListService;
+
 
         // Used for displaying images
         private string? _imageSourceUrl = string.Empty;
@@ -85,6 +74,8 @@ namespace CollectaMundo
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+
 
         // Flag to track startup phase
         public bool _isStartup = true;
@@ -141,7 +132,7 @@ namespace CollectaMundo
         Button cancelButton = new();
         string columnToEdit = string.Empty;
 
-        public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [[50, 50], [50, 50], [50]];
+
 
         // Read the price retailer from appsettings.json
         public string? appsettingsRetailer = ConfigurationManager.GetSetting("PriceInfo:Retailer") as string;
@@ -152,11 +143,7 @@ namespace CollectaMundo
         {
             InitializeComponent();
             _currentInstance = this;
-
-            // instantiate your new Data->Coordinator pipeline
-            AllCardsVM = new CardViewModel();
-            _cardListRepo = new CardListRepository();
-            _cardListCoordinator = new CardListService(_cardListRepo);
+            _cardListService = new CardListService(new CardListRepository());
 
             Loaded += async (sender, args) =>
             {
@@ -166,22 +153,8 @@ namespace CollectaMundo
                 _isStartup = false;
             };
 
-            // 2) "Edit collection" stack: repository --> domain logic --> UI coordinator --> view-models
-            var editRepo = new EditCollectionRepository(DBAccess.connection);
-            var editLogic = new EditCollectionLogic(editRepo);
-            var editUow = new UnitOfWork(DBAccess.connection);
-            var editCoordinator = new EditCollectionService(editUow, editLogic);
-            AddCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: true);
-            EditCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: false);
-            AddCardsVM.CardChanged += OnCardChanged;
-            EditCardsVM.CardChanged += OnCardChanged;
-
-            // 3) "Filtering" stack: defaults repo --> filtering coordinator --> view-model
-            var filterDefaultsRepo = new FilterDefaultsRepository();
-            var filteringCoordinator = new FilteringService(filterDefaultsRepo);
-            _filteringService = filteringCoordinator;
-            FilterVM = new FilterViewModel(filteringCoordinator);
-            FilterVM.FilterChanged += OnFilterChanged;
+            // 1) build the "shell" VM for MainWindow
+            DataContext = new MainWindowViewModel(connection: DBAccess.connection);
 
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
@@ -194,19 +167,19 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            await _cardListCoordinator.LoadAllCardsAsync(AllCardsVM.Cards);
-            await _cardListCoordinator.LoadMyCollectionAsync(MyCollectionVM.Cards);
-            await _cardListCoordinator.LoadAllCardsForDecksAsync(AllCardsForDecksVM.Cards);
-            await _cardListCoordinator.LoadAllCardsInDecksAsync(AllCardsInDecksVM.Cards);
-            await _cardListCoordinator.LoadColorIconsAsync(ColorIcons.Cards);
+            await _cardListService.LoadAllCardsAsync(VM.AllCardsVM.Cards);
+            await _cardListService.LoadMyCollectionAsync(VM.MyCollectionVM.Cards);
+            await _cardListService.LoadAllCardsForDecksAsync(VM.AllCardsForDecksVM.Cards);
+            await _cardListService.LoadAllCardsInDecksAsync(VM.AllCardsInDecksVM.Cards);
+            await _cardListService.LoadColorIconsAsync(VM.ColorIcons.Cards);
 
-            await FilterVM.InitializeFilterDefaultsAsync();
+            await VM.FilterVM.InitializeFilterDefaultsAsync();
 
-            // Force UI refresh so bindings update
-            OnPropertyChanged(nameof(FilterVM));
-            OnPropertyChanged(nameof(AllCardsVM));
-            OnPropertyChanged(nameof(MyCollectionVM));
-            OnPropertyChanged(nameof(AllCardsForDecksVM));
+            //// Force UI refresh so bindings update
+            //OnPropertyChanged(nameof(VM.FilterVM));
+            //OnPropertyChanged(nameof(VM.AllCardsVM));
+            //OnPropertyChanged(nameof(VM.MyCollectionVM));
+            //OnPropertyChanged(nameof(VM.AllCardsForDecksVM));
 
             Task loadDecks = LoadAllDecksAsync();
             Task populateAllFormatsList = PopulateAllFormatsListAsync();
@@ -308,12 +281,7 @@ namespace CollectaMundo
         #endregion
 
         #region Filter elements handling 
-        private void OnFilterChanged(object? sender, EventArgs e)
-        {
-            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, FilterVM.Filters.Values);
-            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
-            AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
-        }
+
 
         // When combobox textboxes get focus/defocus        
         private void FilterTextTextBox_KeyDown(object sender, KeyEventArgs e)
@@ -365,63 +333,6 @@ namespace CollectaMundo
                 await ShowCardImage.ShowImage(selectedVersion.Uuid);
             }
         }
-
-        #endregion
-
-        #region Pick up events for add to or edit collection 
-        private void OnCardChanged(object? sender, CardChangeEventArgs e)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                switch (e.Type)
-                {
-                    case CardChangeEventArgs.ChangeType.Delete:
-                        var deletedId = e.Removed.Single();
-                        var toRemove = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == deletedId);
-                        if (toRemove != null)
-                        {
-                            MyCollectionVM.Cards.Remove(toRemove);
-                        }
-
-                        break;
-
-                    case CardChangeEventArgs.ChangeType.Upsert:
-                        var incoming = e.Survivor!; // guaranteed non-null in Upsert
-                        var existing = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == incoming.CardId);
-
-                        if (existing != null)
-                        {
-                            existing.CardsOwned = incoming.CardsOwned;
-                            existing.CardsForTrade = incoming.CardsForTrade;
-                            existing.SelectedCondition = incoming.SelectedCondition;
-                            existing.Language = incoming.Language;
-                            existing.SelectedFinish = incoming.SelectedFinish;
-                        }
-                        else
-                        {
-                            MyCollectionVM.Cards.Add(incoming);
-                        }
-
-                        // drop any merged-away IDs
-                        foreach (var removedId in e.Removed)
-                        {
-                            var dup = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == removedId);
-                            if (dup != null)
-                            {
-                                MyCollectionVM.Cards.Remove(dup);
-                            }
-                        }
-                        break;
-                }
-
-                // 3) reapply filters
-                MyCollectionVM.FilteredCards =
-                    _filteringService.ApplyFilters(
-                        MyCollectionVM.Cards,
-                        FilterVM.Filters.Values);
-            });
-        }
-
 
         #endregion
 
@@ -849,8 +760,8 @@ namespace CollectaMundo
             // Update the db views to load prices from the selected retailer
             await DownloadAndPrepDB.CreateViews();
 
-            Task loadAllCards = _cardListCoordinator.LoadAllCardsAsync(AllCardsVM.Cards);
-            Task loadMyCollection = _cardListCoordinator.LoadAllCardsAsync(MyCollectionVM.Cards);
+            Task loadAllCards = _cardListService.LoadAllCardsAsync(VM.AllCardsVM.Cards);
+            Task loadMyCollection = _cardListService.LoadAllCardsAsync(VM.MyCollectionVM.Cards);
 
             await Task.WhenAll(loadAllCards, loadMyCollection);
 
@@ -1038,8 +949,8 @@ namespace CollectaMundo
             GridUtilsMenu.Visibility = Visibility.Collapsed;
 
             // Reset filtering and add/edit cards UI
-            AddCardsVM.StatusMessage = string.Empty;
-            EditCardsVM.StatusMessage = string.Empty;
+            //AddCardsVM.StatusMessage = string.Empty;
+            //EditCardsVM.StatusMessage = string.Empty;
             UtilsInfoLabel.Content = "";
 
 

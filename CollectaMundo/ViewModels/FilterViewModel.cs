@@ -68,6 +68,9 @@ namespace CollectaMundo.ViewModels
                     numericOptions: d.NumericCriteria
                 );
             }
+
+            OnPropertyChanged(nameof(Filters));
+
             NotifyFilterChanged();
         }
 
