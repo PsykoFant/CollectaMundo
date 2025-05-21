@@ -175,12 +175,6 @@ namespace CollectaMundo
 
             await VM.FilterVM.InitializeFilterDefaultsAsync();
 
-            //// Force UI refresh so bindings update
-            //OnPropertyChanged(nameof(VM.FilterVM));
-            //OnPropertyChanged(nameof(VM.AllCardsVM));
-            //OnPropertyChanged(nameof(VM.MyCollectionVM));
-            //OnPropertyChanged(nameof(VM.AllCardsForDecksVM));
-
             Task loadDecks = LoadAllDecksAsync();
             Task populateAllFormatsList = PopulateAllFormatsListAsync();
             await Task.WhenAll(loadDecks, populateAllFormatsList);
@@ -198,7 +192,6 @@ namespace CollectaMundo
             GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
 
             await ShowStatusWindowAsync(false);
-
         }
         public async Task LoadAllDecksAsync()
         {

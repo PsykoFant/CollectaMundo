@@ -57,7 +57,6 @@ namespace CollectaMundo.ViewModels
             FilterVM.FilterChanged += OnFilterChanged;
 
         }
-
         private void OnCardChanged(object? sender, CardChangeEventArgs e)
         {
             // exactly your old MainWindow code, minus the Dispatcher.Invoke:
