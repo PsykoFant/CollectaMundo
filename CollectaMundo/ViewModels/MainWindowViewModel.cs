@@ -3,18 +3,44 @@ using CollectaMundo.Data;
 using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.UICoordinators;
+using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data.SQLite;
+using System.Windows.Input;
 using static CollectaMundo.DomainLogic.Models.CardChangeEventArgs;
 
 namespace CollectaMundo.ViewModels
 {
     public class MainWindowViewModel : INotifyPropertyChanged
     {
-        // 1) INotifyPropertyChanged boilerplate
+        // INotifyPropertyChanged boilerplate
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+        // Page navigation
+        public enum Page
+        {
+            SearchAndFilter,
+            MyCollection,
+            Decks,
+            Utilities
+        }
+        private Page _currentPage = Page.SearchAndFilter;
+        public Page CurrentPage
+        {
+            get => _currentPage;
+            set
+            {
+                if (_currentPage != value)
+                {
+                    _currentPage = value;
+                    OnPropertyChanged(nameof(CurrentPage));
+                    // you can also force the column‐resizer here:
+                    //DataGridColumnResizerBehavior.ForceUpdateCommand.Execute(value);
+                }
+            }
+        }
 
         // 2) The same properties your bindings refer to:
         public CardViewModel AllCardsVM { get; }
@@ -30,6 +56,18 @@ namespace CollectaMundo.ViewModels
         private readonly IFilteringService _filteringService;
         private readonly IFilteringService _filterCoordinator = new FilteringService(new FilterDefaultsRepository());
 
+        // Commands to switch pages
+        public ICommand ShowSearchAndFilterCommand { get; }
+        public ICommand ShowMyCollectionCommand { get; }
+        public ICommand ShowDecksCommand { get; }
+        public ICommand ShowUtilitiesCommand { get; }
+        //public static ICommand ForceUpdateCommand { get; }= new RelayCommand<Page>(page =>
+        //{
+        //    // find the right DataGrid by page (e.g. use a naming convention or pass it as a parameter)
+        //    // or simply call ForceUpdate on *all* of them:
+        //    ForceUpdate(AllCardsDataGrid);
+        //    ForceUpdate(MyCollectionDataGrid);
+        //});
 
         public MainWindowViewModel(SQLiteConnection connection)
         {
@@ -56,7 +94,12 @@ namespace CollectaMundo.ViewModels
             FilterVM = new FilterViewModel(filteringCoordinator);
             FilterVM.FilterChanged += OnFilterChanged;
 
+            ShowSearchAndFilterCommand = new RelayCommand<object>(_ => CurrentPage = Page.SearchAndFilter);
+            ShowMyCollectionCommand = new RelayCommand<object>(_ => CurrentPage = Page.MyCollection);
+            ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
+            ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
         }
+
         private void OnCardChanged(object? sender, CardChangeEventArgs e)
         {
             // exactly your old MainWindow code, minus the Dispatcher.Invoke:

@@ -1,13 +1,17 @@
 TO DO 
 - MVVM refactor
 
- - Add to collectionManager til MVVM!
-
- - Tests!!!
+ - Flyt UI crap til MainWindowViewModel
+ - Få styr på mini logo
+ - Få styr på tekst i update resume
+ - Flyt alt startup load crap in in MainWindowViewModel
+ - Unit of work på de andre tech stakke
+ - Opdater integrationstests
 
   - Card image brug MVVM (unit test)
 	- Fix meld creatures show bug
  - Backup restore brug MVVM (unit test) 
+ - Pris update brug MVVM (unit test)
  - Import brug MVVM (unit test)
  - Deck manager brug MVVM (unit test)
 
