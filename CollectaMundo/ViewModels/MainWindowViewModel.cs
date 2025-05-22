@@ -87,8 +87,16 @@ namespace CollectaMundo.ViewModels
             FilterVM = new FilterViewModel(filteringCoordinator);
             FilterVM.FilterChanged += OnFilterChanged;
 
-            ShowSearchAndFilterCommand = new RelayCommand<object>(_ => CurrentPage = Page.SearchAndFilter);
-            ShowMyCollectionCommand = new RelayCommand<object>(_ => CurrentPage = Page.MyCollection);
+            ShowSearchAndFilterCommand = new RelayCommand<object>(_ =>
+            {
+                CurrentPage = Page.SearchAndFilter;
+                AddCardsVM.StatusMessage = string.Empty;
+            });
+            ShowMyCollectionCommand = new RelayCommand<object>(_ =>
+            {
+                CurrentPage = Page.MyCollection;
+                EditCardsVM.StatusMessage = string.Empty;
+            });
             ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
         }

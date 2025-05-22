@@ -107,6 +107,8 @@ namespace CollectaMundo.ViewModels
         {
             if (param is IEnumerable<object> selectedItems)
             {
+                StatusMessage = String.Empty; // Clear status message
+
                 var cards = selectedItems.OfType<CardSet>();
                 foreach (var card in cards)
                 {
@@ -119,14 +121,14 @@ namespace CollectaMundo.ViewModels
 
                 // Now increment the trigger to signal the view to refresh columns.
                 RefreshColumnsTrigger++;
-
-                StatusMessage = String.Empty; // Clear status message
             }
         });
         public ICommand EditSelectedCardsCommand => new RelayCommand<object>(async param =>
         {
             if (param is IEnumerable<object> selectedItems)
             {
+                StatusMessage = String.Empty; // Clear status message
+
                 var cards = selectedItems.OfType<CardSet>();
                 foreach (var card in cards)
                 {
@@ -337,8 +339,6 @@ namespace CollectaMundo.ViewModels
                 }
             }
         }
-
-        // Collapse when no message
         public Visibility StatusVisibility
             => string.IsNullOrEmpty(StatusMessage)
                 ? Visibility.Collapsed

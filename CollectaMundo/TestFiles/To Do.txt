@@ -1,7 +1,6 @@
 TO DO 
 - MVVM refactor
 
- - Flyt UI crap til MainWindowViewModel
  - Få styr på mini logo
  - Få styr på tekst i update resume
  - Flyt alt startup load crap in in MainWindowViewModel

@@ -50,27 +50,6 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid x:Name="GridTopMenu" Grid.Row="0" Grid.ColumnSpan="3" VerticalAlignment="Top" HorizontalAlignment="Center" Height="40" IsEnabled="False">
-            <!--<Button x:Name="MenuSearchAndFilterButton" Content="All Cards" HorizontalAlignment="Center" Margin="0,5,510,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}" Click="MenuSearchAndFilter_Click">
-                <Button.Effect>
-                    <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
-                </Button.Effect>
-            </Button>-->
-            <!--<Button x:Name="MenuMyCollectionButton" Content="My Collection" HorizontalAlignment="Center" Margin="0,5,170,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}" Click="MenuMyCollection_Click">
-                <Button.Effect>
-                    <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
-                </Button.Effect>
-            </Button>-->
-            <!--<Button x:Name="MenuDecksButton" Content="Decks" HorizontalAlignment="Center" Margin="170,5,0,0" VerticalAlignment="Top" Width="160"  Height="30" Style="{StaticResource TopMenuButtonStyle}" Click="MenuDecks_Click">
-                <Button.Effect>
-                    <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
-                </Button.Effect>
-            </Button>-->
-            <!--<Button x:Name="MenuUtilsButton" Content="Utilities" HorizontalAlignment="Left" Margin="510,5,0,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}" Click="MenuUtilsButton_Click">
-                <Button.Effect>
-                    <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
-                </Button.Effect>
-            </Button>-->            
-            
             <Button Command="{Binding ShowSearchAndFilterCommand}"
                     Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static viewmodels:Page.SearchAndFilter}}"
                     Content="All Cards" 
@@ -892,8 +871,7 @@
                     Visibility="{Binding ElementName=AllCardsDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
                     Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
                     CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
-                <ScrollViewer HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                    Visibility="{Binding AddCardsVM.StatusVisibility}">
+                <ScrollViewer HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                     <TextBlock TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding AddCardsVM.StatusMessage}"/>
                 </ScrollViewer>            
                 <!--Cards to add listview-->
@@ -1230,9 +1208,7 @@
                 </DataGrid>
             </Grid>
             <!-- My Collection -->
-            <Grid Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},
-                Converter={StaticResource PageToVisibilityConverter},
-               ConverterParameter={x:Static viewmodels:Page.MyCollection}}" d:IsHidden="True">
+            <Grid Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}" d:IsHidden="True">
                 <Label Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" Visibility="{Binding EditCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}">
                     <Label.Content>
@@ -1256,9 +1232,8 @@
                     Visibility="{Binding ElementName=MyCollectionDataGrid, Path=SelectedItems.Count, Converter={StaticResource CountToVisibilityConverter}}"
                     Command="{Binding EditCardsVM.EditSelectedCardsCommand}"
                     CommandParameter="{Binding SelectedItems, ElementName=MyCollectionDataGrid}" />
-                <ScrollViewer HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                    Visibility="{Binding EditCardsVM.StatusVisibility}">
-                    <TextBlock TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding EditCardsVM.StatusMessage}"/>
+                <ScrollViewer HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                    <TextBlock Text="{Binding EditCardsVM.StatusMessage}" TextWrapping="Wrap" VerticalAlignment="Top" />
                 </ScrollViewer>
 
                 <!--Cards to edit-->
