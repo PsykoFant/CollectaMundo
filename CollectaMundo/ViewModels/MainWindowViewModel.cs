@@ -6,6 +6,7 @@ using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data.SQLite;
+using System.Windows;
 using System.Windows.Input;
 using static CollectaMundo.DomainLogic.Models.CardChangeEventArgs;
 
@@ -25,17 +26,23 @@ namespace CollectaMundo.ViewModels
             get => _currentPage;
             set
             {
-                if (_currentPage != value)
-                {
-                    _currentPage = value;
-                    OnPropertyChanged(nameof(CurrentPage));
-                    // you can also force the column‐resizer here:
-                    //DataGridColumnResizerBehavior.ForceUpdateCommand.Execute(value);
-                }
+                if (_currentPage == value) return;
+                _currentPage = value;
+
+                // clear the “old” page's status
+                if (_currentPage == Page.MyCollection)
+                    AddCardsVM.StatusMessage = string.Empty;
+                else if (_currentPage == Page.SearchAndFilter)
+                    EditCardsVM.StatusMessage = string.Empty;
+
+                OnPropertyChanged(nameof(CurrentPage));
+                // make sure IdleVisibility re-evaluates now that one status has been cleared
+                OnPropertyChanged(nameof(IdleVisibility));
             }
         }
 
-        // 2) The same properties your bindings refer to:
+
+        // Viewmodels
         public CardViewModel AllCardsVM { get; }
         public CardViewModel AllCardsForDecksVM { get; }
         public CardViewModel AllCardsInDecksVM { get; }
@@ -44,7 +51,24 @@ namespace CollectaMundo.ViewModels
         public EditCollectionViewModel AddCardsVM { get; }
         public EditCollectionViewModel EditCardsVM { get; }
         public FilterViewModel FilterVM { get; }
+
+
+        // Misc. properties and fields
         public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [[50, 50], [50, 50], [50]];
+
+        // Hide mini logo at appropriate times
+        public Visibility IdleVisibility
+        {
+            get
+            {
+                // if *either* status box is Visible, hide our logo
+                bool addBusy = AddCardsVM.StatusVisibility == Visibility.Visible;
+                bool editBusy = EditCardsVM.StatusVisibility == Visibility.Visible;
+                return (addBusy || editBusy)
+                  ? Visibility.Collapsed
+                  : Visibility.Visible;
+            }
+        }
 
         private readonly IFilteringService _filteringService;
         private readonly IFilteringService _filterCoordinator = new FilteringService(new FilterDefaultsRepository());
@@ -54,14 +78,8 @@ namespace CollectaMundo.ViewModels
         public ICommand ShowMyCollectionCommand { get; }
         public ICommand ShowDecksCommand { get; }
         public ICommand ShowUtilitiesCommand { get; }
-        //public static ICommand ForceUpdateCommand { get; }= new RelayCommand<Page>(page =>
-        //{
-        //    // find the right DataGrid by page (e.g. use a naming convention or pass it as a parameter)
-        //    // or simply call ForceUpdate on *all* of them:
-        //    ForceUpdate(AllCardsDataGrid);
-        //    ForceUpdate(MyCollectionDataGrid);
-        //});
 
+        // Constructor
         public MainWindowViewModel(SQLiteConnection connection)
         {
             AllCardsVM = new CardViewModel();
@@ -87,20 +105,21 @@ namespace CollectaMundo.ViewModels
             FilterVM = new FilterViewModel(filteringCoordinator);
             FilterVM.FilterChanged += OnFilterChanged;
 
+            HookUpStatusChanged();
+
             ShowSearchAndFilterCommand = new RelayCommand<object>(_ =>
             {
                 CurrentPage = Page.SearchAndFilter;
-                AddCardsVM.StatusMessage = string.Empty;
             });
             ShowMyCollectionCommand = new RelayCommand<object>(_ =>
             {
                 CurrentPage = Page.MyCollection;
-                EditCardsVM.StatusMessage = string.Empty;
             });
             ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
         }
 
+        // When a card is added/updated/deleted from collection
         private void OnCardChanged(object? sender, CardChangeEventArgs e)
         {
             // exactly your old MainWindow code, minus the Dispatcher.Invoke:
@@ -144,14 +163,21 @@ namespace CollectaMundo.ViewModels
             }
 
             // reapply filters
-            MyCollectionVM.FilteredCards =
-                _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
         }
+
+        // When filters are updated
         private void OnFilterChanged(object? sender, EventArgs e)
         {
             AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, FilterVM.Filters.Values);
             MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
             AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
+        }
+
+        private void HookUpStatusChanged()
+        {
+            AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") OnPropertyChanged(nameof(IdleVisibility)); };
+            EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") OnPropertyChanged(nameof(IdleVisibility)); };
         }
 
     }

@@ -839,7 +839,7 @@
                    RenderTransformOrigin="0.5,0.5"
                    Margin="0,70,0,0"
                    Opacity="0.8" 
-                   Visibility="{Binding AddCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}"/>
+                   Visibility="{Binding IdleVisibility}"/>
             <ScrollViewer HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <TextBlock HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
             </ScrollViewer>

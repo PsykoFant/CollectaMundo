@@ -9,7 +9,7 @@ namespace CollectaMundo.ViewModels
     public class FilterViewModel : INotifyPropertyChanged
     {
         // Injected dependencies
-        private readonly IFilteringService _coord;
+        private readonly IFilteringService _service;
 
         // Exposed filters and summary
         public Dictionary<string, FilterItemViewModel> Filters { get; } = [];
@@ -34,9 +34,9 @@ namespace CollectaMundo.ViewModels
         protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         // Constructor now takes interfaces
-        public FilterViewModel(IFilteringService coord)
+        public FilterViewModel(IFilteringService service)
         {
-            _coord = coord;
+            _service = service;
             // pre-populate empty so bindings don’t break…
             foreach (var key in FilterCriteriaMappings.CriteriaMappings.Keys)
                 Filters[key] = new FilterItemViewModel(
@@ -50,13 +50,13 @@ namespace CollectaMundo.ViewModels
 
             ClearFiltersCommand = new RelayCommand<object>(_ =>
             {
-                _coord.ResetAllFilters(Filters.Values);
+                _service.ResetAllFilters(Filters.Values);
                 NotifyFilterChanged();
             });
         }
         public async Task InitializeFilterDefaultsAsync()
         {
-            var defs = await _coord.LoadDefaultsAsync();
+            var defs = await _service.LoadDefaultsAsync();
             foreach (var d in defs)
             {
                 Filters[d.CriteriaKey] = new FilterItemViewModel(
@@ -77,7 +77,7 @@ namespace CollectaMundo.ViewModels
         // Called by each FilterItemViewModel on change
         public void NotifyFilterChanged()
         {
-            FilterSummary = _coord.BuildSummary(Filters.Values);
+            FilterSummary = _service.BuildSummary(Filters.Values);
             FilterChanged?.Invoke(this, EventArgs.Empty);
         }
     }

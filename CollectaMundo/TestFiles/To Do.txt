@@ -1,9 +1,7 @@
 TO DO 
 - MVVM refactor
 
- - Få styr på mini logo
- - Få styr på tekst i update resume
- - Flyt alt startup load crap in in MainWindowViewModel
+ - Flyt alt startup load crap ind i MainWindowViewModel
  - Unit of work på de andre tech stakke
  - Opdater integrationstests
 

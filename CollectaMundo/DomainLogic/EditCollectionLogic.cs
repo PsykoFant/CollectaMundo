@@ -70,6 +70,7 @@ namespace CollectaMundo.DomainLogic
             {
                 Name = src.Name,
                 ManaCostRaw = src.ManaCostRaw,
+                ManaCost = src.ManaCost,
                 ManaValue = src.ManaValue,
                 Colors = src.Colors,
                 Type = src.Type,

@@ -75,18 +75,8 @@ namespace CollectaMundo
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-
-
         // Flag to track startup phase
         public bool _isStartup = true;
-        public enum CardListObject
-        {
-            AllCards,
-            MyCollection,
-            AllCardsForDecks,
-            CardsInDecks,
-            ColorIcons,
-        }
         public enum OperatorType
         {
             // Basic logical operators
@@ -131,8 +121,6 @@ namespace CollectaMundo
         Button saveButton = new();
         Button cancelButton = new();
         string columnToEdit = string.Empty;
-
-
 
         // Read the price retailer from appsettings.json
         public string? appsettingsRetailer = ConfigurationManager.GetSetting("PriceInfo:Retailer") as string;
@@ -183,13 +171,6 @@ namespace CollectaMundo
 
             CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
             CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
-
-            // Start on the search and filter all cards page            
-            //ResetGrids();
-            //MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
-            //LogoSmall.Visibility = Visibility.Visible;
-            //GridFiltering.Visibility = Visibility.Visible;
-            //GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
 
             await ShowStatusWindowAsync(false);
         }

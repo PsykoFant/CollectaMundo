@@ -20,12 +20,12 @@ namespace CollectaMundo.ViewModels
 
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
 
-        private readonly IEditCollectionService _coordinator;
+        private readonly IEditCollectionService _service;
         private readonly bool _removeCardWhenZero;
         // Constructor
-        public EditCollectionViewModel(IEditCollectionService coordinator, bool removeCardWhenZero)
+        public EditCollectionViewModel(IEditCollectionService service, bool removeCardWhenZero)
         {
-            _coordinator = coordinator ?? throw new ArgumentNullException(nameof(coordinator));
+            _service = service ?? throw new ArgumentNullException(nameof(service));
             _removeCardWhenZero = removeCardWhenZero;
             CardsToAdd.CollectionChanged += CardsToAdd_CollectionChanged;
         }
@@ -113,7 +113,7 @@ namespace CollectaMundo.ViewModels
                 foreach (var card in cards)
                 {
                     // Call the manager to add the card to the in-memory collection.
-                    await _coordinator.AddCardToAddCardsListViewAsync(card, CardsToAdd);
+                    await _service.AddCardToAddCardsListViewAsync(card, CardsToAdd);
                 }
 
                 // Increment the trigger to signal the view to clear selection.
@@ -133,7 +133,7 @@ namespace CollectaMundo.ViewModels
                 foreach (var card in cards)
                 {
                     // Call the manager to add the card to the in-memory collection.
-                    await _coordinator.AddCardToEditCardsListViewAsync(card, CardsToAdd);
+                    await _service.AddCardToEditCardsListViewAsync(card, CardsToAdd);
                 }
 
                 // Increment the trigger to signal the view to clear selection.
@@ -194,8 +194,8 @@ namespace CollectaMundo.ViewModels
         });
 
         // Commands - submit cards from listview
-        public ICommand SubmitNewCardsCommand => new RelayCommand<object>(async _ => await SubmitBatchAsync(CardsToAdd, cards => _coordinator.SubmitCardBatchAsync(cards), clearAfter: true, summaryTitle: "Added the following cards to your collection:"));
-        public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async _ => await SubmitBatchAsync(CardsToAdd, cards => _coordinator.SubmitCardBatchAsync(cards), clearAfter: true, summaryTitle: "Updated the following cards with these values:"));
+        public ICommand SubmitNewCardsCommand => new RelayCommand<object>(async _ => await SubmitBatchAsync(CardsToAdd, cards => _service.SubmitCardBatchAsync(cards), clearAfter: true, summaryTitle: "Added the following cards to your collection:"));
+        public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async _ => await SubmitBatchAsync(CardsToAdd, cards => _service.SubmitCardBatchAsync(cards), clearAfter: true, summaryTitle: "Updated the following cards with these values:"));
         public ICommand SubmitNewCardsWithDefaultsCommand => new RelayCommand<object>(async param =>
           {
               if (param is not IEnumerable<object> sel) { return; }
@@ -203,7 +203,7 @@ namespace CollectaMundo.ViewModels
               var originals = sel.OfType<CardSet>().ToList();
               if (originals.Count == 0) { return; }
 
-              await SubmitBatchAsync(originals, cards => _coordinator.SubmitNewCardsWithDefaultsBatchAsync(cards), clearAfter: false, summaryTitle: "Added the following cards with default values:");
+              await SubmitBatchAsync(originals, cards => _service.SubmitNewCardsWithDefaultsBatchAsync(cards), clearAfter: false, summaryTitle: "Added the following cards with default values:");
           });
         public ICommand DeleteSelectedCardsCommand => new RelayCommand<object>(async param =>
         {
@@ -225,7 +225,7 @@ namespace CollectaMundo.ViewModels
             }).ToList();
 
             // 3) Reuse SubmitBatchAsync helper,  
-            await SubmitBatchAsync(toDelete, cards => _coordinator.SubmitCardBatchAsync(cards), clearAfter: true, summaryTitle: "Deleted the following cards from your collection:");
+            await SubmitBatchAsync(toDelete, cards => _service.SubmitCardBatchAsync(cards), clearAfter: true, summaryTitle: "Deleted the following cards from your collection:");
         });
         public ICommand PutAllForTradeCommand => new RelayCommand<object>(async param =>
         {
@@ -248,7 +248,7 @@ namespace CollectaMundo.ViewModels
             }
 
             // 3) Call SubmitBatchAsync helper to persist & raise events
-            await SubmitBatchAsync(cards, cards => _coordinator.SubmitCardBatchAsync(cards), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
+            await SubmitBatchAsync(cards, cards => _service.SubmitCardBatchAsync(cards), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
         });
         public ICommand SetNoneForTradeCommand => new RelayCommand<object>(async param =>
         {
@@ -271,7 +271,7 @@ namespace CollectaMundo.ViewModels
             }
 
             // 3) Call SubmitBatchAsync helper to persist & raise events
-            await SubmitBatchAsync(cards, cards => _coordinator.SubmitCardBatchAsync(cards), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
+            await SubmitBatchAsync(cards, cards => _service.SubmitCardBatchAsync(cards), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
 
         });
 
