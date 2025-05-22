@@ -1,4 +1,5 @@
-﻿using System.Data.SQLite;
+﻿using CollectaMundo.ApplicationServices;
+using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -19,7 +20,7 @@ namespace CollectaMundo
                 MainWindow.CurrentInstance.GridTopMenu.IsEnabled = false;
                 MainWindow.CurrentInstance.GridSideMenu.IsEnabled = false;
 
-                string? dateString = ConfigurationManager.GetSetting("PriceInfo:PricesUpdatedDate") as string;
+                string? dateString = JsonAppSettings.GetSetting("PriceInfo:PricesUpdatedDate") as string;
 
                 if (DateTime.TryParse(dateString, out DateTime priceInfoDate))
                 {
@@ -188,7 +189,7 @@ namespace CollectaMundo
                 }
 
                 // Time to update settings
-                ConfigurationManager.UpdatePriceInfo(createdAt, null);
+                JsonAppSettings.UpdatePriceInfo(createdAt, null);
             }
             catch (Exception ex)
             {

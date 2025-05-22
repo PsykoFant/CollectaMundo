@@ -1,5 +1,6 @@
 using CollectaMundo.ApplicationServices;
 using CollectaMundo.Data;
+using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Presentation.Behaviors;
 using CollectaMundo.ViewModels;
@@ -123,26 +124,47 @@ namespace CollectaMundo
         string columnToEdit = string.Empty;
 
         // Read the price retailer from appsettings.json
-        public string? appsettingsRetailer = ConfigurationManager.GetSetting("PriceInfo:Retailer") as string;
+        public string? appsettingsRetailer = JsonAppSettings.GetSetting("PriceInfo:Retailer") as string;
 
         #endregion
-
         public MainWindow()
         {
             InitializeComponent();
             _currentInstance = this;
-            _cardListService = new CardListService(new CardListRepository());
+
+            // create your two little helpers exactly once
+            var settings = new JsonAppSettings();             // implements IAppSettings
+            var dbFactory = new DbConnectionFactory(settings); // implements IDbConnectionFactory
+
+            // build your repository & service stack
+            var cardListRepo = new CardListRepository(dbFactory);
+            var cardListService = new CardListService(cardListRepo);
+            var filterDefaultsRepo = new FilterDefaultsRepository(dbFactory);
+            var filterDefaultsSvc = new FilterDefaultsService(filterDefaultsRepo);
+            var filteringService = new FilteringService(filterDefaultsRepo);
+            var editCollRepo = new EditCollectionRepository(dbFactory);
+            var editCollLogic = new EditCollectionLogic(editCollRepo);
+            var editCollSvc = new EditCollectionService(editCollRepo, editCollLogic);
+
+            // now hand them all straight into your ViewModel
+            var vm = new MainWindowViewModel(
+                settings,
+                dbFactory,
+                cardListService,
+                filterDefaultsSvc,
+                filteringService,
+                editCollSvc
+            );
+
+            DataContext = vm;
 
             Loaded += async (sender, args) =>
             {
                 await ShowStatusWindowAsync(true, "Just a quick system integrity check …");
                 await DownloadAndPrepDB.SystemIntegrityCheckAsync();
-                await LoadDataIntoUiElements();
+                await vm.InitializeAsync();
                 _isStartup = false;
             };
-
-            // 1) build the "shell" VM for MainWindow
-            DataContext = new MainWindowViewModel(connection: DBAccess.connection);
 
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
@@ -727,7 +749,7 @@ namespace CollectaMundo
                 };
 
                 // Update the retailer in appsettings
-                ConfigurationManager.UpdatePriceInfo(null, retailer);
+                JsonAppSettings.UpdatePriceInfo(null, retailer);
                 appsettingsRetailer = retailer;
             }
 

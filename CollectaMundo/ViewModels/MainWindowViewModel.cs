@@ -5,7 +5,6 @@ using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Data.SQLite;
 using System.Windows;
 using System.Windows.Input;
 using static CollectaMundo.DomainLogic.Models.CardChangeEventArgs;
@@ -80,7 +79,14 @@ namespace CollectaMundo.ViewModels
         public ICommand ShowUtilitiesCommand { get; }
 
         // Constructor
-        public MainWindowViewModel(SQLiteConnection connection)
+        public MainWindowViewModel(
+    IAppSettings settings,
+    IDbConnectionFactory dbFactory,
+    ICardListService cardListSvc,
+    IFilterDefaultsService filterDefaultsSvc,
+    IFilteringService filterSvc,
+    IEditCollectionService editCollSvc
+)
         {
             AllCardsVM = new CardViewModel();
             MyCollectionVM = new CardViewModel();
