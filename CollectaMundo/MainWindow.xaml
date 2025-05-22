@@ -681,7 +681,7 @@
                           HorizontalAlignment="Right"
                           ItemsSource="{Binding AvailableOperators}"
                           SelectedItem="{Binding OperatorSelection, Mode=TwoWay}"
-                          Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">>
+                          Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">
                 </ComboBox>
 
                 <!--SelectedCondition-->

@@ -876,53 +876,6 @@ namespace CollectaMundo
         #endregion
 
         #region Top menu navigation
-        private void MenuSearchAndFilter_Click(object sender, RoutedEventArgs e)
-        {
-            ResetGrids();
-            //MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
-
-            MyCollectionDataGrid.Dispatcher.BeginInvoke(new Action(() =>
-            {
-                DataGridColumnResizerBehavior.ForceUpdate(AllCardsDataGrid);
-            }), System.Windows.Threading.DispatcherPriority.Loaded);
-
-            GridFiltering.Visibility = Visibility.Visible;
-            //GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
-        }
-        private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
-        {
-            ResetGrids();
-
-            MyCollectionDataGrid.Dispatcher.BeginInvoke(new Action(() =>
-            {
-                DataGridColumnResizerBehavior.ForceUpdate(MyCollectionDataGrid);
-            }), System.Windows.Threading.DispatcherPriority.Loaded);
-
-            //MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
-            GridFiltering.Visibility = Visibility.Visible;
-            //GridMyCollection.Visibility = Visibility.Visible;
-            //LanguageComboBox.Visibility = Visibility.Visible;
-            //LanguageOperatorComboBox.Visibility = Visibility.Visible;
-            //SelectedFinishComboBox.Visibility = Visibility.Visible;
-            //SelectedFinishOperatorComboBox.Visibility = Visibility.Visible;
-            //SelectedConditionComboBox.Visibility = Visibility.Visible;
-            //SelectedConditionOperatorComboBox.Visibility = Visibility.Visible;
-            //CheckBoxCardsForTrade.Visibility = Visibility.Visible;
-            //CheckBoxCardsNotForTrade.Visibility = Visibility.Visible;
-        }
-        private void MenuDecks_Click(object sender, RoutedEventArgs e)
-        {
-            ResetGrids();
-            //MenuDecksButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
-            GridDecks.Visibility = Visibility.Visible;
-        }
-        private void MenuUtilsButton_Click(object sender, RoutedEventArgs e)
-        {
-            ResetGrids();
-            //MenuUtilsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
-            GridUtilsMenu.Visibility = Visibility.Visible;
-            GridUtilitiesSection.Visibility = Visibility.Visible;
-        }
         public void ResetGrids()
         {
             // Reset top menu
