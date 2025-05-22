@@ -6,6 +6,7 @@
     xmlns:local="clr-namespace:CollectaMundo"
     xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:core="clr-namespace:Microsoft.Xaml.Behaviors.Core;assembly=Microsoft.Xaml.Behaviors"
+    xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"
     xmlns:converters="clr-namespace:CollectaMundo.Presentation.Converters"
     xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
     xmlns:validation="clr-namespace:CollectaMundo.Presentation.Validation"
@@ -29,6 +30,8 @@
         <converters:CountToSummaryConverter x:Key="CountToSummaryConverter"/>
         <converters:OperatorToSymbolConverter x:Key="OperatorToSymbolConverter"/>
         <converters:InverseVisibilityConverter x:Key="InverseVisibility"/>
+        <converters:PageToBrushConverter x:Key="PageToBrushConverter" SelectedBrush="#5cb9ca" DefaultBrush="#FFDDDDDD"/>
+        <converters:PageToVisibilityConverter x:Key="PageToVisibilityConverter" VisibleVisibility="Visible" HiddenVisibility="Collapsed" />
     </Window.Resources>
     <Window.Background>
         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
@@ -47,29 +50,55 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid x:Name="GridTopMenu" Grid.Row="0" Grid.ColumnSpan="3" VerticalAlignment="Top" HorizontalAlignment="Center" Height="40" IsEnabled="False">
-            <Button x:Name="MenuSearchAndFilterButton" Content="All Cards" HorizontalAlignment="Center" Margin="0,5,510,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}" Click="MenuSearchAndFilter_Click">
+            <!--<Button x:Name="MenuSearchAndFilterButton" Content="All Cards" HorizontalAlignment="Center" Margin="0,5,510,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}" Click="MenuSearchAndFilter_Click">
                 <Button.Effect>
                     <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
                 </Button.Effect>
-            </Button>
+            </Button>-->
             <!--<Button x:Name="MenuMyCollectionButton" Content="My Collection" HorizontalAlignment="Center" Margin="0,5,170,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}" Click="MenuMyCollection_Click">
                 <Button.Effect>
                     <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
                 </Button.Effect>
             </Button>-->
-
-            <Button  Command="{Binding ShowMyCollectionCommand}" 
-                     Background="{Binding CurrentPage, 
-                Converter={StaticResource PageToBrushConverter},
-                ConverterParameter={x:Static local:Page.MyCollection}}"  
-    Content="My Collection" />
-
-            <Button x:Name="MenuDecksButton" Content="Decks" HorizontalAlignment="Center" Margin="170,5,0,0" VerticalAlignment="Top" Width="160"  Height="30" Style="{StaticResource TopMenuButtonStyle}" Click="MenuDecks_Click">
+            <!--<Button x:Name="MenuDecksButton" Content="Decks" HorizontalAlignment="Center" Margin="170,5,0,0" VerticalAlignment="Top" Width="160"  Height="30" Style="{StaticResource TopMenuButtonStyle}" Click="MenuDecks_Click">
+                <Button.Effect>
+                    <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
+                </Button.Effect>
+            </Button>-->
+            <!--<Button x:Name="MenuUtilsButton" Content="Utilities" HorizontalAlignment="Left" Margin="510,5,0,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}" Click="MenuUtilsButton_Click">
+                <Button.Effect>
+                    <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
+                </Button.Effect>
+            </Button>-->            
+            
+            <Button Command="{Binding ShowSearchAndFilterCommand}"
+                    Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static viewmodels:Page.SearchAndFilter}}"
+                    Content="All Cards" 
+                     HorizontalAlignment="Center" Margin="0,5,510,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}">
                 <Button.Effect>
                     <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
                 </Button.Effect>
             </Button>
-            <Button x:Name="MenuUtilsButton" Content="Utilities" HorizontalAlignment="Left" Margin="510,5,0,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}" Click="MenuUtilsButton_Click">
+            <Button Command="{Binding ShowMyCollectionCommand}"
+                    Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}"
+                    Content="My Collection" 
+                     HorizontalAlignment="Center" Margin="0,5,170,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}">
+                <Button.Effect>
+                    <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
+                </Button.Effect>
+            </Button>
+            <Button Command="{Binding ShowDecksCommand}"
+                    Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static viewmodels:Page.Decks}}"
+                    Content="Decks" 
+                     HorizontalAlignment="Center" Margin="170,5,0,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}">
+                <Button.Effect>
+                    <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
+                </Button.Effect>
+            </Button>
+            <Button Command="{Binding ShowUtilitiesCommand}"
+                    Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static viewmodels:Page.Utilities}}"
+                    Content="Decks" 
+                     HorizontalAlignment="Center" Margin="510,5,0,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}">
                 <Button.Effect>
                     <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
                 </Button.Effect>
@@ -586,12 +615,12 @@
                 </TextBox>                
 
                 <!--Language-->
-                <ComboBox x:Name="LanguageComboBox"
-                          DataContext="{Binding FilterVM.Filters[Language]}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[Language]}"
                           IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                           HorizontalAlignment="Left" VerticalAlignment="Top" 
                           Margin="10,515,0,0" 
-                          Width="180" Height="20">
+                          Width="180" Height="20"
+                          Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -645,23 +674,23 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox x:Name="LanguageOperatorComboBox"
-                          DataContext="{Binding FilterVM.Filters[Language]}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[Language]}"
                           Width="60"
                           Margin="190,515,0,0"
                           VerticalAlignment="Top"
                           HorizontalAlignment="Right"
                           ItemsSource="{Binding AvailableOperators}"
-                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
+                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}"
+                          Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">>
                 </ComboBox>
 
                 <!--SelectedCondition-->
-                <ComboBox x:Name="SelectedConditionComboBox"
-                          DataContext="{Binding FilterVM.Filters[SelectedCondition]}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[SelectedCondition]}"
                           IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                           HorizontalAlignment="Left" VerticalAlignment="Top" 
                           Margin="10,545,0,0" 
-                          Width="180" Height="20">
+                          Width="180" Height="20"
+                          Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -715,23 +744,23 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox x:Name="SelectedConditionOperatorComboBox"
-                          DataContext="{Binding FilterVM.Filters[SelectedCondition]}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[SelectedCondition]}"
                           Width="60"
                           Margin="190,545,0,0"
                           VerticalAlignment="Top"
                           HorizontalAlignment="Right"
                           ItemsSource="{Binding AvailableOperators}"
-                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
+                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}"
+                          Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">
                 </ComboBox>
 
                 <!--SelectedFinish-->
-                <ComboBox x:Name="SelectedFinishComboBox"
-                          DataContext="{Binding FilterVM.Filters[SelectedFinish]}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[SelectedFinish]}"
                           IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                           HorizontalAlignment="Left" VerticalAlignment="Top" 
                           Margin="10,485,0,0" 
-                          Width="180" Height="20">
+                          Width="180" Height="20"
+                          Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">
                     <ComboBox.Template>
                         <ControlTemplate TargetType="{x:Type ComboBox}">
                             <Grid>
@@ -785,22 +814,24 @@
                         </ControlTemplate>
                     </ComboBox.Template>
                 </ComboBox>
-                <ComboBox x:Name="SelectedFinishOperatorComboBox"
-                          DataContext="{Binding FilterVM.Filters[SelectedFinish]}"
+                <ComboBox DataContext="{Binding FilterVM.Filters[SelectedFinish]}"
                           Width="60"
                           Margin="190,485,0,0"
                           VerticalAlignment="Top"
                           HorizontalAlignment="Right"
                           ItemsSource="{Binding AvailableOperators}"
-                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}">
+                          SelectedItem="{Binding OperatorSelection, Mode=TwoWay}"
+                          Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">
                 </ComboBox>
 
-                <CheckBox  x:Name="CheckBoxCardsForTrade" Content="Filter on cards for trade"
+                <CheckBox  Content="Filter on cards for trade"
                            IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsTradeChecked, Mode=TwoWay}"
-                           HorizontalAlignment="Left" Margin="10,570,0,0" VerticalAlignment="Top"/>
-                <CheckBox x:Name="CheckBoxCardsNotForTrade" Content="Filter on cards NOT for trade"
+                           HorizontalAlignment="Left" Margin="10,570,0,0" VerticalAlignment="Top"
+                           Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}" />
+                <CheckBox Content="Filter on cards NOT for trade"
                           IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsNotTradeChecked, Mode=TwoWay}"
-                          HorizontalAlignment="Left" Margin="10,590,0,0" VerticalAlignment="Top"/>
+                          HorizontalAlignment="Left" Margin="10,590,0,0" VerticalAlignment="Top"
+                          Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}"/>
 
             </Grid>
             <Grid x:Name="GridUtilsMenu" Visibility="Collapsed">
@@ -833,9 +864,13 @@
             <ScrollViewer HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <TextBlock HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
             </ScrollViewer>
-            <Grid x:Name="GridSearchAndFilterAllCards" d:IsHidden="True">
-                <Label x:Name="HeadlineSearchAndFilter" Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
-                <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" Visibility="{Binding AddCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}">
+            <!-- Search and Filter -->
+            <Grid Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window}, 
+                Converter={StaticResource PageToVisibilityConverter},
+                ConverterParameter={x:Static viewmodels:Page.SearchAndFilter}}" d:IsHidden="True">
+                <Label Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
+                <Label Visibility="{Binding AddCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}"
+                   HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" >
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
                             <Binding Path="AllCardsVM.FilteredCount"/>
@@ -845,7 +880,7 @@
                 </Label>
                 <Button Content="Submit these cards to my collection" HorizontalAlignment="Right" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Height="20" 
                         Visibility="{Binding AddCardsVM.CollectionEditVisibility}"
-                        Command="{Binding AddCardsVM.SubmitNewCardsCommand}" />                
+                        Command="{Binding AddCardsVM.SubmitNewCardsCommand}" />
                 <Button Content="Clear cards without submitting"
                     HorizontalAlignment="Right" Margin="0,45,210,0" VerticalAlignment="Top"
                     Width="200" Height="20"
@@ -860,14 +895,13 @@
                 <ScrollViewer HorizontalAlignment="Left" Margin="0,40,0,0" VerticalAlignment="Top" Height="187" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
                     Visibility="{Binding AddCardsVM.StatusVisibility}">
                     <TextBlock TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding AddCardsVM.StatusMessage}"/>
-                </ScrollViewer>
-                
+                </ScrollViewer>            
                 <!--Cards to add listview-->
                 <ListView DataContext="{Binding AddCardsVM}"
-                          ItemsSource="{Binding CardsToAdd}"
-                          Visibility="{Binding CollectionEditVisibility}"                          
-                          behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding RefreshColumnsTrigger, Mode=OneWay}"                          
-                          Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
+                              ItemsSource="{Binding CardsToAdd}"
+                              Visibility="{Binding CollectionEditVisibility}"                          
+                              behaviors:ListViewColumnRefreshBehavior.RefreshTrigger="{Binding RefreshColumnsTrigger, Mode=OneWay}"                          
+                              Margin="0,70,0,0" VerticalAlignment="Top" Height="170">
                     <ListView.ItemContainerStyle>
                         <Style TargetType="ListViewItem">
                             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -881,7 +915,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding Conditions}"
-                                                  SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}">
+                                                      SelectedItem="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}">
                                             <i:Interaction.Triggers>
                                                 <i:EventTrigger EventName="SelectionChanged">
                                                     <i:InvokeCommandAction Command="{Binding DataContext.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"/>
@@ -895,7 +929,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding AvailableFinishes}" 
-                                                  SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}">
+                                                      SelectedItem="{Binding SelectedFinish, UpdateSourceTrigger=PropertyChanged}">
                                             <i:Interaction.Triggers>
                                                 <i:EventTrigger EventName="SelectionChanged">
                                                     <i:InvokeCommandAction Command="{Binding DataContext.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"/>
@@ -909,7 +943,7 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <ComboBox ItemsSource="{Binding OtherLanguages}" 
-                                                  SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}">
+                                                      SelectedItem="{Binding Language, UpdateSourceTrigger=PropertyChanged}">
                                             <i:Interaction.Triggers>
                                                 <i:EventTrigger EventName="SelectionChanged">
                                                     <i:InvokeCommandAction Command="{Binding DataContext.RefreshColumnsCommand, RelativeSource={RelativeSource AncestorType=ListView}}"/>
@@ -923,8 +957,8 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="+" Width="15" Background="#FFFBF7B4"
-                                            Command="{Binding DataContext.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
+                                                Command="{Binding DataContext.IncrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                                CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -951,8 +985,8 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="-" Width="15" Background="#FFFBF7B4"
-                                            Command="{Binding DataContext.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
+                                                Command="{Binding DataContext.DecrementCountCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                                CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -960,8 +994,8 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="+" Width="15" Background="#FFFBF7B4"
-                                            Command="{Binding DataContext.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
+                                                Command="{Binding DataContext.IncrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                                CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -971,7 +1005,7 @@
                                         <TextBox HorizontalAlignment="Center" Background="White">
                                             <TextBox.Text>
                                                 <Binding Path="CardsForTrade" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged"
-                                                         ValidatesOnDataErrors="True" NotifyOnValidationError="True">
+                                                             ValidatesOnDataErrors="True" NotifyOnValidationError="True">
                                                     <Binding.ValidationRules>
                                                         <validation:IntegerValidationRule />
                                                     </Binding.ValidationRules>
@@ -988,8 +1022,8 @@
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Content="-" Width="15" Background="#FFFBF7B4"
-                                            Command="{Binding DataContext.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
-                                            CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
+                                                Command="{Binding DataContext.DecrementTradeCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                                CommandParameter="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type ListViewItem}}, Path=DataContext}" />
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>
                             </GridViewColumn>
@@ -998,27 +1032,27 @@
                 </ListView>
                 <!--The main card view datagrid-->
                 <DataGrid x:Name="AllCardsDataGrid"
-                          ItemsSource="{Binding AllCardsVM.FilteredCards}"
-                          Margin="0,280,0,0"
-                          AutoGenerateColumns="False"
-                          SelectionChanged="CardImageSelectionChangedHandler"
-                          ScrollViewer.CanContentScroll="True"
-                          EnableColumnVirtualization="True"
-                          VirtualizingPanel.IsVirtualizing="True"
-                          CanUserAddRows="False"
-                          CanUserSortColumns="True"
-                          HorizontalAlignment="Stretch"
-                          IsReadOnly="True"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                          behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
-                          behaviors:DataGridColumnResizerBehavior.DataGridIndex="0"
-                          behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding AddCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
-                            <i:Interaction.Triggers>
-                                <i:EventTrigger EventName="MouseDoubleClick">
-                                    <i:InvokeCommandAction Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
-                                           CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
-                                </i:EventTrigger>
-                            </i:Interaction.Triggers>
+                              ItemsSource="{Binding AllCardsVM.FilteredCards}"
+                              Margin="0,280,0,0"
+                              AutoGenerateColumns="False"
+                              SelectionChanged="CardImageSelectionChangedHandler"
+                              ScrollViewer.CanContentScroll="True"
+                              EnableColumnVirtualization="True"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              CanUserAddRows="False"
+                              CanUserSortColumns="True"
+                              HorizontalAlignment="Stretch"
+                              IsReadOnly="True"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
+                              behaviors:DataGridColumnResizerBehavior.DataGridIndex="0"
+                              behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding AddCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="MouseDoubleClick">
+                            <i:InvokeCommandAction Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
+                                               CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                             <DataGridTemplateColumn.HeaderTemplate>
@@ -1030,15 +1064,15 @@
                                         </Grid.ColumnDefinitions>
                                         <Label Content="Name" VerticalAlignment="Center" Grid.Column="0"/>
                                         <ComboBox IsTextSearchEnabled="False"
-                                                  Grid.Column="1"
-                                                  HorizontalAlignment="Stretch"
-                                                  Height="20"
-                                                  IsEditable="True"
-                                                  Width="{Binding DataContext.ColumnWidths[0][0],RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  ItemsSource="{Binding FilteredOptions}"
-                                                  DisplayMemberPath="OptionName"
-                                                  SelectedItem="OptionName"
-                                                  Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                      Grid.Column="1"
+                                                      HorizontalAlignment="Stretch"
+                                                      Height="20"
+                                                      IsEditable="True"
+                                                      Width="{Binding DataContext.ColumnWidths[0][0],RelativeSource={RelativeSource AncestorType=Window}}"
+                                                      ItemsSource="{Binding FilteredOptions}"
+                                                      DisplayMemberPath="OptionName"
+                                                      SelectedItem="OptionName"
+                                                      Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -1064,15 +1098,15 @@
                                         </Grid.ColumnDefinitions>
                                         <Label Content="Set" VerticalAlignment="Center" Grid.Column="0"/>
                                         <ComboBox IsTextSearchEnabled="False"
-                                                  Grid.Column="1"
-                                                  HorizontalAlignment="Stretch"
-                                                  Height="20"
-                                                  IsEditable="True"
-                                                  Width="{Binding DataContext.ColumnWidths[0][1],RelativeSource={RelativeSource AncestorType=Window}}"
-                                                  ItemsSource="{Binding FilteredOptions}"
-                                                  DisplayMemberPath="OptionName"
-                                                  SelectedItem="OptionName"
-                                                  Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                      Grid.Column="1"
+                                                      HorizontalAlignment="Stretch"
+                                                      Height="20"
+                                                      IsEditable="True"
+                                                      Width="{Binding DataContext.ColumnWidths[0][1],RelativeSource={RelativeSource AncestorType=Window}}"
+                                                      ItemsSource="{Binding FilteredOptions}"
+                                                      DisplayMemberPath="OptionName"
+                                                      SelectedItem="OptionName"
+                                                      Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                                             <ComboBox.ItemsPanel>
                                                 <ItemsPanelTemplate>
                                                     <VirtualizingStackPanel />
@@ -1140,15 +1174,15 @@
                     </DataGrid.Columns>
                     <DataGrid.ContextMenu>
                         <ContextMenu Style="{StaticResource MPlantin}"
-                                     DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                         DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                             <MenuItem Header="Add selected card(s) to Collection"
-                                      Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
-                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      Style="{StaticResource BelerenBold}" />
+                                          Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
+                                          CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          Style="{StaticResource BelerenBold}" />
                             <MenuItem Header="Add selected card(s) with DEFAULT values to Collection" 
-                                      Command="{Binding AddCardsVM.SubmitNewCardsWithDefaultsCommand}"
-                                      CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      Style="{StaticResource BelerenBold}"/>
+                                          Command="{Binding AddCardsVM.SubmitNewCardsWithDefaultsCommand}"
+                                          CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          Style="{StaticResource BelerenBold}"/>
                             <MenuItem Header="">
                                 <MenuItem.Template>
                                     <ControlTemplate>
@@ -1195,8 +1229,11 @@
                     </DataGrid.ContextMenu>
                 </DataGrid>
             </Grid>
-            <Grid x:Name="GridMyCollection" d:IsHidden="True">
-                <Label x:Name="HeadlineMyCollection" Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
+            <!-- My Collection -->
+            <Grid Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},
+                Converter={StaticResource PageToVisibilityConverter},
+               ConverterParameter={x:Static viewmodels:Page.MyCollection}}" d:IsHidden="True">
+                <Label Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" Visibility="{Binding EditCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}">
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
@@ -1532,7 +1569,10 @@
                     </DataGrid.ContextMenu>
                 </DataGrid>
             </Grid>
-            <Grid x:Name="GridDecks" VerticalAlignment="Top">
+            <Grid x:Name="GridDecks" d:IsHidden="True"
+                  Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},
+               Converter={StaticResource PageToVisibilityConverter},
+               ConverterParameter={x:Static viewmodels:Page.Decks}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="40"/>
                     <RowDefinition Height="*"/>
@@ -1749,7 +1789,10 @@
                     </Grid>
                 </Grid>
             </Grid>
-            <Grid x:Name="GridUtilitiesSection" VerticalAlignment="Top" d:IsHidden="True">
+            <Grid x:Name="GridUtilitiesSection" d:IsHidden="True"
+                  Visibility="{Binding DataContext.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},
+               Converter={StaticResource PageToVisibilityConverter},
+               ConverterParameter={x:Static viewmodels:Page.Utilities}}">
                 <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="UtilsInfoLabel" Content="" HorizontalAlignment="Center" Margin="8,150,0,0" VerticalAlignment="Top" FontSize="16"/>
                 <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Resources/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698"/>

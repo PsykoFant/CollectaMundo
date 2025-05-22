@@ -9,7 +9,7 @@ using System.Windows;
 using System.Windows.Media;
 using static CollectaMundo.MainWindow;
 
-namespace CollectaMundo.UICoordinators
+namespace CollectaMundo.ApplicationServices
 {
     public class FilteringService(IFilterDefaultsRepository repo) : IFilteringService
     {

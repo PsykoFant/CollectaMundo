@@ -185,11 +185,11 @@ namespace CollectaMundo
             CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
 
             // Start on the search and filter all cards page            
-            ResetGrids();
-            MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
+            //ResetGrids();
+            //MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
             //LogoSmall.Visibility = Visibility.Visible;
-            GridFiltering.Visibility = Visibility.Visible;
-            GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
+            //GridFiltering.Visibility = Visibility.Visible;
+            //GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
 
             await ShowStatusWindowAsync(false);
         }
@@ -879,7 +879,7 @@ namespace CollectaMundo
         private void MenuSearchAndFilter_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
-            MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
+            //MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
 
             MyCollectionDataGrid.Dispatcher.BeginInvoke(new Action(() =>
             {
@@ -887,7 +887,7 @@ namespace CollectaMundo
             }), System.Windows.Threading.DispatcherPriority.Loaded);
 
             GridFiltering.Visibility = Visibility.Visible;
-            GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
+            //GridSearchAndFilterAllCards.Visibility = Visibility.Visible;
         }
         private void MenuMyCollection_Click(object sender, RoutedEventArgs e)
         {
@@ -898,48 +898,48 @@ namespace CollectaMundo
                 DataGridColumnResizerBehavior.ForceUpdate(MyCollectionDataGrid);
             }), System.Windows.Threading.DispatcherPriority.Loaded);
 
-            MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
+            //MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
             GridFiltering.Visibility = Visibility.Visible;
-            GridMyCollection.Visibility = Visibility.Visible;
-            LanguageComboBox.Visibility = Visibility.Visible;
-            LanguageOperatorComboBox.Visibility = Visibility.Visible;
-            SelectedFinishComboBox.Visibility = Visibility.Visible;
-            SelectedFinishOperatorComboBox.Visibility = Visibility.Visible;
-            SelectedConditionComboBox.Visibility = Visibility.Visible;
-            SelectedConditionOperatorComboBox.Visibility = Visibility.Visible;
-            CheckBoxCardsForTrade.Visibility = Visibility.Visible;
-            CheckBoxCardsNotForTrade.Visibility = Visibility.Visible;
+            //GridMyCollection.Visibility = Visibility.Visible;
+            //LanguageComboBox.Visibility = Visibility.Visible;
+            //LanguageOperatorComboBox.Visibility = Visibility.Visible;
+            //SelectedFinishComboBox.Visibility = Visibility.Visible;
+            //SelectedFinishOperatorComboBox.Visibility = Visibility.Visible;
+            //SelectedConditionComboBox.Visibility = Visibility.Visible;
+            //SelectedConditionOperatorComboBox.Visibility = Visibility.Visible;
+            //CheckBoxCardsForTrade.Visibility = Visibility.Visible;
+            //CheckBoxCardsNotForTrade.Visibility = Visibility.Visible;
         }
         private void MenuDecks_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
-            MenuDecksButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
+            //MenuDecksButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
             GridDecks.Visibility = Visibility.Visible;
         }
         private void MenuUtilsButton_Click(object sender, RoutedEventArgs e)
         {
             ResetGrids();
-            MenuUtilsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
+            //MenuUtilsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
             GridUtilsMenu.Visibility = Visibility.Visible;
             GridUtilitiesSection.Visibility = Visibility.Visible;
         }
         public void ResetGrids()
         {
             // Reset top menu
-            MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
-            MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
-            MenuDecksButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
-            MenuUtilsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
+            //MenuSearchAndFilterButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
+            //MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
+            //MenuDecksButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
+            //MenuUtilsButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFDDDDDD"));
 
             // Reset content section UI
-            GridSearchAndFilterAllCards.Visibility = Visibility.Collapsed;
-            GridMyCollection.Visibility = Visibility.Collapsed;
-            GridDecks.Visibility = Visibility.Collapsed;
-            GridUtilitiesSection.Visibility = Visibility.Collapsed;
+            //GridSearchAndFilterAllCards.Visibility = Visibility.Collapsed;
+            //GridMyCollection.Visibility = Visibility.Collapsed;
+            //GridDecks.Visibility = Visibility.Collapsed;
+            //GridUtilitiesSection.Visibility = Visibility.Collapsed;
 
-            // Reset side menu options
-            GridFiltering.Visibility = Visibility.Collapsed;
-            GridUtilsMenu.Visibility = Visibility.Collapsed;
+            //// Reset side menu options
+            //GridFiltering.Visibility = Visibility.Collapsed;
+            //GridUtilsMenu.Visibility = Visibility.Collapsed;
 
             // Reset filtering and add/edit cards UI
             //AddCardsVM.StatusMessage = string.Empty;
@@ -948,14 +948,14 @@ namespace CollectaMundo
 
 
             // Reset filter UI specific to my collection 
-            LanguageComboBox.Visibility = Visibility.Collapsed;
-            LanguageOperatorComboBox.Visibility = Visibility.Collapsed;
-            SelectedFinishComboBox.Visibility = Visibility.Collapsed;
-            SelectedFinishOperatorComboBox.Visibility = Visibility.Collapsed;
-            SelectedConditionComboBox.Visibility = Visibility.Collapsed;
-            SelectedConditionOperatorComboBox.Visibility = Visibility.Collapsed;
-            CheckBoxCardsForTrade.Visibility = Visibility.Collapsed;
-            CheckBoxCardsNotForTrade.Visibility = Visibility.Collapsed;
+            //LanguageComboBox.Visibility = Visibility.Collapsed;
+            //LanguageOperatorComboBox.Visibility = Visibility.Collapsed;
+            //SelectedFinishComboBox.Visibility = Visibility.Collapsed;
+            //SelectedFinishOperatorComboBox.Visibility = Visibility.Collapsed;
+            //SelectedConditionComboBox.Visibility = Visibility.Collapsed;
+            //SelectedConditionOperatorComboBox.Visibility = Visibility.Collapsed;
+            //CheckBoxCardsForTrade.Visibility = Visibility.Collapsed;
+            //CheckBoxCardsNotForTrade.Visibility = Visibility.Collapsed;
 
             // Reset image UI
             ImagePromoLabel.Content = string.Empty;

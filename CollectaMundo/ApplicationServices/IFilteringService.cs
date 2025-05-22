@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.ViewModels;
 
-namespace CollectaMundo.UICoordinators
+namespace CollectaMundo.ApplicationServices
 {
     public interface IFilteringService
     {

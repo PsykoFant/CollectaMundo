@@ -2,7 +2,6 @@
 using CollectaMundo.Data;
 using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
-using CollectaMundo.UICoordinators;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -19,13 +18,7 @@ namespace CollectaMundo.ViewModels
         protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         // Page navigation
-        public enum Page
-        {
-            SearchAndFilter,
-            MyCollection,
-            Decks,
-            Utilities
-        }
+
         private Page _currentPage = Page.SearchAndFilter;
         public Page CurrentPage
         {

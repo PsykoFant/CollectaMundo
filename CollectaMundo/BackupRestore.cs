@@ -1820,11 +1820,11 @@ namespace CollectaMundo
             EndImport();
 
             // Go to My Collections
-            MainWindow.CurrentInstance.ResetGrids();
-            MainWindow.CurrentInstance.MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
-            MainWindow.CurrentInstance.GridFiltering.Visibility = Visibility.Visible;
+            //MainWindow.CurrentInstance.ResetGrids();
+            //MainWindow.CurrentInstance.MenuMyCollectionButton.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5cb9ca"));
+            //MainWindow.CurrentInstance.GridFiltering.Visibility = Visibility.Visible;
             //MainWindow.CurrentInstance.LogoSmall.Visibility = Visibility.Visible;
-            MainWindow.CurrentInstance.GridMyCollection.Visibility = Visibility.Visible;
+            //MainWindow.CurrentInstance.GridMyCollection.Visibility = Visibility.Visible;
         }
 
         #endregion
