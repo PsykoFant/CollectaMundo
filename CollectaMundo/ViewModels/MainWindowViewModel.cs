@@ -26,13 +26,21 @@ namespace CollectaMundo.ViewModels
             get => _currentPage;
             set
             {
-                if (_currentPage == value) return;
+                if (_currentPage == value)
+                {
+                    return;
+                }
+
                 _currentPage = value;
 
                 if (_currentPage == Page.MyCollection)
+                {
                     AddCardsVM.StatusMessage = string.Empty;
+                }
                 else if (_currentPage == Page.SearchAndFilter)
+                {
                     EditCardsVM.StatusMessage = string.Empty;
+                }
 
                 // 1) CurrentPage changed
                 OnPropertyChanged();
@@ -157,8 +165,16 @@ namespace CollectaMundo.ViewModels
         public void ShowStatusScreen(bool show, string? message = null, bool progress = false, string? firstTimeText = null)
         {
             CurrentPage = show ? Page.StatusScreen : Page.SearchAndFilter;
-            if (message != null) StatusMessage = message;
-            if (firstTimeText != null) FirstTimeSetupText = firstTimeText;
+            if (message != null)
+            {
+                StatusMessage = message;
+            }
+
+            if (firstTimeText != null)
+            {
+                FirstTimeSetupText = firstTimeText;
+            }
+
             IsProgressVisible = progress;
         }
 
@@ -219,8 +235,8 @@ namespace CollectaMundo.ViewModels
 
         private void HookUpStatusChanged()
         {
-            AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") OnPropertyChanged(); };
-            EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") OnPropertyChanged(); };
+            AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(IdleVisibility)); } };
+            EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(IdleVisibility)); } };
         }
 
     }

@@ -139,7 +139,16 @@ namespace CollectaMundo
 
             DataContext = new MainWindowViewModel(_dbFactory);
 
-            ContentRendered += MainWindow_ContentRendered;
+            //ContentRendered += MainWindow_ContentRendered;
+
+            Loaded += async (sender, args) =>
+            {
+                //await ShowStatusWindowAsync(true, "Just a quick system integrity check …");
+                await DownloadAndPrepDB.SystemIntegrityCheckAsync();
+                await LoadDataIntoUiElements();
+                _isStartup = false;
+            };
+
 
             //DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             //UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
