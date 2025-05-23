@@ -161,7 +161,6 @@ namespace CollectaMundo
             // 2) now hand *that* factory into your VM
             DataContext = new MainWindowViewModel(_dbFactory);
 
-
             await DBAccess.OpenConnectionAsync();
 
             await _cardListService.LoadAllCardsAsync(VM.AllCardsVM.Cards);
@@ -170,7 +169,7 @@ namespace CollectaMundo
             await _cardListService.LoadAllCardsInDecksAsync(VM.AllCardsInDecksVM.Cards);
             await _cardListService.LoadColorIconsAsync(VM.ColorIcons.Cards);
 
-            await VM.FilterVM.InitializeFilterDefaultsAsync();
+            VM.FilterVM.NotifyFilterChanged();
 
             Task loadDecks = LoadAllDecksAsync();
             Task populateAllFormatsList = PopulateAllFormatsListAsync();

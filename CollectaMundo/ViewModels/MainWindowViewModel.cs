@@ -52,10 +52,8 @@ namespace CollectaMundo.ViewModels
         public FilterViewModel FilterVM { get; }
 
 
-        // Misc. properties and fields
+        // Misc. properties
         public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [[50, 50], [50, 50], [50]];
-        private readonly IDbConnectionFactory _dbFactory;
-
         // Hide mini logo at appropriate times
         public Visibility IdleVisibility
         {
@@ -70,8 +68,10 @@ namespace CollectaMundo.ViewModels
             }
         }
 
+
+        // Backing fields
+        private readonly IDbConnectionFactory _dbFactory;
         private readonly IFilteringService _filteringService;
-        private readonly IFilteringService _filterCoordinator = new FilteringService(new FilterDefaultsRepository());
 
         // Commands to switch pages
         public ICommand ShowSearchAndFilterCommand { get; }
@@ -88,23 +88,23 @@ namespace CollectaMundo.ViewModels
             MyCollectionVM = new CardViewModel();
             AllCardsForDecksVM = new CardViewModel();
             AllCardsInDecksVM = new CardViewModel();
-            FilterVM = new FilterViewModel(_filterCoordinator);
             ColorIcons = new CardViewModel();
 
             var editRepo = new EditCollectionRepository(_dbFactory);
             var editLogic = new EditCollectionLogic(editRepo);
             var editUow = new UnitOfWork(_dbFactory);
-            var editCoordinator = new EditCollectionService(editUow, editLogic);
-            AddCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: true);
-            EditCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: false);
+            var editService = new EditCollectionService(editUow, editLogic);
+            AddCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);
+            EditCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: false);
             AddCardsVM.CardChanged += OnCardChanged;
             EditCardsVM.CardChanged += OnCardChanged;
 
             // 3) "Filtering" stack: defaults repo --> filtering coordinator --> view-model
-            var filterDefaultsRepo = new FilterDefaultsRepository();
-            var filteringCoordinator = new FilteringService(filterDefaultsRepo);
-            _filteringService = filteringCoordinator;
-            FilterVM = new FilterViewModel(filteringCoordinator);
+            var filterDefaultsRepo = new FilterDefaultsRepository(_dbFactory);
+            _filteringService = new FilteringService(filterDefaultsRepo);
+            // now hand it off to your FilterVM
+            FilterVM = new FilterViewModel(_filteringService);
+            _ = InitializeFiltersAsync(filterDefaultsRepo);
             FilterVM.FilterChanged += OnFilterChanged;
 
             HookUpStatusChanged();
@@ -119,6 +119,12 @@ namespace CollectaMundo.ViewModels
             });
             ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
+        }
+
+        private async Task InitializeFiltersAsync(IFilterDefaultsRepository defaultsRepo)
+        {
+            var uow = new UnitOfWork(_dbFactory);
+            await FilterVM.InitializeAsync(defaultsRepo, uow);
         }
 
         // When a card is added/updated/deleted from collection

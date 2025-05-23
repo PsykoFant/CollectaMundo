@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.Data;
 using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Windows.Input;
@@ -54,27 +55,36 @@ namespace CollectaMundo.ViewModels
                 NotifyFilterChanged();
             });
         }
-        public async Task InitializeFilterDefaultsAsync()
+
+        public async Task InitializeAsync(IFilterDefaultsRepository defaultsRepo, IUnitOfWork uow)
         {
-            var defs = await _service.LoadDefaultsAsync();
-            foreach (var d in defs)
+            await uow.BeginAsync();
+            try
             {
-                Filters[d.CriteriaKey] = new FilterItemViewModel(
-                    d.CriteriaKey,
-                    d.FilterOptions,
-                    d.DefaultText,
-                    d.ReadableLabel,
-                    filterViewModel: this,
-                    numericOptions: d.NumericCriteria
-                );
+                var defaults = await defaultsRepo.GetFilterDefaultsAsync();
+                foreach (var def in defaults)
+                {
+                    Filters[def.CriteriaKey] = new FilterItemViewModel(
+                        def.CriteriaKey,
+                        def.FilterOptions,
+                        def.DefaultText,
+                        def.ReadableLabel,
+                        this,
+                        def.NumericCriteria);
+                }
+                await uow.CommitAsync();
             }
-
-            OnPropertyChanged(nameof(Filters));
-
-            NotifyFilterChanged();
+            catch
+            {
+                await uow.RollbackAsync();
+                throw;
+            }
+            finally
+            {
+                await uow.DisposeAsync();
+            }
         }
 
-        // Called by each FilterItemViewModel on change
         public void NotifyFilterChanged()
         {
             FilterSummary = _service.BuildSummary(Filters.Values);
