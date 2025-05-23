@@ -139,22 +139,45 @@ namespace CollectaMundo
 
             DataContext = new MainWindowViewModel(_dbFactory);
 
-            Loaded += async (sender, args) =>
-            {
-                //await ShowStatusWindowAsync(true, "Just a quick system integrity check …");
-
-                VM.ShowStatusScreen(true, message: "Just a quick system integrity check …", progress: false);
-
-                await DownloadAndPrepDB.SystemIntegrityCheckAsync();
-                await LoadDataIntoUiElements();
-                _isStartup = false;
-            };
+            ContentRendered += MainWindow_ContentRendered;
 
             //DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             //UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
         }
 
         #region Load data and populate UI elements
+        private bool _hasInitialized = false;
+
+        private async void MainWindow_ContentRendered(object? sender, EventArgs e)
+        {
+            if (_hasInitialized)
+            {
+                return;
+            }
+
+            _hasInitialized = true;
+
+            VM.ShowStatusScreen(true, "Just a quick system integrity check …", progress: false);
+            await FlushUiAsync();
+
+            await DownloadAndPrepDB.SystemIntegrityCheckAsync();
+
+            VM.ShowStatusScreen(true, "Loading ALL the cards …", progress: false);
+            await FlushUiAsync();
+
+            await LoadDataIntoUiElements();
+
+            VM.ShowStatusScreen(false);
+            _isStartup = false;
+        }
+
+
+        private static async Task FlushUiAsync()
+        {
+            await Application.Current.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+        }
+
+
         public async Task LoadDataIntoUiElements()
         {
             //await ShowStatusWindowAsync(true, "Loading ALL the cards ...");
@@ -162,9 +185,6 @@ namespace CollectaMundo
 
             // 1) open the shared connection
             await _dbFactory.OpenConnectionAsync();
-
-            // 2) now hand *that* factory into your VM
-
 
             await DBAccess.OpenConnectionAsync();
 
@@ -176,16 +196,11 @@ namespace CollectaMundo
 
             VM.FilterVM.NotifyFilterChanged();
 
-            //Task loadDecks = LoadAllDecksAsync();
-            //Task populateAllFormatsList = PopulateAllFormatsListAsync();
-            //await Task.WhenAll(loadDecks, populateAllFormatsList);
-
             DBAccess.CloseConnection();
 
             CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
             CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
 
-            //await ShowStatusWindowAsync(false);
             VM.ShowStatusScreen(false);
         }
         public async Task LoadAllDecksAsync()
