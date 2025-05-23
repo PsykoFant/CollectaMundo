@@ -48,8 +48,8 @@ namespace CollectaMundo.ViewModels
                 // 2) the top‐menu’s enabledness depends on CurrentPage
                 OnPropertyChanged(nameof(IsTopMenuEnabled));
 
-                // 3) your little logo’s IdleVisibility also depends on CurrentPage
-                OnPropertyChanged(nameof(IdleVisibility));
+                // 3) your little logo’s MiniLogoVisibility also depends on CurrentPage
+                OnPropertyChanged(nameof(MiniLogoVisibility));
             }
         }
 
@@ -86,7 +86,7 @@ namespace CollectaMundo.ViewModels
         // Misc. properties
         public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [[50, 50], [50, 50], [50]];
         // Hide mini logo at appropriate times
-        public Visibility IdleVisibility
+        public Visibility MiniLogoVisibility
         {
             get
             {
@@ -97,6 +97,20 @@ namespace CollectaMundo.ViewModels
                   ? Visibility.Collapsed
                   : Visibility.Visible;
             }
+        }
+
+        private Visibility _sideMenuVisibility = Visibility.Hidden;
+        public Visibility SideMenuVisibility
+        {
+            get => _sideMenuVisibility;
+            set { _sideMenuVisibility = value; OnPropertyChanged(); }
+        }
+
+        private Visibility _sideMenuVisibility = Visibility.Hidden;
+        public Visibility SideMenuVisibility
+        {
+            get => _sideMenuVisibility;
+            set { _sideMenuVisibility = value; OnPropertyChanged(); }
         }
 
         public bool IsTopMenuEnabled => CurrentPage != Page.StatusScreen;
@@ -235,8 +249,8 @@ namespace CollectaMundo.ViewModels
 
         private void HookUpStatusChanged()
         {
-            AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(IdleVisibility)); } };
-            EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(IdleVisibility)); } };
+            AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
+            EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
         }
 
     }

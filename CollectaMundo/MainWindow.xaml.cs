@@ -139,16 +139,7 @@ namespace CollectaMundo
 
             DataContext = new MainWindowViewModel(_dbFactory);
 
-            //ContentRendered += MainWindow_ContentRendered;
-
-            Loaded += async (sender, args) =>
-            {
-                //await ShowStatusWindowAsync(true, "Just a quick system integrity check …");
-                await DownloadAndPrepDB.SystemIntegrityCheckAsync();
-                await LoadDataIntoUiElements();
-                _isStartup = false;
-            };
-
+            ContentRendered += MainWindow_ContentRendered;
 
             //DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             //UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
@@ -175,9 +166,13 @@ namespace CollectaMundo
             await FlushUiAsync();
 
             await LoadDataIntoUiElements();
+            await FlushUiAsync();
 
             VM.ShowStatusScreen(false);
+            await FlushUiAsync();
             _isStartup = false;
+
+            VM.SideMenuVisibility = Visibility.Visible;
         }
 
 
@@ -202,6 +197,9 @@ namespace CollectaMundo
             await _cardListService.LoadAllCardsForDecksAsync(VM.AllCardsForDecksVM.Cards);
             await _cardListService.LoadAllCardsInDecksAsync(VM.AllCardsInDecksVM.Cards);
             await _cardListService.LoadColorIconsAsync(VM.ColorIcons.Cards);
+
+            await Application.Current.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+
 
             VM.FilterVM.NotifyFilterChanged();
 
