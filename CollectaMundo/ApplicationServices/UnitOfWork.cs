@@ -1,27 +1,19 @@
-﻿using System.Data.SQLite;
+﻿using CollectaMundo.Data;
+using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class UnitOfWork : IUnitOfWork
+    public class UnitOfWork(IDbConnectionFactory dbFactory) : IUnitOfWork
     {
+        private readonly IDbConnectionFactory _dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         private SQLiteTransaction? _txn;
-
-        public UnitOfWork(SQLiteConnection connection)
-        {
-            // Force all DBAccess.* calls to use *this* connection
-            DBAccess.connection = connection;
-        }
 
         public async Task BeginAsync()
         {
-            // 1) ensure the connection is open
-            await DBAccess.OpenConnectionAsync();
+            // 1) Open (or re-use) the single shared connection
+            var conn = await _dbFactory.OpenConnectionAsync();
 
-            // 2) grab the connection and null‐check it
-            var conn = DBAccess.connection
-                ?? throw new InvalidOperationException("DBAccess.connection was null");
-
-            // 3) start the transaction on the connection
+            // 2) Start a transaction on it
             _txn = conn.BeginTransaction();
         }
 
@@ -37,10 +29,12 @@ namespace CollectaMundo.ApplicationServices
             return Task.CompletedTask;
         }
 
+        public SQLiteTransaction CurrentTransaction => _txn ?? throw new InvalidOperationException("You must call BeginAsync() before using the transaction.");
+
         public ValueTask DisposeAsync()
         {
-            // always close the connection, even if already closed
-            DBAccess.CloseConnection();
+            // tear down—close the shared connection when you're fully done
+            _dbFactory.CloseConnection();
             return ValueTask.CompletedTask;
         }
     }

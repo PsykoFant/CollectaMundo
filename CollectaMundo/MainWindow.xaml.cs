@@ -125,12 +125,18 @@ namespace CollectaMundo
         // Read the price retailer from appsettings.json
         public string? appsettingsRetailer = JsonAppSettings.GetSetting("PriceInfo:Retailer") as string;
 
+        private readonly IDbConnectionFactory _dbFactory;
+
         #endregion
         public MainWindow()
         {
             InitializeComponent();
             _currentInstance = this;
             _cardListService = new CardListService(new CardListRepository());
+
+            // build your settings + factory once
+            var settings = new JsonAppSettings();
+            _dbFactory = new DbConnectionFactory(settings);
 
             Loaded += async (sender, args) =>
             {
@@ -140,9 +146,6 @@ namespace CollectaMundo
                 _isStartup = false;
             };
 
-            // 1) build the "shell" VM for MainWindow
-            DataContext = new MainWindowViewModel(connection: DBAccess.connection);
-
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
         }
@@ -151,6 +154,13 @@ namespace CollectaMundo
         public async Task LoadDataIntoUiElements()
         {
             await ShowStatusWindowAsync(true, "Loading ALL the cards ...");
+
+            // 1) open the shared connection
+            await _dbFactory.OpenConnectionAsync();
+
+            // 2) now hand *that* factory into your VM
+            DataContext = new MainWindowViewModel(_dbFactory);
+
 
             await DBAccess.OpenConnectionAsync();
 

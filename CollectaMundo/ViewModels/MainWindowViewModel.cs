@@ -5,7 +5,6 @@ using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Data.SQLite;
 using System.Windows;
 using System.Windows.Input;
 using static CollectaMundo.DomainLogic.Models.CardChangeEventArgs;
@@ -55,6 +54,7 @@ namespace CollectaMundo.ViewModels
 
         // Misc. properties and fields
         public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [[50, 50], [50, 50], [50]];
+        private readonly IDbConnectionFactory _dbFactory;
 
         // Hide mini logo at appropriate times
         public Visibility IdleVisibility
@@ -80,8 +80,10 @@ namespace CollectaMundo.ViewModels
         public ICommand ShowUtilitiesCommand { get; }
 
         // Constructor
-        public MainWindowViewModel(SQLiteConnection connection)
+        public MainWindowViewModel(IDbConnectionFactory dbFactory)
         {
+            _dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
+
             AllCardsVM = new CardViewModel();
             MyCollectionVM = new CardViewModel();
             AllCardsForDecksVM = new CardViewModel();
@@ -89,9 +91,9 @@ namespace CollectaMundo.ViewModels
             FilterVM = new FilterViewModel(_filterCoordinator);
             ColorIcons = new CardViewModel();
 
-            var editRepo = new EditCollectionRepository(connection);
+            var editRepo = new EditCollectionRepository(_dbFactory);
             var editLogic = new EditCollectionLogic(editRepo);
-            var editUow = new UnitOfWork(connection);
+            var editUow = new UnitOfWork(_dbFactory);
             var editCoordinator = new EditCollectionService(editUow, editLogic);
             AddCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: true);
             EditCardsVM = new EditCollectionViewModel(editCoordinator, removeCardWhenZero: false);
