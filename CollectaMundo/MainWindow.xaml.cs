@@ -1,6 +1,5 @@
 using CollectaMundo.ApplicationServices;
 using CollectaMundo.Data;
-using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Presentation.Behaviors;
 using CollectaMundo.ViewModels;
@@ -131,40 +130,18 @@ namespace CollectaMundo
         {
             InitializeComponent();
             _currentInstance = this;
-
-            // create your two little helpers exactly once
-            var settings = new JsonAppSettings();             // implements IAppSettings
-            var dbFactory = new DbConnectionFactory(settings); // implements IDbConnectionFactory
-
-            // build your repository & service stack
-            var cardListRepo = new CardListRepository(dbFactory);
-            var cardListService = new CardListService(cardListRepo);
-            var filterDefaultsRepo = new FilterDefaultsRepository(dbFactory);
-            var filterDefaultsSvc = new FilterDefaultsService(filterDefaultsRepo);
-            var filteringService = new FilteringService(filterDefaultsRepo);
-            var editCollRepo = new EditCollectionRepository(dbFactory);
-            var editCollLogic = new EditCollectionLogic(editCollRepo);
-            var editCollSvc = new EditCollectionService(editCollRepo, editCollLogic);
-
-            // now hand them all straight into your ViewModel
-            var vm = new MainWindowViewModel(
-                settings,
-                dbFactory,
-                cardListService,
-                filterDefaultsSvc,
-                filteringService,
-                editCollSvc
-            );
-
-            DataContext = vm;
+            _cardListService = new CardListService(new CardListRepository());
 
             Loaded += async (sender, args) =>
             {
                 await ShowStatusWindowAsync(true, "Just a quick system integrity check …");
                 await DownloadAndPrepDB.SystemIntegrityCheckAsync();
-                await vm.InitializeAsync();
+                await LoadDataIntoUiElements();
                 _isStartup = false;
             };
+
+            // 1) build the "shell" VM for MainWindow
+            DataContext = new MainWindowViewModel(connection: DBAccess.connection);
 
             DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
