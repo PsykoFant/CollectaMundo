@@ -173,6 +173,7 @@ namespace CollectaMundo
             _isStartup = false;
 
             VM.SideMenuVisibility = Visibility.Visible;
+            VM.ContenSectionVisibility = Visibility.Visible;
         }
 
 

@@ -83,9 +83,8 @@
                 </Button.Effect>
             </Button>
         </Grid>
-        <Grid Visibility="{Binding CurrentPage,
-                       Converter={StaticResource PageToVisibilityConverter},
-                       ConverterParameter={x:Static viewmodels:Page.StatusScreen}}"
+        <!-- Status screen -->
+        <Grid Visibility="{Binding CurrentPage,Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.StatusScreen}}"
           Grid.Row="1" Grid.ColumnSpan="3"
           Margin="0,40,0,0"
           VerticalAlignment="Top">
@@ -95,7 +94,8 @@
             <Label Content="{Binding StatusMessage}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,621,0,0"/>
             <Label Content="{Binding FirstTimeSetupText}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,582,0,0" Visibility="{Binding FirstTimeSetupText,Converter={StaticResource StringToVisibilityConverter}}"/>
         </Grid>
-        <Grid x:Name="GridSideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="{Binding SideMenuVisibility}">
+        <!-- Side menu -->
+        <Grid Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="{Binding SideMenuVisibility}">
             <Grid x:Name="GridFiltering">
 
                 <Button x:Name="ClearFiltersButton" Content="Clear filters" Margin="10,0,0,0" VerticalAlignment="Top" Height="20" Command="{Binding FilterVM.ClearFiltersCommand}"/>
@@ -834,7 +834,8 @@
                 <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Left" Width="180" Height="20" Margin="10,180,0,0" VerticalAlignment="Top" Visibility="Collapsed" Click="UpdateDbButton_Click"/>
             </Grid>
         </Grid>
-        <Grid x:Name="GridContentSection" Grid.Row="1" Grid.Column="1" Margin="5,0,5,0">
+        <!-- Content section -->
+        <Grid Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="{Binding ContenSectionVisibility}">
             <Image Source="/Resources/Images/Logo.png"
                    Stretch="Fill"
                    VerticalAlignment="Top"
@@ -844,7 +845,7 @@
                    RenderTransformOrigin="0.5,0.5"
                    Margin="0,70,0,0"
                    Opacity="0.8" 
-                   Visibility="{Binding IdleVisibility}"/>
+                   Visibility="{Binding MiniLogoVisibility}"/>
             <ScrollViewer HorizontalAlignment="Center" Margin="0,240,0,0" VerticalAlignment="Top" Height="40" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                 <TextBlock HorizontalAlignment="Center" Margin="0,0,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="{Binding FilterVM.FilterSummary}"/>
             </ScrollViewer>

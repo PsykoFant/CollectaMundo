@@ -106,11 +106,11 @@ namespace CollectaMundo.ViewModels
             set { _sideMenuVisibility = value; OnPropertyChanged(); }
         }
 
-        private Visibility _sideMenuVisibility = Visibility.Hidden;
-        public Visibility SideMenuVisibility
+        private Visibility _contenSectionVisibility = Visibility.Hidden;
+        public Visibility ContenSectionVisibility
         {
-            get => _sideMenuVisibility;
-            set { _sideMenuVisibility = value; OnPropertyChanged(); }
+            get => _contenSectionVisibility;
+            set { _contenSectionVisibility = value; OnPropertyChanged(); }
         }
 
         public bool IsTopMenuEnabled => CurrentPage != Page.StatusScreen;
