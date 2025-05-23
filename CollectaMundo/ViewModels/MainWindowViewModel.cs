@@ -5,6 +5,7 @@ using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using static CollectaMundo.DomainLogic.Models.CardChangeEventArgs;
@@ -15,7 +16,7 @@ namespace CollectaMundo.ViewModels
     {
         // INotifyPropertyChanged boilerplate
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        protected void OnPropertyChanged([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         // Page navigation
 
@@ -28,18 +29,21 @@ namespace CollectaMundo.ViewModels
                 if (_currentPage == value) return;
                 _currentPage = value;
 
-                // clear the “old” page's status
                 if (_currentPage == Page.MyCollection)
                     AddCardsVM.StatusMessage = string.Empty;
                 else if (_currentPage == Page.SearchAndFilter)
                     EditCardsVM.StatusMessage = string.Empty;
 
-                OnPropertyChanged(nameof(CurrentPage));
-                // make sure IdleVisibility re-evaluates now that one status has been cleared
+                // 1) CurrentPage changed
+                OnPropertyChanged();
+
+                // 2) the top‐menu’s enabledness depends on CurrentPage
+                OnPropertyChanged(nameof(IsTopMenuEnabled));
+
+                // 3) your little logo’s IdleVisibility also depends on CurrentPage
                 OnPropertyChanged(nameof(IdleVisibility));
             }
         }
-
 
         // Viewmodels
         public CardViewModel AllCardsVM { get; }
@@ -51,7 +55,26 @@ namespace CollectaMundo.ViewModels
         public EditCollectionViewModel EditCardsVM { get; }
         public FilterViewModel FilterVM { get; }
 
+        private string _statusMessage = "";
+        public string StatusMessage
+        {
+            get => _statusMessage;
+            set { _statusMessage = value; OnPropertyChanged(); }
+        }
 
+        private bool _isProgressVisible;
+        public bool IsProgressVisible
+        {
+            get => _isProgressVisible;
+            set { _isProgressVisible = value; OnPropertyChanged(); }
+        }
+
+        private string _firstTimeSetupText = "";
+        public string FirstTimeSetupText
+        {
+            get => _firstTimeSetupText;
+            set { _firstTimeSetupText = value; OnPropertyChanged(); }
+        }
         // Misc. properties
         public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [[50, 50], [50, 50], [50]];
         // Hide mini logo at appropriate times
@@ -68,6 +91,8 @@ namespace CollectaMundo.ViewModels
             }
         }
 
+        public bool IsTopMenuEnabled => CurrentPage != Page.StatusScreen;
+
 
         // Backing fields
         private readonly IDbConnectionFactory _dbFactory;
@@ -82,6 +107,8 @@ namespace CollectaMundo.ViewModels
         // Constructor
         public MainWindowViewModel(IDbConnectionFactory dbFactory)
         {
+            CurrentPage = Page.StatusScreen;
+
             _dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
 
             AllCardsVM = new CardViewModel();
@@ -125,6 +152,14 @@ namespace CollectaMundo.ViewModels
         {
             var uow = new UnitOfWork(_dbFactory);
             await FilterVM.InitializeAsync(defaultsRepo, uow);
+        }
+
+        public void ShowStatusScreen(bool show, string? message = null, bool progress = false, string? firstTimeText = null)
+        {
+            CurrentPage = show ? Page.StatusScreen : Page.SearchAndFilter;
+            if (message != null) StatusMessage = message;
+            if (firstTimeText != null) FirstTimeSetupText = firstTimeText;
+            IsProgressVisible = progress;
         }
 
         // When a card is added/updated/deleted from collection
@@ -184,8 +219,8 @@ namespace CollectaMundo.ViewModels
 
         private void HookUpStatusChanged()
         {
-            AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") OnPropertyChanged(nameof(IdleVisibility)); };
-            EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") OnPropertyChanged(nameof(IdleVisibility)); };
+            AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") OnPropertyChanged(); };
+            EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") OnPropertyChanged(); };
         }
 
     }

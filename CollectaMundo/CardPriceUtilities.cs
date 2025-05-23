@@ -27,7 +27,7 @@ namespace CollectaMundo
                     if (priceInfoDate < DateTime.Today)
                     {
                         Debug.WriteLine($"The date in appsettings ({priceInfoDate}) is older than today ({DateTime.Today})");
-                        await MainWindow.ShowStatusWindowAsync(true, null, true);
+                        //await MainWindow.ShowStatusWindowAsync(true, null, true);
 
                         if (await DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(pricesDownloadsPath, DownloadAndPrepDB.pricesDownloadUrl, "Updating card prices - please wait...", "price file...", true, true))
                         {
@@ -70,7 +70,7 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
                 MainWindow.CurrentInstance.GridTopMenu.IsEnabled = true;
                 MainWindow.CurrentInstance.GridSideMenu.IsEnabled = true;
-                await MainWindow.ShowStatusWindowAsync(false);
+                //await MainWindow.ShowStatusWindowAsync(false);
             }
 
         }

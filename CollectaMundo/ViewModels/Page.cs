@@ -5,6 +5,7 @@
         SearchAndFilter,
         MyCollection,
         Decks,
-        Utilities
+        Utilities,
+        StatusScreen
     }
 }

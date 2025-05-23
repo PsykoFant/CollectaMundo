@@ -67,7 +67,7 @@ namespace CollectaMundo
                 // First, create a backup
                 await BackupRestore.CreateCsvBackupAsync();
 
-                await MainWindow.ShowStatusWindowAsync(true);
+                //await MainWindow.ShowStatusWindowAsync(true);
 
                 var downloadDatabaseTask = DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(newDatabasePath, DownloadAndPrepDB.cardDbDownloadUrl, "Downloading fresh card database and updating...", "card database", true, true);
                 var downloadPricesTask = DownloadAndPrepDB.DownloadResourceFileIfNotExistAsync(CardPriceUtilities.pricesDownloadsPath, DownloadAndPrepDB.pricesDownloadUrl, "", "", false);
@@ -91,7 +91,7 @@ namespace CollectaMundo
                         MainWindow.CurrentInstance.UpdateDbButton.Visibility = Visibility.Collapsed;
                         await MainWindow.CurrentInstance.LoadDataIntoUiElements();
 
-                        await MainWindow.ShowStatusWindowAsync(false);
+                        //await MainWindow.ShowStatusWindowAsync(false);
                     }
                     else
                     {

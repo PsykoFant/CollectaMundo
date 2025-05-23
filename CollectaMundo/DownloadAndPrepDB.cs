@@ -109,7 +109,7 @@ namespace CollectaMundo
                 // Only update the status message if it's either forced or the download message is provided
                 if (forceMessageUpdate || !string.IsNullOrEmpty(fileToDownloadForMessage))
                 {
-                    MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = statusMessageBig;
+                    //MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = statusMessageBig;
                 }
 
                 if (showStatusBar && MainWindow.CurrentInstance?.ProgressBar != null)
@@ -174,8 +174,8 @@ namespace CollectaMundo
                 {
                     Application.Current.Dispatcher.Invoke(() =>
                     {
-                        MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = string.Empty;
-                        MainWindow.CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
+                        //MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = string.Empty;
+                        //MainWindow.CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
                     });
                 }
             }

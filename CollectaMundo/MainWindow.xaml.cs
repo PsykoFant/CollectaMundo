@@ -38,7 +38,6 @@ namespace CollectaMundo
 
         private readonly ICardListService _cardListService;
 
-
         // Used for displaying images
         private string? _imageSourceUrl = string.Empty;
         private string? _imageSourceUrl2nd = string.Empty;
@@ -138,28 +137,34 @@ namespace CollectaMundo
             var settings = new JsonAppSettings();
             _dbFactory = new DbConnectionFactory(settings);
 
+            DataContext = new MainWindowViewModel(_dbFactory);
+
             Loaded += async (sender, args) =>
             {
-                await ShowStatusWindowAsync(true, "Just a quick system integrity check …");
+                //await ShowStatusWindowAsync(true, "Just a quick system integrity check …");
+
+                VM.ShowStatusScreen(true, message: "Just a quick system integrity check …", progress: false);
+
                 await DownloadAndPrepDB.SystemIntegrityCheckAsync();
                 await LoadDataIntoUiElements();
                 _isStartup = false;
             };
 
-            DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
-            UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
+            //DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
+            //UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
         }
 
         #region Load data and populate UI elements
         public async Task LoadDataIntoUiElements()
         {
-            await ShowStatusWindowAsync(true, "Loading ALL the cards ...");
+            //await ShowStatusWindowAsync(true, "Loading ALL the cards ...");
+            VM.ShowStatusScreen(true, "Loading ALL the cards …", progress: false);
 
             // 1) open the shared connection
             await _dbFactory.OpenConnectionAsync();
 
             // 2) now hand *that* factory into your VM
-            DataContext = new MainWindowViewModel(_dbFactory);
+
 
             await DBAccess.OpenConnectionAsync();
 
@@ -171,16 +176,17 @@ namespace CollectaMundo
 
             VM.FilterVM.NotifyFilterChanged();
 
-            Task loadDecks = LoadAllDecksAsync();
-            Task populateAllFormatsList = PopulateAllFormatsListAsync();
-            await Task.WhenAll(loadDecks, populateAllFormatsList);
+            //Task loadDecks = LoadAllDecksAsync();
+            //Task populateAllFormatsList = PopulateAllFormatsListAsync();
+            //await Task.WhenAll(loadDecks, populateAllFormatsList);
 
             DBAccess.CloseConnection();
 
             CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
             CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
 
-            await ShowStatusWindowAsync(false);
+            //await ShowStatusWindowAsync(false);
+            VM.ShowStatusScreen(false);
         }
         public async Task LoadAllDecksAsync()
         {
@@ -695,13 +701,13 @@ namespace CollectaMundo
             ResetGrids();
             await UpdateDB.UpdateCardDatabaseAsync();
         }
-        private void UpdateStatusTextBox(string message)
-        {
-            Dispatcher.Invoke(() =>
-            {
-                StatusLabel.Content = message;
-            });
-        }
+        //private void UpdateStatusTextBox(string message)
+        //{
+        //    Dispatcher.Invoke(() =>
+        //    {
+        //        StatusLabel.Content = message;
+        //    });
+        //}
         private void ResetUtilsMenu()
         {
             GridImportWizard.Visibility = Visibility.Collapsed;
@@ -715,7 +721,7 @@ namespace CollectaMundo
                 return;
             }
 
-            await ShowStatusWindowAsync(true, "Reloading cards prices from selected retailer ... ");
+            //await ShowStatusWindowAsync(true, "Reloading cards prices from selected retailer ... ");
 
             await Task.Delay(100);
 
@@ -752,7 +758,7 @@ namespace CollectaMundo
 
             DBAccess.CloseConnection();
 
-            await ShowStatusWindowAsync(false);
+            //await ShowStatusWindowAsync(false);
         }
         public void PriceRetailerUiUpdates()
         {
@@ -906,46 +912,46 @@ namespace CollectaMundo
             ImageSourceUrl2nd = null;
         }
         #endregion
-        public static async Task ShowStatusWindowAsync(bool statusScreenIsVisible, string? statusLabelContent = null, bool progressBarVisible = false)
-        {
-            if (CurrentInstance != null)
-            {
-                await CurrentInstance.Dispatcher.InvokeAsync(() =>
-                {
-                    if (statusScreenIsVisible)
-                    {
-                        // Disable top menu buttons
-                        CurrentInstance.GridTopMenu.IsEnabled = false;
+        //public static async Task ShowStatusWindowAsync(bool statusScreenIsVisible, string? statusLabelContent = null, bool progressBarVisible = false)
+        //{
+        //    if (CurrentInstance != null)
+        //    {
+        //        await CurrentInstance.Dispatcher.InvokeAsync(() =>
+        //        {
+        //            if (statusScreenIsVisible)
+        //            {
+        //                // Disable top menu buttons
+        //                CurrentInstance.GridTopMenu.IsEnabled = false;
 
-                        // Show status section and hide others
-                        CurrentInstance.GridContentSection.Visibility = Visibility.Collapsed;
-                        CurrentInstance.GridSideMenu.Visibility = Visibility.Collapsed;
-                        CurrentInstance.GridCardImages.Visibility = Visibility.Collapsed;
-                        CurrentInstance.GridStatus.Visibility = Visibility.Visible;
+        //                // Show status section and hide others
+        //                CurrentInstance.GridContentSection.Visibility = Visibility.Collapsed;
+        //                CurrentInstance.GridSideMenu.Visibility = Visibility.Collapsed;
+        //                CurrentInstance.GridCardImages.Visibility = Visibility.Collapsed;
+        //                CurrentInstance.GridStatus.Visibility = Visibility.Visible;
 
-                        if (progressBarVisible)
-                        {
-                            CurrentInstance.ProgressBar.Visibility = Visibility.Visible;
-                        }
-                        else
-                        {
-                            CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
-                        }
+        //                if (progressBarVisible)
+        //                {
+        //                    CurrentInstance.ProgressBar.Visibility = Visibility.Visible;
+        //                }
+        //                else
+        //                {
+        //                    CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
+        //                }
 
-                        CurrentInstance.StatusLabel.Content = statusLabelContent;
-                    }
-                    else
-                    {
-                        CurrentInstance.GridTopMenu.IsEnabled = true;
-                        CurrentInstance.GridStatus.Visibility = Visibility.Collapsed;
-                        CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
-                        CurrentInstance.GridSideMenu.Visibility = Visibility.Visible;
-                        CurrentInstance.GridCardImages.Visibility = Visibility.Visible;
-                    }
-                });
-                CurrentInstance.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
-            }
-        }
+        //                CurrentInstance.StatusLabel.Content = statusLabelContent;
+        //            }
+        //            else
+        //            {
+        //                CurrentInstance.GridTopMenu.IsEnabled = true;
+        //                CurrentInstance.GridStatus.Visibility = Visibility.Collapsed;
+        //                CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
+        //                CurrentInstance.GridSideMenu.Visibility = Visibility.Visible;
+        //                CurrentInstance.GridCardImages.Visibility = Visibility.Visible;
+        //            }
+        //        });
+        //        CurrentInstance.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+        //    }
+        //}
 
 
     }

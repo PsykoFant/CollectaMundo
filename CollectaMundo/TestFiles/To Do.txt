@@ -7,6 +7,7 @@ TO DO
 
   - Card image brug MVVM (unit test)
 	- Fix meld creatures show bug
+	- One thing you can eliminate right away is your StringToImageSourceConverter
  - Backup restore brug MVVM (unit test) 
  - Pris update brug MVVM (unit test)
  - Import brug MVVM (unit test)
