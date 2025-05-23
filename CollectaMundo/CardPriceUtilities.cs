@@ -18,7 +18,7 @@ namespace CollectaMundo
             try
             {
                 MainWindow.CurrentInstance.GridTopMenu.IsEnabled = false;
-                MainWindow.CurrentInstance.GridSideMenu.IsEnabled = false;
+                //MainWindow.CurrentInstance.GridSideMenu.IsEnabled = false;
 
                 string? dateString = JsonAppSettings.GetSetting("PriceInfo:PricesUpdatedDate") as string;
 
@@ -69,7 +69,7 @@ namespace CollectaMundo
             {
                 DBAccess.CloseConnection();
                 MainWindow.CurrentInstance.GridTopMenu.IsEnabled = true;
-                MainWindow.CurrentInstance.GridSideMenu.IsEnabled = true;
+                //MainWindow.CurrentInstance.GridSideMenu.IsEnabled = true;
                 //await MainWindow.ShowStatusWindowAsync(false);
             }
 

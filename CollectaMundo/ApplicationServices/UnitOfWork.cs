@@ -6,16 +6,17 @@ namespace CollectaMundo.ApplicationServices
     public class UnitOfWork(IDbConnectionFactory dbFactory) : IUnitOfWork
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
+        private SQLiteConnection? _conn;
         private SQLiteTransaction? _txn;
 
         public async Task BeginAsync()
         {
-            // 1) Open (or re-use) the single shared connection
-            var conn = await _dbFactory.OpenConnectionAsync();
-
-            // 2) Start a transaction on it
-            _txn = conn.BeginTransaction();
+            _conn ??= await _dbFactory.OpenConnectionAsync(); // reuse if already opened
+            _txn = _conn.BeginTransaction();
         }
+
+        public SQLiteConnection CurrentConnection => _conn ?? throw new InvalidOperationException("BeginAsync must be called first.");
+        public SQLiteTransaction CurrentTransaction => _txn ?? throw new InvalidOperationException("BeginAsync must be called first.");
 
         public Task CommitAsync()
         {
@@ -29,13 +30,16 @@ namespace CollectaMundo.ApplicationServices
             return Task.CompletedTask;
         }
 
-        public SQLiteTransaction CurrentTransaction => _txn ?? throw new InvalidOperationException("You must call BeginAsync() before using the transaction.");
-
         public ValueTask DisposeAsync()
         {
-            // tear down—close the shared connection when you're fully done
-            _dbFactory.CloseConnection();
+            _txn?.Dispose();
+            _txn = null;
+
+            _conn?.Dispose();
+            _conn = null;
+
             return ValueTask.CompletedTask;
         }
     }
+
 }

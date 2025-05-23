@@ -5,7 +5,6 @@ namespace CollectaMundo.Data
     public interface IDbConnectionFactory
     {
         Task<SQLiteConnection> OpenConnectionAsync();
-        void CloseConnection();
     }
 
 }

@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic;
+﻿using CollectaMundo.Data;
+using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
 using System.Collections.ObjectModel;
 
@@ -57,7 +58,9 @@ namespace CollectaMundo.ApplicationServices
                 c.Language == newItem.Language);
 
             if (existsByKey)
+            {
                 return;
+            }
 
             // 7) finally, add it
             targetCollection.Add(newItem);
@@ -110,15 +113,19 @@ namespace CollectaMundo.ApplicationServices
             // 1) start transaction
             await _uow.BeginAsync();
 
+
             try
             {
-                // 2) hand off to pure domain logic
-                var results = await _domainLogic.SaveBatchAsync(cards, isEdit);
+                // Construct repo per UoW with the shared connection
+                var connection = _uow.CurrentConnection;
+                var repo = new EditCollectionRepository(connection);
 
-                // 3) commit
+                // Construct domain logic with this repo
+                var logic = new EditCollectionLogic(repo);
+
+                var results = await logic.SaveBatchAsync(cards, isEdit);
+
                 await _uow.CommitAsync();
-
-                // 4) return
                 return [.. results];
             }
             catch

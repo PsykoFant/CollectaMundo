@@ -195,7 +195,7 @@ namespace CollectaMundo
         public static async Task BeginImportButton()
         {
             MainWindow.CurrentInstance.GridTopMenu.IsEnabled = false;
-            MainWindow.CurrentInstance.GridSideMenu.IsEnabled = false;
+            //MainWindow.CurrentInstance.GridSideMenu.IsEnabled = false;
 
             // Select the csv-file and create a TempImport object with the content
             await ImportCsvAsync();
@@ -1849,7 +1849,7 @@ namespace CollectaMundo
 
             // Reenable menu buttons
             MainWindow.CurrentInstance.GridTopMenu.IsEnabled = true;
-            MainWindow.CurrentInstance.GridSideMenu.IsEnabled = true;
+            //MainWindow.CurrentInstance.GridSideMenu.IsEnabled = true;
 
             // Reset other Import UI elements            
             MainWindow.CurrentInstance.CrunchingDataLabel.Content = string.Empty;

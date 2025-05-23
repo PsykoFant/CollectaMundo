@@ -26,7 +26,7 @@ namespace CollectaMundo
             try
             {
                 MainWindow.CurrentInstance.GridTopMenu.IsEnabled = false;
-                MainWindow.CurrentInstance.GridSideMenu.IsEnabled = false;
+                //MainWindow.CurrentInstance.GridSideMenu.IsEnabled = false;
 
                 MainWindow.CurrentInstance.UtilsInfoLabel.Content = "Checking for card database updates...";
 
@@ -51,7 +51,7 @@ namespace CollectaMundo
                     MainWindow.CurrentInstance.UtilsInfoLabel.Content = "Your card database is already up to date.";
                 }
                 MainWindow.CurrentInstance.GridTopMenu.IsEnabled = true;
-                MainWindow.CurrentInstance.GridSideMenu.IsEnabled = true;
+                //MainWindow.CurrentInstance.GridSideMenu.IsEnabled = true;
             }
             catch (Exception ex)
             {

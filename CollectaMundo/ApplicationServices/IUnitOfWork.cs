@@ -13,6 +13,7 @@ namespace CollectaMundo.ApplicationServices
         /// pass it into their SQLiteCommand constructors.
         /// </summary>
         SQLiteTransaction CurrentTransaction { get; }
+        SQLiteConnection CurrentConnection { get; }
     }
 }
 
