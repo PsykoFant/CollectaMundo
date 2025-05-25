@@ -1,6 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices;
 using CollectaMundo.Data;
-using CollectaMundo.DomainLogic;
 using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
@@ -140,8 +139,9 @@ namespace CollectaMundo.ViewModels
             AllCardsInDecksVM = new CardViewModel();
             ColorIcons = new CardViewModel();
 
+            // Edit collection stack
             var editRepo = new EditCollectionRepository(new SQLiteConnection());
-            var editLogic = new EditCollectionLogic(editRepo);
+            var editLogic = new EditLogicFactory();
             var editUow = new UnitOfWork(_dbFactory);
             var editService = new EditCollectionService(editUow, editLogic);
             AddCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);

@@ -6,7 +6,6 @@ namespace CollectaMundo.Data
     public class DbConnectionFactory(IAppSettings settings) : IDbConnectionFactory
     {
         private readonly IAppSettings _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-        private SQLiteConnection? _connection;
 
         public async Task<SQLiteConnection> OpenConnectionAsync()
         {

@@ -1,14 +1,12 @@
-﻿using CollectaMundo.Data;
-using CollectaMundo.DomainLogic;
-using CollectaMundo.DomainLogic.Models;
+﻿using CollectaMundo.DomainLogic.Models;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class EditCollectionService(IUnitOfWork uow, IEditCollectionLogic domainLogic) : IEditCollectionService
+    public class EditCollectionService(IUnitOfWork uow, IEditLogicFactory logicFactory) : IEditCollectionService
     {
-        private readonly IEditCollectionLogic _domainLogic = domainLogic ?? throw new ArgumentNullException(nameof(domainLogic));
         private readonly IUnitOfWork _uow = uow ?? throw new ArgumentNullException(nameof(uow));
+        private readonly IEditLogicFactory _logicFactory = logicFactory;
 
         // Adding cards to an add or edit listview
         public Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewHelperAsync(selectedCard, targetCollection, false);
@@ -17,35 +15,33 @@ namespace CollectaMundo.ApplicationServices
         {
             CardSet newItem;
 
-            // 1) Start a UoW (open/transaction)
+            // Start a UoW 
             await _uow.BeginAsync();
             try
             {
-                // 2) Do all your repo calls under that transaction
-                //    (PrepareCardForListAsync will go to the repo for languages/finishes)
-                newItem = await _domainLogic.PrepareCardForListAsync(selectedCard, isEdit);
+                var domainLogic = _logicFactory.Create(_uow.CurrentConnection);
+                newItem = await domainLogic.PrepareCardForListAsync(selectedCard, isEdit);
 
-                // 3) Commit if everything succeeded
+                // Commit if everything succeeded
                 await _uow.CommitAsync();
             }
             catch
             {
-                // 4) Roll back on any error
+                // Roll back on any error
                 await _uow.RollbackAsync();
                 throw;
             }
             finally
             {
-                // 5) Always tear down the connection
+                // Tear down the connection
                 await _uow.DisposeAsync();
             }
 
-            // 6) Now there is a fully-populated CardSet in newItem.
-            //    Run existing de-duplication logic in-memory:
+            // Now there is a fully-populated CardSet in newItem.
+            // Run existing de-duplication logic in-memory:
 
             // skip if we already have this exact database ID
-            if (newItem.CardId != null &&
-                targetCollection.Any(c => c.CardId == newItem.CardId))
+            if (newItem.CardId != null && targetCollection.Any(c => c.CardId == newItem.CardId))
             {
                 return;
             }
@@ -62,47 +58,48 @@ namespace CollectaMundo.ApplicationServices
                 return;
             }
 
-            // 7) finally, add it
+            // Finally, add it
             targetCollection.Add(newItem);
         }
 
         // Submitting new cards or card edits
         public async Task<List<CardChangeEventArgs>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<CardSet> cards)
         {
-            // (for “with defaults” you know these are all new, so isEdit will be false,
-            // but we compute it here in case you ever reuse this method for mixed lists)
+            // For with defaults you know these are all new, so isEdit will be false,
             bool isEdit = cards.Any(c => c.CardId != null);
 
-            // 1) Open / Begin
+            // Open / Begin
             await _uow.BeginAsync();
 
             try
             {
-                // 2) Prepare each raw into a fully‐populated CardSet
+                // Prepare each raw into a fully‐populated CardSet
                 var prepared = new List<CardSet>();
+                var domainLogic = _logicFactory.Create(_uow.CurrentConnection);
+
                 foreach (var raw in cards)
                 {
-                    prepared.Add(await _domainLogic.PrepareNewCardWithDefaultsAsync(raw));
+                    prepared.Add(await domainLogic.PrepareNewCardWithDefaultsAsync(raw));
                 }
 
-                // 3) Hand off to your pure domain‐logic batch (no further UoW calls inside)
-                var changes = await _domainLogic.SaveBatchAsync(prepared, isEdit);
+                // Hand off to your pure domain‐logic batch (no further UoW calls inside)
+                var changes = await domainLogic.SaveBatchAsync(prepared, isEdit);
 
-                // 4) Commit on success
+                // Commit on success
                 await _uow.CommitAsync();
 
                 // 5) Return a concrete List
-                return changes.ToList();
+                return [.. changes];
             }
             catch
             {
-                // 6) Roll back on any error
+                // Roll back on any error
                 await _uow.RollbackAsync();
                 throw;
             }
             finally
             {
-                // 7) Always clean up / close connection
+                // Clean up / close connection
                 await _uow.DisposeAsync();
             }
         }
@@ -110,33 +107,26 @@ namespace CollectaMundo.ApplicationServices
         {
             bool isEdit = cards.Any(c => c.CardId != null);
 
-            // 1) start transaction
+            // Start transaction
             await _uow.BeginAsync();
-
 
             try
             {
-                // Construct repo per UoW with the shared connection
-                var connection = _uow.CurrentConnection;
-                var repo = new EditCollectionRepository(connection);
-
-                // Construct domain logic with this repo
-                var logic = new EditCollectionLogic(repo);
-
-                var results = await logic.SaveBatchAsync(cards, isEdit);
+                var domainLogic = _logicFactory.Create(_uow.CurrentConnection);
+                var results = await domainLogic.SaveBatchAsync(cards, isEdit);
 
                 await _uow.CommitAsync();
                 return [.. results];
             }
             catch
             {
-                // 5) rollback on any error
+                // Rollback on any error
                 await _uow.RollbackAsync();
                 throw;
             }
             finally
             {
-                // 6) tear down connection
+                // Tear down connection
                 await _uow.DisposeAsync();
             }
         }
