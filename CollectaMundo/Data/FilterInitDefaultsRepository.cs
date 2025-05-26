@@ -6,10 +6,9 @@ using System.Diagnostics;
 
 namespace CollectaMundo.Data
 {
-    public class FilterDefaultsRepository(IDbConnectionFactory dbFactory) : IFilterDefaultsRepository
+    public class FilterInitDefaultsRepository(SQLiteConnection connection) : IFilterInitDefaultsRepository
     {
-        private readonly IDbConnectionFactory _dbFactory = dbFactory;
-
+        private readonly SQLiteConnection _connection = connection;
         public async Task<List<FilterDefaults>> GetFilterDefaultsAsync()
         {
             var filterDefaultsList = new List<FilterDefaults>();
@@ -20,9 +19,6 @@ namespace CollectaMundo.Data
                 string criteriaKey = entry.Key;
                 var mapping = entry.Value;
                 List<string> distinctValues = [];
-
-                // Open the shared connection via factory
-                var conn = await _dbFactory.OpenConnectionAsync();
 
                 // For colors, skip the query and use hardcoded values.
                 if (criteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
@@ -60,7 +56,7 @@ namespace CollectaMundo.Data
 
                     try
                     {
-                        using SQLiteCommand command = new(query, conn);
+                        using SQLiteCommand command = new(query, _connection);
                         using DbDataReader reader = await command.ExecuteReaderAsync();
                         while (await reader.ReadAsync())
                         {

@@ -1,5 +1,4 @@
-﻿using CollectaMundo.Data;
-using CollectaMundo.Domain;
+﻿using CollectaMundo.Domain;
 using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Utilities;
 using CollectaMundo.ViewModels;
@@ -11,10 +10,8 @@ using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class FilteringService(IFilterDefaultsRepository repo) : IFilteringService
+    public class FilteringService() : IFilteringService
     {
-        private readonly IFilterDefaultsRepository _repo = repo;
-        public Task<List<FilterDefaults>> LoadDefaultsAsync() => _repo.GetFilterDefaultsAsync();
         public List<CardSet> ApplyFilters(IEnumerable<CardSet> cards, IEnumerable<FilterItemViewModel> vmFilters)
         {
             // nothing to do if no filters selected
@@ -22,7 +19,7 @@ namespace CollectaMundo.ApplicationServices
                 return [.. cards];
 
             // map UI-state → domain criteria
-            var criteria = vmFilters.Select(vm => new FilterLogic(
+            var criteria = vmFilters.Select(vm => new FilteringLogic(
                     vm.CriteriaKey,
                     vm.FilterCategory,
                     vm.SelectedOptions,
@@ -177,5 +174,7 @@ namespace CollectaMundo.ApplicationServices
                 _ => ""
             };
         }
+
+
     }
 }

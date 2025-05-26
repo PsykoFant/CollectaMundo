@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.ApplicationServices;
-using CollectaMundo.Data;
 using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Windows.Input;
@@ -37,17 +36,8 @@ namespace CollectaMundo.ViewModels
         // Constructor now takes interfaces
         public FilterViewModel(IFilteringService service)
         {
+
             _service = service;
-            // pre-populate empty so bindings don’t break…
-            foreach (var key in FilterCriteriaMappings.CriteriaMappings.Keys)
-                Filters[key] = new FilterItemViewModel(
-                  key,
-                  [],
-                  defaultText: string.Empty,
-                  readableLabel: string.Empty,
-                  filterViewModel: this,
-                  numericOptions: null
-                );
 
             ClearFiltersCommand = new RelayCommand<object>(_ =>
             {
@@ -55,36 +45,6 @@ namespace CollectaMundo.ViewModels
                 NotifyFilterChanged();
             });
         }
-
-        public async Task InitializeAsync(IFilterDefaultsRepository defaultsRepo, IUnitOfWork uow)
-        {
-            await uow.BeginAsync();
-            try
-            {
-                var defaults = await defaultsRepo.GetFilterDefaultsAsync();
-                foreach (var def in defaults)
-                {
-                    Filters[def.CriteriaKey] = new FilterItemViewModel(
-                        def.CriteriaKey,
-                        def.FilterOptions,
-                        def.DefaultText,
-                        def.ReadableLabel,
-                        this,
-                        def.NumericCriteria);
-                }
-                await uow.CommitAsync();
-            }
-            catch
-            {
-                await uow.RollbackAsync();
-                throw;
-            }
-            finally
-            {
-                await uow.DisposeAsync();
-            }
-        }
-
         public void NotifyFilterChanged()
         {
             FilterSummary = _service.BuildSummary(Filters.Values);

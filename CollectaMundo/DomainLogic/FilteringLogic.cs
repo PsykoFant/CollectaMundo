@@ -7,7 +7,7 @@ using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Domain
 {
-    public class FilterLogic(string criteriaKey, FilterType filterCategory, IEnumerable<string> selectedOptions, string? selectedSingleOption, int? selectedNumericValue, MainWindow.OperatorType operatorSelection, string defaultText) : IFilterLogic
+    public class FilteringLogic(string criteriaKey, FilterType filterCategory, IEnumerable<string> selectedOptions, string? selectedSingleOption, int? selectedNumericValue, MainWindow.OperatorType operatorSelection, string defaultText) : IFilteringLogic
     {
         public string CriteriaKey { get; } = criteriaKey;
         public FilterType FilterCategory { get; } = filterCategory;

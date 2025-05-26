@@ -115,10 +115,10 @@ namespace CollectaMundo.ViewModels
 
         public bool IsTopMenuEnabled => CurrentPage != Page.StatusScreen;
 
-
         // Backing fields
         private readonly IDbConnectionFactory _dbFactory;
         private readonly IFilteringService _filteringService;
+        private readonly IFilterInitDefaultsService _filterInitDefaultsService;
 
         // Commands to switch pages
         public ICommand ShowSearchAndFilterCommand { get; }
@@ -149,32 +149,25 @@ namespace CollectaMundo.ViewModels
             AddCardsVM.CardChanged += OnCardChanged;
             EditCardsVM.CardChanged += OnCardChanged;
 
-            // 3) "Filtering" stack: defaults repo --> filtering coordinator --> view-model
-            var filterDefaultsRepo = new FilterDefaultsRepository(_dbFactory);
-            _filteringService = new FilteringService(filterDefaultsRepo);
-            // now hand it off to your FilterVM
+            // Filtering stack
+            var filterUow = new UnitOfWork(_dbFactory);
+            _filteringService = new FilteringService();
+            _filterInitDefaultsService = new FilterInitDefaultsService(filterUow);
             FilterVM = new FilterViewModel(_filteringService);
-            _ = InitializeFiltersAsync(filterDefaultsRepo);
+            _ = InitializeFiltersAsync();
             FilterVM.FilterChanged += OnFilterChanged;
 
             HookUpStatusChanged();
 
-            ShowSearchAndFilterCommand = new RelayCommand<object>(_ =>
-            {
-                CurrentPage = Page.SearchAndFilter;
-            });
-            ShowMyCollectionCommand = new RelayCommand<object>(_ =>
-            {
-                CurrentPage = Page.MyCollection;
-            });
+            ShowSearchAndFilterCommand = new RelayCommand<object>(_ => { CurrentPage = Page.SearchAndFilter; });
+            ShowMyCollectionCommand = new RelayCommand<object>(_ => { CurrentPage = Page.MyCollection; });
             ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
         }
 
-        private async Task InitializeFiltersAsync(IFilterDefaultsRepository defaultsRepo)
+        private async Task InitializeFiltersAsync()
         {
-            var uow = new UnitOfWork(_dbFactory);
-            await FilterVM.InitializeAsync(defaultsRepo, uow);
+            await _filterInitDefaultsService.InitializeFiltersAsync(FilterVM.Filters, FilterVM);
         }
 
         public void ShowStatusScreen(bool show, string? message = null, bool progress = false, string? firstTimeText = null)

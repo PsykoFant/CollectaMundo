@@ -2,7 +2,7 @@
 
 namespace CollectaMundo.Data
 {
-    public interface IFilterDefaultsRepository
+    public interface IFilterInitDefaultsRepository
     {
         Task<List<FilterDefaults>> GetFilterDefaultsAsync();
     }

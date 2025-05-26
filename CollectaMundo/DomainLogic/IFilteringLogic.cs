@@ -2,7 +2,7 @@
 
 namespace CollectaMundo.Domain
 {
-    public interface IFilterLogic
+    public interface IFilteringLogic
     {
         bool Matches(CardSet card);
     }
