@@ -1,4 +1,6 @@
-﻿using CollectaMundo.DomainLogic.Models;
+﻿using CollectaMundo.Data;
+using CollectaMundo.DomainLogic.Models;
+using System.Data.SQLite;
 
 namespace CollectaMundo.Tests
 {
@@ -137,7 +139,15 @@ namespace CollectaMundo.Tests
                 }
             ];
         }
+        public static IDbConnectionFactory CreateInMemoryDbFactory(SQLiteConnection connection)
+        {
+            return new StaticDbFactory(connection);
+        }
 
+        private class StaticDbFactory(SQLiteConnection conn) : IDbConnectionFactory
+        {
+            public Task<SQLiteConnection> OpenConnectionAsync() => Task.FromResult(conn);
+        }
     }
 
 }

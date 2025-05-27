@@ -18,6 +18,7 @@ namespace CollectaMundo.ViewModels
         // INotifyPropertyChanged boilerplate
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        public Action? OnStartupComplete { get; set; }
 
         // Page navigation
 
@@ -182,6 +183,8 @@ namespace CollectaMundo.ViewModels
             });
 
             await _filterInitDefaultsService.InitializeFiltersAsync(FilterVM.Filters, FilterVM);
+
+            OnStartupComplete?.Invoke();
         }
 
         public void ShowStatusScreen(bool show, string? message = null, bool progress = false, string? firstTimeText = null)
