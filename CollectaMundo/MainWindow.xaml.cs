@@ -34,7 +34,6 @@ namespace CollectaMundo
             private set => _currentInstance = value;
         }
 
-        private bool _hasInitialized = false;
         private MainWindowViewModel VM => (MainWindowViewModel)DataContext;
 
         //private readonly ICardListService _cardListService;
@@ -137,35 +136,16 @@ namespace CollectaMundo
             var settings = new JsonAppSettings();
             _dbFactory = new DbConnectionFactory(settings);
 
-            var vm = new MainWindowViewModel(_dbFactory);
-            DataContext = vm;
+            DataContext = new MainWindowViewModel(_dbFactory);
 
-            //Loaded += MainWindow_ContentRendered;
-            Loaded += async (_, _) =>
-            {
-                // Initial bindings now active; viewmodel can drive startup UI
-                VM.ShowStatusScreen(true, "Loading data...", progress: true);
-                await FlushUiAsync();
-
-                await DownloadAndPrepDB.SystemIntegrityCheckAsync();
-
-                VM.ShowStatusScreen(true, "Just a quick system integrity check …", progress: false);
-                await FlushUiAsync();
-                await vm.InitializeAsync();
-
-                VM.FilterVM.NotifyFilterChanged();
-
-                VM.SideMenuVisibility = Visibility.Visible;
-                VM.ContenSectionVisibility = Visibility.Visible;
-                VM.ShowStatusScreen(false);
-            };
+            ContentRendered += MainWindow_ContentRendered;
 
             //DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
             //UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
         }
 
         #region Load data and populate UI elements
-
+        private bool _hasInitialized = false;
 
         private async void MainWindow_ContentRendered(object? sender, EventArgs e)
         {
@@ -184,33 +164,41 @@ namespace CollectaMundo
             VM.ShowStatusScreen(true, "Loading ALL the cards …", progress: false);
             await FlushUiAsync();
 
-            // Build settings + factory
-            var settings = new JsonAppSettings();
-            var dbFactory = new DbConnectionFactory(settings);
-
-            // Show status while initializing
-            var readyTcs = new TaskCompletionSource();
-
-            await readyTcs.Task;
+            await LoadDataIntoUiElements();
+            await FlushUiAsync();
 
             VM.ShowStatusScreen(false);
             await FlushUiAsync();
             _isStartup = false;
 
-            CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
-            CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
-
-            VM.FilterVM.NotifyFilterChanged();
-
             VM.SideMenuVisibility = Visibility.Visible;
             VM.ContenSectionVisibility = Visibility.Visible;
-            VM.ShowStatusScreen(false);
         }
 
 
         private static async Task FlushUiAsync()
         {
             await Application.Current.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+        }
+
+
+        public async Task LoadDataIntoUiElements()
+        {
+            //await ShowStatusWindowAsync(true, "Loading ALL the cards ...");
+            VM.ShowStatusScreen(true, "Loading ALL the cards …", progress: false);
+
+
+            await Application.Current.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+
+
+            VM.FilterVM.NotifyFilterChanged();
+
+
+
+            CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
+            CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
+
+            VM.ShowStatusScreen(false);
         }
         public async Task LoadAllDecksAsync()
         {

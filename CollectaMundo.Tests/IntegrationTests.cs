@@ -8,8 +8,8 @@ namespace CollectaMundo.Tests
     /// methods.  We get one‑time async startup via <see cref="IAsyncLifetime"/>.
     /// </summary>
     public sealed class IntegrationTests(InMemoryDatabaseFixture fixture) :
-        IClassFixture<InMemoryDatabaseFixture>,   // gets us the in‑memory DB
-        IAsyncLifetime                            // lets us await async startup once
+           IClassFixture<InMemoryDatabaseFixture>,   // gets us the in‑memory DB
+           IAsyncLifetime                            // lets us await async startup once
     {
         private readonly InMemoryDatabaseFixture _fx = fixture;
         private MainWindowViewModel _mainVM = null!;
@@ -18,7 +18,10 @@ namespace CollectaMundo.Tests
         // IAsyncLifetime implementation
         public async Task InitializeAsync()
         {
-            if (_mainVM is not null) return;
+            if (_mainVM is not null)
+            {
+                return;
+            }
 
 
             // Ensure seeding is fully complete before any app logic starts
@@ -32,12 +35,12 @@ namespace CollectaMundo.Tests
                 OnStartupComplete = () => readyTcs.SetResult()
             };
 
-            await _mainVM.InitializeListsAsync();   // ✅ Await explicitly
-            await readyTcs.Task; // Wait until full startup completes
+            await readyTcs.Task; // Wait until full startup completes // <-- after this, just spins
 
             _mainVM.AddCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
             _mainVM.EditCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
         }
+
 
 
         public Task DisposeAsync() => Task.CompletedTask;

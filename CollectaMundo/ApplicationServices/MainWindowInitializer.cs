@@ -5,10 +5,7 @@ namespace CollectaMundo.ApplicationServices
 {
     public class MainWindowInitializer(IDbConnectionFactory factory)
     {
-        public async Task InitializeAsync(
-            List<(CardViewModel, CardListQuerySpec)> cardSpecs,
-            Dictionary<string, FilterItemViewModel> filters,
-            FilterViewModel filterVM)
+        public async Task InitializeAsync(List<(CardViewModel, CardListQuerySpec)> cardSpecs, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork(factory);
             await uow.BeginAsync();
