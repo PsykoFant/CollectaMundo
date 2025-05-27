@@ -160,7 +160,6 @@ namespace CollectaMundo.ViewModels
             _filteringService = new FilteringService();
             _filterInitDefaultsService = new FilterInitDefaultsService(filterUow);
             FilterVM = new FilterViewModel(_filteringService);
-            _ = InitializeListsAsync();
             FilterVM.FilterChanged += OnFilterChanged;
 
             HookUpStatusChanged();
@@ -171,21 +170,28 @@ namespace CollectaMundo.ViewModels
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
         }
 
-        private async Task InitializeListsAsync()
+        public async Task InitializeAsync()
         {
-            await _cardListInitService.LoadCardListsAsync(new List<(CardViewModel, CardListQuerySpec)>
-            {
-                (AllCardsVM, CardListQueryCatalog.AllCards),
-                (MyCollectionVM, CardListQueryCatalog.MyCollection),
-                (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
-                (AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
-                (ColorIcons, CardListQueryCatalog.ColorIcons)
-            });
+            var init = new MainWindowInitializer(_dbFactory);
+            await init.InitializeAsync(
+                new List<(CardViewModel, CardListQuerySpec)>
+                {
+            (AllCardsVM, CardListQueryCatalog.AllCards),
+            (MyCollectionVM, CardListQueryCatalog.MyCollection),
+            (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
+            (AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
+            (ColorIcons, CardListQueryCatalog.ColorIcons)
+                },
+                FilterVM.Filters,
+                FilterVM
+            );
 
-            await _filterInitDefaultsService.InitializeFiltersAsync(FilterVM.Filters, FilterVM);
-
+            FilterVM.NotifyFilterChanged();
             OnStartupComplete?.Invoke();
         }
+
+
+
 
         public void ShowStatusScreen(bool show, string? message = null, bool progress = false, string? firstTimeText = null)
         {

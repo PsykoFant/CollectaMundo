@@ -89,7 +89,7 @@ namespace CollectaMundo
                         await Task.Delay(1000); // Leave the message for a few seconds
 
                         MainWindow.CurrentInstance.UpdateDbButton.Visibility = Visibility.Collapsed;
-                        await MainWindow.CurrentInstance.LoadDataIntoUiElements();
+                        //await MainWindow.CurrentInstance.LoadDataIntoUiElements();
 
                         //await MainWindow.ShowStatusWindowAsync(false);
                     }

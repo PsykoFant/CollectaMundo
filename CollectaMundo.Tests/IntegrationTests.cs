@@ -16,8 +16,6 @@ namespace CollectaMundo.Tests
         private readonly List<CardChangeEventArgs> _changedEvents = [];
 
         // IAsyncLifetime implementation
-
-
         public async Task InitializeAsync()
         {
             if (_mainVM is not null) return;
@@ -34,6 +32,7 @@ namespace CollectaMundo.Tests
                 OnStartupComplete = () => readyTcs.SetResult()
             };
 
+            await _mainVM.InitializeListsAsync();   // ✅ Await explicitly
             await readyTcs.Task; // Wait until full startup completes
 
             _mainVM.AddCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
