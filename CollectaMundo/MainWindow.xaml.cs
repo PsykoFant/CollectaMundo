@@ -36,7 +36,7 @@ namespace CollectaMundo
 
         private MainWindowViewModel VM => (MainWindowViewModel)DataContext;
 
-        private readonly ICardListService _cardListService;
+        //private readonly ICardListService _cardListService;
 
         // Used for displaying images
         private string? _imageSourceUrl = string.Empty;
@@ -131,7 +131,6 @@ namespace CollectaMundo
         {
             InitializeComponent();
             _currentInstance = this;
-            _cardListService = new CardListService(new CardListRepository());
 
             // build your settings + factory once
             var settings = new JsonAppSettings();
@@ -188,23 +187,13 @@ namespace CollectaMundo
             //await ShowStatusWindowAsync(true, "Loading ALL the cards ...");
             VM.ShowStatusScreen(true, "Loading ALL the cards …", progress: false);
 
-            // 1) open the shared connection
-            await _dbFactory.OpenConnectionAsync();
-
-            await DBAccess.OpenConnectionAsync();
-
-            await _cardListService.LoadAllCardsAsync(VM.AllCardsVM.Cards);
-            await _cardListService.LoadMyCollectionAsync(VM.MyCollectionVM.Cards);
-            await _cardListService.LoadAllCardsForDecksAsync(VM.AllCardsForDecksVM.Cards);
-            await _cardListService.LoadAllCardsInDecksAsync(VM.AllCardsInDecksVM.Cards);
-            await _cardListService.LoadColorIconsAsync(VM.ColorIcons.Cards);
 
             await Application.Current.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
 
 
             VM.FilterVM.NotifyFilterChanged();
 
-            DBAccess.CloseConnection();
+
 
             CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
             CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
@@ -771,10 +760,10 @@ namespace CollectaMundo
             // Update the db views to load prices from the selected retailer
             await DownloadAndPrepDB.CreateViews();
 
-            Task loadAllCards = _cardListService.LoadAllCardsAsync(VM.AllCardsVM.Cards);
-            Task loadMyCollection = _cardListService.LoadAllCardsAsync(VM.MyCollectionVM.Cards);
+            //Task loadAllCards = _cardListService.LoadAllCardsAsync(VM.AllCardsVM.Cards);
+            //Task loadMyCollection = _cardListService.LoadAllCardsAsync(VM.MyCollectionVM.Cards);
 
-            await Task.WhenAll(loadAllCards, loadMyCollection);
+            //await Task.WhenAll(loadAllCards, loadMyCollection);
 
             CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
             CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);

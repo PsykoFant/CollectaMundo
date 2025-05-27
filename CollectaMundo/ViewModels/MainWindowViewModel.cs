@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.Data;
 using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.Utilities;
@@ -119,6 +120,7 @@ namespace CollectaMundo.ViewModels
         private readonly IDbConnectionFactory _dbFactory;
         private readonly IFilteringService _filteringService;
         private readonly IFilterInitDefaultsService _filterInitDefaultsService;
+        private readonly ICardListInitService _cardListInitService;
 
         // Commands to switch pages
         public ICommand ShowSearchAndFilterCommand { get; }
@@ -139,11 +141,14 @@ namespace CollectaMundo.ViewModels
             AllCardsInDecksVM = new CardViewModel();
             ColorIcons = new CardViewModel();
 
+            // Card lists stack
+            var cardListUow = new UnitOfWork(_dbFactory);
+            _cardListInitService = new CardListInitService(cardListUow);
+
             // Edit collection stack
             var editRepo = new EditCollectionRepository(new SQLiteConnection());
-            var editLogic = new EditLogicFactory();
             var editUow = new UnitOfWork(_dbFactory);
-            var editService = new EditCollectionService(editUow, editLogic);
+            var editService = new EditCollectionService(editUow);
             AddCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);
             EditCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: false);
             AddCardsVM.CardChanged += OnCardChanged;
@@ -167,6 +172,15 @@ namespace CollectaMundo.ViewModels
 
         private async Task InitializeFiltersAsync()
         {
+            await _cardListInitService.LoadCardListsAsync(new List<(CardViewModel, CardListQuerySpec)>
+            {
+                (AllCardsVM, CardListQueryCatalog.AllCards),
+                (MyCollectionVM, CardListQueryCatalog.MyCollection),
+                (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
+                (AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
+                (ColorIcons, CardListQueryCatalog.ColorIcons)
+            });
+
             await _filterInitDefaultsService.InitializeFiltersAsync(FilterVM.Filters, FilterVM);
         }
 

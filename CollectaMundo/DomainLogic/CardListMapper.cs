@@ -4,7 +4,7 @@ using System.Data.Common;
 namespace CollectaMundo.DomainLogic
 {
     // DomainLogic layer: pure, no ADO-NET dependencies
-    public static class CardFactory
+    public static class CardListMapper
     {
         public static CardSet FromAllCardsRow(DbDataReader r)
         {
