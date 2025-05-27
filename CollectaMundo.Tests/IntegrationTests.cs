@@ -22,6 +22,10 @@ namespace CollectaMundo.Tests
         {
             if (_mainVM is not null) return;
 
+
+            // Ensure seeding is fully complete before any app logic starts
+            await _fx.SeedingCompleted;
+
             var dbFactory = TestUtilities.CreateInMemoryDbFactory(_fx.Connection);
             var readyTcs = new TaskCompletionSource();
 
@@ -38,11 +42,6 @@ namespace CollectaMundo.Tests
 
 
         public Task DisposeAsync() => Task.CompletedTask;
-        //private void RefreshFilteredLists(object? sender, EventArgs e)
-        //{
-        //    _allCardsVM.FilteredCards = _filteringCoordinator.ApplyFilters(_allCardsVM.Cards, _filterVM.Filters.Values);
-        //    _myCollectionVM.FilteredCards = _filteringCoordinator.ApplyFilters(_myCollectionVM.Cards, _filterVM.Filters.Values);
-        //}
 
         [Fact]
         public void Seed_has_expected_counts()

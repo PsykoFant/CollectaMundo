@@ -160,7 +160,7 @@ namespace CollectaMundo.ViewModels
             _filteringService = new FilteringService();
             _filterInitDefaultsService = new FilterInitDefaultsService(filterUow);
             FilterVM = new FilterViewModel(_filteringService);
-            _ = InitializeFiltersAsync();
+            _ = InitializeListsAsync();
             FilterVM.FilterChanged += OnFilterChanged;
 
             HookUpStatusChanged();
@@ -171,7 +171,7 @@ namespace CollectaMundo.ViewModels
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
         }
 
-        private async Task InitializeFiltersAsync()
+        private async Task InitializeListsAsync()
         {
             await _cardListInitService.LoadCardListsAsync(new List<(CardViewModel, CardListQuerySpec)>
             {

@@ -39,6 +39,5 @@ namespace CollectaMundo.ApplicationServices
                 await _uow.DisposeAsync();
             }
         }
-
     }
 }

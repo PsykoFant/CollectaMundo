@@ -12,6 +12,11 @@ namespace CollectaMundo.Tests
     {
         public SQLiteConnection Connection { get; private set; }
 
+        private readonly TaskCompletionSource _seedingTcs = new();
+        public Task SeedingCompleted => _seedingTcs.Task;
+
+
+
         // CSV data for each table.
         // Replace these sample rows with the full CSV data from your files.
         public InMemoryDatabaseFixture()
@@ -230,7 +235,25 @@ namespace CollectaMundo.Tests
             ";
             command.ExecuteNonQuery();
 
-            // Create table: view_allCards
+            // Create table: cardsInDecks
+            command.CommandText = @"
+                CREATE TABLE cardsInDecks (id INTEGER PRIMARY KEY AUTOINCREMENT, deckId INTEGER, name TEXT, uuid TEXT, count INTEGER)
+            ";
+            command.ExecuteNonQuery();
+
+            // Create table: uniqueManaSymbols
+            command.CommandText = @"
+                CREATE TABLE uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB)
+            ";
+            command.ExecuteNonQuery();
+
+            // Create table: uniqueManaCostImages
+            command.CommandText = @"
+                CREATE TABLE uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB)
+            ";
+            command.ExecuteNonQuery();
+
+            // Create view: view_allCards
             command.CommandText = @"
                 CREATE TABLE view_allCards(
                     Name            TEXT,
@@ -259,7 +282,7 @@ namespace CollectaMundo.Tests
             ";
             command.ExecuteNonQuery();
 
-            // Create table: view_myCollection
+            // Create view: view_myCollection
             command.CommandText = @"
                 CREATE TABLE view_myCollection(
                     Name            TEXT,
@@ -292,6 +315,76 @@ namespace CollectaMundo.Tests
                 );
             ";
             command.ExecuteNonQuery();
+
+            // Create view: view_allCardsForDecks
+            command.CommandText = @"
+                CREATE VIEW view_allCardsForDecks AS
+                    SELECT * FROM (
+                        SELECT 
+                            DISTINCT c.name AS Name, 
+                            c.manaCost AS ManaCost, 
+                            u.manaCostImage AS ManaCostImage, 
+                            c.types AS Types, 
+                            c.colors AS Colors,
+                            c.supertypes AS SuperTypes, 
+                            c.subtypes AS SubTypes, 
+                            c.type AS Type, 
+                            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
+                            c.text AS RulesText, 
+                            c.manaValue AS ManaValue, 
+                            c.side AS Side
+                        FROM cards c
+                        JOIN sets s ON c.setCode = s.code
+                        LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                        LEFT JOIN (
+                             SELECT 
+                                cc.Name, 
+                                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
+                             FROM cards cc
+                             GROUP BY cc.Name
+                            ) cg ON c.Name = cg.Name
+                        WHERE c.side IS NULL OR c.side = 'a'
+                    ) 
+                    ORDER BY Types,
+                        CASE Colors
+                            WHEN 'W' THEN 1
+                            WHEN 'U' THEN 2
+                            WHEN 'B' THEN 3
+                            WHEN 'R' THEN 4
+                            WHEN 'G' THEN 5
+                            ELSE 7
+                        END
+            ";
+            command.ExecuteNonQuery();
+
+            // Create view: view_cardsInDecks
+            command.CommandText = @"
+                        CREATE VIEW view_cardsInDecks AS
+                        SELECT 
+                            cardsInDecks.id AS CardId,
+                            cardsInDecks.name AS Name,
+                            cardsInDecks.deckId AS DeckId,
+                            cardsInDecks.uuid AS Uuid,
+                            cardsInDecks.count AS Count,
+                            c.manaCost AS ManaCost,
+	                        c.colors AS Colors,
+	                        c.manaValue AS ManaValue, 
+	                        u.manaCostImage AS ManaCostImage, 
+	                        c.type AS Type
+                        FROM 
+                            cardsInDecks
+                        LEFT JOIN 
+                            (
+                                SELECT name, colors, manaCost, manaValue, type
+                                FROM cards
+                                GROUP BY name
+                            ) c
+	                        ON cardsInDecks.name = c.name
+                        LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+            ";
+            command.ExecuteNonQuery();
+
+
         }
         private async Task SeedDataAsync()
         {
@@ -306,6 +399,8 @@ namespace CollectaMundo.Tests
             await SeedTableAsync("myCollection", Path.Combine(basePath, "myCollection.csv"));
             await SeedTableAsync("view_myCollection", Path.Combine(basePath, "view_myCollection.csv"));
             await SeedTableAsync("view_allCards", Path.Combine(basePath, "view_allCards.csv"));
+
+            _seedingTcs.SetResult();
         }
 
         // A helper method to seed a table from CSV data.
