@@ -18,7 +18,6 @@ namespace CollectaMundo.ViewModels
         // INotifyPropertyChanged boilerplate
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
         public Action? OnStartupComplete { get; set; }
 
         // Page navigation
@@ -121,8 +120,6 @@ namespace CollectaMundo.ViewModels
         // Backing fields
         private readonly IDbConnectionFactory _dbFactory;
         private readonly IFilteringService _filteringService;
-        private readonly IFilterInitDefaultsService _filterInitDefaultsService;
-        private readonly ICardListInitService _cardListInitService;
 
         // Commands to switch pages
         public ICommand ShowSearchAndFilterCommand { get; }
@@ -131,7 +128,7 @@ namespace CollectaMundo.ViewModels
         public ICommand ShowUtilitiesCommand { get; }
 
         // Constructor
-        public MainWindowViewModel(IDbConnectionFactory dbFactory)
+        private MainWindowViewModel(IDbConnectionFactory dbFactory)
         {
             CurrentPage = Page.StatusScreen;
 
@@ -142,10 +139,6 @@ namespace CollectaMundo.ViewModels
             AllCardsForDecksVM = new CardViewModel();
             AllCardsInDecksVM = new CardViewModel();
             ColorIcons = new CardViewModel();
-
-            // Card lists stack
-            var cardListUow = new UnitOfWork(_dbFactory);
-            _cardListInitService = new CardListInitService(cardListUow);
 
             // Edit collection stack
             var editRepo = new EditCollectionRepository(new SQLiteConnection());
@@ -159,11 +152,9 @@ namespace CollectaMundo.ViewModels
             // Filtering stack
             var filterUow = new UnitOfWork(_dbFactory);
             _filteringService = new FilteringService();
-            _filterInitDefaultsService = new FilterInitDefaultsService(filterUow);
             FilterVM = new FilterViewModel(_filteringService);
-            _ = InitializeAsync();
+            //_ = InitializeAsync();
             FilterVM.FilterChanged += OnFilterChanged;
-            OnStartupComplete?.Invoke();
 
             HookUpStatusChanged();
 
@@ -173,7 +164,7 @@ namespace CollectaMundo.ViewModels
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
         }
 
-        public async Task InitializeAsync()
+        private async Task InitializeListsAsync()
         {
             var init = new MainWindowInitializer(_dbFactory);
             await init.InitializeAsync(
@@ -192,6 +183,19 @@ namespace CollectaMundo.ViewModels
             FilterVM.NotifyFilterChanged();
             OnStartupComplete?.Invoke();
         }
+
+        public static async Task<MainWindowViewModel> CreateAsync(
+            IDbConnectionFactory dbFactory,
+            Action? onStartupComplete = null)
+        {
+            var vm = new MainWindowViewModel(dbFactory)
+            {
+                OnStartupComplete = onStartupComplete
+            };
+            await vm.InitializeListsAsync();
+            return vm;
+        }
+
 
 
         public void ShowStatusScreen(bool show, string? message = null, bool progress = false, string? firstTimeText = null)

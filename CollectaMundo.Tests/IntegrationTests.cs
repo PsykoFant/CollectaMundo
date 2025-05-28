@@ -18,30 +18,18 @@ namespace CollectaMundo.Tests
         // IAsyncLifetime implementation
         public async Task InitializeAsync()
         {
-            if (_mainVM is not null)
-            {
-                return;
-            }
+            if (_mainVM is not null) return;
 
-
-            // Ensure seeding is fully complete before any app logic starts
             await _fx.SeedingCompleted;
-
             var dbFactory = TestUtilities.CreateInMemoryDbFactory(_fx.Connection);
+
             var readyTcs = new TaskCompletionSource();
-
-            _mainVM = new MainWindowViewModel(dbFactory)
-            {
-                OnStartupComplete = () => readyTcs.SetResult()
-            };
-
-            await readyTcs.Task; // Wait until full startup completes // <-- after this, just spins
+            _mainVM = await MainWindowViewModel.CreateAsync(dbFactory, () => readyTcs.TrySetResult());
+            await readyTcs.Task;
 
             _mainVM.AddCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
             _mainVM.EditCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
         }
-
-
 
         public Task DisposeAsync() => Task.CompletedTask;
 

@@ -136,12 +136,9 @@ namespace CollectaMundo
             var settings = new JsonAppSettings();
             _dbFactory = new DbConnectionFactory(settings);
 
-            DataContext = new MainWindowViewModel(_dbFactory);
+            //DataContext = new MainWindowViewModel(_dbFactory);
 
             ContentRendered += MainWindow_ContentRendered;
-
-            //DownloadAndPrepDB.StatusMessageUpdated += UpdateStatusTextBox;
-            //UpdateDB.StatusMessageUpdated += UpdateStatusTextBox;
         }
 
         #region Load data and populate UI elements
@@ -156,16 +153,22 @@ namespace CollectaMundo
 
             _hasInitialized = true;
 
-            VM.ShowStatusScreen(true, "Just a quick system integrity check …", progress: false);
+            //VM.ShowStatusScreen(true, "Just a quick system integrity check …", progress: false);
             await FlushUiAsync();
 
             await DownloadAndPrepDB.SystemIntegrityCheckAsync();
 
-            VM.ShowStatusScreen(true, "Loading ALL the cards …", progress: false);
+            //VM.ShowStatusScreen(true, "Loading ALL the cards …", progress: false);
             await FlushUiAsync();
 
-            await LoadDataIntoUiElements();
+            //await LoadDataIntoUiElements();
+            var settings = new JsonAppSettings();
+            var dbFactory = new DbConnectionFactory(settings);
+            var vm = await MainWindowViewModel.CreateAsync(dbFactory);
+            DataContext = vm;
             await FlushUiAsync();
+
+            VM.FilterVM.NotifyFilterChanged();
 
             VM.ShowStatusScreen(false);
             await FlushUiAsync();
