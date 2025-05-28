@@ -1,29 +1,24 @@
 ﻿using CollectaMundo.DomainLogic.Models;
 using CollectaMundo.ViewModels;
+using System.Data.SQLite;
 
 namespace CollectaMundo.Tests
 {
-    /// <summary>
-    /// A single test‑class that keeps the same view‑model instances for all test
-    /// methods.  We get one‑time async startup via <see cref="IAsyncLifetime"/>.
-    /// </summary>
-    public sealed class IntegrationTests(InMemoryDatabaseFixture fixture) :
-           IClassFixture<InMemoryDatabaseFixture>,   // gets us the in‑memory DB
-           IAsyncLifetime                            // lets us await async startup once
+    public sealed class IntegrationTests(InMemoryDatabaseFixture fixture) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
         private readonly InMemoryDatabaseFixture _fx = fixture;
+        private SQLiteConnection _testConnection = null!;
         private MainWindowViewModel _mainVM = null!;
         private readonly List<CardChangeEventArgs> _changedEvents = [];
 
-        // IAsyncLifetime implementation
         public async Task InitializeAsync()
         {
-            if (_mainVM is not null) return;
+            // Get fully seeded, isolated connection for this test instance
+            _testConnection = await _fx.CreateClonedConnectionAsync();
 
-            await _fx.SeedingCompleted;
-            var dbFactory = TestUtilities.CreateInMemoryDbFactory(_fx.Connection);
-
+            var dbFactory = TestUtilities.CreateInMemoryDbFactory(_testConnection);
             var readyTcs = new TaskCompletionSource();
+
             _mainVM = await MainWindowViewModel.CreateAsync(dbFactory, () => readyTcs.TrySetResult());
             await readyTcs.Task;
 
@@ -31,7 +26,11 @@ namespace CollectaMundo.Tests
             _mainVM.EditCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
         }
 
-        public Task DisposeAsync() => Task.CompletedTask;
+        public Task DisposeAsync()
+        {
+            _testConnection?.Dispose();
+            return Task.CompletedTask;
+        }
 
         [Fact]
         public void Seed_has_expected_counts()
@@ -185,351 +184,350 @@ namespace CollectaMundo.Tests
             Assert.Equal(3, foilCount);
         }
 
-        //[Fact]
-        //public void FilterViewModel_Object_Creation_Initialization()
-        //{
-        //    var nameFilter = _filterVM.Filters["Name"];
-        //    Assert.NotEmpty(nameFilter.FilterOptions);
+        [Fact]
+        public void FilterViewModel_Object_Creation_Initialization()
+        {
+            var nameFilter = _mainVM.FilterVM.Filters["Name"];
+            Assert.NotEmpty(nameFilter.FilterOptions);
 
-        //    Assert.True(_filterVM.Filters.ContainsKey("SetName"), "Expected filter key 'SetName' not found.");
-        //    var setNameFilter = _filterVM.Filters["SetName"];
-        //    Assert.NotEmpty(setNameFilter.FilterOptions);
+            Assert.True(_mainVM.FilterVM.Filters.ContainsKey("SetName"), "Expected filter key 'SetName' not found.");
+            var setNameFilter = _mainVM.FilterVM.Filters["SetName"];
+            Assert.NotEmpty(setNameFilter.FilterOptions);
 
-        //    // Hardcoded lists of all expected names for the test.
-        //    var expectedNames = new List<string>
-        //    {
-        //        "Once Upon a Time",
-        //        "Snapping Sailback",
-        //        "Dragonscale Boon",
-        //        "Gixian Puppeteer",
-        //        "Thought Harvester",
-        //        "Glarewielder",
-        //        "Plummet",
-        //        "Hypnotic Cloud",
-        //        "Dead Weight",
-        //        "Grazing Gladehart",
-        //        "Leave No Trace",
-        //        "Realmwalker",
-        //        "Vexing Arcanix",
-        //        "Deny the Divine",
-        //        "Resurrection",
-        //        "Ancient Greenwarden",
-        //        "Thallid Devourer",
-        //        "Hungry Mist",
-        //        "Syphon Soul",
-        //        "Bubbling Cauldron",
-        //        "The Thirteenth Doctor",
-        //        "Forest",
-        //        "Deftblade Elite",
-        //        "Viashino Runner",
-        //        "Angel of Glory's Rise",
-        //        "Staying Power",
-        //        "Flameshot",
-        //        "Prismatic Ending",
-        //        "Boundary Lands Ranger",
-        //        "Ouphe Vandals",
-        //        "Guild Feud",
-        //        "Plains",
-        //        "Font of Ire",
-        //        "Prismatic Vista",
-        //        "Crenellated Wall",
-        //        "Renounce",
-        //        "Nissa, Steward of Elements",
-        //        "Culling Drone",
-        //        "Zombie",
-        //        "Bloodvial Purveyor // Bloodvial Purveyor",
-        //        "Warriors",
-        //        "Cat",
-        //        "Unblinking Observer // Unblinking Observer",
-        //        "Otter",
-        //        "Island // Island",
-        //        "Dog",
-        //        "Ranger-Captain of Eos // Ranger-Captain of Eos",
-        //        "Silent Clearing // Silent Clearing",
-        //        "All Will Be One // All Will Be One",
-        //        "Shadrix Silverquill // Shadrix Silverquill",
-        //        "Rampant Frogantua // Rampant Frogantua",
-        //        "Season of Weaving // Season of Weaving",
-        //        "Chillerpillar // Chillerpillar",
-        //        "Devil",
-        //        "Sythis, Harvest's Hand // Sythis, Harvest's Hand",
-        //        "Karox Bladewing",
-        //        "Blossoming Calm // Blossoming Calm",
-        //        "Goblin",
-        //        "Jan Jansen, Chaos Crafter // Jan Jansen, Chaos Crafter",
-        //        "Gisela, the Broken Blade // Brisela, Voice of Nightmares",
-        //        "Sokrates, Athenian Teacher"
-        //    };
+            // Hardcoded lists of all expected names for the test.
+            var expectedNames = new List<string>
+            {
+                "Once Upon a Time",
+                "Snapping Sailback",
+                "Dragonscale Boon",
+                "Gixian Puppeteer",
+                "Thought Harvester",
+                "Glarewielder",
+                "Plummet",
+                "Hypnotic Cloud",
+                "Dead Weight",
+                "Grazing Gladehart",
+                "Leave No Trace",
+                "Realmwalker",
+                "Vexing Arcanix",
+                "Deny the Divine",
+                "Resurrection",
+                "Ancient Greenwarden",
+                "Thallid Devourer",
+                "Hungry Mist",
+                "Syphon Soul",
+                "Bubbling Cauldron",
+                "The Thirteenth Doctor",
+                "Forest",
+                "Deftblade Elite",
+                "Viashino Runner",
+                "Angel of Glory's Rise",
+                "Staying Power",
+                "Flameshot",
+                "Prismatic Ending",
+                "Boundary Lands Ranger",
+                "Ouphe Vandals",
+                "Guild Feud",
+                "Plains",
+                "Font of Ire",
+                "Prismatic Vista",
+                "Crenellated Wall",
+                "Renounce",
+                "Nissa, Steward of Elements",
+                "Culling Drone",
+                "Zombie",
+                "Bloodvial Purveyor // Bloodvial Purveyor",
+                "Warriors",
+                "Cat",
+                "Unblinking Observer // Unblinking Observer",
+                "Otter",
+                "Island // Island",
+                "Dog",
+                "Ranger-Captain of Eos // Ranger-Captain of Eos",
+                "Silent Clearing // Silent Clearing",
+                "All Will Be One // All Will Be One",
+                "Shadrix Silverquill // Shadrix Silverquill",
+                "Rampant Frogantua // Rampant Frogantua",
+                "Season of Weaving // Season of Weaving",
+                "Chillerpillar // Chillerpillar",
+                "Devil",
+                "Sythis, Harvest's Hand // Sythis, Harvest's Hand",
+                "Karox Bladewing",
+                "Blossoming Calm // Blossoming Calm",
+                "Goblin",
+                "Jan Jansen, Chaos Crafter // Jan Jansen, Chaos Crafter",
+                "Gisela, the Broken Blade // Brisela, Voice of Nightmares",
+                "Sokrates, Athenian Teacher"
+            };
 
-        //    // Assert that the filter options contain all expected names.
-        //    Assert.True(expectedNames.All(expected =>
-        //        nameFilter.FilterOptions.Any(opt => opt.OptionName.Contains(expected))),
-        //        "Not all expected filter names were found.");
+            // Assert that the filter options contain all expected names.
+            Assert.True(expectedNames.All(expected => nameFilter.FilterOptions.Any(opt => opt.OptionName.Contains(expected))),
+                "Not all expected filter names were found.");
 
-        //    // Rarity:
-        //    var rarityFilter = _filterVM.Filters["Rarity"];
-        //    var expectedRarityOptions = new List<string> { "common", "uncommon", "rare", "mythic" };
+            // Rarity:
+            var rarityFilter = _mainVM.FilterVM.Filters["Rarity"];
+            var expectedRarityOptions = new List<string> { "common", "uncommon", "rare", "mythic" };
 
-        //    var actualRarityOptions = rarityFilter.FilterOptions
-        //        .Select(opt => opt.OptionName)
-        //        .OrderBy(x => x)
-        //        .ToList();
+            var actualRarityOptions = rarityFilter.FilterOptions
+                .Select(opt => opt.OptionName)
+                .OrderBy(x => x)
+                .ToList();
 
-        //    var sortedExpectedRarityOptions = expectedRarityOptions.OrderBy(x => x).ToList();
-        //    Assert.Equal(sortedExpectedRarityOptions, actualRarityOptions);
-
-
-        //    // Keywords:
-        //    var keywordsFilter = _filterVM.Filters["Keywords"];
-        //    var expectedKeywordsOptions = new List<string>
-        //    {
-        //        "Enrage",
-        //        "Flash",
-        //        "First strike",
-        //        "Devoid",
-        //        "Flying",
-        //        "Evoke",
-        //        "Haste",
-        //        "Kicker",
-        //        "Enchant",
-        //        "Landfall",
-        //        "Lifelink",
-        //        "Meld",
-        //        "Radiance",
-        //        "Changeling",
-        //        "Reach",
-        //        "Paradox",
-        //        "Team TARDIS",
-        //        "Provoke",
-        //        "Menace",
-        //        "Converge",
-        //        "Fight",
-        //        "Defender",
-        //        "Scry",
-        //        "Sokratic Dialogue",
-        //        "Ingest",
-        //        "Prowess"
-        //    };
-        //    var expectedKeyWordsOperators = new[]
-        //    {
-        //        OperatorType.OR,
-        //        OperatorType.AND,
-        //        OperatorType.NOT
-        //    };
-
-        //    var actualKeywordsOptions = keywordsFilter.FilterOptions
-        //        .Select(opt => opt.OptionName)
-        //        .OrderBy(x => x)
-        //        .ToList();
-
-        //    var sortedExpectedKeywordsOptions = expectedKeywordsOptions.OrderBy(x => x).ToList();
-        //    Assert.Equal(sortedExpectedKeywordsOptions, actualKeywordsOptions);
-        //    Assert.Equal(expectedKeyWordsOperators, [.. keywordsFilter.AvailableOperators!]);
-
-        //    // Subtypes:
-        //    var subTypesFilter = _filterVM.Filters["SubTypes"];
-        //    var expectedSubtypesOptions = new List<string>
-        //    {
-        //        "Advisor",
-        //        "Angel",
-        //        "Antelope",
-        //        "Aura",
-        //        "Cat",
-        //        "Devil",
-        //        "Dinosaur",
-        //        "Doctor",
-        //        "Dog",
-        //        "Dragon",
-        //        "Drone",
-        //        "Eldrazi",
-        //        "Elemental",
-        //        "Forest",
-        //        "Fungus",
-        //        "Goblin",
-        //        "Horror",
-        //        "Human",
-        //        "Lizard",
-        //        "Nissa",
-        //        "Otter",
-        //        "Ouphe",
-        //        "Phyrexian",
-        //        "Plains",
-        //        "Ranger",
-        //        "Rogue",
-        //        "Shaman",
-        //        "Shapeshifter",
-        //        "Soldier",
-        //        "Time Lord",
-        //        "Wall",
-        //        "Warlock",
-        //        "Zombie"
-        //    };
-
-        //    var actualSubTypesOptions = subTypesFilter.FilterOptions
-        //        .Select(opt => opt.OptionName)
-        //        .OrderBy(x => x)
-        //        .ToList();
-
-        //    var sortedExpectedSubTypesOptions = expectedSubtypesOptions.OrderBy(x => x).ToList();
-        //    Assert.Equal(sortedExpectedSubTypesOptions, actualSubTypesOptions);
-
-        //    // Assert: the readable label for the "SubTypes" filter is "Subtypes"
-        //    var subTypesLabelFilter = _filterVM.Filters["SubTypes"];
-        //    Assert.Equal("Subtypes", subTypesLabelFilter.ReadableLabel);
+            var sortedExpectedRarityOptions = expectedRarityOptions.OrderBy(x => x).ToList();
+            Assert.Equal(sortedExpectedRarityOptions, actualRarityOptions);
 
 
-        //    // SelectedCondition:
-        //    var selectedConditionFilter = _filterVM.Filters["SelectedCondition"];
-        //    var expectedSelectedConditionsOptions = new List<string>
-        //    {
-        //        "Near Mint",
-        //        "Excellent",
-        //        "Light Played",
-        //        "Good",
-        //        "Poor",
-        //        "Mint"
-        //    };
+            // Keywords:
+            var keywordsFilter = _mainVM.FilterVM.Filters["Keywords"];
+            var expectedKeywordsOptions = new List<string>
+            {
+                "Enrage",
+                "Flash",
+                "First strike",
+                "Devoid",
+                "Flying",
+                "Evoke",
+                "Haste",
+                "Kicker",
+                "Enchant",
+                "Landfall",
+                "Lifelink",
+                "Meld",
+                "Radiance",
+                "Changeling",
+                "Reach",
+                "Paradox",
+                "Team TARDIS",
+                "Provoke",
+                "Menace",
+                "Converge",
+                "Fight",
+                "Defender",
+                "Scry",
+                "Sokratic Dialogue",
+                "Ingest",
+                "Prowess"
+            };
+            var expectedKeyWordsOperators = new[]
+            {
+                MainWindow.OperatorType.OR,
+                MainWindow.OperatorType.AND,
+                MainWindow.OperatorType.NOT
+            };
 
-        //    var actualSelectedConditionsOptions = selectedConditionFilter.FilterOptions
-        //        .Select(opt => opt.OptionName)
-        //        .OrderBy(x => x)
-        //        .ToList();
+            var actualKeywordsOptions = keywordsFilter.FilterOptions
+                .Select(opt => opt.OptionName)
+                .OrderBy(x => x)
+                .ToList();
 
-        //    var sortedExpectedSelectedConditionsOptions = expectedSelectedConditionsOptions.OrderBy(x => x).ToList();
-        //    Assert.Equal(sortedExpectedSelectedConditionsOptions, actualSelectedConditionsOptions);
+            var sortedExpectedKeywordsOptions = expectedKeywordsOptions.OrderBy(x => x).ToList();
+            Assert.Equal(sortedExpectedKeywordsOptions, actualKeywordsOptions);
+            Assert.Equal(expectedKeyWordsOperators, [.. keywordsFilter.AvailableOperators!]);
 
-        //    // SelectedFinish:
-        //    var selectedFinishFilter = _filterVM.Filters["SelectedFinish"];
-        //    var expectedSelectedFinishOptions = new List<string>
-        //    {
-        //        "etched",
-        //        "nonfoil",
-        //        "foil"
-        //    };
+            // Subtypes:
+            var subTypesFilter = _mainVM.FilterVM.Filters["SubTypes"];
+            var expectedSubtypesOptions = new List<string>
+            {
+                "Advisor",
+                "Angel",
+                "Antelope",
+                "Aura",
+                "Cat",
+                "Devil",
+                "Dinosaur",
+                "Doctor",
+                "Dog",
+                "Dragon",
+                "Drone",
+                "Eldrazi",
+                "Elemental",
+                "Forest",
+                "Fungus",
+                "Goblin",
+                "Horror",
+                "Human",
+                "Lizard",
+                "Nissa",
+                "Otter",
+                "Ouphe",
+                "Phyrexian",
+                "Plains",
+                "Ranger",
+                "Rogue",
+                "Shaman",
+                "Shapeshifter",
+                "Soldier",
+                "Time Lord",
+                "Wall",
+                "Warlock",
+                "Zombie"
+            };
 
-        //    var actualSelectedFinishOptions = selectedFinishFilter.FilterOptions
-        //        .Select(opt => opt.OptionName)
-        //        .OrderBy(x => x)
-        //        .ToList();
+            var actualSubTypesOptions = subTypesFilter.FilterOptions
+                .Select(opt => opt.OptionName)
+                .OrderBy(x => x)
+                .ToList();
 
-        //    var sortedExpectedSelectedFinishOptions = expectedSelectedFinishOptions.OrderBy(x => x).ToList();
-        //    Assert.Equal(sortedExpectedSelectedFinishOptions, actualSelectedFinishOptions);
+            var sortedExpectedSubTypesOptions = expectedSubtypesOptions.OrderBy(x => x).ToList();
+            Assert.Equal(sortedExpectedSubTypesOptions, actualSubTypesOptions);
 
-        //    // Assert: the readable label for the "SelectedFinish" filter is "Chosen finish"
-        //    var selectedFinishLabelFilter = _filterVM.Filters["SelectedFinish"];
-        //    Assert.Equal("Chosen finish", selectedFinishLabelFilter.ReadableLabel);
+            // Assert: the readable label for the "SubTypes" filter is "Subtypes"
+            var subTypesLabelFilter = _mainVM.FilterVM.Filters["SubTypes"];
+            Assert.Equal("Subtypes", subTypesLabelFilter.ReadableLabel);
 
-        //    // Language:
-        //    var selectedLanguageFilter = _filterVM.Filters["Language"];
-        //    var expectedLanguageOptions = new List<string>
-        //    {
-        //        "French",
-        //        "English",
-        //        "German"
-        //    };
 
-        //    var actualLanguageOptions = selectedLanguageFilter.FilterOptions
-        //        .Select(opt => opt.OptionName)
-        //        .OrderBy(x => x)
-        //        .ToList();
+            // SelectedCondition:
+            var selectedConditionFilter = _mainVM.FilterVM.Filters["SelectedCondition"];
+            var expectedSelectedConditionsOptions = new List<string>
+            {
+                "Near Mint",
+                "Excellent",
+                "Light Played",
+                "Good",
+                "Poor",
+                "Mint"
+            };
 
-        //    var sortedExpectedLanguageOptions = expectedLanguageOptions.OrderBy(x => x).ToList();
-        //    Assert.Equal(sortedExpectedLanguageOptions, actualLanguageOptions);
+            var actualSelectedConditionsOptions = selectedConditionFilter.FilterOptions
+                .Select(opt => opt.OptionName)
+                .OrderBy(x => x)
+                .ToList();
 
-        //    // Colors:
-        //    var colorFilter = _filterVM.Filters["Colors"];
-        //    var expectedColorOptions = new List<string>
-        //    {
-        //        "W", "U", "B", "R", "G", "C", "X", "Colorless"
-        //    };
+            var sortedExpectedSelectedConditionsOptions = expectedSelectedConditionsOptions.OrderBy(x => x).ToList();
+            Assert.Equal(sortedExpectedSelectedConditionsOptions, actualSelectedConditionsOptions);
 
-        //    var actualColorOptions = colorFilter.FilterOptions
-        //        .Select(opt => opt.OptionName)
-        //        .OrderBy(x => x)
-        //        .ToList();
+            // SelectedFinish:
+            var selectedFinishFilter = _mainVM.FilterVM.Filters["SelectedFinish"];
+            var expectedSelectedFinishOptions = new List<string>
+            {
+                "etched",
+                "nonfoil",
+                "foil"
+            };
 
-        //    var sortedExpectedColorOptions = expectedColorOptions.OrderBy(x => x).ToList();
-        //    Assert.Equal(sortedExpectedColorOptions, actualColorOptions);
+            var actualSelectedFinishOptions = selectedFinishFilter.FilterOptions
+                .Select(opt => opt.OptionName)
+                .OrderBy(x => x)
+                .ToList();
 
-        //    // ManaValue:
-        //    var manaValueFilter = _filterVM.Filters["ManaValue"];
-        //    var expectedManaValueOptions = new List<string>
-        //    {
-        //        "0", "1", "2", "3", "4", "5", "6", "7"
-        //    };
-        //    var expectedManaValueOperators = new[]
-        //    {
-        //        OperatorType.GREATER_THAN,
-        //        OperatorType.LESS_THAN,
-        //        OperatorType.EQUALS,
-        //        OperatorType.GREATER_THAN_OR_EQUALS,
-        //        OperatorType.LESS_THAN_OR_EQUALS
-        //    };
+            var sortedExpectedSelectedFinishOptions = expectedSelectedFinishOptions.OrderBy(x => x).ToList();
+            Assert.Equal(sortedExpectedSelectedFinishOptions, actualSelectedFinishOptions);
 
-        //    var actualManaValueOptions = manaValueFilter.FilterOptions
-        //        .Select(opt => opt.OptionName)
-        //        .OrderBy(x => x)
-        //        .ToList();
+            // Assert: the readable label for the "SelectedFinish" filter is "Chosen finish"
+            var selectedFinishLabelFilter = _mainVM.FilterVM.Filters["SelectedFinish"];
+            Assert.Equal("Chosen finish", selectedFinishLabelFilter.ReadableLabel);
 
-        //    var sortedExpectedManavalueOptions = expectedManaValueOptions.OrderBy(x => x).ToList();
-        //    Assert.Equal(sortedExpectedManavalueOptions, actualManaValueOptions);
-        //    Assert.Equal(expectedManaValueOperators, [.. manaValueFilter.AvailableOperators!]);
-        //}
+            // Language:
+            var selectedLanguageFilter = _mainVM.FilterVM.Filters["Language"];
+            var expectedLanguageOptions = new List<string>
+            {
+                "French",
+                "English",
+                "German"
+            };
 
-        //[Fact]
-        //public void Filter_Integration_Test_Simple()
-        //{
-        //    // Arrange: Filter on ManaValue > 1.
-        //    var numericFilter = _filterVM.Filters["ManaValue"];
-        //    numericFilter.SelectedNumericValue = 1;
-        //    numericFilter.OperatorSelection = OperatorType.GREATER_THAN;
+            var actualLanguageOptions = selectedLanguageFilter.FilterOptions
+                .Select(opt => opt.OptionName)
+                .OrderBy(x => x)
+                .ToList();
 
-        //    // Filter on Rarity not being mythic or rare.
-        //    var rarityFilter = _filterVM.Filters["Rarity"];
-        //    foreach (var opt in rarityFilter.FilterOptions.Where(o => o.OptionName is "mythic" or "rare"))
-        //    {
-        //        opt.IsSelected = true;          // this setter calls NotifyFilterChanged
-        //    }
-        //    rarityFilter.OperatorSelection = OperatorType.NOT;
+            var sortedExpectedLanguageOptions = expectedLanguageOptions.OrderBy(x => x).ToList();
+            Assert.Equal(sortedExpectedLanguageOptions, actualLanguageOptions);
 
-        //    // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
-        //    _allCardsVM.FilteredCards = _filteringCoordinator.ApplyFilters(_allCardsVM.Cards, _filterVM.Filters.Values);
-        //    var filteredAllCards = _allCardsVM.FilteredCards;
+            // Colors:
+            var colorFilter = _mainVM.FilterVM.Filters["Colors"];
+            var expectedColorOptions = new List<string>
+            {
+                "W", "U", "B", "R", "G", "C", "X", "Colorless"
+            };
 
-        //    _myCollectionVM.FilteredCards = _filteringCoordinator.ApplyFilters(_myCollectionVM.Cards, _filterVM.Filters.Values);
-        //    var filteredMyCollection = _myCollectionVM.FilteredCards;
+            var actualColorOptions = colorFilter.FilterOptions
+                .Select(opt => opt.OptionName)
+                .OrderBy(x => x)
+                .ToList();
 
-        //    // Assert: Expected summary string
-        //    string expectedSummary = "Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
-        //    Assert.Equal(expectedSummary, _filterVM.FilterSummary);
+            var sortedExpectedColorOptions = expectedColorOptions.OrderBy(x => x).ToList();
+            Assert.Equal(sortedExpectedColorOptions, actualColorOptions);
 
-        //    // Assert: Number of cards in filteredAllCards and filteredMyCollection.
-        //    Assert.Equal(22, filteredAllCards.Count);
-        //    Assert.Equal(17, filteredMyCollection.Count);
+            // ManaValue:
+            var manaValueFilter = _mainVM.FilterVM.Filters["ManaValue"];
+            var expectedManaValueOptions = new List<string>
+            {
+                "0", "1", "2", "3", "4", "5", "6", "7"
+            };
+            var expectedManaValueOperators = new[]
+            {
+                MainWindow.OperatorType.GREATER_THAN,
+                MainWindow.OperatorType.LESS_THAN,
+                MainWindow.OperatorType.EQUALS,
+                MainWindow.OperatorType.GREATER_THAN_OR_EQUALS,
+                MainWindow.OperatorType.LESS_THAN_OR_EQUALS
+            };
 
-        //    // Arrange: Add color filters to existing filters.
-        //    var colorFilter = _filterVM.Filters["Colors"];
-        //    foreach (var opt in colorFilter.FilterOptions.Where(o => o.OptionName is "R" or "G"))
-        //    {
-        //        opt.IsSelected = true;          // this setter calls NotifyFilterChanged
-        //    }
-        //    colorFilter.OperatorSelection = OperatorType.OR;
+            var actualManaValueOptions = manaValueFilter.FilterOptions
+                .Select(opt => opt.OptionName)
+                .OrderBy(x => x)
+                .ToList();
 
-        //    // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
-        //    _allCardsVM.FilteredCards = _filteringCoordinator.ApplyFilters(_allCardsVM.Cards, _filterVM.Filters.Values);
-        //    filteredAllCards = _allCardsVM.FilteredCards;
+            var sortedExpectedManavalueOptions = expectedManaValueOptions.OrderBy(x => x).ToList();
+            Assert.Equal(sortedExpectedManavalueOptions, actualManaValueOptions);
+            Assert.Equal(expectedManaValueOperators, [.. manaValueFilter.AvailableOperators!]);
+        }
 
-        //    _myCollectionVM.FilteredCards = _filteringCoordinator.ApplyFilters(_myCollectionVM.Cards, _filterVM.Filters.Values);
-        //    filteredMyCollection = _myCollectionVM.FilteredCards;
+        [Fact]
+        public void Filter_Integration_Test_Simple()
+        {
+            // Arrange: Filter on ManaValue > 1.
+            var numericFilter = _mainVM.FilterVM.Filters["ManaValue"];
+            numericFilter.SelectedNumericValue = 1;
+            numericFilter.OperatorSelection = OperatorType.GREATER_THAN;
 
-        //    // Assert: Expected summary string
-        //    expectedSummary = "Colors: {R OR G} AND Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
-        //    Assert.Equal(expectedSummary, _filterVM.FilterSummary);
+            // Filter on Rarity not being mythic or rare.
+            var rarityFilter = _mainVM.FilterVM.Filters["Rarity"];
+            foreach (var opt in rarityFilter.FilterOptions.Where(o => o.OptionName is "mythic" or "rare"))
+            {
+                opt.IsSelected = true;          // this setter calls NotifyFilterChanged
+            }
+            rarityFilter.OperatorSelection = MainWindow.OperatorType.NOT;
 
-        //    // Assert: Number of cards in filteredAllCards and filteredMyCollection.
-        //    Assert.Equal(12, filteredAllCards.Count);
-        //    Assert.Equal(10, filteredMyCollection.Count);
-        //}
+            // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
+            _allCardsVM.FilteredCards = _filteringCoordinator.ApplyFilters(_allCardsVM.Cards, _filterVM.Filters.Values);
+            var filteredAllCards = _allCardsVM.FilteredCards;
+
+            _myCollectionVM.FilteredCards = _filteringCoordinator.ApplyFilters(_myCollectionVM.Cards, _filterVM.Filters.Values);
+            var filteredMyCollection = _myCollectionVM.FilteredCards;
+
+            // Assert: Expected summary string
+            string expectedSummary = "Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
+            Assert.Equal(expectedSummary, _filterVM.FilterSummary);
+
+            // Assert: Number of cards in filteredAllCards and filteredMyCollection.
+            Assert.Equal(22, filteredAllCards.Count);
+            Assert.Equal(17, filteredMyCollection.Count);
+
+            // Arrange: Add color filters to existing filters.
+            var colorFilter = _filterVM.Filters["Colors"];
+            foreach (var opt in colorFilter.FilterOptions.Where(o => o.OptionName is "R" or "G"))
+            {
+                opt.IsSelected = true;          // this setter calls NotifyFilterChanged
+            }
+            colorFilter.OperatorSelection = OperatorType.OR;
+
+            // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
+            _allCardsVM.FilteredCards = _filteringCoordinator.ApplyFilters(_allCardsVM.Cards, _filterVM.Filters.Values);
+            filteredAllCards = _allCardsVM.FilteredCards;
+
+            _myCollectionVM.FilteredCards = _filteringCoordinator.ApplyFilters(_myCollectionVM.Cards, _filterVM.Filters.Values);
+            filteredMyCollection = _myCollectionVM.FilteredCards;
+
+            // Assert: Expected summary string
+            expectedSummary = "Colors: {R OR G} AND Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
+            Assert.Equal(expectedSummary, _filterVM.FilterSummary);
+
+            // Assert: Number of cards in filteredAllCards and filteredMyCollection.
+            Assert.Equal(12, filteredAllCards.Count);
+            Assert.Equal(10, filteredMyCollection.Count);
+        }
 
         //[Fact]
         //public void Filter_Integration_Test_Scenario_With_Event_Subscription()

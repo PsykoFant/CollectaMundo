@@ -10,31 +10,28 @@ namespace CollectaMundo.Tests
     // A fixture class to set up an in‑memory SQLite database and seed it from CSV strings.
     public class InMemoryDatabaseFixture : IDisposable
     {
-        public SQLiteConnection Connection { get; private set; }
-
-        private readonly TaskCompletionSource _seedingTcs = new();
-        public Task SeedingCompleted => _seedingTcs.Task;
-
-
-
-        // CSV data for each table.
-        // Replace these sample rows with the full CSV data from your files.
+        private readonly SQLiteConnection _masterConnection;
         public InMemoryDatabaseFixture()
         {
-            // Create an in-memory SQLite database.
-            Connection = new SQLiteConnection("Data Source=:memory:;Version=3;");
-            Connection.Open();
-
-            // Create tables.
+            _masterConnection = new SQLiteConnection("Data Source=:memory:;Version=3;");
+            _masterConnection.Open();
             SetupSchema();
-
-            // Seed tables with CSV data.
-            // Synchronously seed tables with CSV data.
             SeedDataAsync().GetAwaiter().GetResult();
         }
+        public async Task<SQLiteConnection> CreateClonedConnectionAsync()
+        {
+            var newConn = new SQLiteConnection("Data Source=:memory:;Version=3;");
+            await newConn.OpenAsync();
+
+            // This copies the schema + data into the new connection
+            _masterConnection.BackupDatabase(newConn, "main", "main", -1, null, 0);
+
+            return newConn;
+        }
+        public void Dispose() => _masterConnection.Dispose();
         private void SetupSchema()
         {
-            using var command = new SQLiteCommand(Connection);
+            using var command = new SQLiteCommand(_masterConnection);
             // Create table: cards
             command.CommandText = @"
                 CREATE TABLE cards (
@@ -399,12 +396,7 @@ namespace CollectaMundo.Tests
             await SeedTableAsync("myCollection", Path.Combine(basePath, "myCollection.csv"));
             await SeedTableAsync("view_myCollection", Path.Combine(basePath, "view_myCollection.csv"));
             await SeedTableAsync("view_allCards", Path.Combine(basePath, "view_allCards.csv"));
-
-            _seedingTcs.SetResult();
         }
-
-        // A helper method to seed a table from CSV data.
-        // Assumes semicolon ';' as delimiter.
         private async Task SeedTableAsync(string tableName, string filePath)
         {
             if (!File.Exists(filePath))
@@ -437,8 +429,8 @@ namespace CollectaMundo.Tests
             string insertSql = $"INSERT INTO {tableName} ({string.Join(", ", headers)}) VALUES ({parameters});";
             Debug.WriteLine($"Seeding table '{tableName}' using SQL: {insertSql}");
 
-            using var transaction = Connection.BeginTransaction();
-            using var cmd = new SQLiteCommand(insertSql, Connection, transaction);
+            using var transaction = _masterConnection.BeginTransaction();
+            using var cmd = new SQLiteCommand(insertSql, _masterConnection, transaction);
             for (int i = 0; i < headers.Length; i++)
             {
                 cmd.Parameters.Add(new SQLiteParameter($"@p{i}"));
@@ -469,10 +461,7 @@ namespace CollectaMundo.Tests
             }
             transaction.Commit();
         }
-        public void Dispose()
-        {
-            Connection?.Close();
-            Connection?.Dispose();
-        }
+
     }
+
 }
