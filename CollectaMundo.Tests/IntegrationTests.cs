@@ -1,4 +1,6 @@
-﻿using CollectaMundo.DomainLogic.Models;
+﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.DomainLogic.EditCollection.Models;
+using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.ViewModels;
 using System.Data.SQLite;
 
@@ -10,13 +12,13 @@ namespace CollectaMundo.Tests
         private SQLiteConnection _testConnection = null!;
         private MainWindowViewModel _mainVM = null!;
         private readonly List<CardChangeEventArgs> _changedEvents = [];
+        private readonly FilteringService _filteringService = new();
 
         public async Task InitializeAsync()
         {
-            // Get fully seeded, isolated connection for this test instance
-            _testConnection = await _fx.CreateClonedConnectionAsync();
+            // Ensure schema and seed are already present (fixture keeps the master connection open)
+            var dbFactory = TestUtilities.CreateInMemoryDbFactory(); // uses named shared in-memory DB
 
-            var dbFactory = TestUtilities.CreateInMemoryDbFactory(_testConnection);
             var readyTcs = new TaskCompletionSource();
 
             _mainVM = await MainWindowViewModel.CreateAsync(dbFactory, () => readyTcs.TrySetResult());
@@ -25,6 +27,7 @@ namespace CollectaMundo.Tests
             _mainVM.AddCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
             _mainVM.EditCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
         }
+
 
         public Task DisposeAsync()
         {
@@ -310,9 +313,9 @@ namespace CollectaMundo.Tests
             };
             var expectedKeyWordsOperators = new[]
             {
-                MainWindow.OperatorType.OR,
-                MainWindow.OperatorType.AND,
-                MainWindow.OperatorType.NOT
+                OperatorType.OR,
+                OperatorType.AND,
+                OperatorType.NOT
             };
 
             var actualKeywordsOptions = keywordsFilter.FilterOptions
@@ -457,11 +460,11 @@ namespace CollectaMundo.Tests
             };
             var expectedManaValueOperators = new[]
             {
-                MainWindow.OperatorType.GREATER_THAN,
-                MainWindow.OperatorType.LESS_THAN,
-                MainWindow.OperatorType.EQUALS,
-                MainWindow.OperatorType.GREATER_THAN_OR_EQUALS,
-                MainWindow.OperatorType.LESS_THAN_OR_EQUALS
+                OperatorType.GREATER_THAN,
+                OperatorType.LESS_THAN,
+                OperatorType.EQUALS,
+                OperatorType.GREATER_THAN_OR_EQUALS,
+                OperatorType.LESS_THAN_OR_EQUALS
             };
 
             var actualManaValueOptions = manaValueFilter.FilterOptions
@@ -488,25 +491,25 @@ namespace CollectaMundo.Tests
             {
                 opt.IsSelected = true;          // this setter calls NotifyFilterChanged
             }
-            rarityFilter.OperatorSelection = MainWindow.OperatorType.NOT;
+            rarityFilter.OperatorSelection = OperatorType.NOT;
 
             // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
-            _allCardsVM.FilteredCards = _filteringCoordinator.ApplyFilters(_allCardsVM.Cards, _filterVM.Filters.Values);
-            var filteredAllCards = _allCardsVM.FilteredCards;
+            _mainVM.AllCardsVM.FilteredCards = _filteringService.ApplyFilters(_mainVM.AllCardsVM.Cards, _mainVM.FilterVM.Filters.Values);
+            var filteredAllCards = _mainVM.AllCardsVM.FilteredCards;
 
-            _myCollectionVM.FilteredCards = _filteringCoordinator.ApplyFilters(_myCollectionVM.Cards, _filterVM.Filters.Values);
-            var filteredMyCollection = _myCollectionVM.FilteredCards;
+            _mainVM.MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(_mainVM.MyCollectionVM.Cards, _mainVM.FilterVM.Filters.Values);
+            var filteredMyCollection = _mainVM.MyCollectionVM.FilteredCards;
 
             // Assert: Expected summary string
             string expectedSummary = "Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
-            Assert.Equal(expectedSummary, _filterVM.FilterSummary);
+            Assert.Equal(expectedSummary, _mainVM.FilterVM.FilterSummary);
 
             // Assert: Number of cards in filteredAllCards and filteredMyCollection.
             Assert.Equal(22, filteredAllCards.Count);
             Assert.Equal(17, filteredMyCollection.Count);
 
             // Arrange: Add color filters to existing filters.
-            var colorFilter = _filterVM.Filters["Colors"];
+            var colorFilter = _mainVM.FilterVM.Filters["Colors"];
             foreach (var opt in colorFilter.FilterOptions.Where(o => o.OptionName is "R" or "G"))
             {
                 opt.IsSelected = true;          // this setter calls NotifyFilterChanged
@@ -514,158 +517,117 @@ namespace CollectaMundo.Tests
             colorFilter.OperatorSelection = OperatorType.OR;
 
             // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
-            _allCardsVM.FilteredCards = _filteringCoordinator.ApplyFilters(_allCardsVM.Cards, _filterVM.Filters.Values);
-            filteredAllCards = _allCardsVM.FilteredCards;
+            _mainVM.AllCardsVM.FilteredCards = _filteringService.ApplyFilters(_mainVM.AllCardsVM.Cards, _mainVM.FilterVM.Filters.Values);
+            filteredAllCards = _mainVM.AllCardsVM.FilteredCards;
 
-            _myCollectionVM.FilteredCards = _filteringCoordinator.ApplyFilters(_myCollectionVM.Cards, _filterVM.Filters.Values);
-            filteredMyCollection = _myCollectionVM.FilteredCards;
+            _mainVM.MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(_mainVM.MyCollectionVM.Cards, _mainVM.FilterVM.Filters.Values);
+            filteredMyCollection = _mainVM.MyCollectionVM.FilteredCards;
 
             // Assert: Expected summary string
             expectedSummary = "Colors: {R OR G} AND Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
-            Assert.Equal(expectedSummary, _filterVM.FilterSummary);
+            Assert.Equal(expectedSummary, _mainVM.FilterVM.FilterSummary);
 
             // Assert: Number of cards in filteredAllCards and filteredMyCollection.
             Assert.Equal(12, filteredAllCards.Count);
             Assert.Equal(10, filteredMyCollection.Count);
         }
 
-        //[Fact]
-        //public void Filter_Integration_Test_Scenario_With_Event_Subscription()
-        //{
+        [Fact]
+        public void Filter_Integration_Test_Scenario_With_Event_Subscription()
+        {
 
-        //    // Act: Apply first filter – Name contains "Ranger"
-        //    var nameFilter = _filterVM.Filters["Name"];
-        //    nameFilter.SelectedSingleOption = "Ranger";
+            // Act: Apply first filter – Name contains "Ranger"
+            var nameFilter = _mainVM.FilterVM.Filters["Name"];
+            nameFilter.SelectedSingleOption = "Ranger";
 
-        //    // Assert: only the two “Ranger” cards appear, none in MyCollection
-        //    var expectedNames = new List<string> { "Boundary Lands Ranger", "Ranger-Captain of Eos // Ranger-Captain of Eos" }.OrderBy(n => n).ToList();
+            // Assert: only the two “Ranger” cards appear, none in MyCollection
+            var expectedNames = new List<string> { "Boundary Lands Ranger", "Ranger-Captain of Eos // Ranger-Captain of Eos" }.OrderBy(n => n).ToList();
 
-        //    var actualNames = _allCardsVM.FilteredCards
-        //                       .Select(c => c.Name!)   // names are non‑null in seed data
-        //                       .OrderBy(n => n)
-        //                       .ToList();
+            var actualNames = _mainVM.AllCardsVM.FilteredCards
+                               .Select(c => c.Name!)   // names are non‑null in seed data
+                               .OrderBy(n => n)
+                               .ToList();
 
-        //    Assert.Equal(expectedNames, actualNames);
-        //    Assert.Empty(_myCollectionVM.FilteredCards);
+            Assert.Equal(expectedNames, actualNames);
+            Assert.Empty(_mainVM.MyCollectionVM.FilteredCards);
 
-        //    // Arrange: Clear all filters via the command 
-        //    _filterVM.ClearFiltersCommand?.Execute(null);   // raises FilterChanged again
+            // Arrange: Clear all filters via the command 
+            _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);   // raises FilterChanged again
 
-        //    // Assert: lists are back to their full size and summary text is empty
-        //    Assert.Equal(61, _allCardsVM.FilteredCards.Count);
-        //    Assert.Equal(22, _myCollectionVM.FilteredCards.Count);
-        //    Assert.True(string.IsNullOrEmpty(_filterVM.FilterSummary));
+            // Assert: lists are back to their full size and summary text is empty
+            Assert.Equal(61, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(22, _mainVM.MyCollectionVM.FilteredCards.Count);
+            Assert.True(string.IsNullOrEmpty(_mainVM.FilterVM.FilterSummary));
 
-        //    // Act: Start over with filtering – filter on rules text
-        //    var rulesFilter = _filterVM.Filters["Text"];
-        //    rulesFilter.SelectedSingleOption = "+1/+1 counter";
+            // Act: Start over with filtering – filter on rules text
+            var rulesFilter = _mainVM.FilterVM.Filters["Text"];
+            rulesFilter.SelectedSingleOption = "+1/+1 counter";
 
-        //    // Assert: three cards in AllCards, two in MyCollection with +1/+1 counter in their rules text
-        //    Assert.Equal(3, _allCardsVM.FilteredCards.Count);
-        //    Assert.Equal(2, _myCollectionVM.FilteredCards.Count);
+            // Assert: three cards in AllCards, two in MyCollection with +1/+1 counter in their rules text
+            Assert.Equal(3, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(2, _mainVM.MyCollectionVM.FilteredCards.Count);
 
-        //    // Act: Add one more filter - SetName contains "The List"
-        //    var setFilter = _filterVM.Filters["SetName"];
-        //    setFilter.SelectedSingleOption = "The List";
-        //    _filterVM.NotifyFilterChanged();
+            // Act: Add one more filter - SetName contains "The List"
+            var setFilter = _mainVM.FilterVM.Filters["SetName"];
+            setFilter.SelectedSingleOption = "The List";
+            _mainVM.FilterVM.NotifyFilterChanged();
 
-        //    // Assert: two cards in AllCards, two in MyCollection with +1/+1 counter in their rules text and from the set "The List"
-        //    Assert.Equal(2, _allCardsVM.FilteredCards.Count);
-        //    Assert.Equal(2, _myCollectionVM.FilteredCards.Count);
-        //    Assert.Equal("SetName: \"The List\" AND Text: \"+1/+1 counter\"", _filterVM.FilterSummary);
-
-
-        //    // Arrange: Clear all filters via the command for the second time
-        //    _filterVM.ClearFiltersCommand?.Execute(null);   // raises FilterChanged again
-
-        //    // Assert: lists are back to their full size and summary text is empty
-        //    Assert.Equal(61, _allCardsVM.FilteredCards.Count);
-        //    Assert.Equal(22, _myCollectionVM.FilteredCards.Count);
-        //    Assert.True(string.IsNullOrEmpty(_filterVM.FilterSummary));
-
-        //    // Act: Add a filter on the "Types" filter - select "Creature" and "Planeswalker"
-        //    var typesFilter = _filterVM.Filters["Types"];
-        //    foreach (var opt in typesFilter.FilterOptions.Where(o => o.OptionName is "Creature" or "Planeswalker"))
-        //    {
-        //        opt.IsSelected = true;
-        //    }
-        //    typesFilter.OperatorSelection = OperatorType.OR;
-
-        //    // Assert: 25 cards in AllCards, 10 in MyCollection with type "Creature" or "Planeswalker"
-        //    Assert.Equal(27, _allCardsVM.FilteredCards.Count);
-        //    Assert.Equal(10, _myCollectionVM.FilteredCards.Count);
-
-        //    // Act: Add a filter on the "SuperTypes" filter - select "Legendary"
-        //    var superTypesFilter = _filterVM.Filters["SuperTypes"];
-        //    foreach (var opt in superTypesFilter.FilterOptions.Where(o => o.OptionName is "Legendary"))
-        //    {
-        //        opt.IsSelected = true;
-        //    }
-
-        //    // Assert: 3 cards in AllCards, none in MyCollection with type "Creature" or "Planeswalker" and supertype "Legendary"
-        //    Assert.Equal(5, _allCardsVM.FilteredCards.Count);
-        //    Assert.Empty(_myCollectionVM.FilteredCards);
-        //    Assert.Equal("SuperTypes: {Legendary} AND Types: {Creature OR Planeswalker}", _filterVM.FilterSummary);
+            // Assert: two cards in AllCards, two in MyCollection with +1/+1 counter in their rules text and from the set "The List"
+            Assert.Equal(2, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(2, _mainVM.MyCollectionVM.FilteredCards.Count);
+            Assert.Equal("SetName: \"The List\" AND Text: \"+1/+1 counter\"", _mainVM.FilterVM.FilterSummary);
 
 
-        //    // 1) pick the one FilteredCards item you want
-        //    var uuidToAdd = "e4dcfe4f-8441-5eec-9f74-a7b3672e90e0";
-        //    var cardToAdd = _allCardsVM.FilteredCards.Single(c => c.Uuid == uuidToAdd);
+            // Arrange: Clear all filters via the command for the second time
+            _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);   // raises FilterChanged again
 
-        //    // 2) “fake” the DataGrid selection by wrapping it in an object‐array
-        //    var selection = new object[] { cardToAdd };
+            // Assert: lists are back to their full size and summary text is empty
+            Assert.Equal(61, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(22, _mainVM.MyCollectionVM.FilteredCards.Count);
+            Assert.True(string.IsNullOrEmpty(_mainVM.FilterVM.FilterSummary));
 
-        //    // 3) call the command exactly as the UI would
-        //    _addVM.AddSelectedCardsCommand.Execute(selection);
+            // Act: Add a filter on the "Types" filter - select "Creature" and "Planeswalker"
+            var typesFilter = _mainVM.FilterVM.Filters["Types"];
+            foreach (var opt in typesFilter.FilterOptions.Where(o => o.OptionName is "Creature" or "Planeswalker"))
+            {
+                opt.IsSelected = true;
+            }
+            typesFilter.OperatorSelection = OperatorType.OR;
 
-        //    // at that point addVM.CardsToAdd contains your card
-        //    Assert.Single(_addVM.CardsToAdd, c => c.Uuid == uuidToAdd);
+            // Assert: 25 cards in AllCards, 10 in MyCollection with type "Creature" or "Planeswalker"
+            Assert.Equal(27, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(10, _mainVM.MyCollectionVM.FilteredCards.Count);
 
-        //    _addVM.SubmitNewCardsCommand.Execute(null);
-        //    Assert.Equal(23, _myCollectionVM.Cards.Count);
+            // Act: Add a filter on the "SuperTypes" filter - select "Legendary"
+            var superTypesFilter = _mainVM.FilterVM.Filters["SuperTypes"];
+            foreach (var opt in superTypesFilter.FilterOptions.Where(o => o.OptionName is "Legendary"))
+            {
+                opt.IsSelected = true;
+            }
 
-        //}
+            // Assert: 3 cards in AllCards, none in MyCollection with type "Creature" or "Planeswalker" and supertype "Legendary"
+            Assert.Equal(5, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Empty(_mainVM.MyCollectionVM.FilteredCards);
+            Assert.Equal("SuperTypes: {Legendary} AND Types: {Creature OR Planeswalker}", _mainVM.FilterVM.FilterSummary);
 
-        //// inside your IntegrationTests class:
-        //private sealed class NoCloseUnitOfWork : IUnitOfWork, IAsyncDisposable
-        //{
-        //    private SQLiteTransaction? _txn;
 
-        //    public NoCloseUnitOfWork(SQLiteConnection conn)
-        //    {
-        //        // hijack the static DBAccess.connection so all repos see the same in-memory DB
-        //        DBAccess.connection = conn;
-        //    }
+            // 1) pick the one FilteredCards item you want
+            var uuidToAdd = "e4dcfe4f-8441-5eec-9f74-a7b3672e90e0";
+            var cardToAdd = _mainVM.AllCardsVM.FilteredCards.Single(c => c.Uuid == uuidToAdd);
 
-        //    public async Task BeginAsync()
-        //    {
-        //        // re-open if needed (fixture Connection is already Open, but just in case)
-        //        await DBAccess.OpenConnectionAsync();
-        //        var c = DBAccess.connection
-        //                ?? throw new InvalidOperationException("DBAccess.connection was null");
-        //        _txn = c.BeginTransaction();
-        //    }
+            // 2) “fake” the DataGrid selection by wrapping it in an object‐array
+            var selection = new object[] { cardToAdd };
 
-        //    public Task CommitAsync()
-        //    {
-        //        _txn?.Commit();
-        //        return Task.CompletedTask;
-        //    }
+            // 3) call the command exactly as the UI would
+            _mainVM.AddCardsVM.AddSelectedCardsCommand.Execute(selection);
 
-        //    public Task RollbackAsync()
-        //    {
-        //        _txn?.Rollback();
-        //        return Task.CompletedTask;
-        //    }
+            // at that point addVM.CardsToAdd contains your card
+            Assert.Single(_mainVM.AddCardsVM.CardsToAdd, c => c.Uuid == uuidToAdd);
 
-        //    public ValueTask DisposeAsync()
-        //    {
-        //        // **do not** close DBAccess.connection here!
-        //        // that way the in-memory schema survives
-        //        return ValueTask.CompletedTask;
-        //    }
+            _mainVM.AddCardsVM.SubmitNewCardsCommand.Execute(null);
+            Assert.Equal(23, _mainVM.MyCollectionVM.Cards.Count);
+        }
     }
-
 }
 
 

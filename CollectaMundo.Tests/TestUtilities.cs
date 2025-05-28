@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.Data;
-using CollectaMundo.DomainLogic.Models;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using System.Data.SQLite;
 
 namespace CollectaMundo.Tests
@@ -139,14 +139,19 @@ namespace CollectaMundo.Tests
                 }
             ];
         }
-        public static IDbConnectionFactory CreateInMemoryDbFactory(SQLiteConnection connection)
+        public static IDbConnectionFactory CreateInMemoryDbFactory()
         {
-            return new StaticDbFactory(connection);
+            return new SharedMemoryDbFactory("file:SharedTestDb?mode=memory&cache=shared;Version=3;");
         }
 
-        private class StaticDbFactory(SQLiteConnection conn) : IDbConnectionFactory
+        private class SharedMemoryDbFactory(string connectionString) : IDbConnectionFactory
         {
-            public Task<SQLiteConnection> OpenConnectionAsync() => Task.FromResult(conn);
+            public async Task<SQLiteConnection> OpenConnectionAsync()
+            {
+                var conn = new SQLiteConnection(connectionString);
+                await conn.OpenAsync();
+                return conn;
+            }
         }
     }
 

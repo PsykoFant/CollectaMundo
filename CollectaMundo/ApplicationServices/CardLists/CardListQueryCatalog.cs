@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.Data;
-using CollectaMundo.DomainLogic;
+using CollectaMundo.DomainLogic.CardLists;
 
 namespace CollectaMundo.ApplicationServices.CardLists
 {

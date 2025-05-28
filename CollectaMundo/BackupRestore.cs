@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.Models;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using Microsoft.Win32;
 using ServiceStack;
 using System.Collections.ObjectModel;

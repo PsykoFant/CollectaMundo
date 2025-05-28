@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.Data;
-using CollectaMundo.DomainLogic.Models;
+using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -9,7 +9,7 @@ using System.Data.SQLite;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
-using static CollectaMundo.DomainLogic.Models.CardChangeEventArgs;
+using static CollectaMundo.DomainLogic.EditCollection.Models.CardChangeEventArgs;
 
 namespace CollectaMundo.ViewModels
 {

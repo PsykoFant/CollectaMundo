@@ -1,7 +1,7 @@
-﻿using CollectaMundo.DomainLogic.Models;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using System.Data.Common;
 
-namespace CollectaMundo.DomainLogic
+namespace CollectaMundo.DomainLogic.CardLists
 {
     // DomainLogic layer: pure, no ADO-NET dependencies
     public static class CardListMapper

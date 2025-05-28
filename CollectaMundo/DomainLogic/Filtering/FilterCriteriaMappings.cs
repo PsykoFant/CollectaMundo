@@ -1,6 +1,6 @@
 ﻿using static CollectaMundo.MainWindow;
 
-namespace CollectaMundo.Utilities
+namespace CollectaMundo.DomainLogic.Filtering
 {
     /// <summary>
     /// Defines the type of filtering applicable to a criteria.

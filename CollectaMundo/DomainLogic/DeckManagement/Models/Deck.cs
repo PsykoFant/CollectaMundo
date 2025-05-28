@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.DomainLogic.Models
+﻿namespace CollectaMundo.DomainLogic.DeckManagement.Models
 {
     public class Deck
     {

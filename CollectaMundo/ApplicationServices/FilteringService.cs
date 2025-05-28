@@ -1,12 +1,10 @@
-﻿using CollectaMundo.Domain;
-using CollectaMundo.DomainLogic.Models;
-using CollectaMundo.Utilities;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
 using System.Text;
 using System.Windows;
 using System.Windows.Media;
-using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.ApplicationServices
 {
@@ -16,7 +14,9 @@ namespace CollectaMundo.ApplicationServices
         {
             // nothing to do if no filters selected
             if (vmFilters == null || !vmFilters.Any())
+            {
                 return [.. cards];
+            }
 
             // map UI-state → domain criteria
             var criteria = vmFilters.Select(vm => new FilteringLogic(
@@ -30,7 +30,9 @@ namespace CollectaMundo.ApplicationServices
 
             // if after mapping we still have no active criteria, bail out
             if (criteria.Count == 0)
+            {
                 return [.. cards];
+            }
 
             try
             {

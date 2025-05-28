@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.Models;
+﻿using CollectaMundo.DomainLogic.DeckManagement.Models;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Windows;

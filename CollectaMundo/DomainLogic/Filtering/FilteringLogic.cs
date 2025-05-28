@@ -1,13 +1,11 @@
-﻿using CollectaMundo.DomainLogic.Models;
-using CollectaMundo.Utilities;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using System.Diagnostics;
 using System.Reflection;
 using System.Windows;
-using static CollectaMundo.MainWindow;
 
-namespace CollectaMundo.Domain
+namespace CollectaMundo.DomainLogic.Filtering
 {
-    public class FilteringLogic(string criteriaKey, FilterType filterCategory, IEnumerable<string> selectedOptions, string? selectedSingleOption, int? selectedNumericValue, MainWindow.OperatorType operatorSelection, string defaultText) : IFilteringLogic
+    public class FilteringLogic(string criteriaKey, FilterType filterCategory, IEnumerable<string> selectedOptions, string? selectedSingleOption, int? selectedNumericValue, OperatorType operatorSelection, string defaultText) : IFilteringLogic
     {
         public string CriteriaKey { get; } = criteriaKey;
         public FilterType FilterCategory { get; } = filterCategory;

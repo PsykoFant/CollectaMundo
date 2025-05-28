@@ -1,5 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Models;
-using CollectaMundo.Utilities;
+﻿using CollectaMundo.DomainLogic.Filtering;
+using CollectaMundo.DomainLogic.Filtering.Models;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;

@@ -1,14 +1,13 @@
 ﻿using CollectaMundo.Data;
-using CollectaMundo.Domain;
-using CollectaMundo.DomainLogic;
-using CollectaMundo.DomainLogic.Models;
+using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.EditCollection;
+using CollectaMundo.DomainLogic.EditCollection.Models;
+using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.Presentation.Converters;
-using CollectaMundo.Utilities;
 using CollectaMundo.ViewModels;
 using Moq;
 using System.Globalization;
 using System.Windows.Media.Imaging;
-using static CollectaMundo.MainWindow;
 using static CollectaMundo.Tests.TestUtilities;
 
 

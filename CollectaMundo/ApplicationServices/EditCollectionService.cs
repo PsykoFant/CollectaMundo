@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.Data;
-using CollectaMundo.DomainLogic;
-using CollectaMundo.DomainLogic.Models;
+using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.EditCollection;
+using CollectaMundo.DomainLogic.EditCollection.Models;
 using System.Collections.ObjectModel;
 using System.Data.SQLite;
 

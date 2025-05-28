@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.Models;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using System.ComponentModel;
 
 namespace CollectaMundo.ViewModels

@@ -11,30 +11,43 @@ namespace CollectaMundo.Tests
     public class InMemoryDatabaseFixture : IDisposable
     {
         private readonly SQLiteConnection _masterConnection;
+        private static bool _hasSeeded = false;
         public InMemoryDatabaseFixture()
         {
-            _masterConnection = new SQLiteConnection("Data Source=:memory:;Version=3;");
+            _masterConnection = new SQLiteConnection("Data Source=file:SharedTestDb?mode=memory&cache=shared;Version=3;");
             _masterConnection.Open();
-            SetupSchema();
-            SeedDataAsync().GetAwaiter().GetResult();
+
+            EnsureSchemaAndSeed(); // replaces SetupSchema + _hasSeeded
         }
-        public async Task<SQLiteConnection> CreateClonedConnectionAsync()
+
+
+        private void EnsureSchemaAndSeed()
         {
-            var newConn = new SQLiteConnection("Data Source=:memory:;Version=3;");
-            await newConn.OpenAsync();
+            using var checkCmd = new SQLiteCommand("SELECT name FROM sqlite_master WHERE type='table' AND name='cards';", _masterConnection);
+            var result = checkCmd.ExecuteScalar();
 
-            // This copies the schema + data into the new connection
-            _masterConnection.BackupDatabase(newConn, "main", "main", -1, null, 0);
-
-            return newConn;
+            if (result == null)
+            {
+                SetupSchema();
+                SeedDataAsync().GetAwaiter().GetResult();
+            }
         }
+
+
+        public static async Task<SQLiteConnection> CreateClonedConnectionAsync()
+        {
+            var clone = new SQLiteConnection("Data Source=file:SharedTestDb?mode=memory&cache=shared;Version=3;");
+            await clone.OpenAsync();
+            return clone;
+        }
+
         public void Dispose() => _masterConnection.Dispose();
         private void SetupSchema()
         {
             using var command = new SQLiteCommand(_masterConnection);
-            // Create table: cards
+            // CREATE TABLE IF NOT EXISTS: cards
             command.CommandText = @"
-                CREATE TABLE cards (
+                CREATE TABLE IF NOT EXISTS cards (
                     artist TEXT,
                     artistIds TEXT,
                     asciiName TEXT,
@@ -117,9 +130,9 @@ namespace CollectaMundo.Tests
             ";
             command.ExecuteNonQuery();
 
-            // Create table: tokens
+            // CREATE TABLE IF NOT EXISTS: tokens
             command.CommandText = @"
-                CREATE TABLE tokens (
+                CREATE TABLE IF NOT EXISTS tokens (
                     artist TEXT,
                     artistIds TEXT,
                     asciiName TEXT,
@@ -173,9 +186,9 @@ namespace CollectaMundo.Tests
             ";
             command.ExecuteNonQuery();
 
-            // Create table: sets
+            // CREATE TABLE IF NOT EXISTS: sets
             command.CommandText = @"
-                CREATE TABLE sets (
+                CREATE TABLE IF NOT EXISTS sets (
                     baseSetSize INTEGER,
                     block TEXT,
                     cardsphereSetId INTEGER,
@@ -202,9 +215,9 @@ namespace CollectaMundo.Tests
             ";
             command.ExecuteNonQuery();
 
-            // Create table: cardForeignData
+            // CREATE TABLE IF NOT EXISTS: cardForeignData
             command.CommandText = @"
-                CREATE TABLE cardForeignData (
+                CREATE TABLE IF NOT EXISTS cardForeignData (
 	            faceName TEXT,
 	            flavorText TEXT,
 	            identifiers TEXT,
@@ -218,9 +231,9 @@ namespace CollectaMundo.Tests
             ";
             command.ExecuteNonQuery();
 
-            // Create table: myCollection
+            // CREATE TABLE IF NOT EXISTS: myCollection
             command.CommandText = @"
-                CREATE TABLE myCollection (
+                CREATE TABLE IF NOT EXISTS myCollection (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     uuid TEXT,
                     cardsOwned INTEGER,
@@ -232,27 +245,27 @@ namespace CollectaMundo.Tests
             ";
             command.ExecuteNonQuery();
 
-            // Create table: cardsInDecks
+            // CREATE TABLE IF NOT EXISTS: cardsInDecks
             command.CommandText = @"
-                CREATE TABLE cardsInDecks (id INTEGER PRIMARY KEY AUTOINCREMENT, deckId INTEGER, name TEXT, uuid TEXT, count INTEGER)
+                CREATE TABLE IF NOT EXISTS cardsInDecks (id INTEGER PRIMARY KEY AUTOINCREMENT, deckId INTEGER, name TEXT, uuid TEXT, count INTEGER)
             ";
             command.ExecuteNonQuery();
 
-            // Create table: uniqueManaSymbols
+            // CREATE TABLE IF NOT EXISTS: uniqueManaSymbols
             command.CommandText = @"
-                CREATE TABLE uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB)
+                CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB)
             ";
             command.ExecuteNonQuery();
 
-            // Create table: uniqueManaCostImages
+            // CREATE TABLE IF NOT EXISTS: uniqueManaCostImages
             command.CommandText = @"
-                CREATE TABLE uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB)
+                CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB)
             ";
             command.ExecuteNonQuery();
 
-            // Create view: view_allCards
+            // CREATE VIEW IF NOT EXISTS: view_allCards
             command.CommandText = @"
-                CREATE TABLE view_allCards(
+                CREATE TABLE IF NOT EXISTS view_allCards(
                     Name            TEXT,
                     SetName         TEXT,
                     ReleaseDate     TEXT,
@@ -279,9 +292,9 @@ namespace CollectaMundo.Tests
             ";
             command.ExecuteNonQuery();
 
-            // Create view: view_myCollection
+            // CREATE VIEW IF NOT EXISTS: view_myCollection
             command.CommandText = @"
-                CREATE TABLE view_myCollection(
+                CREATE TABLE IF NOT EXISTS view_myCollection(
                     Name            TEXT,
                     SetName         TEXT,
                     ReleaseDate     TEXT,
@@ -313,9 +326,9 @@ namespace CollectaMundo.Tests
             ";
             command.ExecuteNonQuery();
 
-            // Create view: view_allCardsForDecks
+            // CREATE VIEW IF NOT EXISTS: view_allCardsForDecks
             command.CommandText = @"
-                CREATE VIEW view_allCardsForDecks AS
+                CREATE VIEW IF NOT EXISTS view_allCardsForDecks AS
                     SELECT * FROM (
                         SELECT 
                             DISTINCT c.name AS Name, 
@@ -354,9 +367,9 @@ namespace CollectaMundo.Tests
             ";
             command.ExecuteNonQuery();
 
-            // Create view: view_cardsInDecks
+            // CREATE VIEW IF NOT EXISTS: view_cardsInDecks
             command.CommandText = @"
-                        CREATE VIEW view_cardsInDecks AS
+                        CREATE VIEW IF NOT EXISTS view_cardsInDecks AS
                         SELECT 
                             cardsInDecks.id AS CardId,
                             cardsInDecks.name AS Name,

@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices;
-using CollectaMundo.DomainLogic.Models;
+using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
 using ServiceStack;
 using System.Collections.ObjectModel;

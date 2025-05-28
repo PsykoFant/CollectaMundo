@@ -1,7 +1,6 @@
-﻿using CollectaMundo.ViewModels;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
-namespace CollectaMundo.DomainLogic.Models
+namespace CollectaMundo.DomainLogic.Filtering.Models
 {
     // Base class for all filters with common properties.
     public abstract class FilterBase

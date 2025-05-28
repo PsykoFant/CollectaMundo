@@ -1,6 +1,6 @@
-﻿using System.Globalization;
+﻿using CollectaMundo.DomainLogic.Filtering;
+using System.Globalization;
 using System.Windows.Data;
-using static CollectaMundo.MainWindow;
 
 namespace CollectaMundo.Presentation.Converters
 {

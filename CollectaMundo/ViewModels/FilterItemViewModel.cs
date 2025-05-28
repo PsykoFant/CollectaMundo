@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Models;
+﻿using CollectaMundo.DomainLogic.Filtering;
+using CollectaMundo.DomainLogic.Filtering.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -262,14 +263,18 @@ namespace CollectaMundo.ViewModels
                 disp.Invoke(() =>
                 {
                     if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
+                    {
                         SelectedSingleOption = FreetextSearch;
+                    }
                 });
             }
             else
             {
                 // fallback: just apply the selection directly
                 if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
+                {
                     SelectedSingleOption = FreetextSearch;
+                }
             }
         }
 

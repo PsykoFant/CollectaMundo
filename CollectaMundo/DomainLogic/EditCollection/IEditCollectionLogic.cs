@@ -1,6 +1,7 @@
-﻿using CollectaMundo.DomainLogic.Models;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.EditCollection.Models;
 
-namespace CollectaMundo.DomainLogic
+namespace CollectaMundo.DomainLogic.EditCollection
 {
     public interface IEditCollectionLogic
     {

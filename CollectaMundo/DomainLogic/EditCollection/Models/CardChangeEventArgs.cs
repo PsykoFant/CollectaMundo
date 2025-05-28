@@ -1,4 +1,6 @@
-﻿namespace CollectaMundo.DomainLogic.Models
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
+
+namespace CollectaMundo.DomainLogic.EditCollection.Models
 {
     public class CardChangeEventArgs : EventArgs
     {

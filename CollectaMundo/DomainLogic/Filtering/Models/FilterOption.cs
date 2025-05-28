@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace CollectaMundo.DomainLogic.Models
+namespace CollectaMundo.DomainLogic.Filtering.Models
 {
     public class FilterOption(string optionName, bool isSelected = false) : INotifyPropertyChanged
     {
