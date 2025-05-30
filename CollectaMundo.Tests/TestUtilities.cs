@@ -141,14 +141,25 @@ namespace CollectaMundo.Tests
         }
         public static IDbConnectionFactory CreateInMemoryDbFactory()
         {
-            return new SharedMemoryDbFactory("file:SharedTestDb?mode=memory&cache=shared;Version=3;");
+            const string connectionString = "Data Source=file:MasterDb?mode=memory&cache=shared;Version=3;";
+            return new SharedMemoryDbFactory(connectionString);
         }
-
-        private class SharedMemoryDbFactory(string connectionString) : IDbConnectionFactory
+        private class SharedMemoryDbFactory : IDbConnectionFactory
         {
+            private readonly string _connectionString;
+            private readonly SQLiteConnection _persistentConnection;
+
+            public SharedMemoryDbFactory(string connectionString)
+            {
+                _connectionString = connectionString;
+
+                _persistentConnection = new SQLiteConnection(connectionString);
+                _persistentConnection.Open(); // Ensures DB remains alive for the test duration
+            }
+
             public async Task<SQLiteConnection> OpenConnectionAsync()
             {
-                var conn = new SQLiteConnection(connectionString);
+                var conn = new SQLiteConnection(_connectionString);
                 await conn.OpenAsync();
                 return conn;
             }

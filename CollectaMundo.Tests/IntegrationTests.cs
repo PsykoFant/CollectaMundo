@@ -2,39 +2,32 @@
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.ViewModels;
-using System.Data.SQLite;
 
 namespace CollectaMundo.Tests
 {
     public sealed class IntegrationTests(InMemoryDatabaseFixture fixture) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
         private readonly InMemoryDatabaseFixture _fx = fixture;
-        private SQLiteConnection _testConnection = null!;
         private MainWindowViewModel _mainVM = null!;
         private readonly List<CardChangeEventArgs> _changedEvents = [];
         private readonly FilteringService _filteringService = new();
-
         public async Task InitializeAsync()
         {
-            // Ensure schema and seed are already present (fixture keeps the master connection open)
-            var dbFactory = TestUtilities.CreateInMemoryDbFactory(); // uses named shared in-memory DB
+            // Create a DbFactory from this connection
+            var dbFactory = TestUtilities.CreateInMemoryDbFactory();
 
+            // Build the MainWindowViewModel (per test, no shared VM across tests)
             var readyTcs = new TaskCompletionSource();
-
             _mainVM = await MainWindowViewModel.CreateAsync(dbFactory, () => readyTcs.TrySetResult());
             await readyTcs.Task;
 
             _mainVM.AddCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
             _mainVM.EditCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
         }
-
-
         public Task DisposeAsync()
         {
-            _testConnection?.Dispose();
             return Task.CompletedTask;
         }
-
         [Fact]
         public void Seed_has_expected_counts()
         {

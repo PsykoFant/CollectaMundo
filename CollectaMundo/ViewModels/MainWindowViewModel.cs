@@ -153,7 +153,6 @@ namespace CollectaMundo.ViewModels
             var filterUow = new UnitOfWork(_dbFactory);
             _filteringService = new FilteringService();
             FilterVM = new FilterViewModel(_filteringService);
-            //_ = InitializeAsync();
             FilterVM.FilterChanged += OnFilterChanged;
 
             HookUpStatusChanged();
@@ -163,30 +162,7 @@ namespace CollectaMundo.ViewModels
             ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
         }
-
-        private async Task InitializeListsAsync()
-        {
-            var init = new MainWindowInitializer(_dbFactory);
-            await init.InitializeAsync(
-                new List<(CardViewModel, CardListQuerySpec)>
-                {
-            (AllCardsVM, CardListQueryCatalog.AllCards),
-            (MyCollectionVM, CardListQueryCatalog.MyCollection),
-            (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
-            (AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
-            (ColorIcons, CardListQueryCatalog.ColorIcons)
-                },
-                FilterVM.Filters,
-                FilterVM
-            );
-
-            FilterVM.NotifyFilterChanged();
-            OnStartupComplete?.Invoke();
-        }
-
-        public static async Task<MainWindowViewModel> CreateAsync(
-            IDbConnectionFactory dbFactory,
-            Action? onStartupComplete = null)
+        public static async Task<MainWindowViewModel> CreateAsync(IDbConnectionFactory dbFactory, Action? onStartupComplete = null)
         {
             var vm = new MainWindowViewModel(dbFactory)
             {
@@ -195,9 +171,24 @@ namespace CollectaMundo.ViewModels
             await vm.InitializeListsAsync();
             return vm;
         }
+        private async Task InitializeListsAsync()
+        {
+            var init = new MainWindowInitializer(_dbFactory);
+            await init.InitializeAsync(
+                new List<(CardViewModel, CardListQuerySpec)>
+                {
+                    (AllCardsVM, CardListQueryCatalog.AllCards),
+                    (MyCollectionVM, CardListQueryCatalog.MyCollection),
+                    (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
+                    (AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
+                    (ColorIcons, CardListQueryCatalog.ColorIcons)
+                },
+                FilterVM.Filters, FilterVM
+            );
 
-
-
+            FilterVM.NotifyFilterChanged();
+            OnStartupComplete?.Invoke();
+        }
         public void ShowStatusScreen(bool show, string? message = null, bool progress = false, string? firstTimeText = null)
         {
             CurrentPage = show ? Page.StatusScreen : Page.SearchAndFilter;

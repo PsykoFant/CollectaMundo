@@ -8,41 +8,43 @@ using System.IO;
 namespace CollectaMundo.Tests
 {
     // A fixture class to set up an in‑memory SQLite database and seed it from CSV strings.
-    public class InMemoryDatabaseFixture : IDisposable
+    public class InMemoryDatabaseFixture : IAsyncLifetime, IDisposable
     {
-        private readonly SQLiteConnection _masterConnection;
-        private static bool _hasSeeded = false;
-        public InMemoryDatabaseFixture()
+        private const string MasterConnectionString = "Data Source=file:MasterDb?mode=memory&cache=shared;Version=3;";
+        private static SQLiteConnection? _masterConnection;
+        private static Task? _seedingTask;
+
+        public async Task InitializeAsync()
         {
-            _masterConnection = new SQLiteConnection("Data Source=file:SharedTestDb?mode=memory&cache=shared;Version=3;");
-            _masterConnection.Open();
-
-            EnsureSchemaAndSeed(); // replaces SetupSchema + _hasSeeded
-        }
-
-
-        private void EnsureSchemaAndSeed()
-        {
-            using var checkCmd = new SQLiteCommand("SELECT name FROM sqlite_master WHERE type='table' AND name='cards';", _masterConnection);
-            var result = checkCmd.ExecuteScalar();
-
-            if (result == null)
+            try
             {
-                SetupSchema();
-                SeedDataAsync().GetAwaiter().GetResult();
+                // Create and hold the master connection open
+                if (_masterConnection == null)
+                {
+                    _masterConnection = new SQLiteConnection(MasterConnectionString);
+                    await _masterConnection.OpenAsync();
+                }
+
+                if (_seedingTask == null)
+                {
+                    _seedingTask = InitializeSchemaAndSeedAsync();
+                }
             }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error initializing in-memory database: {ex.Message}");
+                throw;
+            }
+
+            // Wait outside the lock to avoid deadlocks
+            await _seedingTask;
         }
-
-
-        public static async Task<SQLiteConnection> CreateClonedConnectionAsync()
+        private static async Task InitializeSchemaAndSeedAsync()
         {
-            var clone = new SQLiteConnection("Data Source=file:SharedTestDb?mode=memory&cache=shared;Version=3;");
-            await clone.OpenAsync();
-            return clone;
+            SetupSchema();
+            await SeedDataAsync();
         }
-
-        public void Dispose() => _masterConnection.Dispose();
-        private void SetupSchema()
+        private static void SetupSchema()
         {
             using var command = new SQLiteCommand(_masterConnection);
             // CREATE TABLE IF NOT EXISTS: cards
@@ -396,12 +398,19 @@ namespace CollectaMundo.Tests
 
 
         }
-        private async Task SeedDataAsync()
+        private static async Task SeedDataAsync()
         {
-            // Path to test resources directory.
+            // Check if seed is already there
+            var cmd = new SQLiteCommand("SELECT COUNT(*) FROM sets", _masterConnection);
+            var count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+            if (count > 0)
+            {
+                Debug.WriteLine("Skipping seed: 'sets' table already populated.");
+                return;
+            }
+
             string basePath = Path.Combine(AppContext.BaseDirectory, "TestResources");
 
-            // Seed each table from its CSV seed string.
             await SeedTableAsync("cards", Path.Combine(basePath, "cards.csv"));
             await SeedTableAsync("tokens", Path.Combine(basePath, "tokens.csv"));
             await SeedTableAsync("sets", Path.Combine(basePath, "sets.csv"));
@@ -410,12 +419,14 @@ namespace CollectaMundo.Tests
             await SeedTableAsync("view_myCollection", Path.Combine(basePath, "view_myCollection.csv"));
             await SeedTableAsync("view_allCards", Path.Combine(basePath, "view_allCards.csv"));
         }
-        private async Task SeedTableAsync(string tableName, string filePath)
+        private static async Task SeedTableAsync(string tableName, string filePath)
         {
             if (!File.Exists(filePath))
             {
                 throw new FileNotFoundException($"CSV file for {tableName} not found at {filePath}");
             }
+
+            Debug.WriteLine($"Seeding database {tableName} with initial data from CSV files.");
 
             string csvData = await File.ReadAllTextAsync(filePath);
             // Use CsvHelper to parse the CSV.
@@ -475,6 +486,16 @@ namespace CollectaMundo.Tests
             transaction.Commit();
         }
 
+
+        public Task DisposeAsync()
+        {
+            _masterConnection?.Dispose();
+            return Task.CompletedTask;
+        }
+        public void Dispose()
+        {
+            _masterConnection?.Dispose();
+        }
     }
 
 }
