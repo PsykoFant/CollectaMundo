@@ -18,25 +18,9 @@
     Icon="/Resources/Images/Icon.ico" 
     Width="1920"
     Height="960"
-    PreviewMouseDown="Window_PreviewMouseDown">
+    PreviewMouseDown="Window_PreviewMouseDown"
+    Style="{StaticResource {x:Type Window}}">
     
-<!-- Define resources accessible by all elements in this Window -->
-    <Window.Resources>
-        <converters:StringToImageSourceConverter x:Key="StringToImageSourceConverter"/>
-        <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
-        <converters:ColorlessFontConverter x:Key="ColorlessFontConverter"/>
-        <converters:CountToSummaryConverter x:Key="CountToSummaryConverter"/>
-        <converters:OperatorToSymbolConverter x:Key="OperatorToSymbolConverter"/>
-        <converters:InverseVisibilityConverter x:Key="InverseVisibility"/>
-        <converters:PageToBrushConverter x:Key="PageToBrushConverter" SelectedBrush="#5cb9ca" DefaultBrush="#FFDDDDDD"/>
-        <converters:PageToVisibilityConverter x:Key="PageToVisibilityConverter" VisibleVisibility="Visible" HiddenVisibility="Collapsed" />
-    </Window.Resources>
-    <Window.Background>
-        <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-            <GradientStop Color="#FFFBF7B4"/>
-            <GradientStop Color="White" Offset="1"/>
-        </LinearGradientBrush>
-    </Window.Background>
     <Grid>
         <Grid x:Name="AppWindow" DataContext="{Binding Main}" Style="{StaticResource MPlantin}">
             <Grid.ColumnDefinitions>
