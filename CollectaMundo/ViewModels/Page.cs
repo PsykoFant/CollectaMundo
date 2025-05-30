@@ -6,6 +6,5 @@
         MyCollection,
         Decks,
         Utilities,
-        StatusScreen
     }
 }

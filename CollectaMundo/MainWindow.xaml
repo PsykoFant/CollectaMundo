@@ -83,17 +83,6 @@
                 </Button.Effect>
             </Button>
         </Grid>
-        <!-- Status screen -->
-        <Grid Visibility="{Binding CurrentPage,Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.StatusScreen}}"
-          Grid.Row="1" Grid.ColumnSpan="3"
-          Margin="0,40,0,0"
-          VerticalAlignment="Top">
-            <Image Source="/Resources/Images/Logo.png" Stretch="Fill" VerticalAlignment="Top" HorizontalAlignment="Center" Height="500" Width="500" Margin="0,76,0,0" />
-            <Label Content="CollectaMundo" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
-            <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Center" Height="15" Margin="0,650,0,0" VerticalAlignment="Top" Width="500" BorderBrush="Black" Visibility="{Binding IsProgressVisible,Converter={StaticResource BoolToVisibilityConverter}}"/>
-            <Label Content="{Binding StatusMessage}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,621,0,0"/>
-            <Label Content="{Binding FirstTimeSetupText}" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,582,0,0" Visibility="{Binding FirstTimeSetupText,Converter={StaticResource StringToVisibilityConverter}}"/>
-        </Grid>
         <!-- Side menu -->
         <Grid Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="{Binding SideMenuVisibility}">
             <Grid x:Name="GridFiltering">

@@ -65,26 +65,6 @@ namespace CollectaMundo.ViewModels
         public EditCollectionViewModel EditCardsVM { get; }
         public FilterViewModel FilterVM { get; }
 
-        private string _statusMessage = "";
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set { _statusMessage = value; OnPropertyChanged(); }
-        }
-
-        private bool _isProgressVisible;
-        public bool IsProgressVisible
-        {
-            get => _isProgressVisible;
-            set { _isProgressVisible = value; OnPropertyChanged(); }
-        }
-
-        private string _firstTimeSetupText = "";
-        public string FirstTimeSetupText
-        {
-            get => _firstTimeSetupText;
-            set { _firstTimeSetupText = value; OnPropertyChanged(); }
-        }
         // Misc. properties
         public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [[50, 50], [50, 50], [50]];
         // Hide mini logo at appropriate times
@@ -115,7 +95,7 @@ namespace CollectaMundo.ViewModels
             set { _contenSectionVisibility = value; OnPropertyChanged(); }
         }
 
-        public bool IsTopMenuEnabled => CurrentPage != Page.StatusScreen;
+        public bool IsTopMenuEnabled => CurrentPage == Page.SearchAndFilter;
 
         // Backing fields
         private readonly IDbConnectionFactory _dbFactory;
@@ -130,7 +110,7 @@ namespace CollectaMundo.ViewModels
         // Constructor
         private MainWindowViewModel(IDbConnectionFactory dbFactory)
         {
-            CurrentPage = Page.StatusScreen;
+            CurrentPage = Page.SearchAndFilter;
 
             _dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
 
@@ -189,21 +169,7 @@ namespace CollectaMundo.ViewModels
             FilterVM.NotifyFilterChanged();
             OnStartupComplete?.Invoke();
         }
-        public void ShowStatusScreen(bool show, string? message = null, bool progress = false, string? firstTimeText = null)
-        {
-            CurrentPage = show ? Page.StatusScreen : Page.SearchAndFilter;
-            if (message != null)
-            {
-                StatusMessage = message;
-            }
 
-            if (firstTimeText != null)
-            {
-                FirstTimeSetupText = firstTimeText;
-            }
-
-            IsProgressVisible = progress;
-        }
 
         // When a card is added/updated/deleted from collection
         private void OnCardChanged(object? sender, CardChangeEventArgs e)

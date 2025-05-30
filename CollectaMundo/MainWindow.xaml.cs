@@ -127,10 +127,8 @@ namespace CollectaMundo
 
             await DownloadAndPrepDB.SystemIntegrityCheckAsync();
 
-            //VM.ShowStatusScreen(true, "Loading ALL the cards …", progress: false);
             await FlushUiAsync();
 
-            //await LoadDataIntoUiElements();
             var settings = new JsonAppSettings();
             var dbFactory = new DbConnectionFactory(settings);
             var vm = await MainWindowViewModel.CreateAsync(dbFactory);
@@ -139,7 +137,6 @@ namespace CollectaMundo
 
             VM.FilterVM.NotifyFilterChanged();
 
-            VM.ShowStatusScreen(false);
             await FlushUiAsync();
             _isStartup = false;
 
@@ -151,26 +148,6 @@ namespace CollectaMundo
         private static async Task FlushUiAsync()
         {
             await Application.Current.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
-        }
-
-
-        public async Task LoadDataIntoUiElements()
-        {
-            //await ShowStatusWindowAsync(true, "Loading ALL the cards ...");
-            VM.ShowStatusScreen(true, "Loading ALL the cards …", progress: false);
-
-
-            await Application.Current.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
-
-
-            VM.FilterVM.NotifyFilterChanged();
-
-
-
-            CardPriceUtilities.UpdateDataGridHeaders(AllCardsDataGrid);
-            CardPriceUtilities.UpdateDataGridHeaders(MyCollectionDataGrid);
-
-            VM.ShowStatusScreen(false);
         }
         public async Task LoadAllDecksAsync()
         {

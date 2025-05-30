@@ -112,25 +112,25 @@ namespace CollectaMundo
                     //MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = statusMessageBig;
                 }
 
-                if (showStatusBar && MainWindow.CurrentInstance?.ProgressBar != null)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        MainWindow.CurrentInstance.ProgressBar.Visibility = Visibility.Visible;
-                    });
-                }
+                //if (showStatusBar && MainWindow.CurrentInstance?.ProgressBar != null)
+                //{
+                //    Application.Current.Dispatcher.Invoke(() =>
+                //    {
+                //        MainWindow.CurrentInstance.ProgressBar.Visibility = Visibility.Visible;
+                //    });
+                //}
 
                 IProgress<int> progress = new Progress<int>(value =>
                 {
                     if (showStatusBar)
                     {
-                        Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            if (MainWindow.CurrentInstance?.ProgressBar != null)
-                            {
-                                MainWindow.CurrentInstance.ProgressBar.Value = value;
-                            }
-                        });
+                        //Application.Current.Dispatcher.Invoke(() =>
+                        //{
+                        //    if (MainWindow.CurrentInstance?.ProgressBar != null)
+                        //    {
+                        //        MainWindow.CurrentInstance.ProgressBar.Value = value;
+                        //    }
+                        //});
                     }
                 });
 
@@ -170,14 +170,14 @@ namespace CollectaMundo
             }
             finally
             {
-                if (showStatusBar && MainWindow.CurrentInstance?.ProgressBar != null)
-                {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        //MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = string.Empty;
-                        //MainWindow.CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
-                    });
-                }
+                //if (showStatusBar && MainWindow.CurrentInstance?.ProgressBar != null)
+                //{
+                //    Application.Current.Dispatcher.Invoke(() =>
+                //    {
+                //        //MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = string.Empty;
+                //        //MainWindow.CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
+                //    });
+                //}
             }
         }
         public static async Task PrepareDownloadedCardDatabase()
