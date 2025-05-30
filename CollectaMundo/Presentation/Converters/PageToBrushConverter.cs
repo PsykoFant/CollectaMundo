@@ -15,7 +15,7 @@ namespace CollectaMundo.Presentation.Converters
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            // value is the VM’s CurrentPage, parameter is the Page enum we passed in XAML
+            // value is the MainWindowVM’s CurrentPage, parameter is the Page enum we passed in XAML
             if (value is Page currentPage && parameter is Page buttonPage)
             {
                 return currentPage == buttonPage

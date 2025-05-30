@@ -19,6 +19,10 @@ namespace CollectaMundo
 {
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        private RootViewModel Root => (RootViewModel)DataContext;
+        private readonly StatusViewModel _statusVM = new();
+        private MainWindowViewModel? _mainVM;
+
         #region Set up varibales
 
         private static MainWindow? _currentInstance;
@@ -35,9 +39,6 @@ namespace CollectaMundo
             private set => _currentInstance = value;
         }
 
-        private MainWindowViewModel VM => (MainWindowViewModel)DataContext;
-
-        //private readonly ICardListService _cardListService;
 
         // Used for displaying images
         private string? _imageSourceUrl = string.Empty;
@@ -75,9 +76,6 @@ namespace CollectaMundo
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        // Flag to track startup phase
-        public bool _isStartup = true;
-
         // Objects for deck management
         public readonly List<Deck> allDecks = [];
         public Deck CurrentDeck { get; set; } = new Deck();
@@ -101,47 +99,44 @@ namespace CollectaMundo
             InitializeComponent();
             _currentInstance = this;
 
+            // Initial context (before MainWindowViewModel is built)
+            DataContext = this;
+
             // build your settings + factory once
             var settings = new JsonAppSettings();
             _dbFactory = new DbConnectionFactory(settings);
 
-            //DataContext = new MainWindowViewModel(_dbFactory);
+            // Set DataContext to a temporary shell RootViewModel with only statusVM
+            DataContext = new RootViewModel(null!, _statusVM); // mainVM will be filled in later
 
             ContentRendered += MainWindow_ContentRendered;
         }
 
         #region Load data and populate UI elements
-        private bool _hasInitialized = false;
-
         private async void MainWindow_ContentRendered(object? sender, EventArgs e)
         {
-            if (_hasInitialized)
-            {
-                return;
-            }
-
-            _hasInitialized = true;
-
-            //VM.ShowStatusScreen(true, "Just a quick system integrity check …", progress: false);
+            // show overlay before any data is loaded
+            _statusVM.Show("Checking database integrity…", showProgress: false);
             await FlushUiAsync();
 
             await DownloadAndPrepDB.SystemIntegrityCheckAsync();
-
             await FlushUiAsync();
 
-            var settings = new JsonAppSettings();
-            var dbFactory = new DbConnectionFactory(settings);
-            var vm = await MainWindowViewModel.CreateAsync(dbFactory);
-            DataContext = vm;
+            _statusVM.Show("Loading cards…", showProgress: true);
             await FlushUiAsync();
 
-            VM.FilterVM.NotifyFilterChanged();
+            var dbFactory = new DbConnectionFactory(new JsonAppSettings());
+            _mainVM = await MainWindowViewModel.CreateAsync(dbFactory);
+
+            // Set the proper RootViewModel now that both VMs exist
+            DataContext = new RootViewModel(_mainVM, _statusVM);
+
+            _mainVM.FilterVM.NotifyFilterChanged();
+            _mainVM.SideMenuVisibility = Visibility.Visible;
+            _mainVM.ContenSectionVisibility = Visibility.Visible;
 
             await FlushUiAsync();
-            _isStartup = false;
-
-            VM.SideMenuVisibility = Visibility.Visible;
-            VM.ContenSectionVisibility = Visibility.Visible;
+            _statusVM.Hide();
         }
 
 
@@ -677,11 +672,6 @@ namespace CollectaMundo
         }
         private async void RetailSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_isStartup)
-            {
-                return;
-            }
-
             //await ShowStatusWindowAsync(true, "Reloading cards prices from selected retailer ... ");
 
             await Task.Delay(100);
@@ -709,8 +699,8 @@ namespace CollectaMundo
             // Update the db views to load prices from the selected retailer
             await DownloadAndPrepDB.CreateViews();
 
-            //Task loadAllCards = _cardListService.LoadAllCardsAsync(VM.AllCardsVM.Cards);
-            //Task loadMyCollection = _cardListService.LoadAllCardsAsync(VM.MyCollectionVM.Cards);
+            //Task loadAllCards = _cardListService.LoadAllCardsAsync(MainWindowVM.AllCardsVM.Cards);
+            //Task loadMyCollection = _cardListService.LoadAllCardsAsync(MainWindowVM.MyCollectionVM.Cards);
 
             //await Task.WhenAll(loadAllCards, loadMyCollection);
 

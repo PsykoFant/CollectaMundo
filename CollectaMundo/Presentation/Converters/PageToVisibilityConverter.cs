@@ -5,7 +5,7 @@ using System.Windows.Data;
 
 namespace CollectaMundo.Presentation.Converters
 {
-    // Converts your VM’s CurrentPage + a ConverterParameter Page enum
+    // Converts your MainWindowVM’s CurrentPage + a ConverterParameter Page enum
     // into a Visibility (Visible when they match, Collapsed otherwise).
     public class PageToVisibilityConverter : IValueConverter
     {
