@@ -30,8 +30,6 @@
         <converters:InverseVisibilityConverter x:Key="InverseVisibility"/>
         <converters:PageToBrushConverter x:Key="PageToBrushConverter" SelectedBrush="#5cb9ca" DefaultBrush="#FFDDDDDD"/>
         <converters:PageToVisibilityConverter x:Key="PageToVisibilityConverter" VisibleVisibility="Visible" HiddenVisibility="Collapsed" />
-        <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
-        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     </Window.Resources>
     <Window.Background>
         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
