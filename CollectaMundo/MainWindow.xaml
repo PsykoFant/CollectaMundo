@@ -22,7 +22,7 @@
     Style="{StaticResource {x:Type Window}}">
     
     <Grid>
-        <Grid x:Name="AppWindow" DataContext="{Binding Main}" Style="{StaticResource MPlantin}">
+        <Grid x:Name="AppWindow" DataContext="{Binding Main}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="250"/>
                 <ColumnDefinition Width="*"/>
@@ -1129,8 +1129,7 @@
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                         <DataGrid.ContextMenu>
-                            <ContextMenu Style="{StaticResource MPlantin}"
-                                             DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                            <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                                 <MenuItem Header="Add selected card(s) to Collection"
                                               Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
                                               CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
@@ -1504,8 +1503,7 @@
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                         <DataGrid.ContextMenu>
-                            <ContextMenu Style="{StaticResource MPlantin}"
-                                         DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                            <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                                 <MenuItem Header="Edit selected card(s)" Style="{StaticResource BelerenBold}"
                                           Command="{Binding EditCardsVM.AddSelectedCardsCommand}"
                                           CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
@@ -2102,6 +2100,6 @@
                                               RelativeSource={RelativeSource AncestorType=Window}, 
                                               Converter={StaticResource BoolToVisibilityConverter}}"
                          DataContext="{Binding DataContext.StatusOverlay, 
-                                              RelativeSource={RelativeSource AncestorType=Window}}" />
+                                              RelativeSource={RelativeSource AncestorType=Window}}" d:IsHidden="True" />
     </Grid>
 </Window>

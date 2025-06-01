@@ -6,7 +6,7 @@
              mc:Ignorable="d"
              d:DesignHeight="960" d:DesignWidth="1280"
              Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-             Style="{StaticResource CollectaMundoOverlayStyle}">
+             Style="{StaticResource {x:Type UserControl}}">
     <Grid>
         <Grid VerticalAlignment="Top" Margin="0,40,0,0">
             <Image Source="/Resources/Images/Logo.png"

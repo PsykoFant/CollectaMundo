@@ -16,20 +16,23 @@
         <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
+        <!-- Shared base style for font and background -->
         <LinearGradientBrush x:Key="CollectaMundoBackground" EndPoint="0.5,1" StartPoint="0.5,0">
             <GradientStop Color="#FFFBF7B4"/>
             <GradientStop Color="White" Offset="1"/>
         </LinearGradientBrush>
-
-        <Style TargetType="Window">
+        <FontFamily x:Key="CollectaMundoFont">/Resources/Fonts/#Mplantin</FontFamily>
+        <Style x:Key="CollectaMundoControlBaseStyle" TargetType="Control">
+            <Setter Property="FontFamily" Value="{StaticResource CollectaMundoFont}" />
             <Setter Property="Background" Value="{StaticResource CollectaMundoBackground}" />
         </Style>
 
-        <Style TargetType="UserControl" x:Key="CollectaMundoOverlayStyle">
-            <Setter Property="Background" Value="{StaticResource CollectaMundoBackground}" />
-        </Style>
+        <!-- Window and UserControl styles can inherit from this -->
+        <Style TargetType="Window" BasedOn="{StaticResource CollectaMundoControlBaseStyle}" />
+        <Style TargetType="UserControl" BasedOn="{StaticResource CollectaMundoControlBaseStyle}" />
 
-
+        <!-- Font for MenuItem (datagrid context menu) -->
+        <Style TargetType="MenuItem"><Setter Property="FontFamily" Value="{StaticResource CollectaMundoFont}" /></Style>
 
         <!-- Define the Style for the buttons -->
         <Style x:Key="BaseButtonStyle" TargetType="{x:Type ButtonBase}">
@@ -101,12 +104,7 @@
             </Setter>
         </Style>
 
-        <!-- Custom font styles -->
-        <Style x:Key="MPlantin">
-            <Setter Property="TextElement.FontFamily"
-                    Value="/Resources/Fonts/#Mplantin">
-            </Setter>
-        </Style>
+        <!-- Header font style -->
         <Style x:Key="BelerenBold">
             <Setter Property="TextElement.FontFamily"
                     Value="/Resources/Fonts/#Beleren Bold">
