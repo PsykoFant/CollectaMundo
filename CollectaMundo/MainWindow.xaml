@@ -22,7 +22,7 @@
     Style="{StaticResource {x:Type Window}}">
     
     <Grid>
-        <Grid x:Name="AppWindow" DataContext="{Binding Main}">
+        <Grid x:Name="AppWindow" DataContext="{Binding Main}"  Visibility="{Binding MainGridVisibility}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="250"/>
                 <ColumnDefinition Width="*"/>
@@ -2097,9 +2097,9 @@
             </Grid>
         </Grid>
         <local:StatusOverlay Visibility="{Binding DataContext.StatusOverlay.IsVisible, 
-                                              RelativeSource={RelativeSource AncestorType=Window}, 
-                                              Converter={StaticResource BoolToVisibilityConverter}}"
-                         DataContext="{Binding DataContext.StatusOverlay, 
-                                              RelativeSource={RelativeSource AncestorType=Window}}" d:IsHidden="True" />
+            RelativeSource={RelativeSource AncestorType=Window}, 
+            Converter={StaticResource BoolToVisibilityConverter}}"
+                             DataContext="{Binding DataContext.StatusOverlay, 
+            RelativeSource={RelativeSource AncestorType=Window}}" d:IsHidden="True" />
     </Grid>
 </Window>

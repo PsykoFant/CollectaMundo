@@ -81,6 +81,14 @@ namespace CollectaMundo.ViewModels
             }
         }
 
+        // Grid visibility properties
+
+        private Visibility _mainGridVisibility = Visibility.Hidden;
+        public Visibility MainGridVisibility
+        {
+            get => _mainGridVisibility;
+            set { _mainGridVisibility = value; OnPropertyChanged(); }
+        }
         private Visibility _sideMenuVisibility = Visibility.Hidden;
         public Visibility SideMenuVisibility
         {
@@ -95,7 +103,21 @@ namespace CollectaMundo.ViewModels
             set { _contenSectionVisibility = value; OnPropertyChanged(); }
         }
 
-        public bool IsTopMenuEnabled => CurrentPage == Page.SearchAndFilter;
+        // Enable/disable top menu 
+        private bool _isTopMenuEnabled = true;
+        public bool IsTopMenuEnabled
+        {
+            get => _isTopMenuEnabled;
+            set
+            {
+                if (_isTopMenuEnabled != value)
+                {
+                    _isTopMenuEnabled = value;
+                    OnPropertyChanged(); // Required for WPF to update bindings
+                }
+            }
+        }
+
 
         // Backing fields
         private readonly IDbConnectionFactory _dbFactory;

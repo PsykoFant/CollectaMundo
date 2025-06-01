@@ -134,6 +134,7 @@ namespace CollectaMundo
             _mainVM.FilterVM.NotifyFilterChanged();
             _mainVM.SideMenuVisibility = Visibility.Visible;
             _mainVM.ContenSectionVisibility = Visibility.Visible;
+            _mainVM.MainGridVisibility = Visibility.Visible;
 
             await FlushUiAsync();
             _statusVM.Hide();
