@@ -44,13 +44,10 @@ namespace CollectaMundo.ViewModels
                     EditCardsVM.StatusMessage = string.Empty;
                 }
 
-                // 1) CurrentPage changed
+                // CurrentPage changed
                 OnPropertyChanged();
 
-                // 2) the top‐menu’s enabledness depends on CurrentPage
-                OnPropertyChanged(nameof(IsTopMenuEnabled));
-
-                // 3) your little logo’s MiniLogoVisibility also depends on CurrentPage
+                // MiniLogoVisibility depends on CurrentPage
                 OnPropertyChanged(nameof(MiniLogoVisibility));
             }
         }
@@ -83,7 +80,7 @@ namespace CollectaMundo.ViewModels
 
         // Grid visibility properties
 
-        private Visibility _mainGridVisibility = Visibility.Hidden;
+        private Visibility _mainGridVisibility = Visibility.Collapsed;
         public Visibility MainGridVisibility
         {
             get => _mainGridVisibility;

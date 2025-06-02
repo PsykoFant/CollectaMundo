@@ -1,4 +1,8 @@
-﻿using System.Windows;
+﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.Data;
+using CollectaMundo.ViewModels;
+using System.Windows;
+using System.Windows.Threading;
 
 namespace CollectaMundo
 {
@@ -7,6 +11,73 @@ namespace CollectaMundo
     /// </summary>
     public partial class App : Application
     {
+        private StatusWindow _statusWindow;
+
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            base.OnStartup(e);
+
+            var statusVM = new StatusViewModel();
+            _statusWindow = new StatusWindow
+            {
+                DataContext = statusVM
+            };
+            _statusWindow.Show();
+
+            _ = StartAppAsync(statusVM);
+        }
+        private async Task StartAppAsync(StatusViewModel statusVM)
+        {
+            statusVM.Show("Checking database integrity…", false);
+            await FlushUiAsync();
+
+            await DownloadAndPrepDB.SystemIntegrityCheckAsync();
+            await FlushUiAsync();
+
+            statusVM.Show("Loading cards…", true);
+            await FlushUiAsync();
+
+            var dbFactory = new DbConnectionFactory(new JsonAppSettings());
+            var mainVM = await MainWindowViewModel.CreateAsync(dbFactory);
+
+            // Set all your visibility toggles BEFORE showing the window
+            mainVM.FilterVM.NotifyFilterChanged();
+            mainVM.SideMenuVisibility = Visibility.Visible;
+            mainVM.ContenSectionVisibility = Visibility.Visible;
+            mainVM.MainGridVisibility = Visibility.Visible;
+
+            var mainWindow = new MainWindow
+            {
+                DataContext = new RootViewModel(mainVM, statusVM)
+            };
+
+            await FlushUiAsync();
+
+            _statusWindow.Close();
+            mainWindow.Show();
+
+            // Optional: Hide status after MainWindow is fully shown
+            statusVM.Hide();
+        }
+
+        private static async Task FlushUiAsync()
+        {
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var frame = new DispatcherFrame();
+                Dispatcher.CurrentDispatcher.BeginInvoke(
+                    DispatcherPriority.Render,
+                    new DispatcherOperationCallback(f =>
+                    {
+                        ((DispatcherFrame)f).Continue = false;
+                        return null!;
+                    }), frame);
+                Dispatcher.PushFrame(frame);
+            });
+        }
+
+
     }
+
 
 }

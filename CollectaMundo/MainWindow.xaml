@@ -2096,10 +2096,5 @@
                        VerticalAlignment="Top" Margin="0,461,10,0"/>
             </Grid>
         </Grid>
-        <local:StatusOverlay Visibility="{Binding DataContext.StatusOverlay.IsVisible, 
-            RelativeSource={RelativeSource AncestorType=Window}, 
-            Converter={StaticResource BoolToVisibilityConverter}}"
-                             DataContext="{Binding DataContext.StatusOverlay, 
-            RelativeSource={RelativeSource AncestorType=Window}}" d:IsHidden="True" />
     </Grid>
 </Window>

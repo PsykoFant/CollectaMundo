@@ -1,5 +1,4 @@
 using CollectaMundo.ApplicationServices;
-using CollectaMundo.Data;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.DeckManagement.Models;
 using CollectaMundo.Presentation.Behaviors;
@@ -13,6 +12,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using static CollectaMundo.BackupRestore;
 
 namespace CollectaMundo
@@ -91,7 +91,7 @@ namespace CollectaMundo
         // Read the price retailer from appsettings.json
         public string? appsettingsRetailer = JsonAppSettings.GetSetting("PriceInfo:Retailer") as string;
 
-        private readonly IDbConnectionFactory _dbFactory;
+        //private readonly IDbConnectionFactory _dbFactory;
 
         #endregion
         public MainWindow()
@@ -100,51 +100,64 @@ namespace CollectaMundo
             _currentInstance = this;
 
             // Initial context (before MainWindowViewModel is built)
-            DataContext = this;
+            //DataContext = this;
 
-            // build your settings + factory once
-            var settings = new JsonAppSettings();
-            _dbFactory = new DbConnectionFactory(settings);
+            //// build your settings + factory once
+            //var settings = new JsonAppSettings();
+            //_dbFactory = new DbConnectionFactory(settings);
 
             // Set DataContext to a temporary shell RootViewModel with only statusVM
-            DataContext = new RootViewModel(null!, _statusVM); // mainVM will be filled in later
+            //DataContext = new RootViewModel(null!, _statusVM); // mainVM will be filled in later
 
-            ContentRendered += MainWindow_ContentRendered;
+            //Loaded += (_, __) =>
+            //{
+            //    // Defer work until UI is fully rendered and responsive
+            //    Dispatcher.BeginInvoke(new Action(async () =>
+            //    {
+            //        await StartupSequenceAsync();
+            //    }), DispatcherPriority.ApplicationIdle);
+            //};
         }
 
         #region Load data and populate UI elements
-        private async void MainWindow_ContentRendered(object? sender, EventArgs e)
-        {
-            // show overlay before any data is loaded
-            _statusVM.Show("Checking database integrity…", showProgress: false);
-            await FlushUiAsync();
+        //private async Task StartupSequenceAsync()
+        //{
+        //    _statusVM.Show("Checking database integrity…", showProgress: false);
+        //    await FlushUiAsync();
 
-            await DownloadAndPrepDB.SystemIntegrityCheckAsync();
-            await FlushUiAsync();
+        //    await DownloadAndPrepDB.SystemIntegrityCheckAsync();
+        //    await FlushUiAsync();
 
-            _statusVM.Show("Loading cards…", showProgress: true);
-            await FlushUiAsync();
+        //    _statusVM.Show("Loading cards…", showProgress: true);
+        //    await FlushUiAsync();
 
-            var dbFactory = new DbConnectionFactory(new JsonAppSettings());
-            _mainVM = await MainWindowViewModel.CreateAsync(dbFactory);
+        //    var dbFactory = new DbConnectionFactory(new JsonAppSettings());
+        //    _mainVM = await MainWindowViewModel.CreateAsync(dbFactory);
 
-            // Set the proper RootViewModel now that both VMs exist
-            DataContext = new RootViewModel(_mainVM, _statusVM);
+        //    DataContext = new RootViewModel(_mainVM, _statusVM);
 
-            _mainVM.FilterVM.NotifyFilterChanged();
-            _mainVM.SideMenuVisibility = Visibility.Visible;
-            _mainVM.ContenSectionVisibility = Visibility.Visible;
-            _mainVM.MainGridVisibility = Visibility.Visible;
+        //    _mainVM.FilterVM.NotifyFilterChanged();
+        //    _mainVM.SideMenuVisibility = Visibility.Visible;
+        //    _mainVM.ContenSectionVisibility = Visibility.Visible;
+        //    _mainVM.MainGridVisibility = Visibility.Visible;
 
-            await FlushUiAsync();
-            _statusVM.Hide();
-        }
-
-
+        //    await FlushUiAsync();
+        //    _statusVM.Hide();
+        //}
         private static async Task FlushUiAsync()
         {
-            await Application.Current.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Render);
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                var frame = new DispatcherFrame();
+                Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Render, new DispatcherOperationCallback(f =>
+                {
+                    ((DispatcherFrame)f).Continue = false;
+                    return null!;
+                }), frame);
+                Dispatcher.PushFrame(frame);
+            });
         }
+
         public async Task LoadAllDecksAsync()
         {
             try
