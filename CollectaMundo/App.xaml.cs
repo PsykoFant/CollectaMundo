@@ -11,7 +11,7 @@ namespace CollectaMundo
     /// </summary>
     public partial class App : Application
     {
-        private StatusWindow _statusWindow;
+        private StatusWindow? _statusWindow;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -53,11 +53,8 @@ namespace CollectaMundo
 
             await FlushUiAsync();
 
-            _statusWindow.Close();
+            _statusWindow!.Close();
             mainWindow.Show();
-
-            // Optional: Hide status after MainWindow is fully shown
-            statusVM.Hide();
         }
 
         private static async Task FlushUiAsync()

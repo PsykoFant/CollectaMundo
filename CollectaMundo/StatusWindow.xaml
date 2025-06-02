@@ -4,8 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CollectaMundo"
+        Icon="/Resources/Images/Icon.ico" 
         mc:Ignorable="d"
-        Title="StatusWindow" Height="960" Width="1280">
+        Title="CollectaMundo" Height="960" Width="1280">
     <Border Background="{StaticResource CollectaMundoBackground}" CornerRadius="10" Padding="20">
         <local:StatusOverlay />
     </Border>

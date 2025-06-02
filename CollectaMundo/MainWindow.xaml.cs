@@ -12,17 +12,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Threading;
 using static CollectaMundo.BackupRestore;
 
 namespace CollectaMundo
 {
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        private RootViewModel Root => (RootViewModel)DataContext;
-        private readonly StatusViewModel _statusVM = new();
-        private MainWindowViewModel? _mainVM;
-
         #region Set up varibales
 
         private static MainWindow? _currentInstance;
@@ -99,64 +94,10 @@ namespace CollectaMundo
             InitializeComponent();
             _currentInstance = this;
 
-            // Initial context (before MainWindowViewModel is built)
-            //DataContext = this;
-
-            //// build your settings + factory once
-            //var settings = new JsonAppSettings();
-            //_dbFactory = new DbConnectionFactory(settings);
-
-            // Set DataContext to a temporary shell RootViewModel with only statusVM
-            //DataContext = new RootViewModel(null!, _statusVM); // mainVM will be filled in later
-
-            //Loaded += (_, __) =>
-            //{
-            //    // Defer work until UI is fully rendered and responsive
-            //    Dispatcher.BeginInvoke(new Action(async () =>
-            //    {
-            //        await StartupSequenceAsync();
-            //    }), DispatcherPriority.ApplicationIdle);
-            //};
         }
 
         #region Load data and populate UI elements
-        //private async Task StartupSequenceAsync()
-        //{
-        //    _statusVM.Show("Checking database integrity…", showProgress: false);
-        //    await FlushUiAsync();
 
-        //    await DownloadAndPrepDB.SystemIntegrityCheckAsync();
-        //    await FlushUiAsync();
-
-        //    _statusVM.Show("Loading cards…", showProgress: true);
-        //    await FlushUiAsync();
-
-        //    var dbFactory = new DbConnectionFactory(new JsonAppSettings());
-        //    _mainVM = await MainWindowViewModel.CreateAsync(dbFactory);
-
-        //    DataContext = new RootViewModel(_mainVM, _statusVM);
-
-        //    _mainVM.FilterVM.NotifyFilterChanged();
-        //    _mainVM.SideMenuVisibility = Visibility.Visible;
-        //    _mainVM.ContenSectionVisibility = Visibility.Visible;
-        //    _mainVM.MainGridVisibility = Visibility.Visible;
-
-        //    await FlushUiAsync();
-        //    _statusVM.Hide();
-        //}
-        private static async Task FlushUiAsync()
-        {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                var frame = new DispatcherFrame();
-                Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Render, new DispatcherOperationCallback(f =>
-                {
-                    ((DispatcherFrame)f).Continue = false;
-                    return null!;
-                }), frame);
-                Dispatcher.PushFrame(frame);
-            });
-        }
 
         public async Task LoadAllDecksAsync()
         {
