@@ -32,26 +32,17 @@ namespace CollectaMundo
             await FlushUiAsync();
 
             await DownloadAndPrepDB.SystemIntegrityCheckAsync();
-            await FlushUiAsync();
+            statusVM.Show("Loading cards…", false);
 
-            statusVM.Show("Loading cards…", true);
             await FlushUiAsync();
 
             var dbFactory = new DbConnectionFactory(new JsonAppSettings());
             var mainVM = await MainWindowViewModel.CreateAsync(dbFactory);
 
-            // Set all your visibility toggles BEFORE showing the window
-            mainVM.FilterVM.NotifyFilterChanged();
-            mainVM.SideMenuVisibility = Visibility.Visible;
-            mainVM.ContenSectionVisibility = Visibility.Visible;
-            mainVM.MainGridVisibility = Visibility.Visible;
-
             var mainWindow = new MainWindow
             {
                 DataContext = new RootViewModel(mainVM, statusVM)
             };
-
-            await FlushUiAsync();
 
             _statusWindow!.Close();
             mainWindow.Show();

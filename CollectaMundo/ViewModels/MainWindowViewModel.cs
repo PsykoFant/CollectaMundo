@@ -154,7 +154,7 @@ namespace CollectaMundo.ViewModels
             FilterVM = new FilterViewModel(_filteringService);
             FilterVM.FilterChanged += OnFilterChanged;
 
-            HookUpStatusChanged();
+            MiniLogoVisibilityTrigger();
 
             ShowSearchAndFilterCommand = new RelayCommand<object>(_ => { CurrentPage = Page.SearchAndFilter; });
             ShowMyCollectionCommand = new RelayCommand<object>(_ => { CurrentPage = Page.MyCollection; });
@@ -186,6 +186,12 @@ namespace CollectaMundo.ViewModels
             );
 
             FilterVM.NotifyFilterChanged();
+
+            FilterVM.NotifyFilterChanged();
+            SideMenuVisibility = Visibility.Visible;
+            ContenSectionVisibility = Visibility.Visible;
+            MainGridVisibility = Visibility.Visible;
+
             OnStartupComplete?.Invoke();
         }
 
@@ -245,7 +251,7 @@ namespace CollectaMundo.ViewModels
             AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
         }
 
-        private void HookUpStatusChanged()
+        private void MiniLogoVisibilityTrigger()
         {
             AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
             EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
