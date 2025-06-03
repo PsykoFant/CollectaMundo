@@ -119,7 +119,6 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-
         // Backing fields
         private readonly IDbConnectionFactory _dbFactory;
         private readonly IFilteringService _filteringService;

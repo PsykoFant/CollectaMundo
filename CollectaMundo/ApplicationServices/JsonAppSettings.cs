@@ -44,25 +44,21 @@ namespace CollectaMundo.ApplicationServices
         {
             try
             {
-                // Construct the default SQLite path
                 string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 string sqlitePath = Path.Combine(appDataPath, "CollectaMundo", "CardDatabase");
 
-                // Ensure the directory exists
                 Directory.CreateDirectory(sqlitePath);
 
-                // Create default settings
-                var defaultSettings = new JsonAppSettings
+                var defaultSettings = new AppSettingsDto
                 {
                     DatabaseSettings = new DatabaseSettings { SQLitePath = $"{sqlitePath}\\" },
                     ConnectionStrings = new ConnectionStrings
                     {
                         SQLiteConnection = $"Data Source={sqlitePath}\\AllPrintings.sqlite;Version=3;"
                     },
-                    PriceInfo = new PriceInfo() // Initialize default values
+                    PriceInfo = new PriceInfo() // Defaults
                 };
 
-                // Serialize to JSON and write to file
                 File.WriteAllText(appSettingsFile, JsonConvert.SerializeObject(defaultSettings, Formatting.Indented));
             }
             catch (Exception ex)
@@ -71,6 +67,7 @@ namespace CollectaMundo.ApplicationServices
                 MessageBox.Show($"Error creating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         public static void UpdatePriceInfo(string? updatedDate, string? retailer)
         {
             try

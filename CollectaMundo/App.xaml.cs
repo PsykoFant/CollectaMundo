@@ -12,7 +12,6 @@ namespace CollectaMundo
     public partial class App : Application
     {
         private StatusWindow? _statusWindow;
-
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
@@ -24,7 +23,12 @@ namespace CollectaMundo
             };
             _statusWindow.Show();
 
-            var startupService = new StartupService(new JsonAppSettings());
+            var settings = new JsonAppSettings();
+            var dbFactory = new DbConnectionFactory(settings);
+            var healthRepo = new DatabaseHealthRepository();
+            var downloader = new ResourceDownloader();
+
+            var startupService = new StartupService(settings, dbFactory, healthRepo, downloader);
             _ = StartAppAsync(statusVM, startupService);
         }
         private async Task StartAppAsync(StatusViewModel statusVM, IStartupService startupService)
@@ -32,7 +36,7 @@ namespace CollectaMundo
             statusVM.Show("Checking database integrity…", false);
             await FlushUiAsync();
 
-            await startupService.EnsureDatabaseIntegrityAsync();
+            await startupService.EnsureDatabaseIntegrityAsync(statusVM);
             await FlushUiAsync();
 
             statusVM.Show("Loading cards…", true);

@@ -46,7 +46,7 @@ namespace CollectaMundo
             // Check if card database exists            
             if (!File.Exists(databasePath))
             {
-                redownloadDB = true; // Set reload-bool to true
+                redownloadDB = true;
                 downloadMessage = "Performing first-time setup of card database - please wait...";
             }
             // If it does, check that card database is not corrupt
@@ -56,7 +56,7 @@ namespace CollectaMundo
                 {
                     // If card database is corrupted, delete corrupt carddatabase. 
                     File.Delete(databasePath);
-                    redownloadDB = true; // Set reload-bool to true
+                    redownloadDB = true;
                     downloadMessage = "Card database was corrupted! Re-downloading - please wait...";
                 }
             }
