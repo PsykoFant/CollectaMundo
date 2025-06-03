@@ -6,9 +6,9 @@ using System.Windows;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class ResourceDownloader : IResourceDownloader
+    public class CardDatabasePreparationService : ICardDatabasePreparationService
     {
-        public async Task<bool> DownloadAsync(string url, string targetPath, string description, bool showProgress, StatusViewModel statusVm)
+        public async Task<bool> DownloadResourceAsync(string url, string targetPath, string description, bool showProgress, StatusViewModel statusVm)
         {
             try
             {
@@ -35,7 +35,7 @@ namespace CollectaMundo.ApplicationServices
                     if (showProgress && totalBytes > 0)
                     {
                         double percent = (double)totalBytesRead / totalBytes * 100;
-                        Debug.WriteLine($"Progress: {percent:0.0}%");
+                        statusVm.ProgressValue = (int)percent;
                     }
                 }
 

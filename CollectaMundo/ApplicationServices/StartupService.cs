@@ -5,12 +5,12 @@ using System.IO;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class StartupService(IAppSettings settings, IDbConnectionFactory dbFactory, IDatabaseHealthRepository healthRepo, IResourceDownloader downloader) : IStartupService
+    public class StartupService(IAppSettings settings, IDbConnectionFactory dbFactory, IDatabaseHealthRepository healthRepo, ICardDatabasePreparationService downloader) : IStartupService
     {
         private readonly IAppSettings _settings = settings;
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly IDatabaseHealthRepository _healthRepo = healthRepo;
-        private readonly IResourceDownloader _resourceDownloader = downloader;
+        private readonly ICardDatabasePreparationService _resourceDownloader = downloader;
 
         public async Task EnsureDatabaseIntegrityAsync(StatusViewModel statusVm)
         {
@@ -27,15 +27,15 @@ namespace CollectaMundo.ApplicationServices
                 Debug.WriteLine("Card DB exists!");
 
                 bool dbIsCorrupt = false;
-
-                await using (var uow = new UnitOfWork(_dbFactory))
                 {
-                    await uow.BeginAsync();
+
 
                     try
                     {
-                        bool isValid = await _healthRepo.HasExpectedTablesAndViewsAsync(uow.CurrentConnection)
-                                       && await _healthRepo.QuickCheckAsync(uow.CurrentConnection);
+                        await using var uow = new UnitOfWork(_dbFactory);
+                        await uow.BeginAsync();
+
+                        bool isValid = await _healthRepo.HasExpectedTablesAndViewsAsync(uow.CurrentConnection) && await _healthRepo.QuickCheckAsync(uow.CurrentConnection);
 
                         if (!isValid)
                         {
@@ -51,25 +51,24 @@ namespace CollectaMundo.ApplicationServices
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"Error during DB integrity check: {ex.Message}");
-                        await uow.RollbackAsync();
-                        throw;
+                        Debug.WriteLine($"DB integrity exception — assuming corruption: {ex.Message}");
+                        dbIsCorrupt = true; // force fallback
                     }
-                } // <-- connection is disposed here
+
+                }
 
                 if (dbIsCorrupt)
                 {
                     try
                     {
-                        File.Delete(dbPath); // Now safe to delete
-                        redownloadDb = true;
+                        File.Delete(dbPath); // Now safe to delete                        
                         Debug.WriteLine("Deleted corrupted DB file.");
                     }
-                    catch (IOException ex)
+                    catch (Exception fileEx)
                     {
-                        Debug.WriteLine($"Failed to delete corrupted DB file: {ex.Message}");
-                        throw; // Or handle gracefully
+                        Debug.WriteLine("Failed to delete corrupted DB: " + fileEx.Message);
                     }
+                    redownloadDb = true;
                 }
             }
 
@@ -77,10 +76,12 @@ namespace CollectaMundo.ApplicationServices
             {
                 var url = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
                 var path = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
-                bool result = await _resourceDownloader.DownloadAsync(url, path, "Card Database", true, statusVm);
+                bool result = await _resourceDownloader.DownloadResourceAsync(url, path, "Card Database", true, statusVm);
 
                 if (result)
+                {
                     await ProcessCardDatabaseAsync();
+                }
             }
         }
         private Task ProcessCardDatabaseAsync()

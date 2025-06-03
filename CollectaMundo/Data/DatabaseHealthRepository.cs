@@ -9,7 +9,6 @@ namespace CollectaMundo.Data
             "cards", "myCollection", "uniqueManaCostImages", "uniqueManaSymbols",
             "keyruneImages", "view_allCards", "view_myCollection", "view_cardToken"
         ];
-
         public async Task<bool> HasExpectedTablesAndViewsAsync(SQLiteConnection conn)
         {
             var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -18,7 +17,9 @@ namespace CollectaMundo.Data
             await using var reader = await cmd.ExecuteReaderAsync();
 
             while (await reader.ReadAsync())
+            {
                 existing.Add(reader.GetString(0));
+            }
 
             return RequiredObjects.All(existing.Contains);
         }
