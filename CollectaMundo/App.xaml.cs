@@ -26,9 +26,10 @@ namespace CollectaMundo
             var settings = new JsonAppSettings();
             var dbFactory = new DbConnectionFactory(settings);
             var healthRepo = new DatabaseHealthRepository();
-            var downloader = new CardDatabasePreparationService();
+            var cardDatabasePreparationService = new CardDatabasePreparationService();
+            var schemaInitializer = new DatabaseSchemaInitializer();
 
-            var startupService = new StartupService(settings, dbFactory, healthRepo, downloader);
+            var startupService = new StartupService(settings, dbFactory, healthRepo, cardDatabasePreparationService, schemaInitializer);
             _ = StartAppAsync(statusVM, startupService);
         }
         private async Task StartAppAsync(StatusViewModel statusVM, IStartupService startupService)
