@@ -1,11 +1,11 @@
-﻿using CollectaMundo.Data;
+﻿using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using System.Collections.ObjectModel;
 using System.Data.SQLite;
 
-namespace CollectaMundo.ApplicationServices
+namespace CollectaMundo.ApplicationServices.EditCollection
 {
     public class EditCollectionService(IUnitOfWork uow) : IEditCollectionService
     {

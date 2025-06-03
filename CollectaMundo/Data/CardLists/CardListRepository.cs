@@ -3,7 +3,7 @@ using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
 
-namespace CollectaMundo.Data
+namespace CollectaMundo.Data.CardLists
 {
     public class CardListRepository(SQLiteConnection connection) : ICardListRepository
     {

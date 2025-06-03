@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Data;
+﻿using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 
@@ -114,8 +114,6 @@ namespace CollectaMundo.DomainLogic.EditCollection
         }
         private async Task<CardChangeEventArgs> PersistAddedCardsAndReturnChangesAsync(CardSet card)
         {
-
-
             // Do we already have a db row?
             var existingId = await _repo.FindExistingCardReturnIdAsync(card);
             if (existingId.HasValue)

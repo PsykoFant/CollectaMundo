@@ -2,7 +2,7 @@
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using System.Collections.ObjectModel;
 
-namespace CollectaMundo.ApplicationServices
+namespace CollectaMundo.ApplicationServices.EditCollection
 {
     public interface IEditCollectionService
     {

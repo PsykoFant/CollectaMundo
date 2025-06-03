@@ -24,20 +24,21 @@ namespace CollectaMundo
             };
             _statusWindow.Show();
 
-            _ = StartAppAsync(statusVM);
+            var startupService = new StartupService(new JsonAppSettings());
+            _ = StartAppAsync(statusVM, startupService);
         }
-        private async Task StartAppAsync(StatusViewModel statusVM)
+        private async Task StartAppAsync(StatusViewModel statusVM, IStartupService startupService)
         {
             statusVM.Show("Checking database integrity…", false);
             await FlushUiAsync();
 
-            await DownloadAndPrepDB.SystemIntegrityCheckAsync();
+            await startupService.EnsureDatabaseIntegrityAsync();
             await FlushUiAsync();
 
             statusVM.Show("Loading cards…", true);
             await FlushUiAsync();
 
-            var dbFactory = new DbConnectionFactory(new JsonAppSettings());
+            var dbFactory = new DbConnectionFactory(new ApplicationServices.JsonAppSettings());
             var mainVM = await MainWindowViewModel.CreateAsync(dbFactory);
 
             // Set all your visibility toggles BEFORE showing the window

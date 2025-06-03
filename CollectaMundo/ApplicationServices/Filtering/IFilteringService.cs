@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.ViewModels;
 
-namespace CollectaMundo.ApplicationServices
+namespace CollectaMundo.ApplicationServices.Filtering
 {
     public interface IFilteringService
     {

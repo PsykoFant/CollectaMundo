@@ -9,7 +9,7 @@ namespace CollectaMundo.ApplicationServices
     public class JsonAppSettings : IAppSettings
     {
         // backing POCO
-        private static AppSettings CurrentSettings { get; set; } = new();
+        private static AppSettingsDto CurrentSettings { get; set; } = new();
 
         // non-nullable, with defaults
         public DatabaseSettings DatabaseSettings { get; private set; } = new();
@@ -32,15 +32,14 @@ namespace CollectaMundo.ApplicationServices
                 CreateDefaultAppSettings();
             }
 
-            // Load the configuration file into strongly typed AppSettings
+            // Load the configuration file into strongly typed AppSettingsDto
             var json = File.ReadAllText(appSettingsFile);
-            CurrentSettings = JsonConvert.DeserializeObject<AppSettings>(json) ?? new AppSettings();
+            CurrentSettings = JsonConvert.DeserializeObject<AppSettingsDto>(json) ?? new AppSettingsDto();
 
             // Rebuild the connection string with the loaded SQLitePath
             CurrentSettings.ConnectionStrings.SQLiteConnection =
                 $"Data Source={CurrentSettings.DatabaseSettings.SQLitePath}AllPrintings.sqlite;Version=3;";
         }
-
         private static void CreateDefaultAppSettings()
         {
             try
@@ -53,7 +52,7 @@ namespace CollectaMundo.ApplicationServices
                 Directory.CreateDirectory(sqlitePath);
 
                 // Create default settings
-                var defaultSettings = new AppSettings
+                var defaultSettings = new JsonAppSettings
                 {
                     DatabaseSettings = new DatabaseSettings { SQLitePath = $"{sqlitePath}\\" },
                     ConnectionStrings = new ConnectionStrings
@@ -144,8 +143,7 @@ namespace CollectaMundo.ApplicationServices
             }
         }
     }
-
-    public class AppSettings
+    internal class AppSettingsDto
     {
         public DatabaseSettings DatabaseSettings { get; set; } = new DatabaseSettings();
         public ConnectionStrings ConnectionStrings { get; set; } = new ConnectionStrings();

@@ -1,4 +1,3 @@
-using CollectaMundo.ApplicationServices;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.DeckManagement.Models;
 using CollectaMundo.Presentation.Behaviors;
@@ -84,9 +83,7 @@ namespace CollectaMundo
         string columnToEdit = string.Empty;
 
         // Read the price retailer from appsettings.json
-        public string? appsettingsRetailer = JsonAppSettings.GetSetting("PriceInfo:Retailer") as string;
-
-        //private readonly IDbConnectionFactory _dbFactory;
+        public string? appsettingsRetailer = ConfigurationManager.GetSetting("PriceInfo:Retailer") as string;
 
         #endregion
         public MainWindow()
@@ -647,8 +644,8 @@ namespace CollectaMundo
                 };
 
                 // Update the retailer in appsettings
-                JsonAppSettings.UpdatePriceInfo(null, retailer);
-                appsettingsRetailer = retailer;
+                //AppSettings.UpdatePriceInfo(null, retailer);
+                //appsettingsRetailer = retailer;
             }
 
             // Update the db views to load prices from the selected retailer
@@ -668,26 +665,26 @@ namespace CollectaMundo
         }
         public void PriceRetailerUiUpdates()
         {
-            string retailer = appsettingsRetailer switch
-            {
-                "cardmarket" => "Cardmarket",
-                "cardkingdom" => "Card Kingdom",
-                "cardsphere" => "Cardsphere",
-                "tcgplayer" => "TCG Player",
-                "cardhoarder" => "Cardhoarder",
-                _ => throw new NotImplementedException()
-            };
+            //string retailer = appsettingsRetailer switch
+            //{
+            //    "cardmarket" => "Cardmarket",
+            //    "cardkingdom" => "Card Kingdom",
+            //    "cardsphere" => "Cardsphere",
+            //    "tcgplayer" => "TCG Player",
+            //    "cardhoarder" => "Cardhoarder",
+            //    _ => throw new NotImplementedException()
+            //};
 
             // Find the ComboBoxItem with the matching content
-            ComboBoxItem? itemToSelect = RetailSelector.Items
-                .OfType<ComboBoxItem>()
-                .FirstOrDefault(item => item.Content.ToString() == retailer);
+            //ComboBoxItem? itemToSelect = RetailSelector.Items
+            //    .OfType<ComboBoxItem>()
+            //    .FirstOrDefault(item => item.Content.ToString() == retailer);
 
-            // If we found the item, set it as the selected item
-            if (itemToSelect != null)
-            {
-                RetailSelector.SelectedItem = itemToSelect;
-            }
+            //// If we found the item, set it as the selected item
+            //if (itemToSelect != null)
+            //{
+            //    RetailSelector.SelectedItem = itemToSelect;
+            //}
         }
 
         #region Import wizard
@@ -817,48 +814,7 @@ namespace CollectaMundo
             ImageSourceUrl = null;
             ImageSourceUrl2nd = null;
         }
-        #endregion
-        //public static async Task ShowStatusWindowAsync(bool statusScreenIsVisible, string? statusLabelContent = null, bool progressBarVisible = false)
-        //{
-        //    if (CurrentInstance != null)
-        //    {
-        //        await CurrentInstance.Dispatcher.InvokeAsync(() =>
-        //        {
-        //            if (statusScreenIsVisible)
-        //            {
-        //                // Disable top menu buttons
-        //                CurrentInstance.GridTopMenu.IsEnabled = false;
-
-        //                // Show status section and hide others
-        //                CurrentInstance.GridContentSection.Visibility = Visibility.Collapsed;
-        //                CurrentInstance.GridSideMenu.Visibility = Visibility.Collapsed;
-        //                CurrentInstance.GridCardImages.Visibility = Visibility.Collapsed;
-        //                CurrentInstance.GridStatus.Visibility = Visibility.Visible;
-
-        //                if (progressBarVisible)
-        //                {
-        //                    CurrentInstance.ProgressBar.Visibility = Visibility.Visible;
-        //                }
-        //                else
-        //                {
-        //                    CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
-        //                }
-
-        //                CurrentInstance.StatusLabel.Content = statusLabelContent;
-        //            }
-        //            else
-        //            {
-        //                CurrentInstance.GridTopMenu.IsEnabled = true;
-        //                CurrentInstance.GridStatus.Visibility = Visibility.Collapsed;
-        //                CurrentInstance.GridContentSection.Visibility = Visibility.Visible;
-        //                CurrentInstance.GridSideMenu.Visibility = Visibility.Visible;
-        //                CurrentInstance.GridCardImages.Visibility = Visibility.Visible;
-        //            }
-        //        });
-        //        CurrentInstance.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
-        //    }
-        //}
-
+        #endregion      
 
     }
 }
