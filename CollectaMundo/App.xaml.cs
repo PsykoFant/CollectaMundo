@@ -1,8 +1,4 @@
 ﻿using CollectaMundo.ApplicationServices;
-using CollectaMundo.ApplicationServices.GenerateMissingPng;
-using CollectaMundo.Data;
-using CollectaMundo.Data.GenerateMissingPng;
-using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
 using System.Windows;
 using System.Windows.Threading;
@@ -26,47 +22,49 @@ namespace CollectaMundo
             };
             _statusWindow.Show();
 
-            var settings = new JsonAppSettings();
-            var dbFactory = new DbConnectionFactory(settings);
-            var healthRepo = new DatabaseHealthRepository();
-            var schemaInitializer = new DatabaseSchemaInitializer();
-            var missingPngRepo = new GenerateMissingPngRepository();
-            var missingPngLogic = new GenerateMissingPngLogic();
-            var missingPngService = new GenerateMissingPngService(missingPngRepo, missingPngLogic);
-            var cardDatabasePreparationService = new CardDatabasePreparationService(settings, dbFactory, schemaInitializer, missingPngService);
+            //var settings = new JsonAppSettings();
+            //var dbFactory = new DbConnectionFactory(settings);
+            //var healthRepo = new DatabaseHealthRepository();
+            //var schemaInitializer = new DatabaseSchemaInitializer();
+            //var missingPngRepo = new GenerateMissingPngRepository();
+            //var missingPngLogic = new GenerateMissingPngLogic();
+            //var missingPngService = new GenerateMissingPngService(missingPngRepo, missingPngLogic);
+            //var cardDatabasePreparationService = new CardDatabasePreparationService(settings, dbFactory, schemaInitializer, missingPngService);
 
-            var startupService = new StartupService(settings, dbFactory, healthRepo, cardDatabasePreparationService);
+            var startupService = new StartupService();
             _ = StartAppAsync(statusVM, startupService);
         }
         private async Task StartAppAsync(StatusViewModel statusVM, IStartupService startupService)
         {
-            statusVM.Show("Checking database integrity…", false);
-            await FlushUiAsync();
+            await startupService.AppStartEntryPoint(statusVM);
 
-            await startupService.EnsureDatabaseIntegrityAsync(statusVM);
-            await FlushUiAsync();
+            //statusVM.Show("Checking database integrity…", false);
+            //await FlushUiAsync();
 
-            statusVM.Show("Loading cards…", true);
-            await FlushUiAsync();
+            //await startupService.EnsureDatabaseIntegrityAsync(statusVM);
+            //await FlushUiAsync();
 
-            var dbFactory = new DbConnectionFactory(new ApplicationServices.JsonAppSettings());
-            var mainVM = await MainWindowViewModel.CreateAsync(dbFactory);
+            //statusVM.Show("Loading cards…", true);
+            //await FlushUiAsync();
 
-            // Set all your visibility toggles BEFORE showing the window
-            mainVM.FilterVM.NotifyFilterChanged();
-            mainVM.SideMenuVisibility = Visibility.Visible;
-            mainVM.ContenSectionVisibility = Visibility.Visible;
-            mainVM.MainGridVisibility = Visibility.Visible;
+            //var dbFactory = new DbConnectionFactory(new ApplicationServices.JsonAppSettings());
+            //var mainVM = await MainWindowViewModel.CreateAsync(dbFactory);
 
-            var mainWindow = new MainWindow
-            {
-                DataContext = new RootViewModel(mainVM, statusVM)
-            };
+            //// Set all your visibility toggles BEFORE showing the window
+            //mainVM.FilterVM.NotifyFilterChanged();
+            //mainVM.SideMenuVisibility = Visibility.Visible;
+            //mainVM.ContenSectionVisibility = Visibility.Visible;
+            //mainVM.MainGridVisibility = Visibility.Visible;
 
-            await FlushUiAsync();
+            //var mainWindow = new MainWindow
+            //{
+            //    DataContext = new RootViewModel(mainVM, statusVM)
+            //};
 
-            _statusWindow!.Close();
-            mainWindow.Show();
+            //await FlushUiAsync();
+
+            //_statusWindow!.Close();
+            //mainWindow.Show();
         }
 
         private static async Task FlushUiAsync()
