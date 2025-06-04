@@ -4,6 +4,9 @@ namespace CollectaMundo.ApplicationServices
 {
     public interface ICardDatabasePreparationService
     {
-        Task<bool> DownloadResourceAsync(string url, string targetPath, string description, bool showProgress, StatusViewModel statusVm);
+        Task FirstTimeDbSetup(StatusViewModel statusVm);
+        Task UpdateDb(StatusViewModel statusVm);             // Future
+        Task UpdateCardPrices(StatusViewModel statusVm);     // Future
     }
+
 }

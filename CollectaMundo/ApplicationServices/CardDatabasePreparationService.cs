@@ -1,4 +1,6 @@
-﻿using CollectaMundo.ViewModels;
+﻿using CollectaMundo.ApplicationServices.GenerateMissingPng;
+using CollectaMundo.Data;
+using CollectaMundo.ViewModels;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -6,9 +8,54 @@ using System.Windows;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class CardDatabasePreparationService : ICardDatabasePreparationService
+    public class CardDatabasePreparationService(IAppSettings settings, IDbConnectionFactory dbFactory, IDatabaseSchemaInitializer schemaInitializer, IGenerateMissingPngService missingPngService) : ICardDatabasePreparationService
     {
-        public async Task<bool> DownloadResourceAsync(string url, string targetPath, string description, bool showProgress, StatusViewModel statusVm)
+        private readonly IAppSettings _settings = settings;
+        private readonly IDbConnectionFactory _dbFactory = dbFactory;
+        private readonly IDatabaseSchemaInitializer _schemaInitializer = schemaInitializer;
+        private readonly IGenerateMissingPngService _missingPngService = missingPngService;
+        public async Task FirstTimeDbSetup(StatusViewModel statusVm)
+        {
+            string url = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
+            string path = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
+
+            bool success = await DownloadResourceAsync(url, path, "Card Database", true, statusVm);
+            if (!success)
+                return;
+
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginAsync();
+
+            try
+            {
+                await _schemaInitializer.CreateTablesAsync(uow.CurrentConnection);
+                await _missingPngService.GenerateMissingManaSymbolImagesAsync(uow.CurrentConnection, statusVm);
+                await _missingPngService.GenerateMissingManaCostImagesAsync(uow.CurrentConnection, statusVm);
+                await _missingPngService.GenerateMissingKeyRuneImagesAsync(uow.CurrentConnection, statusVm);
+
+                await uow.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[FirstTimeDbSetup] Error: {ex.Message}");
+                await uow.RollbackAsync();
+                throw;
+            }
+        }
+        public Task UpdateDb(StatusViewModel statusVm)
+        {
+            return Task.Run(() =>
+            {
+            });
+        }
+        public Task UpdateCardPrices(StatusViewModel statusVm)
+        {
+            return Task.Run(() =>
+            {
+            });
+        }
+
+        private async Task<bool> DownloadResourceAsync(string url, string targetPath, string description, bool showProgress, StatusViewModel statusVm)
         {
             try
             {

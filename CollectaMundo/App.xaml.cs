@@ -1,5 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.Data;
+using CollectaMundo.Data.GenerateMissingPng;
+using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
 using System.Windows;
 using System.Windows.Threading;
@@ -26,10 +29,13 @@ namespace CollectaMundo
             var settings = new JsonAppSettings();
             var dbFactory = new DbConnectionFactory(settings);
             var healthRepo = new DatabaseHealthRepository();
-            var cardDatabasePreparationService = new CardDatabasePreparationService();
             var schemaInitializer = new DatabaseSchemaInitializer();
+            var missingPngRepo = new GenerateMissingPngRepository();
+            var missingPngLogic = new GenerateMissingPngLogic();
+            var missingPngService = new GenerateMissingPngService(missingPngRepo, missingPngLogic);
+            var cardDatabasePreparationService = new CardDatabasePreparationService(settings, dbFactory, schemaInitializer, missingPngService);
 
-            var startupService = new StartupService(settings, dbFactory, healthRepo, cardDatabasePreparationService, schemaInitializer);
+            var startupService = new StartupService(settings, dbFactory, healthRepo, cardDatabasePreparationService);
             _ = StartAppAsync(statusVM, startupService);
         }
         private async Task StartAppAsync(StatusViewModel statusVM, IStartupService startupService)

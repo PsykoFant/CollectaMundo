@@ -104,81 +104,82 @@ namespace CollectaMundo
         }
         public static async Task<bool> DownloadResourceFileIfNotExistAsync(string downloadTargetPath, string downloadUrl, string statusMessageBig, string fileToDownloadForMessage, bool showStatusBar, bool forceMessageUpdate = false)
         {
-            try
-            {
-                // Only update the status message if it's either forced or the download message is provided
-                if (forceMessageUpdate || !string.IsNullOrEmpty(fileToDownloadForMessage))
-                {
-                    //MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = statusMessageBig;
-                }
+            //try
+            //{
+            //    // Only update the status message if it's either forced or the download message is provided
+            //    if (forceMessageUpdate || !string.IsNullOrEmpty(fileToDownloadForMessage))
+            //    {
+            //        //MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = statusMessageBig;
+            //    }
 
-                //if (showStatusBar && MainWindow.CurrentInstance?.ProgressBar != null)
-                //{
-                //    Application.Current.Dispatcher.Invoke(() =>
-                //    {
-                //        MainWindow.CurrentInstance.ProgressBar.Visibility = Visibility.Visible;
-                //    });
-                //}
+            //    //if (showStatusBar && MainWindow.CurrentInstance?.ProgressBar != null)
+            //    //{
+            //    //    Application.Current.Dispatcher.Invoke(() =>
+            //    //    {
+            //    //        MainWindow.CurrentInstance.ProgressBar.Visibility = Visibility.Visible;
+            //    //    });
+            //    //}
 
-                IProgress<int> progress = new Progress<int>(value =>
-                {
-                    if (showStatusBar)
-                    {
-                        //Application.Current.Dispatcher.Invoke(() =>
-                        //{
-                        //    if (MainWindow.CurrentInstance?.ProgressBar != null)
-                        //    {
-                        //        MainWindow.CurrentInstance.ProgressBar.Value = value;
-                        //    }
-                        //});
-                    }
-                });
+            //    IProgress<int> progress = new Progress<int>(value =>
+            //    {
+            //        if (showStatusBar)
+            //        {
+            //            //Application.Current.Dispatcher.Invoke(() =>
+            //            //{
+            //            //    if (MainWindow.CurrentInstance?.ProgressBar != null)
+            //            //    {
+            //            //        MainWindow.CurrentInstance.ProgressBar.Value = value;
+            //            //    }
+            //            //});
+            //        }
+            //    });
 
-                using var httpClient = new HttpClient();
-                using var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
-                using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-                response.EnsureSuccessStatusCode();
-                var totalBytes = response.Content.Headers.ContentLength ?? -1L;
-                var totalBytesRead = 0L;
-                var buffer = new byte[4096];
-                using var contentStream = await response.Content.ReadAsStreamAsync();
-                using var fileStream = new FileStream(downloadTargetPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
+            //    using var httpClient = new HttpClient();
+            //    using var request = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
+            //    using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            //    response.EnsureSuccessStatusCode();
+            //    var totalBytes = response.Content.Headers.ContentLength ?? -1L;
+            //    var totalBytesRead = 0L;
+            //    var buffer = new byte[4096];
+            //    using var contentStream = await response.Content.ReadAsStreamAsync();
+            //    using var fileStream = new FileStream(downloadTargetPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
 
-                if (forceMessageUpdate || !string.IsNullOrEmpty(fileToDownloadForMessage))
-                {
-                    var megabytes = string.Format("{0:0.0} MB", totalBytes / 1000000.0);
-                    StatusMessageUpdated?.Invoke($"Downloading {fileToDownloadForMessage} ({megabytes})");
-                }
+            //    if (forceMessageUpdate || !string.IsNullOrEmpty(fileToDownloadForMessage))
+            //    {
+            //        var megabytes = string.Format("{0:0.0} MB", totalBytes / 1000000.0);
+            //        StatusMessageUpdated?.Invoke($"Downloading {fileToDownloadForMessage} ({megabytes})");
+            //    }
 
-                var bytesRead = 0;
-                while ((bytesRead = await contentStream.ReadAsync(buffer)) != 0)
-                {
-                    await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
-                    totalBytesRead += bytesRead;
-                    var progressPercentage = totalBytes != -1 ? (int)((totalBytesRead * 100) / totalBytes) : -1;
-                    progress?.Report(progressPercentage);
-                }
+            //    var bytesRead = 0;
+            //    while ((bytesRead = await contentStream.ReadAsync(buffer)) != 0)
+            //    {
+            //        await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
+            //        totalBytesRead += bytesRead;
+            //        var progressPercentage = totalBytes != -1 ? (int)((totalBytesRead * 100) / totalBytes) : -1;
+            //        progress?.Report(progressPercentage);
+            //    }
 
-                Debug.WriteLine($"Download completed. The file '{downloadTargetPath}' is now available.");
-                return true; // Return true if download completes successfully
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error during download: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                Debug.WriteLine($"Error during download: {ex.Message}");
-                return false; // Return false in case of any exception
-            }
-            finally
-            {
-                //if (showStatusBar && MainWindow.CurrentInstance?.ProgressBar != null)
-                //{
-                //    Application.Current.Dispatcher.Invoke(() =>
-                //    {
-                //        //MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = string.Empty;
-                //        //MainWindow.CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
-                //    });
-                //}
-            }
+            //    Debug.WriteLine($"Download completed. The file '{downloadTargetPath}' is now available.");
+            //    return true; // Return true if download completes successfully
+            //}
+            //catch (Exception ex)
+            //{
+            //    MessageBox.Show($"Error during download: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            //    Debug.WriteLine($"Error during download: {ex.Message}");
+            //    return false; // Return false in case of any exception
+            //}
+            //finally
+            //{
+            //    //if (showStatusBar && MainWindow.CurrentInstance?.ProgressBar != null)
+            //    //{
+            //    //    Application.Current.Dispatcher.Invoke(() =>
+            //    //    {
+            //    //        //MainWindow.CurrentInstance.FirstTimeSetupLabel.Content = string.Empty;
+            //    //        //MainWindow.CurrentInstance.ProgressBar.Visibility = Visibility.Collapsed;
+            //    //    });
+            //    //}
+            //}
+            return true; // Placeholder return value for the refactored method
         }
         public static async Task PrepareDownloadedCardDatabase()
         {
