@@ -19,12 +19,10 @@ namespace CollectaMundo.ApplicationServices
             string url = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
             string path = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
 
-            // tmp test
-            /*
             bool success = await DownloadResourceAsync(url, path, "Card Database", true, statusVm);
             if (!success)
                 return;
-            */
+
 
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();

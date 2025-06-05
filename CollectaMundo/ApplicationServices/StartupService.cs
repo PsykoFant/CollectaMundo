@@ -4,6 +4,8 @@ using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ScryfallLookups;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -36,7 +38,6 @@ namespace CollectaMundo.ApplicationServices
 
             var dbStatus = await _integrityService.GetDatabaseStatusAsync();
 
-            /*
             if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
             {
                 if (dbStatus == DatabaseStatus.Corrupt)
@@ -55,8 +56,7 @@ namespace CollectaMundo.ApplicationServices
 
                 await _prepService.FirstTimeDbSetup(statusVm);
             }
-            */
-            // test
+
             await _prepService.FirstTimeDbSetup(statusVm);
 
 
