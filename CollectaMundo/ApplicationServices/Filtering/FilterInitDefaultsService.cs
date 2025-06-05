@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Data.Filtering;
+﻿using CollectaMundo.Data;
 using CollectaMundo.ViewModels;
 
 namespace CollectaMundo.ApplicationServices.Filtering

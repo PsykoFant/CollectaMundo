@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 
-namespace CollectaMundo.Data.EditCollection
+namespace CollectaMundo.Data
 {
     public interface IEditCollectionRepository
     {

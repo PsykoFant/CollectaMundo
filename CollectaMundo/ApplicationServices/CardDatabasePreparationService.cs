@@ -19,19 +19,39 @@ namespace CollectaMundo.ApplicationServices
             string url = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
             string path = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
 
+            // tmp test
+            /*
             bool success = await DownloadResourceAsync(url, path, "Card Database", true, statusVm);
             if (!success)
                 return;
+            */
 
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
 
+            var stopwatch = new Stopwatch();
+
             try
             {
+                stopwatch.Restart();
                 await _schemaInitializer.CreateTablesAsync(uow.CurrentConnection);
+                stopwatch.Stop();
+                Debug.WriteLine($"[Timing] CreateTablesAsync took {stopwatch.ElapsedMilliseconds} ms");
+
+                stopwatch.Restart();
                 await _missingPngService.GenerateMissingManaSymbolImagesAsync(uow.CurrentConnection, statusVm);
+                stopwatch.Stop();
+                Debug.WriteLine($"[Timing] GenerateMissingManaSymbolImagesAsync took {stopwatch.ElapsedMilliseconds} ms");
+
+                stopwatch.Restart();
                 await _missingPngService.GenerateMissingManaCostImagesAsync(uow.CurrentConnection, statusVm);
+                stopwatch.Stop();
+                Debug.WriteLine($"[Timing] GenerateMissingManaCostImagesAsync took {stopwatch.ElapsedMilliseconds} ms");
+
+                stopwatch.Restart();
                 await _missingPngService.GenerateMissingKeyRuneImagesAsync(uow.CurrentConnection, statusVm);
+                stopwatch.Stop();
+                Debug.WriteLine($"[Timing] GenerateMissingKeyRuneImagesAsync took {stopwatch.ElapsedMilliseconds} ms");
 
                 await uow.CommitAsync();
             }

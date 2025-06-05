@@ -4,6 +4,6 @@ namespace CollectaMundo.ApplicationServices
 {
     public interface IStartupService
     {
-        Task EnsureDatabaseIntegrityAsync(StatusViewModel statusVm);
+        Task AppStartEntryPoint(StatusViewModel statusVm);
     }
 }

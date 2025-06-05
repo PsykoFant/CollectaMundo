@@ -75,7 +75,7 @@ namespace CollectaMundo.Data.GenerateMissingPng
                 command.Parameters.AddWithValue("@referenceValue", referenceValue);
 
                 int rowsAffected = await command.ExecuteNonQueryAsync();
-                Debug.WriteLine($"[PngRepo] Updated image for '{referenceValue}' in '{tableName}'. Rows affected: {rowsAffected}");
+                //Debug.WriteLine($"[PngRepo] Updated image for '{referenceValue}' in '{tableName}'. Rows affected: {rowsAffected}");
             }
             catch (Exception ex)
             {
@@ -107,7 +107,7 @@ namespace CollectaMundo.Data.GenerateMissingPng
                     insertCommand.Parameters.AddWithValue("@value", value);
 
                     await insertCommand.ExecuteNonQueryAsync();
-                    Debug.WriteLine($"[PngRepo] Inserted new value '{value}' into {tableName}.");
+                    //Debug.WriteLine($"[PngRepo] Inserted new value '{value}' into {tableName}.");
                 }
                 else
                 {
@@ -117,6 +117,63 @@ namespace CollectaMundo.Data.GenerateMissingPng
             catch (Exception ex)
             {
                 Debug.WriteLine($"[PngRepo] Error inserting '{value}' into {tableName}.{columnName}: {ex.Message}");
+            }
+        }
+        public async Task<Dictionary<string, byte[]>> GetManaSymbolImagesAsync(SQLiteConnection conn, IEnumerable<string> symbols)
+        {
+            var result = new Dictionary<string, byte[]>();
+
+            try
+            {
+                string paramList = string.Join(",", symbols.Select((s, i) => $"@p{i}"));
+                string query = $"SELECT uniqueManaSymbol, manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ({paramList})";
+
+                using var command = new SQLiteCommand(query, conn);
+
+                int i = 0;
+                foreach (string symbol in symbols)
+                {
+                    command.Parameters.AddWithValue($"@p{i++}", symbol);
+                }
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    string symbol = reader.GetString(0);
+                    byte[] imageBytes = (byte[])reader["manaSymbolImage"];
+                    result[symbol] = imageBytes;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[PngRepo] Error in GetManaSymbolImagesAsync: {ex.Message}");
+            }
+
+            return result;
+        }
+        public async Task CopyColumnIfEmptyOrAddMissingRowsAsync(SQLiteConnection conn, string targetTable, string targetColumn, string sourceTable, string sourceColumn)
+        {
+            try
+            {
+                string query = $@"
+                    INSERT INTO {targetTable} ({targetColumn})
+                    SELECT DISTINCT {sourceColumn}
+                    FROM {sourceTable} 
+                    WHERE {sourceColumn} IS NOT NULL 
+                      AND {sourceColumn} != '' 
+                      AND {sourceColumn} NOT IN (
+                          SELECT DISTINCT {targetColumn} 
+                          FROM {targetTable} 
+                          WHERE {targetColumn} IS NOT NULL AND {targetColumn} != ''
+                      );";
+
+                using var command = new SQLiteCommand(query, conn);
+                int rowsAffected = await command.ExecuteNonQueryAsync();
+                //Debug.WriteLine($"[PngRepo] {rowsAffected} rows copied from {sourceTable}.{sourceColumn} to {targetTable}.{targetColumn}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[PngRepo] Error copying values from {sourceTable} to {targetTable}: {ex.Message}");
             }
         }
 

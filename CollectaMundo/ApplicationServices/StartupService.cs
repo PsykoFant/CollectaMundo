@@ -1,85 +1,92 @@
-﻿using CollectaMundo.Data;
+﻿using CollectaMundo.ApplicationServices.GenerateMissingPng;
+using CollectaMundo.Data;
+using CollectaMundo.Data.GenerateMissingPng;
+using CollectaMundo.Data.ScryfallLookups;
+using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
-using System.Diagnostics;
-using System.IO;
+using System.Windows;
+using System.Windows.Threading;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class StartupService(IAppSettings settings, IDbConnectionFactory dbFactory, IDatabaseHealthRepository healthRepo, ICardDatabasePreparationService cardDatabasePreparationService) : IStartupService
+    public class StartupService : IStartupService
     {
-        private readonly IAppSettings _settings = settings;
-        private readonly IDbConnectionFactory _dbFactory = dbFactory;
-        private readonly IDatabaseHealthRepository _healthRepo = healthRepo;
-        private readonly ICardDatabasePreparationService _cardDatabasePreparationService = cardDatabasePreparationService;
-        public async Task EnsureDatabaseIntegrityAsync(StatusViewModel statusVm)
+        private readonly IDatabaseIntegrityService _integrityService;
+        private readonly ICardDatabasePreparationService _prepService;
+        private readonly Action _closeStatusWindow;
+        public StartupService(Action closeStatusWindow)
         {
-            string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
-            bool redownloadDb = false;
+            _integrityService = new DatabaseIntegrityService();
+            _closeStatusWindow = closeStatusWindow;
 
-            // debug
-            //bool redownloadDb = true;
+            var settings = new JsonAppSettings();
+            var dbFactory = new DbConnectionFactory(settings);
+            var scryfallLookups = new ScryfallLookups();
+            var schemaInitializer = new DatabaseSchemaInitializer();
+            var missingPngRepo = new GenerateMissingPngRepository();
+            var missingPngLogic = new GenerateMissingPngLogic();
+            var missingPngService = new GenerateMissingPngService(missingPngRepo, scryfallLookups, missingPngLogic);
 
-            if (!File.Exists(dbPath))
+            _prepService = new CardDatabasePreparationService(settings, dbFactory, schemaInitializer, missingPngService);
+        }
+        public async Task AppStartEntryPoint(StatusViewModel statusVm)
+        {
+            statusVm.Show("Checking database integrity…", false);
+            await FlushUiAsync();
+
+            var dbStatus = await _integrityService.GetDatabaseStatusAsync();
+
+            /*
+            if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
             {
-                redownloadDb = true;
-                Debug.WriteLine("Card DB does not exist. Will trigger download.");
-            }
-            else
-            {
-                Debug.WriteLine("Card DB exists!");
-
-                bool dbIsCorrupt = false;
+                if (dbStatus == DatabaseStatus.Corrupt)
                 {
-
-
+                    string dbPath = Path.Combine(new JsonAppSettings().DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
                     try
                     {
-                        await using var uow = new UnitOfWork(_dbFactory);
-                        await uow.BeginAsync();
-
-                        bool isValid = await _healthRepo.HasExpectedTablesAndViewsAsync(uow.CurrentConnection) && await _healthRepo.QuickCheckAsync(uow.CurrentConnection);
-
-                        if (!isValid)
-                        {
-                            dbIsCorrupt = true;
-                            Debug.WriteLine("DB health check failed. Marking for deletion.");
-                        }
-                        else
-                        {
-                            Debug.WriteLine("DB health check passed.");
-                        }
-
-                        await uow.CommitAsync();
+                        File.Delete(dbPath);
+                        Debug.WriteLine("Deleted corrupted DB.");
                     }
                     catch (Exception ex)
                     {
-                        Debug.WriteLine($"DB integrity exception — assuming corruption: {ex.Message}");
-                        dbIsCorrupt = true; // force fallback
+                        Debug.WriteLine("Failed to delete corrupted DB: " + ex.Message);
                     }
-
                 }
 
-                if (dbIsCorrupt)
-                {
-                    try
-                    {
-                        File.Delete(dbPath); // Now safe to delete                        
-                        Debug.WriteLine("Deleted corrupted DB file.");
-                    }
-                    catch (Exception fileEx)
-                    {
-                        Debug.WriteLine("Failed to delete corrupted DB: " + fileEx.Message);
-                    }
-                    redownloadDb = true;
-                }
+                await _prepService.FirstTimeDbSetup(statusVm);
             }
+            */
+            // test
+            await _prepService.FirstTimeDbSetup(statusVm);
 
-            if (redownloadDb)
+
+            statusVm.Show("Loading cards…", true);
+            await FlushUiAsync();
+
+            var dbFactory = new DbConnectionFactory(new ApplicationServices.JsonAppSettings());
+            var mainVM = await MainWindowViewModel.CreateAsync(dbFactory);
+
+            // Set all your visibility toggles BEFORE showing the window
+            mainVM.FilterVM.NotifyFilterChanged();
+            mainVM.SideMenuVisibility = Visibility.Visible;
+            mainVM.ContenSectionVisibility = Visibility.Visible;
+            mainVM.MainGridVisibility = Visibility.Visible;
+
+            var mainWindow = new MainWindow
             {
-                await _cardDatabasePreparationService.FirstTimeDbSetup(statusVm);
-            }
+                DataContext = new RootViewModel(mainVM, statusVm)
+            };
 
+            await FlushUiAsync();
+
+            _closeStatusWindow();
+            mainWindow.Show();
+        }
+
+        private async Task FlushUiAsync()
+        {
+            await Task.Delay(50);
+            await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
         }
     }
-
 }

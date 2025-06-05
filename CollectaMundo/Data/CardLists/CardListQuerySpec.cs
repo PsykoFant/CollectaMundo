@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using System.Data.Common;
 
-namespace CollectaMundo.Data.CardLists
+namespace CollectaMundo.Data
 {
     public class CardListQuerySpec
     {

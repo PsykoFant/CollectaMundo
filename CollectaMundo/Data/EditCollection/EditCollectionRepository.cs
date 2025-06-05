@@ -2,7 +2,7 @@
 using System.Data.SQLite;
 using System.Diagnostics;
 
-namespace CollectaMundo.Data.EditCollection
+namespace CollectaMundo.Data
 {
     public class EditCollectionRepository(SQLiteConnection connection) : IEditCollectionRepository
     {

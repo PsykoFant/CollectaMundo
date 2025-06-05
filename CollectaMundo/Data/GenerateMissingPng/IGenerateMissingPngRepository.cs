@@ -8,6 +8,7 @@ namespace CollectaMundo.Data.GenerateMissingPng
         Task<List<string>> GetValuesWithNullAsync(SQLiteConnection conn, string table, string returnColumn, string nullColumn);
         Task InsertIfNotExistsAsync(SQLiteConnection conn, string table, string column, string value);
         Task UpdateImageAsync(SQLiteConnection conn, string table, string imageColumn, string keyColumn, string keyValue, byte[] imageData);
+        Task<Dictionary<string, byte[]>> GetManaSymbolImagesAsync(SQLiteConnection conn, IEnumerable<string> symbols);
+        Task CopyColumnIfEmptyOrAddMissingRowsAsync(SQLiteConnection conn, string targetTable, string targetColumn, string sourceTable, string sourceColumn);
     }
-
 }

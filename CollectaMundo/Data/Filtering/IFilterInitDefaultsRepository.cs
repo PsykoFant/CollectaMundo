@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.Filtering.Models;
 
-namespace CollectaMundo.Data.Filtering
+namespace CollectaMundo.Data
 {
     public interface IFilterInitDefaultsRepository
     {

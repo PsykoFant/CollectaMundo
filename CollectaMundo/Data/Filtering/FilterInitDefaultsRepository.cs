@@ -4,7 +4,7 @@ using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
 
-namespace CollectaMundo.Data.Filtering
+namespace CollectaMundo.Data
 {
     public class FilterInitDefaultsRepository(SQLiteConnection connection) : IFilterInitDefaultsRepository
     {

@@ -1,6 +1,4 @@
 ﻿using CollectaMundo.Data;
-using CollectaMundo.Data.CardLists;
-using CollectaMundo.Data.Filtering;
 using CollectaMundo.ViewModels;
 
 namespace CollectaMundo.ApplicationServices

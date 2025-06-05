@@ -22,19 +22,10 @@ namespace CollectaMundo
             };
             _statusWindow.Show();
 
-            //var settings = new JsonAppSettings();
-            //var dbFactory = new DbConnectionFactory(settings);
-            //var healthRepo = new DatabaseHealthRepository();
-            //var schemaInitializer = new DatabaseSchemaInitializer();
-            //var missingPngRepo = new GenerateMissingPngRepository();
-            //var missingPngLogic = new GenerateMissingPngLogic();
-            //var missingPngService = new GenerateMissingPngService(missingPngRepo, missingPngLogic);
-            //var cardDatabasePreparationService = new CardDatabasePreparationService(settings, dbFactory, schemaInitializer, missingPngService);
-
-            var startupService = new StartupService();
+            var startupService = new StartupService(() => _statusWindow!.Close());
             _ = StartAppAsync(statusVM, startupService);
         }
-        private async Task StartAppAsync(StatusViewModel statusVM, IStartupService startupService)
+        private static async Task StartAppAsync(StatusViewModel statusVM, IStartupService startupService)
         {
             await startupService.AppStartEntryPoint(statusVM);
 
