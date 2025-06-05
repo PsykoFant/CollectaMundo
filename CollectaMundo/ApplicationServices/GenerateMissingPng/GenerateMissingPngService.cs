@@ -36,21 +36,27 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 List<string> symbolsWithNullImage = await _repository.GetValuesWithNullAsync(
                     conn, "uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
 
-                // Step 5: Generate PNGs for each and update the DB
-                foreach (string symbol in symbolsWithNullImage)
+                // Step 5: Generate PNGs for each symbol in parallel
+                var tasks = symbolsWithNullImage.Select(async symbol =>
                 {
                     string svgUrl = $"https://svgs.scryfall.io/card-symbols/{symbol.Replace("/", "")}.svg";
-
                     string? svgContent = await _scryfallLookups.FetchSvgContentAsync(svgUrl);
 
                     if (string.IsNullOrWhiteSpace(svgContent))
                     {
-                        Debug.WriteLine($"[PNGService] Skipped symbol '{symbol}': Failed to fetch SVG.");
-                        continue;
+                        Debug.WriteLine($"[PNGService] Skipped null/empty SVG content for symbol: {symbol}");
+                        return (symbol, pngData: Array.Empty<byte>());
                     }
 
                     byte[] pngData = await _logic.ConvertSvgToPngAsync(svgContent);
+                    return (symbol, pngData);
+                }).ToList();
 
+                var results = await Task.WhenAll(tasks);
+
+                // Step 6: Update the DB for each result
+                foreach (var (symbol, pngData) in results)
+                {
                     if (pngData.Length > 0)
                     {
                         await _repository.UpdateImageAsync(
@@ -63,9 +69,10 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                     }
                     else
                     {
-                        Debug.WriteLine($"Skipped empty PNG result for symbol: {symbol}");
+                        Debug.WriteLine($"[PNGService] Skipped update due to empty PNG for: {symbol}");
                     }
                 }
+
 
                 statusVm.StatusMessage = "Mana symbol generation complete.";
             }
