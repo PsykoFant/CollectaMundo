@@ -24,9 +24,41 @@ namespace CollectaMundo.Data.ScryfallLookups
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[PngLogic] Failed to fetch Scryfall set metadata: {ex.Message}");
+                Debug.WriteLine($"[PngLogic] Failed to fetch Scryfall set setMetadata: {ex.Message}");
                 return null;
             }
         }
+        public string? TryGetIconUriForSetCode(JArray setMetadata, string setCode)
+        {
+            try
+            {
+                var match = setMetadata?
+                    .FirstOrDefault(x =>
+                        x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
+
+                return match?["icon_svg_uri"]?.ToString();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ScryfallLookup] Error getting icon URI for set {setCode}: {ex.Message}");
+                return null;
+            }
+        }
+        public async Task<string?> FetchSvgContentAsync(string svgUrl)
+        {
+            try
+            {
+                using var client = new HttpClient();
+                client.DefaultRequestHeaders.Add("User-Agent", "CollectaMundo/1.0");
+
+                return await client.GetStringAsync(svgUrl);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ScryfallLookup] Failed to fetch SVG from {svgUrl}: {ex.Message}");
+                return null;
+            }
+        }
+
     }
 }

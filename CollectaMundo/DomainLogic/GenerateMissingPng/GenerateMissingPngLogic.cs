@@ -1,11 +1,9 @@
-﻿using Newtonsoft.Json.Linq;
-using SharpVectors.Converters;
+﻿using SharpVectors.Converters;
 using SharpVectors.Renderers.Wpf;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
@@ -106,37 +104,11 @@ namespace CollectaMundo.DomainLogic.GenerateMissingPng
             }
         }
 
-        // Keyrune images
-
-
-
-        public async Task<(string SetCode, byte[] PngData)> ProcessSetSvgAsync(string setCode, JArray? data)
-        {
-            try
-            {
-                var match = data?.FirstOrDefault(x =>
-                    x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
-
-                string svgUrl = match?["icon_svg_uri"]?.ToString()
-                              ?? "https://svgs.scryfall.io/sets/default.svg";
-
-                byte[] pngData = await DownloadAndConvertSvgToPngAsync(svgUrl);
-                return (SetCode: setCode, PngData: pngData);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[PngLogic] Failed to process keyrune SVG for set {setCode}: {ex.Message}");
-                return (setCode, []);
-            }
-        }
-
         // Shared
-        public async Task<byte[]> DownloadAndConvertSvgToPngAsync(string svgUrl)
+        public Task<byte[]> ConvertSvgToPngAsync(string svgContent)
         {
             try
             {
-                using var httpClient = new HttpClient();
-                string svgContent = await httpClient.GetStringAsync(svgUrl);
                 using var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgContent));
 
                 var settings = new WpfDrawingSettings
@@ -153,8 +125,8 @@ namespace CollectaMundo.DomainLogic.GenerateMissingPng
 
                     if (drawing == null)
                     {
-                        Debug.WriteLine($"[PngLogic] Failed to parse SVG from {svgUrl}");
-                        return [];
+                        Debug.WriteLine($"[PngLogic] Failed to parse SVG");
+                        return Task.FromResult(Array.Empty<byte>());
                     }
 
                     var drawingImage = new DrawingImage(drawing);
@@ -177,14 +149,15 @@ namespace CollectaMundo.DomainLogic.GenerateMissingPng
 
                     using var ms = new MemoryStream();
                     encoder.Save(ms);
-                    return ms.ToArray();
+                    return Task.FromResult(ms.ToArray());
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[PngLogic] Error downloading/converting SVG from {svgUrl}: {ex.Message}");
-                return [];
+                Debug.WriteLine($"[PngLogic] Error converting SVG to PNG: {ex.Message}");
+                return Task.FromResult(Array.Empty<byte>());
             }
         }
+
     }
 }

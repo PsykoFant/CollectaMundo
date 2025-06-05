@@ -2,6 +2,7 @@
 using CollectaMundo.Data.ScryfallLookups;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
+using Newtonsoft.Json.Linq;
 using System.Data.SQLite;
 using System.Diagnostics;
 
@@ -25,7 +26,6 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 // Step 2: Use logic layer to extract unique symbols from mana cost strings
                 List<string> extractedSymbols = _logic.ExtractSymbolsFromManaCosts(uniqueManaCosts).ToList();
 
-
                 // Step 3: Insert any new symbols into the uniqueManaSymbols table
                 foreach (string symbol in extractedSymbols)
                 {
@@ -33,14 +33,23 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 }
 
                 // Step 4: Get symbols where the PNG image is missing
-                List<string> symbolsWithNullImage = await _repository.GetValuesWithNullAsync(conn, "uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
+                List<string> symbolsWithNullImage = await _repository.GetValuesWithNullAsync(
+                    conn, "uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
 
                 // Step 5: Generate PNGs for each and update the DB
                 foreach (string symbol in symbolsWithNullImage)
                 {
                     string svgUrl = $"https://svgs.scryfall.io/card-symbols/{symbol.Replace("/", "")}.svg";
 
-                    byte[] pngData = await _logic.DownloadAndConvertSvgToPngAsync(svgUrl);
+                    string? svgContent = await _scryfallLookups.FetchSvgContentAsync(svgUrl);
+
+                    if (string.IsNullOrWhiteSpace(svgContent))
+                    {
+                        Debug.WriteLine($"[PNGService] Skipped symbol '{symbol}': Failed to fetch SVG.");
+                        continue;
+                    }
+
+                    byte[] pngData = await _logic.ConvertSvgToPngAsync(svgContent);
 
                     if (pngData.Length > 0)
                     {
@@ -127,36 +136,47 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 await _repository.CopyColumnIfEmptyOrAddMissingRowsAsync(conn, "keyruneImages", "setCode", "sets", "code");
                 await _repository.CopyColumnIfEmptyOrAddMissingRowsAsync(conn, "keyruneImages", "setCode", "sets", "tokenSetCode");
 
-                // Step 2: Find set codes missing keyrune images
                 var missingSetCodes = await _repository.GetValuesWithNullAsync(conn, "keyruneImages", "setCode", "keyruneImage");
 
-                // Step 3: Download all set metadata from Scryfall once
-                var allSetMetadata = await _scryfallLookups.FetchSetMetadataAsync();
-                if (allSetMetadata == null)
+                JArray? metadata = await _scryfallLookups.FetchSetMetadataAsync();
+                if (metadata == null)
                 {
                     statusVm.StatusMessage = "Failed to fetch keyrune metadata. Aborting.";
-                    Debug.WriteLine("[PNGService] Skipping keyrune image generation due to null metadata.");
                     return;
                 }
 
-                // Step 4: Convert SVGs to PNG in parallel
-                var imageTasks = missingSetCodes.Select(setCode =>
-                    _logic.ProcessSetSvgAsync(setCode, allSetMetadata)).ToList();
-
-                var results = await Task.WhenAll(imageTasks);
-
-                // Step 5: Insert images where applicable
-                foreach (var (SetCode, PngData) in results.Where(r => r.PngData.Length > 0))
+                var tasks = missingSetCodes.Select(async setCode =>
                 {
-                    await _repository.UpdateImageAsync(conn, "keyruneImages", "keyruneImage", "setCode", SetCode, PngData);
+                    string svgUrl = _scryfallLookups.TryGetIconUriForSetCode(metadata, setCode)
+                                 ?? "https://svgs.scryfall.io/sets/default.svg";
+
+                    string? svgContent = await _scryfallLookups.FetchSvgContentAsync(svgUrl);
+
+                    if (string.IsNullOrWhiteSpace(svgContent))
+                    {
+                        return (SetCode: setCode, PngData: Array.Empty<byte>());
+                    }
+
+                    byte[] png = await _logic.ConvertSvgToPngAsync(svgContent);
+                    return (SetCode: setCode, PngData: png);
+                });
+
+                var results = await Task.WhenAll(tasks);
+
+                foreach (var (SetCode, PngData) in results)
+                {
+                    if (PngData.Length > 0)
+                    {
+                        await _repository.UpdateImageAsync(conn, table: "keyruneImages", imageColumn: "keyruneImage", keyColumn: "setCode", keyValue: SetCode, imageData: PngData);
+                    }
                 }
 
-                statusVm.StatusMessage = "Keyrune image generation complete.";
+                statusVm.StatusMessage = "Keyrune generation complete.";
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[PNGService] Error generating keyrune images: {ex.Message}");
-                statusVm.StatusMessage = $"Error generating keyrune images: {ex.Message}";
+                statusVm.StatusMessage = $"Error: {ex.Message}";
             }
         }
 

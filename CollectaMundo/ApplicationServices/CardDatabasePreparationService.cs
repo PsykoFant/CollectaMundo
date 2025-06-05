@@ -33,25 +33,36 @@ namespace CollectaMundo.ApplicationServices
 
             try
             {
+                string creatabletime = "";
+                string generateMissingManasymbolstime = "";
+                string generateManaCoststime = "";
+                string generateKeyrunestime = "";
+
+
                 stopwatch.Restart();
                 await _schemaInitializer.CreateTablesAsync(uow.CurrentConnection);
                 stopwatch.Stop();
-                Debug.WriteLine($"[Timing] CreateTablesAsync took {stopwatch.ElapsedMilliseconds} ms");
+                creatabletime = $"[Timing] CreateTablesAsync took {stopwatch.ElapsedMilliseconds} ms";
 
                 stopwatch.Restart();
                 await _missingPngService.GenerateMissingManaSymbolImagesAsync(uow.CurrentConnection, statusVm);
                 stopwatch.Stop();
-                Debug.WriteLine($"[Timing] GenerateMissingManaSymbolImagesAsync took {stopwatch.ElapsedMilliseconds} ms");
+                generateMissingManasymbolstime = $"[Timing] GenerateMissingManaSymbolImagesAsync took {stopwatch.ElapsedMilliseconds} ms";
 
                 stopwatch.Restart();
                 await _missingPngService.GenerateMissingManaCostImagesAsync(uow.CurrentConnection, statusVm);
                 stopwatch.Stop();
-                Debug.WriteLine($"[Timing] GenerateMissingManaCostImagesAsync took {stopwatch.ElapsedMilliseconds} ms");
+                generateManaCoststime = $"[Timing] GenerateMissingManaCostImagesAsync took {stopwatch.ElapsedMilliseconds} ms";
 
                 stopwatch.Restart();
                 await _missingPngService.GenerateMissingKeyRuneImagesAsync(uow.CurrentConnection, statusVm);
                 stopwatch.Stop();
-                Debug.WriteLine($"[Timing] GenerateMissingKeyRuneImagesAsync took {stopwatch.ElapsedMilliseconds} ms");
+                generateKeyrunestime = $"[Timing] GenerateMissingKeyRuneImagesAsync took {stopwatch.ElapsedMilliseconds} ms";
+
+                Debug.WriteLine(creatabletime);
+                Debug.WriteLine(generateMissingManasymbolstime);
+                Debug.WriteLine(generateManaCoststime);
+                Debug.WriteLine(generateKeyrunestime);
 
                 await uow.CommitAsync();
             }
