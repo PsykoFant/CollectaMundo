@@ -7,6 +7,7 @@ namespace CollectaMundo.ViewModels
     {
         private bool _isVisible;
         private bool _isProgressVisible;
+        private int _progressValue;
         private string _statusMessage = string.Empty;
         private string _firstTimeSetupText = string.Empty;
 
@@ -17,12 +18,17 @@ namespace CollectaMundo.ViewModels
             get => _isVisible;
             set => SetField(ref _isVisible, value);
         }
-
         public bool IsProgressVisible
         {
             get => _isProgressVisible;
             set => SetField(ref _isProgressVisible, value);
         }
+        public int ProgressValue
+        {
+            get => _progressValue;
+            set => SetField(ref _progressValue, value);
+        }
+
 
         public string StatusMessage
         {

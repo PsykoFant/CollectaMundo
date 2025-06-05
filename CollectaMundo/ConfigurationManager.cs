@@ -23,7 +23,7 @@ namespace CollectaMundo
                 CreateDefaultAppSettings();
             }
 
-            // Load the configuration file into strongly typed AppSettings
+            // Load the configuration file into strongly typed AppSettingsDto
             var json = File.ReadAllText(appSettingsFile);
             CurrentSettings = JsonConvert.DeserializeObject<AppSettings>(json) ?? new AppSettings();
 

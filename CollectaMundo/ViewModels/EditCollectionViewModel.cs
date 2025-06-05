@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices;
+﻿using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;

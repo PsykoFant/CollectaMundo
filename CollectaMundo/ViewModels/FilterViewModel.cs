@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices;
+﻿using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Windows.Input;

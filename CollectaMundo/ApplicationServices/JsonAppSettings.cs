@@ -9,7 +9,7 @@ namespace CollectaMundo.ApplicationServices
     public class JsonAppSettings : IAppSettings
     {
         // backing POCO
-        private static AppSettings CurrentSettings { get; set; } = new();
+        private static AppSettingsDto CurrentSettings { get; set; } = new();
 
         // non-nullable, with defaults
         public DatabaseSettings DatabaseSettings { get; private set; } = new();
@@ -32,38 +32,33 @@ namespace CollectaMundo.ApplicationServices
                 CreateDefaultAppSettings();
             }
 
-            // Load the configuration file into strongly typed AppSettings
+            // Load the configuration file into strongly typed AppSettingsDto
             var json = File.ReadAllText(appSettingsFile);
-            CurrentSettings = JsonConvert.DeserializeObject<AppSettings>(json) ?? new AppSettings();
+            CurrentSettings = JsonConvert.DeserializeObject<AppSettingsDto>(json) ?? new AppSettingsDto();
 
             // Rebuild the connection string with the loaded SQLitePath
             CurrentSettings.ConnectionStrings.SQLiteConnection =
                 $"Data Source={CurrentSettings.DatabaseSettings.SQLitePath}AllPrintings.sqlite;Version=3;";
         }
-
         private static void CreateDefaultAppSettings()
         {
             try
             {
-                // Construct the default SQLite path
                 string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 string sqlitePath = Path.Combine(appDataPath, "CollectaMundo", "CardDatabase");
 
-                // Ensure the directory exists
                 Directory.CreateDirectory(sqlitePath);
 
-                // Create default settings
-                var defaultSettings = new AppSettings
+                var defaultSettings = new AppSettingsDto
                 {
                     DatabaseSettings = new DatabaseSettings { SQLitePath = $"{sqlitePath}\\" },
                     ConnectionStrings = new ConnectionStrings
                     {
                         SQLiteConnection = $"Data Source={sqlitePath}\\AllPrintings.sqlite;Version=3;"
                     },
-                    PriceInfo = new PriceInfo() // Initialize default values
+                    PriceInfo = new PriceInfo() // Defaults
                 };
 
-                // Serialize to JSON and write to file
                 File.WriteAllText(appSettingsFile, JsonConvert.SerializeObject(defaultSettings, Formatting.Indented));
             }
             catch (Exception ex)
@@ -72,6 +67,7 @@ namespace CollectaMundo.ApplicationServices
                 MessageBox.Show($"Error creating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         public static void UpdatePriceInfo(string? updatedDate, string? retailer)
         {
             try
@@ -144,8 +140,7 @@ namespace CollectaMundo.ApplicationServices
             }
         }
     }
-
-    public class AppSettings
+    internal class AppSettingsDto
     {
         public DatabaseSettings DatabaseSettings { get; set; } = new DatabaseSettings();
         public ConnectionStrings ConnectionStrings { get; set; } = new ConnectionStrings();

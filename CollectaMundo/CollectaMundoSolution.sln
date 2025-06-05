@@ -7,6 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CollectaMundo", "CollectaMu
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E0C6969A-4C94-43D8-8B82-208C03C33B55}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
 		..\CollectaMundoInstall.iss = ..\CollectaMundoInstall.iss
 	EndProjectSection
 EndProject

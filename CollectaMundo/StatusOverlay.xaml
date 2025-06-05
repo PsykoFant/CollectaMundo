@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             d:DesignHeight="960" d:DesignWidth="1280"
+             d:DesignHeight="768" d:DesignWidth="1024"
              Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibilityConverter}}"
              Style="{StaticResource {x:Type UserControl}}">
     <Grid>
@@ -28,7 +28,9 @@
                          VerticalAlignment="Top"
                          Margin="0,650,0,0"
                          BorderBrush="Black"
-                         Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
+                         Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+                         Value="{Binding ProgressValue}"
+                         Maximum="100"/>
 
             <Label Content="{Binding StatusMessage}"
                    HorizontalAlignment="Center"

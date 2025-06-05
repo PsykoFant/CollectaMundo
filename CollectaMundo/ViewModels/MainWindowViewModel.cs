@@ -1,6 +1,10 @@
 ﻿using CollectaMundo.ApplicationServices;
 using CollectaMundo.ApplicationServices.CardLists;
+using CollectaMundo.ApplicationServices.EditCollection;
+using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.Data;
+using CollectaMundo.Data.CardLists;
+using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
@@ -115,7 +119,6 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-
         // Backing fields
         private readonly IDbConnectionFactory _dbFactory;
         private readonly IFilteringService _filteringService;
@@ -154,7 +157,7 @@ namespace CollectaMundo.ViewModels
             FilterVM = new FilterViewModel(_filteringService);
             FilterVM.FilterChanged += OnFilterChanged;
 
-            MiniLogoVisibilityTrigger();
+            HookUpStatusChanged();
 
             ShowSearchAndFilterCommand = new RelayCommand<object>(_ => { CurrentPage = Page.SearchAndFilter; });
             ShowMyCollectionCommand = new RelayCommand<object>(_ => { CurrentPage = Page.MyCollection; });
@@ -186,12 +189,6 @@ namespace CollectaMundo.ViewModels
             );
 
             FilterVM.NotifyFilterChanged();
-
-            FilterVM.NotifyFilterChanged();
-            SideMenuVisibility = Visibility.Visible;
-            ContenSectionVisibility = Visibility.Visible;
-            MainGridVisibility = Visibility.Visible;
-
             OnStartupComplete?.Invoke();
         }
 
@@ -251,7 +248,7 @@ namespace CollectaMundo.ViewModels
             AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
         }
 
-        private void MiniLogoVisibilityTrigger()
+        private void HookUpStatusChanged()
         {
             AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
             EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
