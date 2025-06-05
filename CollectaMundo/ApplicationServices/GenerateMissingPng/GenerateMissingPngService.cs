@@ -55,6 +55,8 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 var results = await Task.WhenAll(tasks);
 
                 // Step 6: Update the DB for each result
+                using var transaction = conn.BeginTransaction();
+
                 foreach (var (symbol, pngData) in results)
                 {
                     if (pngData.Length > 0)
@@ -72,9 +74,8 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                         Debug.WriteLine($"[PNGService] Skipped update due to empty PNG for: {symbol}");
                     }
                 }
+                transaction.Commit();
 
-
-                statusVm.StatusMessage = "Mana symbol generation complete.";
             }
             catch (Exception ex)
             {
@@ -110,6 +111,8 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 // Batch load all needed symbols once
                 var symbolImageMap = await _repository.GetManaSymbolImagesAsync(conn, allSymbols);
 
+                using var transaction = conn.BeginTransaction();
+
                 foreach (var manaCost in missingCosts)
                 {
                     byte[] pngData = await _logic.ProcessManaCostInputAsync(manaCost, symbolImageMap);
@@ -124,6 +127,8 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                             pngData);
                     }
                 }
+
+                transaction.Commit();
 
                 statusVm.StatusMessage = "Mana cost image generation complete.";
             }
@@ -170,15 +175,22 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
 
                 var results = await Task.WhenAll(tasks);
 
+                using var transaction = conn.BeginTransaction();
+
                 foreach (var (SetCode, PngData) in results)
                 {
                     if (PngData.Length > 0)
                     {
-                        await _repository.UpdateImageAsync(conn, table: "keyruneImages", imageColumn: "keyruneImage", keyColumn: "setCode", keyValue: SetCode, imageData: PngData);
+                        await _repository.UpdateImageAsync(conn,
+                            table: "keyruneImages",
+                            imageColumn: "keyruneImage",
+                            keyColumn: "setCode",
+                            keyValue: SetCode,
+                            imageData: PngData);
                     }
                 }
 
-                statusVm.StatusMessage = "Keyrune generation complete.";
+                transaction.Commit();
             }
             catch (Exception ex)
             {
