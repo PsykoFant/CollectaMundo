@@ -36,14 +36,15 @@ namespace CollectaMundo.ApplicationServices
                     await _healthRepo.HasExpectedTablesAndViewsAsync(uow.CurrentConnection) &&
                     await _healthRepo.QuickCheckAsync(uow.CurrentConnection);
 
-                Debug.WriteLine("DB is all fine");
                 await uow.CommitAsync();
+
+                Debug.WriteLine($"Is the database ok: {isValid.ToString()}");
 
                 return isValid ? DatabaseStatus.Healthy : DatabaseStatus.Corrupt;
             }
             catch
             {
-                Debug.WriteLine("DB is corrupted");
+                Debug.WriteLine("DB is corrupted (this is from inside catch)");
                 return DatabaseStatus.Corrupt;
             }
         }

@@ -1,8 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.GenerateMissingPng;
-using CollectaMundo.Data;
-using CollectaMundo.Data.GenerateMissingPng;
-using CollectaMundo.Data.ScryfallLookups;
-using CollectaMundo.DomainLogic.GenerateMissingPng;
+﻿using CollectaMundo.Data;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
 using System.IO;
@@ -16,28 +12,24 @@ namespace CollectaMundo.ApplicationServices
         private readonly IDatabaseIntegrityService _integrityService;
         private readonly ICardDatabasePreparationService _prepService;
         private readonly Action _closeStatusWindow;
-        public StartupService(Action closeStatusWindow)
+        private readonly StatusViewModel _statusVM;
+
+        public StartupService(IDatabaseIntegrityService integrityService, ICardDatabasePreparationService prepService, Action closeStatusWindow, StatusViewModel statusVM)
         {
-            _integrityService = new DatabaseIntegrityService();
+            _integrityService = integrityService;
+            _prepService = prepService;
             _closeStatusWindow = closeStatusWindow;
-
-            var settings = new JsonAppSettings();
-            var dbFactory = new DbConnectionFactory(settings);
-            var scryfallLookups = new ScryfallLookups();
-            var schemaInitializer = new DatabaseSchemaInitializer();
-            var missingPngRepo = new GenerateMissingPngRepository();
-            var missingPngLogic = new GenerateMissingPngLogic();
-            var missingPngService = new GenerateMissingPngService(missingPngRepo, scryfallLookups, missingPngLogic);
-
-            _prepService = new CardDatabasePreparationService(settings, dbFactory, schemaInitializer, missingPngService);
+            _statusVM = statusVM;
         }
-        public async Task AppStartEntryPoint(StatusViewModel statusVm)
+        public async Task AppStartEntryPoint()
         {
-            statusVm.Show("Checking database integrity…", false);
+            _statusVM.Show("Checking database integrity…", false);
             await FlushUiAsync();
 
+            // Check database integrity
             var dbStatus = await _integrityService.GetDatabaseStatusAsync();
 
+            // If the database is missing or corrupt, we need to set it up
             if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
             {
                 if (dbStatus == DatabaseStatus.Corrupt)
@@ -54,13 +46,11 @@ namespace CollectaMundo.ApplicationServices
                     }
                 }
 
-                await _prepService.FirstTimeDbSetup(statusVm);
+                await _prepService.FirstTimeDbSetup();
             }
 
-            await _prepService.FirstTimeDbSetup(statusVm);
-
-
-            statusVm.Show("Loading cards…", true);
+            // Now we can proceed to load the main window
+            _statusVM.Show("Loading cards…", true);
             await FlushUiAsync();
 
             var dbFactory = new DbConnectionFactory(new ApplicationServices.JsonAppSettings());
@@ -74,7 +64,7 @@ namespace CollectaMundo.ApplicationServices
 
             var mainWindow = new MainWindow
             {
-                DataContext = new RootViewModel(mainVM, statusVm)
+                DataContext = new RootViewModel(mainVM, _statusVM)
             };
 
             await FlushUiAsync();

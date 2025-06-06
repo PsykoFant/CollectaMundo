@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.ViewModels;
 using System.Windows;
-using System.Windows.Threading;
 
 namespace CollectaMundo
 {
@@ -22,59 +22,13 @@ namespace CollectaMundo
             };
             _statusWindow.Show();
 
-            var startupService = new StartupService(() => _statusWindow!.Close());
-            _ = StartAppAsync(statusVM, startupService);
+            var startupService = StartupComposition.Build(statusVM, () => _statusWindow!.Close());
+            _ = StartAppAsync(startupService);
         }
-        private static async Task StartAppAsync(StatusViewModel statusVM, IStartupService startupService)
+        private static async Task StartAppAsync(IStartupService startupService)
         {
-            await startupService.AppStartEntryPoint(statusVM);
-
-            //statusVM.Show("Checking database integrity…", false);
-            //await FlushUiAsync();
-
-            //await startupService.EnsureDatabaseIntegrityAsync(statusVM);
-            //await FlushUiAsync();
-
-            //statusVM.Show("Loading cards…", true);
-            //await FlushUiAsync();
-
-            //var dbFactory = new DbConnectionFactory(new ApplicationServices.JsonAppSettings());
-            //var mainVM = await MainWindowViewModel.CreateAsync(dbFactory);
-
-            //// Set all your visibility toggles BEFORE showing the window
-            //mainVM.FilterVM.NotifyFilterChanged();
-            //mainVM.SideMenuVisibility = Visibility.Visible;
-            //mainVM.ContenSectionVisibility = Visibility.Visible;
-            //mainVM.MainGridVisibility = Visibility.Visible;
-
-            //var mainWindow = new MainWindow
-            //{
-            //    DataContext = new RootViewModel(mainVM, statusVM)
-            //};
-
-            //await FlushUiAsync();
-
-            //_statusWindow!.Close();
-            //mainWindow.Show();
+            await startupService.AppStartEntryPoint();
         }
-
-        private static async Task FlushUiAsync()
-        {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                var frame = new DispatcherFrame();
-                Dispatcher.CurrentDispatcher.BeginInvoke(
-                    DispatcherPriority.Render,
-                    new DispatcherOperationCallback(f =>
-                    {
-                        ((DispatcherFrame)f).Continue = false;
-                        return null!;
-                    }), frame);
-                Dispatcher.PushFrame(frame);
-            });
-        }
-
-
     }
 
 

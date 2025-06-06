@@ -1,9 +1,7 @@
-﻿using CollectaMundo.ViewModels;
-
-namespace CollectaMundo.ApplicationServices
+﻿namespace CollectaMundo.ApplicationServices
 {
     public interface IStartupService
     {
-        Task AppStartEntryPoint(StatusViewModel statusVm);
+        Task AppStartEntryPoint();
     }
 }

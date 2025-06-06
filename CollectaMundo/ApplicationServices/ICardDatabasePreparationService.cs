@@ -1,12 +1,10 @@
-﻿using CollectaMundo.ViewModels;
-
-namespace CollectaMundo.ApplicationServices
+﻿namespace CollectaMundo.ApplicationServices
 {
     public interface ICardDatabasePreparationService
     {
-        Task FirstTimeDbSetup(StatusViewModel statusVm);
-        Task UpdateDb(StatusViewModel statusVm);             // Future
-        Task UpdateCardPrices(StatusViewModel statusVm);     // Future
+        Task FirstTimeDbSetup();
+        Task UpdateDb();             // Future
+        Task UpdateCardPrices();     // Future
     }
 
 }
