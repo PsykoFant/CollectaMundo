@@ -24,58 +24,93 @@ namespace CollectaMundo.ApplicationServices
             //if (!success)
             //    return;
 
-
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
             var stopwatch = new Stopwatch();
             var totalPngStopwatch = new Stopwatch();
 
+            string creatabletime = "";
+            string generateMissingManasymbolstime = "";
+            string generateManaCoststime = "";
+            string generateKeyrunestime = "";
+            string totalPngGenerationTime = "";
+
+            // Create initial UnitOfWork for shared steps
+            await using var sharedUow = new UnitOfWork(_dbFactory);
+            await sharedUow.BeginAsync();
+
             try
             {
-                string creatabletime = "";
-                string generateMissingManasymbolstime = "";
-                string generateManaCoststime = "";
-                string generateKeyrunestime = "";
-                string totalPngGenerationTime = "";
+                // Step 1: Create tables
+                stopwatch.Restart();
+                await _schemaInitializer.CreateTablesAsync(sharedUow.CurrentConnection);
+                stopwatch.Stop();
+                creatabletime = $"[Timing] CreateTablesAsync took {stopwatch.ElapsedMilliseconds} ms";
 
-                await _schemaInitializer.CreateTablesAsync(uow.CurrentConnection);
-
+                // Step 2: Generate mana symbol images (sequentially)
                 totalPngStopwatch.Restart();
 
                 stopwatch.Restart();
-                await _missingPngService.GenerateMissingManaSymbolImagesAsync(uow.CurrentConnection, _statusVM);
+                await _missingPngService.GenerateMissingManaSymbolImagesAsync(sharedUow.CurrentConnection, _statusVM);
                 stopwatch.Stop();
                 generateMissingManasymbolstime = $"[Timing] GenerateMissingManaSymbolImagesAsync took {stopwatch.ElapsedMilliseconds} ms";
 
-                stopwatch.Restart();
-                await _missingPngService.GenerateMissingManaCostImagesAsync(uow.CurrentConnection, _statusVM);
-                stopwatch.Stop();
-                generateManaCoststime = $"[Timing] GenerateMissingManaCostImagesAsync took {stopwatch.ElapsedMilliseconds} ms";
-
-                stopwatch.Restart();
-                await _missingPngService.GenerateMissingKeyRuneImagesAsync(uow.CurrentConnection, _statusVM);
-                stopwatch.Stop();
-                generateKeyrunestime = $"[Timing] GenerateMissingKeyRuneImagesAsync took {stopwatch.ElapsedMilliseconds} ms";
-
-                totalPngStopwatch.Stop();
-                totalPngGenerationTime = $"[Timing] Total PNG Generation took {totalPngStopwatch.ElapsedMilliseconds} ms";
-
-                Debug.WriteLine(creatabletime);
-                Debug.WriteLine(generateMissingManasymbolstime);
-                Debug.WriteLine(generateManaCoststime);
-                Debug.WriteLine(generateKeyrunestime);
-                Debug.WriteLine(totalPngGenerationTime);
-
-                await uow.CommitAsync();
+                // Commit shared work so far
+                await sharedUow.CommitAsync();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[FirstTimeDbSetup] Error: {ex.Message}");
-                await uow.RollbackAsync();
+                Debug.WriteLine($"[FirstTimeDbSetup] Error before parallel phase: {ex.Message}");
+                await sharedUow.RollbackAsync();
                 throw;
             }
+
+            // Step 3: Parallel Phase (New connections)
+            await using var uowCost = new UnitOfWork(_dbFactory);
+            await using var uowRune = new UnitOfWork(_dbFactory);
+            await uowCost.BeginAsync();
+            await uowRune.BeginAsync();
+
+            var costStopwatch = Stopwatch.StartNew();
+            var runeStopwatch = Stopwatch.StartNew();
+
+            try
+            {
+                var generateManaCostTask = Task.Run(async () =>
+                {
+                    await _missingPngService.GenerateMissingManaCostImagesAsync(uowCost.CurrentConnection, _statusVM);
+                    costStopwatch.Stop();
+                    generateManaCoststime = $"[Timing] GenerateMissingManaCostImagesAsync took {costStopwatch.ElapsedMilliseconds} ms";
+                });
+
+                var generateKeyrunesTask = Task.Run(async () =>
+                {
+                    await _missingPngService.GenerateMissingKeyRuneImagesAsync(uowRune.CurrentConnection, _statusVM);
+                    runeStopwatch.Stop();
+                    generateKeyrunestime = $"[Timing] GenerateMissingKeyRuneImagesAsync took {runeStopwatch.ElapsedMilliseconds} ms";
+                });
+
+                await Task.WhenAll(generateManaCostTask, generateKeyrunesTask);
+                await Task.WhenAll(uowCost.CommitAsync(), uowRune.CommitAsync());
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[FirstTimeDbSetup] Error during parallel PNG phase: {ex.Message}");
+                await Task.WhenAll(uowCost.RollbackAsync(), uowRune.RollbackAsync());
+                throw;
+            }
+
+            totalPngStopwatch.Stop();
+            totalPngGenerationTime = $"[Timing] Total PNG Generation took {totalPngStopwatch.ElapsedMilliseconds} ms";
+
+            // Logging
+            Debug.WriteLine(creatabletime);
+            Debug.WriteLine(generateMissingManasymbolstime);
+            Debug.WriteLine(generateManaCoststime);
+            Debug.WriteLine(generateKeyrunestime);
+            Debug.WriteLine(totalPngGenerationTime);
+
+            // Later steps in setup can follow here...
         }
+
         public Task UpdateDb()
         {
             return Task.Run(() =>
