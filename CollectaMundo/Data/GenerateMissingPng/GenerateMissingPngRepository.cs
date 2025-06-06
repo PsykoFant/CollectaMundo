@@ -11,7 +11,10 @@ namespace CollectaMundo.Data.GenerateMissingPng
 
             try
             {
-                string query = $"SELECT DISTINCT {columnName} FROM {tableName};";
+                string query = $@"
+                    SELECT DISTINCT {columnName}
+                    FROM {tableName}
+                    WHERE {columnName} IS NOT NULL AND {columnName} != '';";
 
                 using var command = new SQLiteCommand(query, conn);
                 using var reader = await command.ExecuteReaderAsync();
@@ -60,7 +63,7 @@ namespace CollectaMundo.Data.GenerateMissingPng
 
             return results;
         }
-        public async Task UpdateImageAsync(SQLiteConnection conn, string tableName, string imageColumn, string referenceColumn, string referenceValue, byte[] imageData)
+        public async Task<bool> UpdateImageAsync(SQLiteConnection conn, string tableName, string imageColumn, string referenceColumn, string referenceValue, byte[] imageData)
         {
             try
             {
@@ -75,44 +78,26 @@ namespace CollectaMundo.Data.GenerateMissingPng
                 command.Parameters.AddWithValue("@referenceValue", referenceValue);
 
                 int rowsAffected = await command.ExecuteNonQueryAsync();
-                //Debug.WriteLine($"[PngRepo] Updated image for '{referenceValue}' in '{tableName}'. Rows affected: {rowsAffected}");
+                return rowsAffected > 0;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[PngRepo] Error in UpdateImageAsync for {referenceValue}: {ex.Message}");
+                return false;
             }
         }
         public async Task InsertIfNotExistsAsync(SQLiteConnection conn, string tableName, string columnName, string value)
         {
             try
             {
-                // First check if the value already exists
-                string existsQuery = $@"
-                    SELECT COUNT(*) 
-                    FROM {tableName} 
-                    WHERE {columnName} = @value;";
+                string query = $@"
+                    INSERT OR IGNORE INTO {tableName} ({columnName})
+                    VALUES (@value);";
 
-                using var existsCommand = new SQLiteCommand(existsQuery, conn);
-                existsCommand.Parameters.AddWithValue("@value", value);
+                using var command = new SQLiteCommand(query, conn);
+                command.Parameters.AddWithValue("@value", value);
 
-                var count = Convert.ToInt32(await existsCommand.ExecuteScalarAsync());
-
-                if (count == 0)
-                {
-                    string insertQuery = $@"
-                        INSERT INTO {tableName} ({columnName}) 
-                        VALUES (@value);";
-
-                    using var insertCommand = new SQLiteCommand(insertQuery, conn);
-                    insertCommand.Parameters.AddWithValue("@value", value);
-
-                    await insertCommand.ExecuteNonQueryAsync();
-                    //Debug.WriteLine($"[PngRepo] Inserted new value '{value}' into {tableName}.");
-                }
-                else
-                {
-                    Debug.WriteLine($"[PngRepo] Value '{value}' already exists in {tableName}, skipping insert.");
-                }
+                await command.ExecuteNonQueryAsync();
             }
             catch (Exception ex)
             {
@@ -125,15 +110,20 @@ namespace CollectaMundo.Data.GenerateMissingPng
 
             try
             {
-                string paramList = string.Join(",", symbols.Select((s, i) => $"@p{i}"));
-                string query = $"SELECT uniqueManaSymbol, manaSymbolImage FROM uniqueManaSymbols WHERE uniqueManaSymbol IN ({paramList})";
+                var symbolList = symbols.ToList();
+                if (symbolList.Count == 0)
+                    return result;
+
+                string paramList = string.Join(",", symbolList.Select((_, i) => $"@p{i}"));
+                string query = $@"
+                    SELECT uniqueManaSymbol, manaSymbolImage
+                    FROM uniqueManaSymbols
+                    WHERE uniqueManaSymbol IN ({paramList});";
 
                 using var command = new SQLiteCommand(query, conn);
-
-                int i = 0;
-                foreach (string symbol in symbols)
+                for (int i = 0; i < symbolList.Count; i++)
                 {
-                    command.Parameters.AddWithValue($"@p{i++}", symbol);
+                    command.Parameters.AddWithValue($"@p{i}", symbolList[i]);
                 }
 
                 using var reader = await command.ExecuteReaderAsync();
@@ -151,31 +141,27 @@ namespace CollectaMundo.Data.GenerateMissingPng
 
             return result;
         }
-        public async Task CopyColumnIfEmptyOrAddMissingRowsAsync(SQLiteConnection conn, string targetTable, string targetColumn, string sourceTable, string sourceColumn)
+        public async Task InsertMissingFromColumnAsync(SQLiteConnection conn, string fromTable, string fromColumn, string intoTable, string intoColumn)
         {
             try
             {
                 string query = $@"
-                    INSERT INTO {targetTable} ({targetColumn})
-                    SELECT DISTINCT {sourceColumn}
-                    FROM {sourceTable} 
-                    WHERE {sourceColumn} IS NOT NULL 
-                      AND {sourceColumn} != '' 
-                      AND {sourceColumn} NOT IN (
-                          SELECT DISTINCT {targetColumn} 
-                          FROM {targetTable} 
-                          WHERE {targetColumn} IS NOT NULL AND {targetColumn} != ''
-                      );";
+                    INSERT INTO {intoTable} ({intoColumn})
+                    SELECT DISTINCT {fromColumn}
+                    FROM {fromTable}
+                    WHERE {fromColumn} IS NOT NULL AND {fromColumn} != ''
+                    EXCEPT
+                    SELECT DISTINCT {intoColumn}
+                    FROM {intoTable}
+                    WHERE {intoColumn} IS NOT NULL AND {intoColumn} != '';";
 
                 using var command = new SQLiteCommand(query, conn);
-                int rowsAffected = await command.ExecuteNonQueryAsync();
-                //Debug.WriteLine($"[PngRepo] {rowsAffected} rows copied from {sourceTable}.{sourceColumn} to {targetTable}.{targetColumn}");
+                await command.ExecuteNonQueryAsync();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[PngRepo] Error copying values from {sourceTable} to {targetTable}: {ex.Message}");
+                Debug.WriteLine($"[PngRepo] Error inserting missing from {fromTable}.{fromColumn} → {intoTable}.{intoColumn}: {ex.Message}");
             }
         }
-
     }
 }

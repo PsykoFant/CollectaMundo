@@ -61,19 +61,25 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 {
                     if (pngData.Length > 0)
                     {
-                        await _repository.UpdateImageAsync(
+                        bool updated = await _repository.UpdateImageAsync(
                             conn,
-                            table: "uniqueManaSymbols",
+                            tableName: "uniqueManaSymbols",
                             imageColumn: "manaSymbolImage",
-                            keyColumn: "uniqueManaSymbol",
-                            keyValue: symbol,
+                            referenceColumn: "uniqueManaSymbol",
+                            referenceValue: symbol,
                             imageData: pngData);
+
+                        if (!updated)
+                        {
+                            Debug.WriteLine($"[PNGService] No update performed for: {symbol} (already present?)");
+                        }
                     }
                     else
                     {
                         Debug.WriteLine($"[PNGService] Skipped update due to empty PNG for: {symbol}");
                     }
                 }
+
                 transaction.Commit();
 
             }
@@ -145,8 +151,8 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
             try
             {
                 // Step 1: Ensure all potential set codes exist in keyruneImages table
-                await _repository.CopyColumnIfEmptyOrAddMissingRowsAsync(conn, "keyruneImages", "setCode", "sets", "code");
-                await _repository.CopyColumnIfEmptyOrAddMissingRowsAsync(conn, "keyruneImages", "setCode", "sets", "tokenSetCode");
+                await _repository.InsertMissingFromColumnAsync(conn, "sets", "code", "keyruneImages", "setCode");
+                await _repository.InsertMissingFromColumnAsync(conn, "sets", "code", "keyruneImages", "setCode");
 
                 var missingSetCodes = await _repository.GetValuesWithNullAsync(conn, "keyruneImages", "setCode", "keyruneImage");
 
@@ -177,16 +183,32 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
 
                 using var transaction = conn.BeginTransaction();
 
+                int updatedCount = 0;
+
                 foreach (var (SetCode, PngData) in results)
                 {
                     if (PngData.Length > 0)
                     {
-                        await _repository.UpdateImageAsync(conn,
-                            table: "keyruneImages",
+                        bool updated = await _repository.UpdateImageAsync(
+                            conn,
+                            tableName: "keyruneImages",
                             imageColumn: "keyruneImage",
-                            keyColumn: "setCode",
-                            keyValue: SetCode,
+                            referenceColumn: "setCode",
+                            referenceValue: SetCode,
                             imageData: PngData);
+
+                        if (updated)
+                        {
+                            updatedCount++;
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"[PNGService] Keyrune for {SetCode} was already populated. Skipping update.");
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"[PNGService] Empty PNG for set: {SetCode} — not updating.");
                     }
                 }
 

@@ -19,15 +19,17 @@ namespace CollectaMundo.ApplicationServices
             string url = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
             string path = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
 
-            bool success = await DownloadResourceAsync(url, path, "Card Database", true, _statusVM);
-            if (!success)
-                return;
+            // temp disabled
+            //bool success = await DownloadResourceAsync(url, path, "Card Database", true, _statusVM);
+            //if (!success)
+            //    return;
 
 
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
 
             var stopwatch = new Stopwatch();
+            var totalPngStopwatch = new Stopwatch();
 
             try
             {
@@ -35,12 +37,11 @@ namespace CollectaMundo.ApplicationServices
                 string generateMissingManasymbolstime = "";
                 string generateManaCoststime = "";
                 string generateKeyrunestime = "";
+                string totalPngGenerationTime = "";
 
-
-                stopwatch.Restart();
                 await _schemaInitializer.CreateTablesAsync(uow.CurrentConnection);
-                stopwatch.Stop();
-                creatabletime = $"[Timing] CreateTablesAsync took {stopwatch.ElapsedMilliseconds} ms";
+
+                totalPngStopwatch.Restart();
 
                 stopwatch.Restart();
                 await _missingPngService.GenerateMissingManaSymbolImagesAsync(uow.CurrentConnection, _statusVM);
@@ -57,10 +58,14 @@ namespace CollectaMundo.ApplicationServices
                 stopwatch.Stop();
                 generateKeyrunestime = $"[Timing] GenerateMissingKeyRuneImagesAsync took {stopwatch.ElapsedMilliseconds} ms";
 
+                totalPngStopwatch.Stop();
+                totalPngGenerationTime = $"[Timing] Total PNG Generation took {totalPngStopwatch.ElapsedMilliseconds} ms";
+
                 Debug.WriteLine(creatabletime);
                 Debug.WriteLine(generateMissingManasymbolstime);
                 Debug.WriteLine(generateManaCoststime);
                 Debug.WriteLine(generateKeyrunestime);
+                Debug.WriteLine(totalPngGenerationTime);
 
                 await uow.CommitAsync();
             }
