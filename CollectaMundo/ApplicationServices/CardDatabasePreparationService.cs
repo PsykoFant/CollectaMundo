@@ -16,10 +16,15 @@ namespace CollectaMundo.ApplicationServices
         private readonly StatusViewModel _statusVM = statusVM ?? throw new ArgumentNullException(nameof(statusVM));
         public async Task FirstTimeDbSetup()
         {
-            string url = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
+            string CardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
+            string PricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
+
             string path = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
 
-            bool success = await DownloadResourceAsync(url, path, "Card Database", true, _statusVM);
+            string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
+            string PriceDownloadPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "prices.json");
+
+            bool success = await DownloadResourceAsync(url, dbPath, "Card Database", true, _statusVM);
             if (!success)
             {
                 return;

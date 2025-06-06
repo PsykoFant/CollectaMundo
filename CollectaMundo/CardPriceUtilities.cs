@@ -77,7 +77,6 @@ namespace CollectaMundo
         {
             try
             {
-                // Measure the time to read and parse the JSON file
                 if (!File.Exists(pricesDownloadsPath))
                 {
                     throw new FileNotFoundException($"Price JSON file not found at: {pricesDownloadsPath}");

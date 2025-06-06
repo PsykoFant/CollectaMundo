@@ -2,9 +2,8 @@ TO DO
 - MVVM refactor
 
   - repo metoder til missing png stakken - overlap? Flyt til db prep service?
-  - review af png tech stack
-  - Videre in prep sekvensen ... 
 
+  - retry scryfall api kald - brug retry policy?
 
 
   - Card image brug MVVM (unit test)
