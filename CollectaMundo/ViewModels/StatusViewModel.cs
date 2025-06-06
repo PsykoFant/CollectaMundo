@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace CollectaMundo.ViewModels
 {
-    public class StatusViewModel : INotifyPropertyChanged
+    public class StatusViewModel : INotifyPropertyChanged, IStartupProgressReporter
     {
         private bool _isVisible;
         private bool _isProgressVisible;
@@ -28,20 +28,16 @@ namespace CollectaMundo.ViewModels
             get => _progressValue;
             set => SetField(ref _progressValue, value);
         }
-
-
         public string StatusMessage
         {
             get => _statusMessage;
             set => SetField(ref _statusMessage, value);
         }
-
         public string FirstTimeSetupText
         {
             get => _firstTimeSetupText;
             set => SetField(ref _firstTimeSetupText, value);
         }
-
         public void Show(string message, bool showProgress = false, string? firstTimeNote = null)
         {
             StatusMessage = message;
@@ -49,7 +45,6 @@ namespace CollectaMundo.ViewModels
             FirstTimeSetupText = firstTimeNote ?? string.Empty;
             IsVisible = true;
         }
-
         public void Hide()
         {
             IsVisible = false;
@@ -57,7 +52,10 @@ namespace CollectaMundo.ViewModels
             StatusMessage = string.Empty;
             FirstTimeSetupText = string.Empty;
         }
-
+        public void Report(string message, bool showProgress = false, string? note = null)
+        {
+            Show(message, showProgress, note);
+        }
         private void SetField<T>(ref T field, T value, [CallerMemberName] string? propName = null)
         {
             if (!Equals(field, value))

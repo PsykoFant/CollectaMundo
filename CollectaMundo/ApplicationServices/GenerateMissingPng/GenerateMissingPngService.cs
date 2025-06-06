@@ -24,7 +24,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 List<string> uniqueManaCosts = await _repository.GetUniqueValuesAsync(conn, "cards", "manaCost");
 
                 // Step 2: Use logic layer to extract unique symbols from mana cost strings
-                List<string> extractedSymbols = _logic.ExtractSymbolsFromManaCosts(uniqueManaCosts).ToList();
+                List<string> extractedSymbols = [.. _logic.ExtractSymbolsFromManaCosts(uniqueManaCosts)];
 
                 // Step 3: Insert any new symbols into the uniqueManaSymbols table
                 foreach (string symbol in extractedSymbols)
@@ -111,7 +111,9 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                     string[] symbols = cost.Trim('{', '}')
                         .Split(new[] { "}{" }, StringSplitOptions.RemoveEmptyEntries);
                     foreach (var s in symbols)
+                    {
                         allSymbols.Add(s);
+                    }
                 }
 
                 // Batch load all needed symbols once
@@ -146,7 +148,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
         }
         public async Task GenerateMissingKeyRuneImagesAsync(SQLiteConnection conn, StatusViewModel statusVm)
         {
-            statusVm.StatusMessage = "Generating keyrune images...";
+            //statusVm.StatusMessage = "Generating keyrune images...";
 
             try
             {

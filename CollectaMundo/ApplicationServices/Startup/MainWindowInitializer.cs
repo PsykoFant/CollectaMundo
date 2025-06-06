@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.Data;
 using CollectaMundo.ViewModels;
 
-namespace CollectaMundo.ApplicationServices
+namespace CollectaMundo.ApplicationServices.Startup
 {
     public class MainWindowInitializer(IDbConnectionFactory factory)
     {

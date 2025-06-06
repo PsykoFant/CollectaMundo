@@ -1,5 +1,4 @@
-﻿using CollectaMundo.ApplicationServices;
-using CollectaMundo.ApplicationServices.Startup;
+﻿using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.ViewModels;
 using System.Windows;
 

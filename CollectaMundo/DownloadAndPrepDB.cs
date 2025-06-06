@@ -1,14 +1,8 @@
-using SharpVectors.Converters;
-using SharpVectors.Renderers.Wpf;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
-using System.Net.Http;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace CollectaMundo
 {
@@ -932,109 +926,109 @@ namespace CollectaMundo
         #endregion
 
         #region Shared helper methods        
-        private static async Task<byte[]> ConvertSvgToByteArraySharpVectorsAsync(string svgUrl)
-        {
-            try
-            {
-                // Retrieve SVG data
-                using var httpClient = new HttpClient();
-                var svgData = await httpClient.GetStringAsync(svgUrl);
+        //private static async Task<byte[]> ConvertSvgToByteArraySharpVectorsAsync(string svgUrl)
+        //{
+        //    try
+        //    {
+        //        // Retrieve SVG data
+        //        using var httpClient = new HttpClient();
+        //        var svgData = await httpClient.GetStringAsync(svgUrl);
 
-                // Convert SVG data to stream
-                var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgData));
+        //        // Convert SVG data to stream
+        //        var svgStream = new MemoryStream(Encoding.UTF8.GetBytes(svgData));
 
-                var settings = new WpfDrawingSettings
-                {
-                    IncludeRuntime = false,
-                    TextAsGeometry = false,
-                    OptimizePath = true,
-                };
+        //        var settings = new WpfDrawingSettings
+        //        {
+        //            IncludeRuntime = false,
+        //            TextAsGeometry = false,
+        //            OptimizePath = true,
+        //        };
 
-                // Lock to prevent concurrent initialization of the shared SvgProfile
-                lock (SvgProfileLock)
-                {
-                    // Ensure isolated access to FileSvgReader and its dependencies
-                    var reader = new FileSvgReader(settings);
+        //        // Lock to prevent concurrent initialization of the shared SvgProfile
+        //        lock (SvgProfileLock)
+        //        {
+        //            // Ensure isolated access to FileSvgReader and its dependencies
+        //            var reader = new FileSvgReader(settings);
 
-                    // Attempt to read the SVG into a drawing object
-                    var drawing = reader.Read(svgStream);
+        //            // Attempt to read the SVG into a drawing object
+        //            var drawing = reader.Read(svgStream);
 
-                    // Check for valid drawing object
-                    if (drawing == null)
-                    {
-                        Debug.WriteLine($"Warning: Drawing object is null for URL: {svgUrl}");
-                        return [];
-                    }
+        //            // Check for valid drawing object
+        //            if (drawing == null)
+        //            {
+        //                Debug.WriteLine($"Warning: Drawing object is null for URL: {svgUrl}");
+        //                return [];
+        //            }
 
-                    DrawingImage drawingImage = new(drawing);
-                    var drawingVisual = new DrawingVisual();
+        //            DrawingImage drawingImage = new(drawing);
+        //            var drawingVisual = new DrawingVisual();
 
-                    // Calculate aspect ratio and new dimensions
-                    double aspectRatio = drawingImage.Width / drawingImage.Height;
-                    int newHeight = 20;
-                    int newWidth = (int)(newHeight * aspectRatio);
+        //            // Calculate aspect ratio and new dimensions
+        //            double aspectRatio = drawingImage.Width / drawingImage.Height;
+        //            int newHeight = 20;
+        //            int newWidth = (int)(newHeight * aspectRatio);
 
-                    // Render the image
-                    using (var drawingContext = drawingVisual.RenderOpen())
-                    {
-                        drawingContext.DrawImage(drawingImage, new Rect(0, 0, newWidth, newHeight));
-                    }
+        //            // Render the image
+        //            using (var drawingContext = drawingVisual.RenderOpen())
+        //            {
+        //                drawingContext.DrawImage(drawingImage, new Rect(0, 0, newWidth, newHeight));
+        //            }
 
-                    RenderTargetBitmap renderTargetBitmap = new(newWidth, newHeight, 96, 96, PixelFormats.Pbgra32);
-                    renderTargetBitmap.Render(drawingVisual);
+        //            RenderTargetBitmap renderTargetBitmap = new(newWidth, newHeight, 96, 96, PixelFormats.Pbgra32);
+        //            renderTargetBitmap.Render(drawingVisual);
 
-                    // Encode as PNG
-                    System.Windows.Media.Imaging.BitmapEncoder encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
-                    encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(renderTargetBitmap));
+        //            // Encode as PNG
+        //            System.Windows.Media.Imaging.BitmapEncoder encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        //            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(renderTargetBitmap));
 
-                    using MemoryStream memoryStream = new();
-                    encoder.Save(memoryStream);
+        //            using MemoryStream memoryStream = new();
+        //            encoder.Save(memoryStream);
 
-                    return memoryStream.ToArray();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error converting SVG to byte array for url {svgUrl}: {ex.Message}");
-                Debug.WriteLine($"Exception details: {ex}");
-                return [];
-            }
-        }
-        private static async Task UpdateImageInTableAsync(string imageToUpdate, string tableName, string columnToUpdate, string columnToReference, byte[] imageData)
-        {
-            try
-            {
-                using var command = new SQLiteCommand($"UPDATE {tableName} SET {columnToUpdate} = @imageData WHERE {columnToUpdate} IS NULL AND {columnToReference} = @referenceColumn", DBAccess.connection);
-                command.Parameters.AddWithValue("@referenceColumn", imageToUpdate);
-                command.Parameters.AddWithValue("@imageData", imageData);
-                await command.ExecuteNonQueryAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error while updating image in table: {ex.Message}");
-                MessageBox.Show($"Error while updating image in table: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-        private static async Task<List<string>> GetValuesWithNullAsync(string tableName, string returnColumnName, string searchColumnName)
-        {
-            List<string> valuesWithNull = [];
-            try
-            {
-                string query = $"SELECT {returnColumnName} FROM {tableName} WHERE {searchColumnName} IS NULL";
-                using var command = new SQLiteCommand(query, DBAccess.connection);
-                using var reader = await command.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    valuesWithNull.Add(reader[returnColumnName]?.ToString() ?? string.Empty);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error retrieving values with null: {ex.Message}");
-                MessageBox.Show($"Error retrieving values with null: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-            return valuesWithNull;
-        }
+        //            return memoryStream.ToArray();
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"Error converting SVG to byte array for url {svgUrl}: {ex.Message}");
+        //        Debug.WriteLine($"Exception details: {ex}");
+        //        return [];
+        //    }
+        //}
+        //private static async Task UpdateImageInTableAsync(string imageToUpdate, string tableName, string columnToUpdate, string columnToReference, byte[] imageData)
+        //{
+        //    try
+        //    {
+        //        using var command = new SQLiteCommand($"UPDATE {tableName} SET {columnToUpdate} = @imageData WHERE {columnToUpdate} IS NULL AND {columnToReference} = @referenceColumn", DBAccess.connection);
+        //        command.Parameters.AddWithValue("@referenceColumn", imageToUpdate);
+        //        command.Parameters.AddWithValue("@imageData", imageData);
+        //        await command.ExecuteNonQueryAsync();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"Error while updating image in table: {ex.Message}");
+        //        MessageBox.Show($"Error while updating image in table: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //    }
+        //}
+        //private static async Task<List<string>> GetValuesWithNullAsync(string tableName, string returnColumnName, string searchColumnName)
+        //{
+        //    List<string> valuesWithNull = [];
+        //    try
+        //    {
+        //        string query = $"SELECT {returnColumnName} FROM {tableName} WHERE {searchColumnName} IS NULL";
+        //        using var command = new SQLiteCommand(query, DBAccess.connection);
+        //        using var reader = await command.ExecuteReaderAsync();
+        //        while (await reader.ReadAsync())
+        //        {
+        //            valuesWithNull.Add(reader[returnColumnName]?.ToString() ?? string.Empty);
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"Error retrieving values with null: {ex.Message}");
+        //        MessageBox.Show($"Error retrieving values with null: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //    }
+        //    return valuesWithNull;
+        //}
 
         #endregion
     }
