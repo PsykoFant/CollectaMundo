@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.GenerateMissingPng;
+﻿using CollectaMundo.ApplicationServices.CardPrices;
+using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.Data;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
@@ -7,12 +8,12 @@ using System.Net.Http;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class CardDatabasePreparationService(IAppSettings settings, IDbConnectionFactory dbFactory, IDatabaseSchemaInitializer schemaInitializer, ICardPriceImporter priceImporter, IGenerateMissingPngService missingPngService, StatusViewModel statusVM) : ICardDatabasePreparationService
+    public class CardDatabasePreparationService(IAppSettings settings, IDbConnectionFactory dbFactory, IDatabaseSchemaInitializer schemaInitializer, ICardPriceService priceImporter, IGenerateMissingPngService missingPngService, StatusViewModel statusVM) : ICardDatabasePreparationService
     {
         private readonly IAppSettings _settings = settings;
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly IDatabaseSchemaInitializer _schemaInitializer = schemaInitializer;
-        private readonly ICardPriceImporter _priceImporter = priceImporter ?? throw new ArgumentNullException(nameof(priceImporter));
+        private readonly ICardPriceService _priceImporter = priceImporter ?? throw new ArgumentNullException(nameof(priceImporter));
         private readonly IGenerateMissingPngService _missingPngService = missingPngService;
         private readonly StatusViewModel _statusVM = statusVM ?? throw new ArgumentNullException(nameof(statusVM));
         public async Task FirstTimeDbSetup()
@@ -23,33 +24,33 @@ namespace CollectaMundo.ApplicationServices
             string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
             string pricesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "prices.json");
 
-            //var downloadCardDbTask = DownloadResourceAsync(cardDbUrl, dbPath, "Card Database", true, _statusVM);
-            //var downloadPricesTask = DownloadResourceAsync(pricesUrl, pricesPath, "Card Prices", false, _statusVM);
+            var downloadCardDbTask = DownloadResourceAsync(cardDbUrl, dbPath, "Card Database", true, _statusVM);
+            var downloadPricesTask = DownloadResourceAsync(pricesUrl, pricesPath, "Card Prices", false, _statusVM);
 
-            //bool[] results = await Task.WhenAll(downloadCardDbTask, downloadPricesTask);
+            bool[] results = await Task.WhenAll(downloadCardDbTask, downloadPricesTask);
 
-            //// Retry if needed
-            //if (!results[0])
-            //{
-            //    _statusVM.Show("Retrying card database download...", true);
-            //    bool retryCardDb = await DownloadResourceAsync(cardDbUrl, dbPath, "Card Database", true, _statusVM);
-            //    if (!retryCardDb)
-            //    {
-            //        Debug.WriteLine("Card database re-download failed.");
-            //        return;
-            //    }
-            //}
+            // Retry if needed
+            if (!results[0])
+            {
+                _statusVM.Show("Retrying card database download...", true);
+                bool retryCardDb = await DownloadResourceAsync(cardDbUrl, dbPath, "Card Database", true, _statusVM);
+                if (!retryCardDb)
+                {
+                    Debug.WriteLine("Card database re-download failed.");
+                    return;
+                }
+            }
 
-            //if (!results[1])
-            //{
-            //    _statusVM.Show("Retrying card prices download...", false);
-            //    bool retryPrices = await DownloadResourceAsync(pricesUrl, pricesPath, "Card Prices", false, _statusVM);
-            //    if (!retryPrices)
-            //    {
-            //        Debug.WriteLine("Prices re-download failed.");
-            //        return;
-            //    }
-            //}
+            if (!results[1])
+            {
+                _statusVM.Show("Retrying card prices download...", false);
+                bool retryPrices = await DownloadResourceAsync(pricesUrl, pricesPath, "Card Prices", false, _statusVM);
+                if (!retryPrices)
+                {
+                    Debug.WriteLine("Prices re-download failed.");
+                    return;
+                }
+            }
 
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
@@ -93,7 +94,7 @@ namespace CollectaMundo.ApplicationServices
                 try
                 {
                     //File.Delete(pricesPath);
-                    //Debug.WriteLine($"Temp price file deleted");
+
                 }
                 catch (IOException ex)
                 {

@@ -1,8 +1,8 @@
 ﻿using System.Data.SQLite;
 
-namespace CollectaMundo.ApplicationServices
+namespace CollectaMundo.ApplicationServices.CardPrices
 {
-    public interface ICardPriceImporter
+    public interface ICardPriceService
     {
         Task ImportPricesFromJsonAsync(string jsonPath, SQLiteConnection conn);
     }

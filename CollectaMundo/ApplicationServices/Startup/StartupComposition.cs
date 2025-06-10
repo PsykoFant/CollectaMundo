@@ -1,5 +1,7 @@
-﻿using CollectaMundo.ApplicationServices.GenerateMissingPng;
+﻿using CollectaMundo.ApplicationServices.CardPrices;
+using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.Data;
+using CollectaMundo.Data.CardPrices;
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ScryfallLookups;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
@@ -16,7 +18,7 @@ namespace CollectaMundo.ApplicationServices.Startup
             var scryfallLookups = new ScryfallLookups();
             var schemaInitializer = new DatabaseSchemaInitializer();
             var cardPriceRepo = new CardPriceRepository();
-            var priceImporter = new CardPriceImporter(settings, dbFactory, cardPriceRepo);
+            var priceImporter = new CardPriceService(settings, dbFactory, cardPriceRepo);
             var missingPngRepo = new GenerateMissingPngRepository();
             var missingPngLogic = new GenerateMissingPngLogic();
             var missingPngService = new GenerateMissingPngService(missingPngRepo, scryfallLookups, missingPngLogic);

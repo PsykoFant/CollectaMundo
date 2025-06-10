@@ -1,15 +1,16 @@
-﻿using CollectaMundo.Data;
+﻿using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
+using System.Data.SQLite;
 
 namespace CollectaMundo.DomainLogic.EditCollection
 {
     public class EditCollectionLogic(IEditCollectionRepository repo) : IEditCollectionLogic
     {
         private readonly IEditCollectionRepository _repo = repo;
-        public async Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit)
+        public async Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit, SQLiteConnection connection)
         {
-            var clone = await CloneWithMetadataHelperAsync(selectedCard);
+            var clone = await CloneWithMetadataHelperAsync(selectedCard, connection);
 
             if (isEdit)
             {
@@ -34,9 +35,9 @@ namespace CollectaMundo.DomainLogic.EditCollection
 
             return clone;
         }
-        public async Task<CardSet> PrepareNewCardWithDefaultsAsync(CardSet selectedCard)
+        public async Task<CardSet> PrepareNewCardWithDefaultsAsync(CardSet selectedCard, SQLiteConnection connection)
         {
-            var clone = await CloneWithMetadataHelperAsync(selectedCard);
+            var clone = await CloneWithMetadataHelperAsync(selectedCard, connection);
 
             // always brand‐new
             clone.CardId = null;
@@ -57,14 +58,16 @@ namespace CollectaMundo.DomainLogic.EditCollection
 
             return clone;
         }
-        private async Task<CardSet> CloneWithMetadataHelperAsync(CardSet src)
+        private async Task<CardSet> CloneWithMetadataHelperAsync(CardSet src, SQLiteConnection connection)
         {
             if (src.Uuid == null)
+            {
                 throw new ArgumentException("UUID cannot be null", nameof(src));
+            }
 
             // fetch just once
-            var finishes = await _repo.FetchFinishesForCardAsync(src.Uuid);
-            var languages = await _repo.FetchLanguagesForCardAsync(src.Uuid);
+            var finishes = await _repo.FetchFinishesForCardAsync(src.Uuid, connection);
+            var languages = await _repo.FetchLanguagesForCardAsync(src.Uuid, connection);
 
             // shallow‐clone of every “view” field
             var c = new CardSet
@@ -101,31 +104,31 @@ namespace CollectaMundo.DomainLogic.EditCollection
         }
 
         // Save a card and return the changes to viewmodel
-        public async Task<IReadOnlyList<CardChangeEventArgs>> SaveBatchAsync(IEnumerable<CardSet> cards, bool isEdit)
+        public async Task<IReadOnlyList<CardChangeEventArgs>> SaveBatchAsync(IEnumerable<CardSet> cards, bool isEdit, SQLiteConnection connection)
         {
             // explicitly tell the compiler what delegate type we're using
             Func<CardSet, Task<CardChangeEventArgs>> persister = isEdit
-                ? PersistEditedCardsAndReturnChangesAsync
-                : PersistAddedCardsAndReturnChangesAsync;
+                ? (card) => PersistEditedCardsAndReturnChangesAsync(card, connection)
+                : (card) => PersistAddedCardsAndReturnChangesAsync(card, connection);
 
             // now Task.WhenAll can infer correctly
-            var results = await Task.WhenAll(cards.Select(r => persister(r)));
+            var results = await Task.WhenAll(cards.Select(card => persister(card)));
             return results;
         }
-        private async Task<CardChangeEventArgs> PersistAddedCardsAndReturnChangesAsync(CardSet card)
+        private async Task<CardChangeEventArgs> PersistAddedCardsAndReturnChangesAsync(CardSet card, SQLiteConnection connection)
         {
             // Do we already have a db row?
-            var existingId = await _repo.FindExistingCardReturnIdAsync(card);
+            var existingId = await _repo.FindExistingCardReturnIdAsync(card, connection);
             if (existingId.HasValue)
             {
                 // update counts in db
                 card.CardId = existingId.Value;
-                await _repo.UpdateCardCountsAsync(card);
+                await _repo.UpdateCardCountsAsync(card, connection);
 
                 // Get new totals
                 int sumOwned;
                 int sumTrade;
-                (sumOwned, sumTrade) = await _repo.GetTotalsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!);
+                (sumOwned, sumTrade) = await _repo.GetTotalsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, connection);
 
                 card.CardsOwned = sumOwned;
                 card.CardsForTrade = sumTrade;
@@ -133,17 +136,17 @@ namespace CollectaMundo.DomainLogic.EditCollection
             else
             {
                 // Insert and grab the new PK in one shot
-                card.CardId = await _repo.AddCardAndReturnIdAsync(card);
+                card.CardId = await _repo.AddCardAndReturnIdAsync(card, connection);
             }
             return new CardChangeEventArgs(card, []);
         }
-        private async Task<CardChangeEventArgs> PersistEditedCardsAndReturnChangesAsync(CardSet card)
+        private async Task<CardChangeEventArgs> PersistEditedCardsAndReturnChangesAsync(CardSet card, SQLiteConnection connection)
         {
             // 1) Deletion-by-zero?
             if (card.CardsOwned == 0)
             {
                 // delete in DB
-                await _repo.DeleteCardByIdAsync(card);
+                await _repo.DeleteCardByIdAsync(card, connection);
 
                 // make sure we have an ID
                 var deletedId = card.CardId
@@ -159,10 +162,10 @@ namespace CollectaMundo.DomainLogic.EditCollection
 
             int[] removedIds = [];
 
-            await _repo.UpdateCardAsync(card);
+            await _repo.UpdateCardAsync(card, connection);
 
             // Now we check for duplicate values for a merge scenario
-            var allIds = await _repo.FindRecordByIdAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!);
+            var allIds = await _repo.FindRecordByIdAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, connection);
 
             if (allIds.Count > 1)
             {
@@ -172,10 +175,10 @@ namespace CollectaMundo.DomainLogic.EditCollection
                 removedIds = [.. allIds.Skip(1)];
 
                 // get the total sums in one shot
-                (sumOwned, sumTrade) = await _repo.GetTotalsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!);
+                (sumOwned, sumTrade) = await _repo.GetTotalsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, connection);
 
                 // merge in DB
-                await _repo.MergeDuplicateRecordsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, keepId);
+                await _repo.MergeDuplicateRecordsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, keepId, connection);
 
                 // Build the final in‐memory survivor
                 card.CardsOwned = sumOwned;

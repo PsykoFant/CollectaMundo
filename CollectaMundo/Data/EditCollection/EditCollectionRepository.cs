@@ -2,15 +2,13 @@
 using System.Data.SQLite;
 using System.Diagnostics;
 
-namespace CollectaMundo.Data
+namespace CollectaMundo.Data.EditCollection
 {
-    public class EditCollectionRepository(SQLiteConnection connection) : IEditCollectionRepository
+    public class EditCollectionRepository() : IEditCollectionRepository
     {
 
-        private readonly SQLiteConnection _connection = connection;
-
         // Lookups
-        public async Task<List<string>> FetchLanguagesForCardAsync(string uuid)
+        public async Task<List<string>> FetchLanguagesForCardAsync(string uuid, SQLiteConnection conn)
         {
             if (string.IsNullOrEmpty(uuid))
             {
@@ -26,7 +24,7 @@ namespace CollectaMundo.Data
                 SELECT language FROM tokens WHERE uuid = @uuid";
             try
             {
-                using var command = new SQLiteCommand(query, _connection);
+                using var command = new SQLiteCommand(query, conn);
                 command.Parameters.AddWithValue("@uuid", uuid);
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
@@ -46,7 +44,7 @@ namespace CollectaMundo.Data
 
             return languages;
         }
-        public async Task<List<string>> FetchFinishesForCardAsync(string uuid)
+        public async Task<List<string>> FetchFinishesForCardAsync(string uuid, SQLiteConnection conn)
         {
 
 
@@ -57,7 +55,7 @@ namespace CollectaMundo.Data
                 SELECT finishes FROM tokens WHERE uuid = @uuid";
             try
             {
-                using var command = new SQLiteCommand(query, _connection);
+                using var command = new SQLiteCommand(query, conn);
                 command.Parameters.AddWithValue("@uuid", uuid);
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
@@ -84,7 +82,7 @@ namespace CollectaMundo.Data
 
             return finishes;
         }
-        public async Task<int?> FindExistingCardReturnIdAsync(CardSet card)
+        public async Task<int?> FindExistingCardReturnIdAsync(CardSet card, SQLiteConnection conn)
         {
 
             string selectSql = @"
@@ -97,7 +95,7 @@ namespace CollectaMundo.Data
             {
 
 
-                using var selectCommand = new SQLiteCommand(selectSql, _connection);
+                using var selectCommand = new SQLiteCommand(selectSql, conn);
                 selectCommand.Parameters.AddWithValue("@uuid", card.Uuid);
                 selectCommand.Parameters.AddWithValue("@condition", card.SelectedCondition);
                 selectCommand.Parameters.AddWithValue("@language", card.Language);
@@ -116,7 +114,7 @@ namespace CollectaMundo.Data
             }
             return null;
         }
-        public async Task<List<int>> FindRecordByIdAsync(string uuid, string condition, string language, string finish)
+        public async Task<List<int>> FindRecordByIdAsync(string uuid, string condition, string language, string finish, SQLiteConnection conn)
         {
             const string sql = @"
                 SELECT id
@@ -130,7 +128,7 @@ namespace CollectaMundo.Data
             var ids = new List<int>();
             try
             {
-                using var cmd = new SQLiteCommand(sql, _connection);
+                using var cmd = new SQLiteCommand(sql, conn);
                 cmd.Parameters.AddWithValue("@uuid", uuid);
                 cmd.Parameters.AddWithValue("@cond", condition);
                 cmd.Parameters.AddWithValue("@lang", language);
@@ -149,7 +147,7 @@ namespace CollectaMundo.Data
             }
             return ids;
         }
-        public async Task<(int TotalOwned, int TotalTrade)> GetTotalsAsync(string uuid, string condition, string language, string finish)
+        public async Task<(int TotalOwned, int TotalTrade)> GetTotalsAsync(string uuid, string condition, string language, string finish, SQLiteConnection conn)
         {
             const string sql = @"
                 SELECT 
@@ -162,7 +160,7 @@ namespace CollectaMundo.Data
                   AND finish    = @fin;
             ";
 
-            using var cmd = new SQLiteCommand(sql, _connection);
+            using var cmd = new SQLiteCommand(sql, conn);
             cmd.Parameters.AddWithValue("@uuid", uuid);
             cmd.Parameters.AddWithValue("@cond", condition);
             cmd.Parameters.AddWithValue("@lang", language);
@@ -180,7 +178,7 @@ namespace CollectaMundo.Data
         }
 
         // CRUD
-        public async Task<int> AddCardAndReturnIdAsync(CardSet card)
+        public async Task<int> AddCardAndReturnIdAsync(CardSet card, SQLiteConnection conn)
         {
             const string insertSql = @"
                 INSERT INTO myCollection (uuid, cardsOwned, cardsForTrade, condition, language, finish)
@@ -191,7 +189,7 @@ namespace CollectaMundo.Data
 
 
                 // 1) Perform the insert
-                using var insertCmd = new SQLiteCommand(insertSql, _connection);
+                using var insertCmd = new SQLiteCommand(insertSql, conn);
                 insertCmd.Parameters.AddWithValue("@uuid", card.Uuid);
                 insertCmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
                 insertCmd.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
@@ -204,7 +202,7 @@ namespace CollectaMundo.Data
 
 
                 // 2) Retrieve the newly-generated rowid
-                using var idCmd = new SQLiteCommand("SELECT last_insert_rowid()", _connection);
+                using var idCmd = new SQLiteCommand("SELECT last_insert_rowid()", conn);
                 var result = await idCmd.ExecuteScalarAsync();
                 return Convert.ToInt32(result);
             }
@@ -214,7 +212,7 @@ namespace CollectaMundo.Data
                 throw;
             }
         }
-        public async Task UpdateCardAsync(CardSet card)
+        public async Task UpdateCardAsync(CardSet card, SQLiteConnection conn)
         {
 
             string updateSql = @"
@@ -228,7 +226,7 @@ namespace CollectaMundo.Data
                 WHERE id = @cardId";
             try
             {
-                using var cmd = new SQLiteCommand(updateSql, _connection);
+                using var cmd = new SQLiteCommand(updateSql, conn);
                 cmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
                 cmd.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
                 cmd.Parameters.AddWithValue("@condition", card.SelectedCondition);
@@ -244,7 +242,7 @@ namespace CollectaMundo.Data
                 throw;
             }
         }
-        public async Task UpdateCardCountsAsync(CardSet card)
+        public async Task UpdateCardCountsAsync(CardSet card, SQLiteConnection conn)
         {
             // We treat card.CardsOwned and card.CardsForTrade as the *increment* amounts.
             string updateSql = @"
@@ -255,7 +253,7 @@ namespace CollectaMundo.Data
                 WHERE id = @cardId";
             try
             {
-                using var cmd = new SQLiteCommand(updateSql, _connection);
+                using var cmd = new SQLiteCommand(updateSql, conn);
                 cmd.Parameters.AddWithValue("@addCount", card.CardsOwned);
                 cmd.Parameters.AddWithValue("@addTrade", card.CardsForTrade);
                 cmd.Parameters.AddWithValue("@cardId", card.CardId);
@@ -268,12 +266,12 @@ namespace CollectaMundo.Data
                 throw;
             }
         }
-        public async Task DeleteCardByIdAsync(CardSet card)
+        public async Task DeleteCardByIdAsync(CardSet card, SQLiteConnection conn)
         {
             string deleteSql = "DELETE FROM myCollection WHERE id = @id";
             try
             {
-                using var deleteCommand = new SQLiteCommand(deleteSql, _connection);
+                using var deleteCommand = new SQLiteCommand(deleteSql, conn);
                 deleteCommand.Parameters.AddWithValue("@id", card.CardId);
                 await deleteCommand.ExecuteNonQueryAsync();
             }
@@ -283,7 +281,7 @@ namespace CollectaMundo.Data
                 throw;
             }
         }
-        public async Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId)
+        public async Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId, SQLiteConnection conn)
         {
             const string updateSql = @"
                     UPDATE myCollection
@@ -302,10 +300,10 @@ namespace CollectaMundo.Data
             try
             {
                 // 1) Compute the new totals via your helper
-                var (totalOwned, totalTrade) = await GetTotalsAsync(uuid, condition, language, finish);
+                var (totalOwned, totalTrade) = await GetTotalsAsync(uuid, condition, language, finish, conn);
 
                 // 2) Update the survivor row
-                using (var upd = new SQLiteCommand(updateSql, _connection))
+                using (var upd = new SQLiteCommand(updateSql, conn))
                 {
                     upd.Parameters.AddWithValue("@sumOwned", totalOwned);
                     upd.Parameters.AddWithValue("@sumTrade", totalTrade);
@@ -314,7 +312,7 @@ namespace CollectaMundo.Data
                 }
 
                 // 3) Delete the duplicates
-                using (var del = new SQLiteCommand(deleteSql, _connection))
+                using (var del = new SQLiteCommand(deleteSql, conn))
                 {
                     del.Parameters.AddWithValue("@uuid", uuid);
                     del.Parameters.AddWithValue("@cond", condition);

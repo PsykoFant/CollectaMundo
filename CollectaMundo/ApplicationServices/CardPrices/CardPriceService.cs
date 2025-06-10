@@ -1,13 +1,14 @@
 ﻿using CollectaMundo.Data;
-using CollectaMundo.DomainLogic;
+using CollectaMundo.Data.CardPrices;
+using CollectaMundo.DomainLogic.CardPrices;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 
-namespace CollectaMundo.ApplicationServices
+namespace CollectaMundo.ApplicationServices.CardPrices
 {
-    public class CardPriceImporter(IAppSettings appSettings, IDbConnectionFactory dbFactory, ICardPriceRepository cardPriceRepository) : ICardPriceImporter
+    public class CardPriceService(IAppSettings appSettings, IDbConnectionFactory dbFactory, ICardPriceRepository cardPriceRepository) : ICardPriceService
     {
         private readonly IAppSettings _appSettings = appSettings;
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
@@ -20,7 +21,6 @@ namespace CollectaMundo.ApplicationServices
                 Debug.WriteLine($"[PriceImporter] Price file not found: {jsonPath}");
                 return;
             }
-
             try
             {
                 using var stream = File.OpenRead(jsonPath);
@@ -29,37 +29,27 @@ namespace CollectaMundo.ApplicationServices
 
                 string retailer = _appSettings.PriceInfo.Retailer;
 
-                var normalPrices = CardPriceJsonParser.ParsePriceList(pricesRoot, $"{retailer}Normal");
-                var foilPrices = CardPriceJsonParser.ParsePriceList(pricesRoot, $"{retailer}Foil");
-                var etchedPrices = CardPriceJsonParser.ParsePriceList(pricesRoot, $"{retailer}Etched");
 
-                Debug.WriteLine($"[PriceImporter] Parsed {normalPrices.Count} normal, {foilPrices.Count} foil, {etchedPrices.Count} etched prices.");
+                var normalTask = Task.Run(() => CardPriceJsonParser.ParsePriceList(pricesRoot, "paper", retailer, "normal"));
+                var foilTask = Task.Run(() => CardPriceJsonParser.ParsePriceList(pricesRoot, "paper", retailer, "foil"));
+                var etchedTask = Task.Run(() => CardPriceJsonParser.ParsePriceList(pricesRoot, "paper", retailer, "etched"));
+
+                await Task.WhenAll(normalTask, foilTask, etchedTask);
+
+                var normalPrices = normalTask.Result;
+                var foilPrices = foilTask.Result;
+                var etchedPrices = etchedTask.Result;
 
                 await _cardPriceRepository.InsertPricesInBatchesAsync(conn, $"{retailer}Normal", normalPrices);
                 await _cardPriceRepository.InsertPricesInBatchesAsync(conn, $"{retailer}Foil", foilPrices);
                 await _cardPriceRepository.InsertPricesInBatchesAsync(conn, $"{retailer}Etched", etchedPrices);
 
-                Debug.WriteLine("[PriceImporter] Price import completed.");
+                _appSettings.UpdatePriceInfo(DateTime.UtcNow.ToString("yyyy-MM-dd"), retailer);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[PriceImporter] Error importing prices: {ex.Message}");
             }
-        }
-
-
-        private static async Task UpdatePriceColumnAsync(SQLiteConnection conn, string tableName, string columnName, string uuid, decimal price)
-        {
-            string query = $@"
-                INSERT INTO {tableName} (uuid, {columnName})
-                VALUES (@uuid, @price)
-                ON CONFLICT(uuid) DO UPDATE SET {columnName} = excluded.{columnName};";
-
-            using var cmd = new SQLiteCommand(query, conn);
-            cmd.Parameters.AddWithValue("@uuid", uuid);
-            cmd.Parameters.AddWithValue("@price", price);
-
-            await cmd.ExecuteNonQueryAsync();
         }
     }
 }

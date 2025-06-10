@@ -1,6 +1,6 @@
 ﻿using System.Data.SQLite;
 
-namespace CollectaMundo.Data
+namespace CollectaMundo.Data.CardPrices
 {
     public interface ICardPriceRepository
     {

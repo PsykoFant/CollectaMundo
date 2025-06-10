@@ -1,9 +1,8 @@
-﻿using CollectaMundo.Data;
+﻿using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using System.Collections.ObjectModel;
-using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.EditCollection
 {
@@ -22,8 +21,8 @@ namespace CollectaMundo.ApplicationServices.EditCollection
             await _uow.BeginAsync();
             try
             {
-                var domainLogic = CreateLogic(_uow.CurrentConnection);
-                newItem = await domainLogic.PrepareCardForListAsync(selectedCard, isEdit);
+                var domainLogic = CreateLogic();
+                newItem = await domainLogic.PrepareCardForListAsync(selectedCard, isEdit, _uow.CurrentConnection);
 
                 // Commit if everything succeeded
                 await _uow.CommitAsync();
@@ -78,15 +77,15 @@ namespace CollectaMundo.ApplicationServices.EditCollection
             {
                 // Prepare each raw into a fully‐populated CardSet
                 var prepared = new List<CardSet>();
-                var domainLogic = CreateLogic(_uow.CurrentConnection);
+                var domainLogic = CreateLogic();
 
                 foreach (var raw in cards)
                 {
-                    prepared.Add(await domainLogic.PrepareNewCardWithDefaultsAsync(raw));
+                    prepared.Add(await domainLogic.PrepareNewCardWithDefaultsAsync(raw, _uow.CurrentConnection));
                 }
 
                 // Hand off to your pure domain‐logic batch (no further UoW calls inside)
-                var changes = await domainLogic.SaveBatchAsync(prepared, isEdit);
+                var changes = await domainLogic.SaveBatchAsync(prepared, isEdit, _uow.CurrentConnection);
 
                 // Commit on success
                 await _uow.CommitAsync();
@@ -115,8 +114,8 @@ namespace CollectaMundo.ApplicationServices.EditCollection
 
             try
             {
-                var domainLogic = CreateLogic(_uow.CurrentConnection);
-                var results = await domainLogic.SaveBatchAsync(cards, isEdit);
+                var domainLogic = CreateLogic();
+                var results = await domainLogic.SaveBatchAsync(cards, isEdit, _uow.CurrentConnection);
 
                 await _uow.CommitAsync();
                 return [.. results];
@@ -135,9 +134,9 @@ namespace CollectaMundo.ApplicationServices.EditCollection
         }
 
         // Helper to create the EditCollectionLogic with a connection from the UoW
-        private static EditCollectionLogic CreateLogic(SQLiteConnection conn)
+        private static EditCollectionLogic CreateLogic()
         {
-            var repo = new EditCollectionRepository(conn);
+            var repo = new EditCollectionRepository();
             return new EditCollectionLogic(repo);
         }
     }

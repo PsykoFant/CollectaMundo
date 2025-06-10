@@ -1,12 +1,13 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
+using System.Data.SQLite;
 
 namespace CollectaMundo.DomainLogic.EditCollection
 {
     public interface IEditCollectionLogic
     {
-        Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit);
-        Task<CardSet> PrepareNewCardWithDefaultsAsync(CardSet selectedCard);
-        Task<IReadOnlyList<CardChangeEventArgs>> SaveBatchAsync(IEnumerable<CardSet> raws, bool isEdit);
+        Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit, SQLiteConnection connection);
+        Task<CardSet> PrepareNewCardWithDefaultsAsync(CardSet selectedCard, SQLiteConnection connection);
+        Task<IReadOnlyList<CardChangeEventArgs>> SaveBatchAsync(IEnumerable<CardSet> raws, bool isEdit, SQLiteConnection connection);
     }
 }

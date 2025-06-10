@@ -67,7 +67,6 @@ namespace CollectaMundo.ApplicationServices
                 MessageBox.Show($"Error creating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
         public void UpdatePriceInfo(string? updatedDate, string? retailer)
         {
             try

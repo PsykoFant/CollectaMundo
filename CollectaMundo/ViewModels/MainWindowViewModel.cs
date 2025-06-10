@@ -4,11 +4,11 @@ using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.Data;
+using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Data.SQLite;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
@@ -142,7 +142,7 @@ namespace CollectaMundo.ViewModels
             ColorIcons = new CardViewModel();
 
             // Edit collection stack
-            var editRepo = new EditCollectionRepository(new SQLiteConnection());
+            var editRepo = new EditCollectionRepository();
             var editUow = new UnitOfWork(_dbFactory);
             var editService = new EditCollectionService(editUow);
             AddCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);
