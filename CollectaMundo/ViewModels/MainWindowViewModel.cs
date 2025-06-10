@@ -156,7 +156,7 @@ namespace CollectaMundo.ViewModels
             FilterVM = new FilterViewModel(_filteringService);
             FilterVM.FilterChanged += OnFilterChanged;
 
-            HookUpStatusChanged();
+            MiniLogoVisibilityFlipper();
 
             ShowSearchAndFilterCommand = new RelayCommand<object>(_ => { CurrentPage = Page.SearchAndFilter; });
             ShowMyCollectionCommand = new RelayCommand<object>(_ => { CurrentPage = Page.MyCollection; });
@@ -246,7 +246,7 @@ namespace CollectaMundo.ViewModels
             AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
         }
 
-        private void HookUpStatusChanged()
+        private void MiniLogoVisibilityFlipper()
         {
             AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
             EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
