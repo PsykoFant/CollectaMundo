@@ -68,7 +68,7 @@ namespace CollectaMundo.ApplicationServices
             }
         }
 
-        public static void UpdatePriceInfo(string? updatedDate, string? retailer)
+        public void UpdatePriceInfo(string? updatedDate, string? retailer)
         {
             try
             {

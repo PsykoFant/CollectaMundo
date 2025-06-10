@@ -5,6 +5,7 @@
         DatabaseSettings DatabaseSettings { get; }
         ConnectionStrings ConnectionStrings { get; }
         PriceInfo PriceInfo { get; }
+        void UpdatePriceInfo(string? updatedDate, string? retailer);
     }
 
 }

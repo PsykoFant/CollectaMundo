@@ -7,28 +7,49 @@ using System.Net.Http;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class CardDatabasePreparationService(IAppSettings settings, IDbConnectionFactory dbFactory, IDatabaseSchemaInitializer schemaInitializer, IGenerateMissingPngService missingPngService, StatusViewModel statusVM) : ICardDatabasePreparationService
+    public class CardDatabasePreparationService(IAppSettings settings, IDbConnectionFactory dbFactory, IDatabaseSchemaInitializer schemaInitializer, ICardPriceImporter priceImporter, IGenerateMissingPngService missingPngService, StatusViewModel statusVM) : ICardDatabasePreparationService
     {
         private readonly IAppSettings _settings = settings;
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly IDatabaseSchemaInitializer _schemaInitializer = schemaInitializer;
+        private readonly ICardPriceImporter _priceImporter = priceImporter ?? throw new ArgumentNullException(nameof(priceImporter));
         private readonly IGenerateMissingPngService _missingPngService = missingPngService;
         private readonly StatusViewModel _statusVM = statusVM ?? throw new ArgumentNullException(nameof(statusVM));
         public async Task FirstTimeDbSetup()
         {
-            string CardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
-            string PricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
-
-            string path = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
+            string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
+            string pricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
 
             string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
-            string PriceDownloadPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "prices.json");
+            string pricesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "prices.json");
 
-            bool success = await DownloadResourceAsync(url, dbPath, "Card Database", true, _statusVM);
-            if (!success)
-            {
-                return;
-            }
+            //var downloadCardDbTask = DownloadResourceAsync(cardDbUrl, dbPath, "Card Database", true, _statusVM);
+            //var downloadPricesTask = DownloadResourceAsync(pricesUrl, pricesPath, "Card Prices", false, _statusVM);
+
+            //bool[] results = await Task.WhenAll(downloadCardDbTask, downloadPricesTask);
+
+            //// Retry if needed
+            //if (!results[0])
+            //{
+            //    _statusVM.Show("Retrying card database download...", true);
+            //    bool retryCardDb = await DownloadResourceAsync(cardDbUrl, dbPath, "Card Database", true, _statusVM);
+            //    if (!retryCardDb)
+            //    {
+            //        Debug.WriteLine("Card database re-download failed.");
+            //        return;
+            //    }
+            //}
+
+            //if (!results[1])
+            //{
+            //    _statusVM.Show("Retrying card prices download...", false);
+            //    bool retryPrices = await DownloadResourceAsync(pricesUrl, pricesPath, "Card Prices", false, _statusVM);
+            //    if (!retryPrices)
+            //    {
+            //        Debug.WriteLine("Prices re-download failed.");
+            //        return;
+            //    }
+            //}
 
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
@@ -45,23 +66,39 @@ namespace CollectaMundo.ApplicationServices
                 statusVM.StatusMessage = "Generating keyrune images...";
                 await _missingPngService.GenerateMissingKeyRuneImagesAsync(uow.CurrentConnection, _statusVM);
 
+                // 3. Import card prices
+                await _priceImporter.ImportPricesFromJsonAsync(pricesPath, uow.CurrentConnection);
+                statusVM.StatusMessage = "Importing card prices...";
+
                 statusVM.StatusMessage = "Wrapping up first-time setup...";
-                // 3. Create views
+                // 4. Create views
                 await _schemaInitializer.CreateViewsAsync(uow.CurrentConnection, "cardmarket");
 
-                // 4. Create indices
+                // 5. Create indices
                 await _schemaInitializer.CreateIndicesAsync(uow.CurrentConnection);
 
-                // 5. Optimize database
-                await _schemaInitializer.OptimizeAsync(uow.CurrentConnection);
-
                 await uow.CommitAsync();
+
+                // 6. Optimize database
+                await _schemaInitializer.OptimizeAsync(uow.CurrentConnection);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[FirstTimeDbSetup] Error: {ex.Message}");
                 await uow.RollbackAsync();
                 throw;
+            }
+            finally
+            {
+                try
+                {
+                    //File.Delete(pricesPath);
+                    //Debug.WriteLine($"Temp price file deleted");
+                }
+                catch (IOException ex)
+                {
+                    Debug.WriteLine($"Failed to delete temp prices file: {ex.Message}");
+                }
             }
         }
         public Task UpdateDb()

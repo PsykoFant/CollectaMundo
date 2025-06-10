@@ -15,11 +15,13 @@ namespace CollectaMundo.ApplicationServices.Startup
             var dbFactory = new DbConnectionFactory(settings);
             var scryfallLookups = new ScryfallLookups();
             var schemaInitializer = new DatabaseSchemaInitializer();
+            var cardPriceRepo = new CardPriceRepository();
+            var priceImporter = new CardPriceImporter(settings, dbFactory, cardPriceRepo);
             var missingPngRepo = new GenerateMissingPngRepository();
             var missingPngLogic = new GenerateMissingPngLogic();
             var missingPngService = new GenerateMissingPngService(missingPngRepo, scryfallLookups, missingPngLogic);
 
-            var prepService = new CardDatabasePreparationService(settings, dbFactory, schemaInitializer, missingPngService, statusVM);
+            var prepService = new CardDatabasePreparationService(settings, dbFactory, schemaInitializer, priceImporter, missingPngService, statusVM);
             var integrityService = new DatabaseIntegrityService();
 
             return new StartupService(integrityService, prepService, closeStatusWindow, statusVM);
