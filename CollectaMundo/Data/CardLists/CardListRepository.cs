@@ -3,13 +3,12 @@ using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
 
-namespace CollectaMundo.Data
+namespace CollectaMundo.Data.CardLists
 {
-    public class CardListRepository(SQLiteConnection connection) : ICardListRepository
+    public class CardListRepository() : ICardListRepository
     {
-        private readonly SQLiteConnection _connection = connection;
-
-        public Task<IReadOnlyList<CardSet>> QueryAsync(string sql, Func<DbDataReader, CardSet> map) => MapAsync(new SQLiteCommand(sql, _connection), map);
+        public Task<IReadOnlyList<CardSet>> QueryAsync(string sql, SQLiteConnection conn, Func<DbDataReader, CardSet> map)
+            => MapAsync(new SQLiteCommand(sql, conn), map);
 
         private static async Task<IReadOnlyList<CardSet>> MapAsync(SQLiteCommand cmd, Func<DbDataReader, CardSet> mapRow)
         {
@@ -31,5 +30,6 @@ namespace CollectaMundo.Data
                 return [];
             }
         }
+
     }
 }

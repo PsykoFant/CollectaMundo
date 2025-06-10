@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.Data;
+using CollectaMundo.Data.CardLists;
 using CollectaMundo.ViewModels;
 
 namespace CollectaMundo.ApplicationServices.CardLists
@@ -12,13 +13,13 @@ namespace CollectaMundo.ApplicationServices.CardLists
             await _uow.BeginAsync();
             try
             {
-                var repo = new CardListRepository(_uow.CurrentConnection);
-                var tasks = specs.Select(s => repo.QueryAsync(s.spec.Sql, s.spec.Mapper)).ToArray();
+                var repo = new CardListRepository();
+                var tasks = specs.Select(s => repo.QueryAsync(s.spec.Sql, _uow.CurrentConnection, s.spec.Mapper)).ToArray();
                 var results = await Task.WhenAll(tasks);
 
                 for (int i = 0; i < specs.Count; i++)
                 {
-                    specs[i].target.Cards = results[i].ToList();
+                    specs[i].target.Cards = [.. results[i]];
                 }
             }
             finally

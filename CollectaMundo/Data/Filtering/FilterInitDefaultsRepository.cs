@@ -6,10 +6,9 @@ using System.Diagnostics;
 
 namespace CollectaMundo.Data
 {
-    public class FilterInitDefaultsRepository(SQLiteConnection connection) : IFilterInitDefaultsRepository
+    public class FilterInitDefaultsRepository() : IFilterInitDefaultsRepository
     {
-        private readonly SQLiteConnection _connection = connection;
-        public async Task<List<FilterDefaults>> GetFilterDefaultsAsync()
+        public async Task<List<FilterDefaults>> GetFilterDefaultsAsync(SQLiteConnection connection)
         {
             var filterDefaultsList = new List<FilterDefaults>();
 
@@ -56,7 +55,7 @@ namespace CollectaMundo.Data
 
                     try
                     {
-                        using SQLiteCommand command = new(query, _connection);
+                        using SQLiteCommand command = new(query, connection);
                         using DbDataReader reader = await command.ExecuteReaderAsync();
                         while (await reader.ReadAsync())
                         {

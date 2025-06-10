@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.Data;
+using CollectaMundo.Data.CardLists;
 using CollectaMundo.ViewModels;
 
 namespace CollectaMundo.ApplicationServices.Startup
@@ -9,21 +10,22 @@ namespace CollectaMundo.ApplicationServices.Startup
         {
             await using var uow = new UnitOfWork(factory);
             await uow.BeginAsync();
+            var conn = uow.CurrentConnection;
 
-            var repo = new CardListRepository(uow.CurrentConnection);
-            var filterRepo = new FilterInitDefaultsRepository(uow.CurrentConnection);
+            var cardlistRepo = new CardListRepository();
+            var filterRepo = new FilterInitDefaultsRepository();
 
             var cardTasks = cardSpecs
-                .Select(s => repo.QueryAsync(s.Item2.Sql, s.Item2.Mapper))
+                .Select(s => cardlistRepo.QueryAsync(s.Item2.Sql, conn, s.Item2.Mapper))
                 .ToArray();
 
             var cardsResults = await Task.WhenAll(cardTasks);
             for (int i = 0; i < cardSpecs.Count; i++)
             {
-                cardSpecs[i].Item1.Cards = cardsResults[i].ToList();
+                cardSpecs[i].Item1.Cards = [.. cardsResults[i]];
             }
 
-            var filterDefaults = await filterRepo.GetFilterDefaultsAsync();
+            var filterDefaults = await filterRepo.GetFilterDefaultsAsync(conn);
             filters.Clear();
             foreach (var def in filterDefaults)
             {

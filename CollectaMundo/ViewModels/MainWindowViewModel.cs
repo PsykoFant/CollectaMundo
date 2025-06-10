@@ -176,14 +176,13 @@ namespace CollectaMundo.ViewModels
         {
             var init = new MainWindowInitializer(_dbFactory);
             await init.InitializeAsync(
-                new List<(CardViewModel, CardListQuerySpec)>
-                {
+                [
                     (AllCardsVM, CardListQueryCatalog.AllCards),
                     (MyCollectionVM, CardListQueryCatalog.MyCollection),
                     (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
                     (AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
                     (ColorIcons, CardListQueryCatalog.ColorIcons)
-                },
+                ],
                 FilterVM.Filters, FilterVM
             );
 

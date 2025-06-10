@@ -12,8 +12,8 @@ namespace CollectaMundo.ApplicationServices.Filtering
             try
             {
 
-                var repo = new FilterInitDefaultsRepository(_uow.CurrentConnection);
-                var defaults = await repo.GetFilterDefaultsAsync();
+                var repo = new FilterInitDefaultsRepository();
+                var defaults = await repo.GetFilterDefaultsAsync(_uow.CurrentConnection);
 
                 target.Clear(); // reset if needed
                 foreach (var def in defaults)
