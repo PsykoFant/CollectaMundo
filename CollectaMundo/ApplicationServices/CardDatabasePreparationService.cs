@@ -30,6 +30,8 @@ namespace CollectaMundo.ApplicationServices
 
         public async Task FirstTimeDbSetup()
         {
+            _statusVM.Show("Getting ready!", false, "Performing first-time setup of card database - please wait ...");
+
             string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
             string pricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
 
@@ -44,7 +46,7 @@ namespace CollectaMundo.ApplicationServices
             // Retry if needed
             if (!results[0])
             {
-                _statusVM.Show("Retrying card database download...", true);
+                _statusVM.Show("Retrying card database download...", true, "Performing first-time setup of card database - please wait ...");
                 bool retryCardDb = await DownloadResourceAsync(cardDbUrl, dbPath, "Card Database", true, _statusVM);
                 if (!retryCardDb)
                 {
@@ -55,8 +57,8 @@ namespace CollectaMundo.ApplicationServices
 
             if (!results[1])
             {
-                _statusVM.Show("Retrying card prices download...", false);
-                bool retryPrices = await DownloadResourceAsync(pricesUrl, pricesPath, "Card Prices", false, _statusVM);
+                _statusVM.Show("Retrying card prices download...", true, "Performing first-time setup of card database - please wait ...");
+                bool retryPrices = await DownloadResourceAsync(pricesUrl, pricesPath, "Card Prices", true, _statusVM);
                 if (!retryPrices)
                 {
                     Debug.WriteLine("Prices re-download failed.");
