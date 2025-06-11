@@ -109,7 +109,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 foreach (var cost in missingCosts)
                 {
                     string[] symbols = cost.Trim('{', '}')
-                        .Split(new[] { "}{" }, StringSplitOptions.RemoveEmptyEntries);
+                        .Split(["}{"], StringSplitOptions.RemoveEmptyEntries);
                     foreach (var s in symbols)
                     {
                         allSymbols.Add(s);
@@ -148,8 +148,6 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
         }
         public async Task GenerateMissingKeyRuneImagesAsync(SQLiteConnection conn, StatusViewModel statusVm)
         {
-            //statusVm.StatusMessage = "Generating keyrune images...";
-
             try
             {
                 // Step 1: Ensure all potential set codes exist in keyruneImages table

@@ -1,45 +1,97 @@
 ﻿using CollectaMundo.Data;
 using CollectaMundo.Data.CardLists;
+using CollectaMundo.Data.Filtering;
 using CollectaMundo.ViewModels;
+using System.Diagnostics;
+using System.IO;
 
 namespace CollectaMundo.ApplicationServices.Startup
 {
-    public class MainWindowInitializer(IDbConnectionFactory factory)
+    public class MainWindowInitializer
     {
+        private readonly IAppSettings _settings;
+        private readonly IDbConnectionFactory _dbFactory;
+
+        public MainWindowInitializer()
+        {
+            _settings = new JsonAppSettings();
+            _dbFactory = new DbConnectionFactory(_settings);
+        }
         public async Task InitializeAsync(List<(CardViewModel, CardListQuerySpec)> cardSpecs, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
-            await using var uow = new UnitOfWork(factory);
-            await uow.BeginAsync();
-            var conn = uow.CurrentConnection;
+            Debug.WriteLine("[InitializeAsync] Starting initialization...");
 
-            var cardlistRepo = new CardListRepository();
-            var filterRepo = new FilterInitDefaultsRepository();
-
-            var cardTasks = cardSpecs
-                .Select(s => cardlistRepo.QueryAsync(s.Item2.Sql, conn, s.Item2.Mapper))
-                .ToArray();
-
-            var cardsResults = await Task.WhenAll(cardTasks);
-            for (int i = 0; i < cardSpecs.Count; i++)
+            await using var uow = new UnitOfWork(_dbFactory);
+            try
             {
-                cardSpecs[i].Item1.Cards = [.. cardsResults[i]];
+                await uow.BeginAsync();
+                Debug.WriteLine("[InitializeAsync] UnitOfWork started");
+                var conn = uow.CurrentConnection;
+
+                var cardlistRepo = new CardListRepository();
+                var filterRepo = new FilterInitDefaultsRepository();
+
+                Debug.WriteLine("[InitializeAsync] Beginning card list queries...");
+
+                var cardTasks = cardSpecs
+                    .Select(spec => cardlistRepo.QueryAsync(spec.Item2.Sql, conn, spec.Item2.Mapper))
+                    .ToArray();
+
+                var cardsResults = await Task.WhenAll(cardTasks);
+
+                Debug.WriteLine("[InitializeAsync] All card queries completed");
+
+                for (int i = 0; i < cardSpecs.Count; i++)
+                {
+                    Debug.WriteLine($"[InitializeAsync] Setting {cardSpecs[i].Item2} cards to ViewModel");
+                    cardSpecs[i].Item1.Cards = [.. cardsResults[i]];
+                }
+
+                Debug.WriteLine("[InitializeAsync] Querying filter defaults...");
+                var filterDefaults = await filterRepo.GetFilterDefaultsAsync(conn);
+
+                filters.Clear();
+                foreach (var def in filterDefaults)
+                {
+                    filters[def.CriteriaKey] = new FilterItemViewModel(
+                        def.CriteriaKey,
+                        def.FilterOptions,
+                        def.DefaultText,
+                        def.ReadableLabel,
+                        filterVM,
+                        def.NumericCriteria);
+                }
+
+                Debug.WriteLine("[InitializeAsync] Filter defaults populated");
+
+                await uow.CommitAsync();
+                Debug.WriteLine("[InitializeAsync] UnitOfWork committed");
+            }
+            catch (Exception ex)
+            {
+                await uow.RollbackAsync();
+                Debug.WriteLine($"[InitializeAsync] Exception caught: {ex.Message}");
+            }
+            finally
+            {
+                Debug.WriteLine($"[InitializeAsync] Connection state before dispose: {uow.CurrentConnection.State}");
+
+                await uow.DisposeAsync();
+                Debug.WriteLine("[InitializeAsync] UnitOfWork disposed");
+
+                // Force GC collection to test cleanup behavior
+                //GC.Collect();
+                //GC.WaitForPendingFinalizers();
+                //GC.Collect();
+
+                var walExists = File.Exists("AllPrintings.sqlite-wal");
+                var shmExists = File.Exists("AllPrintings.sqlite-shm");
+                Debug.WriteLine($"[InitializeAsync] WAL exists: {walExists}, SHM exists: {shmExists}");
             }
 
-            var filterDefaults = await filterRepo.GetFilterDefaultsAsync(conn);
-            filters.Clear();
-            foreach (var def in filterDefaults)
-            {
-                filters[def.CriteriaKey] = new FilterItemViewModel(
-                    def.CriteriaKey,
-                    def.FilterOptions,
-                    def.DefaultText,
-                    def.ReadableLabel,
-                    filterVM,
-                    def.NumericCriteria);
-            }
-
-            await uow.CommitAsync();
+            Debug.WriteLine("[InitializeAsync] Initialization complete");
         }
+
     }
 
 }

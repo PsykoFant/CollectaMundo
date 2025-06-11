@@ -7,15 +7,14 @@ namespace CollectaMundo.Data.CardLists
 {
     public class CardListRepository() : ICardListRepository
     {
-        public Task<IReadOnlyList<CardSet>> QueryAsync(string sql, SQLiteConnection conn, Func<DbDataReader, CardSet> map)
-            => MapAsync(new SQLiteCommand(sql, conn), map);
+        public Task<IReadOnlyList<CardSet>> QueryAsync(string sql, SQLiteConnection conn, Func<DbDataReader, CardSet> map) => MapAsync(new SQLiteCommand(sql, conn), map);
 
         private static async Task<IReadOnlyList<CardSet>> MapAsync(SQLiteCommand cmd, Func<DbDataReader, CardSet> mapRow)
         {
             try
             {
                 var cards = new List<CardSet>();
-                using var rdr = await cmd.ExecuteReaderAsync();
+                await using var rdr = await cmd.ExecuteReaderAsync();
                 while (await rdr.ReadAsync())
                 {
                     cards.Add(mapRow(rdr));
@@ -30,6 +29,5 @@ namespace CollectaMundo.Data.CardLists
                 return [];
             }
         }
-
     }
 }

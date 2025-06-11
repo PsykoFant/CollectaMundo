@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.Data;
 using System.Data.SQLite;
+using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices
 {
@@ -30,15 +31,30 @@ namespace CollectaMundo.ApplicationServices
             return Task.CompletedTask;
         }
 
-        public ValueTask DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
-            _txn?.Dispose();
-            _txn = null;
+            try
+            {
+                if (_txn != null)
+                {
+                    await _txn.DisposeAsync();
+                    _txn = null;
+                }
 
-            _conn?.Dispose();
-            _conn = null;
+                if (_conn != null)
+                {
+                    var conn = _conn;
+                    _conn = null; // clear reference early
+                    await conn.CloseAsync();
+                    await conn.DisposeAsync();
+                    Debug.WriteLine($"[DISPOSE] Reader/Command disposed");
+                }
 
-            return ValueTask.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[UnitOfWork] DisposeAsync error: {ex.Message}");
+            }
         }
     }
 

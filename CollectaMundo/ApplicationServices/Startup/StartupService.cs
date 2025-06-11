@@ -1,5 +1,4 @@
-﻿using CollectaMundo.Data;
-using CollectaMundo.ViewModels;
+﻿using CollectaMundo.ViewModels;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
@@ -46,8 +45,7 @@ namespace CollectaMundo.ApplicationServices.Startup
             _statusVM.Show("Loading ALL the cards…", false);
             await FlushUiAsync();
 
-            var dbFactory = new DbConnectionFactory(new JsonAppSettings());
-            var mainVM = await MainWindowViewModel.CreateAsync(dbFactory);
+            var mainVM = await MainWindowViewModel.CreateAsync();
 
             // Set all your visibility toggles BEFORE showing the window
             mainVM.FilterVM.NotifyFilterChanged();

@@ -13,7 +13,7 @@ namespace CollectaMundo.Data
         {
             var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            using var cmd = new SQLiteCommand("SELECT name FROM sqlite_master WHERE type IN ('table', 'view');", conn);
+            await using var cmd = new SQLiteCommand("SELECT name FROM sqlite_master WHERE type IN ('table', 'view');", conn);
             await using var reader = await cmd.ExecuteReaderAsync();
 
             while (await reader.ReadAsync())
@@ -26,7 +26,7 @@ namespace CollectaMundo.Data
 
         public async Task<bool> QuickCheckAsync(SQLiteConnection conn)
         {
-            using var cmd = new SQLiteCommand("PRAGMA quick_check;", conn);
+            await using var cmd = new SQLiteCommand("PRAGMA quick_check;", conn);
             var result = await cmd.ExecuteScalarAsync();
             return result?.ToString() == "ok";
         }

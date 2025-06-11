@@ -1,10 +1,9 @@
 ﻿using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Models;
-using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
 
-namespace CollectaMundo.Data
+namespace CollectaMundo.Data.Filtering
 {
     public class FilterInitDefaultsRepository() : IFilterInitDefaultsRepository
     {
@@ -55,8 +54,8 @@ namespace CollectaMundo.Data
 
                     try
                     {
-                        using SQLiteCommand command = new(query, connection);
-                        using DbDataReader reader = await command.ExecuteReaderAsync();
+                        await using var command = new SQLiteCommand(query, connection);
+                        await using var reader = await command.ExecuteReaderAsync();
                         while (await reader.ReadAsync())
                         {
                             string? value = criteriaKey switch

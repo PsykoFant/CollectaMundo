@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices;
+﻿using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.ViewModels;

@@ -1,9 +1,7 @@
-﻿using CollectaMundo.ApplicationServices;
-using CollectaMundo.ApplicationServices.CardLists;
+﻿using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Startup;
-using CollectaMundo.Data;
 using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
@@ -119,7 +117,6 @@ namespace CollectaMundo.ViewModels
         }
 
         // Backing fields
-        private readonly IDbConnectionFactory _dbFactory;
         private readonly IFilteringService _filteringService;
 
         // Commands to switch pages
@@ -129,11 +126,9 @@ namespace CollectaMundo.ViewModels
         public ICommand ShowUtilitiesCommand { get; }
 
         // Constructor
-        private MainWindowViewModel(IDbConnectionFactory dbFactory)
+        private MainWindowViewModel()
         {
             CurrentPage = Page.SearchAndFilter;
-
-            _dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
 
             AllCardsVM = new CardViewModel();
             MyCollectionVM = new CardViewModel();
@@ -143,15 +138,13 @@ namespace CollectaMundo.ViewModels
 
             // Edit collection stack
             var editRepo = new EditCollectionRepository();
-            var editUow = new UnitOfWork(_dbFactory);
-            var editService = new EditCollectionService(editUow);
+            var editService = new EditCollectionService();
             AddCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);
             EditCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: false);
             AddCardsVM.CardChanged += OnCardChanged;
             EditCardsVM.CardChanged += OnCardChanged;
 
             // Filtering stack
-            var filterUow = new UnitOfWork(_dbFactory);
             _filteringService = new FilteringService();
             FilterVM = new FilterViewModel(_filteringService);
             FilterVM.FilterChanged += OnFilterChanged;
@@ -163,9 +156,9 @@ namespace CollectaMundo.ViewModels
             ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
         }
-        public static async Task<MainWindowViewModel> CreateAsync(IDbConnectionFactory dbFactory, Action? onStartupComplete = null)
+        public static async Task<MainWindowViewModel> CreateAsync(Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(dbFactory)
+            var vm = new MainWindowViewModel()
             {
                 OnStartupComplete = onStartupComplete
             };
@@ -174,7 +167,7 @@ namespace CollectaMundo.ViewModels
         }
         private async Task InitializeListsAsync()
         {
-            var init = new MainWindowInitializer(_dbFactory);
+            var init = new MainWindowInitializer();
             await init.InitializeAsync(
                 [
                     (AllCardsVM, CardListQueryCatalog.AllCards),

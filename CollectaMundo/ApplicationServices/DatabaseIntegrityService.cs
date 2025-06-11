@@ -32,13 +32,11 @@ namespace CollectaMundo.ApplicationServices
                 await using var uow = new UnitOfWork(_dbFactory);
                 await uow.BeginAsync();
 
-                bool isValid =
-                    await _healthRepo.HasExpectedTablesAndViewsAsync(uow.CurrentConnection) &&
-                    await _healthRepo.QuickCheckAsync(uow.CurrentConnection);
+                bool isValid = await _healthRepo.HasExpectedTablesAndViewsAsync(uow.CurrentConnection) && await _healthRepo.QuickCheckAsync(uow.CurrentConnection);
 
                 await uow.CommitAsync();
 
-                Debug.WriteLine($"Is the database ok: {isValid.ToString()}");
+                Debug.WriteLine($"Is the database ok: {isValid}");
 
                 return isValid ? DatabaseStatus.Healthy : DatabaseStatus.Corrupt;
             }

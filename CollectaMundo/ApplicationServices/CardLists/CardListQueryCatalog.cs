@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Data;
+﻿using CollectaMundo.Data.CardLists;
 using CollectaMundo.DomainLogic.CardLists;
 
 namespace CollectaMundo.ApplicationServices.CardLists
