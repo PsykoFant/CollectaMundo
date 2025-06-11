@@ -8,11 +8,18 @@ using System.Text.Json;
 
 namespace CollectaMundo.ApplicationServices.CardPrices
 {
-    public class CardPriceService(IAppSettings appSettings, IDbConnectionFactory dbFactory, ICardPriceRepository cardPriceRepository) : ICardPriceService
+    public class CardPriceService : ICardPriceService
     {
-        private readonly IAppSettings _appSettings = appSettings;
-        private readonly IDbConnectionFactory _dbFactory = dbFactory;
-        private readonly ICardPriceRepository _cardPriceRepository = cardPriceRepository ?? throw new ArgumentNullException(nameof(cardPriceRepository));
+        private readonly IAppSettings _appSettings;
+        private readonly ICardPriceRepository _cardPriceRepository;
+        private readonly IDbConnectionFactory _dbFactory;
+
+        public CardPriceService(IAppSettings appSettings, ICardPriceRepository cardPriceRepository)
+        {
+            _appSettings = appSettings;
+            _cardPriceRepository = cardPriceRepository;
+            _dbFactory = new DbConnectionFactory(_appSettings);
+        }
 
         public async Task ImportPricesFromJsonAsync(string jsonPath, SQLiteConnection conn)
         {

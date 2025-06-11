@@ -8,14 +8,31 @@ using System.Net.Http;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class CardDatabasePreparationService(IAppSettings settings, IDbConnectionFactory dbFactory, IDatabaseSchemaInitializer schemaInitializer, ICardPriceService priceImporter, IGenerateMissingPngService missingPngService, StatusViewModel statusVM) : ICardDatabasePreparationService
+    public class CardDatabasePreparationService : ICardDatabasePreparationService
     {
-        private readonly IAppSettings _settings = settings;
-        private readonly IDbConnectionFactory _dbFactory = dbFactory;
-        private readonly IDatabaseSchemaInitializer _schemaInitializer = schemaInitializer;
-        private readonly ICardPriceService _priceImporter = priceImporter ?? throw new ArgumentNullException(nameof(priceImporter));
-        private readonly IGenerateMissingPngService _missingPngService = missingPngService;
-        private readonly StatusViewModel _statusVM = statusVM ?? throw new ArgumentNullException(nameof(statusVM));
+        private readonly IAppSettings _settings;
+        private readonly IDbConnectionFactory _dbFactory;
+        private readonly IDatabaseSchemaInitializer _schemaInitializer;
+        private readonly ICardPriceService _priceImporter;
+        private readonly IGenerateMissingPngService _missingPngService;
+        private readonly StatusViewModel _statusVM;
+
+        public CardDatabasePreparationService(
+            IAppSettings settings,
+            IDatabaseSchemaInitializer schemaInitializer,
+            ICardPriceService priceImporter,
+            IGenerateMissingPngService missingPngService,
+            StatusViewModel statusVM)
+        {
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+            _schemaInitializer = schemaInitializer ?? throw new ArgumentNullException(nameof(schemaInitializer));
+            _priceImporter = priceImporter ?? throw new ArgumentNullException(nameof(priceImporter));
+            _missingPngService = missingPngService ?? throw new ArgumentNullException(nameof(missingPngService));
+            _statusVM = statusVM ?? throw new ArgumentNullException(nameof(statusVM));
+
+            _dbFactory = new DbConnectionFactory(_settings);
+        }
+
         public async Task FirstTimeDbSetup()
         {
             string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
