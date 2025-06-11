@@ -15,19 +15,22 @@ namespace CollectaMundo.ApplicationServices.Startup
         {
             var settings = new JsonAppSettings();
             var scryfallLookups = new ScryfallLookups();
-            var schemaInitializer = new DatabaseSchemaInitializer();
-            var cardPriceRepo = new CardPriceRepository();
-            var priceService = new CardPriceService(settings, cardPriceRepo);
 
             // Generate missing PNG stack
             var missingPngRepo = new GenerateMissingPngRepository();
             var missingPngLogic = new GenerateMissingPngLogic();
             var missingPngService = new GenerateMissingPngService(missingPngRepo, scryfallLookups, missingPngLogic);
 
+            // Card prices stack
+            var cardPriceRepo = new CardPriceRepository();
+            var priceService = new CardPriceService(settings, cardPriceRepo);
+
+            // Database services stack
+            var schemaInitializer = new DatabaseSchemaInitializer();
             var prepService = new CardDatabasePreparationService(settings, schemaInitializer, priceService, missingPngService, statusVM);
             var integrityService = new DatabaseIntegrityService(settings);
 
-            return new StartupService(settings, integrityService, prepService, closeStatusWindow, statusVM);
+            return new StartupService(integrityService, prepService, closeStatusWindow, statusVM);
         }
     }
 }

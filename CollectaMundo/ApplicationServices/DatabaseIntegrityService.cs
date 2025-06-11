@@ -10,9 +10,9 @@ namespace CollectaMundo.ApplicationServices
         private readonly IDbConnectionFactory _dbFactory;
         private readonly IDatabaseHealthRepository _healthRepo;
 
-        public DatabaseIntegrityService()
+        public DatabaseIntegrityService(IAppSettings settings)
         {
-            _settings = new JsonAppSettings();
+            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _dbFactory = new DbConnectionFactory(_settings);
             _healthRepo = new DatabaseHealthRepository();
         }

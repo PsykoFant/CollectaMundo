@@ -1,9 +1,8 @@
 TO DO 
 - MVVM refactor
 
-  - repo metoder til missing png stakken - overlap? Flyt til db prep service?
-
   - retry scryfall api kald - brug retry policy?
+  - UI crap ved startup
 
 
   - Card image brug MVVM (unit test)

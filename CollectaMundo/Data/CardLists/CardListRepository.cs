@@ -8,7 +8,6 @@ namespace CollectaMundo.Data.CardLists
     public class CardListRepository() : ICardListRepository
     {
         public Task<IReadOnlyList<CardSet>> QueryAsync(string sql, SQLiteConnection conn, Func<DbDataReader, CardSet> map) => MapAsync(new SQLiteCommand(sql, conn), map);
-
         private static async Task<IReadOnlyList<CardSet>> MapAsync(SQLiteCommand cmd, Func<DbDataReader, CardSet> mapRow)
         {
             try

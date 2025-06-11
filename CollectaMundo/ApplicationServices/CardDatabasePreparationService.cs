@@ -17,12 +17,7 @@ namespace CollectaMundo.ApplicationServices
         private readonly IGenerateMissingPngService _missingPngService;
         private readonly StatusViewModel _statusVM;
 
-        public CardDatabasePreparationService(
-            IAppSettings settings,
-            IDatabaseSchemaInitializer schemaInitializer,
-            ICardPriceService priceImporter,
-            IGenerateMissingPngService missingPngService,
-            StatusViewModel statusVM)
+        public CardDatabasePreparationService(IAppSettings settings, IDatabaseSchemaInitializer schemaInitializer, ICardPriceService priceImporter, IGenerateMissingPngService missingPngService, StatusViewModel statusVM)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             _schemaInitializer = schemaInitializer ?? throw new ArgumentNullException(nameof(schemaInitializer));
@@ -81,14 +76,14 @@ namespace CollectaMundo.ApplicationServices
                 await _missingPngService.GenerateMissingManaSymbolImagesAsync(uow.CurrentConnection, _statusVM);
                 await _missingPngService.GenerateMissingManaCostImagesAsync(uow.CurrentConnection, _statusVM);
 
-                statusVM.StatusMessage = "Generating keyrune images...";
+                _statusVM.StatusMessage = "Generating keyrune images...";
                 await _missingPngService.GenerateMissingKeyRuneImagesAsync(uow.CurrentConnection, _statusVM);
 
                 // 3. Import card prices
                 await _priceImporter.ImportPricesFromJsonAsync(pricesPath, uow.CurrentConnection);
-                statusVM.StatusMessage = "Importing card prices...";
+                _statusVM.StatusMessage = "Importing card prices...";
 
-                statusVM.StatusMessage = "Wrapping up first-time setup...";
+                _statusVM.StatusMessage = "Wrapping up first-time setup...";
                 // 4. Create views
                 await _schemaInitializer.CreateViewsAsync(uow.CurrentConnection, "cardmarket");
 
@@ -108,6 +103,8 @@ namespace CollectaMundo.ApplicationServices
             }
             finally
             {
+                await uow.DisposeAsync();
+
                 try
                 {
                     //File.Delete(pricesPath);

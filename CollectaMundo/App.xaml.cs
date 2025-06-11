@@ -10,7 +10,7 @@ namespace CollectaMundo
     public partial class App : Application
     {
         private StatusWindow? _statusWindow;
-        protected override void OnStartup(StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
@@ -22,7 +22,7 @@ namespace CollectaMundo
             _statusWindow.Show();
 
             var startupService = StartupComposition.Build(statusVM, () => _statusWindow!.Close());
-            _ = StartAppAsync(startupService);
+            await StartAppAsync(startupService);
         }
         private static async Task StartAppAsync(IStartupService startupService)
         {

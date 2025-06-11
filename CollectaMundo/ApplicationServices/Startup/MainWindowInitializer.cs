@@ -1,9 +1,9 @@
 ﻿using CollectaMundo.Data;
 using CollectaMundo.Data.CardLists;
 using CollectaMundo.Data.Filtering;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
-using System.IO;
 
 namespace CollectaMundo.ApplicationServices.Startup
 {
@@ -19,23 +19,23 @@ namespace CollectaMundo.ApplicationServices.Startup
         }
         public async Task InitializeAsync(List<(CardViewModel, CardListQuerySpec)> cardSpecs, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
-            Debug.WriteLine("[InitializeAsync] Starting initialization...");
-
             await using var uow = new UnitOfWork(_dbFactory);
             try
             {
                 await uow.BeginAsync();
-                Debug.WriteLine("[InitializeAsync] UnitOfWork started");
                 var conn = uow.CurrentConnection;
 
                 var cardlistRepo = new CardListRepository();
                 var filterRepo = new FilterInitDefaultsRepository();
 
-                Debug.WriteLine("[InitializeAsync] Beginning card list queries...");
 
-                var cardTasks = cardSpecs
-                    .Select(spec => cardlistRepo.QueryAsync(spec.Item2.Sql, conn, spec.Item2.Mapper))
-                    .ToArray();
+                var cardTasks = new Task<IReadOnlyList<CardSet>>[cardSpecs.Count];
+
+                for (int i = 0; i < cardSpecs.Count; i++)
+                {
+                    var spec = cardSpecs[i];
+                    cardTasks[i] = cardlistRepo.QueryAsync(spec.Item2.Sql, conn, spec.Item2.Mapper);
+                }
 
                 var cardsResults = await Task.WhenAll(cardTasks);
 
@@ -47,7 +47,6 @@ namespace CollectaMundo.ApplicationServices.Startup
                     cardSpecs[i].Item1.Cards = [.. cardsResults[i]];
                 }
 
-                Debug.WriteLine("[InitializeAsync] Querying filter defaults...");
                 var filterDefaults = await filterRepo.GetFilterDefaultsAsync(conn);
 
                 filters.Clear();
@@ -63,9 +62,8 @@ namespace CollectaMundo.ApplicationServices.Startup
                 }
 
                 Debug.WriteLine("[InitializeAsync] Filter defaults populated");
-
                 await uow.CommitAsync();
-                Debug.WriteLine("[InitializeAsync] UnitOfWork committed");
+
             }
             catch (Exception ex)
             {
@@ -80,13 +78,9 @@ namespace CollectaMundo.ApplicationServices.Startup
                 Debug.WriteLine("[InitializeAsync] UnitOfWork disposed");
 
                 // Force GC collection to test cleanup behavior
-                //GC.Collect();
-                //GC.WaitForPendingFinalizers();
-                //GC.Collect();
-
-                var walExists = File.Exists("AllPrintings.sqlite-wal");
-                var shmExists = File.Exists("AllPrintings.sqlite-shm");
-                Debug.WriteLine($"[InitializeAsync] WAL exists: {walExists}, SHM exists: {shmExists}");
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
             }
 
             Debug.WriteLine("[InitializeAsync] Initialization complete");

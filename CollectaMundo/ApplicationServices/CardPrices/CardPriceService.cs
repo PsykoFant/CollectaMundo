@@ -1,5 +1,4 @@
-﻿using CollectaMundo.Data;
-using CollectaMundo.Data.CardPrices;
+﻿using CollectaMundo.Data.CardPrices;
 using CollectaMundo.DomainLogic.CardPrices;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -8,19 +7,10 @@ using System.Text.Json;
 
 namespace CollectaMundo.ApplicationServices.CardPrices
 {
-    public class CardPriceService : ICardPriceService
+    public class CardPriceService(IAppSettings appSettings, ICardPriceRepository cardPriceRepository) : ICardPriceService
     {
-        private readonly IAppSettings _appSettings;
-        private readonly ICardPriceRepository _cardPriceRepository;
-        private readonly IDbConnectionFactory _dbFactory;
-
-        public CardPriceService(IAppSettings appSettings, ICardPriceRepository cardPriceRepository)
-        {
-            _appSettings = appSettings;
-            _cardPriceRepository = cardPriceRepository;
-            _dbFactory = new DbConnectionFactory(_appSettings);
-        }
-
+        private readonly IAppSettings _appSettings = appSettings;
+        private readonly ICardPriceRepository _cardPriceRepository = cardPriceRepository;
         public async Task ImportPricesFromJsonAsync(string jsonPath, SQLiteConnection conn)
         {
             if (!File.Exists(jsonPath))
