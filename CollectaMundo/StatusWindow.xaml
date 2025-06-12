@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:CollectaMundo"
         Icon="/Resources/Images/Icon.ico" 
         mc:Ignorable="d"
-        Title="CollectaMundo" Height="960" Width="1280">
+        Title="CollectaMundo" Height="600" Width="800">
     <Border Background="{StaticResource CollectaMundoBackground}" CornerRadius="10" Padding="20">
         <local:StatusOverlay />
     </Border>

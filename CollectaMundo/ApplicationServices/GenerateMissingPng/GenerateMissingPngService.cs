@@ -14,12 +14,17 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
         private readonly IScryfallLookups _scryfallLookups = scryfallLookups;
         private readonly IGenerateMissingPngLogic _logic = logic;
 
-        public async Task GenerateMissingManaSymbolImagesAsync(SQLiteConnection conn, StatusViewModel statusVm)
+        public async Task GenerateMissingManaSymbolImagesAsync(SQLiteConnection conn, StatusViewModel statusVM)
         {
-            statusVm.StatusMessage = "Generating mana symbols...";
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            // Reset progress status
+            statusVM.StatusMessage = "Generating mana symbol images...";
+            statusVM.ProgressValue = 0;
 
             try
             {
+                stopwatch.Start();
+
                 // Step 1: Get unique mana cost strings from 'cards' table
                 List<string> uniqueManaCosts = await _repository.GetUniqueValuesAsync(conn, "cards", "manaCost");
 
@@ -81,17 +86,19 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 }
 
                 transaction.Commit();
+                stopwatch.Stop();
+                Debug.WriteLine($"[PNGService] Generated {results.Length} mana symbol images in {stopwatch.ElapsedMilliseconds} ms.");
 
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[PNGService] Error generating mana symbol images: {ex.Message}");
-                statusVm.StatusMessage = $"Error generating mana symbol images: {ex.Message}";
+                statusVM.StatusMessage = $"Error generating mana symbol images: {ex.Message}";
             }
         }
         public async Task GenerateMissingManaCostImagesAsync(SQLiteConnection conn, StatusViewModel statusVm)
         {
-            statusVm.StatusMessage = "Generating mana cost images...";
+            //statusVM.StatusMessage = "Generating mana cost images...";
 
             try
             {

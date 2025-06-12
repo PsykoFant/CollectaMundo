@@ -12,16 +12,16 @@ namespace CollectaMundo.ApplicationServices
     {
         private readonly IAppSettings _settings;
         private readonly IDbConnectionFactory _dbFactory;
-        private readonly IDatabaseSchemaInitializer _schemaInitializer;
-        private readonly ICardPriceService _priceImporter;
+        private readonly IDatabaseSchemaRepository _dbSchemaRepo;
+        private readonly ICardPriceService _priceService;
         private readonly IGenerateMissingPngService _missingPngService;
         private readonly StatusViewModel _statusVM;
 
-        public CardDatabasePreparationService(IAppSettings settings, IDatabaseSchemaInitializer schemaInitializer, ICardPriceService priceImporter, IGenerateMissingPngService missingPngService, StatusViewModel statusVM)
+        public CardDatabasePreparationService(IAppSettings settings, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, StatusViewModel statusVM)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            _schemaInitializer = schemaInitializer ?? throw new ArgumentNullException(nameof(schemaInitializer));
-            _priceImporter = priceImporter ?? throw new ArgumentNullException(nameof(priceImporter));
+            _dbSchemaRepo = dbSchemaRepo ?? throw new ArgumentNullException(nameof(dbSchemaRepo));
+            _priceService = priceService ?? throw new ArgumentNullException(nameof(priceService));
             _missingPngService = missingPngService ?? throw new ArgumentNullException(nameof(missingPngService));
             _statusVM = statusVM ?? throw new ArgumentNullException(nameof(statusVM));
 
@@ -30,7 +30,7 @@ namespace CollectaMundo.ApplicationServices
 
         public async Task FirstTimeDbSetup()
         {
-            _statusVM.Show("Getting ready!", false, "Performing first-time setup of card database - please wait ...");
+            _statusVM.FirstTimeSetupText = "Performing first-time setup of card database - please wait ...";
 
             string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
             string pricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
@@ -38,33 +38,41 @@ namespace CollectaMundo.ApplicationServices
             string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
             string pricesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "prices.json");
 
-            var downloadCardDbTask = DownloadResourceAsync(cardDbUrl, dbPath, "Card Database", true, _statusVM);
-            var downloadPricesTask = DownloadResourceAsync(pricesUrl, pricesPath, "Card Prices", false, _statusVM);
+            //var downloadCardDbTask = DownloadResourceAsync(cardDbUrl, dbPath, onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true), onProgress: percent => _statusVM.ProgressValue = percent);
+            //var downloadPricesTask = DownloadResourceAsync(pricesUrl, pricesPath, onStart: null, onProgress: null);
 
-            bool[] results = await Task.WhenAll(downloadCardDbTask, downloadPricesTask);
+            //bool[] results = await Task.WhenAll(downloadCardDbTask, downloadPricesTask);
 
-            // Retry if needed
-            if (!results[0])
-            {
-                _statusVM.Show("Retrying card database download...", true, "Performing first-time setup of card database - please wait ...");
-                bool retryCardDb = await DownloadResourceAsync(cardDbUrl, dbPath, "Card Database", true, _statusVM);
-                if (!retryCardDb)
-                {
-                    Debug.WriteLine("Card database re-download failed.");
-                    return;
-                }
-            }
+            //// Retry if needed
+            //if (!results[0])
+            //{
+            //    _statusVM.Show("Retrying card database download...", true);
+            //    bool retryCardDb = await DownloadResourceAsync(
+            //    cardDbUrl,
+            //    dbPath,
+            //    onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true),
+            //    onProgress: percent => _statusVM.ProgressValue = percent);
+            //    if (!retryCardDb)
+            //    {
+            //        Debug.WriteLine("Card database re-download failed.");
+            //        return;
+            //    }
+            //}
 
-            if (!results[1])
-            {
-                _statusVM.Show("Retrying card prices download...", true, "Performing first-time setup of card database - please wait ...");
-                bool retryPrices = await DownloadResourceAsync(pricesUrl, pricesPath, "Card Prices", true, _statusVM);
-                if (!retryPrices)
-                {
-                    Debug.WriteLine("Prices re-download failed.");
-                    return;
-                }
-            }
+            //if (!results[1])
+            //{
+            //    _statusVM.Show("Retrying card prices download...", true);
+            //    bool retryPrices = await DownloadResourceAsync(
+            //    pricesUrl,
+            //    pricesPath,
+            //    onStart: size => _statusVM.Show($"Downloading price file ({size})", true),
+            //    onProgress: percent => _statusVM.ProgressValue = percent);
+            //    if (!retryPrices)
+            //    {
+            //        Debug.WriteLine("Prices re-download failed.");
+            //        return;
+            //    }
+            //}
 
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
@@ -72,30 +80,33 @@ namespace CollectaMundo.ApplicationServices
             try
             {
                 // 1. Create tables
-                await _schemaInitializer.CreateTablesAsync(uow.CurrentConnection);
+                await _dbSchemaRepo.CreateTablesAsync(uow.CurrentConnection);
 
-                // 2. Generate missing PNGs for icons                
+                // 2. Generate missing PNGs for icons
+                _statusVM.StatusMessage = "Generating mana symbols...";
                 await _missingPngService.GenerateMissingManaSymbolImagesAsync(uow.CurrentConnection, _statusVM);
+
+                _statusVM.StatusMessage = "Generating mana cost images...";
                 await _missingPngService.GenerateMissingManaCostImagesAsync(uow.CurrentConnection, _statusVM);
 
                 _statusVM.StatusMessage = "Generating keyrune images...";
                 await _missingPngService.GenerateMissingKeyRuneImagesAsync(uow.CurrentConnection, _statusVM);
 
                 // 3. Import card prices
-                await _priceImporter.ImportPricesFromJsonAsync(pricesPath, uow.CurrentConnection);
+                await _priceService.ImportPricesFromJsonAsync(pricesPath, uow.CurrentConnection);
                 _statusVM.StatusMessage = "Importing card prices...";
 
                 _statusVM.StatusMessage = "Wrapping up first-time setup...";
                 // 4. Create views
-                await _schemaInitializer.CreateViewsAsync(uow.CurrentConnection, "cardmarket");
+                await _dbSchemaRepo.CreateViewsAsync(uow.CurrentConnection, "cardmarket");
 
                 // 5. Create indices
-                await _schemaInitializer.CreateIndicesAsync(uow.CurrentConnection);
+                await _dbSchemaRepo.CreateIndicesAsync(uow.CurrentConnection);
 
                 await uow.CommitAsync();
 
                 // 6. Optimize database
-                await _schemaInitializer.OptimizeAsync(uow.CurrentConnection);
+                await _dbSchemaRepo.OptimizeAsync(uow.CurrentConnection);
             }
             catch (Exception ex)
             {
@@ -130,7 +141,7 @@ namespace CollectaMundo.ApplicationServices
             {
             });
         }
-        private static async Task<bool> DownloadResourceAsync(string url, string targetPath, string description, bool showProgress, StatusViewModel statusVm)
+        private static async Task<bool> DownloadResourceAsync(string url, string targetPath, Action<string>? onStart = null, Action<int>? onProgress = null)
         {
             try
             {
@@ -145,8 +156,11 @@ namespace CollectaMundo.ApplicationServices
                 using var contentStream = await response.Content.ReadAsStreamAsync();
                 using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
 
-                var megabytes = string.Format("{0:0.0} MB", totalBytes / 1_000_000.0);
-                statusVm.Show($"Downloading {description} ({megabytes})", showProgress);
+                if (onStart != null && totalBytes > 0)
+                {
+                    var megabytes = string.Format("{0:0.0} MB", totalBytes / 1_000_000.0);
+                    onStart.Invoke(megabytes);
+                }
 
                 int bytesRead;
                 while ((bytesRead = await contentStream.ReadAsync(buffer)) != 0)
@@ -154,10 +168,10 @@ namespace CollectaMundo.ApplicationServices
                     await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
                     totalBytesRead += bytesRead;
 
-                    if (showProgress && totalBytes > 0)
+                    if (onProgress != null && totalBytes > 0)
                     {
                         double percent = (double)totalBytesRead / totalBytes * 100;
-                        statusVm.ProgressValue = (int)percent;
+                        onProgress.Invoke((int)percent);
                     }
                 }
 
@@ -170,6 +184,7 @@ namespace CollectaMundo.ApplicationServices
                 return false;
             }
         }
+
     }
 
 }

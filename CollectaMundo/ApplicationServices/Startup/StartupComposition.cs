@@ -26,7 +26,7 @@ namespace CollectaMundo.ApplicationServices.Startup
             var priceService = new CardPriceService(settings, cardPriceRepo);
 
             // Database services stack
-            var schemaInitializer = new DatabaseSchemaInitializer();
+            var schemaInitializer = new DatabaseSchemaRepository();
             var prepService = new CardDatabasePreparationService(settings, schemaInitializer, priceService, missingPngService, statusVM);
             var integrityService = new DatabaseIntegrityService(settings);
 

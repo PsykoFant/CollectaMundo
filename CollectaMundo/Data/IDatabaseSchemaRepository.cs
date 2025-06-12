@@ -2,7 +2,7 @@
 
 namespace CollectaMundo.Data
 {
-    public interface IDatabaseSchemaInitializer
+    public interface IDatabaseSchemaRepository
     {
         Task CreateTablesAsync(SQLiteConnection conn);
         Task CreateIndicesAsync(SQLiteConnection conn);

@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace CollectaMundo.Data
 {
-    public class DatabaseSchemaInitializer : IDatabaseSchemaInitializer
+    public class DatabaseSchemaRepository : IDatabaseSchemaRepository
     {
         public async Task CreateTablesAsync(SQLiteConnection conn)
         {

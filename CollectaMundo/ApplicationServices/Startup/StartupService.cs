@@ -15,7 +15,8 @@ namespace CollectaMundo.ApplicationServices.Startup
         {
 
             // Check database integrity
-            _statusVM.Show("Checking database integrity…", false);
+            _statusVM.Show("Checking database integrity…");
+
             await FlushUiAsync(); // Ensure UI updates            
             //var dbStatus = await _integrityService.GetDatabaseStatusAsync();
 
@@ -43,7 +44,7 @@ namespace CollectaMundo.ApplicationServices.Startup
             await _prepService.FirstTimeDbSetup();
 
             // Now we can proceed to load the main window
-            _statusVM.Show("Loading ALL the cards…", false);
+            _statusVM.StatusMessage = "Loading ALL the cards…";
             await FlushUiAsync();
 
             var mainVM = await MainWindowViewModel.CreateAsync();
