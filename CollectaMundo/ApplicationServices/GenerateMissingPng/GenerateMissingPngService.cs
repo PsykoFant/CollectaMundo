@@ -200,7 +200,6 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 stopwatch.Reset();
                 stopwatch.Start();
                 // Use throttled parallelism for balance
-                //int maxParallelism = Environment.ProcessorCount;
                 int maxParallelism = Math.Max(2, Environment.ProcessorCount / 2);
 
                 var semaphore = new SemaphoreSlim(maxParallelism);
