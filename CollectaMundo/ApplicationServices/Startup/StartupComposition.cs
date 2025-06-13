@@ -19,7 +19,7 @@ namespace CollectaMundo.ApplicationServices.Startup
             // Generate missing PNG stack
             var missingPngRepo = new GenerateMissingPngRepository();
             var missingPngLogic = new GenerateMissingPngLogic();
-            var missingPngService = new GenerateMissingPngService(missingPngRepo, scryfallLookups, missingPngLogic);
+            var missingPngService = new GenerateMissingPngService(missingPngRepo, scryfallLookups, missingPngLogic, statusVM);
 
             // Card prices stack
             var cardPriceRepo = new CardPriceRepository();

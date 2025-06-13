@@ -1,28 +1,22 @@
-﻿using CollectaMundo.Data.GenerateMissingPng;
+﻿using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ScryfallLookups;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
 using Newtonsoft.Json.Linq;
-using System.Collections.Concurrent;
 using System.Data.SQLite;
 using System.Diagnostics;
-using System.Windows;
-using System.Windows.Threading;
 
 namespace CollectaMundo.ApplicationServices.GenerateMissingPng
 {
-    public class GenerateMissingPngService(IGenerateMissingPngRepository repository, IScryfallLookups scryfallLookups, IGenerateMissingPngLogic logic) : IGenerateMissingPngService
+    public class GenerateMissingPngService(IGenerateMissingPngRepository repository, IScryfallLookups scryfallLookups, IGenerateMissingPngLogic logic, StatusViewModel statusVM) : IGenerateMissingPngService
     {
         private readonly IGenerateMissingPngRepository _repository = repository;
         private readonly IScryfallLookups _scryfallLookups = scryfallLookups;
         private readonly IGenerateMissingPngLogic _logic = logic;
-
-        public async Task GenerateMissingManaSymbolImagesAsync(SQLiteConnection conn, StatusViewModel statusVM)
+        private readonly StatusViewModel _statusVM = statusVM;
+        public async Task GenerateMissingManaSymbolImagesAsync(SQLiteConnection conn)
         {
-            // Reset progress status
-            statusVM.Show("Generating mana symbol images...", true);
-            statusVM.ProgressValue = 0;
-
             try
             {
                 // Step 1: Get unique mana cost strings from 'cards' table
@@ -41,36 +35,29 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 List<string> symbolsWithNullImage = await _repository.GetValuesWithNullAsync(conn, "uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
 
                 // Step 5: Generate PNGs for each symbol in parallel
-                int maxParallelism = Environment.ProcessorCount; // Or manually: 4, 8 etc.
-                var semaphore = new SemaphoreSlim(maxParallelism);
-                int completed = 0;
-                int total = symbolsWithNullImage.Count;
-                var results = new ConcurrentBag<(string Symbol, byte[] PngData)>();
+                using var coordinator = new ParallelWorkCoordinator<(string Symbol, byte[] PngData)>(_statusVM, symbolsWithNullImage.Count, Environment.ProcessorCount);
 
-                await Task.WhenAll(symbolsWithNullImage.Select(async symbol =>
-                {
-                    await semaphore.WaitAsync();
-                    try
+                await Task.WhenAll(symbolsWithNullImage.Select(symbol =>
+                    coordinator.DoAsync(async () =>
                     {
-                        string svgUrl = $"https://svgs.scryfall.io/card-symbols/{symbol.Replace("/", "")}.svg";
-                        string? svgContent = await _scryfallLookups.FetchSvgContentAsync(svgUrl);
-                        byte[] pngData = string.IsNullOrWhiteSpace(svgContent)
-                            ? []
-                            : await _logic.ConvertSvgToPngAsync(svgContent);
+                        try
+                        {
+                            string svgUrl = $"https://svgs.scryfall.io/card-symbols/{symbol.Replace("/", "")}.svg";
+                            string? svgContent = await _scryfallLookups.FetchSvgContentAsync(svgUrl);
+                            byte[] pngData = string.IsNullOrWhiteSpace(svgContent)
+                                ? []
+                                : await _logic.ConvertSvgToPngAsync(svgContent);
+                            return (symbol, pngData);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Error processing symbol {symbol}: {ex.Message}");
+                            return (symbol, []);
+                        }
+                    })
+                ));
 
-                        results.Add((symbol, pngData));
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Error processing symbol {symbol}: {ex.Message}");
-                    }
-                    finally
-                    {
-                        Interlocked.Increment(ref completed);
-                        statusVM.ProgressValue = (int)((double)completed / total * 100);
-                        semaphore.Release();
-                    }
-                }));
+                var results = coordinator.Results;
 
                 // Step 6: Update the DB for each result
                 using var transaction = conn.BeginTransaction();
@@ -103,14 +90,10 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
             catch (Exception ex)
             {
                 Debug.WriteLine($"[PNGService] Error generating mana symbol images: {ex.Message}");
-                statusVM.StatusMessage = $"Error generating mana symbol images: {ex.Message}";
             }
         }
-        public async Task GenerateMissingManaCostImagesAsync(SQLiteConnection conn, StatusViewModel statusVM)
+        public async Task GenerateMissingManaCostImagesAsync(SQLiteConnection conn)
         {
-            statusVM.Show("Generating mana cost images...", true);
-            statusVM.ProgressValue = 0;
-
             try
             {
                 var uniqueManaCosts = await _repository.GetUniqueValuesAsync(conn, "cards", "manaCost");
@@ -138,9 +121,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 var symbolImageMap = await _repository.GetManaSymbolImagesAsync(conn, allSymbols);
 
                 using var transaction = conn.BeginTransaction();
-
-                int total = missingCosts.Count;
-                int processed = 0;
+                using var reporter = new ProgressReporter(_statusVM, missingCosts.Count);
 
                 foreach (var manaCost in missingCosts)
                 {
@@ -156,12 +137,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                             pngData);
                     }
 
-                    // Update progress every 10 items or at the end to avoid spamming UI
-                    processed++;
-                    if (processed % 10 == 0 || processed == total)
-                    {
-                        statusVM.ProgressValue = (int)((double)processed / total * 100);
-                    }
+                    reporter.Increment(); // Updates progress with throttle
                 }
 
                 transaction.Commit();
@@ -169,20 +145,13 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
             catch (Exception ex)
             {
                 Debug.WriteLine($"[PngService] Error generating mana cost images: {ex.Message}");
-                statusVM.StatusMessage = $"Error generating mana cost images: {ex.Message}";
             }
         }
-        public async Task GenerateMissingKeyRuneImagesAsync(SQLiteConnection conn, StatusViewModel statusVM)
+        public async Task GenerateMissingKeyRuneImagesAsync(SQLiteConnection conn)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-            statusVM.Show("Generating set symbol images...", true);
-            statusVM.ProgressValue = 0;
-
             try
             {
-                stopwatch.Start();
-
-                // Ensure all potential set codes exist in keyruneImages table
+                // Setup
                 await _repository.InsertMissingFromColumnAsync(conn, "sets", "code", "keyruneImages", "setCode");
                 await _repository.InsertMissingFromColumnAsync(conn, "sets", "code", "keyruneImages", "setCode");
 
@@ -191,67 +160,40 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 JArray? metadata = await _scryfallLookups.FetchSetMetadataAsync();
                 if (metadata == null)
                 {
-                    statusVM.StatusMessage = "Failed to fetch keyrune metadata. Aborting.";
+                    Debug.WriteLine($"Failed to fetch keyrune metadata. Aborting.");
                     return;
                 }
-                stopwatch.Stop();
-                Debug.WriteLine($"[PNGService] Fetched metadata in {stopwatch.ElapsedMilliseconds} ms.");
 
-                stopwatch.Reset();
-                stopwatch.Start();
-                // Use throttled parallelism for balance
+                // Parallel processing with progress
                 int maxParallelism = Math.Max(2, Environment.ProcessorCount / 2);
+                using var coordinator = new ParallelWorkCoordinator<(string SetCode, byte[] PngData)>(_statusVM, missingSetCodes.Count, maxParallelism);
 
-                var semaphore = new SemaphoreSlim(maxParallelism);
-                var results = new ConcurrentBag<(string SetCode, byte[] PngData)>();
-                int completed = 0;
-                int total = missingSetCodes.Count;
-
-                await Task.WhenAll(missingSetCodes.Select(async setCode =>
-                {
-                    await semaphore.WaitAsync();
-                    try
+                await Task.WhenAll(missingSetCodes.Select(setCode =>
+                    coordinator.DoAsync(async () =>
                     {
-                        string svgUrl = _scryfallLookups.TryGetIconUriForSetCode(metadata, setCode)
-                                        ?? "https://svgs.scryfall.io/sets/default.svg";
-
-                        string? svgContent = await _scryfallLookups.FetchSvgContentAsync(svgUrl);
-                        byte[] png = string.IsNullOrWhiteSpace(svgContent)
-                            ? Array.Empty<byte>()
-                            : await _logic.ConvertSvgToPngAsync(svgContent);
-
-                        results.Add((SetCode: setCode, PngData: png));
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"[PNGService] Error processing set {setCode}: {ex.Message}");
-                    }
-                    finally
-                    {
-                        int done = Interlocked.Increment(ref completed);
-                        if (done % 10 == 0 || done == total)
+                        try
                         {
-                            int percent = (int)((double)done / total * 100);
+                            string svgUrl = _scryfallLookups.TryGetIconUriForSetCode(metadata, setCode)
+                                            ?? "https://svgs.scryfall.io/sets/default.svg";
 
-                            // Schedule on dispatcher ASAP
-                            await Application.Current.Dispatcher.InvokeAsync(() =>
-                            {
-                                statusVM.ProgressValue = percent;
-                            }, DispatcherPriority.Render); // Render is higher priority than Background
+                            string? svgContent = await _scryfallLookups.FetchSvgContentAsync(svgUrl);
+                            byte[] png = string.IsNullOrWhiteSpace(svgContent)
+                                ? []
+                                : await _logic.ConvertSvgToPngAsync(svgContent);
+
+                            return (SetCode: setCode, PngData: png);
                         }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"[PNGService] Error processing set {setCode}: {ex.Message}");
+                            return (SetCode: setCode, PngData: Array.Empty<byte>());
+                        }
+                    })
+                ));
 
-                        semaphore.Release();
-                    }
+                var results = coordinator.Results;
 
-
-                }));
-
-                stopwatch.Stop();
-                Debug.WriteLine($"[PNGService] Processed {missingSetCodes.Count} set codes in {stopwatch.ElapsedMilliseconds} ms.");
-
-                stopwatch.Reset();
-                stopwatch.Start();
-
+                // Database update
                 using var transaction = conn.BeginTransaction();
                 int updatedCount = 0;
 
@@ -267,14 +209,8 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                             referenceValue: SetCode,
                             imageData: PngData);
 
-                        if (updated)
-                        {
-                            updatedCount++;
-                        }
-                        else
-                        {
-                            Debug.WriteLine($"[PNGService] Keyrune for {SetCode} was already populated. Skipping update.");
-                        }
+                        if (updated) updatedCount++;
+                        else Debug.WriteLine($"[PNGService] Keyrune for {SetCode} was already populated. Skipping update.");
                     }
                     else
                     {
@@ -283,16 +219,11 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                 }
 
                 transaction.Commit();
-                stopwatch.Stop();
-                Debug.WriteLine($"[PNGService] Inserted {updatedCount} keyrune images into db in {stopwatch.ElapsedMilliseconds} ms.");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[PNGService] Error generating keyrune images: {ex.Message}");
-                statusVM.StatusMessage = $"Error: {ex.Message}";
             }
         }
-
-
     }
 }

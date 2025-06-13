@@ -84,13 +84,13 @@ namespace CollectaMundo.ApplicationServices
 
                 // 2. Generate missing PNGs for icons
                 _statusVM.StatusMessage = "Generating mana symbols...";
-                await _missingPngService.GenerateMissingManaSymbolImagesAsync(uow.CurrentConnection, _statusVM);
+                await _missingPngService.GenerateMissingManaSymbolImagesAsync(uow.CurrentConnection);
 
                 _statusVM.StatusMessage = "Generating mana cost images...";
-                await _missingPngService.GenerateMissingManaCostImagesAsync(uow.CurrentConnection, _statusVM);
+                await _missingPngService.GenerateMissingManaCostImagesAsync(uow.CurrentConnection);
 
                 _statusVM.StatusMessage = "Generating keyrune images...";
-                await _missingPngService.GenerateMissingKeyRuneImagesAsync(uow.CurrentConnection, _statusVM);
+                await _missingPngService.GenerateMissingKeyRuneImagesAsync(uow.CurrentConnection);
 
                 // 3. Import card prices
                 await _priceService.ImportPricesFromJsonAsync(pricesPath, uow.CurrentConnection);
