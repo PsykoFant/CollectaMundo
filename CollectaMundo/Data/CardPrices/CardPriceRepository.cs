@@ -1,49 +1,29 @@
-﻿using System.Data.SQLite;
-using System.Text;
+﻿using CollectaMundo.DomainLogic.CardPrices;
+using System.Data.SQLite;
 
 namespace CollectaMundo.Data.CardPrices
 {
     public class CardPriceRepository : ICardPriceRepository
     {
-        public async Task InsertPricesInBatchesAsync(SQLiteConnection conn, string columnName, Dictionary<string, decimal> prices, int batchSize = 5000)
+        public async Task InsertPricesInBatchesAsync(SQLiteConnection conn, string columnName, List<CardPrice> prices, int batchSize = 5000)
         {
-            var batches = prices
-                .Select((pair, index) => new { pair.Key, pair.Value, Index = index })
-                .GroupBy(x => x.Index / batchSize);
-
-            foreach (var batch in batches)
+            foreach (var batch in prices.Chunk(batchSize))
             {
-                using var tx = conn.BeginTransaction(); // optional if not in higher-level transaction
-
-                var queryBuilder = new StringBuilder();
-                queryBuilder.Append($"INSERT INTO cardPrices (uuid, {columnName}) VALUES ");
-
-                var parameters = new List<SQLiteParameter>();
-                int paramIndex = 0;
-
-                foreach (var item in batch)
+                using var transaction = conn.BeginTransaction();
+                foreach (var price in batch)
                 {
-                    string uuidParam = $"@uuid{paramIndex}";
-                    string priceParam = $"@price{paramIndex}";
+                    var command = conn.CreateCommand();
+                    command.CommandText = $@"
+                        INSERT INTO cardPrices (uuid, {columnName})
+                        VALUES (@uuid, @price)
+                        ON CONFLICT(uuid) DO UPDATE SET {columnName} = excluded.{columnName};";
 
-                    queryBuilder.Append($"({uuidParam}, {priceParam}),");
-
-                    parameters.Add(new SQLiteParameter(uuidParam, item.Key));
-                    parameters.Add(new SQLiteParameter(priceParam, item.Value));
-
-                    paramIndex++;
+                    command.Parameters.AddWithValue("@uuid", price.Uuid);
+                    command.Parameters.AddWithValue("@price", price.Price);
+                    await command.ExecuteNonQueryAsync();
                 }
-
-                queryBuilder.Length--; // remove trailing comma
-                queryBuilder.Append($" ON CONFLICT(uuid) DO UPDATE SET {columnName} = excluded.{columnName};");
-
-                using var cmd = new SQLiteCommand(queryBuilder.ToString(), conn, tx);
-                cmd.Parameters.AddRange(parameters.ToArray());
-
-                await cmd.ExecuteNonQueryAsync();
-                tx.Commit();
+                transaction.Commit();
             }
-
         }
 
     }

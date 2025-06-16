@@ -173,8 +173,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                     {
                         try
                         {
-                            string svgUrl = _scryfallLookups.TryGetIconUriForSetCode(metadata, setCode)
-                                            ?? "https://svgs.scryfall.io/sets/default.svg";
+                            string svgUrl = _scryfallLookups.TryGetIconUriForSetCode(metadata, setCode) ?? "https://svgs.scryfall.io/sets/default.svg";
 
                             string? svgContent = await _scryfallLookups.FetchSvgContentAsync(svgUrl);
                             byte[] png = string.IsNullOrWhiteSpace(svgContent)

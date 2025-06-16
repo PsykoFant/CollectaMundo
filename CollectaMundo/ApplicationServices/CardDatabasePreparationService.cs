@@ -89,12 +89,12 @@ namespace CollectaMundo.ApplicationServices
                 _statusVM.StatusMessage = "Generating mana cost images...";
                 await _missingPngService.GenerateMissingManaCostImagesAsync(uow.CurrentConnection);
 
-                _statusVM.StatusMessage = "Generating keyrune images...";
+                _statusVM.StatusMessage = "Generating set icon images...";
                 await _missingPngService.GenerateMissingKeyRuneImagesAsync(uow.CurrentConnection);
 
                 // 3. Import card prices
-                await _priceService.ImportPricesFromJsonAsync(pricesPath, uow.CurrentConnection);
                 _statusVM.StatusMessage = "Importing card prices...";
+                await _priceService.ImportPricesFromJsonAsync(pricesPath, uow.CurrentConnection);
 
                 _statusVM.StatusMessage = "Wrapping up first-time setup...";
                 // 4. Create views

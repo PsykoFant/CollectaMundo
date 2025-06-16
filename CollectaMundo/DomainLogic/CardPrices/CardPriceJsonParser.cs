@@ -1,55 +1,75 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Concurrent;
+using System.Text.Json;
 
 namespace CollectaMundo.DomainLogic.CardPrices
 {
     public static class CardPriceJsonParser
     {
-        public static Dictionary<string, decimal> ParsePriceList(JsonElement pricesRoot, string format, string retailer, string finishType)
+        public static async Task<List<CardPrice>> ParseAllPricesAsync(JsonElement root)
         {
-            var result = new Dictionary<string, decimal>();
+            var prices = new ConcurrentBag<CardPrice>();
 
-            if (!pricesRoot.TryGetProperty("data", out var dataNode))
+            var tasks = GetAllKeys().Select(key =>
+                Task.Run(() =>
+                {
+                    var result = ParsePricesForSource(root, key);
+                    foreach (var price in result)
+                    {
+                        prices.Add(price);
+                    }
+                })
+            );
+
+            await Task.WhenAll(tasks);
+            return [.. prices];
+        }
+        private static List<CardPrice> ParsePricesForSource(JsonElement root, PriceSourceKey key)
+        {
+            var results = new List<CardPrice>();
+
+            foreach (JsonProperty card in root.GetProperty("data").EnumerateObject())
             {
-                return result;
+                string uuid = card.Name;
+
+                if (!card.Value.TryGetProperty(key.Format, out JsonElement formatElement)) continue;
+                if (!formatElement.TryGetProperty(key.Retailer, out JsonElement retailerElement)) continue;
+                if (!retailerElement.TryGetProperty("retail", out JsonElement retailElement)) continue;
+                if (!retailElement.TryGetProperty(key.Finish, out JsonElement finishElement)) continue;
+
+                // Directly fetch the single price value
+                if (finishElement.EnumerateObject().FirstOrDefault() is { } datePricePair)
+                {
+                    var price = datePricePair.Value.GetDecimal();
+
+                    results.Add(new CardPrice
+                    {
+                        Uuid = uuid,
+                        Format = key.Format,
+                        Retailer = key.Retailer,
+                        Finish = key.Finish,
+                        Price = price
+                    });
+                }
             }
 
-            foreach (var card in dataNode.EnumerateObject())
+            return results;
+        }
+
+
+        private static IEnumerable<PriceSourceKey> GetAllKeys()
+        {
+            foreach (var (format, retailers) in CardPriceDefinitions.RetailersByFormat)
             {
-                var uuid = card.Name;
-                var cardData = card.Value;
-
-                if (!cardData.TryGetProperty(format, out var formatNode))
+                foreach (string retailer in retailers)
                 {
-                    continue;
-                }
-
-                if (!formatNode.TryGetProperty(retailer, out var retailerNode))
-                {
-                    continue;
-                }
-
-                if (!retailerNode.TryGetProperty("retail", out var retailNode))
-                {
-                    continue;
-                }
-
-                if (!retailNode.TryGetProperty(finishType, out var finishNode))
-                {
-                    continue;
-                }
-
-                foreach (var dateEntry in finishNode.EnumerateObject())
-                {
-                    if (dateEntry.Value.ValueKind == JsonValueKind.Number &&
-                        dateEntry.Value.TryGetDecimal(out var price))
+                    foreach (string finish in CardPriceDefinitions.Finishes)
                     {
-                        result[uuid] = price;
-                        break; // Only need the first available price
+                        yield return new PriceSourceKey(format, retailer, finish.ToLowerInvariant());
                     }
                 }
             }
-
-            return result;
         }
+
+        private readonly record struct PriceSourceKey(string Format, string Retailer, string Finish);
     }
 }

@@ -5,8 +5,8 @@ namespace CollectaMundo.ApplicationServices.Utilities
 {
     public sealed class ParallelWorkCoordinator<T>(StatusViewModel statusVM, int total, int maxDegreeOfParallelism) : IDisposable
     {
-        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(maxDegreeOfParallelism);
-        private readonly ProgressReporter _reporter = new ProgressReporter(statusVM, total);
+        private readonly SemaphoreSlim _semaphore = new(maxDegreeOfParallelism);
+        private readonly ProgressReporter _reporter = new(statusVM, total);
         public readonly ConcurrentBag<T> Results = [];
         public int Total { get; } = total;
 
