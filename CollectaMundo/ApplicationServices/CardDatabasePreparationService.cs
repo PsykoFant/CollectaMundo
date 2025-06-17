@@ -38,41 +38,41 @@ namespace CollectaMundo.ApplicationServices
             string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
             string pricesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "prices.json");
 
-            //var downloadCardDbTask = DownloadResourceAsync(cardDbUrl, dbPath, onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true), onProgress: percent => _statusVM.ProgressValue = percent);
-            //var downloadPricesTask = DownloadResourceAsync(pricesUrl, pricesPath, onStart: null, onProgress: null);
+            var downloadCardDbTask = DownloadResourceAsync(cardDbUrl, dbPath, onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true), onProgress: percent => _statusVM.ProgressValue = percent);
+            var downloadPricesTask = DownloadResourceAsync(pricesUrl, pricesPath, onStart: null, onProgress: null);
 
-            //bool[] results = await Task.WhenAll(downloadCardDbTask, downloadPricesTask);
+            bool[] results = await Task.WhenAll(downloadCardDbTask, downloadPricesTask);
 
-            //// Retry if needed
-            //if (!results[0])
-            //{
-            //    _statusVM.Show("Retrying card database download...", true);
-            //    bool retryCardDb = await DownloadResourceAsync(
-            //    cardDbUrl,
-            //    dbPath,
-            //    onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true),
-            //    onProgress: percent => _statusVM.ProgressValue = percent);
-            //    if (!retryCardDb)
-            //    {
-            //        Debug.WriteLine("Card database re-download failed.");
-            //        return;
-            //    }
-            //}
+            // Retry if needed
+            if (!results[0])
+            {
+                _statusVM.Show("Retrying card database download...", true);
+                bool retryCardDb = await DownloadResourceAsync(
+                cardDbUrl,
+                dbPath,
+                onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true),
+                onProgress: percent => _statusVM.ProgressValue = percent);
+                if (!retryCardDb)
+                {
+                    Debug.WriteLine("Card database re-download failed.");
+                    return;
+                }
+            }
 
-            //if (!results[1])
-            //{
-            //    _statusVM.Show("Retrying card prices download...", true);
-            //    bool retryPrices = await DownloadResourceAsync(
-            //    pricesUrl,
-            //    pricesPath,
-            //    onStart: size => _statusVM.Show($"Downloading price file ({size})", true),
-            //    onProgress: percent => _statusVM.ProgressValue = percent);
-            //    if (!retryPrices)
-            //    {
-            //        Debug.WriteLine("Prices re-download failed.");
-            //        return;
-            //    }
-            //}
+            if (!results[1])
+            {
+                _statusVM.Show("Retrying card prices download...", true);
+                bool retryPrices = await DownloadResourceAsync(
+                pricesUrl,
+                pricesPath,
+                onStart: size => _statusVM.Show($"Downloading price file ({size})", true),
+                onProgress: percent => _statusVM.ProgressValue = percent);
+                if (!retryPrices)
+                {
+                    Debug.WriteLine("Prices re-download failed.");
+                    return;
+                }
+            }
 
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
@@ -93,20 +93,29 @@ namespace CollectaMundo.ApplicationServices
                 await _missingPngService.GenerateMissingKeyRuneImagesAsync(uow.CurrentConnection);
 
                 // 3. Import card prices
-                _statusVM.StatusMessage = "Importing card prices...";
+                _statusVM.StatusMessage = "Processing card prices...";
                 await _priceService.ImportPricesFromJsonAsync(pricesPath, uow.CurrentConnection);
 
-                _statusVM.StatusMessage = "Wrapping up first-time setup...";
-                // 4. Create views
-                await _dbSchemaRepo.CreateViewsAsync(uow.CurrentConnection, "cardmarket");
+                _statusVM.StatusMessage = "Almost there - wrapping things up...";
 
-                // 5. Create indices
-                await _dbSchemaRepo.CreateIndicesAsync(uow.CurrentConnection);
+                // Perform heavy work in the background
+                await Task.Run(async () =>
+                {
+                    // 4. Create views
+                    await _dbSchemaRepo.CreateViewsAsync(uow.CurrentConnection, "cardmarket");
 
-                await uow.CommitAsync();
+                    // 5. Create indices
+                    await _dbSchemaRepo.CreateIndicesAsync(uow.CurrentConnection);
 
-                // 6. Optimize database
-                await _dbSchemaRepo.OptimizeAsync(uow.CurrentConnection);
+                    // 6. Commit the unit of work
+                    await uow.CommitAsync();
+
+                    // 7. Optimize database
+                    await _dbSchemaRepo.OptimizeAsync(uow.CurrentConnection);
+
+                });
+
+                _statusVM.FirstTimeSetupText = "First time setup of card database completed successfully!";
             }
             catch (Exception ex)
             {
@@ -120,8 +129,7 @@ namespace CollectaMundo.ApplicationServices
 
                 try
                 {
-                    //File.Delete(pricesPath);
-
+                    File.Delete(pricesPath);
                 }
                 catch (IOException ex)
                 {

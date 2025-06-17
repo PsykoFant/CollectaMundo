@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ViewModels;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace CollectaMundo.ApplicationServices.Utilities
 {
@@ -23,7 +24,6 @@ namespace CollectaMundo.ApplicationServices.Utilities
             int value = Interlocked.Increment(ref _current);
             ReportProgress(value);
         }
-
         private void ReportProgress(int done)
         {
             int percent = (int)((double)done / _total * 100);
@@ -34,6 +34,7 @@ namespace CollectaMundo.ApplicationServices.Utilities
                 {
                     _statusVM.ProgressValue = percent;
                 });
+                Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
             }
         }
 

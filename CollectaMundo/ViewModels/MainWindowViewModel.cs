@@ -168,16 +168,20 @@ namespace CollectaMundo.ViewModels
         private async Task InitializeListsAsync()
         {
             var init = new MainWindowInitializer();
-            await init.InitializeAsync(
-                [
-                    (AllCardsVM, CardListQueryCatalog.AllCards),
-                    (MyCollectionVM, CardListQueryCatalog.MyCollection),
-                    (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
-                    (AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
-                    (ColorIcons, CardListQueryCatalog.ColorIcons)
-                ],
-                FilterVM.Filters, FilterVM
-            );
+
+            await Task.Run(async () =>
+            {
+                await init.InitializeAsync(
+                    [
+                        (AllCardsVM, CardListQueryCatalog.AllCards),
+                        (MyCollectionVM, CardListQueryCatalog.MyCollection),
+                        (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
+                        (AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
+                        (ColorIcons, CardListQueryCatalog.ColorIcons)
+                    ],
+                    FilterVM.Filters, FilterVM
+                );
+            });
 
             FilterVM.NotifyFilterChanged();
             OnStartupComplete?.Invoke();

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Text.Json;
+using static CollectaMundo.DomainLogic.CardPrices.CardPriceDefinitions;
 
 namespace CollectaMundo.DomainLogic.CardPrices
 {
@@ -9,7 +10,7 @@ namespace CollectaMundo.DomainLogic.CardPrices
         {
             var prices = new ConcurrentBag<CardPrice>();
 
-            var tasks = GetAllKeys().Select(key =>
+            var tasks = CardPriceDefinitions.GetAllKeys().Select(key =>
                 Task.Run(() =>
                 {
                     var result = ParsePricesForSource(root, key);
@@ -23,7 +24,7 @@ namespace CollectaMundo.DomainLogic.CardPrices
             await Task.WhenAll(tasks);
             return [.. prices];
         }
-        private static List<CardPrice> ParsePricesForSource(JsonElement root, PriceSourceKey key)
+        public static List<CardPrice> ParsePricesForSource(JsonElement root, PriceSourceKey key)
         {
             var results = new List<CardPrice>();
 
@@ -54,22 +55,5 @@ namespace CollectaMundo.DomainLogic.CardPrices
 
             return results;
         }
-
-
-        private static IEnumerable<PriceSourceKey> GetAllKeys()
-        {
-            foreach (var (format, retailers) in CardPriceDefinitions.RetailersByFormat)
-            {
-                foreach (string retailer in retailers)
-                {
-                    foreach (string finish in CardPriceDefinitions.Finishes)
-                    {
-                        yield return new PriceSourceKey(format, retailer, finish.ToLowerInvariant());
-                    }
-                }
-            }
-        }
-
-        private readonly record struct PriceSourceKey(string Format, string Retailer, string Finish);
     }
 }
