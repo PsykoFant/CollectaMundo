@@ -5,6 +5,7 @@ using CollectaMundo.ViewModels;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Windows;
 
 namespace CollectaMundo.ApplicationServices
 {
@@ -17,19 +18,100 @@ namespace CollectaMundo.ApplicationServices
         private readonly IGenerateMissingPngService _missingPngService;
         private readonly StatusViewModel _statusVM;
 
+        private readonly string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
+        private readonly string pricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
+
         public CardDatabasePreparationService(IAppSettings settings, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, StatusViewModel statusVM)
         {
-            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            _dbSchemaRepo = dbSchemaRepo ?? throw new ArgumentNullException(nameof(dbSchemaRepo));
-            _priceService = priceService ?? throw new ArgumentNullException(nameof(priceService));
-            _missingPngService = missingPngService ?? throw new ArgumentNullException(nameof(missingPngService));
-            _statusVM = statusVM ?? throw new ArgumentNullException(nameof(statusVM));
+            _settings = settings;
+            _dbSchemaRepo = dbSchemaRepo;
+            _priceService = priceService;
+            _missingPngService = missingPngService;
+            _statusVM = statusVM;
 
             _dbFactory = new DbConnectionFactory(_settings);
         }
+        public async Task RunCompleteSetupWithRetriesAsync()
+        {
+            if (!IsInternetAvailable())
+            {
+                _statusVM.Show("No internet connection!", false);
+                _statusVM.FirstTimeSetupText = "Unfortunately, first time setup cannot continue without internet connection";
+                await Task.Delay(10000);
+                Application.Current.Shutdown();
+            }
+
+            string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
+            string pricesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "prices.json");
+
+            const int maxTotalAttempts = 3;
+
+            for (int overallAttempt = 1; overallAttempt <= maxTotalAttempts; overallAttempt++)
+            {
+                _statusVM.FirstTimeSetupText = "Performing first-time setup of card database - please wait ...";
+                Debug.WriteLine($"[SetupPipeline] Starting overall attempt {overallAttempt} of {maxTotalAttempts}.");
+
+                try
+                {
+                    var cardDbTask = ExecuteWithRetryAsync(() => DownloadResourceAsync(cardDbUrl, dbPath, onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true), onProgress: percent => _statusVM.ProgressValue = percent), "1a - card db download");
+                    var downloadPricesTask = ExecuteWithRetryAsync(() => DownloadResourceAsync(pricesUrl, pricesPath, onStart: null, onProgress: null), "1b - price file download");
+
+                    bool downloadsSucceeded;
+                    try
+                    {
+                        bool[] results = await Task.WhenAll(cardDbTask, downloadPricesTask);
+                        downloadsSucceeded = results.All(r => r);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"[SetupPipeline] One or both download tasks threw: {ex.Message}");
+                        downloadsSucceeded = false;
+                    }
+
+                    if (!downloadsSucceeded)
+                    {
+                        Debug.WriteLine($"[SetupPipeline] One or both downloads failed. Restarting setup.");
+
+                        if (File.Exists(dbPath))
+                        {
+                            try
+                            {
+                                File.Delete(dbPath);
+                                Debug.WriteLine("[SetupPipeline] Deleted corrupt or partial DB file.");
+                            }
+                            catch (Exception cleanupEx)
+                            {
+                                Debug.WriteLine($"[SetupPipeline] Failed to delete DB file: {cleanupEx.Message}");
+                            }
+                        }
+
+                        continue;
+                    }
+
+                    Debug.WriteLine("[SetupPipeline] Both downloads succeeded.");
+                    // Proceed to next steps — tables, PNGs, prices etc...
+                    return; // exit after full successful run
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[SetupPipeline] Attempt {overallAttempt} failed with exception: {ex.Message}");
+                }
+            }
+
+            _statusVM.Show("Setup failed after multiple attempts. Please restart the application or check your internet connection.", false);
+            _statusVM.FirstTimeSetupText = "CollectaMundo will automatically close in a bit...";
+
+            await Task.Delay(10000);
+            Application.Current.Shutdown();
+
+
+        }
+
+
 
         public async Task FirstTimeDbSetup()
         {
+            /*
             _statusVM.FirstTimeSetupText = "Performing first-time setup of card database - please wait ...";
 
             string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
@@ -43,21 +125,21 @@ namespace CollectaMundo.ApplicationServices
 
             bool[] results = await Task.WhenAll(downloadCardDbTask, downloadPricesTask);
 
-            // Retry if needed
+            Retry if needed
             if (!results[0])
-            {
-                _statusVM.Show("Retrying card database download...", true);
-                bool retryCardDb = await DownloadResourceAsync(
-                cardDbUrl,
-                dbPath,
-                onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true),
-                onProgress: percent => _statusVM.ProgressValue = percent);
-                if (!retryCardDb)
                 {
-                    Debug.WriteLine("Card database re-download failed.");
-                    return;
+                    _statusVM.Show("Retrying card database download...", true);
+                    bool retryCardDb = await DownloadResourceAsync(
+                    cardDbUrl,
+                    dbPath,
+                    onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true),
+                    onProgress: percent => _statusVM.ProgressValue = percent);
+                    if (!retryCardDb)
+                    {
+                        Debug.WriteLine("Card database re-download failed.");
+                        return;
+                    }
                 }
-            }
 
             if (!results[1])
             {
@@ -73,7 +155,12 @@ namespace CollectaMundo.ApplicationServices
                     return;
                 }
             }
+            */
 
+            await RunCompleteSetupWithRetriesAsync();
+
+
+            string pricesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "prices.json");
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
 
@@ -188,11 +275,49 @@ namespace CollectaMundo.ApplicationServices
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Download error: {ex.Message}");
+                Debug.WriteLine($"[DownloadResourceAsync] Download error: {ex.Message}");
                 return false;
             }
         }
 
-    }
+        private async Task<bool> ExecuteWithRetryAsync(Func<Task<bool>> action, string stepName, int maxRetries = 3)
+        {
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                try
+                {
+                    if (await action())
+                    {
+                        Debug.WriteLine($"[SetupPipeline] Step '{stepName}' succeeded.");
+                        return true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[SetupPipeline] Step '{stepName}' threw on attempt {attempt}: {ex.Message}");
+                }
 
+                Debug.WriteLine($"[SetupPipeline] Step '{stepName}' failed on attempt {attempt}.");
+                _statusVM.Show($"Retrying '{stepName}' ({attempt}/{maxRetries})...", true);
+                await Task.Delay(2000);
+            }
+
+            _statusVM.Show($"Failed to complete '{stepName}' after {maxRetries} tries. Restarting setup.", true);
+            return false;
+        }
+
+        private static bool IsInternetAvailable()
+        {
+            try
+            {
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+                using var result = client.GetAsync("https://www.google.com").Result;
+                return result.IsSuccessStatusCode;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
 }
