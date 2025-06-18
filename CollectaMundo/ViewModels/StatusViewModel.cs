@@ -8,8 +8,9 @@ namespace CollectaMundo.ViewModels
         private bool _isVisible;
         private bool _isProgressVisible;
         private int _progressValue;
-        private string _statusMessage = string.Empty;
-        private string _firstTimeSetupText = string.Empty;
+        private string _statusLabelAboveBar = string.Empty;
+        private string _statusLabelBelowBar = string.Empty;
+        private string _statusLabelMain = string.Empty;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -28,28 +29,33 @@ namespace CollectaMundo.ViewModels
             get => _progressValue;
             set => SetField(ref _progressValue, value);
         }
-        public string StatusMessage
+        public string StatusLabelAboveBar
         {
-            get => _statusMessage;
-            set => SetField(ref _statusMessage, value);
+            get => _statusLabelAboveBar;
+            set => SetField(ref _statusLabelAboveBar, value);
         }
-        public string FirstTimeSetupText
+        public string StatusLabelBelowBar
         {
-            get => _firstTimeSetupText;
-            set => SetField(ref _firstTimeSetupText, value);
+            get => _statusLabelBelowBar;
+            set => SetField(ref _statusLabelBelowBar, value);
+        }
+        public string StatusLabelMain
+        {
+            get => _statusLabelMain;
+            set => SetField(ref _statusLabelMain, value);
         }
         public void Show(string message, bool showProgress = false)
         {
             IsVisible = true;
-            StatusMessage = message;
+            StatusLabelMain = message;
             IsProgressVisible = showProgress;
         }
         public void Hide()
         {
             IsVisible = false;
             IsProgressVisible = false;
-            StatusMessage = string.Empty;
-            FirstTimeSetupText = string.Empty;
+            StatusLabelMain = string.Empty;
+            StatusLabelAboveBar = string.Empty;
         }
         private void SetField<T>(ref T field, T value, [CallerMemberName] string? propName = null)
         {

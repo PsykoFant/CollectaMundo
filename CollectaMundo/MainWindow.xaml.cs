@@ -793,8 +793,8 @@ namespace CollectaMundo
             //GridUtilsMenu.Visibility = Visibility.Collapsed;
 
             // Reset filtering and add/edit cards UI
-            //AddCardsVM.StatusMessage = string.Empty;
-            //EditCardsVM.StatusMessage = string.Empty;
+            //AddCardsVM.StatusLabelMain = string.Empty;
+            //EditCardsVM.StatusLabelMain = string.Empty;
             UtilsInfoLabel.Content = "";
 
 
