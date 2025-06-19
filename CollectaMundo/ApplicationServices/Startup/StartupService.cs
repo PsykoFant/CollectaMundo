@@ -1,5 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.Utilities;
-using CollectaMundo.ViewModels;
+﻿using CollectaMundo.ViewModels;
 using System.Windows;
 
 namespace CollectaMundo.ApplicationServices.Startup
@@ -17,14 +16,17 @@ namespace CollectaMundo.ApplicationServices.Startup
             // Check database integrity
             _statusVM.Show("Checking database integrity…");
 
-            await UIHelper.ForceRenderAsync();
-            var dbStatus = await _integrityService.GetDatabaseStatusAsync();
+            //await UIHelper.ForceRenderAsync();
+            //var dbStatus = await _integrityService.GetDatabaseStatusAsync();
 
-            // If the database is missing or corrupt, we need to set it up
-            if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
-            {
-                await _prepService.FirstTimeDbSetup();
-            }
+            //// If the database is missing or corrupt, we need to set it up
+            //if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
+            //{
+            //    await _prepService.FirstTimeDbSetup();
+            //}
+
+            // temp test
+            await _prepService.FirstTimeDbSetup();
 
             // Now we can proceed to load the main window
             _statusVM.StatusLabelMain = "Loading ALL the cards…";

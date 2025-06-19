@@ -2,6 +2,7 @@
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.Data;
 using CollectaMundo.ViewModels;
+using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
@@ -47,71 +48,94 @@ namespace CollectaMundo.ApplicationServices
 
             const int maxTotalAttempts = 3;
 
+            // Outer loop for overall attempts
+
             for (int overallAttempt = 1; overallAttempt <= maxTotalAttempts; overallAttempt++)
             {
-                // Overall attempt - Reset Action
+                // Outer loop - reset Action
                 _statusVM.ProgressValue = 0;
-                if (File.Exists(dbPath))
-                {
-                    try
-                    {
-                        File.Delete(dbPath);
-                        Debug.WriteLine("[SetupPipeline] Deleted corrupt or partial DB file.");
-                    }
-                    catch (Exception cleanupEx)
-                    {
-                        Debug.WriteLine($"[SetupPipeline] Failed to delete DB file: {cleanupEx.Message}");
-                    }
-                }
+                //if (File.Exists(dbPath))
+                //{
+                //    try
+                //    {
+                //        File.Delete(dbPath);
+                // also delete the other files that SQLite creates
+                //AllPrintings.sqlite-shm
+                //    AllPrintings.sqlite-wal
+                //        Debug.WriteLine("[SetupPipeline] Deleted corrupt or partial DB file.");
+                //    }
+                //    catch (Exception cleanupEx)
+                //    {
+                //        Debug.WriteLine($"[SetupPipeline] Failed to delete DB file: {cleanupEx.Message}");
+                //    }
+                //}
                 _statusVM.StatusLabelAboveBar = string.Empty;
                 _statusVM.StatusLabelBelowBar = string.Empty;
                 _statusVM.StatusLabelMain = string.Empty;
-                // end reset block
 
                 _statusVM.StatusLabelAboveBar = "Performing first-time setup of card database - please wait ...";
                 Debug.WriteLine($"[SetupPipeline] Starting first time db setup overall attempt {overallAttempt} of {maxTotalAttempts}.");
 
                 try
                 {
+                    // Inner loop for download attempts
                     using var cts = new CancellationTokenSource();
                     var token = cts.Token;
 
-                    var cardDbTcs = new TaskCompletionSource<bool>();
-                    var priceFileTcs = new TaskCompletionSource<bool>();
+                    //var cardDbTcs = new TaskCompletionSource<bool>();
+                    //var priceFileTcs = new TaskCompletionSource<bool>();
 
-                    var cardDbExecutionTask = Task.Run(async () =>
-                    {
-                        bool result = await ExecuteWithRetryAsync(() => DownloadResourceAsync(cardDbUrl, dbPath, onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true), onProgress: percent => _statusVM.ProgressValue = percent, token), "1a - card database download", token);
-                        cardDbTcs.TrySetResult(result);
-                        if (!result) cts.Cancel();
-                    });
+                    //var cardDbExecutionTask = Task.Run(async () =>
+                    //{
+                    //    bool result = await ExecuteWithRetryAsync(() => DownloadResourceAsync(cardDbUrl, dbPath, onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true), onProgress: percent => _statusVM.ProgressValue = percent, token), "1a - card database download", token);
+                    //    cardDbTcs.TrySetResult(result);
+                    //    if (!result) cts.Cancel();
+                    //});
 
-                    var priceFileExecutionTask = Task.Run(async () =>
-                    {
-                        bool result = await ExecuteWithRetryAsync(() => DownloadResourceAsync(pricesUrl, pricesPath, onStart: null, onProgress: null, token), "1b - price file download", token);
-                        priceFileTcs.TrySetResult(result);
-                        if (!result) cts.Cancel();
-                    });
+                    //var priceFileExecutionTask = Task.Run(async () =>
+                    //{
+                    //    bool result = await ExecuteWithRetryAsync(() => DownloadResourceAsync(pricesUrl, pricesPath, onStart: null, onProgress: null, token), "1b - price file download", token);
+                    //    priceFileTcs.TrySetResult(result);
+                    //    if (!result) cts.Cancel();
+                    //});
 
-                    await Task.WhenAll(cardDbTcs.Task, priceFileTcs.Task);
+                    //await Task.WhenAll(cardDbTcs.Task, priceFileTcs.Task);
 
-                    bool cardDbDone = cardDbTcs.Task.IsCompletedSuccessfully;
-                    bool priceFileDone = priceFileTcs.Task.IsCompletedSuccessfully;
+                    //bool cardDbDone = cardDbTcs.Task.IsCompletedSuccessfully;
+                    //bool priceFileDone = priceFileTcs.Task.IsCompletedSuccessfully;
 
-                    bool cardDbSuccess = cardDbDone && cardDbTcs.Task.Result;
-                    bool priceFileSuccess = priceFileDone && priceFileTcs.Task.Result;
+                    //bool cardDbSuccess = cardDbDone && cardDbTcs.Task.Result;
+                    //bool priceFileSuccess = priceFileDone && priceFileTcs.Task.Result;
 
-                    if (!cardDbSuccess || !priceFileSuccess)
-                    {
-                        Debug.WriteLine("[SetupPipeline] One or both downloads failed. Restarting immediately.");
+                    //if (!cardDbSuccess || !priceFileSuccess)
+                    //{
+                    //    Debug.WriteLine("[SetupPipeline] One or both downloads failed. Restarting immediately.");
 
-                        cts.Cancel(); // stop the other
-                        await Task.WhenAll(cardDbExecutionTask, priceFileExecutionTask); // wait for all cleanup
-                        _statusVM.ProgressValue = 0;
-                        continue;
-                    }
+                    //    cts.Cancel(); // stop the other
+                    //    await Task.WhenAll(cardDbExecutionTask, priceFileExecutionTask); // wait for all cleanup
+                    //    _statusVM.ProgressValue = 0;
+                    //    continue;
+                    //}
 
                     Debug.WriteLine("[SetupPipeline] Both downloads succeeded.");
+
+                    // Inner loop table creation
+                    _statusVM.StatusLabelMain = "Creating custom tables...";
+                    bool tableSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn), "2 - custom table creation", token);
+                    if (!tableSuccess) continue;
+
+                    _statusVM.StatusLabelMain = "Generating mana symbols...";
+                    bool manaSymbolCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn), "3", token);
+                    if (!manaSymbolCreationSuccess) continue;
+
+                    _statusVM.StatusLabelMain = "Generating mana cost images...";
+                    bool manaCostImageCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn), "4", token);
+                    if (!manaCostImageCreationSuccess) continue;
+
+                    _statusVM.StatusLabelMain = "Generating set icon images...";
+                    bool keyRuneCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn), "5", token);
+                    if (!keyRuneCreationSuccess) continue;
+
                     return;
                 }
                 catch (Exception ex)
@@ -130,52 +154,6 @@ namespace CollectaMundo.ApplicationServices
 
         public async Task FirstTimeDbSetup()
         {
-            /*
-            _statusVM.StatusLabelAboveBar = "Performing first-time setup of card database - please wait ...";
-
-            string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
-            string pricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
-
-            string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
-            string pricesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "prices.json");
-
-            var downloadCardDbTask = DownloadResourceAsync(cardDbUrl, dbPath, onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true), onProgress: percent => _statusVM.ProgressValue = percent);
-            var downloadPricesTask = DownloadResourceAsync(pricesUrl, pricesPath, onStart: null, onProgress: null);
-
-            bool[] results = await Task.WhenAll(downloadCardDbTask, downloadPricesTask);
-
-            Retry if needed
-            if (!results[0])
-                {
-                    _statusVM.Show("Retrying card database download...", true);
-                    bool retryCardDb = await DownloadResourceAsync(
-                    cardDbUrl,
-                    dbPath,
-                    onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true),
-                    onProgress: percent => _statusVM.ProgressValue = percent);
-                    if (!retryCardDb)
-                    {
-                        Debug.WriteLine("Card database re-download failed.");
-                        return;
-                    }
-                }
-
-            if (!results[1])
-            {
-                _statusVM.Show("Retrying card prices download...", true);
-                bool retryPrices = await DownloadResourceAsync(
-                pricesUrl,
-                pricesPath,
-                onStart: size => _statusVM.Show($"Downloading price file ({size})", true),
-                onProgress: percent => _statusVM.ProgressValue = percent);
-                if (!retryPrices)
-                {
-                    Debug.WriteLine("Prices re-download failed.");
-                    return;
-                }
-            }
-            */
-
             await RunCompleteSetupWithRetriesAsync();
 
 
@@ -185,18 +163,6 @@ namespace CollectaMundo.ApplicationServices
 
             try
             {
-                // 1. Create tables
-                await _dbSchemaRepo.CreateTablesAsync(uow.CurrentConnection);
-
-                // 2. Generate missing PNGs for icons
-                _statusVM.StatusLabelMain = "Generating mana symbols...";
-                await _missingPngService.GenerateMissingManaSymbolImagesAsync(uow.CurrentConnection);
-
-                _statusVM.StatusLabelMain = "Generating mana cost images...";
-                await _missingPngService.GenerateMissingManaCostImagesAsync(uow.CurrentConnection);
-
-                _statusVM.StatusLabelMain = "Generating set icon images...";
-                await _missingPngService.GenerateMissingKeyRuneImagesAsync(uow.CurrentConnection);
 
                 // 3. Import card prices
                 _statusVM.StatusLabelMain = "Processing card prices...";
@@ -235,7 +201,7 @@ namespace CollectaMundo.ApplicationServices
 
                 try
                 {
-                    File.Delete(pricesPath);
+                    //File.Delete(pricesPath);
                 }
                 catch (IOException ex)
                 {
@@ -256,7 +222,26 @@ namespace CollectaMundo.ApplicationServices
             });
         }
 
-        private async Task<bool> ExecuteWithRetryAsync(Func<Task<bool>> action, string stepName, CancellationToken token, int maxRetries = 3)
+        private Task<bool> ExecuteWithRetryAsync(Func<Task> action, string stepName, CancellationToken token)
+            => ExecuteWithRetryCoreAsync(action, stepName, maxRetries: 3, token);
+
+        private async Task<bool> ExecuteWithUnitOfWorkRetryAsync(Func<SQLiteConnection, Task> action, string stepName, CancellationToken token)
+        {
+            return await ExecuteWithRetryCoreAsync(async () =>
+            {
+                await using var uow = new UnitOfWork(_dbFactory);
+                await uow.BeginAsync();
+
+                await action(uow.CurrentConnection);
+
+                await uow.CommitAsync();
+                await uow.DisposeAsync(); // redundant, but safe
+            }, stepName, maxRetries: 3, token);
+        }
+        private Task<bool> ExecuteWithRetryAsync(Func<Task<bool>> action, string stepName, CancellationToken token) => ExecuteWithRetryCoreAsync(async () => { if (!await action()) throw new Exception("Step returned false."); }, stepName, maxRetries: 3, token);
+
+
+        private async Task<bool> ExecuteWithRetryCoreAsync(Func<Task> action, string stepName, int maxRetries, CancellationToken token)
         {
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
@@ -269,11 +254,9 @@ namespace CollectaMundo.ApplicationServices
                 try
                 {
                     Debug.WriteLine($"[SetupPipeline] Step '{stepName}' attempt number {attempt}...");
-                    if (await action())
-                    {
-                        Debug.WriteLine($"[SetupPipeline] Step '{stepName}' succeeded!");
-                        return true;
-                    }
+                    await action();
+                    Debug.WriteLine($"[SetupPipeline] Step '{stepName}' succeeded!");
+                    return true;
                 }
                 catch (Exception ex)
                 {
@@ -281,7 +264,7 @@ namespace CollectaMundo.ApplicationServices
                     Debug.WriteLine($"[SetupPipeline] Step '{stepName}' threw error on attempt {attempt}: {ex.Message}");
                 }
 
-                await Task.Delay(3000, token).ContinueWith(_ => { });  // Safe delay with cancellation
+                await Task.Delay(3000, token).ContinueWith(_ => { });
                 _statusVM.StatusLabelBelowBar = string.Empty;
             }
 
@@ -290,6 +273,8 @@ namespace CollectaMundo.ApplicationServices
             _statusVM.StatusLabelBelowBar = string.Empty;
             return false;
         }
+
+
         private static async Task<bool> DownloadResourceAsync(string url, string targetPath, Action<string>? onStart = null, Action<int>? onProgress = null, CancellationToken token = default)
         {
             using var httpClient = new HttpClient();
