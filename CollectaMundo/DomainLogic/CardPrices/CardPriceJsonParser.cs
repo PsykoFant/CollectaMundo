@@ -32,10 +32,25 @@ namespace CollectaMundo.DomainLogic.CardPrices
             {
                 string uuid = card.Name;
 
-                if (!card.Value.TryGetProperty(key.Format, out JsonElement formatElement)) continue;
-                if (!formatElement.TryGetProperty(key.Retailer, out JsonElement retailerElement)) continue;
-                if (!retailerElement.TryGetProperty("retail", out JsonElement retailElement)) continue;
-                if (!retailElement.TryGetProperty(key.Finish, out JsonElement finishElement)) continue;
+                if (!card.Value.TryGetProperty(key.Format, out JsonElement formatElement))
+                {
+                    continue;
+                }
+
+                if (!formatElement.TryGetProperty(key.Retailer, out JsonElement retailerElement))
+                {
+                    continue;
+                }
+
+                if (!retailerElement.TryGetProperty("retail", out JsonElement retailElement))
+                {
+                    continue;
+                }
+
+                if (!retailElement.TryGetProperty(key.Finish, out JsonElement finishElement))
+                {
+                    continue;
+                }
 
                 // Directly fetch the single price value
                 if (finishElement.EnumerateObject().FirstOrDefault() is { } datePricePair)

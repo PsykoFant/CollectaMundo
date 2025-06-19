@@ -114,7 +114,7 @@ namespace CollectaMundo.Data
                     t.side IS NULL OR t.side = 'a';
             ";
             string createAllCardsForDecksViewQuery = $@"
-                CREATE VIEW view_allCardsForDecks AS
+                CREATE VIEW IF NOT EXISTS view_allCardsForDecks AS
                 SELECT * FROM (
                     SELECT 
                         DISTINCT c.name AS Name, 
@@ -153,7 +153,7 @@ namespace CollectaMundo.Data
                     END;
             ";
             string createCardsInDecksViewQuery = @"
-                CREATE VIEW view_cardsInDecks AS
+                CREATE VIEW IF NOT EXISTS view_cardsInDecks AS
                 SELECT 
                     cardsInDecks.id AS CardId,
                     cardsInDecks.name AS Name,
@@ -175,7 +175,7 @@ namespace CollectaMundo.Data
                 LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost;
             ";
             string createAllCardsViewQuery = $@"
-                CREATE VIEW view_allCards AS
+                CREATE VIEW IF NOT EXISTS view_allCards AS
                 SELECT * FROM (
                     SELECT 
                         c.name AS Name, 
@@ -258,7 +258,7 @@ namespace CollectaMundo.Data
                     END;
             ";
             string createMyCollectionViewQuery = $@"
-                CREATE VIEW view_myCollection AS
+                CREATE VIEW IF NOT EXISTS view_myCollection AS
                 SELECT * FROM (
                     SELECT                        
                         c.name AS Name,
@@ -373,6 +373,7 @@ namespace CollectaMundo.Data
         }
         public async Task OptimizeAsync(SQLiteConnection conn)
         {
+            //throw new Exception("Test throw.");
             var commands = new[]
             {
                 "VACUUM;",

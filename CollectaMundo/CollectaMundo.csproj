@@ -16,6 +16,7 @@
   <ItemGroup>
     <None Remove="Resources\Fonts\Beleren-Bold.ttf" />
     <None Remove="Resources\Fonts\mplantin.ttf" />
+    <None Remove="Resources\Images\counterspell_fail.png" />
     <None Remove="Resources\Images\Icon.ico" />
     <None Remove="Resources\Images\inspired-tinkering-183.png" />
     <None Remove="Resources\Images\IxidorsWill.jpg" />
@@ -50,6 +51,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\Fonts\mplantin.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\Images\counterspell_fail.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\Images\Icon.ico">

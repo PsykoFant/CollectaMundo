@@ -6,6 +6,8 @@ namespace CollectaMundo.ViewModels
     public class StatusViewModel : INotifyPropertyChanged
     {
         private bool _isVisible;
+        private bool _isLogoVisible = true;
+        private bool _isSetupFailVisible = false;
         private bool _isProgressVisible;
         private int _progressValue;
         private string _statusLabelAboveBar = string.Empty;
@@ -18,6 +20,16 @@ namespace CollectaMundo.ViewModels
         {
             get => _isVisible;
             set => SetField(ref _isVisible, value);
+        }
+        public bool IsLogoVisible
+        {
+            get => _isLogoVisible;
+            set => SetField(ref _isLogoVisible, value);
+        }
+        public bool IsSetupFailVisible
+        {
+            get => _isSetupFailVisible;
+            set => SetField(ref _isSetupFailVisible, value);
         }
         public bool IsProgressVisible
         {

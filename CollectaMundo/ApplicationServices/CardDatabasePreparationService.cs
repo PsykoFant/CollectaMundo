@@ -122,23 +122,59 @@ namespace CollectaMundo.ApplicationServices
                     // Inner loop table creation
                     _statusVM.StatusLabelMain = "Creating custom tables...";
                     bool tableSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn), "2 - custom table creation", token);
-                    if (!tableSuccess) continue;
+                    if (!tableSuccess)
+                    {
+                        continue;
+                    }
 
                     _statusVM.StatusLabelMain = "Generating mana symbols...";
                     bool manaSymbolCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn), "3", token);
-                    if (!manaSymbolCreationSuccess) continue;
+                    if (!manaSymbolCreationSuccess)
+                    {
+                        continue;
+                    }
 
                     _statusVM.StatusLabelMain = "Generating mana cost images...";
                     bool manaCostImageCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn), "4", token);
-                    if (!manaCostImageCreationSuccess) continue;
+                    if (!manaCostImageCreationSuccess)
+                    {
+                        continue;
+                    }
 
                     _statusVM.StatusLabelMain = "Generating set icon images...";
                     bool keyRuneCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn), "5", token);
-                    if (!keyRuneCreationSuccess) continue;
+                    if (!keyRuneCreationSuccess)
+                    {
+                        continue;
+                    }
 
-                    _statusVM.StatusLabelMain = "Processing card prices...";
-                    bool importCardPricesSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn), "6", token);
-                    if (!importCardPricesSuccess) continue;
+                    //_statusVM.StatusLabelMain = "Processing card prices...";
+                    //bool importCardPricesSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn), "6", token);
+                    //if (!importCardPricesSuccess)
+                    //{
+                    //    continue;
+                    //}
+
+                    _statusVM.StatusLabelMain = "Creating views...";
+                    bool createViewsSuccess = await Task.Run(() => ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket"), "7", token));
+                    if (!createViewsSuccess)
+                    {
+                        continue;
+                    }
+
+                    _statusVM.StatusLabelMain = "Creating indices...";
+                    bool createIndicesSuccess = await Task.Run(() => ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn), "8", token));
+                    if (!createIndicesSuccess)
+                    {
+                        continue;
+                    }
+
+                    _statusVM.StatusLabelMain = "Optimizing database...";
+                    bool optimizeDbSuccess = await Task.Run(() => ExecuteWithConnectionRetryAsync(conn => _dbSchemaRepo.OptimizeAsync(conn), "9", token));
+                    if (!optimizeDbSuccess)
+                    {
+                        continue;
+                    }
 
                     return;
                 }
@@ -149,6 +185,8 @@ namespace CollectaMundo.ApplicationServices
             }
 
             _statusVM.IsProgressVisible = false;
+            _statusVM.IsSetupFailVisible = true;
+            _statusVM.IsLogoVisible = false;
             _statusVM.StatusLabelAboveBar = "Setup failed after multiple attempts. Please restart the application or check your internet connection.";
             _statusVM.StatusLabelMain = "CollectaMundo will close down shortly...";
 
@@ -167,25 +205,20 @@ namespace CollectaMundo.ApplicationServices
 
             try
             {
-
-
-
-                _statusVM.StatusLabelMain = "Almost there - wrapping things up...";
+                //_statusVM.StatusLabelMain = "Almost there - wrapping things up...";
 
                 // Perform heavy work in the background
                 await Task.Run(async () =>
                 {
-                    // 4. Create views
-                    await _dbSchemaRepo.CreateViewsAsync(uow.CurrentConnection, "cardmarket");
+                    // create views
 
-                    // 5. Create indices
-                    await _dbSchemaRepo.CreateIndicesAsync(uow.CurrentConnection);
+                    // create indices
 
                     // 6. Commit the unit of work
                     await uow.CommitAsync();
-
                     // 7. Optimize database
-                    await _dbSchemaRepo.OptimizeAsync(uow.CurrentConnection);
+                    //await _dbSchemaRepo.OptimizeAsync(uow.CurrentConnection);
+
 
                 });
 
@@ -240,7 +273,7 @@ namespace CollectaMundo.ApplicationServices
                 await uow.DisposeAsync(); // redundant, but safe
             }, stepName, maxRetries: 3, token);
         }
-        private Task<bool> ExecuteWithRetryAsync(Func<Task<bool>> action, string stepName, CancellationToken token) => ExecuteWithRetryCoreAsync(async () => { if (!await action()) throw new Exception("Step returned false."); }, stepName, maxRetries: 3, token);
+        private Task<bool> ExecuteWithRetryAsync(Func<Task<bool>> action, string stepName, CancellationToken token) => ExecuteWithRetryCoreAsync(async () => { if (!await action()) { throw new Exception("Step returned false."); } }, stepName, maxRetries: 3, token);
 
 
         private async Task<bool> ExecuteWithRetryCoreAsync(Func<Task> action, string stepName, int maxRetries, CancellationToken token)
@@ -275,6 +308,17 @@ namespace CollectaMundo.ApplicationServices
             _statusVM.StatusLabelBelowBar = string.Empty;
             return false;
         }
+
+        private async Task<bool> ExecuteWithConnectionRetryAsync(Func<SQLiteConnection, Task> action, string stepName, CancellationToken token)
+        {
+            return await ExecuteWithRetryCoreAsync(async () =>
+            {
+                await using var conn = await _dbFactory.OpenConnectionAsync();
+                await action(conn);
+            }, stepName, maxRetries: 3, token);
+        }
+
+
 
 
         private static async Task<bool> DownloadResourceAsync(string url, string targetPath, Action<string>? onStart = null, Action<int>? onProgress = null, CancellationToken token = default)
