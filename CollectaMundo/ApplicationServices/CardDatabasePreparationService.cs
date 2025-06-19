@@ -136,6 +136,10 @@ namespace CollectaMundo.ApplicationServices
                     bool keyRuneCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn), "5", token);
                     if (!keyRuneCreationSuccess) continue;
 
+                    _statusVM.StatusLabelMain = "Processing card prices...";
+                    bool importCardPricesSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn), "6", token);
+                    if (!importCardPricesSuccess) continue;
+
                     return;
                 }
                 catch (Exception ex)
@@ -164,9 +168,7 @@ namespace CollectaMundo.ApplicationServices
             try
             {
 
-                // 3. Import card prices
-                _statusVM.StatusLabelMain = "Processing card prices...";
-                await _priceService.ImportPricesFromJsonAsync(pricesPath, uow.CurrentConnection);
+
 
                 _statusVM.StatusLabelMain = "Almost there - wrapping things up...";
 

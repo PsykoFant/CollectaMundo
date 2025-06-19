@@ -69,26 +69,18 @@ namespace CollectaMundo.ApplicationServices
         }
         public void UpdatePriceInfo(string? updatedDate, string? retailer)
         {
-            try
+            // Update the PriceInfo fields
+            if (updatedDate != null)
             {
-                // Update the PriceInfo fields
-                if (updatedDate != null)
-                {
-                    CurrentSettings.PriceInfo.PricesUpdatedDate = updatedDate;
-                }
-                if (retailer != null)
-                {
-                    CurrentSettings.PriceInfo.Retailer = retailer;
-                }
+                CurrentSettings.PriceInfo.PricesUpdatedDate = updatedDate;
+            }
+            if (retailer != null)
+            {
+                CurrentSettings.PriceInfo.Retailer = retailer;
+            }
 
-                // Save the updated settings to appsettings.json
-                SaveSettings();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error updating PriceInfo in appsettings.json: {ex.Message}");
-                MessageBox.Show($"Error updating PriceInfo in appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            // Save the updated settings to appsettings.json
+            SaveSettings();
         }
         private static void SaveSettings()
         {

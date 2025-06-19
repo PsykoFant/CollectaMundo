@@ -20,70 +20,62 @@ namespace CollectaMundo.ApplicationServices.CardPrices
             if (!File.Exists(jsonPath))
             {
                 Debug.WriteLine($"[PriceImporter] Price file not found: {jsonPath}");
+                throw new FileNotFoundException("Price JSON file not found.", jsonPath);
+            }
+
+            // Step 1: Load and parse JSON
+            using var stream = File.OpenRead(jsonPath);
+            var jsonDoc = await JsonDocument.ParseAsync(stream);
+            var root = jsonDoc.RootElement;
+
+            string? jsonDate = root.GetProperty("meta").GetProperty("date").GetString();
+            if (jsonDate == null)
+            {
+                Debug.WriteLine("[PriceImporter] Missing date in price JSON metadata.");
                 return;
             }
 
-            try
-            {
-                // Step 1: Load and parse JSON
-                using var stream = File.OpenRead(jsonPath);
-                var jsonDoc = await JsonDocument.ParseAsync(stream);
-                var root = jsonDoc.RootElement;
+            // Step 2: Parse all prices (with progress)
+            var allKeys = CardPriceDefinitions.GetAllKeys().ToList();
+            using var parseProgress = new ProgressReporter(_statusVM, allKeys.Count);
+            var parsedPrices = new ConcurrentBag<CardPrice>();
 
-                string? jsonDate = root.GetProperty("meta").GetProperty("date").GetString();
-                if (jsonDate == null)
+            await Task.WhenAll(allKeys.Select(key =>
+                Task.Run(() =>
                 {
-                    Debug.WriteLine("[PriceImporter] Missing date in price JSON metadata.");
-                    return;
-                }
+                    var prices = CardPriceJsonParser.ParsePricesForSource(root, key);
+                    foreach (var price in prices)
+                        parsedPrices.Add(price);
+                    parseProgress.Increment();
+                })
+            ));
 
-                // Step 2: Parse all prices (with progress)
-                var allKeys = CardPriceDefinitions.GetAllKeys().ToList();
-                using var parseProgress = new ProgressReporter(_statusVM, allKeys.Count);
-                var parsedPrices = new ConcurrentBag<CardPrice>();
+            // Step 3: Group and insert into database (with progress)
+            var groups = parsedPrices.GroupBy(p => $"{p.Retailer}{char.ToUpper(p.Finish[0]) + p.Finish[1..]}").ToList();
 
-                await Task.WhenAll(allKeys.Select(key =>
-                    Task.Run(() =>
-                    {
-                        var prices = CardPriceJsonParser.ParsePricesForSource(root, key);
-                        foreach (var price in prices)
-                            parsedPrices.Add(price);
-                        parseProgress.Increment();
-                    })
-                ));
+            using var insertProgress = new ProgressReporter(_statusVM, groups.Count);
 
-                // Step 3: Group and insert into database (with progress)
-                var groups = parsedPrices.GroupBy(p => $"{p.Retailer}{char.ToUpper(p.Finish[0]) + p.Finish[1..]}").ToList();
-
-                using var insertProgress = new ProgressReporter(_statusVM, groups.Count);
-
-                foreach (var group in groups)
-                {
-                    string tableName = group.Key;
-                    var priceList = group.Select(p => new CardPrice { Uuid = p.Uuid, Price = p.Price }).ToList();
-                    await _cardPriceRepository.InsertPricesInBatchesAsync(conn, tableName, priceList);
-
-                    var retailer = group.First().Retailer;
-                    var finish = group.First().Finish;
-                    _statusVM.StatusLabelMain = $"Imported retailer {retailer} prices for card finish: {finish} ...";
-
-                    insertProgress.Increment();
-
-                    // Force a UI render between each insert
-                    await UIHelper.ForceRenderAsync();
-                }
-
-                // Step 4: Update settings with the JSON's actual date
-                _appSettings.UpdatePriceInfo(jsonDate, "all");
-            }
-            catch (Exception ex)
+            foreach (var group in groups)
             {
-                Debug.WriteLine($"[PriceImporter] Error importing prices: {ex.Message}");
+                string tableName = group.Key;
+                var priceList = group.Select(p => new CardPrice { Uuid = p.Uuid, Price = p.Price }).ToList();
+                await _cardPriceRepository.InsertPricesInBatchesAsync(conn, tableName, priceList);
+
+                var retailer = group.First().Retailer;
+                var finish = group.First().Finish;
+                _statusVM.StatusLabelMain = $"Imported retailer {retailer} prices for card finish: {finish} ...";
+
+                insertProgress.Increment();
+
+                // Force a UI render between each insert
+                await UIHelper.ForceRenderAsync();
             }
+
+            // Step 4: Update settings with the JSON's actual date
+            _appSettings.UpdatePriceInfo(jsonDate, "all");
         }
-
-
     }
 }
+
 
 
