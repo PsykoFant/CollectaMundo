@@ -19,12 +19,11 @@ namespace CollectaMundo.ApplicationServices
         private readonly IGenerateMissingPngService _missingPngService;
         private readonly StatusViewModel _statusVM;
 
-        private static string exceptionMessage = string.Empty;
-
-
-
         private readonly string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqliter";
         private readonly string pricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
+        private static string _exceptionMessageA = string.Empty;
+        private static string _exceptionMessageB = string.Empty;
+
 
         public CardDatabasePreparationService(IAppSettings settings, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, StatusViewModel statusVM)
         {
@@ -97,25 +96,8 @@ namespace CollectaMundo.ApplicationServices
                 {
                     // Inner loop for download attempts
                     downloadsSucceeded = await ExecuteDualDownloadWithRetryAsync(
-                        async token =>
-                        {
-                            return await DownloadResourceAsync(
-                                cardDbUrl,
-                                dbPath,
-                                onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true),
-                                onProgress: percent => _statusVM.ProgressValue = percent,
-                                token);
-                        },
-                        async token =>
-                        {
-                            return await DownloadResourceAsync(
-                                pricesUrl,
-                                pricesPath,
-                                onStart: null,
-                                onProgress: null,
-                                token);
-                        });
-
+                        token => DownloadResourceAsync(cardDbUrl, dbPath, "A", size => _statusVM.Show($"Downloading Card Database ({size})", true), percent => _statusVM.ProgressValue = percent, token),
+                        token => DownloadResourceAsync(pricesUrl, pricesPath, "B", null, null, token));
                     if (!downloadsSucceeded)
                     {
                         continue;
@@ -264,20 +246,15 @@ namespace CollectaMundo.ApplicationServices
                     Debug.WriteLine($"[SetupPipeline] Step '{stepName}' cancelled before attempt {attempt}.");
                     return false;
                 }
-
                 try
                 {
                     Debug.WriteLine($"[SetupPipeline] Step '{stepName}' attempt {attempt}...");
 
-
-
-                    if (await attemptFunc(attempt, token))
+                    if (!await attemptFunc(attempt, token))
                     {
-                        Debug.WriteLine($"[SetupPipeline] Step '{stepName}' succeeded.");
-                        return true;
+                        var err = !string.IsNullOrEmpty(_exceptionMessageA) ? _exceptionMessageA : _exceptionMessageB;
+                        throw new Exception(err);
                     }
-                    throw new Exception(exceptionMessage);
-                    //throw new Exception("Step returned false unexpectedly.");
                 }
                 catch (Exception ex)
                 {
@@ -288,6 +265,11 @@ namespace CollectaMundo.ApplicationServices
                     Debug.WriteLine($"[RetryLoopAsync] {message}");
                     Debug.WriteLine($"[RetryLoopAsync] {ex.Message}");
                 }
+                finally
+                {
+                    _exceptionMessageA = _exceptionMessageB = string.Empty;
+                }
+
 
                 await Task.Delay(3000, token).ContinueWith(_ => { });
             }
@@ -341,7 +323,7 @@ namespace CollectaMundo.ApplicationServices
                 }
             }, stepName, maxRetries: 3);
         }
-        public static async Task<bool> DownloadResourceAsync(string url, string targetPath, Action<string>? onStart = null, Action<int>? onProgress = null, CancellationToken token = default)
+        public static async Task<bool> DownloadResourceAsync(string url, string targetPath, string taskLabel, Action<string>? onStart = null, Action<int>? onProgress = null, CancellationToken token = default)
         {
             Debug.WriteLine($"[DownloadResourceAsync] Preparing to download from {url} to {targetPath}");
 
@@ -349,8 +331,8 @@ namespace CollectaMundo.ApplicationServices
             {
                 using var httpClient = new HttpClient();
                 using var request = new HttpRequestMessage(HttpMethod.Get, url);
-
                 using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
+
                 response.EnsureSuccessStatusCode();
 
                 var totalBytes = response.Content.Headers.ContentLength ?? -1L;
@@ -379,11 +361,23 @@ namespace CollectaMundo.ApplicationServices
             }
             catch (Exception ex)
             {
-                exceptionMessage = ex.Message;
-                Debug.WriteLine($"[DownloadResourceAsync] Error downloading {url}: {ex.Message}");
+                var msg = ex.Message;
+                Debug.WriteLine($"[DownloadResourceAsync] Error downloading {url}: {msg}");
+
+                // Only assign if both are still unset
+                if (string.IsNullOrEmpty(_exceptionMessageA) && string.IsNullOrEmpty(_exceptionMessageB))
+                {
+                    if (taskLabel == "A")
+                        _exceptionMessageA = msg;
+                    else if (taskLabel == "B")
+                        _exceptionMessageB = msg;
+                }
+
                 return false;
             }
+
         }
+
 
 
 
