@@ -22,11 +22,11 @@ namespace CollectaMundo.ApplicationServices.Startup
             //// If the database is missing or corrupt, we need to set it up
             //if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
             //{
-            //    await _prepService.FirstTimeDbSetup();
+            //    await _prepService.FirstTimeDbPrepOrchetrator();
             //}
 
             // temp test
-            await _prepService.FirstTimeDbSetup();
+            await _prepService.FirstTimeDbPrepOrchetrator();
 
             // Now we can proceed to load the main window
             _statusVM.StatusLabelMain = "Loading ALL the cards…";

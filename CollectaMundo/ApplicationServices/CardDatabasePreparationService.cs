@@ -32,7 +32,7 @@ namespace CollectaMundo.ApplicationServices
 
             _dbFactory = new DbConnectionFactory(_settings);
         }
-        public async Task RunCompleteSetupWithRetriesAsync()
+        public async Task FirstTimeDbPrepOrchetrator()
         {
             if (!IsInternetAvailable())
             {
@@ -43,33 +43,42 @@ namespace CollectaMundo.ApplicationServices
                 Application.Current.Shutdown();
             }
 
+            string userDownloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
             string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
-            string pricesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "prices.json");
+            string pricesPath = Path.Combine(userDownloads, "prices.json");
 
             const int maxTotalAttempts = 3;
-
-            // Outer loop for overall attempts
-
             for (int overallAttempt = 1; overallAttempt <= maxTotalAttempts; overallAttempt++)
             {
-                // Outer loop - reset Action
+
+                // Reset status after each new overall attempt
                 _statusVM.ProgressValue = 0;
-                //if (File.Exists(dbPath))
-                //{
-                //    try
-                //    {
-                //        File.Delete(dbPath);
-                // also delete the other files that SQLite creates
-                //AllPrintings.sqlite-shm
-                //    AllPrintings.sqlite-wal
-                //        Debug.WriteLine("[SetupPipeline] Deleted corrupt or partial DB file.");
-                //    }
-                //    catch (Exception cleanupEx)
-                //    {
-                //        Debug.WriteLine($"[SetupPipeline] Failed to delete DB file: {cleanupEx.Message}");
-                //    }
-                //}
-                _statusVM.StatusLabelAboveBar = string.Empty;
+
+                try
+                {
+                    // List of DB-related files to delete
+                    var filesToDelete = new[]
+                    {
+                        dbPath,
+                        Path.Combine(userDownloads, "AllPrintings.sqlite - shm"),
+                        Path.Combine(userDownloads, "AllPrintings.sqlite - wal")
+                    };
+
+                    foreach (var file in filesToDelete)
+                    {
+                        if (File.Exists(file))
+                        {
+                            File.Delete(file);
+                        }
+                    }
+
+                    Debug.WriteLine("[SetupPipeline] Deleted corrupt or partial DB file(s).");
+                }
+                catch (Exception cleanupEx)
+                {
+                    Debug.WriteLine($"[SetupPipeline] Failed to delete DB file(s): {cleanupEx.Message}");
+                }
+
                 _statusVM.StatusLabelBelowBar = string.Empty;
                 _statusVM.StatusLabelMain = string.Empty;
 
@@ -79,98 +88,106 @@ namespace CollectaMundo.ApplicationServices
                 try
                 {
                     // Inner loop for download attempts
-                    using var cts = new CancellationTokenSource();
-                    var token = cts.Token;
+                    bool downloadsSucceeded = await ExecuteDualDownloadWithRetryAsync(
+                        async token =>
+                        {
+                            try
+                            {
+                                bool result = await DownloadResourceAsync(cardDbUrl, dbPath,
+                                    onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true),
+                                    onProgress: percent => _statusVM.ProgressValue = percent,
+                                    token);
 
-                    //var cardDbTcs = new TaskCompletionSource<bool>();
-                    //var priceFileTcs = new TaskCompletionSource<bool>();
+                                return result
+                                    ? StepAttemptResult.SuccessResult
+                                    : StepAttemptResult.Failure("Card DB download returned false.");
+                            }
+                            catch (Exception ex)
+                            {
+                                return StepAttemptResult.Failure($"Card DB download exception: {ex.Message}");
+                            }
+                        },
+                        async token =>
+                        {
+                            try
+                            {
+                                bool result = await DownloadResourceAsync(pricesUrl, pricesPath,
+                                    onStart: null,
+                                    onProgress: null,
+                                    token);
 
-                    //var cardDbExecutionTask = Task.Run(async () =>
-                    //{
-                    //    bool result = await ExecuteWithRetryAsync(() => DownloadResourceAsync(cardDbUrl, dbPath, onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true), onProgress: percent => _statusVM.ProgressValue = percent, token), "1a - card database download", token);
-                    //    cardDbTcs.TrySetResult(result);
-                    //    if (!result) cts.Cancel();
-                    //});
+                                return result
+                                    ? StepAttemptResult.SuccessResult
+                                    : StepAttemptResult.Failure("Price file download returned false.");
+                            }
+                            catch (Exception ex)
+                            {
+                                return StepAttemptResult.Failure($"Price file download exception: {ex.Message}");
+                            }
+                        },
+                        "1a - card database download",
+                        "1b - price file download");
 
-                    //var priceFileExecutionTask = Task.Run(async () =>
-                    //{
-                    //    bool result = await ExecuteWithRetryAsync(() => DownloadResourceAsync(pricesUrl, pricesPath, onStart: null, onProgress: null, token), "1b - price file download", token);
-                    //    priceFileTcs.TrySetResult(result);
-                    //    if (!result) cts.Cancel();
-                    //});
-
-                    //await Task.WhenAll(cardDbTcs.Task, priceFileTcs.Task);
-
-                    //bool cardDbDone = cardDbTcs.Task.IsCompletedSuccessfully;
-                    //bool priceFileDone = priceFileTcs.Task.IsCompletedSuccessfully;
-
-                    //bool cardDbSuccess = cardDbDone && cardDbTcs.Task.Result;
-                    //bool priceFileSuccess = priceFileDone && priceFileTcs.Task.Result;
-
-                    //if (!cardDbSuccess || !priceFileSuccess)
-                    //{
-                    //    Debug.WriteLine("[SetupPipeline] One or both downloads failed. Restarting immediately.");
-
-                    //    cts.Cancel(); // stop the other
-                    //    await Task.WhenAll(cardDbExecutionTask, priceFileExecutionTask); // wait for all cleanup
-                    //    _statusVM.ProgressValue = 0;
-                    //    continue;
-                    //}
-
-                    Debug.WriteLine("[SetupPipeline] Both downloads succeeded.");
+                    if (!downloadsSucceeded)
+                    {
+                        continue;
+                    }
 
                     // Inner loop table creation
                     _statusVM.StatusLabelMain = "Creating custom tables...";
-                    bool tableSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn), "2 - custom table creation", token);
+                    bool tableSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn), "2 - custom table creation");
                     if (!tableSuccess)
                     {
                         continue;
                     }
 
+                    // Inner loop for generating images
                     _statusVM.StatusLabelMain = "Generating mana symbols...";
-                    bool manaSymbolCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn), "3", token);
+                    bool manaSymbolCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn), "3");
                     if (!manaSymbolCreationSuccess)
                     {
                         continue;
                     }
 
+                    // Inner loop for generating mana cost images
                     _statusVM.StatusLabelMain = "Generating mana cost images...";
-                    bool manaCostImageCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn), "4", token);
+                    bool manaCostImageCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn), "4");
                     if (!manaCostImageCreationSuccess)
                     {
                         continue;
                     }
 
+
                     _statusVM.StatusLabelMain = "Generating set icon images...";
-                    bool keyRuneCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn), "5", token);
+                    bool keyRuneCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn), "5");
                     if (!keyRuneCreationSuccess)
                     {
                         continue;
                     }
 
-                    //_statusVM.StatusLabelMain = "Processing card prices...";
-                    //bool importCardPricesSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn), "6", token);
-                    //if (!importCardPricesSuccess)
-                    //{
-                    //    continue;
-                    //}
+                    _statusVM.StatusLabelMain = "Processing card prices...";
+                    bool importCardPricesSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn), "6");
+                    if (!importCardPricesSuccess)
+                    {
+                        continue;
+                    }
 
                     _statusVM.StatusLabelMain = "Creating views...";
-                    bool createViewsSuccess = await Task.Run(() => ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket"), "7", token));
+                    bool createViewsSuccess = await Task.Run(() => ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket"), "7"));
                     if (!createViewsSuccess)
                     {
                         continue;
                     }
 
                     _statusVM.StatusLabelMain = "Creating indices...";
-                    bool createIndicesSuccess = await Task.Run(() => ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn), "8", token));
+                    bool createIndicesSuccess = await Task.Run(() => ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn), "8"));
                     if (!createIndicesSuccess)
                     {
                         continue;
                     }
 
                     _statusVM.StatusLabelMain = "Optimizing database...";
-                    bool optimizeDbSuccess = await Task.Run(() => ExecuteWithConnectionRetryAsync(conn => _dbSchemaRepo.OptimizeAsync(conn), "9", token));
+                    bool optimizeDbSuccess = await Task.Run(() => ExecuteWithConnectionRetryAsync(conn => _dbSchemaRepo.OptimizeAsync(conn), "9"));
                     if (!optimizeDbSuccess)
                     {
                         continue;
@@ -181,6 +198,18 @@ namespace CollectaMundo.ApplicationServices
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"[SetupPipeline] Attempt {overallAttempt} failed with exception: {ex.Message}");
+                }
+                finally
+                {
+                    _statusVM.ProgressValue = 0;
+                    try
+                    {
+                        File.Delete(pricesPath);
+                    }
+                    catch (IOException ex)
+                    {
+                        Debug.WriteLine($"Failed to delete temp prices file: {ex.Message}");
+                    }
                 }
             }
 
@@ -193,90 +222,55 @@ namespace CollectaMundo.ApplicationServices
             await Task.Delay(10000);
             Application.Current.Shutdown();
         }
-
-        public async Task FirstTimeDbSetup()
+        public readonly struct StepAttemptResult(bool success, string message)
         {
-            await RunCompleteSetupWithRetriesAsync();
+            public bool Success { get; } = success;
+            public string Message { get; } = message;
 
+            public static StepAttemptResult SuccessResult => new(true, string.Empty);
+            public static StepAttemptResult Failure(string message) => new(false, message);
+        }
 
-            string pricesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "prices.json");
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
+        private async Task<bool> ExecuteDualDownloadWithRetryAsync(Func<CancellationToken, Task<StepAttemptResult>> downloadA, Func<CancellationToken, Task<StepAttemptResult>> downloadB, string labelA, string labelB, int maxRetries = 3)
+        {
+            using var outerCts = new CancellationTokenSource();
+            var outerToken = outerCts.Token;
 
-            try
+            return await RetryLoopAsync(async (attempt, token) =>
             {
-                //_statusVM.StatusLabelMain = "Almost there - wrapping things up...";
+                using var innerCts = new CancellationTokenSource();
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(innerCts.Token, token);
+                var linkedToken = linkedCts.Token;
 
-                // Perform heavy work in the background
-                await Task.Run(async () =>
+                var taskA = Task.Run(() => downloadA(linkedToken), linkedToken);
+                var taskB = Task.Run(() => downloadB(linkedToken), linkedToken);
+
+                var firstCompleted = await Task.WhenAny(taskA, taskB);
+                var firstResult = await firstCompleted;
+
+                if (!firstResult.Success)
                 {
-                    // create views
+                    innerCts.Cancel();
+                    await Task.WhenAll(taskA, taskB);
 
-                    // create indices
-
-                    // 6. Commit the unit of work
-                    await uow.CommitAsync();
-                    // 7. Optimize database
-                    //await _dbSchemaRepo.OptimizeAsync(uow.CurrentConnection);
-
-
-                });
-
-                _statusVM.StatusLabelAboveBar = "First time setup of card database completed successfully!";
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[FirstTimeDbSetup] Error: {ex.Message}");
-                await uow.RollbackAsync();
-                throw;
-            }
-            finally
-            {
-                await uow.DisposeAsync();
-
-                try
-                {
-                    //File.Delete(pricesPath);
+                    var failedLabel = firstCompleted == taskA ? labelA : labelB;
+                    throw new Exception($"{failedLabel} failed: {firstResult.Message}");
                 }
-                catch (IOException ex)
-                {
-                    Debug.WriteLine($"Failed to delete temp prices file: {ex.Message}");
-                }
-            }
+
+                var finalA = await taskA;
+                var finalB = await taskB;
+
+                if (!finalA.Success)
+                    throw new Exception($"{labelA} failed: {finalA.Message}");
+
+                if (!finalB.Success)
+                    throw new Exception($"{labelB} failed: {finalB.Message}");
+
+                return StepAttemptResult.SuccessResult;
+
+            }, "1 - downloading files", maxRetries, outerToken);
         }
-        public Task UpdateDb()
-        {
-            return Task.Run(() =>
-            {
-            });
-        }
-        public Task UpdateCardPrices()
-        {
-            return Task.Run(() =>
-            {
-            });
-        }
-
-        private Task<bool> ExecuteWithRetryAsync(Func<Task> action, string stepName, CancellationToken token)
-            => ExecuteWithRetryCoreAsync(action, stepName, maxRetries: 3, token);
-
-        private async Task<bool> ExecuteWithUnitOfWorkRetryAsync(Func<SQLiteConnection, Task> action, string stepName, CancellationToken token)
-        {
-            return await ExecuteWithRetryCoreAsync(async () =>
-            {
-                await using var uow = new UnitOfWork(_dbFactory);
-                await uow.BeginAsync();
-
-                await action(uow.CurrentConnection);
-
-                await uow.CommitAsync();
-                await uow.DisposeAsync(); // redundant, but safe
-            }, stepName, maxRetries: 3, token);
-        }
-        private Task<bool> ExecuteWithRetryAsync(Func<Task<bool>> action, string stepName, CancellationToken token) => ExecuteWithRetryCoreAsync(async () => { if (!await action()) { throw new Exception("Step returned false."); } }, stepName, maxRetries: 3, token);
-
-
-        private async Task<bool> ExecuteWithRetryCoreAsync(Func<Task> action, string stepName, int maxRetries, CancellationToken token)
+        private async Task<bool> RetryLoopAsync(Func<int, CancellationToken, Task<StepAttemptResult>> attemptFunc, string stepName, int maxRetries, CancellationToken token)
         {
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
@@ -288,39 +282,75 @@ namespace CollectaMundo.ApplicationServices
 
                 try
                 {
-                    Debug.WriteLine($"[SetupPipeline] Step '{stepName}' attempt number {attempt}...");
-                    await action();
-                    Debug.WriteLine($"[SetupPipeline] Step '{stepName}' succeeded!");
-                    return true;
+                    Debug.WriteLine($"[SetupPipeline] Step '{stepName}' attempt {attempt}...");
+                    StepAttemptResult result = await attemptFunc(attempt, token);
+
+                    if (result.Success)
+                    {
+                        Debug.WriteLine($"[SetupPipeline] Step '{stepName}' succeeded.");
+                        return true;
+                    }
+
+                    // Only used if the attempt returns failure without throwing
+                    _statusVM.StatusLabelBelowBar = result.Message;
                 }
                 catch (Exception ex)
                 {
-                    _statusVM.StatusLabelBelowBar = $"Step '{stepName}' threw error on attempt {attempt}: {ex.Message}";
-                    Debug.WriteLine($"[SetupPipeline] Step '{stepName}' threw error on attempt {attempt}: {ex.Message}");
+                    string message = $"Step '{stepName}' threw on attempt {attempt}: {ex.Message}";
+                    _statusVM.StatusLabelBelowBar = message;
+                    Debug.WriteLine($"[SetupPipeline] {message}");
                 }
 
                 await Task.Delay(3000, token).ContinueWith(_ => { });
-                _statusVM.StatusLabelBelowBar = string.Empty;
             }
 
-            _statusVM.StatusLabelBelowBar = $"Failed to complete '{stepName}' after {maxRetries} tries. Restarting setup.";
-            await Task.Delay(3000);
-            _statusVM.StatusLabelBelowBar = string.Empty;
+            _statusVM.StatusLabelBelowBar = $"Step '{stepName}' failed after {maxRetries} tries. Restarting overall setup...";
+            await Task.Delay(3000, token);
             return false;
         }
 
-        private async Task<bool> ExecuteWithConnectionRetryAsync(Func<SQLiteConnection, Task> action, string stepName, CancellationToken token)
+        // Overload without cancellation token
+        private Task<bool> RetryLoopAsync(Func<int, Task<StepAttemptResult>> attemptFunc, string stepName, int maxRetries)
         {
-            return await ExecuteWithRetryCoreAsync(async () =>
-            {
-                await using var conn = await _dbFactory.OpenConnectionAsync();
-                await action(conn);
-            }, stepName, maxRetries: 3, token);
+            return RetryLoopAsync((i, _) => attemptFunc(i), stepName, maxRetries, CancellationToken.None);
         }
 
-
-
-
+        private async Task<bool> ExecuteWithUnitOfWorkRetryAsync(Func<SQLiteConnection, Task> action, string stepName)
+        {
+            return await RetryLoopAsync(async attempt =>
+            {
+                try
+                {
+                    await using var uow = new UnitOfWork(_dbFactory);
+                    await uow.BeginAsync();
+                    await action(uow.CurrentConnection);
+                    await uow.CommitAsync();
+                    return StepAttemptResult.SuccessResult;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[SetupPipeline] {stepName} failed: {ex.Message}");
+                    return StepAttemptResult.Failure(ex.Message);
+                }
+            }, stepName, maxRetries: 3);
+        }
+        private async Task<bool> ExecuteWithConnectionRetryAsync(Func<SQLiteConnection, Task> action, string stepName)
+        {
+            return await RetryLoopAsync(async attempt =>
+            {
+                try
+                {
+                    await using var conn = await _dbFactory.OpenConnectionAsync();
+                    await action(conn);
+                    return StepAttemptResult.SuccessResult;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[SetupPipeline] {stepName} failed: {ex.Message}");
+                    return StepAttemptResult.Failure(ex.Message);
+                }
+            }, stepName, maxRetries: 3);
+        }
         private static async Task<bool> DownloadResourceAsync(string url, string targetPath, Action<string>? onStart = null, Action<int>? onProgress = null, CancellationToken token = default)
         {
             using var httpClient = new HttpClient();
@@ -368,6 +398,20 @@ namespace CollectaMundo.ApplicationServices
             {
                 return false;
             }
+        }
+
+
+        public Task UpdateDb()
+        {
+            return Task.Run(() =>
+            {
+            });
+        }
+        public Task UpdateCardPrices()
+        {
+            return Task.Run(() =>
+            {
+            });
         }
     }
 }

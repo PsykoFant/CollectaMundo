@@ -2,7 +2,7 @@
 {
     public interface ICardDatabasePreparationService
     {
-        Task FirstTimeDbSetup();
+        Task FirstTimeDbPrepOrchetrator();
         Task UpdateDb();             // Future
         Task UpdateCardPrices();     // Future
     }
