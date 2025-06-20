@@ -7,9 +7,10 @@ namespace CollectaMundo.Data
     public class DatabaseSchemaRepository : IDatabaseSchemaRepository
     {
         private static readonly string[] first = ["uuid TEXT UNIQUE PRIMARY KEY"];
-
         public async Task CreateTablesAsync(SQLiteConnection conn)
         {
+            throw new Exception("Test throw.");
+
             var finishes = CardPriceDefinitions.Finishes;
             var retailerColumns = CardPriceDefinitions.RetailersByFormat
                 .SelectMany(kvp => kvp.Value.SelectMany(r => finishes.Select(f => $"{r}{f} DECIMAL(10, 2)")))

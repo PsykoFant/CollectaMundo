@@ -19,7 +19,7 @@ namespace CollectaMundo.ApplicationServices
         private readonly IGenerateMissingPngService _missingPngService;
         private readonly StatusViewModel _statusVM;
 
-        private readonly string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqliter";
+        private readonly string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
         private readonly string pricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
         private static string _exceptionMessageA = string.Empty;
         private static string _exceptionMessageB = string.Empty;
@@ -53,6 +53,7 @@ namespace CollectaMundo.ApplicationServices
             }
 
             _statusVM.StatusLabelAboveBar = "Performing first-time setup of card database - please wait ...";
+            _statusVM.IsProgressVisible = true;
 
             for (int overallAttempt = 1; overallAttempt <= maxTotalAttempts; overallAttempt++)
             {
@@ -63,45 +64,44 @@ namespace CollectaMundo.ApplicationServices
                     _statusVM.StatusLabelAboveBar = $"Setup failed, retrying overall attempt {overallAttempt} of {maxTotalAttempts}...";
                     _statusVM.StatusLabelBelowBar = string.Empty;
                     _statusVM.StatusLabelMain = string.Empty;
-
                 }
 
                 // Reset cleanup after each new overall attempt
-                try
-                {
-                    // List of DB-related files to delete
-                    var filesToDelete = new[]
-                    {
-                        dbPath,
-                        Path.Combine(userDownloads, "AllPrintings.sqlite - shm"),
-                        Path.Combine(userDownloads, "AllPrintings.sqlite - wal")
-                    };
+                //try
+                //{
+                //    // List of DB-related files to delete
+                //    var filesToDelete = new[]
+                //    {
+                //        dbPath,
+                //        Path.Combine(userDownloads, "AllPrintings.sqlite - shm"),
+                //        Path.Combine(userDownloads, "AllPrintings.sqlite - wal")
+                //    };
 
-                    foreach (var file in filesToDelete)
-                    {
-                        if (File.Exists(file))
-                        {
-                            File.Delete(file);
-                        }
-                    }
+                //    foreach (var file in filesToDelete)
+                //    {
+                //        if (File.Exists(file))
+                //        {
+                //            File.Delete(file);
+                //        }
+                //    }
 
-                    Debug.WriteLine("[SetupPipeline] Deleted corrupt or partial DB file(s).");
-                }
-                catch (Exception cleanupEx)
-                {
-                    Debug.WriteLine($"[SetupPipeline] Failed to delete DB file(s): {cleanupEx.Message}");
-                }
+                //    Debug.WriteLine("[SetupPipeline] Deleted corrupt or partial DB file(s).");
+                //}
+                //catch (Exception cleanupEx)
+                //{
+                //    Debug.WriteLine($"[SetupPipeline] Failed to delete DB file(s): {cleanupEx.Message}");
+                //}
 
                 try
                 {
                     // Inner loop for download attempts
-                    downloadsSucceeded = await ExecuteDualDownloadWithRetryAsync(
-                        token => DownloadResourceAsync(cardDbUrl, dbPath, "A", size => _statusVM.Show($"Downloading Card Database ({size})", true), percent => _statusVM.ProgressValue = percent, token),
-                        token => DownloadResourceAsync(pricesUrl, pricesPath, "B", null, null, token));
-                    if (!downloadsSucceeded)
-                    {
-                        continue;
-                    }
+                    //downloadsSucceeded = await ExecuteDualDownloadWithRetryAsync(
+                    //    token => DownloadResourceAsync(cardDbUrl, dbPath, "A", size => _statusVM.Show($"Downloading Card Database ({size})", true), percent => _statusVM.ProgressValue = percent, token),
+                    //    token => DownloadResourceAsync(pricesUrl, pricesPath, "B", null, null, token));
+                    //if (!downloadsSucceeded)
+                    //{
+                    //    continue;
+                    //}
 
                     #region other setup steps
                     // Inner loop table creation
@@ -170,7 +170,7 @@ namespace CollectaMundo.ApplicationServices
                     {
                         try
                         {
-                            File.Delete(pricesPath);
+                            //File.Delete(pricesPath);
                         }
                         catch (IOException ex)
                         {
@@ -250,11 +250,13 @@ namespace CollectaMundo.ApplicationServices
                 {
                     Debug.WriteLine($"[SetupPipeline] Step '{stepName}' attempt {attempt}...");
 
-                    if (!await attemptFunc(attempt, token))
+                    if (await attemptFunc(attempt, token))
                     {
-                        var err = !string.IsNullOrEmpty(_exceptionMessageA) ? _exceptionMessageA : _exceptionMessageB;
-                        throw new Exception(err);
+                        return true;
                     }
+                    var err = !string.IsNullOrEmpty(_exceptionMessageA) ? _exceptionMessageA : _exceptionMessageB;
+                    throw new Exception(err);
+
                 }
                 catch (Exception ex)
                 {
@@ -279,12 +281,19 @@ namespace CollectaMundo.ApplicationServices
             return false;
         }
 
-
-
         // Overload without cancellation token
         private Task<bool> RetryLoopAsync(Func<int, Task<bool>> attemptFunc, string stepName, int maxRetries)
         {
-            return RetryLoopAsync((i, _) => attemptFunc(i), stepName, maxRetries, CancellationToken.None);
+            return RetryLoopAsync(async (i, token) =>
+            {
+                bool result = await attemptFunc(i);
+                if (result)
+                {
+                    return true;
+                }
+                return false;
+
+            }, stepName, maxRetries, CancellationToken.None);
         }
 
         private async Task<bool> ExecuteWithUnitOfWorkRetryAsync(Func<SQLiteConnection, Task> action, string stepName)
@@ -297,15 +306,17 @@ namespace CollectaMundo.ApplicationServices
                     await uow.BeginAsync();
                     await action(uow.CurrentConnection);
                     await uow.CommitAsync();
-                    return true;
+                    return true; // 
                 }
                 catch (Exception ex)
                 {
+                    // Vi har den rigtige exception her!
                     Debug.WriteLine($"[SetupPipeline] {stepName} failed: {ex.Message}");
                     return false;
                 }
             }, stepName, maxRetries: 3);
         }
+
         private async Task<bool> ExecuteWithConnectionRetryAsync(Func<SQLiteConnection, Task> action, string stepName)
         {
             return await RetryLoopAsync(async attempt =>
@@ -377,12 +388,6 @@ namespace CollectaMundo.ApplicationServices
             }
 
         }
-
-
-
-
-
-
 
 
         private static bool IsInternetAvailable()
