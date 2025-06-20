@@ -19,7 +19,7 @@ namespace CollectaMundo.ApplicationServices
         private readonly IGenerateMissingPngService _missingPngService;
         private readonly StatusViewModel _statusVM;
 
-        private readonly string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
+        private readonly string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqliter";
         private readonly string pricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
 
         public CardDatabasePreparationService(IAppSettings settings, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, StatusViewModel statusVM)
@@ -51,9 +51,7 @@ namespace CollectaMundo.ApplicationServices
             for (int overallAttempt = 1; overallAttempt <= maxTotalAttempts; overallAttempt++)
             {
 
-                // Reset status after each new overall attempt
-                _statusVM.ProgressValue = 0;
-
+                // Reset cleanup after each new overall attempt
                 try
                 {
                     // List of DB-related files to delete
@@ -85,54 +83,45 @@ namespace CollectaMundo.ApplicationServices
                 _statusVM.StatusLabelAboveBar = "Performing first-time setup of card database - please wait ...";
                 Debug.WriteLine($"[SetupPipeline] Starting first time db setup overall attempt {overallAttempt} of {maxTotalAttempts}.");
 
+                bool downloadsSucceeded = false;
                 try
                 {
                     // Inner loop for download attempts
-                    bool downloadsSucceeded = await ExecuteDualDownloadWithRetryAsync(
+                    downloadsSucceeded = await ExecuteDualDownloadWithRetryAsync(
                         async token =>
                         {
-                            try
-                            {
-                                bool result = await DownloadResourceAsync(cardDbUrl, dbPath,
-                                    onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true),
-                                    onProgress: percent => _statusVM.ProgressValue = percent,
-                                    token);
+                            bool result = await DownloadResourceAsync(
+                                cardDbUrl,
+                                dbPath,
+                                onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true),
+                                onProgress: percent => _statusVM.ProgressValue = percent,
+                                token);
 
-                                return result
-                                    ? StepAttemptResult.SuccessResult
-                                    : StepAttemptResult.Failure("Card DB download returned false.");
-                            }
-                            catch (Exception ex)
-                            {
-                                return StepAttemptResult.Failure($"Card DB download exception: {ex.Message}");
-                            }
+                            return result
+                                ? StepAttemptResult.SuccessResult
+                                : StepAttemptResult.Failure("Card DB download returned false.");
                         },
                         async token =>
                         {
-                            try
-                            {
-                                bool result = await DownloadResourceAsync(pricesUrl, pricesPath,
-                                    onStart: null,
-                                    onProgress: null,
-                                    token);
+                            bool result = await DownloadResourceAsync(
+                                pricesUrl,
+                                pricesPath,
+                                onStart: null,
+                                onProgress: null,
+                                token);
 
-                                return result
-                                    ? StepAttemptResult.SuccessResult
-                                    : StepAttemptResult.Failure("Price file download returned false.");
-                            }
-                            catch (Exception ex)
-                            {
-                                return StepAttemptResult.Failure($"Price file download exception: {ex.Message}");
-                            }
+                            return result
+                                ? StepAttemptResult.SuccessResult
+                                : StepAttemptResult.Failure("Price file download returned false.");
                         },
                         "1a - card database download",
                         "1b - price file download");
-
                     if (!downloadsSucceeded)
                     {
                         continue;
                     }
 
+                    #region other setup steps
                     // Inner loop table creation
                     _statusVM.StatusLabelMain = "Creating custom tables...";
                     bool tableSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn), "2 - custom table creation");
@@ -192,7 +181,7 @@ namespace CollectaMundo.ApplicationServices
                     {
                         continue;
                     }
-
+                    #endregion
                     return;
                 }
                 catch (Exception ex)
@@ -201,7 +190,13 @@ namespace CollectaMundo.ApplicationServices
                 }
                 finally
                 {
+                    // Reset progress bar after each overall attempt
                     _statusVM.ProgressValue = 0;
+                }
+
+                // Only clean up price file if we are exiting the setup loop (e.g. on success)
+                if (downloadsSucceeded)
+                {
                     try
                     {
                         File.Delete(pricesPath);
@@ -211,6 +206,7 @@ namespace CollectaMundo.ApplicationServices
                         Debug.WriteLine($"Failed to delete temp prices file: {ex.Message}");
                     }
                 }
+
             }
 
             _statusVM.IsProgressVisible = false;
@@ -242,19 +238,17 @@ namespace CollectaMundo.ApplicationServices
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(innerCts.Token, token);
                 var linkedToken = linkedCts.Token;
 
-                var taskA = Task.Run(() => downloadA(linkedToken), linkedToken);
-                var taskB = Task.Run(() => downloadB(linkedToken), linkedToken);
+                var taskA = downloadA(linkedToken);
+                var taskB = downloadB(linkedToken);
 
                 var firstCompleted = await Task.WhenAny(taskA, taskB);
                 var firstResult = await firstCompleted;
 
                 if (!firstResult.Success)
                 {
-                    innerCts.Cancel();
-                    await Task.WhenAll(taskA, taskB);
-
-                    var failedLabel = firstCompleted == taskA ? labelA : labelB;
-                    throw new Exception($"{failedLabel} failed: {firstResult.Message}");
+                    innerCts.Cancel(); // cancel the other task immediately
+                    await Task.WhenAll(taskA, taskB); // deterministically wait for both
+                    throw new Exception($"{(firstCompleted == taskA ? labelA : labelB)} failed: {firstResult.Message}");
                 }
 
                 var finalA = await taskA;
@@ -270,6 +264,7 @@ namespace CollectaMundo.ApplicationServices
 
             }, "1 - downloading files", maxRetries, outerToken);
         }
+
         private async Task<bool> RetryLoopAsync(Func<int, CancellationToken, Task<StepAttemptResult>> attemptFunc, string stepName, int maxRetries, CancellationToken token)
         {
             for (int attempt = 1; attempt <= maxRetries; attempt++)
@@ -292,12 +287,14 @@ namespace CollectaMundo.ApplicationServices
                     }
 
                     // Only used if the attempt returns failure without throwing
-                    _statusVM.StatusLabelBelowBar = result.Message;
+                    //_statusVM.StatusLabelBelowBar = result.Message;
                 }
                 catch (Exception ex)
                 {
-                    string message = $"Step '{stepName}' threw on attempt {attempt}: {ex.Message}";
-                    _statusVM.StatusLabelBelowBar = message;
+                    string message = $"Step '{stepName}' threw on attempt {attempt}:";
+
+                    _statusVM.StatusLabelAboveBar = message;
+                    _statusVM.StatusLabelBelowBar = ex.Message;
                     Debug.WriteLine($"[SetupPipeline] {message}");
                 }
 
@@ -351,41 +348,53 @@ namespace CollectaMundo.ApplicationServices
                 }
             }, stepName, maxRetries: 3);
         }
-        private static async Task<bool> DownloadResourceAsync(string url, string targetPath, Action<string>? onStart = null, Action<int>? onProgress = null, CancellationToken token = default)
+        public static async Task<bool> DownloadResourceAsync(string url, string targetPath, Action<string>? onStart = null, Action<int>? onProgress = null, CancellationToken token = default)
         {
-            using var httpClient = new HttpClient();
-            using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
-            response.EnsureSuccessStatusCode();
+            Debug.WriteLine($"[DownloadResourceAsync] Preparing to download from {url} to {targetPath}");
 
-            var totalBytes = response.Content.Headers.ContentLength ?? -1L;
-            var totalBytesRead = 0L;
-            var buffer = new byte[8192];
-            using var contentStream = await response.Content.ReadAsStreamAsync(token);
-            using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
-
-            if (onStart != null && totalBytes > 0)
+            try
             {
-                var megabytes = string.Format("{0:0.0} MB", totalBytes / 1_000_000.0);
-                onStart.Invoke(megabytes);
-            }
+                using var httpClient = new HttpClient();
+                using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-            int bytesRead;
-            while ((bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length), token)) != 0)
-            {
-                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), token);
-                totalBytesRead += bytesRead;
+                using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
+                response.EnsureSuccessStatusCode();
 
-                if (onProgress != null && totalBytes > 0)
+                var totalBytes = response.Content.Headers.ContentLength ?? -1L;
+                var buffer = new byte[8192];
+
+                using var contentStream = await response.Content.ReadAsStreamAsync(token);
+                using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
+
+                if (onStart != null && totalBytes > 0)
+                    onStart($"{totalBytes / 1_000_000.0:0.0} MB");
+
+                long totalBytesRead = 0;
+                int bytesRead;
+
+                while ((bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length), token)) != 0)
                 {
-                    double percent = (double)totalBytesRead / totalBytes * 100;
-                    onProgress.Invoke((int)percent);
-                }
-            }
+                    await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), token);
+                    totalBytesRead += bytesRead;
 
-            Debug.WriteLine($"Download complete: {targetPath}");
-            return true;
+                    if (onProgress != null && totalBytes > 0)
+                        onProgress((int)(100 * totalBytesRead / totalBytes));
+                }
+
+                Debug.WriteLine($"[DownloadResourceAsync] Download complete: {targetPath}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[DownloadResourceAsync] Error downloading {url}: {ex.Message}");
+                return false;
+            }
         }
+
+
+
+
+
         private static bool IsInternetAvailable()
         {
             try
