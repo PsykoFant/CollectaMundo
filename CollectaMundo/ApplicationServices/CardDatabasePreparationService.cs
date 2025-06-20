@@ -19,6 +19,10 @@ namespace CollectaMundo.ApplicationServices
         private readonly IGenerateMissingPngService _missingPngService;
         private readonly StatusViewModel _statusVM;
 
+        private static string exceptionMessage = string.Empty;
+
+
+
         private readonly string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqliter";
         private readonly string pricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
 
@@ -48,8 +52,6 @@ namespace CollectaMundo.ApplicationServices
                 await Task.Delay(10000);
                 Application.Current.Shutdown();
             }
-
-
 
             _statusVM.StatusLabelAboveBar = "Performing first-time setup of card database - please wait ...";
 
@@ -97,22 +99,23 @@ namespace CollectaMundo.ApplicationServices
                     downloadsSucceeded = await ExecuteDualDownloadWithRetryAsync(
                         async token =>
                         {
-                            bool result = await DownloadResourceAsync(cardDbUrl, dbPath, onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true), onProgress: percent => _statusVM.ProgressValue = percent, token);
-
-                            return result
-                                ? StepAttemptResult.SuccessResult
-                                : StepAttemptResult.Failure("Card DB download returned false.");
+                            return await DownloadResourceAsync(
+                                cardDbUrl,
+                                dbPath,
+                                onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true),
+                                onProgress: percent => _statusVM.ProgressValue = percent,
+                                token);
                         },
                         async token =>
                         {
-                            bool result = await DownloadResourceAsync(pricesUrl, pricesPath, onStart: null, onProgress: null, token);
+                            return await DownloadResourceAsync(
+                                pricesUrl,
+                                pricesPath,
+                                onStart: null,
+                                onProgress: null,
+                                token);
+                        });
 
-                            return result
-                                ? StepAttemptResult.SuccessResult
-                                : StepAttemptResult.Failure("Price file download returned false.");
-                        },
-                        "1a - card database download",
-                        "1b - price file download");
                     if (!downloadsSucceeded)
                     {
                         continue;
@@ -216,16 +219,7 @@ namespace CollectaMundo.ApplicationServices
             await Task.Delay(10000);
             Application.Current.Shutdown();
         }
-        public readonly struct StepAttemptResult(bool success, string message)
-        {
-            public bool Success { get; } = success;
-            public string Message { get; } = message;
-
-            public static StepAttemptResult SuccessResult => new(true, string.Empty);
-            public static StepAttemptResult Failure(string message) => new(false, message);
-        }
-
-        private async Task<bool> ExecuteDualDownloadWithRetryAsync(Func<CancellationToken, Task<StepAttemptResult>> downloadA, Func<CancellationToken, Task<StepAttemptResult>> downloadB, string labelA, string labelB, int maxRetries = 3)
+        private async Task<bool> ExecuteDualDownloadWithRetryAsync(Func<CancellationToken, Task<bool>> downloadA, Func<CancellationToken, Task<bool>> downloadB, int maxRetries = 3)
         {
             using var outerCts = new CancellationTokenSource();
             var outerToken = outerCts.Token;
@@ -242,27 +236,26 @@ namespace CollectaMundo.ApplicationServices
                 var firstCompleted = await Task.WhenAny(taskA, taskB);
                 var firstResult = await firstCompleted;
 
-                if (!firstResult.Success)
+                if (!firstResult)
                 {
-                    innerCts.Cancel(); // cancel the other task immediately
-                    await Task.WhenAll(taskA, taskB); // deterministically wait for both
-                    throw new Exception($"{(firstCompleted == taskA ? labelA : labelB)} failed: {firstResult.Message}");
+                    innerCts.Cancel();
+                    await Task.WhenAll(taskA, taskB);
+                    return false;
                 }
 
                 var finalA = await taskA;
                 var finalB = await taskB;
 
-                if (!finalA.Success)
-                    throw new Exception($"{labelA} failed: {finalA.Message}");
+                if (!finalA || !finalB)
+                {
+                    Debug.WriteLine($"[SetupPipeline] One of the downloads failed on attempt {attempt}.");
+                    return false;
+                }
 
-                if (!finalB.Success)
-                    throw new Exception($"{labelB} failed: {finalB.Message}");
-
-                return StepAttemptResult.SuccessResult;
-
+                return true;
             }, "1 - downloading files", maxRetries, outerToken);
         }
-        private async Task<bool> RetryLoopAsync(Func<int, CancellationToken, Task<StepAttemptResult>> attemptFunc, string stepName, int maxRetries, CancellationToken token)
+        private async Task<bool> RetryLoopAsync(Func<int, CancellationToken, Task<bool>> attemptFunc, string stepName, int maxRetries, CancellationToken token)
         {
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
@@ -276,21 +269,19 @@ namespace CollectaMundo.ApplicationServices
                 {
                     Debug.WriteLine($"[SetupPipeline] Step '{stepName}' attempt {attempt}...");
 
-                    StepAttemptResult result = await attemptFunc(attempt, token);
 
-                    if (result.Success)
+
+                    if (await attemptFunc(attempt, token))
                     {
                         Debug.WriteLine($"[SetupPipeline] Step '{stepName}' succeeded.");
                         return true;
                     }
-
-                    // If failure, throw to ensure centralized handling
-                    throw new Exception(result.Message);
+                    throw new Exception(exceptionMessage);
+                    //throw new Exception("Step returned false unexpectedly.");
                 }
                 catch (Exception ex)
                 {
                     string message = $"Step '{stepName}' threw on attempt {attempt}:";
-
                     _statusVM.StatusLabelBelowBar = ex.Message;
                     _statusVM.StatusLabelMain = message;
 
@@ -307,8 +298,9 @@ namespace CollectaMundo.ApplicationServices
         }
 
 
+
         // Overload without cancellation token
-        private Task<bool> RetryLoopAsync(Func<int, Task<StepAttemptResult>> attemptFunc, string stepName, int maxRetries)
+        private Task<bool> RetryLoopAsync(Func<int, Task<bool>> attemptFunc, string stepName, int maxRetries)
         {
             return RetryLoopAsync((i, _) => attemptFunc(i), stepName, maxRetries, CancellationToken.None);
         }
@@ -323,12 +315,12 @@ namespace CollectaMundo.ApplicationServices
                     await uow.BeginAsync();
                     await action(uow.CurrentConnection);
                     await uow.CommitAsync();
-                    return StepAttemptResult.SuccessResult;
+                    return true;
                 }
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"[SetupPipeline] {stepName} failed: {ex.Message}");
-                    return StepAttemptResult.Failure(ex.Message);
+                    return false;
                 }
             }, stepName, maxRetries: 3);
         }
@@ -340,12 +332,12 @@ namespace CollectaMundo.ApplicationServices
                 {
                     await using var conn = await _dbFactory.OpenConnectionAsync();
                     await action(conn);
-                    return StepAttemptResult.SuccessResult;
+                    return true;
                 }
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"[SetupPipeline] {stepName} failed: {ex.Message}");
-                    return StepAttemptResult.Failure(ex.Message);
+                    return false;
                 }
             }, stepName, maxRetries: 3);
         }
@@ -387,6 +379,7 @@ namespace CollectaMundo.ApplicationServices
             }
             catch (Exception ex)
             {
+                exceptionMessage = ex.Message;
                 Debug.WriteLine($"[DownloadResourceAsync] Error downloading {url}: {ex.Message}");
                 return false;
             }
