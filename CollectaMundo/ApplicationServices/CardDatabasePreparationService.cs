@@ -106,7 +106,7 @@ namespace CollectaMundo.ApplicationServices
                     #region other setup steps
                     // Inner loop table creation
                     _statusVM.StatusLabelMain = "Creating custom tables...";
-                    bool tableSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn), "2 - custom table creation");
+                    bool tableSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn), "Custom table creation");
                     if (!tableSuccess)
                     {
                         continue;
@@ -114,11 +114,13 @@ namespace CollectaMundo.ApplicationServices
 
                     // Inner loop for generating images
                     _statusVM.StatusLabelMain = "Generating mana symbols...";
-                    bool manaSymbolCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn), "3");
+                    bool manaSymbolCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn), "Generate mana symbols");
                     if (!manaSymbolCreationSuccess)
                     {
                         continue;
                     }
+
+                    // Vi har testet hertil...
 
                     // Inner loop for generating mana cost images
                     _statusVM.StatusLabelMain = "Generating mana cost images...";
@@ -300,20 +302,12 @@ namespace CollectaMundo.ApplicationServices
         {
             return await RetryLoopAsync(async attempt =>
             {
-                try
-                {
-                    await using var uow = new UnitOfWork(_dbFactory);
-                    await uow.BeginAsync();
-                    await action(uow.CurrentConnection);
-                    await uow.CommitAsync();
-                    return true; // 
-                }
-                catch (Exception ex)
-                {
-                    // Vi har den rigtige exception her!
-                    Debug.WriteLine($"[SetupPipeline] {stepName} failed: {ex.Message}");
-                    return false;
-                }
+                await using var uow = new UnitOfWork(_dbFactory);
+                await uow.BeginAsync();
+                await action(uow.CurrentConnection);
+                await uow.CommitAsync();
+                return true; // 
+
             }, stepName, maxRetries: 3);
         }
 

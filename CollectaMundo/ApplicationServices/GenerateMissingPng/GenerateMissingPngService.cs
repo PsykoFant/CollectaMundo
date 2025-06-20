@@ -30,17 +30,10 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
             }
 
             // Step 4: Get symbols where the PNG image is missing
-            List<string> symbolsWithNullImage = await _repository.GetValuesWithNullAsync(
-                conn,
-                "uniqueManaSymbols",
-                "uniqueManaSymbol",
-                "manaSymbolImage");
+            List<string> symbolsWithNullImage = await _repository.GetValuesWithNullAsync(conn, "uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
 
             // Step 5: Generate PNGs for each symbol in parallel
-            using var coordinator = new ParallelWorkCoordinator<(string Symbol, byte[] PngData)>(
-                _statusVM,
-                symbolsWithNullImage.Count,
-                Environment.ProcessorCount);
+            using var coordinator = new ParallelWorkCoordinator<(string Symbol, byte[] PngData)>(_statusVM, symbolsWithNullImage.Count, Environment.ProcessorCount);
 
             await Task.WhenAll(symbolsWithNullImage.Select(symbol =>
                 coordinator.DoAsync(async () =>
@@ -67,7 +60,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
             // Step 6: Fail if too many results failed
             int failed = results.Count(r => r.PngData.Length == 0);
             int total = results.Count;
-            if (failed > total * 0.2)
+            if (failed > total * 0.5)
             {
                 throw new Exception($"More than half of mana symbol image downloads failed ({failed}/{total}).");
             }
