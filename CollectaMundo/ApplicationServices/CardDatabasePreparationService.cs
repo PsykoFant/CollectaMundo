@@ -34,6 +34,12 @@ namespace CollectaMundo.ApplicationServices
         }
         public async Task FirstTimeDbPrepOrchetrator()
         {
+            string userDownloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+            string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
+            string pricesPath = Path.Combine(userDownloads, "prices.json");
+            const int maxTotalAttempts = 3;
+            bool downloadsSucceeded = false;
+
             if (!IsInternetAvailable())
             {
                 _statusVM.StatusLabelAboveBar = "No internet connection!";
@@ -43,13 +49,21 @@ namespace CollectaMundo.ApplicationServices
                 Application.Current.Shutdown();
             }
 
-            string userDownloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
-            string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
-            string pricesPath = Path.Combine(userDownloads, "prices.json");
 
-            const int maxTotalAttempts = 3;
+
+            _statusVM.StatusLabelAboveBar = "Performing first-time setup of card database - please wait ...";
+
             for (int overallAttempt = 1; overallAttempt <= maxTotalAttempts; overallAttempt++)
             {
+                Debug.WriteLine($"[SetupPipeline] Starting first time db setup overall attempt {overallAttempt} of {maxTotalAttempts}.");
+
+                if (overallAttempt != 1)
+                {
+                    _statusVM.StatusLabelAboveBar = $"Setup failed, retrying overall attempt {overallAttempt} of {maxTotalAttempts}...";
+                    _statusVM.StatusLabelBelowBar = string.Empty;
+                    _statusVM.StatusLabelMain = string.Empty;
+
+                }
 
                 // Reset cleanup after each new overall attempt
                 try
@@ -77,25 +91,13 @@ namespace CollectaMundo.ApplicationServices
                     Debug.WriteLine($"[SetupPipeline] Failed to delete DB file(s): {cleanupEx.Message}");
                 }
 
-                _statusVM.StatusLabelBelowBar = string.Empty;
-                _statusVM.StatusLabelMain = string.Empty;
-
-                _statusVM.StatusLabelAboveBar = "Performing first-time setup of card database - please wait ...";
-                Debug.WriteLine($"[SetupPipeline] Starting first time db setup overall attempt {overallAttempt} of {maxTotalAttempts}.");
-
-                bool downloadsSucceeded = false;
                 try
                 {
                     // Inner loop for download attempts
                     downloadsSucceeded = await ExecuteDualDownloadWithRetryAsync(
                         async token =>
                         {
-                            bool result = await DownloadResourceAsync(
-                                cardDbUrl,
-                                dbPath,
-                                onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true),
-                                onProgress: percent => _statusVM.ProgressValue = percent,
-                                token);
+                            bool result = await DownloadResourceAsync(cardDbUrl, dbPath, onStart: size => _statusVM.Show($"Downloading Card Database ({size})", true), onProgress: percent => _statusVM.ProgressValue = percent, token);
 
                             return result
                                 ? StepAttemptResult.SuccessResult
@@ -103,12 +105,7 @@ namespace CollectaMundo.ApplicationServices
                         },
                         async token =>
                         {
-                            bool result = await DownloadResourceAsync(
-                                pricesUrl,
-                                pricesPath,
-                                onStart: null,
-                                onProgress: null,
-                                token);
+                            bool result = await DownloadResourceAsync(pricesUrl, pricesPath, onStart: null, onProgress: null, token);
 
                             return result
                                 ? StepAttemptResult.SuccessResult
@@ -182,6 +179,20 @@ namespace CollectaMundo.ApplicationServices
                         continue;
                     }
                     #endregion
+
+                    // Only clean up price file if we are exiting the setup loop (e.g. on success)
+                    if (downloadsSucceeded)
+                    {
+                        try
+                        {
+                            File.Delete(pricesPath);
+                        }
+                        catch (IOException ex)
+                        {
+                            Debug.WriteLine($"Failed to delete temp prices file: {ex.Message}");
+                        }
+                    }
+
                     return;
                 }
                 catch (Exception ex)
@@ -193,22 +204,9 @@ namespace CollectaMundo.ApplicationServices
                     // Reset progress bar after each overall attempt
                     _statusVM.ProgressValue = 0;
                 }
-
-                // Only clean up price file if we are exiting the setup loop (e.g. on success)
-                if (downloadsSucceeded)
-                {
-                    try
-                    {
-                        File.Delete(pricesPath);
-                    }
-                    catch (IOException ex)
-                    {
-                        Debug.WriteLine($"Failed to delete temp prices file: {ex.Message}");
-                    }
-                }
-
             }
 
+            //  If we reach here, all attempts have failed
             _statusVM.IsProgressVisible = false;
             _statusVM.IsSetupFailVisible = true;
             _statusVM.IsLogoVisible = false;
@@ -264,7 +262,6 @@ namespace CollectaMundo.ApplicationServices
 
             }, "1 - downloading files", maxRetries, outerToken);
         }
-
         private async Task<bool> RetryLoopAsync(Func<int, CancellationToken, Task<StepAttemptResult>> attemptFunc, string stepName, int maxRetries, CancellationToken token)
         {
             for (int attempt = 1; attempt <= maxRetries; attempt++)
@@ -278,6 +275,7 @@ namespace CollectaMundo.ApplicationServices
                 try
                 {
                     Debug.WriteLine($"[SetupPipeline] Step '{stepName}' attempt {attempt}...");
+
                     StepAttemptResult result = await attemptFunc(attempt, token);
 
                     if (result.Success)
@@ -286,25 +284,28 @@ namespace CollectaMundo.ApplicationServices
                         return true;
                     }
 
-                    // Only used if the attempt returns failure without throwing
-                    //_statusVM.StatusLabelBelowBar = result.Message;
+                    // If failure, throw to ensure centralized handling
+                    throw new Exception(result.Message);
                 }
                 catch (Exception ex)
                 {
                     string message = $"Step '{stepName}' threw on attempt {attempt}:";
 
-                    _statusVM.StatusLabelAboveBar = message;
                     _statusVM.StatusLabelBelowBar = ex.Message;
-                    Debug.WriteLine($"[SetupPipeline] {message}");
+                    _statusVM.StatusLabelMain = message;
+
+                    Debug.WriteLine($"[RetryLoopAsync] {message}");
+                    Debug.WriteLine($"[RetryLoopAsync] {ex.Message}");
                 }
 
                 await Task.Delay(3000, token).ContinueWith(_ => { });
             }
 
-            _statusVM.StatusLabelBelowBar = $"Step '{stepName}' failed after {maxRetries} tries. Restarting overall setup...";
+            _statusVM.StatusLabelAboveBar = $"Step '{stepName}' failed after {maxRetries} tries. Restarting overall setup...";
             await Task.Delay(3000, token);
             return false;
         }
+
 
         // Overload without cancellation token
         private Task<bool> RetryLoopAsync(Func<int, Task<StepAttemptResult>> attemptFunc, string stepName, int maxRetries)
@@ -390,6 +391,8 @@ namespace CollectaMundo.ApplicationServices
                 return false;
             }
         }
+
+
 
 
 
