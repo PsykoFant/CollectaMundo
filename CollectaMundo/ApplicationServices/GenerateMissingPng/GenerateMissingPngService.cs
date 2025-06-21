@@ -193,8 +193,14 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                         referenceValue: SetCode,
                         imageData: PngData);
 
-                    if (updated) updatedCount++;
-                    else Debug.WriteLine($"[PNGService] Keyrune for {SetCode} was already populated. Skipping update.");
+                    if (updated)
+                    {
+                        updatedCount++;
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"[PNGService] Keyrune for {SetCode} was already populated. Skipping update.");
+                    }
                 }
                 else
                 {

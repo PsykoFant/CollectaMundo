@@ -23,8 +23,6 @@ namespace CollectaMundo.ApplicationServices
         private readonly string pricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
         private static string _exceptionMessageA = string.Empty;
         private static string _exceptionMessageB = string.Empty;
-
-
         public CardDatabasePreparationService(IAppSettings settings, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, StatusViewModel statusVM)
         {
             _settings = settings;
@@ -62,51 +60,48 @@ namespace CollectaMundo.ApplicationServices
                 if (overallAttempt != 1)
                 {
                     _statusVM.StatusLabelAboveBar = $"Setup failed, retrying overall attempt {overallAttempt} of {maxTotalAttempts}...";
-                    _statusVM.StatusLabelBelowBar = string.Empty;
-                    _statusVM.StatusLabelMain = string.Empty;
                 }
 
                 // Reset cleanup after each new overall attempt
-                //try
-                //{
-                //    // List of DB-related files to delete
-                //    var filesToDelete = new[]
-                //    {
-                //        dbPath,
-                //        Path.Combine(userDownloads, "AllPrintings.sqlite - shm"),
-                //        Path.Combine(userDownloads, "AllPrintings.sqlite - wal")
-                //    };
+                try
+                {
+                    // List of DB-related files to delete
+                    var filesToDelete = new[]
+                    {
+                        dbPath,
+                        Path.Combine(userDownloads, "AllPrintings.sqlite - shm"),
+                        Path.Combine(userDownloads, "AllPrintings.sqlite - wal")
+                    };
 
-                //    foreach (var file in filesToDelete)
-                //    {
-                //        if (File.Exists(file))
-                //        {
-                //            File.Delete(file);
-                //        }
-                //    }
+                    foreach (var file in filesToDelete)
+                    {
+                        if (File.Exists(file))
+                        {
+                            File.Delete(file);
+                        }
+                    }
 
-                //    Debug.WriteLine("[SetupPipeline] Deleted corrupt or partial DB file(s).");
-                //}
-                //catch (Exception cleanupEx)
-                //{
-                //    Debug.WriteLine($"[SetupPipeline] Failed to delete DB file(s): {cleanupEx.Message}");
-                //}
+                    Debug.WriteLine("[SetupPipeline] Deleted corrupt or partial DB file(s).");
+                }
+                catch (Exception cleanupEx)
+                {
+                    Debug.WriteLine($"[SetupPipeline] Failed to delete DB file(s): {cleanupEx.Message}");
+                }
 
                 try
                 {
                     // Inner loop for download attempts
-                    //downloadsSucceeded = await ExecuteDualDownloadWithRetryAsync(
-                    //    token => DownloadResourceAsync(cardDbUrl, dbPath, "A", size => _statusVM.Show($"Downloading Card Database ({size})", true), percent => _statusVM.ProgressValue = percent, token),
-                    //    token => DownloadResourceAsync(pricesUrl, pricesPath, "B", null, null, token));
-                    //if (!downloadsSucceeded)
-                    //{
-                    //    continue;
-                    //}
+                    downloadsSucceeded = await ExecuteDualDownloadWithRetryAsync(
+                        token => DownloadResourceAsync(cardDbUrl, dbPath, "A", size => _statusVM.Show($"Downloading Card Database ({size})", true), percent => _statusVM.ProgressValue = percent, token),
+                        token => DownloadResourceAsync(pricesUrl, pricesPath, "B", null, null, token));
+                    if (!downloadsSucceeded)
+                    {
+                        continue;
+                    }
 
-                    #region other setup steps
                     // Inner loop table creation
                     _statusVM.StatusLabelMain = "Creating custom tables...";
-                    bool tableSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn), "Custom table creation");
+                    bool tableSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn), "2. Creating custom tables...");
                     if (!tableSuccess)
                     {
                         continue;
@@ -114,65 +109,62 @@ namespace CollectaMundo.ApplicationServices
 
                     // Inner loop for generating images
                     _statusVM.StatusLabelMain = "Generating mana symbols...";
-                    bool manaSymbolCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn), "Generate mana symbols");
+                    bool manaSymbolCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn), "3. Generating mana symbols...");
                     if (!manaSymbolCreationSuccess)
                     {
                         continue;
                     }
 
-                    // Vi har testet hertil...
-
                     // Inner loop for generating mana cost images
                     _statusVM.StatusLabelMain = "Generating mana cost images...";
-                    bool manaCostImageCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn), "4");
+                    bool manaCostImageCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn), "4. Generating mana cost images...");
                     if (!manaCostImageCreationSuccess)
                     {
                         continue;
                     }
 
-
+                    // Inner loop for generating key rune images
                     _statusVM.StatusLabelMain = "Generating set icon images...";
-                    bool keyRuneCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn), "5");
+                    bool keyRuneCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn), "5. Generating set icon images...");
                     if (!keyRuneCreationSuccess)
                     {
                         continue;
                     }
 
                     _statusVM.StatusLabelMain = "Processing card prices...";
-                    bool importCardPricesSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn), "6");
+                    bool importCardPricesSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn), "6. Processing card prices...");
                     if (!importCardPricesSuccess)
                     {
                         continue;
                     }
 
                     _statusVM.StatusLabelMain = "Creating views...";
-                    bool createViewsSuccess = await Task.Run(() => ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket"), "7"));
+                    bool createViewsSuccess = await Task.Run(() => ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket"), "7. Creating views..."));
                     if (!createViewsSuccess)
                     {
                         continue;
                     }
 
                     _statusVM.StatusLabelMain = "Creating indices...";
-                    bool createIndicesSuccess = await Task.Run(() => ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn), "8"));
+                    bool createIndicesSuccess = await Task.Run(() => ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn), "8. Creating indices..."));
                     if (!createIndicesSuccess)
                     {
                         continue;
                     }
 
                     _statusVM.StatusLabelMain = "Optimizing database...";
-                    bool optimizeDbSuccess = await Task.Run(() => ExecuteWithConnectionRetryAsync(conn => _dbSchemaRepo.OptimizeAsync(conn), "9"));
+                    bool optimizeDbSuccess = await Task.Run(() => ExecuteWithConnectionRetryAsync(conn => _dbSchemaRepo.OptimizeAsync(conn), "9. Optimizing database..."));
                     if (!optimizeDbSuccess)
                     {
                         continue;
                     }
-                    #endregion
 
                     // Only clean up price file if we are exiting the setup loop (e.g. on success)
                     if (downloadsSucceeded)
                     {
                         try
                         {
-                            //File.Delete(pricesPath);
+                            File.Delete(pricesPath);
                         }
                         catch (IOException ex)
                         {
@@ -188,8 +180,10 @@ namespace CollectaMundo.ApplicationServices
                 }
                 finally
                 {
-                    // Reset progress bar after each overall attempt
                     _statusVM.ProgressValue = 0;
+                    _statusVM.StatusLabelAboveBar = string.Empty;
+                    _statusVM.StatusLabelBelowBar = string.Empty;
+                    _statusVM.StatusLabelMain = string.Empty;
                 }
             }
 
@@ -239,6 +233,36 @@ namespace CollectaMundo.ApplicationServices
                 return true;
             }, "1 - downloading files", maxRetries, outerToken);
         }
+        private async Task<bool> ExecuteWithUnitOfWorkRetryAsync(Func<SQLiteConnection, Task> action, string stepName)
+        {
+            return await RetryLoopAsync(async attempt =>
+            {
+                await using var uow = new UnitOfWork(_dbFactory);
+                await uow.BeginAsync();
+                await action(uow.CurrentConnection);
+                await uow.CommitAsync();
+                return true; // 
+
+            }, stepName, maxRetries: 3);
+        }
+        private async Task<bool> ExecuteWithConnectionRetryAsync(Func<SQLiteConnection, Task> action, string stepName)
+        {
+            return await RetryLoopAsync(async attempt =>
+            {
+                try
+                {
+                    await using var conn = await _dbFactory.OpenConnectionAsync();
+                    await action(conn);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[SetupPipeline] {stepName} failed: {ex.Message}");
+                    return false;
+                }
+            }, stepName, maxRetries: 3);
+        }
+
         private async Task<bool> RetryLoopAsync(Func<int, CancellationToken, Task<bool>> attemptFunc, string stepName, int maxRetries, CancellationToken token)
         {
             for (int attempt = 1; attempt <= maxRetries; attempt++)
@@ -298,36 +322,6 @@ namespace CollectaMundo.ApplicationServices
             }, stepName, maxRetries, CancellationToken.None);
         }
 
-        private async Task<bool> ExecuteWithUnitOfWorkRetryAsync(Func<SQLiteConnection, Task> action, string stepName)
-        {
-            return await RetryLoopAsync(async attempt =>
-            {
-                await using var uow = new UnitOfWork(_dbFactory);
-                await uow.BeginAsync();
-                await action(uow.CurrentConnection);
-                await uow.CommitAsync();
-                return true; // 
-
-            }, stepName, maxRetries: 3);
-        }
-
-        private async Task<bool> ExecuteWithConnectionRetryAsync(Func<SQLiteConnection, Task> action, string stepName)
-        {
-            return await RetryLoopAsync(async attempt =>
-            {
-                try
-                {
-                    await using var conn = await _dbFactory.OpenConnectionAsync();
-                    await action(conn);
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[SetupPipeline] {stepName} failed: {ex.Message}");
-                    return false;
-                }
-            }, stepName, maxRetries: 3);
-        }
         public static async Task<bool> DownloadResourceAsync(string url, string targetPath, string taskLabel, Action<string>? onStart = null, Action<int>? onProgress = null, CancellationToken token = default)
         {
             Debug.WriteLine($"[DownloadResourceAsync] Preparing to download from {url} to {targetPath}");
@@ -347,7 +341,9 @@ namespace CollectaMundo.ApplicationServices
                 using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
 
                 if (onStart != null && totalBytes > 0)
+                {
                     onStart($"{totalBytes / 1_000_000.0:0.0} MB");
+                }
 
                 long totalBytesRead = 0;
                 int bytesRead;
@@ -358,7 +354,9 @@ namespace CollectaMundo.ApplicationServices
                     totalBytesRead += bytesRead;
 
                     if (onProgress != null && totalBytes > 0)
+                    {
                         onProgress((int)(100 * totalBytesRead / totalBytes));
+                    }
                 }
 
                 Debug.WriteLine($"[DownloadResourceAsync] Download complete: {targetPath}");
@@ -373,17 +371,19 @@ namespace CollectaMundo.ApplicationServices
                 if (string.IsNullOrEmpty(_exceptionMessageA) && string.IsNullOrEmpty(_exceptionMessageB))
                 {
                     if (taskLabel == "A")
+                    {
                         _exceptionMessageA = msg;
+                    }
                     else if (taskLabel == "B")
+                    {
                         _exceptionMessageB = msg;
+                    }
                 }
 
                 return false;
             }
 
         }
-
-
         private static bool IsInternetAvailable()
         {
             try

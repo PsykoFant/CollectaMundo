@@ -23,16 +23,20 @@ namespace CollectaMundo.DomainLogic.GenerateMissingPng
 
             foreach (var cost in manaCosts)
             {
-                if (string.IsNullOrWhiteSpace(cost)) continue;
+                if (string.IsNullOrWhiteSpace(cost))
+                {
+                    continue;
+                }
 
                 foreach (Match match in regex.Matches(cost))
                 {
                     string symbol = match.Groups[1].Value;
                     if (!string.IsNullOrWhiteSpace(symbol))
+                    {
                         symbols.Add(symbol);
+                    }
                 }
             }
-
             return symbols;
         }
 
@@ -61,7 +65,9 @@ namespace CollectaMundo.DomainLogic.GenerateMissingPng
         private static byte[] CombineImages(List<Bitmap> images)
         {
             if (images == null || images.Count == 0)
+            {
                 return [];
+            }
 
             int width = images.Sum(img => img.Width);
             int height = images.Max(img => img.Height);

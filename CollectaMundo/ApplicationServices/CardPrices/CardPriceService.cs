@@ -40,28 +40,19 @@ namespace CollectaMundo.ApplicationServices.CardPrices
             using var parseProgress = new ProgressReporter(_statusVM, allKeys.Count);
             var parsedPrices = new ConcurrentBag<CardPrice>();
 
-            try
-            {
-                await Task.WhenAll(allKeys.Select(key =>
-                    Task.Run(async () =>
+            await Task.WhenAll(allKeys.Select(key =>
+                Task.Run(async () =>
+                {
+                    await Task.Yield(); // Ensures this runs as a true async task
+                    var prices = CardPriceJsonParser.ParsePricesForSource(root, key); // throws
+                    foreach (var price in prices)
                     {
-                        await Task.Yield(); // Ensures this runs as a true async task
-                        var prices = CardPriceJsonParser.ParsePricesForSource(root, key); // throws
-                        foreach (var price in prices)
-                        {
-                            parsedPrices.Add(price);
-                        }
+                        parsedPrices.Add(price);
+                    }
 
-                        parseProgress.Increment();
-                    })
-                ));
-
-            }
-            catch (Exception ex)
-            {
-                // Bubble up to trigger retry
-                throw new Exception("[PriceImporter] Error while parsing price sources", ex);
-            }
+                    parseProgress.Increment();
+                })
+            ));
 
             // Step 3: Group and insert into database (with progress)
             var groups = parsedPrices.GroupBy(p => $"{p.Retailer}{char.ToUpper(p.Finish[0]) + p.Finish[1..]}").ToList();
