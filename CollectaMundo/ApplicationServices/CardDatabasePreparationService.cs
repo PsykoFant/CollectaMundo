@@ -19,7 +19,7 @@ namespace CollectaMundo.ApplicationServices
         private readonly IGenerateMissingPngService _missingPngService;
         private readonly StatusViewModel _statusVM;
 
-        private readonly string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
+        private readonly string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqliter";
         private readonly string pricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
         private static string _exceptionMessageA = string.Empty;
         private static string _exceptionMessageB = string.Empty;
@@ -55,7 +55,7 @@ namespace CollectaMundo.ApplicationServices
 
             for (int overallAttempt = 1; overallAttempt <= maxTotalAttempts; overallAttempt++)
             {
-                Debug.WriteLine($"[SetupPipeline] Starting first time db setup overall attempt {overallAttempt} of {maxTotalAttempts}.");
+                Debug.WriteLine($"[FirstTimeDbPrepOrchetrator][Outer loop] Starting first time db setup overall attempt {overallAttempt} of {maxTotalAttempts}.");
 
                 if (overallAttempt != 1)
                 {
@@ -81,11 +81,11 @@ namespace CollectaMundo.ApplicationServices
                         }
                     }
 
-                    Debug.WriteLine("[SetupPipeline] Deleted corrupt or partial DB file(s).");
+                    Debug.WriteLine("[FirstTimeDbPrepOrchetrator][Outer loop] Deleted corrupt or partial DB file(s).");
                 }
                 catch (Exception cleanupEx)
                 {
-                    Debug.WriteLine($"[SetupPipeline] Failed to delete DB file(s): {cleanupEx.Message}");
+                    Debug.WriteLine($"[FirstTimeDbPrepOrchetrator][Outer loop] Failed to delete DB file(s): {cleanupEx.Message}");
                 }
 
                 try
@@ -176,7 +176,7 @@ namespace CollectaMundo.ApplicationServices
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[SetupPipeline] Attempt {overallAttempt} failed with exception: {ex.Message}");
+                    Debug.WriteLine($"[FirstTimeDbPrepOrchetrator][Outer loop] Attempt {overallAttempt} failed with exception: {ex.Message}");
                 }
                 finally
                 {
@@ -199,40 +199,50 @@ namespace CollectaMundo.ApplicationServices
         }
         private async Task<bool> ExecuteDualDownloadWithRetryAsync(Func<CancellationToken, Task<bool>> downloadA, Func<CancellationToken, Task<bool>> downloadB, int maxRetries = 3)
         {
-            using var outerCts = new CancellationTokenSource();
-            var outerToken = outerCts.Token;
-
-            return await RetryLoopAsync(async (attempt, token) =>
+            // Use a standard retry loop that will attempt the entire dual download block up to maxRetries times.
+            return await RetryLoopAsync(async (attempt) =>
             {
+                // Create a CancellationTokenSource to be used if one task fails and the other needs to be cancelled.
                 using var innerCts = new CancellationTokenSource();
-                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(innerCts.Token, token);
+
+                // Create a linked token that allows cancellation from innerCts and handles propagation.
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(innerCts.Token);
                 var linkedToken = linkedCts.Token;
 
+                // Start both download tasks using the shared linked cancellation token.
                 var taskA = downloadA(linkedToken);
                 var taskB = downloadB(linkedToken);
 
+                // Wait for the first of the two downloads to complete.
                 var firstCompleted = await Task.WhenAny(taskA, taskB);
                 var firstResult = await firstCompleted;
 
+                // If the first completed task failed, cancel the other immediately.
                 if (!firstResult)
                 {
-                    innerCts.Cancel();
-                    await Task.WhenAll(taskA, taskB);
-                    return false;
+                    innerCts.Cancel(); // Trigger cancellation for the remaining task.
+                    await Task.WhenAll(taskA, taskB); // Ensure both tasks are awaited to prevent dangling operations.
+                    return false; // Indicate this attempt failed.
                 }
 
+                // Both tasks completed: check results of each.
                 var finalA = await taskA;
                 var finalB = await taskB;
 
+                // If either task failed, log and fail the attempt. We need this if the first task succeeded but the second failed.
                 if (!finalA || !finalB)
                 {
-                    Debug.WriteLine($"[SetupPipeline] One of the downloads failed on attempt {attempt}.");
+                    Debug.WriteLine($"[ExecuteDualDownloadWithRetryAsync] One of the downloads failed on attempt {attempt}.");
                     return false;
                 }
 
+                // If both tasks succeeded, return success.
                 return true;
-            }, "1 - downloading files", maxRetries, outerToken);
+
+            }, "1 - downloading files", maxRetries);
         }
+
+
         private async Task<bool> ExecuteWithUnitOfWorkRetryAsync(Func<SQLiteConnection, Task> action, string stepName)
         {
             return await RetryLoopAsync(async attempt =>
@@ -367,18 +377,18 @@ namespace CollectaMundo.ApplicationServices
                 var msg = ex.Message;
                 Debug.WriteLine($"[DownloadResourceAsync] Error downloading {url}: {msg}");
 
-                // Only assign if both are still unset
-                if (string.IsNullOrEmpty(_exceptionMessageA) && string.IsNullOrEmpty(_exceptionMessageB))
-                {
-                    if (taskLabel == "A")
-                    {
-                        _exceptionMessageA = msg;
-                    }
-                    else if (taskLabel == "B")
-                    {
-                        _exceptionMessageB = msg;
-                    }
-                }
+                //// Only assign if both are still unset
+                //if (string.IsNullOrEmpty(_exceptionMessageA) && string.IsNullOrEmpty(_exceptionMessageB))
+                //{
+                //    if (taskLabel == "A")
+                //    {
+                //        _exceptionMessageA = msg;
+                //    }
+                //    else if (taskLabel == "B")
+                //    {
+                //        _exceptionMessageB = msg;
+                //    }
+                //}
 
                 return false;
             }
