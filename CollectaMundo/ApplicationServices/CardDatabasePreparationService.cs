@@ -28,7 +28,6 @@ namespace CollectaMundo.ApplicationServices
             _priceService = priceService;
             _missingPngService = missingPngService;
             _statusVM = statusVM;
-
             _dbFactory = new DbConnectionFactory(_settings);
         }
         public async Task FirstTimeDbPrepOrchetrator()
@@ -41,11 +40,10 @@ namespace CollectaMundo.ApplicationServices
 
             if (!IsInternetAvailable())
             {
-                _statusVM.StatusLabelAboveBar = "No internet connection!";
-                _statusVM.StatusLabelBelowBar = "Unfortunately, first time setup cannot continue without internet connection";
-                _statusVM.StatusLabelMain = "Please check your connection. CollectaMundo will close down shortly...";
-                await Task.Delay(10000);
-                Application.Current.Shutdown();
+                await DbSetupFailed(
+                    statusAboveBar: "No internet connection!",
+                    statusBelowBar: "Unfortunately, first time setup cannot continue without internet connection",
+                    statusLabelMain: "Please check your connection. CollectaMundo will close down shortly...");
             }
 
             _statusVM.StatusLabelAboveBar = "Performing first-time setup of card database - please wait ...";
@@ -61,34 +59,12 @@ namespace CollectaMundo.ApplicationServices
                 }
 
                 // Reset cleanup after each new overall attempt
-                try
-                {
-                    // List of DB-related files to delete
-                    var filesToDelete = new[]
-                    {
-                        dbPath,
-                        Path.Combine(userDownloads, "AllPrintings.sqlite - shm"),
-                        Path.Combine(userDownloads, "AllPrintings.sqlite - wal")
-                    };
-
-                    foreach (var file in filesToDelete)
-                    {
-                        if (File.Exists(file))
-                        {
-                            File.Delete(file);
-                        }
-                    }
-
-                    Debug.WriteLine("[FirstTimeDbPrepOrchetrator][Outer loop] Deleted corrupt or partial DB file(s).");
-                }
-                catch (Exception cleanupEx)
-                {
-                    Debug.WriteLine($"[FirstTimeDbPrepOrchetrator][Outer loop] Failed to delete DB file(s): {cleanupEx.Message}");
-                }
+                try { CleanupPartialDatabaseFiles(dbPath, userDownloads); }
+                catch (Exception ex) { Debug.WriteLine($"[Cleanup] {ex.Message}"); }
 
                 try
                 {
-                    // Inner loop for download attempts
+                    // Step 1: Downloads (handled separately)
                     downloadsSucceeded = await ExecuteDualDownloadWithRetryAsync(
                         token => DownloadResourceAsync(cardDbUrl, dbPath, "A", size => _statusVM.Show($"Downloading Card Database ({size})", true), percent => _statusVM.ProgressValue = percent, token),
                         token => DownloadResourceAsync(pricesUrl, pricesPath, "B", null, null, token));
@@ -97,67 +73,37 @@ namespace CollectaMundo.ApplicationServices
                         continue;
                     }
 
-                    // Inner loop table creation
-                    _statusVM.StatusLabelMain = "Creating custom tables...";
-                    bool tableSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn), "2. Creating custom tables...");
-                    if (!tableSuccess)
+                    // Steps 2–9: Sequential execution list using centralized label handling
+                    var setupSteps = new List<(string Label, Func<Task<bool>> Action)>
                     {
-                        continue;
+                        ("2. Creating custom tables...", () =>ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn), "2. Creating custom tables...")),
+                        ("3. Generating mana symbols...", () =>ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn), "3. Generating mana symbols...")),
+                        ("4. Generating mana cost images...", () =>ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn), "4. Generating mana cost images...")),
+                        ("5. Generating set icon images...", () =>ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn), "5. Generating set icon images...")),
+                        ("6. Processing card prices...", () =>ExecuteWithUnitOfWorkRetryAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn), "6. Processing card prices...")),
+                        ("7. Creating views...", () =>Task.Run(() => ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket"), "7. Creating views..."))),
+                        ("8. Creating indices...", () =>Task.Run(() => ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn), "8. Creating indices..."))),
+                        ("9. Optimizing database...", () =>Task.Run(() => ExecuteWithConnectionRetryAsync(conn => _dbSchemaRepo.OptimizeAsync(conn), "9. Optimizing database...")))
+                    };
+
+                    bool allStepsSucceeded = true;
+
+                    foreach (var (label, action) in setupSteps)
+                    {
+                        bool stepSuccess = await action();
+                        if (!stepSuccess)
+                        {
+                            allStepsSucceeded = false;
+                            break; // Exit current outer attempt and retry the whole setup
+                        }
                     }
 
-                    // Inner loop for generating images
-                    _statusVM.StatusLabelMain = "Generating mana symbols...";
-                    bool manaSymbolCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn), "3. Generating mana symbols...");
-                    if (!manaSymbolCreationSuccess)
+                    if (!allStepsSucceeded)
                     {
-                        continue;
+                        continue; // Outer loop retry
                     }
 
-                    // Inner loop for generating mana cost images
-                    _statusVM.StatusLabelMain = "Generating mana cost images...";
-                    bool manaCostImageCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn), "4. Generating mana cost images...");
-                    if (!manaCostImageCreationSuccess)
-                    {
-                        continue;
-                    }
-
-                    // Inner loop for generating key rune images
-                    _statusVM.StatusLabelMain = "Generating set icon images...";
-                    bool keyRuneCreationSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn), "5. Generating set icon images...");
-                    if (!keyRuneCreationSuccess)
-                    {
-                        continue;
-                    }
-
-                    _statusVM.StatusLabelMain = "Processing card prices...";
-                    bool importCardPricesSuccess = await ExecuteWithUnitOfWorkRetryAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn), "6. Processing card prices...");
-                    if (!importCardPricesSuccess)
-                    {
-                        continue;
-                    }
-
-                    _statusVM.StatusLabelMain = "Creating views...";
-                    bool createViewsSuccess = await Task.Run(() => ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket"), "7. Creating views..."));
-                    if (!createViewsSuccess)
-                    {
-                        continue;
-                    }
-
-                    _statusVM.StatusLabelMain = "Creating indices...";
-                    bool createIndicesSuccess = await Task.Run(() => ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn), "8. Creating indices..."));
-                    if (!createIndicesSuccess)
-                    {
-                        continue;
-                    }
-
-                    _statusVM.StatusLabelMain = "Optimizing database...";
-                    bool optimizeDbSuccess = await Task.Run(() => ExecuteWithConnectionRetryAsync(conn => _dbSchemaRepo.OptimizeAsync(conn), "9. Optimizing database..."));
-                    if (!optimizeDbSuccess)
-                    {
-                        continue;
-                    }
-
-                    // Only clean up price file if we are exiting the setup loop (e.g. on success)
+                    // Clean up only if fully successful
                     if (downloadsSucceeded)
                     {
                         try
@@ -170,8 +116,9 @@ namespace CollectaMundo.ApplicationServices
                         }
                     }
 
-                    return;
+                    return; // setup completed successfully
                 }
+
                 catch (Exception ex)
                 {
                     Debug.WriteLine($"[FirstTimeDbPrepOrchetrator][Outer loop] Attempt {overallAttempt} failed with exception: {ex.Message}");
@@ -185,16 +132,25 @@ namespace CollectaMundo.ApplicationServices
                 }
             }
 
-            //  If we reach here, all attempts have failed
-            _statusVM.IsProgressVisible = false;
-            _statusVM.IsSetupFailVisible = true;
-            _statusVM.IsLogoVisible = false;
-            _statusVM.StatusLabelAboveBar = "Setup failed after multiple attempts. Please restart the application or check your internet connection.";
-            _statusVM.StatusLabelMain = "CollectaMundo will close down shortly...";
-
-            await Task.Delay(10000);
-            Application.Current.Shutdown();
+            await DbSetupFailed(
+                statusAboveBar: "Despite all the best intentions and effort, setup failed after multiple attempts.",
+                statusBelowBar: "Please restart the application or check your internet connection.",
+                statusLabelMain: "CollectaMundo will close down shortly...");
         }
+        public Task UpdateDb()
+        {
+            return Task.Run(() =>
+            {
+            });
+        }
+        public Task UpdateCardPrices()
+        {
+            return Task.Run(() =>
+            {
+            });
+        }
+
+        // Retry logic for downloading files and executing database actions
         private async Task<bool> ExecuteDualDownloadWithRetryAsync(Func<CancellationToken, Task<(bool success, string? error)>> downloadA, Func<CancellationToken, Task<(bool success, string? error)>> downloadB, int maxRetries = 3)
         {
             return await RetryLoopAsync(async (attempt) =>
@@ -215,7 +171,10 @@ namespace CollectaMundo.ApplicationServices
                     await Task.WhenAll(taskA, taskB);
 
                     if (!string.IsNullOrWhiteSpace(firstResult.error))
+                    {
                         throw new Exception(firstResult.error);
+                    }
+
                     return false;
                 }
 
@@ -264,6 +223,8 @@ namespace CollectaMundo.ApplicationServices
         {
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
+                _statusVM.StatusLabelMain = stepName;
+
                 try
                 {
                     Debug.WriteLine($"[RetryLoopAsync] Step '{stepName}' attempt {attempt}...");
@@ -291,6 +252,8 @@ namespace CollectaMundo.ApplicationServices
             await Task.Delay(3000);
             return false;
         }
+
+        // Local helper and db setup methods
         public static async Task<(bool success, string? errorMessage)> DownloadResourceAsync(string url, string targetPath, string taskLabel, Action<string>? onStart = null, Action<int>? onProgress = null, CancellationToken token = default)
         {
             Debug.WriteLine($"[DownloadResourceAsync] Preparing to download from {url} to {targetPath}");
@@ -309,7 +272,9 @@ namespace CollectaMundo.ApplicationServices
                 using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
 
                 if (onStart != null && totalBytes > 0)
+                {
                     onStart($"{totalBytes / 1_000_000.0:0.0} MB");
+                }
 
                 long totalBytesRead = 0;
                 int bytesRead;
@@ -320,7 +285,9 @@ namespace CollectaMundo.ApplicationServices
                     totalBytesRead += bytesRead;
 
                     if (onProgress != null && totalBytes > 0)
+                    {
                         onProgress((int)(100 * totalBytesRead / totalBytes));
+                    }
                 }
 
                 Debug.WriteLine($"[DownloadResourceAsync] Download complete: {targetPath}");
@@ -350,19 +317,39 @@ namespace CollectaMundo.ApplicationServices
                 return false;
             }
         }
+        private static void CleanupPartialDatabaseFiles(string dbPath, string userDownloads)
+        {
+            var filesToDelete = new[]
+            {
+                dbPath,
+                Path.Combine(userDownloads, "AllPrintings.sqlite - shm"),
+                Path.Combine(userDownloads, "AllPrintings.sqlite - wal")
+            };
+
+            foreach (var file in filesToDelete)
+            {
+                if (File.Exists(file))
+                {
+                    File.Delete(file);
+                }
+            }
+
+            Debug.WriteLine("[CardDatabasePrep] Deleted corrupt or partial DB file(s).");
+        }
+        private async Task DbSetupFailed(string statusAboveBar, string statusBelowBar, string statusLabelMain)
+        {
+            //  If we reach here, all attempts have failed
+            _statusVM.IsProgressVisible = false;
+            _statusVM.IsLogoVisible = false;
+            _statusVM.IsSetupFailVisible = true;
+            _statusVM.StatusLabelAboveBar = statusAboveBar;
+            _statusVM.StatusLabelBelowBar = statusBelowBar;
+            _statusVM.StatusLabelMain = statusLabelMain;
+
+            await Task.Delay(10000);
+            Application.Current.Shutdown();
+        }
 
 
-        public Task UpdateDb()
-        {
-            return Task.Run(() =>
-            {
-            });
-        }
-        public Task UpdateCardPrices()
-        {
-            return Task.Run(() =>
-            {
-            });
-        }
     }
 }

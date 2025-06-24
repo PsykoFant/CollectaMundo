@@ -18,7 +18,7 @@ namespace CollectaMundo.Tests
 
             // Build the MainWindowViewModel (per test, no shared VM across tests)
             var readyTcs = new TaskCompletionSource();
-            _mainVM = await MainWindowViewModel.CreateAsync(dbFactory, () => readyTcs.TrySetResult());
+            _mainVM = await MainWindowViewModel.CreateAsync();
             await readyTcs.Task;
 
             _mainVM.AddCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);

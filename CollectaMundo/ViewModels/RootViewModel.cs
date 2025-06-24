@@ -1,16 +1,12 @@
-﻿using CollectaMundo.ViewModels;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
-public class RootViewModel : INotifyPropertyChanged
+namespace CollectaMundo.ViewModels
 {
-    public MainWindowViewModel Main { get; }
-    public StatusViewModel StatusOverlay { get; }
-
-    public RootViewModel(MainWindowViewModel main, StatusViewModel status)
+    public class RootViewModel(MainWindowViewModel main, StatusViewModel status) : INotifyPropertyChanged
     {
-        Main = main;
-        StatusOverlay = status;
-    }
+        public MainWindowViewModel Main { get; } = main;
+        public StatusViewModel StatusOverlay { get; } = status;
 
-    public event PropertyChangedEventHandler? PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
+    }
 }
