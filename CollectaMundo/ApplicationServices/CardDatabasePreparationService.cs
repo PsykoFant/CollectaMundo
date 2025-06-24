@@ -355,19 +355,6 @@ namespace CollectaMundo.ApplicationServices
                 var msg = ex.Message;
                 Debug.WriteLine($"[DownloadResourceAsync] Error downloading {url}: {msg}");
 
-                //// Only assign if both are still unset
-                //if (string.IsNullOrEmpty(_exceptionMessageA) && string.IsNullOrEmpty(_exceptionMessageB))
-                //{
-                //    if (taskLabel == "A")
-                //    {
-                //        _exceptionMessageA = msg;
-                //    }
-                //    else if (taskLabel == "B")
-                //    {
-                //        _exceptionMessageB = msg;
-                //    }
-                //}
-
                 return false;
             }
 
