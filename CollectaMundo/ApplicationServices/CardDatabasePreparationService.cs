@@ -19,10 +19,8 @@ namespace CollectaMundo.ApplicationServices
         private readonly IGenerateMissingPngService _missingPngService;
         private readonly StatusViewModel _statusVM;
 
-        private readonly string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqliter";
+        private readonly string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
         private readonly string pricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
-        private static string _exceptionMessageA = string.Empty;
-        private static string _exceptionMessageB = string.Empty;
         public CardDatabasePreparationService(IAppSettings settings, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, StatusViewModel statusVM)
         {
             _settings = settings;
@@ -197,52 +195,42 @@ namespace CollectaMundo.ApplicationServices
             await Task.Delay(10000);
             Application.Current.Shutdown();
         }
-        private async Task<bool> ExecuteDualDownloadWithRetryAsync(Func<CancellationToken, Task<bool>> downloadA, Func<CancellationToken, Task<bool>> downloadB, int maxRetries = 3)
+        private async Task<bool> ExecuteDualDownloadWithRetryAsync(Func<CancellationToken, Task<(bool success, string? error)>> downloadA, Func<CancellationToken, Task<(bool success, string? error)>> downloadB, int maxRetries = 3)
         {
-            // Use a standard retry loop that will attempt the entire dual download block up to maxRetries times.
             return await RetryLoopAsync(async (attempt) =>
             {
-                // Create a CancellationTokenSource to be used if one task fails and the other needs to be cancelled.
                 using var innerCts = new CancellationTokenSource();
-
-                // Create a linked token that allows cancellation from innerCts and handles propagation.
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(innerCts.Token);
                 var linkedToken = linkedCts.Token;
 
-                // Start both download tasks using the shared linked cancellation token.
                 var taskA = downloadA(linkedToken);
                 var taskB = downloadB(linkedToken);
 
-                // Wait for the first of the two downloads to complete.
                 var firstCompleted = await Task.WhenAny(taskA, taskB);
                 var firstResult = await firstCompleted;
 
-                // If the first completed task failed, cancel the other immediately.
-                if (!firstResult)
+                if (!firstResult.success)
                 {
-                    innerCts.Cancel(); // Trigger cancellation for the remaining task.
-                    await Task.WhenAll(taskA, taskB); // Ensure both tasks are awaited to prevent dangling operations.
-                    return false; // Indicate this attempt failed.
-                }
+                    innerCts.Cancel();
+                    await Task.WhenAll(taskA, taskB);
 
-                // Both tasks completed: check results of each.
-                var finalA = await taskA;
-                var finalB = await taskB;
-
-                // If either task failed, log and fail the attempt. We need this if the first task succeeded but the second failed.
-                if (!finalA || !finalB)
-                {
-                    Debug.WriteLine($"[ExecuteDualDownloadWithRetryAsync] One of the downloads failed on attempt {attempt}.");
+                    if (!string.IsNullOrWhiteSpace(firstResult.error))
+                        throw new Exception(firstResult.error);
                     return false;
                 }
 
-                // If both tasks succeeded, return success.
-                return true;
+                var finalA = await taskA;
+                var finalB = await taskB;
 
+                if (!finalA.success || !finalB.success)
+                {
+                    string error = finalA.error ?? finalB.error ?? "Unknown download error.";
+                    throw new Exception(error);
+                }
+
+                return true;
             }, "1 - downloading files", maxRetries);
         }
-
-
         private async Task<bool> ExecuteWithUnitOfWorkRetryAsync(Func<SQLiteConnection, Task> action, string stepName)
         {
             return await RetryLoopAsync(async attempt =>
@@ -284,33 +272,26 @@ namespace CollectaMundo.ApplicationServices
                     {
                         return true;
                     }
-
-                    // Compose error message if available from download tasks
-                    var err = !string.IsNullOrEmpty(_exceptionMessageA) ? _exceptionMessageA : _exceptionMessageB;
-                    throw new Exception(err);
                 }
                 catch (Exception ex)
                 {
-                    string message = $"Step '{stepName}' threw on attempt {attempt}:";
+                    string message = $"Step '{stepName}' failed on attempt {attempt}:";
                     _statusVM.StatusLabelBelowBar = ex.Message;
                     _statusVM.StatusLabelMain = message;
 
                     Debug.WriteLine($"[RetryLoopAsync] {message}");
                     Debug.WriteLine($"[RetryLoopAsync] {ex.Message}");
                 }
-                finally
-                {
-                    _exceptionMessageA = _exceptionMessageB = string.Empty;
-                }
 
                 await Task.Delay(3000);
+                _statusVM.StatusLabelBelowBar = string.Empty;
             }
 
             _statusVM.StatusLabelAboveBar = $"Step '{stepName}' failed after {maxRetries} tries. Restarting overall setup...";
             await Task.Delay(3000);
             return false;
         }
-        public static async Task<bool> DownloadResourceAsync(string url, string targetPath, string taskLabel, Action<string>? onStart = null, Action<int>? onProgress = null, CancellationToken token = default)
+        public static async Task<(bool success, string? errorMessage)> DownloadResourceAsync(string url, string targetPath, string taskLabel, Action<string>? onStart = null, Action<int>? onProgress = null, CancellationToken token = default)
         {
             Debug.WriteLine($"[DownloadResourceAsync] Preparing to download from {url} to {targetPath}");
 
@@ -319,7 +300,6 @@ namespace CollectaMundo.ApplicationServices
                 using var httpClient = new HttpClient();
                 using var request = new HttpRequestMessage(HttpMethod.Get, url);
                 using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
-
                 response.EnsureSuccessStatusCode();
 
                 var totalBytes = response.Content.Headers.ContentLength ?? -1L;
@@ -329,9 +309,7 @@ namespace CollectaMundo.ApplicationServices
                 using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
 
                 if (onStart != null && totalBytes > 0)
-                {
                     onStart($"{totalBytes / 1_000_000.0:0.0} MB");
-                }
 
                 long totalBytesRead = 0;
                 int bytesRead;
@@ -342,22 +320,22 @@ namespace CollectaMundo.ApplicationServices
                     totalBytesRead += bytesRead;
 
                     if (onProgress != null && totalBytes > 0)
-                    {
                         onProgress((int)(100 * totalBytesRead / totalBytes));
-                    }
                 }
 
                 Debug.WriteLine($"[DownloadResourceAsync] Download complete: {targetPath}");
-                return true;
+                return (true, null);
+            }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine($"[DownloadResourceAsync] Cancelled intentionally — suppress message");
+                return (false, null); // Cancelled intentionally — suppress message
             }
             catch (Exception ex)
             {
-                var msg = ex.Message;
-                Debug.WriteLine($"[DownloadResourceAsync] Error downloading {url}: {msg}");
-
-                return false;
+                Debug.WriteLine($"[DownloadResourceAsync] Error downloading {url}: {ex.Message}");
+                return (false, $"{taskLabel} failed: {ex.Message}");
             }
-
         }
         private static bool IsInternetAvailable()
         {
