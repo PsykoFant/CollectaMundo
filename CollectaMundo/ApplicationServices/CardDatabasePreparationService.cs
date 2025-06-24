@@ -272,27 +272,22 @@ namespace CollectaMundo.ApplicationServices
                 }
             }, stepName, maxRetries: 3);
         }
-
-        private async Task<bool> RetryLoopAsync(Func<int, CancellationToken, Task<bool>> attemptFunc, string stepName, int maxRetries, CancellationToken token)
+        private async Task<bool> RetryLoopAsync(Func<int, Task<bool>> attemptFunc, string stepName, int maxRetries)
         {
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
-                if (token.IsCancellationRequested)
-                {
-                    Debug.WriteLine($"[SetupPipeline] Step '{stepName}' cancelled before attempt {attempt}.");
-                    return false;
-                }
                 try
                 {
-                    Debug.WriteLine($"[SetupPipeline] Step '{stepName}' attempt {attempt}...");
+                    Debug.WriteLine($"[RetryLoopAsync] Step '{stepName}' attempt {attempt}...");
 
-                    if (await attemptFunc(attempt, token))
+                    if (await attemptFunc(attempt))
                     {
                         return true;
                     }
+
+                    // Compose error message if available from download tasks
                     var err = !string.IsNullOrEmpty(_exceptionMessageA) ? _exceptionMessageA : _exceptionMessageB;
                     throw new Exception(err);
-
                 }
                 catch (Exception ex)
                 {
@@ -308,30 +303,13 @@ namespace CollectaMundo.ApplicationServices
                     _exceptionMessageA = _exceptionMessageB = string.Empty;
                 }
 
-
-                await Task.Delay(3000, token).ContinueWith(_ => { });
+                await Task.Delay(3000);
             }
 
             _statusVM.StatusLabelAboveBar = $"Step '{stepName}' failed after {maxRetries} tries. Restarting overall setup...";
-            await Task.Delay(3000, token);
+            await Task.Delay(3000);
             return false;
         }
-
-        // Overload without cancellation token
-        private Task<bool> RetryLoopAsync(Func<int, Task<bool>> attemptFunc, string stepName, int maxRetries)
-        {
-            return RetryLoopAsync(async (i, token) =>
-            {
-                bool result = await attemptFunc(i);
-                if (result)
-                {
-                    return true;
-                }
-                return false;
-
-            }, stepName, maxRetries, CancellationToken.None);
-        }
-
         public static async Task<bool> DownloadResourceAsync(string url, string targetPath, string taskLabel, Action<string>? onStart = null, Action<int>? onProgress = null, CancellationToken token = default)
         {
             Debug.WriteLine($"[DownloadResourceAsync] Preparing to download from {url} to {targetPath}");
