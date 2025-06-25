@@ -16,6 +16,9 @@ namespace CollectaMundo.ApplicationServices.Startup
             var settings = new JsonAppSettings();
             var scryfallLookups = new ScryfallLookups();
 
+            // Assign the global database factory
+            AppGlobals.DbFactory = new DbConnectionFactory(settings);
+
             // Generate missing PNG stack
             var missingPngRepo = new GenerateMissingPngRepository();
             var missingPngLogic = new GenerateMissingPngLogic();
@@ -32,5 +35,6 @@ namespace CollectaMundo.ApplicationServices.Startup
 
             return new StartupService(integrityService, prepService, closeStatusWindow, statusVM);
         }
+
     }
 }

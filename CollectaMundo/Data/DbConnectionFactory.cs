@@ -9,10 +9,7 @@ namespace CollectaMundo.Data
 
         public async Task<SQLiteConnection> OpenConnectionAsync()
         {
-            var cs = _settings
-                        .ConnectionStrings
-                        .SQLiteConnection
-                        .Replace("{SQLitePath}", _settings.DatabaseSettings.SQLitePath);
+            var cs = _settings.ConnectionStrings.SQLiteConnection.Replace("{SQLitePath}", _settings.DatabaseSettings.SQLitePath);
 
             var conn = new SQLiteConnection(cs);
             await conn.OpenAsync();

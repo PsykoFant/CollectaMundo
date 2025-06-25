@@ -4,18 +4,10 @@ using System.IO;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class DatabaseIntegrityService : IDatabaseIntegrityService
+    public class DatabaseIntegrityService(IAppSettings settings) : IDatabaseIntegrityService
     {
-        private readonly IAppSettings _settings;
-        private readonly IDbConnectionFactory _dbFactory;
-        private readonly IDatabaseHealthRepository _healthRepo;
-
-        public DatabaseIntegrityService(IAppSettings settings)
-        {
-            _settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            _dbFactory = new DbConnectionFactory(_settings);
-            _healthRepo = new DatabaseHealthRepository();
-        }
+        private readonly IAppSettings _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        private readonly IDatabaseHealthRepository _healthRepo = new DatabaseHealthRepository();
 
         public async Task<DatabaseStatus> GetDatabaseStatusAsync()
         {
@@ -29,7 +21,7 @@ namespace CollectaMundo.ApplicationServices
 
             try
             {
-                await using var uow = new UnitOfWork(_dbFactory);
+                await using var uow = new UnitOfWork();
                 await uow.BeginAsync();
 
                 bool isValid = await _healthRepo.HasExpectedTablesAndViewsAsync(uow.CurrentConnection) && await _healthRepo.QuickCheckAsync(uow.CurrentConnection);

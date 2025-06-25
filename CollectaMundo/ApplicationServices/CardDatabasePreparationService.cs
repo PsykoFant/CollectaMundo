@@ -10,26 +10,18 @@ using System.Windows;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class CardDatabasePreparationService : ICardDatabasePreparationService
+    public class CardDatabasePreparationService(IAppSettings settings, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, StatusViewModel statusVM) : ICardDatabasePreparationService
     {
-        private readonly IAppSettings _settings;
-        private readonly IDbConnectionFactory _dbFactory;
-        private readonly IDatabaseSchemaRepository _dbSchemaRepo;
-        private readonly ICardPriceService _priceService;
-        private readonly IGenerateMissingPngService _missingPngService;
-        private readonly StatusViewModel _statusVM;
+        private static IDbConnectionFactory DbFactory => AppGlobals.DbFactory ?? throw new InvalidOperationException("AppContext.DbFactory is not initialized.");
+        private readonly IAppSettings _settings = settings;
+        private readonly IDatabaseSchemaRepository _dbSchemaRepo = dbSchemaRepo;
+        private readonly ICardPriceService _priceService = priceService;
+        private readonly IGenerateMissingPngService _missingPngService = missingPngService;
+        private readonly StatusViewModel _statusVM = statusVM;
 
         private readonly string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
         private readonly string pricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
-        public CardDatabasePreparationService(IAppSettings settings, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, StatusViewModel statusVM)
-        {
-            _settings = settings;
-            _dbSchemaRepo = dbSchemaRepo;
-            _priceService = priceService;
-            _missingPngService = missingPngService;
-            _statusVM = statusVM;
-            _dbFactory = new DbConnectionFactory(_settings);
-        }
+
         public async Task FirstTimeDbPrepOrchetrator()
         {
             string userDownloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
@@ -194,7 +186,7 @@ namespace CollectaMundo.ApplicationServices
         {
             return await RetryLoopAsync(async attempt =>
             {
-                await using var uow = new UnitOfWork(_dbFactory);
+                await using var uow = new UnitOfWork();
                 await uow.BeginAsync();
                 await action(uow.CurrentConnection);
                 await uow.CommitAsync();
@@ -208,7 +200,7 @@ namespace CollectaMundo.ApplicationServices
             {
                 try
                 {
-                    await using var conn = await _dbFactory.OpenConnectionAsync();
+                    await using var conn = await DbFactory.OpenConnectionAsync();
                     await action(conn);
                     return true;
                 }

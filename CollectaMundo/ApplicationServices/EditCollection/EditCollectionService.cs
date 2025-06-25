@@ -1,5 +1,4 @@
-﻿using CollectaMundo.Data;
-using CollectaMundo.Data.EditCollection;
+﻿using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
@@ -9,23 +8,16 @@ namespace CollectaMundo.ApplicationServices.EditCollection
 {
     public class EditCollectionService : IEditCollectionService
     {
-        private readonly IAppSettings _settings;
-        private readonly IDbConnectionFactory _dbFactory;
-        public EditCollectionService()
-        {
-            _settings = new JsonAppSettings();
-            _dbFactory = new DbConnectionFactory(_settings);
-        }
 
         // Adding cards to an add or edit listview
         public Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewHelperAsync(selectedCard, targetCollection, false);
         public Task AddCardToEditCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewHelperAsync(selectedCard, targetCollection, true);
-        private async Task AddCardToListViewHelperAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection, bool isEdit)
+        private static async Task AddCardToListViewHelperAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection, bool isEdit)
         {
             CardSet newItem;
 
             // Start a UoW 
-            await using var uow = new UnitOfWork(_dbFactory);
+            await using var uow = new UnitOfWork();
             await uow.BeginAsync();
             try
             {
@@ -79,7 +71,7 @@ namespace CollectaMundo.ApplicationServices.EditCollection
             bool isEdit = cards.Any(c => c.CardId != null);
 
             // Open / Begin
-            await using var uow = new UnitOfWork(_dbFactory);
+            await using var uow = new UnitOfWork();
             await uow.BeginAsync();
 
             try
@@ -119,7 +111,7 @@ namespace CollectaMundo.ApplicationServices.EditCollection
             bool isEdit = cards.Any(c => c.CardId != null);
 
             // Start transaction
-            await using var uow = new UnitOfWork(_dbFactory);
+            await using var uow = new UnitOfWork();
             await uow.BeginAsync();
 
             try

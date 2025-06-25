@@ -1,18 +1,21 @@
-﻿using CollectaMundo.Data;
-using System.Data.SQLite;
+﻿using System.Data.SQLite;
 using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class UnitOfWork(IDbConnectionFactory dbFactory) : IUnitOfWork
+    public class UnitOfWork : IUnitOfWork
     {
-        private readonly IDbConnectionFactory _dbFactory = dbFactory ?? throw new ArgumentNullException(nameof(dbFactory));
         private SQLiteConnection? _conn;
         private SQLiteTransaction? _txn;
 
         public async Task BeginAsync()
         {
-            _conn ??= await _dbFactory.OpenConnectionAsync(); // reuse if already opened
+            if (AppGlobals.DbFactory is null)
+            {
+                throw new InvalidOperationException("AppContext.DbFactory is not initialized.");
+            }
+
+            _conn ??= await AppGlobals.DbFactory.OpenConnectionAsync(); // reuse if already opened
             _txn = _conn.BeginTransaction();
         }
 

@@ -1,5 +1,4 @@
-﻿using CollectaMundo.Data;
-using CollectaMundo.Data.CardLists;
+﻿using CollectaMundo.Data.CardLists;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.ViewModels;
@@ -9,17 +8,9 @@ namespace CollectaMundo.ApplicationServices.Startup
 {
     public class MainWindowInitializer
     {
-        private readonly IAppSettings _settings;
-        private readonly IDbConnectionFactory _dbFactory;
-
-        public MainWindowInitializer()
-        {
-            _settings = new JsonAppSettings();
-            _dbFactory = new DbConnectionFactory(_settings);
-        }
         public async Task InitializeAsync(List<(CardViewModel, CardListQuerySpec)> cardSpecs, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
-            await using var uow = new UnitOfWork(_dbFactory);
+            await using var uow = new UnitOfWork();
             try
             {
                 await uow.BeginAsync();
