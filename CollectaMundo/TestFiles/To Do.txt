@@ -1,8 +1,7 @@
 TO DO 
 - MVVM refactor
 
-  - retry scryfall api kald - brug retry policy?
-  - UI crap ved startup
+
 
 
   - Card image brug MVVM (unit test)
@@ -12,8 +11,6 @@ TO DO
  - Pris update brug MVVM (unit test)
  - Import brug MVVM (unit test)
  - Deck manager brug MVVM (unit test)
-
- - Fix logo synlighed problem ved eks. MainWindowViewModel
 
  - Hvorfor er der ingen kort fra Mystery Booster
 

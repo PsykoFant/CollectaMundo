@@ -33,10 +33,9 @@ namespace CollectaMundo.ViewModels
         public event EventHandler? FilterChanged;
         protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-        // Constructor now takes interfaces
+        // Constructor
         public FilterViewModel(IFilteringService service)
         {
-
             _service = service;
 
             ClearFiltersCommand = new RelayCommand<object>(_ =>

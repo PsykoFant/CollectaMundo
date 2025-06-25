@@ -59,7 +59,7 @@
                 </Button>
                 <Button Command="{Binding ShowUtilitiesCommand}"
                         Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static viewmodels:Page.Utilities}}"
-                        Content="Decks" 
+                        Content="Utilities" 
                          HorizontalAlignment="Center" Margin="510,5,0,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}">
                     <Button.Effect>
                         <DropShadowEffect ShadowDepth="5" BlurRadius="10" Opacity="0.6"/>
@@ -67,8 +67,8 @@
                 </Button>
             </Grid>
             <!-- Side menu -->
-            <Grid Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="{Binding SideMenuVisibility}">
-                <Grid x:Name="GridFiltering">
+            <Grid  x:Name="SideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="{Binding SideMenuVisibility}">
+                <Grid x:Name="GridFiltering" Visibility="{Binding SideMenuFilterVisibility}">
 
                     <Button x:Name="ClearFiltersButton" Content="Clear filters" Margin="10,0,0,0" VerticalAlignment="Top" Height="20" Command="{Binding FilterVM.ClearFiltersCommand}"/>
 
@@ -790,10 +790,10 @@
                               Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}"/>
 
                 </Grid>
-                <Grid x:Name="GridUtilsMenu" Visibility="Collapsed">
-                    <Button x:Name="CreateBackupButton" Content="Create backup of my collection" HorizontalAlignment="Left" Margin="10,0,0,0" Height="20" Width="180" VerticalAlignment="Top" Click="CreateBackupButton_Click"/>
+                <Grid x:Name="GridUtilsMenu" Visibility="{Binding SideMenuUtilsVisibility}">
+                    <Button Command="{Binding BackupDbCommand}" Content="Create backup of my collection" HorizontalAlignment="Left" Margin="10,0,0,0" Height="20" Width="180" VerticalAlignment="Top"/>
                     <Button x:Name="ImportCollectionButton" Content="The Import Wizard" HorizontalAlignment="Left" Margin="10,30,0,0" Width="180" Height="20" VerticalAlignment="Top" Click="ImportCollectionButton_Click"/>
-                    <Button x:Name="UpdatePricesButton" Content="Update card prices" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,60,0,0" Width="180" Height="20" Click="UpdatePricesButton_Click"/>
+                    <Button x:Name="UpdatePricesButton" Content="Update card prices" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,60,0,0" Width="180" Height="20"/>
                     <Label Content="Show prices from:" Margin="10,90,0,0"/>
                     <ComboBox x:Name="RetailSelector" SelectionChanged="RetailSelector_SelectionChanged" Width="180" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,120,0,0">
                         <ComboBoxItem Content="Cardmarket" />
@@ -802,8 +802,8 @@
                         <ComboBoxItem Content="TCG Player" />
                         <ComboBoxItem Content="Cardhoarder" />
                     </ComboBox>
-                    <Button x:Name="CheckForUpdatesButton" Content="Check for card database updates" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,150,0,0" Width="180" Height="20" Click="CheckForUpdatesButton_Click"/>
-                    <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Left" Width="180" Height="20" Margin="10,180,0,0" VerticalAlignment="Top" Visibility="Collapsed" Click="UpdateDbButton_Click"/>
+                    <Button x:Name="CheckForUpdatesButton" Content="Check for card database updates" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,150,0,0" Width="180" Height="20"/>
+                    <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Left" Width="180" Height="20" Margin="10,180,0,0" VerticalAlignment="Top" Visibility="Collapsed"/>
                 </Grid>
             </Grid>
             <!-- Content section -->

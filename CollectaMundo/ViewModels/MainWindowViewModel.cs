@@ -7,6 +7,7 @@ using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
@@ -39,12 +40,20 @@ namespace CollectaMundo.ViewModels
                 if (_currentPage == Page.MyCollection)
                 {
                     AddCardsVM.StatusMessage = string.Empty;
+                    SideMenuFilterVisibility = Visibility.Visible;
+                    SideMenuUtilsVisibility = Visibility.Collapsed;
                 }
                 else if (_currentPage == Page.SearchAndFilter)
                 {
                     EditCardsVM.StatusMessage = string.Empty;
+                    SideMenuFilterVisibility = Visibility.Visible;
+                    SideMenuUtilsVisibility = Visibility.Collapsed;
                 }
-
+                else if (_currentPage == Page.Utilities)
+                {
+                    SideMenuFilterVisibility = Visibility.Collapsed;
+                    SideMenuUtilsVisibility = Visibility.Visible;
+                }
                 // CurrentPage changed
                 OnPropertyChanged();
 
@@ -73,7 +82,9 @@ namespace CollectaMundo.ViewModels
                 // if *either* status box is Visible, hide our logo
                 bool addBusy = AddCardsVM.StatusVisibility == Visibility.Visible;
                 bool editBusy = EditCardsVM.StatusVisibility == Visibility.Visible;
-                return (addBusy || editBusy)
+                bool isLogoPage = CurrentPage == Page.MyCollection || CurrentPage == Page.SearchAndFilter;
+
+                return (addBusy || editBusy || !isLogoPage)
                   ? Visibility.Collapsed
                   : Visibility.Visible;
             }
@@ -81,17 +92,12 @@ namespace CollectaMundo.ViewModels
 
         // Grid visibility properties
 
+        // Main Grids
         private Visibility _mainGridVisibility = Visibility.Collapsed;
         public Visibility MainGridVisibility
         {
             get => _mainGridVisibility;
             set { _mainGridVisibility = value; OnPropertyChanged(); }
-        }
-        private Visibility _sideMenuVisibility = Visibility.Hidden;
-        public Visibility SideMenuVisibility
-        {
-            get => _sideMenuVisibility;
-            set { _sideMenuVisibility = value; OnPropertyChanged(); }
         }
 
         private Visibility _contenSectionVisibility = Visibility.Hidden;
@@ -99,6 +105,29 @@ namespace CollectaMundo.ViewModels
         {
             get => _contenSectionVisibility;
             set { _contenSectionVisibility = value; OnPropertyChanged(); }
+        }
+
+        private Visibility _sideMenuVisibility = Visibility.Hidden;
+        public Visibility SideMenuVisibility
+        {
+            get => _sideMenuVisibility;
+            set { _sideMenuVisibility = value; OnPropertyChanged(); }
+        }
+
+
+        // Side menu visibility properties
+        private Visibility _sideMenuFilterVisibility = Visibility.Visible;
+        public Visibility SideMenuFilterVisibility
+        {
+            get => _sideMenuFilterVisibility;
+            set { _sideMenuFilterVisibility = value; OnPropertyChanged(); }
+        }
+
+        private Visibility _sideMenuUtilsVisibility = Visibility.Hidden;
+        public Visibility SideMenuUtilsVisibility
+        {
+            get => _sideMenuUtilsVisibility;
+            set { _sideMenuUtilsVisibility = value; OnPropertyChanged(); }
         }
 
         // Enable/disable top menu 
@@ -124,6 +153,9 @@ namespace CollectaMundo.ViewModels
         public ICommand ShowMyCollectionCommand { get; }
         public ICommand ShowDecksCommand { get; }
         public ICommand ShowUtilitiesCommand { get; }
+
+        // Utilities commands
+        public ICommand BackupDbCommand { get; }
 
         // Constructor
         private MainWindowViewModel()
@@ -155,38 +187,11 @@ namespace CollectaMundo.ViewModels
             ShowMyCollectionCommand = new RelayCommand<object>(_ => { CurrentPage = Page.MyCollection; });
             ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
-        }
-        public static async Task<MainWindowViewModel> CreateAsync(Action? onStartupComplete = null)
-        {
-            var vm = new MainWindowViewModel()
+            BackupDbCommand = new RelayCommand<object>(_ =>
             {
-                OnStartupComplete = onStartupComplete
-            };
-            await vm.InitializeListsAsync();
-            return vm;
-        }
-        private async Task InitializeListsAsync()
-        {
-            var init = new MainWindowInitializer();
-
-            await Task.Run(async () =>
-            {
-                await init.InitializeAsync(
-                    [
-                        (AllCardsVM, CardListQueryCatalog.AllCards),
-                        (MyCollectionVM, CardListQueryCatalog.MyCollection),
-                        (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
-                        (AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
-                        (ColorIcons, CardListQueryCatalog.ColorIcons)
-                    ],
-                    FilterVM.Filters, FilterVM
-                );
+                Debug.WriteLine("Update the db");
             });
-
-            FilterVM.NotifyFilterChanged();
-            OnStartupComplete?.Invoke();
         }
-
 
         // When a card is added/updated/deleted from collection
         private void OnCardChanged(object? sender, CardChangeEventArgs e)
@@ -247,6 +252,37 @@ namespace CollectaMundo.ViewModels
         {
             AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
             EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
+        }
+
+
+        // Factory method to create the ViewModel
+        public static async Task<MainWindowViewModel> CreateAsync(Action? onStartupComplete = null)
+        {
+            var vm = new MainWindowViewModel()
+            {
+                OnStartupComplete = onStartupComplete
+            };
+            await vm.InitializeListsAsync();
+            return vm;
+        }
+        private async Task InitializeListsAsync()
+        {
+            await Task.Run(async () =>
+            {
+                await MainWindowInitializer.InitializeAsync(
+                    [
+                        (AllCardsVM, CardListQueryCatalog.AllCards),
+                        (MyCollectionVM, CardListQueryCatalog.MyCollection),
+                        (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
+                        (AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
+                        (ColorIcons, CardListQueryCatalog.ColorIcons)
+                    ],
+                    FilterVM.Filters, FilterVM
+                );
+            });
+
+            FilterVM.NotifyFilterChanged();
+            OnStartupComplete?.Invoke();
         }
 
     }
