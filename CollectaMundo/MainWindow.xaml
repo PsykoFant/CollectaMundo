@@ -791,7 +791,7 @@
 
                 </Grid>
                 <Grid x:Name="GridUtilsMenu" Visibility="{Binding SideMenuUtilsVisibility}">
-                    <Button Command="{Binding BackupDbCommand}" Content="Create backup of my collection" HorizontalAlignment="Left" Margin="10,0,0,0" Height="20" Width="180" VerticalAlignment="Top"/>
+                    <Button Command="{Binding BackupCollectionCommand}" Content="Create backup of my collection" HorizontalAlignment="Left" Margin="10,0,0,0" Height="20" Width="180" VerticalAlignment="Top"/>
                     <Button x:Name="ImportCollectionButton" Content="The Import Wizard" HorizontalAlignment="Left" Margin="10,30,0,0" Width="180" Height="20" VerticalAlignment="Top" Click="ImportCollectionButton_Click"/>
                     <Button x:Name="UpdatePricesButton" Content="Update card prices" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,60,0,0" Width="180" Height="20"/>
                     <Label Content="Show prices from:" Margin="10,90,0,0"/>
@@ -1742,8 +1742,8 @@
                 </Grid>
                 <Grid x:Name="GridUtilitiesSection" d:IsHidden="True"
                       Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},
-                   Converter={StaticResource PageToVisibilityConverter},
-                   ConverterParameter={x:Static viewmodels:Page.Utilities}}">
+                    Converter={StaticResource PageToVisibilityConverter},
+                    ConverterParameter={x:Static viewmodels:Page.Utilities}}">
                     <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                     <Label x:Name="UtilsInfoLabel" Content="" HorizontalAlignment="Center" Margin="8,150,0,0" VerticalAlignment="Top" FontSize="16"/>
                     <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Resources/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698"/>
@@ -2080,6 +2080,8 @@
                         </Grid>
                     </Grid>
                 </Grid>
+                <!-- Status window -->
+                <local:StatusOverlay Visibility="{Binding StatusOverlayVisibility}" />
             </Grid>
             <Grid x:Name="GridCardImages" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Right" Width="250" Margin="0,0,0,0">
                 <Label x:Name="ImagePromoLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="250" Style="{StaticResource BelerenBold}"/>

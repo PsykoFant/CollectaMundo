@@ -1,13 +1,13 @@
 ﻿using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
+using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Startup;
-using CollectaMundo.Data.EditCollection;
+using CollectaMundo.Data.ImportExport;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
@@ -147,6 +147,7 @@ namespace CollectaMundo.ViewModels
 
         // Backing fields
         private readonly IFilteringService _filteringService;
+        private readonly IImportExportService _importExportService;
 
         // Commands to switch pages
         public ICommand ShowSearchAndFilterCommand { get; }
@@ -155,7 +156,7 @@ namespace CollectaMundo.ViewModels
         public ICommand ShowUtilitiesCommand { get; }
 
         // Utilities commands
-        public ICommand BackupDbCommand { get; }
+        public ICommand BackupCollectionCommand { get; }
 
         // Constructor
         private MainWindowViewModel()
@@ -169,7 +170,6 @@ namespace CollectaMundo.ViewModels
             ColorIcons = new CardViewModel();
 
             // Edit collection stack
-            var editRepo = new EditCollectionRepository();
             var editService = new EditCollectionService();
             AddCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);
             EditCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: false);
@@ -181,15 +181,18 @@ namespace CollectaMundo.ViewModels
             FilterVM = new FilterViewModel(_filteringService);
             FilterVM.FilterChanged += OnFilterChanged;
 
+            // Import/export stack
+            _importExportService = new ImportExportService(new ImportExportRepo());
+
             MiniLogoVisibilityFlipper();
 
             ShowSearchAndFilterCommand = new RelayCommand<object>(_ => { CurrentPage = Page.SearchAndFilter; });
             ShowMyCollectionCommand = new RelayCommand<object>(_ => { CurrentPage = Page.MyCollection; });
             ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
-            BackupDbCommand = new RelayCommand<object>(_ =>
+            BackupCollectionCommand = new RelayCommand<object>(_ =>
             {
-                Debug.WriteLine("Update the db");
+                _importExportService.ExportCollectionAsync();
             });
         }
 
@@ -247,7 +250,6 @@ namespace CollectaMundo.ViewModels
             MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
             AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
         }
-
         private void MiniLogoVisibilityFlipper()
         {
             AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
@@ -262,29 +264,24 @@ namespace CollectaMundo.ViewModels
             {
                 OnStartupComplete = onStartupComplete
             };
-            await vm.InitializeListsAsync();
-            return vm;
-        }
-        private async Task InitializeListsAsync()
-        {
+
             await Task.Run(async () =>
             {
                 await MainWindowInitializer.InitializeAsync(
                     [
-                        (AllCardsVM, CardListQueryCatalog.AllCards),
-                        (MyCollectionVM, CardListQueryCatalog.MyCollection),
-                        (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
-                        (AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
-                        (ColorIcons, CardListQueryCatalog.ColorIcons)
+                        (vm.AllCardsVM, CardListQueryCatalog.AllCards),
+                        (vm.MyCollectionVM, CardListQueryCatalog.MyCollection),
+                        (vm.AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
+                        (vm.AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
+                        (vm.ColorIcons, CardListQueryCatalog.ColorIcons)
                     ],
-                    FilterVM.Filters, FilterVM
+                    vm.FilterVM.Filters, vm.FilterVM
                 );
             });
 
-            FilterVM.NotifyFilterChanged();
-            OnStartupComplete?.Invoke();
+            vm.FilterVM.NotifyFilterChanged();
+            vm.OnStartupComplete?.Invoke();
+            return vm;
         }
-
     }
-
 }

@@ -19,6 +19,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardlistRepo = new CardListRepository();
                 var filterRepo = new FilterInitDefaultsRepository();
 
+                // Initializt and load card lists in parallel
 
                 var cardTasks = new Task<IReadOnlyList<CardSet>>[cardSpecs.Count];
 
@@ -30,14 +31,13 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var cardsResults = await Task.WhenAll(cardTasks);
 
-                Debug.WriteLine("[InitializeAsync] All card queries completed");
-
                 for (int i = 0; i < cardSpecs.Count; i++)
                 {
                     Debug.WriteLine($"[InitializeAsync] Setting {cardSpecs[i].Item2} cards to ViewModel");
                     cardSpecs[i].Item1.Cards = [.. cardsResults[i]];
                 }
 
+                // Initialize filters and filter defaults
                 var filterDefaults = await filterRepo.GetFilterDefaultsAsync(conn);
 
                 filters.Clear();
@@ -63,20 +63,13 @@ namespace CollectaMundo.ApplicationServices.Startup
             }
             finally
             {
-                Debug.WriteLine($"[InitializeAsync] Connection state before dispose: {uow.CurrentConnection.State}");
-
                 await uow.DisposeAsync();
-                Debug.WriteLine("[InitializeAsync] UnitOfWork disposed");
 
                 // Force GC collection to test cleanup behavior
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
                 GC.Collect();
             }
-
-            Debug.WriteLine("[InitializeAsync] Initialization complete");
         }
-
     }
-
 }

@@ -581,24 +581,12 @@ namespace CollectaMundo
         #endregion
 
         #region UI elements for utilities
-        private async void CreateBackupButton_Click(object sender, RoutedEventArgs e)
-        {
-            ResetUtilsMenu();
-            await CreateCsvBackupAsync();
-        }
         private void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
         {
             Inspiredtinkering.Visibility = Visibility.Collapsed;
             UtilsInfoLabel.Content = string.Empty;
             GridImportWizard.Visibility = Visibility.Visible;
             GridImportStartScreen.Visibility = Visibility.Visible;
-        }
-
-        private void ResetUtilsMenu()
-        {
-            GridImportWizard.Visibility = Visibility.Collapsed;
-            Inspiredtinkering.Visibility = Visibility.Visible;
-            UtilsInfoLabel.Content = string.Empty;
         }
         private async void RetailSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {

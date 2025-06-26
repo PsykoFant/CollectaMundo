@@ -67,7 +67,7 @@ namespace CollectaMundo.ApplicationServices.CardPrices
 
                 var retailer = group.First().Retailer;
                 var finish = group.First().Finish;
-                _statusVM.StatusLabelMain = $"Imported retailer {retailer} prices for card finish: {finish} ...";
+                _statusVM.StatusLabel3 = $"Imported retailer {retailer} prices for card finish: {finish} ...";
 
                 insertProgress.Increment();
 

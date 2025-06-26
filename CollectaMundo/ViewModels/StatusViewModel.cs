@@ -10,9 +10,9 @@ namespace CollectaMundo.ViewModels
         private bool _isSetupFailVisible = false;
         private bool _isProgressVisible;
         private int _progressValue;
-        private string _statusLabelAboveBar = string.Empty;
-        private string _statusLabelBelowBar = string.Empty;
-        private string _statusLabelMain = string.Empty;
+        private string _statusLabel1 = string.Empty;
+        private string _statusLabel2 = string.Empty;
+        private string _statusLabel3 = string.Empty;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -41,33 +41,33 @@ namespace CollectaMundo.ViewModels
             get => _progressValue;
             set => SetField(ref _progressValue, value);
         }
-        public string StatusLabelAboveBar
+        public string StatusLabel1
         {
-            get => _statusLabelAboveBar;
-            set => SetField(ref _statusLabelAboveBar, value);
+            get => _statusLabel1;
+            set => SetField(ref _statusLabel1, value);
         }
-        public string StatusLabelBelowBar
+        public string StatusLabel2
         {
-            get => _statusLabelBelowBar;
-            set => SetField(ref _statusLabelBelowBar, value);
+            get => _statusLabel2;
+            set => SetField(ref _statusLabel2, value);
         }
-        public string StatusLabelMain
+        public string StatusLabel3
         {
-            get => _statusLabelMain;
-            set => SetField(ref _statusLabelMain, value);
+            get => _statusLabel3;
+            set => SetField(ref _statusLabel3, value);
         }
         public void Show(string message, bool showProgress = false)
         {
             IsVisible = true;
-            StatusLabelMain = message;
+            StatusLabel3 = message;
             IsProgressVisible = showProgress;
         }
         public void Hide()
         {
             IsVisible = false;
             IsProgressVisible = false;
-            StatusLabelMain = string.Empty;
-            StatusLabelAboveBar = string.Empty;
+            StatusLabel3 = string.Empty;
+            StatusLabel1 = string.Empty;
         }
         private void SetField<T>(ref T field, T value, [CallerMemberName] string? propName = null)
         {

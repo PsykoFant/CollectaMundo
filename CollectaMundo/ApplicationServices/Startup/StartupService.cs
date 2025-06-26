@@ -27,7 +27,7 @@ namespace CollectaMundo.ApplicationServices.Startup
             }
 
             // Now we can proceed to load the main window
-            _statusVM.StatusLabelMain = "Loading ALL the cards…";
+            _statusVM.StatusLabel3 = "Loading ALL the cards…";
 
             var mainVM = await MainWindowViewModel.CreateAsync();
 

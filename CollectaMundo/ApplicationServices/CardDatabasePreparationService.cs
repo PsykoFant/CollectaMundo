@@ -38,7 +38,7 @@ namespace CollectaMundo.ApplicationServices
                     statusLabelMain: "Please check your connection. CollectaMundo will close down shortly...");
             }
 
-            _statusVM.StatusLabelAboveBar = "Performing first-time setup of card database - please wait ...";
+            _statusVM.StatusLabel1 = "Performing first-time setup of card database - please wait ...";
             _statusVM.IsProgressVisible = true;
 
             for (int overallAttempt = 1; overallAttempt <= maxTotalAttempts; overallAttempt++)
@@ -47,7 +47,7 @@ namespace CollectaMundo.ApplicationServices
 
                 if (overallAttempt != 1)
                 {
-                    _statusVM.StatusLabelAboveBar = $"Setup failed, retrying overall attempt {overallAttempt} of {maxTotalAttempts}...";
+                    _statusVM.StatusLabel1 = $"Setup failed, retrying overall attempt {overallAttempt} of {maxTotalAttempts}...";
                 }
 
                 // Reset cleanup after each new overall attempt
@@ -118,9 +118,9 @@ namespace CollectaMundo.ApplicationServices
                 finally
                 {
                     _statusVM.ProgressValue = 0;
-                    _statusVM.StatusLabelAboveBar = string.Empty;
-                    _statusVM.StatusLabelBelowBar = string.Empty;
-                    _statusVM.StatusLabelMain = string.Empty;
+                    _statusVM.StatusLabel1 = string.Empty;
+                    _statusVM.StatusLabel2 = string.Empty;
+                    _statusVM.StatusLabel3 = string.Empty;
                 }
             }
 
@@ -215,7 +215,7 @@ namespace CollectaMundo.ApplicationServices
         {
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
-                _statusVM.StatusLabelMain = stepName;
+                _statusVM.StatusLabel3 = stepName;
 
                 try
                 {
@@ -229,18 +229,18 @@ namespace CollectaMundo.ApplicationServices
                 catch (Exception ex)
                 {
                     string message = $"Step '{stepName}' failed on attempt {attempt}:";
-                    _statusVM.StatusLabelBelowBar = ex.Message;
-                    _statusVM.StatusLabelMain = message;
+                    _statusVM.StatusLabel2 = ex.Message;
+                    _statusVM.StatusLabel3 = message;
 
                     Debug.WriteLine($"[RetryLoopAsync] {message}");
                     Debug.WriteLine($"[RetryLoopAsync] {ex.Message}");
                 }
 
                 await Task.Delay(3000);
-                _statusVM.StatusLabelBelowBar = string.Empty;
+                _statusVM.StatusLabel2 = string.Empty;
             }
 
-            _statusVM.StatusLabelAboveBar = $"Step '{stepName}' failed after {maxRetries} tries. Restarting overall setup...";
+            _statusVM.StatusLabel1 = $"Step '{stepName}' failed after {maxRetries} tries. Restarting overall setup...";
             await Task.Delay(3000);
             return false;
         }
@@ -334,9 +334,9 @@ namespace CollectaMundo.ApplicationServices
             _statusVM.IsProgressVisible = false;
             _statusVM.IsLogoVisible = false;
             _statusVM.IsSetupFailVisible = true;
-            _statusVM.StatusLabelAboveBar = statusAboveBar;
-            _statusVM.StatusLabelBelowBar = statusBelowBar;
-            _statusVM.StatusLabelMain = statusLabelMain;
+            _statusVM.StatusLabel1 = statusAboveBar;
+            _statusVM.StatusLabel2 = statusBelowBar;
+            _statusVM.StatusLabel3 = statusLabelMain;
 
             await Task.Delay(10000);
             Application.Current.Shutdown();
