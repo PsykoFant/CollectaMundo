@@ -22,13 +22,7 @@ namespace CollectaMundo
             _statusWindow.Show();
 
             var startupService = StartupComposition.Build(statusVM, () => _statusWindow!.Close());
-            await StartAppAsync(startupService);
-        }
-        private static async Task StartAppAsync(IStartupService startupService)
-        {
             await startupService.AppStartEntryPoint();
         }
     }
-
-
 }
