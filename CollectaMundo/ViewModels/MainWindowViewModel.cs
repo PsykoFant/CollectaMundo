@@ -3,7 +3,6 @@ using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Startup;
-using CollectaMundo.Data.ImportExport;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
@@ -145,10 +144,6 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        // Backing fields
-        private readonly IFilteringService _filteringService;
-        private readonly IImportExportService _importExportService;
-
         // Commands to switch pages
         public ICommand ShowSearchAndFilterCommand { get; }
         public ICommand ShowMyCollectionCommand { get; }
@@ -158,9 +153,16 @@ namespace CollectaMundo.ViewModels
         // Utilities commands
         public ICommand BackupCollectionCommand { get; }
 
+        // Backing fields
+        private readonly IFilteringService _filteringService;
+        private readonly IImportExportService _importExportService;
+
         // Constructor
-        private MainWindowViewModel()
+        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService)
         {
+            _filteringService = filteringService;
+            _importExportService = importExportService;
+
             CurrentPage = Page.SearchAndFilter;
 
             AllCardsVM = new CardViewModel();
@@ -169,20 +171,13 @@ namespace CollectaMundo.ViewModels
             AllCardsInDecksVM = new CardViewModel();
             ColorIcons = new CardViewModel();
 
-            // Edit collection stack
-            var editService = new EditCollectionService();
             AddCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);
             EditCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: false);
             AddCardsVM.CardChanged += OnCardChanged;
             EditCardsVM.CardChanged += OnCardChanged;
 
-            // Filtering stack
-            _filteringService = new FilteringService();
             FilterVM = new FilterViewModel(_filteringService);
             FilterVM.FilterChanged += OnFilterChanged;
-
-            // Import/export stack
-            _importExportService = new ImportExportService(new ImportExportRepo());
 
             MiniLogoVisibilityFlipper();
 
@@ -190,12 +185,8 @@ namespace CollectaMundo.ViewModels
             ShowMyCollectionCommand = new RelayCommand<object>(_ => { CurrentPage = Page.MyCollection; });
             ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
-            BackupCollectionCommand = new RelayCommand<object>(_ =>
-            {
-                _importExportService.ExportCollectionAsync();
-            });
+            BackupCollectionCommand = new RelayCommand<object>(_ => { _importExportService.ExportCollectionAsync(); });
         }
-
         // When a card is added/updated/deleted from collection
         private void OnCardChanged(object? sender, CardChangeEventArgs e)
         {
@@ -258,30 +249,28 @@ namespace CollectaMundo.ViewModels
 
 
         // Factory method to create the ViewModel
-        public static async Task<MainWindowViewModel> CreateAsync(Action? onStartupComplete = null)
+        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel()
+            var vm = new MainWindowViewModel(filteringService, editService, importExportService)
             {
                 OnStartupComplete = onStartupComplete
             };
 
-            await Task.Run(async () =>
-            {
-                await MainWindowInitializer.InitializeAsync(
-                    [
-                        (vm.AllCardsVM, CardListQueryCatalog.AllCards),
-                        (vm.MyCollectionVM, CardListQueryCatalog.MyCollection),
-                        (vm.AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
-                        (vm.AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
-                        (vm.ColorIcons, CardListQueryCatalog.ColorIcons)
-                    ],
-                    vm.FilterVM.Filters, vm.FilterVM
-                );
-            });
+            await MainWindowInitializer.InitializeAsync(
+                [
+                    (vm.AllCardsVM, CardListQueryCatalog.AllCards),
+                    (vm.MyCollectionVM, CardListQueryCatalog.MyCollection),
+                    (vm.AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
+                    (vm.AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
+                    (vm.ColorIcons, CardListQueryCatalog.ColorIcons)
+                ],
+                vm.FilterVM.Filters, vm.FilterVM
+            );
 
             vm.FilterVM.NotifyFilterChanged();
             vm.OnStartupComplete?.Invoke();
             return vm;
         }
+
     }
 }

@@ -1,5 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
+using CollectaMundo.ApplicationServices.ImportExport;
+using CollectaMundo.Data.ImportExport;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.ViewModels;
@@ -14,21 +17,28 @@ namespace CollectaMundo.Tests
         private readonly FilteringService _filteringService = new();
         public async Task InitializeAsync()
         {
-            // 1. Create your test-specific in-memory factory
             var dbFactory = TestUtilities.CreateInMemoryDbFactory();
-
-            // 2. Assign it to AppContext
             AppGlobals.DbFactory = dbFactory;
 
-            // 3. Proceed to create the MainWindowViewModel (now uses AppContext internally)
             var readyTcs = new TaskCompletionSource();
-            _mainVM = await MainWindowViewModel.CreateAsync(() => readyTcs.TrySetResult());
+
+            var filteringService = new FilteringService();
+            var editService = new EditCollectionService();
+            var importExportService = new ImportExportService(new ImportExportRepo());
+
+            _mainVM = await MainWindowViewModel.CreateAsync(
+                filteringService,
+                editService,
+                importExportService,
+                () => readyTcs.TrySetResult()
+            );
+
             await readyTcs.Task;
 
-            // 4. Hook up event listeners
             _mainVM.AddCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
             _mainVM.EditCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
         }
+
 
         public Task DisposeAsync()
         {

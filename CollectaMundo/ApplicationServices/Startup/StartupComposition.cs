@@ -1,9 +1,13 @@
 ﻿using CollectaMundo.ApplicationServices.CardPrices;
+using CollectaMundo.ApplicationServices.EditCollection;
+using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
+using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.Data;
 using CollectaMundo.Data.CardPrices;
 using CollectaMundo.Data.GenerateMissingPng;
+using CollectaMundo.Data.ImportExport;
 using CollectaMundo.Data.ScryfallLookups;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
@@ -20,10 +24,8 @@ namespace CollectaMundo.ApplicationServices.Startup
             {
                 var settings = new JsonAppSettings();
                 var scryfallLookups = new ScryfallLookups();
-
                 AppGlobals.DbFactory = new DbConnectionFactory(settings);
 
-                // Prep services
                 var missingPngRepo = new GenerateMissingPngRepository();
                 var missingPngLogic = new GenerateMissingPngLogic();
                 var missingPngService = new GenerateMissingPngService(missingPngRepo, scryfallLookups, missingPngLogic, statusVM);
@@ -35,7 +37,6 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var prepService = new CardDatabasePreparationService(settings, schemaInitializer, priceService, missingPngService, statusVM);
                 var integrityService = new DatabaseIntegrityService(settings);
 
-                // Do DB checks
                 statusVM.ShowStatusOverlay("Checking database integrity…");
                 await UIHelper.ForceRenderAsync();
 
@@ -45,16 +46,21 @@ namespace CollectaMundo.ApplicationServices.Startup
                     await prepService.FirstTimeDbPrepOrchetrator();
                 }
 
-                // Create main window VM
                 statusVM.StatusLabel3 = "Loading ALL the cards…";
+                await UIHelper.ForceRenderAsync();
 
-                var mainVM = await MainWindowViewModel.CreateAsync();
+                // Construct your new DI services
+                var filteringService = new FilteringService();
+                var editService = new EditCollectionService();
+                var importExportService = new ImportExportService(new ImportExportRepo());
+
+                var mainVM = await MainWindowViewModel.CreateAsync(filteringService, editService, importExportService);
+
                 mainVM.FilterVM.NotifyFilterChanged();
                 mainVM.SideMenuVisibility = Visibility.Visible;
                 mainVM.ContenSectionVisibility = Visibility.Visible;
                 mainVM.MainGridVisibility = Visibility.Visible;
 
-                // Done with splash overlay
                 statusVM.HideStatusOverlay();
 
                 return new RootViewModel(mainVM, statusVM);
@@ -62,9 +68,10 @@ namespace CollectaMundo.ApplicationServices.Startup
             catch (Exception ex)
             {
                 Debug.WriteLine($"Startup failed: {ex.Message}");
-                throw; // Re-throw to let the application handle it
+                throw;
             }
         }
+
     }
 
 }
