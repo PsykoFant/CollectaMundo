@@ -15,7 +15,7 @@ namespace CollectaMundo.ApplicationServices.Utilities
         {
             _statusVM = statusVM;
             _total = Math.Max(total, 1); // prevent divide by zero
-            _statusVM.IsProgressVisible = true;
+            _statusVM.ProgressVisibility = Visibility.Visible;
             _statusVM.ProgressValue = 0;
         }
 
@@ -43,7 +43,7 @@ namespace CollectaMundo.ApplicationServices.Utilities
         public void Dispose()
         {
             Complete();
-            _statusVM.IsProgressVisible = false;
+            _statusVM.ProgressVisibility = Visibility.Collapsed;
         }
 
     }

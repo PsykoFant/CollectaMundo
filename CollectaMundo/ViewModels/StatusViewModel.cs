@@ -1,14 +1,15 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
     public class StatusViewModel : INotifyPropertyChanged
     {
-        private bool _isVisible;
-        private bool _isLogoVisible = true;
-        private bool _isSetupFailVisible = false;
-        private bool _isProgressVisible;
+        private Visibility _statusOverlayVisibility;
+        private Visibility _logoVisibility = Visibility.Visible;
+        private Visibility _setupFailVisibility = Visibility.Collapsed;
+        private Visibility _progressVisibility = Visibility.Collapsed;
         private int _progressValue;
         private string _statusLabel1 = string.Empty;
         private string _statusLabel2 = string.Empty;
@@ -16,25 +17,25 @@ namespace CollectaMundo.ViewModels
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        public bool IsVisible
+        public Visibility StatusOverlayVisibilitiy
         {
-            get => _isVisible;
-            set => SetField(ref _isVisible, value);
+            get => _statusOverlayVisibility;
+            set => SetField(ref _statusOverlayVisibility, value);
         }
-        public bool IsLogoVisible
+        public Visibility LogoVisibility
         {
-            get => _isLogoVisible;
-            set => SetField(ref _isLogoVisible, value);
+            get => _logoVisibility;
+            set => SetField(ref _logoVisibility, value);
         }
-        public bool IsSetupFailVisible
+        public Visibility SetupFailVisibility
         {
-            get => _isSetupFailVisible;
-            set => SetField(ref _isSetupFailVisible, value);
+            get => _setupFailVisibility;
+            set => SetField(ref _setupFailVisibility, value);
         }
-        public bool IsProgressVisible
+        public Visibility ProgressVisibility
         {
-            get => _isProgressVisible;
-            set => SetField(ref _isProgressVisible, value);
+            get => _progressVisibility;
+            set => SetField(ref _progressVisibility, value);
         }
         public int ProgressValue
         {
@@ -58,14 +59,14 @@ namespace CollectaMundo.ViewModels
         }
         public void ShowStatusOverlay(string message, bool showProgress = false)
         {
-            IsVisible = true;
+            StatusOverlayVisibilitiy = Visibility.Visible;
             StatusLabel3 = message;
-            IsProgressVisible = showProgress;
+            ProgressVisibility = showProgress ? Visibility.Visible : Visibility.Collapsed;
         }
         public void HideStatusOverlay()
         {
-            IsVisible = false;
-            IsProgressVisible = false;
+            StatusOverlayVisibilitiy = Visibility.Collapsed;
+            ProgressVisibility = Visibility.Collapsed;
             StatusLabel3 = string.Empty;
             StatusLabel1 = string.Empty;
         }

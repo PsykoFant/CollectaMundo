@@ -39,7 +39,7 @@ namespace CollectaMundo.ApplicationServices
             }
 
             _statusVM.StatusLabel1 = "Performing first-time setup of card database - please wait ...";
-            _statusVM.IsProgressVisible = true;
+            _statusVM.ProgressVisibility = Visibility.Visible;
 
             for (int overallAttempt = 1; overallAttempt <= maxTotalAttempts; overallAttempt++)
             {
@@ -331,9 +331,9 @@ namespace CollectaMundo.ApplicationServices
         private async Task DbSetupFailed(string statusAboveBar, string statusBelowBar, string statusLabelMain)
         {
             //  If we reach here, all attempts have failed
-            _statusVM.IsProgressVisible = false;
-            _statusVM.IsLogoVisible = false;
-            _statusVM.IsSetupFailVisible = true;
+            _statusVM.ProgressVisibility = Visibility.Collapsed;
+            _statusVM.LogoVisibility = Visibility.Collapsed;
+            _statusVM.SetupFailVisibility = Visibility.Visible;
             _statusVM.StatusLabel1 = statusAboveBar;
             _statusVM.StatusLabel2 = statusBelowBar;
             _statusVM.StatusLabel3 = statusLabelMain;
