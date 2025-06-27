@@ -56,7 +56,6 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 // Done with splash overlay
                 statusVM.HideStatusOverlay();
-                //closeStatusWindow();
 
                 return new RootViewModel(mainVM, statusVM);
             }
