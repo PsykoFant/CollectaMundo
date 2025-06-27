@@ -668,7 +668,7 @@ namespace CollectaMundo
                         }
                     }
 
-                    // Hide the current mapping grid
+                    // HideStatusOverlay the current mapping grid
                     Application.Current.Dispatcher.Invoke(() =>
                     {
                         MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
@@ -1494,7 +1494,7 @@ namespace CollectaMundo
                 Filter = "Text documents (.txt)|*.txt" // Filter files by extension
             };
 
-            // Show the dialog and get the chosen file path
+            // ShowStatusOverlay the dialog and get the chosen file path
             bool? result = saveFileDialog.ShowDialog();
 
             if (result == true)

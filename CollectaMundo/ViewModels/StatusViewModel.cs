@@ -56,13 +56,13 @@ namespace CollectaMundo.ViewModels
             get => _statusLabel3;
             set => SetField(ref _statusLabel3, value);
         }
-        public void Show(string message, bool showProgress = false)
+        public void ShowStatusOverlay(string message, bool showProgress = false)
         {
             IsVisible = true;
             StatusLabel3 = message;
             IsProgressVisible = showProgress;
         }
-        public void Hide()
+        public void HideStatusOverlay()
         {
             IsVisible = false;
             IsProgressVisible = false;

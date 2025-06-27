@@ -2081,7 +2081,7 @@
                     </Grid>
                 </Grid>
                 <!-- Status window -->
-                <local:StatusOverlay Visibility="{Binding StatusOverlayVisibility}" />
+                <local:StatusOverlay DataContext="{Binding DataContext.StatusOverlay, RelativeSource={RelativeSource AncestorType=Window}}"/>
             </Grid>
             <Grid x:Name="GridCardImages" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Right" Width="250" Margin="0,0,0,0">
                 <Label x:Name="ImagePromoLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="250" Style="{StaticResource BelerenBold}"/>

@@ -15,7 +15,7 @@ namespace CollectaMundo.ApplicationServices.Startup
         {
 
             // Check database integrity
-            _statusVM.Show("Checking database integrity…");
+            _statusVM.ShowStatusOverlay("Checking database integrity…");
             await UIHelper.ForceRenderAsync();
 
             var dbStatus = await _integrityService.GetDatabaseStatusAsync();
@@ -42,6 +42,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 DataContext = new RootViewModel(mainVM, _statusVM)
             };
 
+            _statusVM.HideStatusOverlay();
             _closeStatusWindow();
             mainWindow.Show();
         }

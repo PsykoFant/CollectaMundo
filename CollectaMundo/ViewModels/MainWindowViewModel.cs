@@ -74,7 +74,7 @@ namespace CollectaMundo.ViewModels
 
         // Misc. properties
         public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [[50, 50], [50, 50], [50]];
-        // Hide mini logo at appropriate times
+        // HideStatusOverlay mini logo at appropriate times
         public Visibility MiniLogoVisibility
         {
             get

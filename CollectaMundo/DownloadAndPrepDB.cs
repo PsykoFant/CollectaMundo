@@ -90,7 +90,7 @@ namespace CollectaMundo
             //}
             //catch (Exception ex)
             //{
-            //    MessageBox.Show($"Error during download: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            //    MessageBox.ShowStatusOverlay($"Error during download: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             //    Debug.WriteLine($"Error during download: {ex.Message}");
             //    return false; // Return false in case of any exception
             //}
@@ -165,7 +165,7 @@ namespace CollectaMundo
         //    catch (Exception ex)
         //    {
         //        Debug.WriteLine($"Error during creation of tables: {ex.Message}");
-        //        MessageBox.Show($"Error during creation of tables: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //        MessageBox.ShowStatusOverlay($"Error during creation of tables: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         //    }
         //}
 
@@ -221,7 +221,7 @@ namespace CollectaMundo
         //    //catch (Exception ex)
         //    //{
         //    //    Debug.WriteLine($"Error during creation or insertion of uniqueManaSymbols: {ex.Message}");
-        //    //    MessageBox.Show($"Error during creation or insertion of uniqueManaSymbols: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //    //    MessageBox.ShowStatusOverlay($"Error during creation or insertion of uniqueManaSymbols: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         //    //}
         //}
         //private static async Task GenerateManaCostImagesAsync()
@@ -251,7 +251,7 @@ namespace CollectaMundo
         //    //catch (Exception ex)
         //    //{
         //    //    Debug.WriteLine($"Error during generation of mana cost images: {ex.Message}");
-        //    //    MessageBox.Show($"Error during generation of mana cost images: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //    //    MessageBox.ShowStatusOverlay($"Error during generation of mana cost images: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         //    //}
         //}
         //private static async Task InsertValueInTableAsync(string value, string tableName, string columnName)
@@ -273,7 +273,7 @@ namespace CollectaMundo
         //    catch (Exception ex)
         //    {
         //        Debug.WriteLine($"Error during insertion of values into table: {ex.Message}");
-        //        MessageBox.Show($"Error during insertion of values into table: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //        MessageBox.ShowStatusOverlay($"Error during insertion of values into table: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         //    }
         //}
         //private static async Task<byte[]> ProcessManaCostInputAsync(string manaCostInput)
@@ -304,7 +304,7 @@ namespace CollectaMundo
         //    catch (Exception ex)
         //    {
         //        Debug.WriteLine($"An error occurred while processing mana cost input: {ex.Message}");
-        //        MessageBox.Show($"An error occurred while processing mana cost input: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //        MessageBox.ShowStatusOverlay($"An error occurred while processing mana cost input: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         //    }
 
         //    return await CombineImagesAsync(manaSymbolImage);
@@ -368,7 +368,7 @@ namespace CollectaMundo
         //    catch (Exception ex)
         //    {
         //        Debug.WriteLine($"An error occurred while combining mana cost images: {ex.Message}");
-        //        MessageBox.Show($"An error occurred while combining mana cost images: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //        MessageBox.ShowStatusOverlay($"An error occurred while combining mana cost images: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         //    }
 
         //    // Return an empty array failure
@@ -422,7 +422,7 @@ namespace CollectaMundo
         //    //catch (Exception ex)
         //    //{
         //    //    Debug.WriteLine($"Error during insertion of keyRuneImages: {ex.Message}");
-        //    //    MessageBox.Show($"Error during insertion of keyRuneImages: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //    //    MessageBox.ShowStatusOverlay($"Error during insertion of keyRuneImages: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         //    //}
         //}
         //private static async Task<(string SetCode, byte[] PngData)> ProcessSetSvgAsync(string setCode, JArray? data)
@@ -462,7 +462,7 @@ namespace CollectaMundo
         //    catch (Exception ex)
         //    {
         //        Debug.WriteLine("An error occurred while copying missing rows: " + ex.Message);
-        //        MessageBox.Show($"An error occurred while copying missing rows: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //        MessageBox.ShowStatusOverlay($"An error occurred while copying missing rows: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         //    }
         //}
         #endregion
@@ -942,7 +942,7 @@ namespace CollectaMundo
         //    catch (Exception ex)
         //    {
         //        Debug.WriteLine($"Error while updating image in table: {ex.Message}");
-        //        MessageBox.Show($"Error while updating image in table: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //        MessageBox.ShowStatusOverlay($"Error while updating image in table: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         //    }
         //}
         //private static async Task<List<string>> GetValuesWithNullAsync(string tableName, string returnColumnName, string searchColumnName)
@@ -961,7 +961,7 @@ namespace CollectaMundo
         //    catch (Exception ex)
         //    {
         //        Debug.WriteLine($"Error retrieving values with null: {ex.Message}");
-        //        MessageBox.Show($"Error retrieving values with null: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        //        MessageBox.ShowStatusOverlay($"Error retrieving values with null: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         //    }
         //    return valuesWithNull;
         //}

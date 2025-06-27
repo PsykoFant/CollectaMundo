@@ -206,11 +206,11 @@ namespace CollectaMundo
         #endregion
 
         #region Show selected card image
-        // Show the card image for the highlighted DataGrid row
+        // ShowStatusOverlay the card image for the highlighted DataGrid row
         private async void CardImageSelectionChangedHandler(object sender, SelectionChangedEventArgs e)
         {
 
-            // Show image from a highlighted row in a datagrid
+            // ShowStatusOverlay image from a highlighted row in a datagrid
             if (sender is DataGrid dataGrid && dataGrid.SelectedItem is CardSet selectedCard)
             {
                 if (selectedCard.Uuid != null)
@@ -223,7 +223,7 @@ namespace CollectaMundo
                 }
             }
 
-            // Show image from import wizards (choose between versions)
+            // ShowStatusOverlay image from import wizards (choose between versions)
             else if (sender is ComboBox comboBox && comboBox.SelectedItem is UuidVersion selectedVersion && !string.IsNullOrEmpty(selectedVersion.Uuid))
             {
                 await ShowCardImage.ShowImage(selectedVersion.Uuid);
@@ -255,7 +255,7 @@ namespace CollectaMundo
         {
             if (sender is Button button && button.DataContext is Deck deckFromButton)
             {
-                // Show a confirmation dialog
+                // ShowStatusOverlay a confirmation dialog
                 MessageBoxResult result = MessageBox.Show(
                     $"Are you sure you want to delete the deck '{deckFromButton.DeckName}'?",
                     "Confirm Delete",
