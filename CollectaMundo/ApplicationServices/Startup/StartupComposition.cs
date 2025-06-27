@@ -35,6 +35,5 @@ namespace CollectaMundo.ApplicationServices.Startup
 
             return new StartupService(integrityService, prepService, closeStatusWindow, statusVM);
         }
-
     }
 }
