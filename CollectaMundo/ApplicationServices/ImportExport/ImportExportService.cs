@@ -7,6 +7,8 @@ namespace CollectaMundo.ApplicationServices.ImportExport
     public class ImportExportService(IImportExportRepo importExportRepo) : IImportExportService
     {
         private readonly IImportExportRepo _importExportRepo = importExportRepo;
+
+        public event Action<string>? StatusMessage;
         public async Task ExportCollectionAsync()
         {
             try
@@ -22,7 +24,7 @@ namespace CollectaMundo.ApplicationServices.ImportExport
                 }
                 else
                 {
-                    MessageBox.Show($"Backup created successfully at {filePath}", "A backup of your collection has been created!", MessageBoxButton.OK, MessageBoxImage.Information);
+                    StatusMessage?.Invoke($"Backup created successfully at {filePath}.");
                 }
 
                 await uow.CommitAsync();

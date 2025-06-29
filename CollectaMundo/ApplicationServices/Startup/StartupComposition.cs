@@ -54,7 +54,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var editService = new EditCollectionService();
                 var importExportService = new ImportExportService(new ImportExportRepo());
 
-                var mainVM = await MainWindowViewModel.CreateAsync(filteringService, editService, importExportService);
+                var mainVM = await MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, statusVM);
 
                 mainVM.FilterVM.NotifyFilterChanged();
                 mainVM.SideMenuVisibility = Visibility.Visible;

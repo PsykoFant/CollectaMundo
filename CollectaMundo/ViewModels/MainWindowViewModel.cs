@@ -157,11 +157,22 @@ namespace CollectaMundo.ViewModels
         private readonly IFilteringService _filteringService;
         private readonly IImportExportService _importExportService;
 
+
+        public StatusViewModel StatusOverlayVM { get; }
+
         // Constructor
-        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService)
+        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, StatusViewModel statusOverlayVM)
         {
+            StatusOverlayVM = statusOverlayVM;
+
             _filteringService = filteringService;
             _importExportService = importExportService;
+            _importExportService.StatusMessage += msg =>
+            {
+                StatusOverlayVM.ShowStatusOverlay(msg);
+            };
+
+
 
             CurrentPage = Page.SearchAndFilter;
 
@@ -249,9 +260,9 @@ namespace CollectaMundo.ViewModels
 
 
         // Factory method to create the ViewModel
-        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, Action? onStartupComplete = null)
+        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, StatusViewModel statusVM, Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(filteringService, editService, importExportService)
+            var vm = new MainWindowViewModel(filteringService, editService, importExportService, statusVM)
             {
                 OnStartupComplete = onStartupComplete
             };
