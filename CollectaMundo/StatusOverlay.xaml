@@ -42,7 +42,7 @@
                          Margin="0,410,0,0"
                          BorderBrush="Black"
                          Visibility="{Binding ProgressVisibility}"
-                         Maximum="100"/>
+                         Maximum="100" ValueChanged="ProgressBar_ValueChanged"/>
 
             <Label Content="{Binding StatusLabel1}"
                    HorizontalAlignment="Center"
@@ -58,6 +58,11 @@
                    HorizontalAlignment="Center"
                    VerticalAlignment="Top"
                    Margin="0,460,0,0"/>
+
+            <Button Command="{Binding AckCommand}"
+                Content="{Binding AckButtonText}" 
+                    Visibility="{Binding AckButtonVisibility}"
+                    HorizontalAlignment="Center" Margin="0,480,0,0" VerticalAlignment="Top"/>
         </Grid>
     </Grid>
 </UserControl>

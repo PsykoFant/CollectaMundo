@@ -3,6 +3,7 @@ using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Startup;
+using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
@@ -21,6 +22,65 @@ namespace CollectaMundo.ViewModels
         protected void OnPropertyChanged([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         public Action? OnStartupComplete { get; set; }
 
+        private readonly StatusViewModel _statusOverlayVM;
+        private readonly IFilteringService _filteringService;
+        private readonly IImportExportService _importExportService;
+
+        // Constructor
+        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, StatusViewModel statusOverlayVM)
+        {
+            _statusOverlayVM = statusOverlayVM;
+
+            _filteringService = filteringService;
+            _importExportService = importExportService;
+
+            CurrentPage = Page.SearchAndFilter;
+
+            AllCardsVM = new CardViewModel();
+            MyCollectionVM = new CardViewModel();
+            AllCardsForDecksVM = new CardViewModel();
+            AllCardsInDecksVM = new CardViewModel();
+            ColorIcons = new CardViewModel();
+
+            AddCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);
+            EditCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: false);
+            AddCardsVM.CardChanged += OnCardChanged;
+            EditCardsVM.CardChanged += OnCardChanged;
+
+            FilterVM = new FilterViewModel(_filteringService);
+            FilterVM.FilterChanged += OnFilterChanged;
+
+            MiniLogoVisibilityFlipper();
+
+            ShowSearchAndFilterCommand = new RelayCommand<object>(_ => { CurrentPage = Page.SearchAndFilter; });
+            ShowMyCollectionCommand = new RelayCommand<object>(_ => { CurrentPage = Page.MyCollection; });
+            ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
+            ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
+            BackupCollectionCommand = new RelayCommand<object>(async _ => await BackupCollectionAsync());
+        }
+        private async Task BackupCollectionAsync()
+        {
+            var result = await _importExportService.ExportCollectionAsync();
+
+            switch (result.Code)
+            {
+                case ExportResultCode.Success:
+                    _statusOverlayVM.AckButtonText = "Awesome!";
+                    _statusOverlayVM.ShowStatusOverlay(result.Message);
+                    break;
+
+                case ExportResultCode.Error:
+                    _statusOverlayVM.AckButtonText = "Ok :-/";
+                    _statusOverlayVM.ShowStatusOverlay($"Error: {result.Message}");
+                    break;
+
+                case ExportResultCode.Empty:
+                    _statusOverlayVM.AckButtonText = "Oh ... I guess that makes sense...";
+                    _statusOverlayVM.ShowStatusOverlay(result.Message);
+                    break;
+            }
+        }
+
         // Page navigation
 
         private Page _currentPage = Page.SearchAndFilter;
@@ -29,12 +89,16 @@ namespace CollectaMundo.ViewModels
             get => _currentPage;
             set
             {
+                // If we are on the same page, do nothing
                 if (_currentPage == value)
                 {
                     return;
                 }
 
                 _currentPage = value;
+
+                // Reset and hide the status overlay
+                _statusOverlayVM.HideStatusOverlay();
 
                 if (_currentPage == Page.MyCollection)
                 {
@@ -153,51 +217,7 @@ namespace CollectaMundo.ViewModels
         // Utilities commands
         public ICommand BackupCollectionCommand { get; }
 
-        // Backing fields
-        private readonly IFilteringService _filteringService;
-        private readonly IImportExportService _importExportService;
 
-
-        public StatusViewModel StatusOverlayVM { get; }
-
-        // Constructor
-        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, StatusViewModel statusOverlayVM)
-        {
-            StatusOverlayVM = statusOverlayVM;
-
-            _filteringService = filteringService;
-            _importExportService = importExportService;
-            _importExportService.StatusMessage += msg =>
-            {
-                StatusOverlayVM.ShowStatusOverlay(msg);
-            };
-
-
-
-            CurrentPage = Page.SearchAndFilter;
-
-            AllCardsVM = new CardViewModel();
-            MyCollectionVM = new CardViewModel();
-            AllCardsForDecksVM = new CardViewModel();
-            AllCardsInDecksVM = new CardViewModel();
-            ColorIcons = new CardViewModel();
-
-            AddCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);
-            EditCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: false);
-            AddCardsVM.CardChanged += OnCardChanged;
-            EditCardsVM.CardChanged += OnCardChanged;
-
-            FilterVM = new FilterViewModel(_filteringService);
-            FilterVM.FilterChanged += OnFilterChanged;
-
-            MiniLogoVisibilityFlipper();
-
-            ShowSearchAndFilterCommand = new RelayCommand<object>(_ => { CurrentPage = Page.SearchAndFilter; });
-            ShowMyCollectionCommand = new RelayCommand<object>(_ => { CurrentPage = Page.MyCollection; });
-            ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
-            ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
-            BackupCollectionCommand = new RelayCommand<object>(_ => { _importExportService.ExportCollectionAsync(); });
-        }
         // When a card is added/updated/deleted from collection
         private void OnCardChanged(object? sender, CardChangeEventArgs e)
         {

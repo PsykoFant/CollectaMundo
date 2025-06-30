@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using CollectaMundo.Utilities;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 
@@ -10,7 +11,9 @@ namespace CollectaMundo.ViewModels
         private Visibility _logoVisibility = Visibility.Visible;
         private Visibility _setupFailVisibility = Visibility.Collapsed;
         private Visibility _progressVisibility = Visibility.Collapsed;
+        private Visibility _ackButtonVisibility = Visibility.Collapsed;
         private int _progressValue;
+        private string _ackButtonText = "OK";
         private string _statusLabel1 = string.Empty;
         private string _statusLabel2 = string.Empty;
         private string _statusLabel3 = string.Empty;
@@ -42,6 +45,16 @@ namespace CollectaMundo.ViewModels
             get => _progressValue;
             set => SetField(ref _progressValue, value);
         }
+        public Visibility AckButtonVisibility
+        {
+            get => _ackButtonVisibility;
+            set => SetField(ref _ackButtonVisibility, value);
+        }
+        public string AckButtonText
+        {
+            get => _ackButtonText;
+            set => SetField(ref _ackButtonText, value);
+        }
         public string StatusLabel1
         {
             get => _statusLabel1;
@@ -66,9 +79,19 @@ namespace CollectaMundo.ViewModels
         public void HideStatusOverlay()
         {
             StatusOverlayVisibilitiy = Visibility.Collapsed;
+
+            LogoVisibility = Visibility.Visible;
             ProgressVisibility = Visibility.Collapsed;
-            StatusLabel3 = string.Empty;
+            AckButtonVisibility = Visibility.Collapsed;
+            SetupFailVisibility = Visibility.Collapsed;
+            AckButtonVisibility = Visibility.Collapsed;
+
             StatusLabel1 = string.Empty;
+            StatusLabel2 = string.Empty;
+            StatusLabel3 = string.Empty;
+
+            ProgressValue = 0;
+            AckButtonText = "OK";
         }
         private void SetField<T>(ref T field, T value, [CallerMemberName] string? propName = null)
         {
@@ -77,6 +100,11 @@ namespace CollectaMundo.ViewModels
                 field = value;
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
             }
+        }
+        public RelayCommand<object> AckCommand { get; }
+        public StatusViewModel()
+        {
+            AckCommand = new RelayCommand<object>(_ => HideStatusOverlay());
         }
     }
 }
