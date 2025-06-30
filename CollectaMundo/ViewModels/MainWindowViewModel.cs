@@ -62,6 +62,8 @@ namespace CollectaMundo.ViewModels
         {
             var result = await _importExportService.ExportCollectionAsync();
 
+            _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
+
             switch (result.Code)
             {
                 case ExportResultCode.Success:

@@ -33,7 +33,7 @@
                    VerticalAlignment="Top"
                    FontSize="48"
                    Style="{StaticResource BelerenBold}"/>
-
+            
             <ProgressBar Value="{Binding ProgressValue}"
                          Height="15"
                          Width="500"
@@ -42,7 +42,7 @@
                          Margin="0,410,0,0"
                          BorderBrush="Black"
                          Visibility="{Binding ProgressVisibility}"
-                         Maximum="100" ValueChanged="ProgressBar_ValueChanged"/>
+                         Maximum="100"/>
 
             <Label Content="{Binding StatusLabel1}"
                    HorizontalAlignment="Center"
@@ -62,7 +62,7 @@
             <Button Command="{Binding AckCommand}"
                 Content="{Binding AckButtonText}" 
                     Visibility="{Binding AckButtonVisibility}"
-                    HorizontalAlignment="Center" Margin="0,480,0,0" VerticalAlignment="Top"/>
+                    HorizontalAlignment="Center" Margin="0,500,0,0" VerticalAlignment="Top"/>
         </Grid>
     </Grid>
 </UserControl>
