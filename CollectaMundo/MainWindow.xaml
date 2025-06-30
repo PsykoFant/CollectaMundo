@@ -68,7 +68,7 @@
             </Grid>
             <!-- Side menu -->
             <Grid  x:Name="SideMenu" Grid.Row="1" Grid.Column="0" Width="250" HorizontalAlignment="Left" Margin="0,0,0,0" Visibility="{Binding SideMenuVisibility}">
-                <Grid x:Name="GridFiltering" Visibility="{Binding SideMenuFilterVisibility}">
+                <Grid x:Name="GridFiltering" Visibility="{Binding SideMenuFilterVisibility}" d:IsHidden="True">
 
                     <Button x:Name="ClearFiltersButton" Content="Clear filters" Margin="10,0,0,0" VerticalAlignment="Top" Height="20" Command="{Binding FilterVM.ClearFiltersCommand}"/>
 
@@ -1747,7 +1747,7 @@
                     <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                     <Label x:Name="UtilsInfoLabel" Content="" HorizontalAlignment="Center" Margin="8,150,0,0" VerticalAlignment="Top" FontSize="16"/>
                     <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Resources/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698"/>
-                    <Grid x:Name="GridImportWizard" Visibility="Collapsed">
+                    <Grid x:Name="GridImportWizard" Visibility="Collapsed" d:IsHidden="True">
                         <Label x:Name="ImportStartLabel" Content="The Import Wizard" HorizontalAlignment="Center" Margin="0,45,0,0" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
                         <Button x:Name="ButtonCancelImport" Content="Cancel Import" HorizontalAlignment="Center" Margin="0,350,410,0" VerticalAlignment="Top" Width="90" Height="20" Visibility="Collapsed" Click="CancelImport_Click"/>
                         <Label x:Name="CrunchingDataLabel" Content="Please wait - crunching data..." HorizontalAlignment="Center" Margin="0,350,0,0" VerticalAlignment="Top" Height="25" Width="170" Visibility="Collapsed"/>
@@ -2081,7 +2081,7 @@
                     </Grid>
                 </Grid>
                 <!-- Status window -->
-                <local:StatusOverlay DataContext="{Binding DataContext.StatusOverlay, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                <local:StatusOverlay DataContext="{Binding DataContext.StatusOverlay, RelativeSource={RelativeSource AncestorType=Window}}" d:IsHidden="True"/>
             </Grid>
             <Grid x:Name="GridCardImages" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Right" Width="250" Margin="0,0,0,0">
                 <Label x:Name="ImagePromoLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="250" Style="{StaticResource BelerenBold}"/>
