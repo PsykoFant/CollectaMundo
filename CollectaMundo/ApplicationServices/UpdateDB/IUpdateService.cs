@@ -2,5 +2,6 @@
 {
     public interface IUpdateService
     {
+        Task CheckForDbUpdatesAsync();
     }
 }

@@ -802,8 +802,12 @@
                         <ComboBoxItem Content="TCG Player" />
                         <ComboBoxItem Content="Cardhoarder" />
                     </ComboBox>
-                    <Button x:Name="CheckForUpdatesButton" Content="Check for card database updates" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,150,0,0" Width="180" Height="20"/>
-                    <Button x:Name="UpdateDbButton" Content="Update card database" HorizontalAlignment="Left" Width="180" Height="20" Margin="10,180,0,0" VerticalAlignment="Top" Visibility="Collapsed"/>
+                    <Button x:Name="CheckForUpdatesButton" Content="Check for card database updates"
+                            Visibility="{Binding SideMenuUtilsCheckForUpdatesVisibility}"
+                            HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,150,0,0" Width="180" Height="20"/>
+                    <Button x:Name="UpdateDbButton" 
+                            Visibility="{Binding SideMenuUtilsUpdateDbisibility}"
+                            Content="Update card database" HorizontalAlignment="Left" Width="180" Height="20" Margin="10,180,0,0" VerticalAlignment="Top"/>
                 </Grid>
             </Grid>
             <!-- Content section -->

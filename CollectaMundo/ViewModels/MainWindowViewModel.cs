@@ -3,7 +3,7 @@ using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Startup;
-using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.ApplicationServices.UpdateDB;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
@@ -25,14 +25,16 @@ namespace CollectaMundo.ViewModels
         private readonly StatusViewModel _statusOverlayVM;
         private readonly IFilteringService _filteringService;
         private readonly IImportExportService _importExportService;
+        private readonly IUpdateService _updateService;
 
         // Constructor
-        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, StatusViewModel statusOverlayVM)
+        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, IUpdateService updateService, StatusViewModel statusOverlayVM)
         {
             _statusOverlayVM = statusOverlayVM;
 
             _filteringService = filteringService;
             _importExportService = importExportService;
+            _updateService = updateService;
 
             CurrentPage = Page.SearchAndFilter;
 
@@ -57,34 +59,35 @@ namespace CollectaMundo.ViewModels
             ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
             BackupCollectionCommand = new RelayCommand<object>(async _ => await BackupCollectionAsync());
+            CheckForDbUpdatesCommand = new RelayCommand<object>(async _ => await CheckForDbUpdatesAsync());
         }
+        // Command methods
         private async Task BackupCollectionAsync()
         {
             var result = await _importExportService.ExportCollectionAsync();
+            _statusOverlayVM.ShowBackupResult(result);
+        }
+        private async Task CheckForDbUpdatesAsync()
+        {
+            bool dbIsUpToDate = false;
 
-            _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
+            var result = await _updateService.CheckForDbUpdatesAsync();
 
-            switch (result.Code)
+            // dbIsUpToDate = some call to a service;
+
+
+            if (dbIsUpToDate)
             {
-                case ExportResultCode.Success:
-                    _statusOverlayVM.AckButtonText = "Awesome!";
-                    _statusOverlayVM.ShowStatusOverlay(result.Message);
-                    break;
-
-                case ExportResultCode.Error:
-                    _statusOverlayVM.AckButtonText = "Ok :-/";
-                    _statusOverlayVM.ShowStatusOverlay($"Error: {result.Message}");
-                    break;
-
-                case ExportResultCode.Empty:
-                    _statusOverlayVM.AckButtonText = "Oh ... I guess that makes sense...";
-                    _statusOverlayVM.ShowStatusOverlay(result.Message);
-                    break;
+                // status overalay with "Database is up to date"
+            }
+            else
+            {
+                SideMenuUtilsUpdateDbisibility = Visibility.Visible;
+                // status overalay with "There is an update"
             }
         }
 
         // Page navigation
-
         private Page _currentPage = Page.SearchAndFilter;
         public Page CurrentPage
         {
@@ -195,6 +198,20 @@ namespace CollectaMundo.ViewModels
             set { _sideMenuUtilsVisibility = value; OnPropertyChanged(); }
         }
 
+        private Visibility _sideMenuUtilsCheckForUpdatesVisibility = Visibility.Visible;
+        public Visibility SideMenuUtilsCheckForUpdatesVisibility
+        {
+            get => _sideMenuUtilsCheckForUpdatesVisibility;
+            set { _sideMenuUtilsCheckForUpdatesVisibility = value; OnPropertyChanged(); }
+        }
+
+        private Visibility _sideMenuUtilsUpdateDbisibility = Visibility.Collapsed;
+        public Visibility SideMenuUtilsUpdateDbisibility
+        {
+            get => _sideMenuUtilsUpdateDbisibility;
+            set { _sideMenuUtilsUpdateDbisibility = value; OnPropertyChanged(); }
+        }
+
         // Enable/disable top menu 
         private bool _isTopMenuEnabled = true;
         public bool IsTopMenuEnabled
@@ -218,6 +235,7 @@ namespace CollectaMundo.ViewModels
 
         // Utilities commands
         public ICommand BackupCollectionCommand { get; }
+        public ICommand CheckForDbUpdatesCommand { get; }
 
 
         // When a card is added/updated/deleted from collection

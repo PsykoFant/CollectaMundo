@@ -1,5 +1,4 @@
 ﻿using System.Data.SQLite;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
 
@@ -7,10 +6,6 @@ namespace CollectaMundo.Data.ImportExport
 {
     public class ImportExportRepo() : IImportExportRepo
     {
-        public void DummyTask()
-        {
-            Debug.WriteLine("backup the collection from repo");
-        }
         public async Task<string?> ExportCollectionAsync(SQLiteConnection conn)
         {
             string backupFolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "CollectaMundoBackup");
@@ -31,7 +26,10 @@ namespace CollectaMundo.Data.ImportExport
             for (int i = 0; i < reader.FieldCount; i++)
             {
                 writer.Write(reader.GetName(i));
-                if (i < reader.FieldCount - 1) writer.Write(";");
+                if (i < reader.FieldCount - 1)
+                {
+                    writer.Write(";");
+                }
             }
             writer.WriteLine();
 
@@ -42,7 +40,10 @@ namespace CollectaMundo.Data.ImportExport
                 {
                     string value = reader[i]?.ToString()?.Replace(";", ",") ?? string.Empty;
                     writer.Write(value);
-                    if (i < reader.FieldCount - 1) writer.Write(";");
+                    if (i < reader.FieldCount - 1)
+                    {
+                        writer.Write(";");
+                    }
                 }
                 writer.WriteLine();
             }

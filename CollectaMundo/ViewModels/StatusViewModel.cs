@@ -1,4 +1,5 @@
-﻿using CollectaMundo.Utilities;
+﻿using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -19,7 +20,14 @@ namespace CollectaMundo.ViewModels
         private string _statusLabel3 = string.Empty;
 
         public event PropertyChangedEventHandler? PropertyChanged;
-
+        private void SetField<T>(ref T field, T value, [CallerMemberName] string? propName = null)
+        {
+            if (!Equals(field, value))
+            {
+                field = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+            }
+        }
         public Visibility StatusOverlayVisibilitiy
         {
             get => _statusOverlayVisibility;
@@ -70,6 +78,11 @@ namespace CollectaMundo.ViewModels
             get => _statusLabel3;
             set => SetField(ref _statusLabel3, value);
         }
+        public RelayCommand<object> AckCommand { get; }
+        public StatusViewModel()
+        {
+            AckCommand = new RelayCommand<object>(_ => HideStatusOverlay());
+        }
         public void ShowStatusOverlay(string message, bool showProgress = false)
         {
             StatusOverlayVisibilitiy = Visibility.Visible;
@@ -93,18 +106,28 @@ namespace CollectaMundo.ViewModels
             ProgressValue = 0;
             AckButtonText = "OK";
         }
-        private void SetField<T>(ref T field, T value, [CallerMemberName] string? propName = null)
+        public void ShowBackupResult(ExportResult result)
         {
-            if (!Equals(field, value))
+            AckButtonVisibility = Visibility.Visible;
+
+            switch (result.Code)
             {
-                field = value;
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+                case ExportResultCode.Success:
+                    AckButtonText = "Awesome!";
+                    ShowStatusOverlay(result.Message);
+                    break;
+
+                case ExportResultCode.Error:
+                    AckButtonText = "Ok :-/";
+                    ShowStatusOverlay($"Error: {result.Message}");
+                    break;
+
+                case ExportResultCode.Empty:
+                    AckButtonText = "Oh ... I guess that makes sense...";
+                    ShowStatusOverlay(result.Message);
+                    break;
             }
         }
-        public RelayCommand<object> AckCommand { get; }
-        public StatusViewModel()
-        {
-            AckCommand = new RelayCommand<object>(_ => HideStatusOverlay());
-        }
+
     }
 }

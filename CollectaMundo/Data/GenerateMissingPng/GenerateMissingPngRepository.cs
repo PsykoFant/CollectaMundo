@@ -1,4 +1,5 @@
-﻿using System.Data.SQLite;
+﻿using CollectaMundo.Data.Common;
+using System.Data.SQLite;
 
 namespace CollectaMundo.Data.GenerateMissingPng
 {
@@ -6,24 +7,7 @@ namespace CollectaMundo.Data.GenerateMissingPng
     {
         public async Task<List<string>> GetUniqueValuesAsync(SQLiteConnection conn, string tableName, string columnName)
         {
-            List<string> uniqueValues = [];
-
-            string query = $@"
-                    SELECT DISTINCT {columnName}
-                    FROM {tableName}
-                    WHERE {columnName} IS NOT NULL AND {columnName} != '';";
-
-            using var command = new SQLiteCommand(query, conn);
-            using var reader = await command.ExecuteReaderAsync();
-
-            while (await reader.ReadAsync())
-            {
-                string? value = reader[columnName]?.ToString();
-                if (!string.IsNullOrWhiteSpace(value))
-                    uniqueValues.Add(value);
-            }
-
-            return uniqueValues;
+            return await DbHelpers.GetUniqueValuesAsync(conn, tableName, columnName);
         }
         public async Task<List<string>> GetValuesWithNullAsync(SQLiteConnection conn, string tableName, string returnColumn, string targetColumn)
         {
@@ -43,7 +27,9 @@ namespace CollectaMundo.Data.GenerateMissingPng
             {
                 string? value = reader[returnColumn]?.ToString();
                 if (!string.IsNullOrWhiteSpace(value))
+                {
                     results.Add(value);
+                }
             }
 
             return results;
@@ -80,7 +66,9 @@ namespace CollectaMundo.Data.GenerateMissingPng
 
             var symbolList = symbols.ToList();
             if (symbolList.Count == 0)
+            {
                 return result;
+            }
 
             string paramList = string.Join(",", symbolList.Select((_, i) => $"@p{i}"));
             string query = $@"
