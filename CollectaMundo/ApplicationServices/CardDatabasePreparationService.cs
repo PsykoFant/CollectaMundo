@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
+using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.Data;
 using CollectaMundo.ViewModels;
 using System.Data.SQLite;
@@ -58,8 +59,8 @@ namespace CollectaMundo.ApplicationServices
                 {
                     // Step 1: Downloads (handled separately)
                     downloadsSucceeded = await ExecuteDualDownloadWithRetryAsync(
-                        token => DownloadResourceAsync(cardDbUrl, dbPath, "A", size => _statusVM.ShowStatusOverlay($"Downloading Card Database ({size})", true), percent => _statusVM.ProgressValue = percent, token),
-                        token => DownloadResourceAsync(pricesUrl, pricesPath, "B", null, null, token));
+                        token => DownloadResourceHelper.DownloadResourceAsync(cardDbUrl, dbPath, "A", size => _statusVM.ShowStatusOverlay($"Downloading Card Database ({size})", true), percent => _statusVM.ProgressValue = percent, token),
+                        token => DownloadResourceHelper.DownloadResourceAsync(pricesUrl, pricesPath, "B", null, null, token));
                     if (!downloadsSucceeded)
                     {
                         continue;
@@ -128,18 +129,6 @@ namespace CollectaMundo.ApplicationServices
                 statusAboveBar: "Despite all the best intentions and effort, setup failed after multiple attempts.",
                 statusBelowBar: "Please restart the application or check your internet connection.",
                 statusLabelMain: "CollectaMundo will close down shortly...");
-        }
-        public Task UpdateDb()
-        {
-            return Task.Run(() =>
-            {
-            });
-        }
-        public Task UpdateCardPrices()
-        {
-            return Task.Run(() =>
-            {
-            });
         }
 
         // Retry logic for downloading files and executing database actions
@@ -246,56 +235,7 @@ namespace CollectaMundo.ApplicationServices
         }
 
         // Local helper and db setup methods
-        public static async Task<(bool success, string? errorMessage)> DownloadResourceAsync(string url, string targetPath, string taskLabel, Action<string>? onStart = null, Action<int>? onProgress = null, CancellationToken token = default)
-        {
-            Debug.WriteLine($"[DownloadResourceAsync] Preparing to download from {url} to {targetPath}");
 
-            try
-            {
-                using var httpClient = new HttpClient();
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
-                response.EnsureSuccessStatusCode();
-
-                var totalBytes = response.Content.Headers.ContentLength ?? -1L;
-                var buffer = new byte[8192];
-
-                using var contentStream = await response.Content.ReadAsStreamAsync(token);
-                using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
-
-                if (onStart != null && totalBytes > 0)
-                {
-                    onStart($"{totalBytes / 1_000_000.0:0.0} MB");
-                }
-
-                long totalBytesRead = 0;
-                int bytesRead;
-
-                while ((bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length), token)) != 0)
-                {
-                    await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), token);
-                    totalBytesRead += bytesRead;
-
-                    if (onProgress != null && totalBytes > 0)
-                    {
-                        onProgress((int)(100 * totalBytesRead / totalBytes));
-                    }
-                }
-
-                Debug.WriteLine($"[DownloadResourceAsync] Download complete: {targetPath}");
-                return (true, null);
-            }
-            catch (OperationCanceledException)
-            {
-                Debug.WriteLine($"[DownloadResourceAsync] Cancelled intentionally — suppress message");
-                return (false, null); // Cancelled intentionally — suppress message
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[DownloadResourceAsync] Error downloading {url}: {ex.Message}");
-                return (false, $"{taskLabel} failed: {ex.Message}");
-            }
-        }
         private static bool IsInternetAvailable()
         {
             try
