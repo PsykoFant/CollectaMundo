@@ -52,5 +52,16 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
                 return new OperationResult(OperationResultCode.UpToDate, $"Your local card database is up to date! ({numberOfSetsInDb} sets).");
             }
         }
+        public async Task<OperationResult> UpdateDbAsync()
+        {
+            // STEP 1: Download the new card database and price file
+            // Same as step 1 in FirstTimeDbPrepOrchetrator, new card database and price file
+            // new card database should be downloaded to current users "Downloads" folder: Environment.GetFolderPath(Environment.SpecialFolder.UserProfile); as "AllPrintings.sqlite"
+            // The price file should be downloaded to the same location as "CardPrices.json"
+
+            // STEP 2: Copy the tables from the new card database to the existing card database
+            // We will implement this later...
+            return new OperationResult(OperationResultCode.Error, "UpdateDbAsync is not implemented yet. Please try again later.");
+        }
     }
 }

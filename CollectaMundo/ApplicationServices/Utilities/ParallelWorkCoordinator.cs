@@ -31,5 +31,4 @@ namespace CollectaMundo.ApplicationServices.Utilities
             _semaphore.Dispose();
         }
     }
-
 }

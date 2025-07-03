@@ -21,45 +21,6 @@ namespace CollectaMundo
 
         // For updating statuswindow
         public static event Action<string>? StatusMessageUpdated;
-        public static async Task CheckForDbUpdatesAsync()
-        {
-            try
-            {
-                MainWindow.CurrentInstance.GridTopMenu.IsEnabled = false;
-                //MainWindow.CurrentInstance.GridSideMenu.IsEnabled = false;
-
-                MainWindow.CurrentInstance.UtilsInfoLabel.Content = "Checking for card database updates...";
-
-                // Read updated date from card db
-                await DBAccess.OpenConnectionAsync();
-                int numberOfSetsInDb = (await DBAccess.GetUniqueValuesAsync("sets", "code")).Count;
-                Debug.WriteLine(numberOfSetsInDb.ToString());
-                DBAccess.CloseConnection();
-
-                // Fetch last updated from server
-                int numberOfSetsOnServer = await FetchSetsCountAsync();
-
-                // Compare the two
-                if (numberOfSetsOnServer > numberOfSetsInDb)
-                {
-                    MainWindow.CurrentInstance.UtilsInfoLabel.Content = "There is a newer card database available.";
-                    MainWindow.CurrentInstance.UpdateDbButton.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    Debug.WriteLine("You are already up to date");
-                    MainWindow.CurrentInstance.UtilsInfoLabel.Content = "Your card database is already up to date.";
-                }
-                MainWindow.CurrentInstance.GridTopMenu.IsEnabled = true;
-                //MainWindow.CurrentInstance.GridSideMenu.IsEnabled = true;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"An error occurred checking for updates: {ex.Message}");
-                MessageBox.Show($"An error occurred checking for updates: {ex.Message}", "Update Check Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
-        }
         public static async Task UpdateCardDatabaseAsync()
         {
             try
@@ -88,7 +49,7 @@ namespace CollectaMundo
                         StatusMessageUpdated?.Invoke("Reloading card database...");
                         await Task.Delay(1000); // Leave the message for a few seconds
 
-                        MainWindow.CurrentInstance.UpdateDbButton.Visibility = Visibility.Collapsed;
+                        //MainWindow.CurrentInstance.UpdateDbButton.Visibility = Visibility.Collapsed;
                         //await MainWindow.CurrentInstance.LoadDataIntoUiElements();
 
                         //await MainWindow.ShowStatusWindowAsync(false);

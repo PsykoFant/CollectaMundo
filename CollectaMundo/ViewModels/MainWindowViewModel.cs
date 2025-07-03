@@ -99,6 +99,10 @@ namespace CollectaMundo.ViewModels
         private async Task UpdateDBAsync()
         {
             _statusOverlayVM.ShowStatusOverlay("Temp text - updating db", true);
+
+            var result = await _updateService.UpdateDbAsync();
+
+            // update progress bar while downloading
         }
 
 

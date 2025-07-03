@@ -18,7 +18,6 @@ namespace CollectaMundo.ApplicationServices.Utilities
             _statusVM.ProgressVisibility = Visibility.Visible;
             _statusVM.ProgressValue = 0;
         }
-
         public void Increment()
         {
             int value = Interlocked.Increment(ref _current);
@@ -37,16 +36,11 @@ namespace CollectaMundo.ApplicationServices.Utilities
                 Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
             }
         }
-
         public void Complete() => ReportProgress(_total);
-
         public void Dispose()
         {
             Complete();
             _statusVM.ProgressVisibility = Visibility.Collapsed;
         }
-
     }
-
-
 }
