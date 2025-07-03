@@ -4,6 +4,7 @@ using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.ApplicationServices.UpdateDB;
+using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
@@ -60,6 +61,7 @@ namespace CollectaMundo.ViewModels
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
             BackupCollectionCommand = new RelayCommand<object>(async _ => await BackupCollectionAsync());
             CheckForDbUpdatesCommand = new RelayCommand<object>(async _ => await CheckForDbUpdatesAsync());
+            UpdateDBCommand = new RelayCommand<object>(async _ => await UpdateDBAsync());
         }
         // Command methods
         private async Task BackupCollectionAsync()
@@ -69,23 +71,36 @@ namespace CollectaMundo.ViewModels
         }
         private async Task CheckForDbUpdatesAsync()
         {
-            bool dbIsUpToDate = false;
+            _statusOverlayVM.ShowStatusOverlay("One moment - checking for updates...", false);
 
             var result = await _updateService.CheckForDbUpdatesAsync();
 
-            // dbIsUpToDate = some call to a service;
-
-
-            if (dbIsUpToDate)
+            switch (result.Code)
             {
-                // status overalay with "Database is up to date"
-            }
-            else
-            {
-                SideMenuUtilsUpdateDbisibility = Visibility.Visible;
-                // status overalay with "There is an update"
+                case OperationResultCode.UpToDate:
+                    _statusOverlayVM.StatusLabel3 = result.Message;
+                    _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
+                    _statusOverlayVM.AckButtonText = "Got it!";
+
+                    break;
+
+                case OperationResultCode.NeedsUpdate:
+                    SideMenuUtilsUpdateDbVisibility = Visibility.Visible;
+                    _statusOverlayVM.StatusLabel3 = result.Message;
+                    break;
+
+                case OperationResultCode.Error:
+                    _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
+                    _statusOverlayVM.AckButtonText = "OK";
+                    _statusOverlayVM.StatusLabel3 = result.Message;
+                    break;
             }
         }
+        private async Task UpdateDBAsync()
+        {
+            _statusOverlayVM.ShowStatusOverlay("Temp text - updating db", true);
+        }
+
 
         // Page navigation
         private Page _currentPage = Page.SearchAndFilter;
@@ -205,11 +220,11 @@ namespace CollectaMundo.ViewModels
             set { _sideMenuUtilsCheckForUpdatesVisibility = value; OnPropertyChanged(); }
         }
 
-        private Visibility _sideMenuUtilsUpdateDbisibility = Visibility.Collapsed;
-        public Visibility SideMenuUtilsUpdateDbisibility
+        private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
+        public Visibility SideMenuUtilsUpdateDbVisibility
         {
-            get => _sideMenuUtilsUpdateDbisibility;
-            set { _sideMenuUtilsUpdateDbisibility = value; OnPropertyChanged(); }
+            get => _sideMenuUtilsUpdateDbVisibility;
+            set { _sideMenuUtilsUpdateDbVisibility = value; OnPropertyChanged(); }
         }
 
         // Enable/disable top menu 
@@ -236,6 +251,7 @@ namespace CollectaMundo.ViewModels
         // Utilities commands
         public ICommand BackupCollectionCommand { get; }
         public ICommand CheckForDbUpdatesCommand { get; }
+        public ICommand UpdateDBCommand { get; }
 
 
         // When a card is added/updated/deleted from collection
@@ -300,9 +316,9 @@ namespace CollectaMundo.ViewModels
 
 
         // Factory method to create the ViewModel
-        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, StatusViewModel statusVM, Action? onStartupComplete = null)
+        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, IUpdateService updateService, StatusViewModel statusVM, Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(filteringService, editService, importExportService, statusVM)
+            var vm = new MainWindowViewModel(filteringService, editService, importExportService, updateService, statusVM)
             {
                 OnStartupComplete = onStartupComplete
             };

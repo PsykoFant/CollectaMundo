@@ -4,7 +4,7 @@ namespace CollectaMundo.ApplicationServices.ImportExport
 {
     public interface IImportExportService
     {
-        Task<ExportResult> ExportCollectionAsync();
+        Task<OperationResult> ExportCollectionAsync();
     }
 
 }

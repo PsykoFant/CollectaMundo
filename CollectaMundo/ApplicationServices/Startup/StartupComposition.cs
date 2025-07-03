@@ -3,12 +3,14 @@ using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.ImportExport;
+using CollectaMundo.ApplicationServices.UpdateDB;
 using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.Data;
 using CollectaMundo.Data.CardPrices;
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ImportExport;
 using CollectaMundo.Data.ScryfallLookups;
+using CollectaMundo.Data.UpdateDB;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
@@ -53,8 +55,9 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var filteringService = new FilteringService();
                 var editService = new EditCollectionService();
                 var importExportService = new ImportExportService(new ImportExportRepo());
+                var updateService = new UpdateService(new UpdateDbRepo(), new UpdateDbRemoteData());
 
-                var mainVM = await MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, statusVM);
+                var mainVM = await MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, updateService, statusVM);
 
                 mainVM.FilterVM.NotifyFilterChanged();
                 mainVM.SideMenuVisibility = Visibility.Visible;

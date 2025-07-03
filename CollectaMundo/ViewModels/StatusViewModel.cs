@@ -106,23 +106,23 @@ namespace CollectaMundo.ViewModels
             ProgressValue = 0;
             AckButtonText = "OK";
         }
-        public void ShowBackupResult(ExportResult result)
+        public void ShowBackupResult(OperationResult result)
         {
             AckButtonVisibility = Visibility.Visible;
 
             switch (result.Code)
             {
-                case ExportResultCode.Success:
+                case OperationResultCode.Success:
                     AckButtonText = "Awesome!";
                     ShowStatusOverlay(result.Message);
                     break;
 
-                case ExportResultCode.Error:
+                case OperationResultCode.Error:
                     AckButtonText = "Ok :-/";
                     ShowStatusOverlay($"Error: {result.Message}");
                     break;
 
-                case ExportResultCode.Empty:
+                case OperationResultCode.Empty:
                     AckButtonText = "Oh ... I guess that makes sense...";
                     ShowStatusOverlay(result.Message);
                     break;

@@ -7,7 +7,7 @@ namespace CollectaMundo.ApplicationServices.ImportExport
     public class ImportExportService(IImportExportRepo importExportRepo) : IImportExportService
     {
         private readonly IImportExportRepo _importExportRepo = importExportRepo;
-        public async Task<ExportResult> ExportCollectionAsync()
+        public async Task<OperationResult> ExportCollectionAsync()
         {
             try
             {
@@ -18,17 +18,17 @@ namespace CollectaMundo.ApplicationServices.ImportExport
 
                 if (filePath == null)
                 {
-                    return new ExportResult(ExportResultCode.Empty, "Your collection is empty — nothing to back up.");
+                    return new OperationResult(OperationResultCode.Empty, "Your collection is empty — nothing to back up.");
                 }
                 else
                 {
-                    return new ExportResult(ExportResultCode.Success, $"Backup created successfully at {filePath}");
+                    return new OperationResult(OperationResultCode.Success, $"Backup created successfully at {filePath}");
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error creating CSV backup: {ex.Message}");
-                return new ExportResult(ExportResultCode.Error, $"Error creating CSV backup: {ex.Message}");
+                return new OperationResult(OperationResultCode.Error, $"Error creating CSV backup: {ex.Message}");
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using CollectaMundo.Data.UpdateDB;
+﻿using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.Data.UpdateDB;
 
 namespace CollectaMundo.ApplicationServices.UpdateDB
 {
@@ -6,11 +7,10 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
     {
         private readonly IUpdateDbRepo _updateDBRepo = updateDBRepo;
         private readonly IUpdateDbRemoteData _remoteData = remoteData;
-        public async Task CheckForDbUpdatesAsync()
+        public async Task<OperationResult> CheckForDbUpdatesAsync()
         {
             int numberOfSetsInDb;
             int numberOfSetsOnServer;
-            string? errorMessage;
 
             // Get the number of sets in the database
             await using var uow = new UnitOfWork();
@@ -22,10 +22,9 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
             }
             catch (Exception ex)
             {
-                errorMessage = ex.Message;
                 // Roll back on any error
                 await uow.RollbackAsync();
-                throw;
+                return new OperationResult(OperationResultCode.Error, $"Error querying your db for sets: {ex.Message}");
             }
             finally
             {
@@ -40,18 +39,17 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
             }
             catch (Exception ex)
             {
-                errorMessage = ex.Message;
-                throw;
+                return new OperationResult(OperationResultCode.Error, $"Error querying server for updates: {ex.Message}");
             }
 
             // Compare the number of sets in the database with the number of sets on the server
             if (numberOfSetsInDb < numberOfSetsOnServer)
             {
-                // return something
+                return new OperationResult(OperationResultCode.NeedsUpdate, $"Your local card database has {numberOfSetsInDb} sets, server has {numberOfSetsOnServer} sets — update available!");
             }
             else
             {
-                // return something else
+                return new OperationResult(OperationResultCode.UpToDate, $"Your local card database is up to date! ({numberOfSetsInDb} sets).");
             }
         }
     }

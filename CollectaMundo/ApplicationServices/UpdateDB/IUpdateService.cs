@@ -1,7 +1,9 @@
-﻿namespace CollectaMundo.ApplicationServices.UpdateDB
+﻿using CollectaMundo.ApplicationServices.Utilities;
+
+namespace CollectaMundo.ApplicationServices.UpdateDB
 {
     public interface IUpdateService
     {
-        Task CheckForDbUpdatesAsync();
+        Task<OperationResult> CheckForDbUpdatesAsync();
     }
 }
