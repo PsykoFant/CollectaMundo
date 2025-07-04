@@ -1,13 +1,24 @@
 TO DO 
 - MVVM refactor
-
+- Status updates i CardDatabasePrepareationService
+	- Hvad er label 2 og hvad er label3?
+	- Duplikeret tekst i setuptext:  ("2. Creating custom tables...", () =>ExecuteWithUnitOfWorkRetryAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn), "2. Creating custom tables...")),
+- Gå videre med update scenarie
+	- Status updates
+	- Check om step 2 (kopier) får ryddet ordentligt op, når der ikke er close-connection
+	- Gå videre med step 3 (nye png'er)
+	- Gå videre med step 4 (priser)
+	- Tilføj backup af database step
+	- Cancel update
+- Update priser scenarie
+- Check for genbrug mellem 1st time prep og update service igen
+- Test af update og db prep. 
 
 
 
   - Card image brug MVVM (unit test)
 	- Fix meld creatures show bug
 	- One thing you can eliminate right away is your StringToImageSourceConverter
- - Backup restore brug MVVM (unit test) 
  - Pris update brug MVVM (unit test)
  - Import brug MVVM (unit test)
  - Deck manager brug MVVM (unit test)

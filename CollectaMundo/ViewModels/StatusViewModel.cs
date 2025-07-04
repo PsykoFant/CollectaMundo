@@ -86,7 +86,7 @@ namespace CollectaMundo.ViewModels
         public void ShowStatusOverlay(string message, bool showProgress = false)
         {
             StatusOverlayVisibilitiy = Visibility.Visible;
-            StatusLabel3 = message;
+            StatusLabel1 = message;
             ProgressVisibility = showProgress ? Visibility.Visible : Visibility.Collapsed;
         }
         public void HideStatusOverlay()

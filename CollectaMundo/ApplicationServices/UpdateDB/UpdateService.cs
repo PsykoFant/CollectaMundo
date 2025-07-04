@@ -1,15 +1,17 @@
 ﻿using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.Data;
 using CollectaMundo.Data.UpdateDB;
 using System.Diagnostics;
 using System.IO;
 
 namespace CollectaMundo.ApplicationServices.UpdateDB
 {
-    public class UpdateService(IAppSettings settings, IUpdateDbRepo updateDBRepo, IUpdateDbRemoteData remoteData) : IUpdateService
+    public class UpdateService(IAppSettings settings, IDbConnectionFactory dbFactory, IUpdateDbRepo updateDBRepo, IUpdateDbRemoteData remoteData) : IUpdateService
     {
+        private readonly IAppSettings _settings = settings;
+        private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly IUpdateDbRepo _updateDBRepo = updateDBRepo;
         private readonly IUpdateDbRemoteData _remoteData = remoteData;
-        private readonly IAppSettings _settings = settings;
         public async Task<OperationResult> CheckForDbUpdatesAsync()
         {
             int numberOfSetsInDb;
@@ -55,14 +57,14 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
                 return new OperationResult(OperationResultCode.UpToDate, $"Your local card database is up to date! ({numberOfSetsInDb} sets).");
             }
         }
-        public async Task<OperationResult> UpdateDbAsync(IProgress<string> statusProgress, IProgress<int> percentProgress)
+        public async Task<OperationResult> UpdateDbAsync(IProgress<string> statusLabel2Progress, IProgress<string> statusLabel3Progress, IProgress<int> percentProgress)
         {
             string dbPath = Path.Combine(_settings.UserDownloadsPath, "AllPrintings.sqlite");
             string pricesPath = Path.Combine(_settings.UserDownloadsPath, "AllPricesToday.json");
             string cardDbUrl = _settings.CardDatabaseUrl;
             string pricesUrl = _settings.CardPricesUrl;
 
-            // Step 1 - download files
+            ////Step 1 - download files
             //bool downloadsSucceeded = await RetryHelper.RetryLoopAsync(
             //    async attempt =>
             //    {
@@ -70,7 +72,7 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
             //        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(innerCts.Token);
             //        var token = linkedCts.Token;
 
-            //        var taskA = DownloadResourceHelper.DownloadResourceAsync(cardDbUrl, dbPath, taskLabel: "Card DB", onStart: size => statusProgress.Report($"Card database size: {size}"), onProgress: percentProgress.Report, token: token);
+            //        var taskA = DownloadResourceHelper.DownloadResourceAsync(cardDbUrl, dbPath, taskLabel: "Card DB", onStart: size => statusLabel2Progress.Report($"Card database size: {size}"), onProgress: percentProgress.Report, token: token);
             //        var taskB = DownloadResourceHelper.DownloadResourceAsync(pricesUrl, pricesPath, taskLabel: "Price file", null, null, token: token);
 
             //        var firstCompleted = await Task.WhenAny(taskA, taskB);
@@ -93,7 +95,7 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
             //    },
             //    stepName: "Downloading DB + Prices",
             //    maxRetries: 3,
-            //    progress: statusProgress
+            //    progress: status2Progress
             //);
 
             //if (!downloadsSucceeded)
@@ -101,21 +103,28 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
             //    return new OperationResult(OperationResultCode.Error, "Downloads failed after multiple retries.");
             //}
 
+
             Debug.WriteLine("Testing - assume files are already downloaded");
 
-            // Step 2 - copy tables
-            await using var uow = new UnitOfWork();
-            await uow.BeginAsync();
+            // Step 2 - Copy tables from new DB
+            statusLabel3Progress.Report("Step 2 / 4 - Copying new tables...");
 
             try
             {
-                await _updateDBRepo.CopyTablesFromNewDbAsync(uow.CurrentConnection, statusProgress, dbPath);
-                await uow.CommitAsync();
+                await using var conn = await _dbFactory.OpenConnectionAsync();
+
+                await Task.Run(async () =>
+                {
+                    await _updateDBRepo.AttachTempDbAsync(conn, dbPath, statusLabel2Progress);
+                    await _updateDBRepo.DropTablesAsync(conn, statusLabel2Progress);
+                    await _updateDBRepo.CopyTablesAsync(conn, statusLabel2Progress);
+                    await _updateDBRepo.DetachTempDbAsync(conn, statusLabel2Progress);
+                });
+
             }
             catch (Exception ex)
             {
-                await uow.RollbackAsync();
-                statusProgress.Report($"Failed to copy tables: {ex.Message}");
+                statusLabel2Progress.Report($"Table copy failed: {ex.Message}");
                 return new OperationResult(OperationResultCode.Error, $"Table copy failed: {ex.Message}");
             }
 

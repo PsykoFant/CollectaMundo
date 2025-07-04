@@ -54,7 +54,7 @@ namespace CollectaMundo.ApplicationServices
                 {
                     // Step 1: Downloads (handled separately)
                     downloadsSucceeded = await ExecuteDualDownloadWithRetryAsync(
-                        token => DownloadResourceHelper.DownloadResourceAsync(_settings.CardDatabaseUrl, dbPath, "A", size => _statusVM.ShowStatusOverlay($"Downloading Card Database ({size})", true), percent => _statusVM.ProgressValue = percent, token),
+                        token => DownloadResourceHelper.DownloadResourceAsync(_settings.CardDatabaseUrl, dbPath, "A", size => _statusVM.StatusLabel2 = $"Downloading Card Database ({size})", percent => _statusVM.ProgressValue = percent, token),
                         token => DownloadResourceHelper.DownloadResourceAsync(_settings.CardPricesUrl, pricesPath, "B", null, null, token));
                     if (!downloadsSucceeded)
                     {

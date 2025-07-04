@@ -48,6 +48,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                     await prepService.FirstTimeDbPrepOrchetrator();
                 }
 
+                statusVM.StatusLabel1 = string.Empty;
                 statusVM.StatusLabel3 = "Loading ALL the cards…";
                 await UIHelper.ForceRenderAsync();
 
@@ -55,7 +56,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var filteringService = new FilteringService();
                 var editService = new EditCollectionService();
                 var importExportService = new ImportExportService(new ImportExportRepo());
-                var updateService = new UpdateService(settings, new UpdateDbRepo(), new UpdateDbRemoteData());
+                var updateService = new UpdateService(settings, AppGlobals.DbFactory, new UpdateDbRepo(), new UpdateDbRemoteData());
 
                 var mainVM = await MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, updateService, statusVM);
 

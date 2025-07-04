@@ -98,14 +98,16 @@ namespace CollectaMundo.ViewModels
         }
         private async Task UpdateDBAsync()
         {
-            SideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
             _statusOverlayVM.ShowStatusOverlay("Updating database, please wait...", true);
-            _statusOverlayVM.StatusLabel2 = "Step 1 / 4 - downloading new card database";
 
-            // Step 1: Download the new database
-            var statusProgress = new Progress<string>(msg => _statusOverlayVM.StatusLabel1 = msg);
+            //await Task.Delay(100); // Give the UI a moment to update
+
+            //await UIHelper.ForceRenderAsync();
+
+            var statusLabel2Progress = new Progress<string>(msg => _statusOverlayVM.StatusLabel2 = msg);
+            var statusLabel3Progress = new Progress<string>(msg => _statusOverlayVM.StatusLabel3 = msg);
             var percentProgress = new Progress<int>(percent => _statusOverlayVM.ProgressValue = percent);
-            var result = await _updateService.UpdateDbAsync(statusProgress, percentProgress);
+            var result = await _updateService.UpdateDbAsync(statusLabel2Progress, statusLabel3Progress, percentProgress);
 
             if (result.Code == OperationResultCode.Error)
             {
@@ -244,7 +246,7 @@ namespace CollectaMundo.ViewModels
 
         //private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
         // debug - always visible
-        private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
+        private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Visible;
 
         public Visibility SideMenuUtilsUpdateDbVisibility
         {
