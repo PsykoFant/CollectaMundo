@@ -15,6 +15,9 @@ namespace CollectaMundo.ApplicationServices
         public DatabaseSettings DatabaseSettings { get; private set; } = new();
         public ConnectionStrings ConnectionStrings { get; private set; } = new();
         public PriceInfo PriceInfo { get; private set; } = new();
+        public string CardDatabaseUrl => "https://mtgjson.com/api/v5/AllPrintings.sqlite";
+        public string CardPricesUrl => "https://mtgjson.com/api/v5/AllPricesToday.json";
+        public string UserDownloadsPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
 
         private static readonly string appSettingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
 
@@ -37,8 +40,7 @@ namespace CollectaMundo.ApplicationServices
             CurrentSettings = JsonConvert.DeserializeObject<AppSettingsDto>(json) ?? new AppSettingsDto();
 
             // Rebuild the connection string with the loaded SQLitePath
-            CurrentSettings.ConnectionStrings.SQLiteConnection =
-                $"Data Source={CurrentSettings.DatabaseSettings.SQLitePath}AllPrintings.sqlite;Version=3;";
+            CurrentSettings.ConnectionStrings.SQLiteConnection = $"Data Source={CurrentSettings.DatabaseSettings.SQLitePath}AllPrintings.sqlite;Version=3;";
         }
         private static void CreateDefaultAppSettings()
         {

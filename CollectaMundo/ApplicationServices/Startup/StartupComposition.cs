@@ -55,7 +55,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var filteringService = new FilteringService();
                 var editService = new EditCollectionService();
                 var importExportService = new ImportExportService(new ImportExportRepo());
-                var updateService = new UpdateService(new UpdateDbRepo(), new UpdateDbRemoteData());
+                var updateService = new UpdateService(settings, new UpdateDbRepo(), new UpdateDbRemoteData());
 
                 var mainVM = await MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, updateService, statusVM);
 

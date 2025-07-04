@@ -4,6 +4,9 @@
     {
         DatabaseSettings DatabaseSettings { get; }
         ConnectionStrings ConnectionStrings { get; }
+        string CardDatabaseUrl { get; }
+        string CardPricesUrl { get; }
+        string UserDownloadsPath { get; }
         PriceInfo PriceInfo { get; }
         void UpdatePriceInfo(string? updatedDate, string? retailer);
     }

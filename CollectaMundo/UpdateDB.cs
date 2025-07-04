@@ -1,8 +1,6 @@
-﻿using Newtonsoft.Json.Linq;
-using System.Data.SQLite;
+﻿using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
-using System.Net.Http;
 using System.Windows;
 
 namespace CollectaMundo
@@ -140,26 +138,6 @@ namespace CollectaMundo
             {
                 DBAccess.CloseConnection();
             }
-        }
-        private static async Task<int> FetchSetsCountAsync()
-        {
-            try
-            {
-                using var httpClient = new HttpClient();
-                var response = await httpClient.GetStringAsync("https://mtgjson.com/api/v5/SetList.json");
-                var json = JObject.Parse(response);
-                var sets = json["data"] as JArray;
-                int count = sets?.Count ?? 0;
-                Debug.WriteLine($"Number of sets fetched: {count}");
-                return count;
-            }
-            catch (HttpRequestException httpEx)
-            {
-                Debug.WriteLine($"An error occurred during HTTP request: {httpEx.Message}");
-                MessageBox.Show($"An error occurred during HTTP request: {httpEx.Message}", "HttpRequestException", MessageBoxButton.OK, MessageBoxImage.Error);
-
-            }
-            return 0;
         }
     }
 }

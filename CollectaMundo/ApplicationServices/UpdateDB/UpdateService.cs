@@ -1,12 +1,15 @@
 ﻿using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.Data.UpdateDB;
+using System.Diagnostics;
+using System.IO;
 
 namespace CollectaMundo.ApplicationServices.UpdateDB
 {
-    public class UpdateService(IUpdateDbRepo updateDBRepo, IUpdateDbRemoteData remoteData) : IUpdateService
+    public class UpdateService(IAppSettings settings, IUpdateDbRepo updateDBRepo, IUpdateDbRemoteData remoteData) : IUpdateService
     {
         private readonly IUpdateDbRepo _updateDBRepo = updateDBRepo;
         private readonly IUpdateDbRemoteData _remoteData = remoteData;
+        private readonly IAppSettings _settings = settings;
         public async Task<OperationResult> CheckForDbUpdatesAsync()
         {
             int numberOfSetsInDb;
@@ -52,16 +55,72 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
                 return new OperationResult(OperationResultCode.UpToDate, $"Your local card database is up to date! ({numberOfSetsInDb} sets).");
             }
         }
-        public async Task<OperationResult> UpdateDbAsync()
+        public async Task<OperationResult> UpdateDbAsync(IProgress<string> statusProgress, IProgress<int> percentProgress)
         {
-            // STEP 1: Download the new card database and price file
-            // Same as step 1 in FirstTimeDbPrepOrchetrator, new card database and price file
-            // new card database should be downloaded to current users "Downloads" folder: Environment.GetFolderPath(Environment.SpecialFolder.UserProfile); as "AllPrintings.sqlite"
-            // The price file should be downloaded to the same location as "CardPrices.json"
+            string dbPath = Path.Combine(_settings.UserDownloadsPath, "AllPrintings.sqlite");
+            string pricesPath = Path.Combine(_settings.UserDownloadsPath, "AllPricesToday.json");
+            string cardDbUrl = _settings.CardDatabaseUrl;
+            string pricesUrl = _settings.CardPricesUrl;
 
-            // STEP 2: Copy the tables from the new card database to the existing card database
-            // We will implement this later...
-            return new OperationResult(OperationResultCode.Error, "UpdateDbAsync is not implemented yet. Please try again later.");
+            // Step 1 - download files
+            //bool downloadsSucceeded = await RetryHelper.RetryLoopAsync(
+            //    async attempt =>
+            //    {
+            //        using var innerCts = new CancellationTokenSource();
+            //        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(innerCts.Token);
+            //        var token = linkedCts.Token;
+
+            //        var taskA = DownloadResourceHelper.DownloadResourceAsync(cardDbUrl, dbPath, taskLabel: "Card DB", onStart: size => statusProgress.Report($"Card database size: {size}"), onProgress: percentProgress.Report, token: token);
+            //        var taskB = DownloadResourceHelper.DownloadResourceAsync(pricesUrl, pricesPath, taskLabel: "Price file", null, null, token: token);
+
+            //        var firstCompleted = await Task.WhenAny(taskA, taskB);
+
+            //        if (!firstCompleted.Result.success)
+            //        {
+            //            innerCts.Cancel();
+            //            await Task.WhenAll(taskA, taskB);
+            //            throw new Exception(firstCompleted.Result.errorMessage ?? "Unknown download error");
+            //        }
+
+            //        var finalA = await taskA;
+            //        var finalB = await taskB;
+
+            //        if (!finalA.success || !finalB.success)
+            //            throw new Exception(finalA.errorMessage ?? finalB.errorMessage ?? "Unknown download error");
+
+            //        return true;
+
+            //    },
+            //    stepName: "Downloading DB + Prices",
+            //    maxRetries: 3,
+            //    progress: statusProgress
+            //);
+
+            //if (!downloadsSucceeded)
+            //{
+            //    return new OperationResult(OperationResultCode.Error, "Downloads failed after multiple retries.");
+            //}
+
+            Debug.WriteLine("Testing - assume files are already downloaded");
+
+            // Step 2 - copy tables
+            await using var uow = new UnitOfWork();
+            await uow.BeginAsync();
+
+            try
+            {
+                await _updateDBRepo.CopyTablesFromNewDbAsync(uow.CurrentConnection, statusProgress, dbPath);
+                await uow.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await uow.RollbackAsync();
+                statusProgress.Report($"Failed to copy tables: {ex.Message}");
+                return new OperationResult(OperationResultCode.Error, $"Table copy failed: {ex.Message}");
+            }
+
+            return new OperationResult(OperationResultCode.Success, "Update complete!");
         }
+
     }
 }

@@ -98,12 +98,30 @@ namespace CollectaMundo.ViewModels
         }
         private async Task UpdateDBAsync()
         {
-            _statusOverlayVM.ShowStatusOverlay("Temp text - updating db", true);
+            SideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
+            _statusOverlayVM.ShowStatusOverlay("Updating database, please wait...", true);
+            _statusOverlayVM.StatusLabel2 = "Step 1 / 4 - downloading new card database";
 
-            var result = await _updateService.UpdateDbAsync();
+            // Step 1: Download the new database
+            var statusProgress = new Progress<string>(msg => _statusOverlayVM.StatusLabel1 = msg);
+            var percentProgress = new Progress<int>(percent => _statusOverlayVM.ProgressValue = percent);
+            var result = await _updateService.UpdateDbAsync(statusProgress, percentProgress);
 
-            // update progress bar while downloading
+            if (result.Code == OperationResultCode.Error)
+            {
+                _statusOverlayVM.StatusLabel2 = string.Empty;
+                _statusOverlayVM.StatusLabel3 = result.Message;
+                _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
+                _statusOverlayVM.ProgressVisibility = Visibility.Collapsed;
+                _statusOverlayVM.AckButtonText = "  OK!  ";
+                return;
+            }
+
+            _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
+            _statusOverlayVM.AckButtonText = "  OK!  ";
+            _statusOverlayVM.ShowStatusOverlay(result.Message);
         }
+
 
 
         // Page navigation
@@ -224,7 +242,10 @@ namespace CollectaMundo.ViewModels
             set { _sideMenuUtilsCheckForUpdatesVisibility = value; OnPropertyChanged(); }
         }
 
+        //private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
+        // debug - always visible
         private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
+
         public Visibility SideMenuUtilsUpdateDbVisibility
         {
             get => _sideMenuUtilsUpdateDbVisibility;

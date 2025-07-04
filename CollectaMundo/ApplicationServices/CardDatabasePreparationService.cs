@@ -19,15 +19,10 @@ namespace CollectaMundo.ApplicationServices
         private readonly ICardPriceService _priceService = priceService;
         private readonly IGenerateMissingPngService _missingPngService = missingPngService;
         private readonly StatusViewModel _statusVM = statusVM;
-
-        private readonly string cardDbUrl = "https://mtgjson.com/api/v5/AllPrintings.sqlite";
-        private readonly string pricesUrl = "https://mtgjson.com/api/v5/AllPricesToday.json";
-
         public async Task FirstTimeDbPrepOrchetrator()
         {
-            string userDownloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
             string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
-            string pricesPath = Path.Combine(userDownloads, "prices.json");
+            string pricesPath = Path.Combine(_settings.UserDownloadsPath, "prices.json");
             const int maxTotalAttempts = 3;
             bool downloadsSucceeded = false;
 
@@ -52,15 +47,15 @@ namespace CollectaMundo.ApplicationServices
                 }
 
                 // Reset cleanup after each new overall attempt
-                try { CleanupPartialDatabaseFiles(dbPath, userDownloads); }
+                try { CleanupPartialDatabaseFiles(dbPath, _settings.UserDownloadsPath); }
                 catch (Exception ex) { Debug.WriteLine($"[Cleanup] {ex.Message}"); }
 
                 try
                 {
                     // Step 1: Downloads (handled separately)
                     downloadsSucceeded = await ExecuteDualDownloadWithRetryAsync(
-                        token => DownloadResourceHelper.DownloadResourceAsync(cardDbUrl, dbPath, "A", size => _statusVM.ShowStatusOverlay($"Downloading Card Database ({size})", true), percent => _statusVM.ProgressValue = percent, token),
-                        token => DownloadResourceHelper.DownloadResourceAsync(pricesUrl, pricesPath, "B", null, null, token));
+                        token => DownloadResourceHelper.DownloadResourceAsync(_settings.CardDatabaseUrl, dbPath, "A", size => _statusVM.ShowStatusOverlay($"Downloading Card Database ({size})", true), percent => _statusVM.ProgressValue = percent, token),
+                        token => DownloadResourceHelper.DownloadResourceAsync(_settings.CardPricesUrl, pricesPath, "B", null, null, token));
                     if (!downloadsSucceeded)
                     {
                         continue;
@@ -132,60 +127,66 @@ namespace CollectaMundo.ApplicationServices
         }
 
         // Retry logic for downloading files and executing database actions
-        private async Task<bool> ExecuteDualDownloadWithRetryAsync(Func<CancellationToken, Task<(bool success, string? error)>> downloadA, Func<CancellationToken, Task<(bool success, string? error)>> downloadB, int maxRetries = 3)
+        private async Task<bool> ExecuteDualDownloadWithRetryAsync(
+            Func<CancellationToken, Task<(bool success, string? error)>> downloadA,
+            Func<CancellationToken, Task<(bool success, string? error)>> downloadB,
+            int maxRetries = 3)
         {
-            return await RetryLoopAsync(async (attempt) =>
-            {
-                using var innerCts = new CancellationTokenSource();
-                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(innerCts.Token);
-                var linkedToken = linkedCts.Token;
-
-                var taskA = downloadA(linkedToken);
-                var taskB = downloadB(linkedToken);
-
-                var firstCompleted = await Task.WhenAny(taskA, taskB);
-                var firstResult = await firstCompleted;
-
-                if (!firstResult.success)
+            return await RetryHelper.RetryLoopAsync(
+                async attempt =>
                 {
-                    innerCts.Cancel();
-                    await Task.WhenAll(taskA, taskB);
+                    using var innerCts = new CancellationTokenSource();
+                    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(innerCts.Token);
+                    var linkedToken = linkedCts.Token;
 
-                    if (!string.IsNullOrWhiteSpace(firstResult.error))
+                    var taskA = downloadA(linkedToken);
+                    var taskB = downloadB(linkedToken);
+
+                    var firstCompleted = await Task.WhenAny(taskA, taskB);
+                    var firstResult = await firstCompleted;
+
+                    if (!firstResult.success)
                     {
-                        throw new Exception(firstResult.error);
+                        innerCts.Cancel();
+                        await Task.WhenAll(taskA, taskB);
+
+                        if (!string.IsNullOrWhiteSpace(firstResult.error))
+                        {
+                            throw new Exception(firstResult.error);
+                        }
+
+                        return false;
                     }
 
-                    return false;
-                }
+                    var finalA = await taskA;
+                    var finalB = await taskB;
 
-                var finalA = await taskA;
-                var finalB = await taskB;
+                    if (!finalA.success || !finalB.success)
+                    {
+                        string error = finalA.error ?? finalB.error ?? "Unknown download error.";
+                        throw new Exception(error);
+                    }
 
-                if (!finalA.success || !finalB.success)
-                {
-                    string error = finalA.error ?? finalB.error ?? "Unknown download error.";
-                    throw new Exception(error);
-                }
-
-                return true;
-            }, "1 - downloading files", maxRetries);
+                    return true;
+                }, "1 - downloading files", maxRetries, progress: new Progress<string>(msg => _statusVM.StatusLabel3 = msg)
+            );
         }
+
         private async Task<bool> ExecuteWithUnitOfWorkRetryAsync(Func<SQLiteConnection, Task> action, string stepName)
         {
-            return await RetryLoopAsync(async attempt =>
+            return await RetryHelper.RetryLoopAsync(async attempt =>
             {
                 await using var uow = new UnitOfWork();
                 await uow.BeginAsync();
                 await action(uow.CurrentConnection);
                 await uow.CommitAsync();
-                return true; // 
+                return true;
 
-            }, stepName, maxRetries: 3);
+            }, stepName, maxRetries: 3, progress: new Progress<string>(msg => _statusVM.StatusLabel3 = msg));
         }
         private async Task<bool> ExecuteWithConnectionRetryAsync(Func<SQLiteConnection, Task> action, string stepName)
         {
-            return await RetryLoopAsync(async attempt =>
+            return await RetryHelper.RetryLoopAsync(async attempt =>
             {
                 try
                 {
@@ -198,44 +199,9 @@ namespace CollectaMundo.ApplicationServices
                     Debug.WriteLine($"[SetupPipeline] {stepName} failed: {ex.Message}");
                     return false;
                 }
-            }, stepName, maxRetries: 3);
+            }, stepName, maxRetries: 3, progress: new Progress<string>(msg => _statusVM.StatusLabel3 = msg)
+);
         }
-        private async Task<bool> RetryLoopAsync(Func<int, Task<bool>> attemptFunc, string stepName, int maxRetries)
-        {
-            for (int attempt = 1; attempt <= maxRetries; attempt++)
-            {
-                _statusVM.StatusLabel3 = stepName;
-
-                try
-                {
-                    Debug.WriteLine($"[RetryLoopAsync] Step '{stepName}' attempt {attempt}...");
-
-                    if (await attemptFunc(attempt))
-                    {
-                        return true;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    string message = $"Step '{stepName}' failed on attempt {attempt}:";
-                    _statusVM.StatusLabel2 = ex.Message;
-                    _statusVM.StatusLabel3 = message;
-
-                    Debug.WriteLine($"[RetryLoopAsync] {message}");
-                    Debug.WriteLine($"[RetryLoopAsync] {ex.Message}");
-                }
-
-                await Task.Delay(3000);
-                _statusVM.StatusLabel2 = string.Empty;
-            }
-
-            _statusVM.StatusLabel1 = $"Step '{stepName}' failed after {maxRetries} tries. Restarting overall setup...";
-            await Task.Delay(3000);
-            return false;
-        }
-
-        // Local helper and db setup methods
-
         private static bool IsInternetAvailable()
         {
             try

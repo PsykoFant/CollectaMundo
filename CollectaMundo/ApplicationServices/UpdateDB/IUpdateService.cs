@@ -5,6 +5,6 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
     public interface IUpdateService
     {
         Task<OperationResult> CheckForDbUpdatesAsync();
-        Task<OperationResult> UpdateDbAsync()
+        Task<OperationResult> UpdateDbAsync(IProgress<string> statusProgress, IProgress<int> percentProgress);
     }
 }
