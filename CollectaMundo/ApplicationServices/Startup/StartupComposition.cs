@@ -43,10 +43,15 @@ namespace CollectaMundo.ApplicationServices.Startup
                 await UIHelper.ForceRenderAsync();
 
                 var dbStatus = await integrityService.GetDatabaseStatusAsync();
-                if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
-                {
-                    await prepService.FirstTimeDbPrepOrchetrator();
-                }
+
+                //if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
+                //{
+                //    await prepService.FirstTimeDbPrepOrchetrator();
+                //}
+
+                // debug
+                await prepService.FirstTimeDbPrepOrchetrator();
+
 
                 statusVM.StatusLabel1 = string.Empty;
                 statusVM.StatusLabel3 = "Loading ALL the cards…";

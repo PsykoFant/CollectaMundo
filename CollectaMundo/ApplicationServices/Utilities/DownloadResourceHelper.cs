@@ -6,7 +6,7 @@ namespace CollectaMundo.ApplicationServices.Utilities
 {
     public static class DownloadResourceHelper
     {
-        public static async Task<(bool success, string? errorMessage)> DownloadResourceAsync(string url, string targetPath, string taskLabel, Action<string>? onStart = null, Action<int>? onProgress = null, CancellationToken token = default)
+        public static async Task<(bool success, string? errorMessage)> DownloadResourceAsync(string url, string targetPath, string taskLabel, IProgress<string>? statusProgress = null, IProgress<int>? percentProgress = null, CancellationToken token = default)
         {
             Debug.WriteLine($"[DownloadResourceAsync] Preparing to download from {url} to {targetPath}");
 
@@ -23,9 +23,10 @@ namespace CollectaMundo.ApplicationServices.Utilities
                 using var contentStream = await response.Content.ReadAsStreamAsync(token);
                 using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
 
-                if (onStart != null && totalBytes > 0)
+                if (statusProgress != null && totalBytes > 0)
                 {
-                    onStart($"{totalBytes / 1_000_000.0:0.0} MB");
+                    var sizeInMb = $"{totalBytes / 1_000_000.0:0.0} MB";
+                    statusProgress.Report($"{taskLabel}: {sizeInMb}");
                 }
 
                 long totalBytesRead = 0;
@@ -36,15 +37,16 @@ namespace CollectaMundo.ApplicationServices.Utilities
                     await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), token);
                     totalBytesRead += bytesRead;
 
-                    if (onProgress != null && totalBytes > 0)
+                    if (percentProgress != null && totalBytes > 0)
                     {
-                        onProgress((int)(100 * totalBytesRead / totalBytes));
+                        percentProgress.Report((int)(100 * totalBytesRead / totalBytes));
                     }
                 }
 
                 Debug.WriteLine($"[DownloadResourceAsync] Download complete: {targetPath}");
                 return (true, null);
             }
+
             catch (OperationCanceledException)
             {
                 Debug.WriteLine($"[DownloadResourceAsync] Cancelled intentionally — suppress message");

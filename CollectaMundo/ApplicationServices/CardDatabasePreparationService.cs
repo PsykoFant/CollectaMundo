@@ -39,9 +39,9 @@ namespace CollectaMundo.ApplicationServices
             _statusVM.StatusLabel1 = "Performing first-time setup of card database - please wait ...";
             _statusVM.ProgressVisibility = Visibility.Visible;
 
-            var stepLabelProgress = new Progress<string>(label => _statusVM.StatusLabel3 = label);
-            var stepDetailProgress = new Progress<string>(msg => _statusVM.StatusLabel2 = msg);
-            var percentProgress = new Progress<int>(p => _statusVM.ProgressValue = p);
+            IProgress<string> stepDetailProgress = new Progress<string>(msg => _statusVM.StatusLabel2 = msg);
+            IProgress<string> stepLabelProgress = new Progress<string>(msg => _statusVM.StatusLabel3 = msg);
+            IProgress<int> percentProgress = new Progress<int>(p => _statusVM.ProgressValue = p);
 
             for (int overallAttempt = 1; overallAttempt <= maxTotalAttempts; overallAttempt++)
             {
@@ -52,52 +52,58 @@ namespace CollectaMundo.ApplicationServices
                     _statusVM.StatusLabel1 = $"Setup failed, retrying attempt {overallAttempt}...";
                 }
 
-                try { CleanupPartialDatabaseFiles(dbPath, _settings.UserDownloadsPath); }
-                catch (Exception ex) { Debug.WriteLine($"[Cleanup] {ex.Message}"); }
+                //try { CleanupPartialDatabaseFiles(dbPath, _settings.UserDownloadsPath); }
+                //catch (Exception ex) { Debug.WriteLine($"[Cleanup] {ex.Message}"); }
 
                 try
                 {
-                    // Step 1: Downloads (handled separately)
-                    downloadsSucceeded = await RetryHelper.RetryLoopAsync(attempt =>
-                        {
-                            Debug.WriteLine($"[Download Attempt {attempt}]");
+                    // Step 1: Downloads 
+                    //downloadsSucceeded = await RetryHelper.RetryLoopAsync(
+                    //    attempt =>
+                    //    {
+                    //        Debug.WriteLine($"[Download Attempt {attempt}]");
 
-                            return ExecuteDualDownloadAsync(
-                                token => DownloadResourceHelper.DownloadResourceAsync(
-                                    _settings.CardDatabaseUrl, dbPath, "A",
-                                    onStart: size => _statusVM.StatusLabel2 = $"Downloading Card Database ({size})",
-                                    onProgress: percent => _statusVM.ProgressValue = percent,
-                                    token: token),
+                    //        return ExecuteDualDownloadAsync(
+                    //            token => DownloadResourceHelper.DownloadResourceAsync(
+                    //                _settings.CardDatabaseUrl,
+                    //                dbPath,
+                    //                taskLabel: "Card database",
+                    //                statusProgress: stepDetailProgress,
+                    //                percentProgress: percentProgress,
+                    //                token: token),
 
-                                token => DownloadResourceHelper.DownloadResourceAsync(
-                                    _settings.CardPricesUrl, pricesPath, "B",
-                                    onStart: null,
-                                    onProgress: null,
-                                    token: token)
-                            );
-                        },
-                        stepName: "1 - downloading resource files",
-                        maxRetries: 3,
-                        progress: new Progress<string>(msg => _statusVM.StatusLabel3 = msg)
-                    );
+                    //            token => DownloadResourceHelper.DownloadResourceAsync(
+                    //                _settings.CardPricesUrl,
+                    //                pricesPath,
+                    //                taskLabel: "Price File",
+                    //                statusProgress: null,
+                    //                percentProgress: null,
+                    //                token: token)
+                    //        );
+                    //    },
+                    //    stepName: "Step 1. Downloading resource files...",
+                    //    maxRetries: 3,
+                    //    stepNameProgress: stepLabelProgress,
+                    //    detailProgress: stepDetailProgress
+                    //);
 
-                    if (!downloadsSucceeded) continue;
+                    //if (!downloadsSucceeded) continue;
 
                     // STEP 2–9: Setup pipeline
                     var setupSteps = new List<(string Label, Func<Task> Work)>{
-                        ("2. Creating custom tables...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn)))),
-                        ("3. Generating mana symbols...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn)))),
-                        ("4. Generating mana cost images...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn)))),
-                        ("5. Generating set icon images...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn)))),
-                        ("6. Processing card prices...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn)))),
-                        ("7. Creating views...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket")))),
-                        ("8. Creating indices...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn)))),
-                        ("9. Optimizing database...", (Func<Task>)(() => ExecuteWithConnectionAsync(conn => _dbSchemaRepo.OptimizeAsync(conn))))
+                        ("Step 2. Creating custom tables...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn)))),
+                        ("Step 3. Generating mana symbols...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn)))),
+                        ("Step 4. Generating mana cost images...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn)))),
+                        ("Step 5. Generating set icon images...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn)))),
+                        ("Step 6. Processing card prices...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn)))),
+                        ("Step 7. Creating views...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket")))),
+                        ("Step 8. Creating indices...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn)))),
+                        ("Step 9. Optimizing database...", (Func<Task>)(() => ExecuteWithConnectionAsync(conn => _dbSchemaRepo.OptimizeAsync(conn))))
                     };
 
                     foreach (var (label, work) in setupSteps)
                     {
-                        _statusVM.StatusLabel3 = label;
+                        //_statusVM.StatusLabel3 = label;
 
                         bool success = await RetryHelper.RetryLoopAsync(
                             attempt =>
@@ -106,9 +112,11 @@ namespace CollectaMundo.ApplicationServices
                                 return work().ContinueWith(_ => true);
                             },
                             maxRetries: 3,
-                            progress: stepDetailProgress,
+                            stepNameProgress: stepLabelProgress,
+                            detailProgress: stepDetailProgress,
                             stepName: label
                         );
+
 
                         if (!success)
                             throw new Exception($"Step '{label}' failed after retries.");
