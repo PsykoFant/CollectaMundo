@@ -89,27 +89,39 @@ namespace CollectaMundo.ApplicationServices
 
                     //if (!downloadsSucceeded) continue;
 
+                    _statusVM.ProgressVisibility = Visibility.Collapsed;
+
                     // STEP 2–9: Setup pipeline
                     var setupSteps = new List<(string Label, Func<Task> Work)>{
-                        ("Step 2. Creating custom tables...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn)))),
+                        ("Step 2. Creating custom tables...", (Func<Task>)(() => Task.Run(() =>ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn))))),
                         ("Step 3. Generating mana symbols...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn)))),
                         ("Step 4. Generating mana cost images...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn)))),
                         ("Step 5. Generating set icon images...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn)))),
                         ("Step 6. Processing card prices...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn)))),
-                        ("Step 7. Creating views...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket")))),
-                        ("Step 8. Creating indices...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn)))),
-                        ("Step 9. Optimizing database...", (Func<Task>)(() => ExecuteWithConnectionAsync(conn => _dbSchemaRepo.OptimizeAsync(conn))))
+                        ("Step 7. Creating views...",(Func<Task>)(() => Task.Run(() =>ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket"))))),
+                        ("Step 8. Creating indices...", (Func<Task>)(() => Task.Run(() =>ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn))))),
+                        ("Step 9. Optimizing database...", (Func<Task>)(() => Task.Run(() =>ExecuteWithConnectionAsync(conn => _dbSchemaRepo.OptimizeAsync(conn)))))
                     };
 
                     foreach (var (label, work) in setupSteps)
                     {
-                        //_statusVM.StatusLabel3 = label;
-
                         bool success = await RetryHelper.RetryLoopAsync(
-                            attempt =>
+                            async attempt =>
                             {
                                 Debug.WriteLine($"[Step {label}] attempt {attempt}");
-                                return work().ContinueWith(_ => true);
+
+                                try
+                                {
+                                    await work();  // Await the actual step
+                                    return true;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine($"[RetryLoopAsync] Step '{label}' threw: {ex.Message}");
+                                    detailProgress?.Report($"❌ {label} failed: {ex.Message}");
+                                    return false;
+                                }
+
                             },
                             maxRetries: 3,
                             stepNameProgress: stepLabelProgress,
@@ -187,8 +199,6 @@ namespace CollectaMundo.ApplicationServices
 
             return true;
         }
-
-
         private static async Task ExecuteWithUnitOfWorkAsync(Func<SQLiteConnection, Task> action)
         {
             await using var uow = new UnitOfWork();
@@ -196,13 +206,11 @@ namespace CollectaMundo.ApplicationServices
             await action(uow.CurrentConnection);
             await uow.CommitAsync();
         }
-
         private static async Task ExecuteWithConnectionAsync(Func<SQLiteConnection, Task> action)
         {
             await using var conn = await DbFactory.OpenConnectionAsync();
             await action(conn);
         }
-
         private static bool IsInternetAvailable()
         {
             try

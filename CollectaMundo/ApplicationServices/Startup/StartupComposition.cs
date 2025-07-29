@@ -54,6 +54,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
 
                 statusVM.StatusLabel1 = string.Empty;
+                statusVM.StatusLabel2 = string.Empty;
                 statusVM.StatusLabel3 = "Loading ALL the cards…";
                 await UIHelper.ForceRenderAsync();
 

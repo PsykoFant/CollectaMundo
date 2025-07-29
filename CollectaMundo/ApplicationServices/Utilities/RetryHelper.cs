@@ -29,9 +29,6 @@
 
             detailProgress?.Report($"❌ {stepName} failed after {maxRetries} retries.");
             return false;
-
         }
-
-
     }
 }

@@ -9,6 +9,8 @@ namespace CollectaMundo.Data
         private static readonly string[] first = ["uuid TEXT UNIQUE PRIMARY KEY"];
         public async Task CreateTablesAsync(SQLiteConnection conn)
         {
+            throw new Exception("Test throw.");
+
             var finishes = CardPriceDefinitions.Finishes;
             var retailerColumns = CardPriceDefinitions.RetailersByFormat
                 .SelectMany(kvp => kvp.Value.SelectMany(r => finishes.Select(f => $"{r}{f} DECIMAL(10, 2)")))
@@ -372,19 +374,20 @@ namespace CollectaMundo.Data
         }
         public async Task OptimizeAsync(SQLiteConnection conn)
         {
-            //throw new Exception("Test throw.");
-            var commands = new[]
-            {
-                "VACUUM;",
-                "ANALYZE;",
-                "PRAGMA optimize;"
-            };
+            throw new Exception("Test throw.");
+            //var commands = new[]
+            //{
+            //    "VACUUM;",
+            //    "ANALYZE;",
+            //    "PRAGMA optimize;"
+            //};
 
-            foreach (var cmdText in commands)
-            {
-                using var command = new SQLiteCommand(cmdText, conn);
-                await command.ExecuteNonQueryAsync();
-            }
+            //foreach (var cmdText in commands)
+            //{
+            //    using var command = new SQLiteCommand(cmdText, conn);
+            //    await command.ExecuteNonQueryAsync();
+            //}
+            //Debug.WriteLine("Database optimization completed.");
         }
     }
 }
