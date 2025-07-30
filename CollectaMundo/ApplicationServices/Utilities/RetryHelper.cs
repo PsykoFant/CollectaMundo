@@ -1,14 +1,10 @@
-﻿namespace CollectaMundo.ApplicationServices.Utilities
+﻿using System.Diagnostics;
+
+namespace CollectaMundo.ApplicationServices.Utilities
 {
     public static class RetryHelper
     {
-        public static async Task<bool> RetryLoopAsync(
-            Func<int, Task<bool>> attemptFunc,
-            int maxRetries = 3,
-            IProgress<string>? stepNameProgress = null,  // StatusLabel3
-            IProgress<string>? detailProgress = null,     // StatusLabel2
-            string stepName = "")
-
+        public static async Task<bool> RetryLoopAsync(Func<Task> stepWork, int maxRetries = 3, IProgress<string>? stepNameProgress = null, IProgress<string>? detailProgress = null, string stepName = "")
         {
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
@@ -16,18 +12,18 @@
 
                 try
                 {
-                    if (await attemptFunc(attempt))
-                        return true;
+                    await stepWork(); // 
+                    return true;
                 }
                 catch (Exception ex)
                 {
-                    detailProgress?.Report($"❌ {stepName} failed: {ex.Message}");
+                    Debug.WriteLine($"[RetryLoopAsync] Step '{stepName}' attempt {attempt} threw: {ex.Message}");
+                    detailProgress?.Report($"❌ Error: {ex.Message}");
                 }
 
-                await Task.Delay(2000);
+                await Task.Delay(3000);
             }
 
-            detailProgress?.Report($"❌ {stepName} failed after {maxRetries} retries.");
             return false;
         }
     }

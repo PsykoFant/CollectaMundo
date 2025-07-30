@@ -105,43 +105,21 @@ namespace CollectaMundo.ApplicationServices
 
                     foreach (var (label, work) in setupSteps)
                     {
-                        bool success = await RetryHelper.RetryLoopAsync(
-                            async attempt =>
-                            {
-                                Debug.WriteLine($"[Step {label}] attempt {attempt}");
-
-                                try
-                                {
-                                    await work();  // Await the actual step
-                                    return true;
-                                }
-                                catch (Exception ex)
-                                {
-                                    Debug.WriteLine($"[RetryLoopAsync] Step '{label}' threw: {ex.Message}");
-                                    detailProgress?.Report($"❌ {label} failed: {ex.Message}");
-                                    return false;
-                                }
-
-                            },
-                            maxRetries: 3,
-                            stepNameProgress: stepLabelProgress,
-                            detailProgress: stepDetailProgress,
-                            stepName: label
-                        );
-
+                        bool success = await RetryHelper.RetryLoopAsync(stepWork: work, maxRetries: 3, stepNameProgress: stepLabelProgress, detailProgress: stepDetailProgress, stepName: label);
 
                         if (!success)
                             throw new Exception($"Step '{label}' failed after retries.");
                     }
 
-                    // If setup fully succeeded
-                    if (downloadsSucceeded)
-                    {
-                        try { File.Delete(pricesPath); }
-                        catch (IOException ex) { Debug.WriteLine($"Couldn't delete prices.json: {ex.Message}"); }
-                    }
 
-                    return; // 
+                    // If setup fully succeeded
+                    //if (downloadsSucceeded)
+                    //{
+                    //    try { File.Delete(pricesPath); }
+                    //    catch (IOException ex) { Debug.WriteLine($"Couldn't delete prices.json: {ex.Message}"); }
+                    //}
+
+                    return;
                 }
                 catch (Exception ex)
                 {
