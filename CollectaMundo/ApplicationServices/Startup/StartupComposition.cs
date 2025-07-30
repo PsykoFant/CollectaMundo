@@ -30,10 +30,10 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var missingPngRepo = new GenerateMissingPngRepository();
                 var missingPngLogic = new GenerateMissingPngLogic();
-                var missingPngService = new GenerateMissingPngService(missingPngRepo, scryfallLookups, missingPngLogic, statusVM);
+                var missingPngService = new GenerateMissingPngService(missingPngRepo, scryfallLookups, missingPngLogic);
 
                 var cardPriceRepo = new CardPriceRepository();
-                var priceService = new CardPriceService(settings, cardPriceRepo, statusVM);
+                var priceService = new CardPriceService(settings, cardPriceRepo);
 
                 var schemaInitializer = new DatabaseSchemaRepository();
                 var prepService = new CardDatabasePreparationService(settings, schemaInitializer, priceService, missingPngService, statusVM);

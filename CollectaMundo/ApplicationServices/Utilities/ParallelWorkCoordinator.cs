@@ -1,13 +1,13 @@
-﻿using CollectaMundo.ViewModels;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 
 namespace CollectaMundo.ApplicationServices.Utilities
 {
-    public sealed class ParallelWorkCoordinator<T>(StatusViewModel statusVM, int total, int maxDegreeOfParallelism) : IDisposable
+    public sealed class ParallelWorkCoordinator<T>(IProgress<int> percentProgress, int total, int maxDegreeOfParallelism) : IDisposable
     {
         private readonly SemaphoreSlim _semaphore = new(maxDegreeOfParallelism);
-        private readonly ProgressReporter _reporter = new(statusVM, total);
-        public readonly ConcurrentBag<T> Results = [];
+        private readonly ProgressReporter _reporter = new(percentProgress, total);
+
+        public ConcurrentBag<T> Results { get; } = [];
         public int Total { get; } = total;
 
         public async Task DoAsync(Func<Task<T>> work)

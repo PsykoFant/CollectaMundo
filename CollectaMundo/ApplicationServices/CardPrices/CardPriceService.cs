@@ -1,7 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.Data.CardPrices;
 using CollectaMundo.DomainLogic.CardPrices;
-using CollectaMundo.ViewModels;
 using System.Collections.Concurrent;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -10,18 +9,20 @@ using System.Text.Json;
 
 namespace CollectaMundo.ApplicationServices.CardPrices
 {
-    public class CardPriceService(IAppSettings appSettings, ICardPriceRepository cardPriceRepository, StatusViewModel statusVM) : ICardPriceService
+    public class CardPriceService(IAppSettings appSettings, ICardPriceRepository cardPriceRepository) : ICardPriceService
     {
         private readonly IAppSettings _appSettings = appSettings;
         private readonly ICardPriceRepository _cardPriceRepository = cardPriceRepository;
-        private readonly StatusViewModel _statusVM = statusVM;
-        public async Task ImportPricesFromJsonAsync(string jsonPath, SQLiteConnection conn)
+        public async Task ImportPricesFromJsonAsync(string jsonPath, SQLiteConnection conn, IProgress<string>? statusProgress = null, IProgress<int>? percentProgress = null)
         {
             if (!File.Exists(jsonPath))
             {
                 Debug.WriteLine($"[PriceImporter] Price file not found: {jsonPath}");
                 throw new FileNotFoundException("Price JSON file not found.", jsonPath);
             }
+
+            var effectiveProgress = percentProgress ?? new Progress<int>(_ => { }); // Use percentProgress if provided, otherwise use a no-op progress reporter
+            var effectiveStatusProgress = statusProgress ?? new Progress<string>(_ => { });
 
             // Step 1: Load and parse JSON
             using var stream = File.OpenRead(jsonPath);
@@ -37,9 +38,8 @@ namespace CollectaMundo.ApplicationServices.CardPrices
 
             // Step 2: Parse all prices (with progress)
             var allKeys = CardPriceDefinitions.GetAllKeys().ToList();
-            using var parseProgress = new ProgressReporter(_statusVM, allKeys.Count);
+            using var parseProgress = new ProgressReporter(effectiveProgress, allKeys.Count);
             var parsedPrices = new ConcurrentBag<CardPrice>();
-
             await Task.WhenAll(allKeys.Select(key =>
                 Task.Run(async () =>
                 {
@@ -56,8 +56,7 @@ namespace CollectaMundo.ApplicationServices.CardPrices
 
             // Step 3: Group and insert into database (with progress)
             var groups = parsedPrices.GroupBy(p => $"{p.Retailer}{char.ToUpper(p.Finish[0]) + p.Finish[1..]}").ToList();
-
-            using var insertProgress = new ProgressReporter(_statusVM, groups.Count);
+            using var insertProgress = new ProgressReporter(effectiveProgress, groups.Count);
 
             foreach (var group in groups)
             {
@@ -67,7 +66,7 @@ namespace CollectaMundo.ApplicationServices.CardPrices
 
                 var retailer = group.First().Retailer;
                 var finish = group.First().Finish;
-                _statusVM.StatusLabel3 = $"Imported retailer {retailer} prices for card finish: {finish} ...";
+                effectiveStatusProgress.Report($"Imported retailer {retailer} prices for card finish: {finish} ...");
 
                 insertProgress.Increment();
 

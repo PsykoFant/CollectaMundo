@@ -2,20 +2,18 @@
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ScryfallLookups;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
-using CollectaMundo.ViewModels;
 using Newtonsoft.Json.Linq;
 using System.Data.SQLite;
 using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.GenerateMissingPng
 {
-    public class GenerateMissingPngService(IGenerateMissingPngRepository repository, IScryfallLookups scryfallLookups, IGenerateMissingPngLogic logic, StatusViewModel statusVM) : IGenerateMissingPngService
+    public class GenerateMissingPngService(IGenerateMissingPngRepository repository, IScryfallLookups scryfallLookups, IGenerateMissingPngLogic logic) : IGenerateMissingPngService
     {
         private readonly IGenerateMissingPngRepository _repository = repository;
         private readonly IScryfallLookups _scryfallLookups = scryfallLookups;
         private readonly IGenerateMissingPngLogic _logic = logic;
-        private readonly StatusViewModel _statusVM = statusVM;
-        public async Task GenerateMissingManaSymbolImagesAsync(SQLiteConnection conn)
+        public async Task GenerateMissingManaSymbolImagesAsync(SQLiteConnection conn, IProgress<int>? percentProgress = null)
         {
             // Step 1: Get unique mana cost strings from 'cards' table
             List<string> uniqueManaCosts = await _repository.GetUniqueValuesAsync(conn, "cards", "manaCost");
@@ -33,7 +31,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
             List<string> symbolsWithNullImage = await _repository.GetValuesWithNullAsync(conn, "uniqueManaSymbols", "uniqueManaSymbol", "manaSymbolImage");
 
             // Step 5: Generate PNGs for each symbol in parallel
-            using var coordinator = new ParallelWorkCoordinator<(string Symbol, byte[] PngData)>(_statusVM, symbolsWithNullImage.Count, Environment.ProcessorCount);
+            using var coordinator = new ParallelWorkCoordinator<(string Symbol, byte[] PngData)>(percentProgress ?? new Progress<int>(_ => { }), symbolsWithNullImage.Count, Environment.ProcessorCount);
 
             await Task.WhenAll(symbolsWithNullImage.Select(symbol =>
                 coordinator.DoAsync(async () =>
@@ -93,8 +91,9 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
 
             transaction.Commit();
         }
-        public async Task GenerateMissingManaCostImagesAsync(SQLiteConnection conn)
+        public async Task GenerateMissingManaCostImagesAsync(SQLiteConnection conn, IProgress<int>? percentProgress = null)
         {
+            var effectiveProgress = percentProgress ?? new Progress<int>(_ => { }); // Use percentProgress if provided, otherwise use a no-op progress reporter
             var uniqueManaCosts = await _repository.GetUniqueValuesAsync(conn, "cards", "manaCost");
 
             foreach (var cost in uniqueManaCosts)
@@ -120,7 +119,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
             var symbolImageMap = await _repository.GetManaSymbolImagesAsync(conn, allSymbols);
 
             using var transaction = conn.BeginTransaction();
-            using var reporter = new ProgressReporter(_statusVM, missingCosts.Count);
+            using var reporter = new ProgressReporter(effectiveProgress, missingCosts.Count);
 
             foreach (var manaCost in missingCosts)
             {
@@ -142,7 +141,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
             transaction.Commit();
 
         }
-        public async Task GenerateMissingKeyRuneImagesAsync(SQLiteConnection conn)
+        public async Task GenerateMissingKeyRuneImagesAsync(SQLiteConnection conn, IProgress<int>? percentProgress = null)
         {
             // Setup
             await _repository.InsertMissingFromColumnAsync(conn, "sets", "code", "keyruneImages", "setCode");
@@ -159,7 +158,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
 
             // Parallel processing with progress
             int maxParallelism = Math.Max(2, Environment.ProcessorCount / 2);
-            using var coordinator = new ParallelWorkCoordinator<(string SetCode, byte[] PngData)>(_statusVM, missingSetCodes.Count, maxParallelism);
+            using var coordinator = new ParallelWorkCoordinator<(string SetCode, byte[] PngData)>(percentProgress ?? new Progress<int>(_ => { }), missingSetCodes.Count, maxParallelism);
 
             await Task.WhenAll(missingSetCodes.Select(setCode =>
                 coordinator.DoAsync(async () =>

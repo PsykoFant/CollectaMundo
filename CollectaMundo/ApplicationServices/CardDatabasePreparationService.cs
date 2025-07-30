@@ -89,22 +89,27 @@ namespace CollectaMundo.ApplicationServices
 
                     //if (!downloadsSucceeded) continue;
 
-                    _statusVM.ProgressVisibility = Visibility.Collapsed;
+                    //_statusVM.ProgressVisibility = Visibility.Collapsed;
 
                     // STEP 2–9: Setup pipeline
-                    var setupSteps = new List<(string Label, Func<Task> Work)>{
-                        ("Step 2. Creating custom tables...", (Func<Task>)(() => Task.Run(() =>ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn))))),
-                        ("Step 3. Generating mana symbols...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn)))),
-                        ("Step 4. Generating mana cost images...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn)))),
-                        ("Step 5. Generating set icon images...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn)))),
-                        ("Step 6. Processing card prices...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn)))),
-                        ("Step 7. Creating views...",(Func<Task>)(() => Task.Run(() =>ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket"))))),
-                        ("Step 8. Creating indices...", (Func<Task>)(() => Task.Run(() =>ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn))))),
-                        ("Step 9. Optimizing database...", (Func<Task>)(() => Task.Run(() =>ExecuteWithConnectionAsync(conn => _dbSchemaRepo.OptimizeAsync(conn)))))
+                    var setupSteps = new List<(string Label, Func<Task> Work, bool showProgressBar)>{
+                        ("Step 2. Creating custom tables...", (Func<Task>)(() => Task.Run(() =>ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn)))), showProgressBar: false),
+                        ("Step 3. Generating mana symbols...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn,percentProgress))), showProgressBar: true),
+                        ("Step 4. Generating mana cost images...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, percentProgress))), showProgressBar: true),
+                        ("Step 5. Generating set icon images...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, percentProgress))), showProgressBar: true),
+                        ("Step 6. Processing card prices...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn, stepDetailProgress, percentProgress))), showProgressBar: true),
+                        ("Step 7. Creating views...",(Func<Task>)(() => Task.Run(() =>ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket")))), showProgressBar: false),
+                        ("Step 8. Creating indices...", (Func<Task>)(() => Task.Run(() =>ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn)))), showProgressBar: false),
+                        ("Step 9. Optimizing database...", (Func<Task>)(() => Task.Run(() =>ExecuteWithConnectionAsync(conn => _dbSchemaRepo.OptimizeAsync(conn)))), showProgressBar: false)
                     };
 
-                    foreach (var (label, work) in setupSteps)
+                    foreach (var (label, work, showProgressBar) in setupSteps)
                     {
+                        _statusVM.ProgressVisibility = showProgressBar ? Visibility.Visible : Visibility.Collapsed;
+
+                        // Reset status detail between steps
+                        _statusVM.StatusLabel2 = string.Empty;
+
                         bool success = await RetryHelper.RetryLoopAsync(stepWork: work, maxRetries: 3, stepNameProgress: stepLabelProgress, detailProgress: stepDetailProgress, stepName: label);
 
                         if (!success)
