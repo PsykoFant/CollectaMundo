@@ -52,44 +52,40 @@ namespace CollectaMundo.ApplicationServices
                     _statusVM.StatusLabel1 = $"Setup failed, retrying attempt {overallAttempt}...";
                 }
 
-                //try { CleanupPartialDatabaseFiles(dbPath, _settings.UserDownloadsPath); }
-                //catch (Exception ex) { Debug.WriteLine($"[Cleanup] {ex.Message}"); }
+                try { CleanupPartialDatabaseFiles(dbPath, _settings.UserDownloadsPath); }
+                catch (Exception ex) { Debug.WriteLine($"[Cleanup] {ex.Message}"); }
 
                 try
                 {
-                    // Step 1: Downloads 
-                    //downloadsSucceeded = await RetryHelper.RetryLoopAsync(
-                    //    attempt =>
-                    //    {
-                    //        Debug.WriteLine($"[Download Attempt {attempt}]");
+                    //Step 1: Downloads
+                    downloadsSucceeded = await RetryHelper.RetryLoopAsync(
+                        () =>
+                        {
+                            return ExecuteDualDownloadAsync(
+                                token => DownloadResourceHelper.DownloadResourceAsync(
+                                    _settings.CardDatabaseUrl,
+                                    dbPath,
+                                    taskLabel: "Card database",
+                                    statusProgress: stepDetailProgress,
+                                    percentProgress: percentProgress,
+                                    token: token),
 
-                    //        return ExecuteDualDownloadAsync(
-                    //            token => DownloadResourceHelper.DownloadResourceAsync(
-                    //                _settings.CardDatabaseUrl,
-                    //                dbPath,
-                    //                taskLabel: "Card database",
-                    //                statusProgress: stepDetailProgress,
-                    //                percentProgress: percentProgress,
-                    //                token: token),
+                                token => DownloadResourceHelper.DownloadResourceAsync(
+                                    _settings.CardPricesUrl,
+                                    pricesPath,
+                                    taskLabel: "Price File",
+                                    statusProgress: null,
+                                    percentProgress: null,
+                                    token: token)
+                            );
+                        },
+                        stepName: "Step 1. Downloading resource files...",
+                        maxRetries: 3,
+                        stepNameProgress: stepLabelProgress,
+                        detailProgress: stepDetailProgress
+                    );
 
-                    //            token => DownloadResourceHelper.DownloadResourceAsync(
-                    //                _settings.CardPricesUrl,
-                    //                pricesPath,
-                    //                taskLabel: "Price File",
-                    //                statusProgress: null,
-                    //                percentProgress: null,
-                    //                token: token)
-                    //        );
-                    //    },
-                    //    stepName: "Step 1. Downloading resource files...",
-                    //    maxRetries: 3,
-                    //    stepNameProgress: stepLabelProgress,
-                    //    detailProgress: stepDetailProgress
-                    //);
-
-                    //if (!downloadsSucceeded) continue;
-
-                    //_statusVM.ProgressVisibility = Visibility.Collapsed;
+                    if (!downloadsSucceeded) continue;
 
                     // STEP 2–9: Setup pipeline
                     var setupSteps = new List<(string Label, Func<Task> Work, bool showProgressBar)>{
@@ -118,11 +114,11 @@ namespace CollectaMundo.ApplicationServices
 
 
                     // If setup fully succeeded
-                    //if (downloadsSucceeded)
-                    //{
-                    //    try { File.Delete(pricesPath); }
-                    //    catch (IOException ex) { Debug.WriteLine($"Couldn't delete prices.json: {ex.Message}"); }
-                    //}
+                    if (downloadsSucceeded)
+                    {
+                        try { File.Delete(pricesPath); }
+                        catch (IOException ex) { Debug.WriteLine($"Couldn't delete prices.json: {ex.Message}"); }
+                    }
 
                     return;
                 }
@@ -133,8 +129,9 @@ namespace CollectaMundo.ApplicationServices
                 finally
                 {
                     _statusVM.ProgressValue = 0;
-                    _statusVM.StatusLabel2 = "";
-                    _statusVM.StatusLabel3 = "";
+                    _statusVM.StatusLabel1 = string.Empty;
+                    _statusVM.StatusLabel2 = string.Empty;
+                    _statusVM.StatusLabel3 = string.Empty;
                 }
             }
 
@@ -146,7 +143,7 @@ namespace CollectaMundo.ApplicationServices
 
 
         // Retry logic for downloading files and executing database actions
-        private async Task<bool> ExecuteDualDownloadAsync(
+        private static async Task<bool> ExecuteDualDownloadAsync(
             Func<CancellationToken, Task<(bool success, string? error)>> downloadA,
             Func<CancellationToken, Task<(bool success, string? error)>> downloadB)
         {
@@ -239,6 +236,5 @@ namespace CollectaMundo.ApplicationServices
             await Task.Delay(10000);
             Application.Current.Shutdown();
         }
-
     }
 }

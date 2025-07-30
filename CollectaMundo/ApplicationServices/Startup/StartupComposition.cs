@@ -44,14 +44,10 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var dbStatus = await integrityService.GetDatabaseStatusAsync();
 
-                //if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
-                //{
-                //    await prepService.FirstTimeDbPrepOrchetrator();
-                //}
-
-                // debug
-                await prepService.FirstTimeDbPrepOrchetrator();
-
+                if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
+                {
+                    await prepService.FirstTimeDbPrepOrchetrator();
+                }
 
                 statusVM.StatusLabel1 = string.Empty;
                 statusVM.StatusLabel2 = string.Empty;
@@ -64,7 +60,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var importExportService = new ImportExportService(new ImportExportRepo());
                 var updateService = new UpdateService(settings, AppGlobals.DbFactory, new UpdateDbRepo(), new UpdateDbRemoteData());
 
-                var mainVM = await MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, updateService, statusVM);
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, updateService, statusVM));
 
                 mainVM.FilterVM.NotifyFilterChanged();
                 mainVM.SideMenuVisibility = Visibility.Visible;
