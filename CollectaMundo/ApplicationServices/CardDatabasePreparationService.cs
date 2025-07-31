@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.CardPrices;
+using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Utilities;
-using CollectaMundo.ApplicationServices.Utilities.Downloads;
 using CollectaMundo.Data;
 using CollectaMundo.ViewModels;
 using System.Data.SQLite;
@@ -12,13 +12,14 @@ using System.Windows;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class CardDatabasePreparationService(IAppSettings settings, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, StatusViewModel statusVM) : ICardDatabasePreparationService
+    public class CardDatabasePreparationService(IAppSettings settings, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IDownloadService downloadService, StatusViewModel statusVM) : ICardDatabasePreparationService
     {
         private static IDbConnectionFactory DbFactory => AppGlobals.DbFactory ?? throw new InvalidOperationException("AppContext.DbFactory is not initialized.");
         private readonly IAppSettings _settings = settings;
         private readonly IDatabaseSchemaRepository _dbSchemaRepo = dbSchemaRepo;
         private readonly ICardPriceService _priceService = priceService;
         private readonly IGenerateMissingPngService _missingPngService = missingPngService;
+        private readonly IDownloadService _downloadService = downloadService;
         private readonly StatusViewModel _statusVM = statusVM;
         public async Task FirstTimeDbPrepOrchetrator()
         {
@@ -59,34 +60,16 @@ namespace CollectaMundo.ApplicationServices
                 try
                 {
                     //Step 1: Downloads
-                    downloadsSucceeded = await RetryHelper.RetryLoopAsync(
-                        () =>
-                        {
-                            return ExecuteDualDownloadAsync(
-                                token => DownloadResourceHelper.DownloadResourceAsync(
-                                    _settings.CardDatabaseUrl,
-                                    dbPath,
-                                    taskLabel: "Card database",
-                                    statusProgress: stepDetailProgress,
-                                    percentProgress: percentProgress,
-                                    token: token),
+                    (downloadsSucceeded, errorMessage) = await _downloadService.DownloadParallelAsync(
+    _settings.CardDatabaseUrl, dbPath, "Card database",
+    _settings.CardPricesUrl, pricesPath, "Price File",
+    stepLabelProgress, percentProgress
+);
 
-                                token => DownloadResourceHelper.DownloadResourceAsync(
-                                    _settings.CardPricesUrl,
-                                    pricesPath,
-                                    taskLabel: "Price File",
-                                    statusProgress: null,
-                                    percentProgress: null,
-                                    token: token)
-                            );
-                        },
-                        stepName: "Step 1. Downloading resource files...",
-                        maxRetries: 3,
-                        stepNameProgress: stepLabelProgress,
-                        detailProgress: stepDetailProgress
-                    );
-
-                    if (!downloadsSucceeded) continue;
+                    if (!downloadsSucceeded)
+                    {
+                        continue;
+                    }
 
                     // STEP 2–9: Setup pipeline
                     var setupSteps = new List<(string Label, Func<Task> Work, bool showProgressBar)>{
@@ -110,7 +93,9 @@ namespace CollectaMundo.ApplicationServices
                         bool success = await RetryHelper.RetryLoopAsync(stepWork: work, maxRetries: 3, stepNameProgress: stepLabelProgress, detailProgress: stepDetailProgress, stepName: label);
 
                         if (!success)
+                        {
                             throw new Exception($"Step '{label}' failed after retries.");
+                        }
                     }
 
 
@@ -163,7 +148,9 @@ namespace CollectaMundo.ApplicationServices
                 await Task.WhenAll(taskA, taskB);
 
                 if (!string.IsNullOrWhiteSpace(firstResult.error))
+                {
                     throw new Exception(firstResult.error);
+                }
 
                 return false;
             }

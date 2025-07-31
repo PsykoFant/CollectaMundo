@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardPrices;
+using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
@@ -35,8 +36,10 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardPriceRepo = new CardPriceRepository();
                 var priceService = new CardPriceService(settings, cardPriceRepo);
 
+                var downloadService = new DownloadService();
+
                 var schemaInitializer = new DatabaseSchemaRepository();
-                var prepService = new CardDatabasePreparationService(settings, schemaInitializer, priceService, missingPngService, statusVM);
+                var prepService = new CardDatabasePreparationService(settings, schemaInitializer, priceService, missingPngService, downloadService, statusVM);
                 var integrityService = new DatabaseIntegrityService(settings);
 
                 statusVM.ShowStatusOverlay("Checking database integrity…");
@@ -60,7 +63,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var importExportService = new ImportExportService(new ImportExportRepo());
                 var updateService = new UpdateService(settings, AppGlobals.DbFactory, new UpdateDbRepo(), new UpdateDbRemoteData());
 
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, updateService, statusVM));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, updateService, downloadService, statusVM));
 
                 mainVM.FilterVM.NotifyFilterChanged();
                 mainVM.SideMenuVisibility = Visibility.Visible;

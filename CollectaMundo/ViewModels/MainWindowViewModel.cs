@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardLists;
+using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
@@ -27,15 +28,17 @@ namespace CollectaMundo.ViewModels
         private readonly IFilteringService _filteringService;
         private readonly IImportExportService _importExportService;
         private readonly IUpdateService _updateService;
+        private readonly IDownloadService _downloadService;
 
         // Constructor
-        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, IUpdateService updateService, StatusViewModel statusOverlayVM)
+        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, IUpdateService updateService, IDownloadService downloadService, StatusViewModel statusOverlayVM)
         {
             _statusOverlayVM = statusOverlayVM;
 
             _filteringService = filteringService;
             _importExportService = importExportService;
             _updateService = updateService;
+            _downloadService = downloadService;
 
             CurrentPage = Page.SearchAndFilter;
 
@@ -343,9 +346,9 @@ namespace CollectaMundo.ViewModels
 
 
         // Factory method to create the ViewModel
-        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, IUpdateService updateService, StatusViewModel statusVM, Action? onStartupComplete = null)
+        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, IUpdateService updateService, IDownloadService downloadService, StatusViewModel statusVM, Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(filteringService, editService, importExportService, updateService, statusVM)
+            var vm = new MainWindowViewModel(filteringService, editService, importExportService, updateService, downloadService, statusVM)
             {
                 OnStartupComplete = onStartupComplete
             };
