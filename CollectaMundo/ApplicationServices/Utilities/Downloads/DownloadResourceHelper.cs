@@ -2,7 +2,7 @@
 using System.IO;
 using System.Net.Http;
 
-namespace CollectaMundo.ApplicationServices.Utilities
+namespace CollectaMundo.ApplicationServices.Utilities.Downloads
 {
     public static class DownloadResourceHelper
     {

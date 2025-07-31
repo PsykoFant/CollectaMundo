@@ -22,16 +22,6 @@ namespace CollectaMundo
                 return _sqlitePath;
             }
         }
-
-        // Initialize the DBAccess class with ConfigurationManager and setup the connection string
-        static DBAccess()
-        {
-            // Use ConfigurationManager to set the SQLite path and connection string
-            if (ConfigurationManager.CurrentSettings == null)
-            {
-                ConfigurationManager.LoadOrCreateAppSettings();
-            }
-        }
         public static async Task OpenConnectionAsync()
         {
             try
@@ -79,95 +69,6 @@ namespace CollectaMundo
                 MessageBox.Show($"Closing connection failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        public static async Task<bool> CheckDatabaseIntegrityAsync()
-        {
-            try
-            {
-                await OpenConnectionAsync();
-
-                if (connection != null && connection.State == System.Data.ConnectionState.Open)
-                {
-                    // Define a list of all required tables and views
-                    var requiredDbObjects = new List<string>
-                    {
-                        "cards",
-                        "myCollection",
-                        "uniqueManaCostImages",
-                        "uniqueManaSymbols",
-                        "keyruneImages",
-                        "view_allCards",
-                        "view_myCollection",
-                        "view_cardToken"
-                    };
-
-                    // First, check if the database has the expected tables and views
-                    if (!await DatabaseHasTablesAndViewsAsync(requiredDbObjects))
-                    {
-                        Debug.WriteLine("Database does not contain all expected tables and views.");
-                        return false; // Consider the absence of expected tables or views as a failure
-                    }
-
-                    // Proceed with the integrity check if the tables and views exist
-                    using (var command = new SQLiteCommand("PRAGMA quick_check", connection))
-                    {
-                        var result = await command.ExecuteScalarAsync();
-                        string resultString = result?.ToString() ?? "unknown";
-
-                        if (resultString == "ok")
-                        {
-                            Debug.WriteLine("Database integrity check passed.");
-                            return true;
-                        }
-                        else
-                        {
-                            Debug.WriteLine($"Database integrity check failed: {resultString}");
-                            return false;
-                        }
-                    }
-                }
-                else
-                {
-                    Debug.WriteLine("Failed to open database connection for integrity check.");
-                    return false;
-                }
-            }
-            catch (SQLiteException ex)
-            {
-                Debug.WriteLine($"SQLite error during database integrity check: {ex.Message}");
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Unexpected error during database integrity check: {ex.Message}");
-                return false;
-            }
-            finally
-            {
-                CloseConnection();
-            }
-        }
-        private static async Task<bool> DatabaseHasTablesAndViewsAsync(List<string> expectedObjects)
-        {
-            if (connection == null || connection.State != System.Data.ConnectionState.Open)
-            {
-                return false;
-            }
-
-            foreach (var name in expectedObjects)
-            {
-                string checkExistenceQuery = $"SELECT name FROM sqlite_master WHERE (type='table' OR type='view') AND name='{name}';";
-                using (var command = new SQLiteCommand(checkExistenceQuery, connection))
-                {
-                    var result = await command.ExecuteScalarAsync();
-                    if (result == null)
-                    {
-                        Debug.WriteLine($"Missing expected database object: {name}");
-                        return false; // Return false immediately if one of the objects is missing
-                    }
-                }
-            }
-            return true; // If all checks pass
-        }
         public static async Task OptimizeDb()
         {
             List<string> optimizeCommands = new()
@@ -183,33 +84,6 @@ namespace CollectaMundo
                 using var command = new SQLiteCommand(item, DBAccess.connection);
                 await command.ExecuteNonQueryAsync();
             }
-        }
-        public static async Task<List<string>> GetUniqueValuesAsync(string tableName, string columnName)
-        {
-            List<string> uniqueValues = [];
-
-            try
-            {
-                string query = $"SELECT DISTINCT {columnName} FROM {tableName};";
-
-                using var command = new SQLiteCommand(query, DBAccess.connection);
-                using var reader = await command.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    string value = reader[columnName]?.ToString() ?? string.Empty;
-                    if (!string.IsNullOrEmpty(value))
-                    {
-                        uniqueValues.Add(value);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"An error occurred while fetching unique values: {ex.Message}");
-                MessageBox.Show($"An error occurred while fetching unique values: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-
-            return uniqueValues;
         }
     }
 }

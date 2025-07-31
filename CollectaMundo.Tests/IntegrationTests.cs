@@ -2,7 +2,9 @@
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
+using CollectaMundo.ApplicationServices.UpdateDB;
 using CollectaMundo.Data.ImportExport;
+using CollectaMundo.Data.UpdateDB;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.ViewModels;
@@ -22,14 +24,19 @@ namespace CollectaMundo.Tests
 
             var readyTcs = new TaskCompletionSource();
 
+            var settings = new JsonAppSettings();
             var filteringService = new FilteringService();
             var editService = new EditCollectionService();
             var importExportService = new ImportExportService(new ImportExportRepo());
+            var updateService = new UpdateService(settings, AppGlobals.DbFactory, new UpdateDbRepo(), new UpdateDbRemoteData());
+            var statusVM = new StatusViewModel();
 
             _mainVM = await MainWindowViewModel.CreateAsync(
                 filteringService,
                 editService,
                 importExportService,
+                updateService,
+                statusVM,
                 () => readyTcs.TrySetResult()
             );
 

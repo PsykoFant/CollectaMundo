@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.ApplicationServices.Utilities.Downloads;
 using CollectaMundo.Data;
 using CollectaMundo.ViewModels;
 using System.Data.SQLite;
@@ -27,7 +28,7 @@ namespace CollectaMundo.ApplicationServices
             const int maxTotalAttempts = 3;
             bool downloadsSucceeded = false;
 
-            if (!IsInternetAvailable())
+            if (!await IsInternetAvailableAsync())
             {
                 await DbSetupFailed(
                     statusAboveBar: "No internet connection!",
@@ -141,7 +142,6 @@ namespace CollectaMundo.ApplicationServices
                 statusLabelMain: "CollectaMundo will close down shortly...");
         }
 
-
         // Retry logic for downloading files and executing database actions
         private static async Task<bool> ExecuteDualDownloadAsync(
             Func<CancellationToken, Task<(bool success, string? error)>> downloadA,
@@ -191,12 +191,12 @@ namespace CollectaMundo.ApplicationServices
             await using var conn = await DbFactory.OpenConnectionAsync();
             await action(conn);
         }
-        private static bool IsInternetAvailable()
+        private static async Task<bool> IsInternetAvailableAsync()
         {
             try
             {
                 using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-                using var result = client.GetAsync("https://www.google.com").Result;
+                var result = await client.GetAsync("https://www.google.com");
                 return result.IsSuccessStatusCode;
             }
             catch
@@ -204,6 +204,7 @@ namespace CollectaMundo.ApplicationServices
                 return false;
             }
         }
+
         private static void CleanupPartialDatabaseFiles(string dbPath, string userDownloads)
         {
             var filesToDelete = new[]

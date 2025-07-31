@@ -1,4 +1,8 @@
-﻿using CollectaMundo.Data.EditCollection;
+﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.ApplicationServices.CardPrices;
+using CollectaMundo.ApplicationServices.GenerateMissingPng;
+using CollectaMundo.Data;
+using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
@@ -8,6 +12,7 @@ using CollectaMundo.ViewModels;
 using Moq;
 using System.Data.SQLite;
 using System.Globalization;
+using System.IO;
 using System.Windows.Media.Imaging;
 using static CollectaMundo.Tests.TestUtilities;
 
@@ -713,6 +718,58 @@ namespace CollectaMundo.Tests
                 // verify this was NOT called
                 repo.Verify(r => r.MergeDuplicateRecordsAsync(newCard.Uuid, newCard.SelectedCondition, newCard.Language, newCard.SelectedFinish, 123, dummyConn), Times.Once);
             }
+        }
+        public class FirstTimeSetupLogicTests
+        {
+            [Fact]
+            public async Task FirstTimeDbPrepOrchetrator_RetriesOnStepFailure()
+            {
+                // Arrange
+                var mockSchemaRepo = new Mock<IDatabaseSchemaRepository>();
+                var mockPriceService = new Mock<ICardPriceService>();
+                var mockPngService = new Mock<IGenerateMissingPngService>();
+                var statusVM = new StatusViewModel();
+
+                // Fail first two calls to CreateTablesAsync, succeed on third
+                int callCount = 0;
+                mockSchemaRepo
+                    .Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()))
+                    .Returns(async () =>
+                    {
+                        callCount++;
+                        if (callCount < 3)
+                            throw new Exception($"Simulated failure on attempt {callCount}");
+                    });
+
+                var fakeSettings = new Mock<IAppSettings>();
+                fakeSettings.Setup(s => s.DatabaseSettings).Returns(new ApplicationServices.DatabaseSettings { SQLitePath = Path.GetTempPath() });
+                fakeSettings.Setup(s => s.UserDownloadsPath).Returns(Path.GetTempPath());
+                fakeSettings.Setup(s => s.CardDatabaseUrl).Returns("http://localhost/dummy.sqlite");
+                fakeSettings.Setup(s => s.CardPricesUrl).Returns("http://localhost/dummy.json");
+
+                // Stub in the rest of the steps to pass
+                mockPngService.Setup(p => p.GenerateMissingManaSymbolImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+                mockPngService.Setup(p => p.GenerateMissingManaCostImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+                mockPngService.Setup(p => p.GenerateMissingKeyRuneImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+                mockPriceService.Setup(p => p.ImportPricesFromJsonAsync(It.IsAny<string>(), It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+
+                var service = new CardDatabasePreparationService(
+                    fakeSettings.Object,
+                    mockSchemaRepo.Object,
+                    mockPriceService.Object,
+                    mockPngService.Object,
+                    statusVM
+                );
+
+                // Act
+                await service.FirstTimeDbPrepOrchetrator();
+
+                // Assert
+                Assert.Equal("Step 2. Creating custom tables...", statusVM.StatusLabel3); // final reported step
+                Assert.Contains("attempt 3", statusVM.StatusLabel3); // optional if you display attempts
+                Assert.Equal(3, callCount); // should retry exactly twice then succeed
+            }
+
         }
     }
 }
