@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
@@ -29,6 +30,7 @@ namespace CollectaMundo.Tests
             var editService = new EditCollectionService();
             var importExportService = new ImportExportService(new ImportExportRepo());
             var updateService = new UpdateService(settings, AppGlobals.DbFactory, new UpdateDbRepo(), new UpdateDbRemoteData());
+            var downloadService = new DownloadService();
             var statusVM = new StatusViewModel();
 
             _mainVM = await MainWindowViewModel.CreateAsync(
@@ -36,6 +38,7 @@ namespace CollectaMundo.Tests
                 editService,
                 importExportService,
                 updateService,
+                downloadService,
                 statusVM,
                 () => readyTcs.TrySetResult()
             );

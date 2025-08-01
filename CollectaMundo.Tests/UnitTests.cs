@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices;
 using CollectaMundo.ApplicationServices.CardPrices;
+using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.Data;
 using CollectaMundo.Data.EditCollection;
@@ -728,6 +729,7 @@ namespace CollectaMundo.Tests
                 var mockSchemaRepo = new Mock<IDatabaseSchemaRepository>();
                 var mockPriceService = new Mock<ICardPriceService>();
                 var mockPngService = new Mock<IGenerateMissingPngService>();
+                var mockDownloadService = new Mock<IDownloadService>();
                 var statusVM = new StatusViewModel();
 
                 // Fail first two calls to CreateTablesAsync, succeed on third
@@ -740,6 +742,15 @@ namespace CollectaMundo.Tests
                         if (callCount < 3)
                             throw new Exception($"Simulated failure on attempt {callCount}");
                     });
+
+                // Mock download to always succeed
+                mockDownloadService
+                    .Setup(d => d.DownloadParallelAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()
+                    ))
+                    .ReturnsAsync((true, null));
 
                 var fakeSettings = new Mock<IAppSettings>();
                 fakeSettings.Setup(s => s.DatabaseSettings).Returns(new ApplicationServices.DatabaseSettings { SQLitePath = Path.GetTempPath() });
@@ -758,6 +769,7 @@ namespace CollectaMundo.Tests
                     mockSchemaRepo.Object,
                     mockPriceService.Object,
                     mockPngService.Object,
+                    mockDownloadService.Object,
                     statusVM
                 );
 
@@ -766,8 +778,8 @@ namespace CollectaMundo.Tests
 
                 // Assert
                 Assert.Equal("Step 2. Creating custom tables...", statusVM.StatusLabel3); // final reported step
-                Assert.Contains("attempt 3", statusVM.StatusLabel3); // optional if you display attempts
-                Assert.Equal(3, callCount); // should retry exactly twice then succeed
+                Assert.Contains("attempt 3", statusVM.StatusLabel3); // ensure we retried
+                Assert.Equal(3, callCount); // exactly 2 retries + 1 success
             }
 
         }
