@@ -23,7 +23,6 @@ namespace CollectaMundo.ApplicationServices.Utilities
 
                 await Task.Delay(3000);
             }
-
             return false;
         }
     }

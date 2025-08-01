@@ -60,16 +60,24 @@ namespace CollectaMundo.ApplicationServices
                 try
                 {
                     //Step 1: Downloads
-                    (downloadsSucceeded, errorMessage) = await _downloadService.DownloadParallelAsync(
-    _settings.CardDatabaseUrl, dbPath, "Card database",
-    _settings.CardPricesUrl, pricesPath, "Price File",
-    stepLabelProgress, percentProgress
-);
+                    downloadsSucceeded = await RetryHelper.RetryLoopAsync(async () =>
+                        {
+                            var (success, errorMessage) = await _downloadService.DownloadParallelAsync(
+                                _settings.CardDatabaseUrl, dbPath, "Card database",
+                                _settings.CardPricesUrl, pricesPath, "Price File",
+                                stepDetailProgress,
+                                percentProgress
+                            );
+
+                            if (!success)
+                                throw new Exception(errorMessage ?? "Unknown download error");
+
+                            downloadsSucceeded = true;
+                        },
+                        stepName: "Step 1. Downloading resource files...", maxRetries: 3, stepNameProgress: stepLabelProgress, detailProgress: stepDetailProgress);
 
                     if (!downloadsSucceeded)
-                    {
-                        continue;
-                    }
+                        continue; // Skip to next outer attempt
 
                     // STEP 2–9: Setup pipeline
                     var setupSteps = new List<(string Label, Func<Task> Work, bool showProgressBar)>{
@@ -97,7 +105,6 @@ namespace CollectaMundo.ApplicationServices
                             throw new Exception($"Step '{label}' failed after retries.");
                         }
                     }
-
 
                     // If setup fully succeeded
                     if (downloadsSucceeded)
@@ -127,45 +134,7 @@ namespace CollectaMundo.ApplicationServices
                 statusLabelMain: "CollectaMundo will close down shortly...");
         }
 
-        // Retry logic for downloading files and executing database actions
-        private static async Task<bool> ExecuteDualDownloadAsync(
-            Func<CancellationToken, Task<(bool success, string? error)>> downloadA,
-            Func<CancellationToken, Task<(bool success, string? error)>> downloadB)
-        {
-            using var innerCts = new CancellationTokenSource();
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(innerCts.Token);
-            var token = linkedCts.Token;
-
-            var taskA = downloadA(token);
-            var taskB = downloadB(token);
-
-            var firstCompleted = await Task.WhenAny(taskA, taskB);
-            var firstResult = await firstCompleted;
-
-            if (!firstResult.success)
-            {
-                innerCts.Cancel();
-                await Task.WhenAll(taskA, taskB);
-
-                if (!string.IsNullOrWhiteSpace(firstResult.error))
-                {
-                    throw new Exception(firstResult.error);
-                }
-
-                return false;
-            }
-
-            var finalA = await taskA;
-            var finalB = await taskB;
-
-            if (!finalA.success || !finalB.success)
-            {
-                var error = finalA.error ?? finalB.error ?? "Unknown download error.";
-                throw new Exception(error);
-            }
-
-            return true;
-        }
+        // Retry logic for executing database actions
         private static async Task ExecuteWithUnitOfWorkAsync(Func<SQLiteConnection, Task> action)
         {
             await using var uow = new UnitOfWork();
@@ -191,7 +160,6 @@ namespace CollectaMundo.ApplicationServices
                 return false;
             }
         }
-
         private static void CleanupPartialDatabaseFiles(string dbPath, string userDownloads)
         {
             var filesToDelete = new[]
