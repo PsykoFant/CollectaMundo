@@ -27,7 +27,6 @@ namespace CollectaMundo.ApplicationServices
             string pricesPath = Path.Combine(_settings.UserDownloadsPath, "prices.json");
 
             const int maxTotalAttempts = 3;
-            bool downloadsSucceeded = false;
 
             if (!await IsInternetAvailableAsync())
             {
@@ -60,24 +59,16 @@ namespace CollectaMundo.ApplicationServices
                 try
                 {
                     //Step 1: Downloads
-                    downloadsSucceeded = await RetryHelper.RetryLoopAsync(async () =>
-                        {
-                            var (success, errorMessage) = await _downloadService.DownloadParallelAsync(
-                                _settings.CardDatabaseUrl, dbPath, "Card database",
-                                _settings.CardPricesUrl, pricesPath, "Price File",
-                                stepDetailProgress,
-                                percentProgress
-                            );
+                    var downloadResult = await _downloadService.DownloadParallelAsync(
+                        _settings.CardDatabaseUrl, dbPath, "Card database",
+                        _settings.CardPricesUrl, pricesPath, "Price File",
+                        stepDetailProgress, percentProgress, stepLabelProgress);
 
-                            if (!success)
-                                throw new Exception(errorMessage ?? "Unknown download error");
-
-                            downloadsSucceeded = true;
-                        },
-                        stepName: "Step 1. Downloading resource files...", maxRetries: 3, stepNameProgress: stepLabelProgress, detailProgress: stepDetailProgress);
-
-                    if (!downloadsSucceeded)
-                        continue; // Skip to next outer attempt
+                    if (downloadResult.Code != OperationResultCode.Success)
+                    {
+                        Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
+                        continue; // Restart outer attempt loop
+                    }
 
                     // STEP 2–9: Setup pipeline
                     var setupSteps = new List<(string Label, Func<Task> Work, bool showProgressBar)>{
@@ -94,24 +85,26 @@ namespace CollectaMundo.ApplicationServices
                     foreach (var (label, work, showProgressBar) in setupSteps)
                     {
                         _statusVM.ProgressVisibility = showProgressBar ? Visibility.Visible : Visibility.Collapsed;
-
-                        // Reset status detail between steps
                         _statusVM.StatusLabel2 = string.Empty;
 
-                        bool success = await RetryHelper.RetryLoopAsync(stepWork: work, maxRetries: 3, stepNameProgress: stepLabelProgress, detailProgress: stepDetailProgress, stepName: label);
+                        var result = await RetryHelper.RetryLoopAsync(
+                            async () =>
+                            {
+                                await work(); // this is still the actual unit-of-work wrapped step
+                                return new OperationResult(OperationResultCode.Success, $"{label} completed.");
+                            },
+                            maxRetries: 3,
+                            stepName: label,
+                            stepNameProgress: stepLabelProgress,
+                            detailProgress: stepDetailProgress);
 
-                        if (!success)
-                        {
-                            throw new Exception($"Step '{label}' failed after retries.");
-                        }
+                        if (result.Code != OperationResultCode.Success)
+                            throw new Exception($"Step '{label}' failed after retries. {result.Message}");
                     }
 
                     // If setup fully succeeded
-                    if (downloadsSucceeded)
-                    {
-                        try { File.Delete(pricesPath); }
-                        catch (IOException ex) { Debug.WriteLine($"Couldn't delete prices.json: {ex.Message}"); }
-                    }
+                    try { File.Delete(pricesPath); }
+                    catch (IOException ex) { Debug.WriteLine($"Couldn't delete prices.json: {ex.Message}"); }
 
                     return;
                 }

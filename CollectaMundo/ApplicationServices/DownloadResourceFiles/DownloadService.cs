@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using CollectaMundo.ApplicationServices.Utilities;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 
@@ -6,11 +7,52 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
 {
     public class DownloadService : IDownloadService
     {
-        public async Task<(bool success, string? errorMessage)> DownloadAsync(string url, string targetPath, string label, IProgress<string>? detailProgress = null, IProgress<int>? percentProgress = null, CancellationToken token = default)
+        public async Task<OperationResult> DownloadAsync(string url, string targetPath, string label, IProgress<string>? detailProgress = null, IProgress<int>? percentProgress = null, CancellationToken token = default)
         {
-            return await DownloadFileAsync(url, targetPath, label, detailProgress, percentProgress, token);
+            return await RetryHelper.RetryLoopAsync(async () =>
+                {
+                    var (success, error) = await DownloadFileAsync(url, targetPath, label, detailProgress, percentProgress, token);
+                    return success
+                        ? new OperationResult(OperationResultCode.Success, $"{label} download succeeded.")
+                        : new OperationResult(OperationResultCode.Error, error ?? $"{label} download failed.");
+                },
+                maxRetries: 3,
+                stepName: $"Downloading {label}...",
+                stepNameProgress: detailProgress,
+                detailProgress: detailProgress
+            );
         }
-        public async Task<(bool success, string? errorMessage)> DownloadParallelAsync(string url1, string targetPath1, string label1, string url2, string targetPath2, string label2, IProgress<string>? detailProgress = null, IProgress<int>? percentProgress = null, CancellationToken token = default)
+
+        public async Task<OperationResult> DownloadParallelAsync(
+            string url1, string targetPath1, string label1,
+            string url2, string targetPath2, string label2,
+            IProgress<string>? detailProgress = null, IProgress<int>? percentProgress = null, IProgress<string>? stepLabelProgress = null, CancellationToken token = default)
+        {
+            return await RetryHelper.RetryLoopAsync(
+                async () =>
+                {
+                    var result = await RunParallelDownloadsAsync(
+                        url1, targetPath1, label1,
+                        url2, targetPath2, label2,
+                        detailProgress, percentProgress, token);
+
+                    return result.success
+                        ? new OperationResult(OperationResultCode.Success, "Parallel download succeeded.")
+                        : new OperationResult(OperationResultCode.Error, result.errorMessage ?? "Unknown download error");
+                },
+                maxRetries: 3,
+                stepName: "Step 1. Downloading resource files...",
+                stepNameProgress: stepLabelProgress,
+                detailProgress: detailProgress
+            );
+        }
+
+        private static async Task<(bool success, string? errorMessage)> RunParallelDownloadsAsync(
+            string url1, string targetPath1, string label1,
+            string url2, string targetPath2, string label2,
+            IProgress<string>? detailProgress,
+            IProgress<int>? percentProgress,
+            CancellationToken token)
         {
             using var innerCts = new CancellationTokenSource();
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(innerCts.Token, token);
@@ -24,17 +66,17 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
 
             if (!firstResult.success)
             {
-                innerCts.Cancel(); // Cancel the other download
-                await Task.WhenAll(task1, task2); // Ensure cleanup
+                innerCts.Cancel(); // cancel the other download
+                await Task.WhenAll(task1, task2); // ensure cleanup
                 return firstResult;
             }
 
-            var (success, errorMessage) = await task1;
+            var result1 = await task1;
             var result2 = await task2;
 
-            if (!success || !result2.success)
+            if (!result1.success || !result2.success)
             {
-                string error = errorMessage ?? result2.errorMessage ?? "Unknown error during parallel download.";
+                var error = result1.errorMessage ?? result2.errorMessage ?? "Unknown error during parallel download.";
                 return (false, error);
             }
 
