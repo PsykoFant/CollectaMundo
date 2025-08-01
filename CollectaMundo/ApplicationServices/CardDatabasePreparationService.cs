@@ -62,7 +62,7 @@ namespace CollectaMundo.ApplicationServices
                     var downloadResult = await _downloadService.DownloadParallelAsync(
                         _settings.CardDatabaseUrl, dbPath, "Card database",
                         _settings.CardPricesUrl, pricesPath, "Price File",
-                        stepDetailProgress, percentProgress, stepLabelProgress);
+                        retryDelayInMs: 3000, stepDetailProgress, percentProgress, stepLabelProgress);
 
                     if (downloadResult.Code != OperationResultCode.Success)
                     {
@@ -93,6 +93,7 @@ namespace CollectaMundo.ApplicationServices
                                 await work(); // this is still the actual unit-of-work wrapped step
                                 return new OperationResult(OperationResultCode.Success, $"{label} completed.");
                             },
+                            retryDelayInMs: 3000,
                             maxRetries: 3,
                             stepName: label,
                             stepNameProgress: stepLabelProgress,

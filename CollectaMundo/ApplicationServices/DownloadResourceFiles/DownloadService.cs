@@ -7,7 +7,7 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
 {
     public class DownloadService : IDownloadService
     {
-        public async Task<OperationResult> DownloadAsync(string url, string targetPath, string label, IProgress<string>? detailProgress = null, IProgress<int>? percentProgress = null, CancellationToken token = default)
+        public async Task<OperationResult> DownloadAsync(string url, string targetPath, string label, int retryDelayInMs, IProgress<string>? detailProgress = null, IProgress<int>? percentProgress = null, CancellationToken token = default)
         {
             return await RetryHelper.RetryLoopAsync(async () =>
                 {
@@ -16,6 +16,7 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
                         ? new OperationResult(OperationResultCode.Success, $"{label} download succeeded.")
                         : new OperationResult(OperationResultCode.Error, error ?? $"{label} download failed.");
                 },
+                retryDelayInMs,
                 maxRetries: 3,
                 stepName: $"Downloading {label}...",
                 stepNameProgress: detailProgress,
@@ -26,7 +27,7 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
         public async Task<OperationResult> DownloadParallelAsync(
             string url1, string targetPath1, string label1,
             string url2, string targetPath2, string label2,
-            IProgress<string>? detailProgress = null, IProgress<int>? percentProgress = null, IProgress<string>? stepLabelProgress = null, CancellationToken token = default)
+            int retryDelayInMs, IProgress<string>? detailProgress = null, IProgress<int>? percentProgress = null, IProgress<string>? stepLabelProgress = null, CancellationToken token = default)
         {
             return await RetryHelper.RetryLoopAsync(
                 async () =>
@@ -40,6 +41,7 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
                         ? new OperationResult(OperationResultCode.Success, "Parallel download succeeded.")
                         : new OperationResult(OperationResultCode.Error, result.errorMessage ?? "Unknown download error");
                 },
+                retryDelayInMs,
                 maxRetries: 3,
                 stepName: "Step 1. Downloading resource files...",
                 stepNameProgress: stepLabelProgress,
