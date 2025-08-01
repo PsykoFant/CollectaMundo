@@ -2,6 +2,7 @@
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
+using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.Data;
 using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
@@ -731,6 +732,8 @@ namespace CollectaMundo.Tests
                 var mockPngService = new Mock<IGenerateMissingPngService>();
                 var mockDownloadService = new Mock<IDownloadService>();
                 var statusVM = new StatusViewModel();
+                var settings = new JsonAppSettings();
+                AppGlobals.DbFactory = new DbConnectionFactory(settings);
 
                 // Fail first two calls to CreateTablesAsync, succeed on third
                 int callCount = 0;
@@ -743,22 +746,26 @@ namespace CollectaMundo.Tests
                             throw new Exception($"Simulated failure on attempt {callCount}");
                     });
 
-                // Mock download to always succeed
+                // Mock DownloadParallelAsync to return OperationResult.Success
                 mockDownloadService
                     .Setup(d => d.DownloadParallelAsync(
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                        It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()
-                    ))
-                    .ReturnsAsync((true, null));
+                        It.IsAny<int>(),                                     // retryDelayInMs
+                        It.IsAny<IProgress<string>>(),                       // detailProgress
+                        It.IsAny<IProgress<int>>(),                          // percentProgress
+                        It.IsAny<IProgress<string>>(),                       // stepLabelProgress
+                        It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new OperationResult(OperationResultCode.Success, "Download succeeded"));
 
+                // Settings
                 var fakeSettings = new Mock<IAppSettings>();
                 fakeSettings.Setup(s => s.DatabaseSettings).Returns(new ApplicationServices.DatabaseSettings { SQLitePath = Path.GetTempPath() });
                 fakeSettings.Setup(s => s.UserDownloadsPath).Returns(Path.GetTempPath());
                 fakeSettings.Setup(s => s.CardDatabaseUrl).Returns("http://localhost/dummy.sqlite");
                 fakeSettings.Setup(s => s.CardPricesUrl).Returns("http://localhost/dummy.json");
 
-                // Stub in the rest of the steps to pass
+                // Stub remaining steps to succeed
                 mockPngService.Setup(p => p.GenerateMissingManaSymbolImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
                 mockPngService.Setup(p => p.GenerateMissingManaCostImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
                 mockPngService.Setup(p => p.GenerateMissingKeyRuneImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
@@ -777,9 +784,8 @@ namespace CollectaMundo.Tests
                 await service.FirstTimeDbPrepOrchetrator();
 
                 // Assert
-                Assert.Equal("Step 2. Creating custom tables...", statusVM.StatusLabel3); // final reported step
-                Assert.Contains("attempt 3", statusVM.StatusLabel3); // ensure we retried
-                Assert.Equal(3, callCount); // exactly 2 retries + 1 success
+                Assert.Equal("Step 2. Creating custom tables... — Attempt 3...", statusVM.StatusLabel3); // Final retry label
+                Assert.Equal(3, callCount); // Exactly 2 retries, then success
             }
 
         }
