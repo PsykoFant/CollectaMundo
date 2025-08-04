@@ -2,7 +2,7 @@
 {
     public interface ICardDatabasePreparationService
     {
-        Task FirstTimeDbPrepOrchetrator();
+        Task FirstTimeDbPrepOrchetrator(int defaultDelay);
     }
 
 }

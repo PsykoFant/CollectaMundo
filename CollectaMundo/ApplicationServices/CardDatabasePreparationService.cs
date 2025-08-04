@@ -2,17 +2,17 @@
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.ApplicationServices.Utilities.InternetCheck;
 using CollectaMundo.Data;
 using CollectaMundo.ViewModels;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
-using System.Net.Http;
 using System.Windows;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class CardDatabasePreparationService(IAppSettings settings, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IDownloadService downloadService, StatusViewModel statusVM) : ICardDatabasePreparationService
+    public class CardDatabasePreparationService(IAppSettings settings, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IDownloadService downloadService, IInternetConnectivityService internetConnectivityService, StatusViewModel statusVM, Action? shutdownApp = null) : ICardDatabasePreparationService
     {
         private static IDbConnectionFactory DbFactory => AppGlobals.DbFactory ?? throw new InvalidOperationException("AppContext.DbFactory is not initialized.");
         private readonly IAppSettings _settings = settings;
@@ -20,20 +20,23 @@ namespace CollectaMundo.ApplicationServices
         private readonly ICardPriceService _priceService = priceService;
         private readonly IGenerateMissingPngService _missingPngService = missingPngService;
         private readonly IDownloadService _downloadService = downloadService;
+        private readonly IInternetConnectivityService _internetConnectivityService = internetConnectivityService;
         private readonly StatusViewModel _statusVM = statusVM;
-        public async Task FirstTimeDbPrepOrchetrator()
+        private readonly Action? _shutdownApp = shutdownApp ?? (() => Application.Current?.Shutdown()); // Optional action to shutdown the app after setup failure
+        public async Task FirstTimeDbPrepOrchetrator(int defaultDelay = 3000)
         {
             string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
             string pricesPath = Path.Combine(_settings.UserDownloadsPath, "prices.json");
 
             const int maxTotalAttempts = 3;
 
-            if (!await IsInternetAvailableAsync())
+            if (!await internetConnectivityService.IsInternetAvailableAsync())
             {
                 await DbSetupFailed(
                     statusAboveBar: "No internet connection!",
                     statusBelowBar: "Unfortunately, first time setup cannot continue without internet connection",
-                    statusLabelMain: "Please check your connection. CollectaMundo will close down shortly...");
+                    statusLabelMain: "Please check your connection. CollectaMundo will close down shortly...",
+                    defaultDelay);
                 return;
             }
 
@@ -44,13 +47,13 @@ namespace CollectaMundo.ApplicationServices
             IProgress<string> stepLabelProgress = new Progress<string>(msg => _statusVM.StatusLabel3 = msg);
             IProgress<int> percentProgress = new Progress<int>(p => _statusVM.ProgressValue = p);
 
-            for (int overallAttempt = 1; overallAttempt <= maxTotalAttempts; overallAttempt++)
+            for (int outerloopAttempt = 1; outerloopAttempt <= maxTotalAttempts; outerloopAttempt++)
             {
-                Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Overall attempt {overallAttempt} of {maxTotalAttempts}");
+                Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Overall outer loop attempt {outerloopAttempt} of {maxTotalAttempts}");
 
-                if (overallAttempt > 1)
+                if (outerloopAttempt > 1)
                 {
-                    _statusVM.StatusLabel1 = $"Setup failed, retrying attempt {overallAttempt}...";
+                    _statusVM.StatusLabel1 = $"Setup failed, retrying attempt {outerloopAttempt}...";
                 }
 
                 try { CleanupPartialDatabaseFiles(dbPath, _settings.UserDownloadsPath); }
@@ -62,7 +65,7 @@ namespace CollectaMundo.ApplicationServices
                     var downloadResult = await _downloadService.DownloadParallelAsync(
                         _settings.CardDatabaseUrl, dbPath, "Card database",
                         _settings.CardPricesUrl, pricesPath, "Price File",
-                        retryDelayInMs: 3000, stepDetailProgress, percentProgress, stepLabelProgress);
+                        retryDelayInMs: defaultDelay, stepDetailProgress, percentProgress, stepLabelProgress);
 
                     if (downloadResult.Code != OperationResultCode.Success)
                     {
@@ -93,7 +96,7 @@ namespace CollectaMundo.ApplicationServices
                                 await work(); // this is still the actual unit-of-work wrapped step
                                 return new OperationResult(OperationResultCode.Success, $"{label} completed.");
                             },
-                            retryDelayInMs: 3000,
+                            retryDelayInMs: defaultDelay,
                             maxRetries: 3,
                             stepName: label,
                             stepNameProgress: stepLabelProgress,
@@ -111,7 +114,7 @@ namespace CollectaMundo.ApplicationServices
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Overall attempt {overallAttempt} failed: {ex.Message}");
+                    Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Overall attempt {outerloopAttempt} failed: {ex.Message}");
                 }
                 finally
                 {
@@ -125,7 +128,8 @@ namespace CollectaMundo.ApplicationServices
             await DbSetupFailed(
                 statusAboveBar: "Setup failed after multiple attempts.",
                 statusBelowBar: "Please check your internet or restart the application.",
-                statusLabelMain: "CollectaMundo will close down shortly...");
+                statusLabelMain: "CollectaMundo will close down shortly...",
+                defaultDelay);
         }
 
         // Retry logic for executing database actions
@@ -140,19 +144,6 @@ namespace CollectaMundo.ApplicationServices
         {
             await using var conn = await DbFactory.OpenConnectionAsync();
             await action(conn);
-        }
-        private static async Task<bool> IsInternetAvailableAsync()
-        {
-            try
-            {
-                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-                var result = await client.GetAsync("https://www.google.com");
-                return result.IsSuccessStatusCode;
-            }
-            catch
-            {
-                return false;
-            }
         }
         private static void CleanupPartialDatabaseFiles(string dbPath, string userDownloads)
         {
@@ -173,7 +164,7 @@ namespace CollectaMundo.ApplicationServices
 
             Debug.WriteLine("[CardDatabasePrep] Deleted corrupt or partial DB file(s).");
         }
-        private async Task DbSetupFailed(string statusAboveBar, string statusBelowBar, string statusLabelMain)
+        private async Task DbSetupFailed(string statusAboveBar, string statusBelowBar, string statusLabelMain, int defaultDelay)
         {
             //  If we reach here, all attempts have failed
             _statusVM.ProgressVisibility = Visibility.Collapsed;
@@ -183,8 +174,8 @@ namespace CollectaMundo.ApplicationServices
             _statusVM.StatusLabel2 = statusBelowBar;
             _statusVM.StatusLabel3 = statusLabelMain;
 
-            await Task.Delay(10000);
-            Application.Current.Shutdown();
+            await Task.Delay(defaultDelay * 3);
+            _shutdownApp?.Invoke();
         }
     }
 }

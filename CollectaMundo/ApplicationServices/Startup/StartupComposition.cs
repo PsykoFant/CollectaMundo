@@ -6,6 +6,7 @@ using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.UpdateDB;
 using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.ApplicationServices.Utilities.InternetCheck;
 using CollectaMundo.Data;
 using CollectaMundo.Data.CardPrices;
 using CollectaMundo.Data.GenerateMissingPng;
@@ -37,9 +38,10 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var priceService = new CardPriceService(settings, cardPriceRepo);
 
                 var downloadService = new DownloadService();
+                var internetCheckService = new InternetConnectivityService();
 
                 var schemaInitializer = new DatabaseSchemaRepository();
-                var prepService = new CardDatabasePreparationService(settings, schemaInitializer, priceService, missingPngService, downloadService, statusVM);
+                var prepService = new CardDatabasePreparationService(settings, schemaInitializer, priceService, missingPngService, downloadService, internetCheckService, statusVM);
                 var integrityService = new DatabaseIntegrityService(settings);
 
                 statusVM.ShowStatusOverlay("Checking database integrity…");
