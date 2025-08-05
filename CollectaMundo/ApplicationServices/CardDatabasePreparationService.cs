@@ -30,7 +30,7 @@ namespace CollectaMundo.ApplicationServices
 
             const int maxTotalAttempts = 3;
 
-            if (!await internetConnectivityService.IsInternetAvailableAsync())
+            if (!await _internetConnectivityService.IsInternetAvailableAsync())
             {
                 await DbSetupFailed(
                     statusAboveBar: "No internet connection!",

@@ -1,10 +1,18 @@
-﻿using CollectaMundo.Data;
+﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.ApplicationServices.CardPrices;
+using CollectaMundo.ApplicationServices.DownloadResourceFiles;
+using CollectaMundo.ApplicationServices.GenerateMissingPng;
+using CollectaMundo.ApplicationServices.Utilities.InternetCheck;
+using CollectaMundo.Data;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.ViewModels;
+using Moq;
 using System.Data.SQLite;
+using System.IO;
 
 namespace CollectaMundo.Tests
 {
-    class TestUtilities
+    public class TestUtilities
     {
         public static List<CardSet> GetTestCards()
         {
@@ -163,6 +171,54 @@ namespace CollectaMundo.Tests
                 await conn.OpenAsync();
                 return conn;
             }
+        }
+    }
+
+    public class FirstTimeSetupTestContext
+    {
+        public Mock<IDatabaseSchemaRepository> SchemaRepo { get; } = new();
+        public Mock<ICardPriceService> PriceService { get; } = new();
+        public Mock<IGenerateMissingPngService> PngService { get; } = new();
+        public Mock<IDownloadService> DownloadService { get; } = new();
+        public Mock<IInternetConnectivityService> InternetService { get; } = new();
+        public Mock<IAppSettings> Settings { get; } = new();
+        public StatusViewModel StatusVM { get; } = new();
+        public bool ShutdownCalled { get; private set; }
+
+        public CardDatabasePreparationService BuildService()
+        {
+            AppGlobals.DbFactory = new DbConnectionFactory(new JsonAppSettings());
+
+            Settings.Setup(s => s.DatabaseSettings).Returns(new ApplicationServices.DatabaseSettings
+            {
+                SQLitePath = Path.GetTempPath()
+            });
+            Settings.Setup(s => s.UserDownloadsPath).Returns(Path.GetTempPath());
+            Settings.Setup(s => s.CardDatabaseUrl).Returns("http://localhost/dummy.sqlite");
+            Settings.Setup(s => s.CardPricesUrl).Returns("http://localhost/dummy.json");
+
+            return new CardDatabasePreparationService(
+                Settings.Object,
+                SchemaRepo.Object,
+                PriceService.Object,
+                PngService.Object,
+                DownloadService.Object,
+                InternetService.Object,
+                StatusVM,
+                shutdownApp: () => ShutdownCalled = true
+            );
+        }
+
+        public void StubAllStepsAsSuccess()
+        {
+            SchemaRepo.Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
+            SchemaRepo.Setup(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+            SchemaRepo.Setup(r => r.CreateIndicesAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
+            SchemaRepo.Setup(r => r.OptimizeAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
+            PriceService.Setup(p => p.ImportPricesFromJsonAsync(It.IsAny<string>(), It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+            PngService.Setup(p => p.GenerateMissingManaSymbolImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+            PngService.Setup(p => p.GenerateMissingManaCostImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+            PngService.Setup(p => p.GenerateMissingKeyRuneImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
         }
     }
 
