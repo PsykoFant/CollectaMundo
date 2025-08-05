@@ -1,6 +1,5 @@
 TO DO 
 - MVVM refactor
-- Test CardDatabasePrepareationService
 
 - Gå videre med update scenarie
 	- Status updates
