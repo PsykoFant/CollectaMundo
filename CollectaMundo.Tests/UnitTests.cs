@@ -3,6 +3,7 @@ using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.ApplicationServices.Utilities.InternetCheck;
 using CollectaMundo.Data;
 using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
@@ -727,6 +728,76 @@ namespace CollectaMundo.Tests
             public class RetryBehavior
             {
                 [Fact]
+                public async Task FirstTimeDbPrepOrchetrator_AllStepsSucceed_NoRetries()
+                {
+                    // Arrange
+                    var shutdownCalled = false;
+
+                    var mockSchemaRepo = new Mock<IDatabaseSchemaRepository>();
+                    var mockPriceService = new Mock<ICardPriceService>();
+                    var mockPngService = new Mock<IGenerateMissingPngService>();
+                    var mockDownloadService = new Mock<IDownloadService>();
+                    var mockInternet = new Mock<IInternetConnectivityService>();
+                    var statusVM = new StatusViewModel();
+                    AppGlobals.DbFactory = new DbConnectionFactory(new JsonAppSettings());
+
+                    // Internet is available
+                    mockInternet.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
+
+                    // Download succeeds immediately
+                    mockDownloadService
+                        .Setup(d => d.DownloadParallelAsync(
+                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                            It.IsAny<int>(), It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>(), It.IsAny<IProgress<string>>(),
+                            It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
+
+                    // Setup steps succeed on first try
+                    mockSchemaRepo.Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
+                    mockSchemaRepo.Setup(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+                    mockSchemaRepo.Setup(r => r.CreateIndicesAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
+                    mockSchemaRepo.Setup(r => r.OptimizeAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
+                    mockPriceService.Setup(p => p.ImportPricesFromJsonAsync(It.IsAny<string>(), It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+                    mockPngService.Setup(p => p.GenerateMissingManaSymbolImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+                    mockPngService.Setup(p => p.GenerateMissingManaCostImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+                    mockPngService.Setup(p => p.GenerateMissingKeyRuneImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+
+                    var fakeSettings = new Mock<IAppSettings>();
+                    fakeSettings.Setup(s => s.DatabaseSettings).Returns(new ApplicationServices.DatabaseSettings { SQLitePath = Path.GetTempPath() });
+                    fakeSettings.Setup(s => s.UserDownloadsPath).Returns(Path.GetTempPath());
+                    fakeSettings.Setup(s => s.CardDatabaseUrl).Returns("http://localhost/dummy.sqlite");
+                    fakeSettings.Setup(s => s.CardPricesUrl).Returns("http://localhost/dummy.json");
+
+                    var service = new CardDatabasePreparationService(
+                        fakeSettings.Object,
+                        mockSchemaRepo.Object,
+                        mockPriceService.Object,
+                        mockPngService.Object,
+                        mockDownloadService.Object,
+                        mockInternet.Object,
+                        statusVM,
+                        shutdownApp: () => shutdownCalled = true
+                    );
+
+                    // Act
+                    await service.FirstTimeDbPrepOrchetrator(0); // 0 = instant retries for test
+
+                    // Assert
+                    Assert.False(shutdownCalled, "Shutdown should not be triggered on success");
+
+                    // Confirm that each step ran once (no retry)
+                    mockSchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()), Times.Once);
+                    mockSchemaRepo.Verify(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>(), "cardmarket"), Times.Once);
+                    mockSchemaRepo.Verify(r => r.CreateIndicesAsync(It.IsAny<SQLiteConnection>()), Times.Once);
+                    mockSchemaRepo.Verify(r => r.OptimizeAsync(It.IsAny<SQLiteConnection>()), Times.Once);
+                    mockPriceService.Verify(p => p.ImportPricesFromJsonAsync(It.IsAny<string>(), It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>()), Times.Once);
+                    mockPngService.Verify(p => p.GenerateMissingManaSymbolImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>()), Times.Once);
+                    mockPngService.Verify(p => p.GenerateMissingManaCostImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>()), Times.Once);
+                    mockPngService.Verify(p => p.GenerateMissingKeyRuneImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>()), Times.Once);
+                }
+
+                [Fact]
                 public async Task FirstTimeDbPrepOrchetrator_RetriesOnStepFailure()
                 {
                     // Arrange
@@ -734,6 +805,7 @@ namespace CollectaMundo.Tests
                     var mockPriceService = new Mock<ICardPriceService>();
                     var mockPngService = new Mock<IGenerateMissingPngService>();
                     var mockDownloadService = new Mock<IDownloadService>();
+                    var mockInternet = new Mock<IInternetConnectivityService>();
                     var statusVM = new StatusViewModel();
                     var settings = new JsonAppSettings();
                     AppGlobals.DbFactory = new DbConnectionFactory(settings);
@@ -780,6 +852,7 @@ namespace CollectaMundo.Tests
                         mockPriceService.Object,
                         mockPngService.Object,
                         mockDownloadService.Object,
+                        mockInternet.Object,
                         statusVM
                     );
 
@@ -797,6 +870,7 @@ namespace CollectaMundo.Tests
                     var mockPriceService = new Mock<ICardPriceService>();
                     var mockPngService = new Mock<IGenerateMissingPngService>();
                     var mockDownloadService = new Mock<IDownloadService>();
+                    var mockInternet = new Mock<IInternetConnectivityService>();
                     var statusVM = new StatusViewModel();
                     AppGlobals.DbFactory = new DbConnectionFactory(new JsonAppSettings()); // real DbFactory since we rely on file setup
 
@@ -839,6 +913,7 @@ namespace CollectaMundo.Tests
                         mockPriceService.Object,
                         mockPngService.Object,
                         mockDownloadService.Object,
+                        mockInternet.Object,
                         statusVM,
                         shutdownApp: () => { /* noop */ }
                     );
@@ -858,6 +933,7 @@ namespace CollectaMundo.Tests
                     var mockPriceService = new Mock<ICardPriceService>();
                     var mockPngService = new Mock<IGenerateMissingPngService>();
                     var mockDownloadService = new Mock<IDownloadService>();
+                    var mockInternet = new Mock<IInternetConnectivityService>();
                     var statusVM = new StatusViewModel();
                     AppGlobals.DbFactory = new DbConnectionFactory(new JsonAppSettings());
 
@@ -898,6 +974,7 @@ namespace CollectaMundo.Tests
                         mockPriceService.Object,
                         mockPngService.Object,
                         mockDownloadService.Object,
+                        mockInternet.Object,
                         statusVM,
                         shutdownApp: () => { /* noop */ }
                     );
@@ -921,6 +998,7 @@ namespace CollectaMundo.Tests
                     var mockPriceService = new Mock<ICardPriceService>();
                     var mockPngService = new Mock<IGenerateMissingPngService>();
                     var mockDownloadService = new Mock<IDownloadService>();
+                    var mockInternet = new Mock<IInternetConnectivityService>();
                     var statusVM = new StatusViewModel();
                     AppGlobals.DbFactory = new DbConnectionFactory(new JsonAppSettings());
 
@@ -939,12 +1017,47 @@ namespace CollectaMundo.Tests
                     fakeSettings.Setup(s => s.CardDatabaseUrl).Returns("http://localhost/dummy.sqlite");
                     fakeSettings.Setup(s => s.CardPricesUrl).Returns("http://localhost/dummy.json");
 
+                    var service = new CardDatabasePreparationService(fakeSettings.Object, mockSchemaRepo.Object, mockPriceService.Object, mockPngService.Object, mockDownloadService.Object, mockInternet.Object, statusVM, shutdownApp: () => shutdownCalled = true
+                    );
+
+                    // Act
+                    await service.FirstTimeDbPrepOrchetrator(0);
+
+                    // Assert
+                    Assert.True(shutdownCalled);
+                }
+
+
+                [Fact]
+                public async Task NoInternet_CallsShutdownImmediately()
+                {
+                    // Arrange
+                    var shutdownCalled = false;
+
+                    var mockSchemaRepo = new Mock<IDatabaseSchemaRepository>();
+                    var mockPriceService = new Mock<ICardPriceService>();
+                    var mockPngService = new Mock<IGenerateMissingPngService>();
+                    var mockDownloadService = new Mock<IDownloadService>();
+                    var mockInternet = new Mock<IInternetConnectivityService>();
+                    var statusVM = new StatusViewModel();
+                    AppGlobals.DbFactory = new DbConnectionFactory(new JsonAppSettings());
+
+                    // Simulate no internet
+                    mockInternet.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(false);
+
+                    var fakeSettings = new Mock<IAppSettings>();
+                    fakeSettings.Setup(s => s.DatabaseSettings).Returns(new ApplicationServices.DatabaseSettings { SQLitePath = Path.GetTempPath() });
+                    fakeSettings.Setup(s => s.UserDownloadsPath).Returns(Path.GetTempPath());
+                    fakeSettings.Setup(s => s.CardDatabaseUrl).Returns("http://localhost/dummy.sqlite");
+                    fakeSettings.Setup(s => s.CardPricesUrl).Returns("http://localhost/dummy.json");
+
                     var service = new CardDatabasePreparationService(
                         fakeSettings.Object,
                         mockSchemaRepo.Object,
                         mockPriceService.Object,
                         mockPngService.Object,
                         mockDownloadService.Object,
+                        mockInternet.Object,
                         statusVM,
                         shutdownApp: () => shutdownCalled = true
                     );
@@ -956,10 +1069,7 @@ namespace CollectaMundo.Tests
                     Assert.True(shutdownCalled);
                 }
 
-
-                //[Fact] public async Task NoInternet_CallsShutdownImmediately() { ... }
             }
-
         }
     }
 }
