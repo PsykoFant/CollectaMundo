@@ -27,7 +27,7 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
         public async Task<OperationResult> DownloadParallelAsync(
             string url1, string targetPath1, string label1,
             string url2, string targetPath2, string label2,
-            int retryDelayInMs, IProgress<string>? detailProgress = null, IProgress<int>? percentProgress = null, IProgress<string>? stepLabelProgress = null, CancellationToken token = default)
+            int retryDelayInMs, IProgress<string>? detailProgress = null, IProgress<int>? percentProgress = null, IProgress<string>? stepLabelProgress = null, string stepName = "Downloading files...", CancellationToken token = default)
         {
             return await RetryHelper.RetryLoopAsync(
                 async () =>
@@ -43,7 +43,7 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
                 },
                 retryDelayInMs,
                 maxRetries: 3,
-                stepName: "Step 1. Downloading resource files...",
+                stepName: stepName,
                 stepNameProgress: stepLabelProgress,
                 detailProgress: detailProgress
             );

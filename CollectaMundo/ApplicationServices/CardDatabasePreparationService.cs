@@ -65,7 +65,9 @@ namespace CollectaMundo.ApplicationServices
                     var downloadResult = await _downloadService.DownloadParallelAsync(
                         _settings.CardDatabaseUrl, dbPath, "Card database",
                         _settings.CardPricesUrl, pricesPath, "Price File",
-                        retryDelayInMs: defaultDelay, stepDetailProgress, percentProgress, stepLabelProgress);
+                        retryDelayInMs: defaultDelay,
+                        stepDetailProgress, percentProgress, stepLabelProgress,
+                        stepName: "Step 1. Downloading resource files...");
 
                     if (downloadResult.Code != OperationResultCode.Success)
                     {
