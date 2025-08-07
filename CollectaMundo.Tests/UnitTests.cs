@@ -729,10 +729,18 @@ namespace CollectaMundo.Tests
                     ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
                     ctx.DownloadService
                         .Setup(d => d.DownloadParallelAsync(
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<int>(), It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>(), It.IsAny<IProgress<string>>(),
-                            It.IsAny<CancellationToken>()))
+                            It.IsAny<string>(), // url1
+                            It.IsAny<string>(), // targetPath1
+                            It.IsAny<string>(), // label1
+                            It.IsAny<string>(), // url2
+                            It.IsAny<string>(), // targetPath2
+                            It.IsAny<string>(), // label2
+                            It.IsAny<int>(),    // retryDelayInMs
+                            It.IsAny<string>(), // stepName
+                            It.IsAny<IProgress<string>>(), // stepNameAndNumberProgress
+                            It.IsAny<IProgress<string>>(), // stepDetailAndErrorProgress
+                            It.IsAny<IProgress<int>>(),    // percentProgress
+                            It.IsAny<CancellationToken>())) // token
                         .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
 
                     ctx.StubAllStepsAsSuccess();
@@ -767,11 +775,19 @@ namespace CollectaMundo.Tests
 
                     ctx.DownloadService
                         .Setup(d => d.DownloadParallelAsync(
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<int>(), It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>(), It.IsAny<IProgress<string>>(),
-                            It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(new OperationResult(OperationResultCode.Success, "Download succeeded"));
+                            It.IsAny<string>(), // url1
+                            It.IsAny<string>(), // targetPath1
+                            It.IsAny<string>(), // label1
+                            It.IsAny<string>(), // url2
+                            It.IsAny<string>(), // targetPath2
+                            It.IsAny<string>(), // label2
+                            It.IsAny<int>(),    // retryDelayInMs
+                            It.IsAny<string>(), // stepName
+                            It.IsAny<IProgress<string>>(), // stepNameAndNumberProgress
+                            It.IsAny<IProgress<string>>(), // stepDetailAndErrorProgress
+                            It.IsAny<IProgress<int>>(),    // percentProgress
+                            It.IsAny<CancellationToken>())) // token
+                        .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
 
                     var service = ctx.BuildService();
 
@@ -803,11 +819,20 @@ namespace CollectaMundo.Tests
 
                     ctx.DownloadService
                         .Setup(d => d.DownloadParallelAsync(
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<int>(), It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>(), It.IsAny<IProgress<string>>(),
-                            It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(new OperationResult(OperationResultCode.Success, "Download succeeded"));
+                            It.IsAny<string>(), // url1
+                            It.IsAny<string>(), // targetPath1
+                            It.IsAny<string>(), // label1
+                            It.IsAny<string>(), // url2
+                            It.IsAny<string>(), // targetPath2
+                            It.IsAny<string>(), // label2
+                            It.IsAny<int>(),    // retryDelayInMs
+                            It.IsAny<string>(), // stepName
+                            It.IsAny<IProgress<string>>(), // stepNameAndNumberProgress
+                            It.IsAny<IProgress<string>>(), // stepDetailAndErrorProgress
+                            It.IsAny<IProgress<int>>(),    // percentProgress
+                            It.IsAny<CancellationToken>())) // token
+                        .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
+
 
                     var service = ctx.BuildService();
 
@@ -829,16 +854,24 @@ namespace CollectaMundo.Tests
                     int downloadAttempts = 0;
                     ctx.DownloadService
                         .Setup(d => d.DownloadParallelAsync(
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<int>(), It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>(), It.IsAny<IProgress<string>>(),
-                            It.IsAny<CancellationToken>()))
+                            It.IsAny<string>(),  // url1
+                            It.IsAny<string>(),  // targetPath1
+                            It.IsAny<string>(),  // label1
+                            It.IsAny<string>(),  // url2
+                            It.IsAny<string>(),  // targetPath2
+                            It.IsAny<string>(),  // label2
+                            It.IsAny<int>(),     // retryDelayInMs
+                            It.IsAny<string>(),  // stepName
+                            It.IsAny<IProgress<string>>(), // stepNameAndNumberProgress
+                            It.IsAny<IProgress<string>>(), // stepDetailAndErrorProgress
+                            It.IsAny<IProgress<int>>(),    // percentProgress
+                            It.IsAny<CancellationToken>())) // token
                         .ReturnsAsync(() =>
                         {
                             downloadAttempts++;
-                            if (downloadAttempts < 3)
-                                return new OperationResult(OperationResultCode.Error, "Download failed");
-                            return new OperationResult(OperationResultCode.Success, "Download succeeded");
+                            return downloadAttempts < 3
+                                ? new OperationResult(OperationResultCode.Error, "Download failed")
+                                : new OperationResult(OperationResultCode.Success, "Download succeeded");
                         });
 
                     var service = ctx.BuildService();
@@ -862,13 +895,21 @@ namespace CollectaMundo.Tests
                     ctx.StubAllStepsAsSuccess(); // all steps will succeed... if we ever reach them
 
                     // Download always fails → triggers all outer loop retries
-                    ctx.DownloadService
-                        .Setup(d => d.DownloadParallelAsync(
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<int>(), It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>(), It.IsAny<IProgress<string>>(),
-                            It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(new OperationResult(OperationResultCode.Error, "fail"));
+
+                    ctx.DownloadService.Setup(d => d.DownloadParallelAsync(
+                        It.IsAny<string>(), // url1
+                        It.IsAny<string>(), // targetPath1
+                        It.IsAny<string>(), // label1
+                        It.IsAny<string>(), // url2
+                        It.IsAny<string>(), // targetPath2
+                        It.IsAny<string>(), // label2
+                        It.IsAny<int>(),    // retryDelayInMs
+                        It.IsAny<string>(), // stepName
+                        It.IsAny<IProgress<string>>(), // stepNameAndNumberProgress
+                        It.IsAny<IProgress<string>>(), // stepDetailAndErrorProgress
+                        It.IsAny<IProgress<int>>(),    // percentProgress
+                        It.IsAny<CancellationToken>())) // token
+                    .ReturnsAsync(new OperationResult(OperationResultCode.Error, "fail"));
 
                     var service = ctx.BuildService();
 

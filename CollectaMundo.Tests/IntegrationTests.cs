@@ -4,6 +4,7 @@ using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.UpdateDB;
+using CollectaMundo.ApplicationServices.Utilities.InternetCheck;
 using CollectaMundo.Data.ImportExport;
 using CollectaMundo.Data.UpdateDB;
 using CollectaMundo.DomainLogic.EditCollection.Models;
@@ -29,8 +30,8 @@ namespace CollectaMundo.Tests
             var filteringService = new FilteringService();
             var editService = new EditCollectionService();
             var importExportService = new ImportExportService(new ImportExportRepo());
-            var updateService = new UpdateService(settings, AppGlobals.DbFactory, new UpdateDbRepo(), new UpdateDbRemoteData());
             var downloadService = new DownloadService();
+            var updateService = new UpdateService(settings, AppGlobals.DbFactory, downloadService, new InternetConnectivityService(), new UpdateDbRepo(), new UpdateDbRemoteData());
             var statusVM = new StatusViewModel();
 
             _mainVM = await MainWindowViewModel.CreateAsync(

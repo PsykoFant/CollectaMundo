@@ -43,8 +43,8 @@ namespace CollectaMundo.ApplicationServices
             _statusVM.StatusLabel1 = "Performing first-time setup of card database - please wait ...";
             _statusVM.ProgressVisibility = Visibility.Visible;
 
-            IProgress<string> stepDetailProgress = new Progress<string>(msg => _statusVM.StatusLabel2 = msg);
-            IProgress<string> stepLabelProgress = new Progress<string>(msg => _statusVM.StatusLabel3 = msg);
+            IProgress<string> statusLabel2Progress = new Progress<string>(msg => _statusVM.StatusLabel2 = msg); // details of the current step and failure messages
+            IProgress<string> statusLabel3Progress = new Progress<string>(msg => _statusVM.StatusLabel3 = msg); // current step name and number
             IProgress<int> percentProgress = new Progress<int>(p => _statusVM.ProgressValue = p);
 
             for (int outerloopAttempt = 1; outerloopAttempt <= maxTotalAttempts; outerloopAttempt++)
@@ -66,8 +66,10 @@ namespace CollectaMundo.ApplicationServices
                         _settings.CardDatabaseUrl, dbPath, "Card database",
                         _settings.CardPricesUrl, pricesPath, "Price File",
                         retryDelayInMs: defaultDelay,
-                        stepDetailProgress, percentProgress, stepLabelProgress,
-                        stepName: "Step 1. Downloading resource files...");
+                        stepName: "Step 1. Downloading card database and prices...",
+                        stepNameAndNumberProgress: statusLabel3Progress,
+                        stepDetailAndErrorProgress: statusLabel2Progress,
+                        percentProgress);
 
                     if (downloadResult.Code != OperationResultCode.Success)
                     {
@@ -81,7 +83,7 @@ namespace CollectaMundo.ApplicationServices
                         ("Step 3. Generating mana symbols...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn,percentProgress))), showProgressBar: true),
                         ("Step 4. Generating mana cost images...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, percentProgress))), showProgressBar: true),
                         ("Step 5. Generating set icon images...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, percentProgress))), showProgressBar: true),
-                        ("Step 6. Processing card prices...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn, stepDetailProgress, percentProgress))), showProgressBar: true),
+                        ("Step 6. Processing card prices...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn, statusLabel2Progress, percentProgress))), showProgressBar: true),
                         ("Step 7. Creating views...",(Func<Task>)(() => Task.Run(() =>ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket")))), showProgressBar: false),
                         ("Step 8. Creating indices...", (Func<Task>)(() => Task.Run(() =>ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn)))), showProgressBar: false),
                         ("Step 9. Optimizing database...", (Func<Task>)(() => Task.Run(() =>ExecuteWithConnectionAsync(conn => _dbSchemaRepo.OptimizeAsync(conn)))), showProgressBar: false)
@@ -99,10 +101,9 @@ namespace CollectaMundo.ApplicationServices
                                 return new OperationResult(OperationResultCode.Success, $"{label} completed.");
                             },
                             retryDelayInMs: defaultDelay,
-                            maxRetries: 3,
                             stepName: label,
-                            stepNameProgress: stepLabelProgress,
-                            detailProgress: stepDetailProgress);
+                            stepNameAndNumberProgress: statusLabel3Progress,
+                            stepDetailAndErrorProgress: statusLabel2Progress);
 
                         if (result.Code != OperationResultCode.Success)
                             throw new Exception($"Step '{label}' failed after retries. {result.Message}");

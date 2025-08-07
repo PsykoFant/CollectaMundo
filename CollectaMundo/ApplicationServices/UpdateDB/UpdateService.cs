@@ -17,6 +17,14 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
         private readonly IUpdateDbRemoteData _remoteData = remoteData;
         public async Task<OperationResult> CheckForDbUpdatesAsync()
         {
+
+            var internetAvailable = await _internetConnectivityService.IsInternetAvailableAsync();
+
+            if (!internetAvailable)
+            {
+                return new OperationResult(OperationResultCode.Error, "Internet not available - unable to check server...");
+            }
+
             int numberOfSetsInDb;
             int numberOfSetsOnServer;
 
@@ -60,8 +68,15 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
                 return new OperationResult(OperationResultCode.UpToDate, $"Your local card database is up to date! ({numberOfSetsInDb} sets).");
             }
         }
-        public async Task<OperationResult> UpdateDbAsync(IProgress<string> stepDetailProgress, IProgress<string> stepLabelProgress, IProgress<int> percentProgress)
+        public async Task<OperationResult> UpdateDbAsync(IProgress<string> stepDetailAndErrorProgress, IProgress<string> stepNameAndNumberProgress, IProgress<int> percentProgress)
         {
+            var internetAvailable = await _internetConnectivityService.IsInternetAvailableAsync();
+
+            if (!internetAvailable)
+            {
+                return new OperationResult(OperationResultCode.Error, "Internet not available - unable download updated resource files...");
+            }
+
             string dbPath = Path.Combine(_settings.UserDownloadsPath, "AllPrintings.sqlite");
             string pricesPath = Path.Combine(_settings.UserDownloadsPath, "AllPricesToday.json");
             string cardDbUrl = _settings.CardDatabaseUrl;
@@ -71,36 +86,38 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
             var downloadResult = await _downloadService.DownloadParallelAsync(
                 _settings.CardDatabaseUrl, dbPath, "Card database",
                 _settings.CardPricesUrl, pricesPath, "Price File",
-                retryDelayInMs: 3000, stepDetailProgress, percentProgress, stepLabelProgress, stepName: "Step 1 / 4. Downloading resource files for update...");
+                retryDelayInMs: 3000,
+                stepName: "Step 1 / 4. Downloading resource files for update...",
+                stepNameAndNumberProgress, stepDetailAndErrorProgress, percentProgress);
 
             if (downloadResult.Code != OperationResultCode.Success)
             {
-                return new OperationResult(OperationResultCode.Error, "Downloads failed after multiple retries.");
+                return new OperationResult(OperationResultCode.Error, downloadResult.Message);
             }
 
             //Debug.WriteLine("Testing - assume files are already downloaded");
 
             // Step 2 - Copy tables from new DB
-            stepLabelProgress.Report("Step 2 / 4 - Copying new tables...");
+            //stepNameAndNumberProgress.Report("Step 2 / 4 - Copying new tables...");
 
-            try
-            {
-                await using var conn = await _dbFactory.OpenConnectionAsync();
+            //try
+            //{
+            //    await using var conn = await _dbFactory.OpenConnectionAsync();
 
-                await Task.Run(async () =>
-                {
-                    await _updateDBRepo.AttachTempDbAsync(conn, dbPath, stepDetailProgress);
-                    await _updateDBRepo.DropTablesAsync(conn, stepDetailProgress);
-                    await _updateDBRepo.CopyTablesAsync(conn, stepDetailProgress);
-                    await _updateDBRepo.DetachTempDbAsync(conn, stepDetailProgress);
-                });
+            //    await Task.Run(async () =>
+            //    {
+            //        await _updateDBRepo.AttachTempDbAsync(conn, dbPath, stepDetailAndErrorProgress);
+            //        await _updateDBRepo.DropTablesAsync(conn, stepDetailAndErrorProgress);
+            //        await _updateDBRepo.CopyTablesAsync(conn, stepDetailAndErrorProgress);
+            //        await _updateDBRepo.DetachTempDbAsync(conn, stepDetailAndErrorProgress);
+            //    });
 
-            }
-            catch (Exception ex)
-            {
-                stepDetailProgress.Report($"Table copy failed: {ex.Message}");
-                return new OperationResult(OperationResultCode.Error, $"Table copy failed: {ex.Message}");
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    stepDetailAndErrorProgress.Report($"Table copy failed: {ex.Message}");
+            //    return new OperationResult(OperationResultCode.Error, $"Table copy failed: {ex.Message}");
+            //}
 
             return new OperationResult(OperationResultCode.Success, "Update complete!");
         }

@@ -103,17 +103,14 @@ namespace CollectaMundo.ViewModels
         {
             _statusOverlayVM.ShowStatusOverlay("Updating database, please wait...", true);
 
-            //await Task.Delay(100); // Give the UI a moment to update
-
-            //await UIHelper.ForceRenderAsync();
-
             var statusLabel2Progress = new Progress<string>(msg => _statusOverlayVM.StatusLabel2 = msg);
             var statusLabel3Progress = new Progress<string>(msg => _statusOverlayVM.StatusLabel3 = msg);
             var percentProgress = new Progress<int>(percent => _statusOverlayVM.ProgressValue = percent);
-            var result = await _updateService.UpdateDbAsync(statusLabel2Progress, statusLabel3Progress, percentProgress);
+            var result = await _updateService.UpdateDbAsync(stepDetailAndErrorProgress: statusLabel2Progress, stepNameAndNumberProgress: statusLabel3Progress, percentProgress);
 
             if (result.Code == OperationResultCode.Error)
             {
+                _statusOverlayVM.StatusLabel1 = "Update failed!";
                 _statusOverlayVM.StatusLabel2 = string.Empty;
                 _statusOverlayVM.StatusLabel3 = result.Message;
                 _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
