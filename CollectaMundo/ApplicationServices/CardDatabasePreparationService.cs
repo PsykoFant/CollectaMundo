@@ -107,6 +107,92 @@ namespace CollectaMundo.ApplicationServices
             }
         }
 
+        // Use case: orchestrates card database update
+        public async Task<OperationResult> UpdateDbPrepOrchetrator(int defaultDelay = 3000)
+        {
+
+            var internetAvailable = await _internetConnectivityService.IsInternetAvailableAsync();
+
+            if (!internetAvailable)
+            {
+                return new OperationResult(OperationResultCode.Error, "Internet not available - unable download updated resource files...");
+            }
+            _statusVM.ProgressVisibility = Visibility.Visible;
+
+            // ---------------------------
+            // Step 1. Download resources
+            // ---------------------------
+            var downloadResult = await _downloadService.DownloadParallelAsync(
+                _settings.CardDatabaseUrl, _dbPath, "Card database",
+                _settings.CardPricesUrl, _pricesPath, "Price File",
+                retryDelayInMs: 3000,
+                stepName: "Step 1 / 4. Downloading resource files for update...",
+                _statusLabel3Progress, _statusLabel2Progress, _percentProgress);
+
+            if (downloadResult.Code != OperationResultCode.Success)
+            {
+                return new OperationResult(OperationResultCode.Error, downloadResult.Message);
+            }
+
+            // ---------------------------
+            // Step 2 - Copy tables from new DB
+            // ---------------------------
+            _statusLabel3Progress.Report("Step 2 / 4 - Copying new tables...");
+
+            try
+            {
+                await using var conn = await _dbFactory.OpenConnectionAsync();
+
+                await Task.Run(async () =>
+                {
+                    await _updateDBRepo.AttachTempDbAsync(conn, dbPath, stepDetailAndErrorProgress);
+                    await _updateDBRepo.DropTablesAsync(conn, stepDetailAndErrorProgress);
+                    await _updateDBRepo.CopyTablesAsync(conn, stepDetailAndErrorProgress);
+                    await _updateDBRepo.DetachTempDbAsync(conn, stepDetailAndErrorProgress);
+                });
+
+            }
+            catch (Exception ex)
+            {
+                stepDetailAndErrorProgress.Report($"Table copy failed: {ex.Message}");
+                return new OperationResult(OperationResultCode.Error, $"Table copy failed: {ex.Message}");
+            }
+
+
+            // prepare database
+            await PrepareDatabase(defaultDelay);
+
+            // finish
+
+            try
+            {
+
+                // ---------------------------
+                // Steps 2–9
+                // ---------------------------
+                await PrepareDatabase(defaultDelay);
+
+                // Success: clean up transient price file
+                try { File.Delete(_pricesPath); }
+                catch (IOException ex) { Debug.WriteLine($"Couldn't delete prices.json: {ex.Message}"); }
+
+                // Clear UI on success
+                _statusVM.ProgressValue = 0;
+                _statusVM.StatusLabel1 = string.Empty;
+                _statusVM.StatusLabel2 = string.Empty;
+                _statusVM.StatusLabel3 = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Fatal error: {ex.Message}");
+                await DbSetupFailed(
+                    statusAboveBar: "Setup failed.",
+                    statusBelowBar: "CollectaMundo will automatically shutdown shortly ...",
+                    statusLabelMain: ex.Message,
+                    defaultDelay);
+            }
+        }
+
         private async Task PrepareDatabase(int defaultDelay)
         {
             int stepNumber = 2;
