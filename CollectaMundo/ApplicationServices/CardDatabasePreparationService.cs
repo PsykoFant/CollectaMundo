@@ -23,13 +23,14 @@ namespace CollectaMundo.ApplicationServices
         private readonly IInternetConnectivityService _internetConnectivityService = internetConnectivityService;
         private readonly StatusViewModel _statusVM = statusVM;
         private readonly Action? _shutdownApp = shutdownApp ?? (() => Application.Current?.Shutdown()); // Optional action to shutdown the app after setup failure
+        private int stepNumber; // Used for step numbering in the UI
+
         public async Task FirstTimeDbPrepOrchetrator(int defaultDelay = 3000)
         {
             string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
             string pricesPath = Path.Combine(_settings.UserDownloadsPath, "prices.json");
 
-            const int maxTotalAttempts = 3;
-
+            // 1) Internet precheck
             if (!await _internetConnectivityService.IsInternetAvailableAsync())
             {
                 await DbSetupFailed(
@@ -43,96 +44,111 @@ namespace CollectaMundo.ApplicationServices
             _statusVM.StatusLabel1 = "Performing first-time setup of card database - please wait ...";
             _statusVM.ProgressVisibility = Visibility.Visible;
 
-            IProgress<string> statusLabel2Progress = new Progress<string>(msg => _statusVM.StatusLabel2 = msg); // details of the current step and failure messages
-            IProgress<string> statusLabel3Progress = new Progress<string>(msg => _statusVM.StatusLabel3 = msg); // current step name and number
+            // Wiring: 2 = detail/errors, 3 = current step + attempt
+            IProgress<string> statusLabel2Progress = new Progress<string>(msg => _statusVM.StatusLabel2 = msg);
+            IProgress<string> statusLabel3Progress = new Progress<string>(msg => _statusVM.StatusLabel3 = msg);
             IProgress<int> percentProgress = new Progress<int>(p => _statusVM.ProgressValue = p);
 
-            for (int outerloopAttempt = 1; outerloopAttempt <= maxTotalAttempts; outerloopAttempt++)
+            // Always start from a clean slate on a single run
+            try { CleanupPartialDatabaseFiles(dbPath, _settings.UserDownloadsPath); }
+            catch (Exception ex) { Debug.WriteLine($"[Cleanup] {ex.Message}"); }
+
+            try
             {
-                Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Overall outer loop attempt {outerloopAttempt} of {maxTotalAttempts}");
+                // ---------------------------
+                // Step 1. Download resources
+                // ---------------------------
+                var step1Name = "Step 1. Downloading card database and prices...";
+                var downloadResult = await _downloadService.DownloadParallelAsync(
+                    _settings.CardDatabaseUrl, dbPath, "Card database",
+                    _settings.CardPricesUrl, pricesPath, "Price File",
+                    retryDelayInMs: defaultDelay,
+                    stepName: step1Name,
+                    stepNameAndNumberProgress: statusLabel3Progress,
+                    stepDetailAndErrorProgress: statusLabel2Progress,
+                    percentProgress: percentProgress);
 
-                if (outerloopAttempt > 1)
+                if (downloadResult.Code != OperationResultCode.Success)
                 {
-                    _statusVM.StatusLabel1 = $"Setup failed, retrying attempt {outerloopAttempt}...";
-                }
-
-                try { CleanupPartialDatabaseFiles(dbPath, _settings.UserDownloadsPath); }
-                catch (Exception ex) { Debug.WriteLine($"[Cleanup] {ex.Message}"); }
-
-                try
-                {
-                    //Step 1: Downloads
-                    var downloadResult = await _downloadService.DownloadParallelAsync(
-                        _settings.CardDatabaseUrl, dbPath, "Card database",
-                        _settings.CardPricesUrl, pricesPath, "Price File",
-                        retryDelayInMs: defaultDelay,
-                        stepName: "Step 1. Downloading card database and prices...",
-                        stepNameAndNumberProgress: statusLabel3Progress,
-                        stepDetailAndErrorProgress: statusLabel2Progress,
-                        percentProgress);
-
-                    if (downloadResult.Code != OperationResultCode.Success)
-                    {
-                        Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
-                        continue; // Restart outer attempt loop
-                    }
-
-                    // STEP 2–9: Setup pipeline
-                    var setupSteps = new List<(string Label, Func<Task> Work, bool showProgressBar)>{
-                        ("Step 2. Creating custom tables...", (Func<Task>)(() => Task.Run(() =>ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn)))), showProgressBar: false),
-                        ("Step 3. Generating mana symbols...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn,percentProgress))), showProgressBar: true),
-                        ("Step 4. Generating mana cost images...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, percentProgress))), showProgressBar: true),
-                        ("Step 5. Generating set icon images...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, percentProgress))), showProgressBar: true),
-                        ("Step 6. Processing card prices...", (Func<Task>)(() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn, statusLabel2Progress, percentProgress))), showProgressBar: true),
-                        ("Step 7. Creating views...",(Func<Task>)(() => Task.Run(() =>ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket")))), showProgressBar: false),
-                        ("Step 8. Creating indices...", (Func<Task>)(() => Task.Run(() =>ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn)))), showProgressBar: false),
-                        ("Step 9. Optimizing database...", (Func<Task>)(() => Task.Run(() =>ExecuteWithConnectionAsync(conn => _dbSchemaRepo.OptimizeAsync(conn)))), showProgressBar: false)
-                    };
-
-                    foreach (var (label, work, showProgressBar) in setupSteps)
-                    {
-                        _statusVM.ProgressVisibility = showProgressBar ? Visibility.Visible : Visibility.Collapsed;
-                        _statusVM.StatusLabel2 = string.Empty;
-
-                        var result = await RetryHelper.RetryLoopAsync(
-                            async () =>
-                            {
-                                await work(); // this is still the actual unit-of-work wrapped step
-                                return new OperationResult(OperationResultCode.Success, $"{label} completed.");
-                            },
-                            retryDelayInMs: defaultDelay,
-                            stepName: label,
-                            stepNameAndNumberProgress: statusLabel3Progress,
-                            stepDetailAndErrorProgress: statusLabel2Progress);
-
-                        if (result.Code != OperationResultCode.Success)
-                            throw new Exception($"Step '{label}' failed after retries. {result.Message}");
-                    }
-
-                    // If setup fully succeeded
-                    try { File.Delete(pricesPath); }
-                    catch (IOException ex) { Debug.WriteLine($"Couldn't delete prices.json: {ex.Message}"); }
-
+                    Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
+                    await DbSetupFailed(
+                        statusAboveBar: "Could not download required files.",
+                        statusBelowBar: "CollectaMundo will automatically shutdown shortly ...",
+                        statusLabelMain: downloadResult.Message,
+                        defaultDelay);
                     return;
                 }
-                catch (Exception ex)
+
+                // ---------------------------
+                // Steps 2–9
+                // ---------------------------
+                await PrepareDatabase(defaultDelay, statusLabel3Progress, statusLabel2Progress, percentProgress, pricesPath);
+
+                // Success: clean up transient price file
+                try { File.Delete(pricesPath); }
+                catch (IOException ex) { Debug.WriteLine($"Couldn't delete prices.json: {ex.Message}"); }
+
+                // Clear UI on success
+                _statusVM.ProgressValue = 0;
+                _statusVM.StatusLabel1 = string.Empty;
+                _statusVM.StatusLabel2 = string.Empty;
+                _statusVM.StatusLabel3 = string.Empty;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Fatal error: {ex.Message}");
+                await DbSetupFailed(
+                    statusAboveBar: "Setup failed.",
+                    statusBelowBar: "CollectaMundo will automatically shutdown shortly ...",
+                    statusLabelMain: ex.Message,
+                    defaultDelay);
+            }
+        }
+
+        private async Task PrepareDatabase(int defaultDelay, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, IProgress<int> percentProgress, string pricesPath)
+        {
+            int stepNumber = 2;
+
+            var steps = new List<(string Label, Func<Task> Work, bool ShowProgress)>
+            {
+                ($"Step {stepNumber++}. Creating custom tables...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn)) ),false),
+                ($"Step {stepNumber++}. Generating mana symbols...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn, percentProgress)),true),
+                ($"Step {stepNumber++}. Generating mana cost images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, percentProgress)),true),
+                ($"Step {stepNumber++}. Generating set icon images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, percentProgress)),true),
+                ($"Step {stepNumber++}. Processing card prices...",() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn, stepDetailAndErrorProgress, percentProgress)),true),
+                ($"Step {stepNumber++}. Creating views...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket"))),false),
+                ($"Step {stepNumber++}. Creating indices...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn))),false),
+                ($"Step {stepNumber++}. Optimizing database...",() => Task.Run(() => ExecuteWithConnectionAsync(conn => _dbSchemaRepo.OptimizeAsync(conn))),false),
+            };
+
+            foreach (var (label, work, showProgress) in steps)
+            {
+                _statusVM.ProgressVisibility = showProgress ? Visibility.Visible : Visibility.Collapsed;
+                _statusVM.StatusLabel2 = string.Empty;
+
+                var result = await RetryHelper.RetryLoopAsync(
+                    async () =>
+                    {
+                        await work();
+                        return new OperationResult(OperationResultCode.Success, $"{label} completed.");
+                    },
+                    retryDelayInMs: defaultDelay,
+                    maxRetries: 3,
+                    stepName: label,
+                    stepNameAndNumberProgress: stepNameAndNumberProgress,
+                    stepDetailAndErrorProgress: stepDetailAndErrorProgress);
+
+                if (result.Code != OperationResultCode.Success)
                 {
-                    Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Overall attempt {outerloopAttempt} failed: {ex.Message}");
-                }
-                finally
-                {
-                    _statusVM.ProgressValue = 0;
-                    _statusVM.StatusLabel1 = string.Empty;
-                    _statusVM.StatusLabel2 = string.Empty;
-                    _statusVM.StatusLabel3 = string.Empty;
+                    // Fail-fast: any step failing its own retries triggers DB setup failure
+                    await DbSetupFailed(
+                        statusAboveBar: "Setup failed.",
+                        statusBelowBar: "A setup step failed repeatedly.",
+                        statusLabelMain: result.Message,
+                        defaultDelay);
+                    throw new Exception($"Step '{label}' failed after retries. {result.Message}");
                 }
             }
-
-            await DbSetupFailed(
-                statusAboveBar: "Setup failed after multiple attempts.",
-                statusBelowBar: "Please check your internet or restart the application.",
-                statusLabelMain: "CollectaMundo will close down shortly...",
-                defaultDelay);
         }
 
         // Retry logic for executing database actions

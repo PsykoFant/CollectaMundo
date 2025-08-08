@@ -3,6 +3,7 @@ using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.ApplicationServices.Utilities.InternetCheck;
 using CollectaMundo.Data;
 using CollectaMundo.Data.UpdateDB;
+using System.Diagnostics;
 using System.IO;
 
 namespace CollectaMundo.ApplicationServices.UpdateDB

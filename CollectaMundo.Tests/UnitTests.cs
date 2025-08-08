@@ -799,40 +799,32 @@ namespace CollectaMundo.Tests
                 }
 
                 [Fact]
-                public async Task FirstTimeDbPrepOrchetrator_RetriesOuterLoop_WhenStep2Fails()
+                public async Task Step2FailsAfterRetries_ShutsDown()
                 {
                     // Arrange
                     var ctx = new FirstTimeSetupTestContext();
                     ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
-
                     ctx.StubAllStepsAsSuccess();
 
-                    int createCallCount = 0;
+                    // Downloads succeed so we reach Step 2
+                    ctx.DownloadService
+                        .Setup(d => d.DownloadParallelAsync(
+                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                            It.IsAny<int>(), It.IsAny<string>(),
+                            It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
+                            It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
+
+                    int createCalls = 0;
                     ctx.SchemaRepo
                         .Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()))
                         .Returns(async () =>
                         {
-                            createCallCount++;
-                            await Task.Yield(); // ensures it's truly async
+                            await Task.Yield();
+                            createCalls++;
                             throw new Exception("Step 2 failure");
                         });
-
-                    ctx.DownloadService
-                        .Setup(d => d.DownloadParallelAsync(
-                            It.IsAny<string>(), // url1
-                            It.IsAny<string>(), // targetPath1
-                            It.IsAny<string>(), // label1
-                            It.IsAny<string>(), // url2
-                            It.IsAny<string>(), // targetPath2
-                            It.IsAny<string>(), // label2
-                            It.IsAny<int>(),    // retryDelayInMs
-                            It.IsAny<string>(), // stepName
-                            It.IsAny<IProgress<string>>(), // stepNameAndNumberProgress
-                            It.IsAny<IProgress<string>>(), // stepDetailAndErrorProgress
-                            It.IsAny<IProgress<int>>(),    // percentProgress
-                            It.IsAny<CancellationToken>())) // token
-                        .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
-
 
                     var service = ctx.BuildService();
 
@@ -840,48 +832,57 @@ namespace CollectaMundo.Tests
                     await service.FirstTimeDbPrepOrchetrator(0);
 
                     // Assert
-                    Assert.Equal(9, createCallCount); // 3 outer x 3 inner
+                    Assert.True(ctx.ShutdownCalled);
+                    Assert.Equal(3, createCalls); // RetryHelper tried Step 2 three times
+                                                  // Steps after Step 2 should never run
+                    ctx.SchemaRepo.Verify(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>(), It.IsAny<string>()), Times.Never);
                 }
 
                 [Fact]
-                public async Task FirstTimeDbPrepOrchetrator_RetriesOuterLoop_WhenDownloadFails()
+                public async Task DownloadFailsAfterRetries_ShutsDown()
                 {
                     // Arrange
                     var ctx = new FirstTimeSetupTestContext();
                     ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
-                    ctx.StubAllStepsAsSuccess();
+                    ctx.StubAllStepsAsSuccess(); // we won’t reach them if download never succeeds
 
-                    int downloadAttempts = 0;
+                    int attempts = 0;
                     ctx.DownloadService
                         .Setup(d => d.DownloadParallelAsync(
-                            It.IsAny<string>(),  // url1
-                            It.IsAny<string>(),  // targetPath1
-                            It.IsAny<string>(),  // label1
-                            It.IsAny<string>(),  // url2
-                            It.IsAny<string>(),  // targetPath2
-                            It.IsAny<string>(),  // label2
-                            It.IsAny<int>(),     // retryDelayInMs
-                            It.IsAny<string>(),  // stepName
-                            It.IsAny<IProgress<string>>(), // stepNameAndNumberProgress
-                            It.IsAny<IProgress<string>>(), // stepDetailAndErrorProgress
-                            It.IsAny<IProgress<int>>(),    // percentProgress
-                            It.IsAny<CancellationToken>())) // token
+                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                            It.IsAny<int>(), It.IsAny<string>(),
+                            It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
+                            It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
                         .ReturnsAsync(() =>
                         {
-                            downloadAttempts++;
-                            return downloadAttempts < 3
-                                ? new OperationResult(OperationResultCode.Error, "Download failed")
-                                : new OperationResult(OperationResultCode.Success, "Download succeeded");
+                            attempts++;
+                            // Always fail so RetryHelper hits its 3 attempts and returns Error
+                            return new OperationResult(OperationResultCode.Error, "Download failed");
                         });
 
                     var service = ctx.BuildService();
 
                     // Act
-                    await service.FirstTimeDbPrepOrchetrator(0); // no retry delay
+                    await service.FirstTimeDbPrepOrchetrator(0);
 
                     // Assert
-                    Assert.Equal(3, downloadAttempts); // 2 failures + 1 success = 3 total attempts
+                    Assert.True(ctx.ShutdownCalled);
+
+                    // The orchestrator should only call into the download service once;
+                    // internal retries are the service's responsibility.
+                    ctx.DownloadService.Verify(d => d.DownloadParallelAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<int>(), It.IsAny<string>(),
+                        It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
+                        It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                        Times.Once);
+
+                    ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()), Times.Never);
+
                 }
+
 
             }
             public class ShutdownLogic

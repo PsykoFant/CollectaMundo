@@ -147,12 +147,18 @@ namespace CollectaMundo.Tests
                 }
             ];
         }
-        public static IDbConnectionFactory CreateInMemoryDbFactory()
+        public static IDbConnectionFactory CreateInMemoryDbFactory() =>
+            CreateInMemoryDbFactory("MasterDb"); // keeps your existing callers working
+
+        public static IDbConnectionFactory CreateInMemoryDbFactory(string dbName)
         {
-            const string connectionString = "Data Source=file:MasterDb?mode=memory&cache=shared;Version=3;";
-            return new SharedMemoryDbFactory(connectionString);
+            // Unique name per test -> isolated in-memory DB
+            // URI=True ensures the "file:dbname?..." string is parsed correctly
+            var cs = $"Data Source=file:{dbName}?mode=memory&cache=shared;Version=3;URI=True;";
+            return new SharedMemoryDbFactory(cs);
         }
-        private class SharedMemoryDbFactory : IDbConnectionFactory
+
+        private sealed class SharedMemoryDbFactory : IDbConnectionFactory, IDisposable
         {
             private readonly string _connectionString;
             private readonly SQLiteConnection _persistentConnection;
@@ -160,9 +166,8 @@ namespace CollectaMundo.Tests
             public SharedMemoryDbFactory(string connectionString)
             {
                 _connectionString = connectionString;
-
                 _persistentConnection = new SQLiteConnection(connectionString);
-                _persistentConnection.Open(); // Ensures DB remains alive for the test duration
+                _persistentConnection.Open(); // keep the shared in-memory DB alive
             }
 
             public async Task<SQLiteConnection> OpenConnectionAsync()
@@ -170,6 +175,11 @@ namespace CollectaMundo.Tests
                 var conn = new SQLiteConnection(_connectionString);
                 await conn.OpenAsync();
                 return conn;
+            }
+
+            public void Dispose()
+            {
+                try { _persistentConnection?.Dispose(); } catch { /* meh */ }
             }
         }
     }
@@ -185,15 +195,27 @@ namespace CollectaMundo.Tests
         public StatusViewModel StatusVM { get; } = new();
         public bool ShutdownCalled { get; private set; }
 
+        private string? _tmpRoot;
+        private IDisposable? _dbFactoryDisposable;
         public CardDatabasePreparationService BuildService()
         {
-            AppGlobals.DbFactory = new DbConnectionFactory(new JsonAppSettings());
+            var dbName = $"cmtests-{Guid.NewGuid():N}";
+
+            var factory = TestUtilities.CreateInMemoryDbFactory(dbName);
+            AppGlobals.DbFactory = factory;
+
+            // if you want to dispose the persistent connection after test:
+            _dbFactoryDisposable = factory as IDisposable;
+
+            // Unique paths so CleanupPartialDatabaseFiles & downloads are isolated
+            _tmpRoot = Path.Combine(Path.GetTempPath(), "cm-tests", dbName);
+            Directory.CreateDirectory(_tmpRoot);
 
             Settings.Setup(s => s.DatabaseSettings).Returns(new ApplicationServices.DatabaseSettings
             {
-                SQLitePath = Path.GetTempPath()
+                SQLitePath = _tmpRoot
             });
-            Settings.Setup(s => s.UserDownloadsPath).Returns(Path.GetTempPath());
+            Settings.Setup(s => s.UserDownloadsPath).Returns(_tmpRoot);
             Settings.Setup(s => s.CardDatabaseUrl).Returns("http://localhost/dummy.sqlite");
             Settings.Setup(s => s.CardPricesUrl).Returns("http://localhost/dummy.json");
 
@@ -207,6 +229,17 @@ namespace CollectaMundo.Tests
                 StatusVM,
                 shutdownApp: () => ShutdownCalled = true
             );
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                _dbFactoryDisposable?.Dispose();
+                if (!string.IsNullOrEmpty(_tmpRoot) && Directory.Exists(_tmpRoot))
+                    Directory.Delete(_tmpRoot, recursive: true);
+            }
+            catch { /* best effort cleanup */ }
         }
 
         public void StubAllStepsAsSuccess()
