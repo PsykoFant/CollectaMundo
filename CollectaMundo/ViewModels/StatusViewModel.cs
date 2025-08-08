@@ -85,6 +85,7 @@ namespace CollectaMundo.ViewModels
         }
         public void ShowStatusOverlay(string message, bool showProgress = false)
         {
+
             StatusOverlayVisibilitiy = Visibility.Visible;
             StatusLabel1 = message;
             ProgressVisibility = showProgress ? Visibility.Visible : Visibility.Collapsed;
@@ -104,7 +105,7 @@ namespace CollectaMundo.ViewModels
             StatusLabel3 = string.Empty;
 
             ProgressValue = 0;
-            AckButtonText = "OK";
+            AckButtonText = "  OK  ";
         }
         public void ShowBackupResult(OperationResult result)
         {

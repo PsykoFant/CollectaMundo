@@ -102,12 +102,17 @@ namespace CollectaMundo.ViewModels
         private async Task UpdateDBAsync()
         {
             _statusOverlayVM.ShowStatusOverlay("Updating database, please wait...", true);
+            _isTopMenuEnabled = false; // Disable top menu during update
 
+            // Create progress handlers for status updates
             var statusLabel2Progress = new Progress<string>(msg => _statusOverlayVM.StatusLabel2 = msg);
             var statusLabel3Progress = new Progress<string>(msg => _statusOverlayVM.StatusLabel3 = msg);
             var percentProgress = new Progress<int>(percent => _statusOverlayVM.ProgressValue = percent);
+
+            // Start the update process
             var result = await _updateService.UpdateDbAsync(stepDetailAndErrorProgress: statusLabel2Progress, stepNameAndNumberProgress: statusLabel3Progress, percentProgress);
 
+            // Handle the result of the update
             if (result.Code == OperationResultCode.Error)
             {
                 _statusOverlayVM.StatusLabel1 = "Update failed!";
@@ -118,14 +123,14 @@ namespace CollectaMundo.ViewModels
                 _statusOverlayVM.AckButtonText = "  OK!  ";
                 return;
             }
-
-            _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
-            _statusOverlayVM.AckButtonText = "  OK!  ";
-            _statusOverlayVM.ShowStatusOverlay(result.Message);
+            else
+            {
+                _isTopMenuEnabled = true; // Re-enable top menu after update
+                _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
+                _statusOverlayVM.AckButtonText = "  OK!  ";
+                _statusOverlayVM.ShowStatusOverlay(result.Message);
+            }
         }
-
-
-
         // Page navigation
         private Page _currentPage = Page.SearchAndFilter;
         public Page CurrentPage

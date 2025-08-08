@@ -82,6 +82,7 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
             string cardDbUrl = _settings.CardDatabaseUrl;
             string pricesUrl = _settings.CardPricesUrl;
 
+            /*
             //Step 1: Downloads
             var downloadResult = await _downloadService.DownloadParallelAsync(
                 _settings.CardDatabaseUrl, dbPath, "Card database",
@@ -95,29 +96,31 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
                 return new OperationResult(OperationResultCode.Error, downloadResult.Message);
             }
 
-            //Debug.WriteLine("Testing - assume files are already downloaded");
+            */
 
-            // Step 2 - Copy tables from new DB
-            //stepNameAndNumberProgress.Report("Step 2 / 4 - Copying new tables...");
+            Debug.WriteLine("Testing - assume files are already downloaded");
 
-            //try
-            //{
-            //    await using var conn = await _dbFactory.OpenConnectionAsync();
+            //Step 2 - Copy tables from new DB
+            stepNameAndNumberProgress.Report("Step 2 / 4 - Copying new tables...");
 
-            //    await Task.Run(async () =>
-            //    {
-            //        await _updateDBRepo.AttachTempDbAsync(conn, dbPath, stepDetailAndErrorProgress);
-            //        await _updateDBRepo.DropTablesAsync(conn, stepDetailAndErrorProgress);
-            //        await _updateDBRepo.CopyTablesAsync(conn, stepDetailAndErrorProgress);
-            //        await _updateDBRepo.DetachTempDbAsync(conn, stepDetailAndErrorProgress);
-            //    });
+            try
+            {
+                await using var conn = await _dbFactory.OpenConnectionAsync();
 
-            //}
-            //catch (Exception ex)
-            //{
-            //    stepDetailAndErrorProgress.Report($"Table copy failed: {ex.Message}");
-            //    return new OperationResult(OperationResultCode.Error, $"Table copy failed: {ex.Message}");
-            //}
+                await Task.Run(async () =>
+                {
+                    await _updateDBRepo.AttachTempDbAsync(conn, dbPath, stepDetailAndErrorProgress);
+                    await _updateDBRepo.DropTablesAsync(conn, stepDetailAndErrorProgress);
+                    await _updateDBRepo.CopyTablesAsync(conn, stepDetailAndErrorProgress);
+                    await _updateDBRepo.DetachTempDbAsync(conn, stepDetailAndErrorProgress);
+                });
+
+            }
+            catch (Exception ex)
+            {
+                stepDetailAndErrorProgress.Report($"Table copy failed: {ex.Message}");
+                return new OperationResult(OperationResultCode.Error, $"Table copy failed: {ex.Message}");
+            }
 
             return new OperationResult(OperationResultCode.Success, "Update complete!");
         }
