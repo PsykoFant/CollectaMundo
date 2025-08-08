@@ -23,13 +23,18 @@ namespace CollectaMundo.ApplicationServices
         private readonly IInternetConnectivityService _internetConnectivityService = internetConnectivityService;
         private readonly StatusViewModel _statusVM = statusVM;
         private readonly Action? _shutdownApp = shutdownApp ?? (() => Application.Current?.Shutdown()); // Optional action to shutdown the app after setup failure
-        private int stepNumber; // Used for step numbering in the UI
+
+        // Paths (precomputed)
+        private readonly string _dbPath = Path.Combine(settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
+        private readonly string _pricesPath = Path.Combine(settings.UserDownloadsPath, "prices.json");
+
+        // Progress reporters (precomputed)
+        private readonly IProgress<string> _statusLabel2Progress = new Progress<string>(msg => statusVM.StatusLabel2 = msg); // details/errors
+        private readonly IProgress<string> _statusLabel3Progress = new Progress<string>(msg => statusVM.StatusLabel3 = msg); // step + attempt
+        private readonly IProgress<int> _percentProgress = new Progress<int>(p => statusVM.ProgressValue = p);
 
         public async Task FirstTimeDbPrepOrchetrator(int defaultDelay = 3000)
         {
-            string dbPath = Path.Combine(_settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
-            string pricesPath = Path.Combine(_settings.UserDownloadsPath, "prices.json");
-
             // 1) Internet precheck
             if (!await _internetConnectivityService.IsInternetAvailableAsync())
             {
@@ -44,13 +49,8 @@ namespace CollectaMundo.ApplicationServices
             _statusVM.StatusLabel1 = "Performing first-time setup of card database - please wait ...";
             _statusVM.ProgressVisibility = Visibility.Visible;
 
-            // Wiring: 2 = detail/errors, 3 = current step + attempt
-            IProgress<string> statusLabel2Progress = new Progress<string>(msg => _statusVM.StatusLabel2 = msg);
-            IProgress<string> statusLabel3Progress = new Progress<string>(msg => _statusVM.StatusLabel3 = msg);
-            IProgress<int> percentProgress = new Progress<int>(p => _statusVM.ProgressValue = p);
-
             // Always start from a clean slate on a single run
-            try { CleanupPartialDatabaseFiles(dbPath, _settings.UserDownloadsPath); }
+            try { CleanupPartialDatabaseFiles(_dbPath, _settings.UserDownloadsPath); }
             catch (Exception ex) { Debug.WriteLine($"[Cleanup] {ex.Message}"); }
 
             try
@@ -60,13 +60,13 @@ namespace CollectaMundo.ApplicationServices
                 // ---------------------------
                 var step1Name = "Step 1. Downloading card database and prices...";
                 var downloadResult = await _downloadService.DownloadParallelAsync(
-                    _settings.CardDatabaseUrl, dbPath, "Card database",
-                    _settings.CardPricesUrl, pricesPath, "Price File",
+                    _settings.CardDatabaseUrl, _dbPath, "Card database",
+                    _settings.CardPricesUrl, _pricesPath, "Price File",
                     retryDelayInMs: defaultDelay,
                     stepName: step1Name,
-                    stepNameAndNumberProgress: statusLabel3Progress,
-                    stepDetailAndErrorProgress: statusLabel2Progress,
-                    percentProgress: percentProgress);
+                    stepNameAndNumberProgress: _statusLabel3Progress,
+                    stepDetailAndErrorProgress: _statusLabel2Progress,
+                    percentProgress: _percentProgress);
 
                 if (downloadResult.Code != OperationResultCode.Success)
                 {
@@ -82,10 +82,10 @@ namespace CollectaMundo.ApplicationServices
                 // ---------------------------
                 // Steps 2–9
                 // ---------------------------
-                await PrepareDatabase(defaultDelay, statusLabel3Progress, statusLabel2Progress, percentProgress, pricesPath);
+                await PrepareDatabase(defaultDelay);
 
                 // Success: clean up transient price file
-                try { File.Delete(pricesPath); }
+                try { File.Delete(_pricesPath); }
                 catch (IOException ex) { Debug.WriteLine($"Couldn't delete prices.json: {ex.Message}"); }
 
                 // Clear UI on success
@@ -105,17 +105,17 @@ namespace CollectaMundo.ApplicationServices
             }
         }
 
-        private async Task PrepareDatabase(int defaultDelay, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, IProgress<int> percentProgress, string pricesPath)
+        private async Task PrepareDatabase(int defaultDelay)
         {
             int stepNumber = 2;
 
             var steps = new List<(string Label, Func<Task> Work, bool ShowProgress)>
             {
                 ($"Step {stepNumber++}. Creating custom tables...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn)) ),false),
-                ($"Step {stepNumber++}. Generating mana symbols...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn, percentProgress)),true),
-                ($"Step {stepNumber++}. Generating mana cost images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, percentProgress)),true),
-                ($"Step {stepNumber++}. Generating set icon images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, percentProgress)),true),
-                ($"Step {stepNumber++}. Processing card prices...",() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(pricesPath, conn, stepDetailAndErrorProgress, percentProgress)),true),
+                ($"Step {stepNumber++}. Generating mana symbols...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn, _percentProgress)),true),
+                ($"Step {stepNumber++}. Generating mana cost images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, _percentProgress)),true),
+                ($"Step {stepNumber++}. Generating set icon images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, _percentProgress)),true),
+                ($"Step {stepNumber++}. Processing card prices...",() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(_pricesPath, conn, _statusLabel2Progress, _percentProgress)),true),
                 ($"Step {stepNumber++}. Creating views...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket"))),false),
                 ($"Step {stepNumber++}. Creating indices...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn))),false),
                 ($"Step {stepNumber++}. Optimizing database...",() => Task.Run(() => ExecuteWithConnectionAsync(conn => _dbSchemaRepo.OptimizeAsync(conn))),false),
@@ -135,8 +135,8 @@ namespace CollectaMundo.ApplicationServices
                     retryDelayInMs: defaultDelay,
                     maxRetries: 3,
                     stepName: label,
-                    stepNameAndNumberProgress: stepNameAndNumberProgress,
-                    stepDetailAndErrorProgress: stepDetailAndErrorProgress);
+                    stepNameAndNumberProgress: _statusLabel3Progress,
+                    stepDetailAndErrorProgress: _statusLabel2Progress);
 
                 if (result.Code != OperationResultCode.Success)
                 {
