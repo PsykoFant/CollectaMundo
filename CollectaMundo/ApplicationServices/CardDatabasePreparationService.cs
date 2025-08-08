@@ -33,6 +33,7 @@ namespace CollectaMundo.ApplicationServices
         private readonly IProgress<string> _statusLabel3Progress = new Progress<string>(msg => statusVM.StatusLabel3 = msg); // step + attempt
         private readonly IProgress<int> _percentProgress = new Progress<int>(p => statusVM.ProgressValue = p);
 
+        // Use case: orchestrates the first-time database preparation steps
         public async Task FirstTimeDbPrepOrchetrator(int defaultDelay = 3000)
         {
             // 1) Internet precheck
@@ -58,6 +59,7 @@ namespace CollectaMundo.ApplicationServices
                 // ---------------------------
                 // Step 1. Download resources
                 // ---------------------------
+
                 var step1Name = "Step 1. Downloading card database and prices...";
                 var downloadResult = await _downloadService.DownloadParallelAsync(
                     _settings.CardDatabaseUrl, _dbPath, "Card database",
