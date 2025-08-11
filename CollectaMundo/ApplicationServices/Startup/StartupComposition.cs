@@ -54,8 +54,6 @@ namespace CollectaMundo.ApplicationServices.Startup
                     await prepService.FirstTimeDbPrepOrchetrator();
                 }
 
-                statusVM.StatusLabel1 = string.Empty;
-                statusVM.StatusLabel2 = string.Empty;
                 statusVM.StatusLabel3 = "Loading ALL the cards…";
                 await UIHelper.ForceRenderAsync();
 
