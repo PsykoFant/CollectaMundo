@@ -22,7 +22,6 @@ namespace CollectaMundo.ApplicationServices
         private readonly IDownloadService _downloadService = downloadService;
         private readonly IInternetConnectivityService _internetConnectivityService = internetConnectivityService;
         private readonly StatusViewModel _statusVM = statusVM;
-        private readonly Action? _shutdownApp = shutdownApp ?? (() => Application.Current?.Shutdown()); // Optional action to shutdown the app after setup failure
 
         // Paths (precomputed)
         private readonly string _dbPath = Path.Combine(settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
@@ -35,17 +34,12 @@ namespace CollectaMundo.ApplicationServices
         private readonly IProgress<int> _percentProgress = new Progress<int>(p => statusVM.ProgressValue = p);
 
         // Use case: orchestrates the first-time database preparation steps
-        public async Task FirstTimeDbPrepOrchetrator(int defaultDelay = 3000)
+        public async Task<OperationResult> FirstTimeDbPrepOrchetrator(int defaultDelay = 3000)
         {
             // 1) Internet precheck
             if (!await _internetConnectivityService.IsInternetAvailableAsync())
             {
-                await DbSetupFailed(
-                    statusAboveBar: "No internet connection!",
-                    statusBelowBar: "Unfortunately, first time setup cannot continue without internet connection",
-                    statusLabelMain: "Please check your connection. CollectaMundo will close down shortly...",
-                    defaultDelay);
-                return;
+                return new OperationResult(OperationResultCode.Error, "Internet not available");
             }
 
             _overallStepHeadlineProgress.Report("Performing first-time setup of card database - please wait ...");
@@ -74,12 +68,7 @@ namespace CollectaMundo.ApplicationServices
                 if (downloadResult.Code != OperationResultCode.Success)
                 {
                     Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
-                    await DbSetupFailed(
-                        statusAboveBar: "Could not download required files.",
-                        statusBelowBar: "CollectaMundo will automatically shutdown shortly ...",
-                        statusLabelMain: downloadResult.Message,
-                        defaultDelay);
-                    return;
+                    return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
                 }
 
                 // ---------------------------
@@ -88,32 +77,23 @@ namespace CollectaMundo.ApplicationServices
                 var prepResult = await PrepareDatabaseAsync(defaultDelay, stepNumberStart: 2);
                 if (prepResult.Code != OperationResultCode.Success)
                 {
-                    await DbSetupFailed(
-                        statusAboveBar: "Setup failed.",
-                        statusBelowBar: "A setup step failed repeatedly.",
-                        statusLabelMain: prepResult.Message,
-                        defaultDelay);
-                    return;
+                    return new OperationResult(OperationResultCode.Error, prepResult.Message);
                 }
 
                 // Success: clean up transient price file
                 try { File.Delete(_pricesPath); }
-                catch (IOException ex) { Debug.WriteLine($"Couldn't delete prices.json: {ex.Message}"); }
+                catch (IOException ex)
+                {
+                    Debug.WriteLine($"Couldn't delete prices.json: {ex.Message}");
+                    return new OperationResult(OperationResultCode.Error, ex.Message);
+                }
 
-                // Clear UI on success
-                _statusVM.ProgressValue = 0;
-                _statusVM.StatusLabel1 = string.Empty;
-                _statusVM.StatusLabel2 = string.Empty;
-                _statusVM.StatusLabel3 = string.Empty;
+                return new OperationResult(OperationResultCode.Success);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Fatal error: {ex.Message}");
-                await DbSetupFailed(
-                    statusAboveBar: "Setup failed.",
-                    statusBelowBar: "CollectaMundo will automatically shutdown shortly ...",
-                    statusLabelMain: ex.Message,
-                    defaultDelay);
+                return new OperationResult(OperationResultCode.Error, ex.Message);
             }
         }
 

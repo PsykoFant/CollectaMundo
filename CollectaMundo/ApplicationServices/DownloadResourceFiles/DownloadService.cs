@@ -31,14 +31,14 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
             return await RetryHelper.RetryLoopAsync(
                 async () =>
                 {
-                    var result = await RunParallelDownloadsAsync(
+                    var (success, errorMessage) = await RunParallelDownloadsAsync(
                         url1, targetPath1, label1,
                         url2, targetPath2, label2,
                         stepDetailAndErrorProgress, percentProgress, token);
 
-                    return result.success
+                    return success
                         ? new OperationResult(OperationResultCode.Success, "Parallel download succeeded.")
-                        : new OperationResult(OperationResultCode.Error, result.errorMessage ?? "Unknown download error");
+                        : new OperationResult(OperationResultCode.DownloadFailed, errorMessage ?? "Unknown download error");
                 },
                 retryDelayInMs,
                 stepName,

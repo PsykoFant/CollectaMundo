@@ -51,7 +51,20 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
                 {
-                    await prepService.FirstTimeDbPrepOrchetrator();
+                    var prepResult = await prepService.FirstTimeDbPrepOrchetrator();
+                    if (prepResult.Code != OperationResultCode.Success)
+                    {
+                        switch (prepResult.Code)
+                        {
+                            case OperationResultCode.Error:
+                                ShowStartupFatal(statusVM, main: "First time setup failed! CollectaMundo cannot continue", above: prepResult.Message, below: "CollectaMundo will close down shortly.");
+                            case OperationResultCode.DownloadFailed:
+                                ShowStartupFatal(statusVM, main: "First time setup failed! Could not download necessary resource files.", above: prepResult.Message, below: "CollectaMundo will close down shortly.");
+                            default:
+                                ShowStartupFatal(statusVM, "Unknown error", "Please check your settings and try again.", "An unknown error occurred during database preparation.");
+                        }
+                        throw new InvalidOperationException("Database preparation did not complete successfully.");
+                    }
                 }
 
                 statusVM.StatusLabel3 = "Loading ALL the cards…";
@@ -80,7 +93,14 @@ namespace CollectaMundo.ApplicationServices.Startup
                 throw;
             }
         }
-
+        private static void ShowStartupFatal(StatusViewModel vm, string main, string above, string below)
+        {
+            vm.ShowStatusOverlay(above);           // your existing overlay method
+            vm.StatusLabel1 = main;                // details/error
+            vm.StatusLabel2 = below;               // “The app will close shortly…” etc.
+            vm.ProgressVisibility = Visibility.Collapsed;
+            vm.ProgressValue = 0;
+        }
     }
 
 }

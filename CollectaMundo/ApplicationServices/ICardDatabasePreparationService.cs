@@ -1,8 +1,9 @@
-﻿namespace CollectaMundo.ApplicationServices
+﻿using CollectaMundo.ApplicationServices.Utilities;
+namespace CollectaMundo.ApplicationServices
 {
     public interface ICardDatabasePreparationService
     {
-        Task FirstTimeDbPrepOrchetrator(int defaultDelay);
+        Task<OperationResult> FirstTimeDbPrepOrchetrator(int defaultDelay = 3000);
     }
 
 }
