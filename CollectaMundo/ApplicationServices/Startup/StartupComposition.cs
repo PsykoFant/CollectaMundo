@@ -28,7 +28,7 @@ namespace CollectaMundo.ApplicationServices.Startup
             {
                 var settings = new JsonAppSettings();
                 var scryfallLookups = new ScryfallLookups();
-                AppGlobals.DbFactory = new DbConnectionFactory(settings);
+                var dbFactory = AppGlobals.DbFactory = new DbConnectionFactory(settings);
 
                 var missingPngRepo = new GenerateMissingPngRepository();
                 var missingPngLogic = new GenerateMissingPngLogic();
@@ -41,7 +41,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var internetCheckService = new InternetConnectivityService();
 
                 var schemaInitializer = new DatabaseSchemaRepository();
-                var prepService = new CardDatabasePreparationService(settings, schemaInitializer, priceService, missingPngService, downloadService, internetCheckService, statusVM);
+                var prepService = new CardDatabasePreparationService(settings, dbFactory, schemaInitializer, priceService, missingPngService, downloadService, internetCheckService, statusVM);
                 var integrityService = new DatabaseIntegrityService(settings);
 
                 statusVM.ShowStatusOverlay("Checking database integrity…");

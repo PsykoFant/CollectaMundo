@@ -106,15 +106,15 @@ namespace CollectaMundo.ApplicationServices.UpdateDB
 
             try
             {
-                await using var conn = await _dbFactory.OpenConnectionAsync();
+                //    await using var conn = await _dbFactory.OpenConnectionAsync();
 
-                await Task.Run(async () =>
-                {
-                    await _updateDBRepo.AttachTempDbAsync(conn, dbPath, stepDetailAndErrorProgress);
-                    await _updateDBRepo.DropTablesAsync(conn, stepDetailAndErrorProgress);
-                    await _updateDBRepo.CopyTablesAsync(conn, stepDetailAndErrorProgress);
-                    await _updateDBRepo.DetachTempDbAsync(conn, stepDetailAndErrorProgress);
-                });
+                //    await Task.Run(async () =>
+                //    {
+                //        await _updateDBRepo.AttachTempDbAsync(conn, dbPath, stepDetailAndErrorProgress);
+                //        await _updateDBRepo.DropTablesAsync(conn, stepDetailAndErrorProgress);
+                //        await _updateDBRepo.CopyTablesAsync(conn, stepDetailAndErrorProgress);
+                //        await _updateDBRepo.DetachTempDbAsync(conn, stepDetailAndErrorProgress);
+                //    });
 
             }
             catch (Exception ex)
