@@ -4,15 +4,36 @@ using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.ApplicationServices.Utilities.InternetCheck;
 using CollectaMundo.Data;
-using CollectaMundo.ViewModels;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
-using System.Windows;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class CardDatabasePreparationService(IAppSettings settings, IDbConnectionFactory dbFactory, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IDownloadService downloadService, IInternetConnectivityService internetConnectivityService, StatusViewModel statusVM, Action? shutdownApp = null) : ICardDatabasePreparationService
+    public sealed record SetupProgress(
+    string? Headline = null,
+    string? Detail = null,
+    string? Step = null,
+    int? Percent = null,
+    bool? IsProgressVisible = null);
+    public interface IProgressContext
+    {
+        IProgress<string> Headline { get; }
+        IProgress<string> Detail { get; }
+        IProgress<string> Step { get; }
+        IProgress<int> Percent { get; }
+        IProgress<bool> ProgressBarVisible { get; }
+    }
+    public sealed class ProgressContext(IProgress<SetupProgress> p) : IProgressContext
+    {
+        public static readonly IProgressContext NoOp = new ProgressContext(new Progress<SetupProgress>(_ => { }));
+        public IProgress<string> Headline { get; } = new Progress<string>(s => p.Report(new SetupProgress(Headline: s)));
+        public IProgress<string> Detail { get; } = new Progress<string>(s => p.Report(new SetupProgress(Detail: s)));
+        public IProgress<string> Step { get; } = new Progress<string>(s => p.Report(new SetupProgress(Step: s)));
+        public IProgress<int> Percent { get; } = new Progress<int>(v => p.Report(new SetupProgress(Percent: v)));
+        public IProgress<bool> ProgressBarVisible { get; } = new Progress<bool>(v => p.Report(new SetupProgress(IsProgressVisible: v)));
+    }
+    public class CardDatabasePreparationService(IAppSettings settings, IDbConnectionFactory dbFactory, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IDownloadService downloadService, IInternetConnectivityService internetConnectivityService) : ICardDatabasePreparationService
     {
         private readonly IAppSettings _settings = settings;
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
@@ -21,17 +42,14 @@ namespace CollectaMundo.ApplicationServices
         private readonly IGenerateMissingPngService _missingPngService = missingPngService;
         private readonly IDownloadService _downloadService = downloadService;
         private readonly IInternetConnectivityService _internetConnectivityService = internetConnectivityService;
-        private readonly StatusViewModel _statusVM = statusVM;
 
         // Paths (precomputed)
         private readonly string _dbPath = Path.Combine(settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
         private readonly string _pricesPath = Path.Combine(settings.UserDownloadsPath, "prices.json");
 
-        // Progress reporters (precomputed)
-        private readonly IProgress<string> _overallStepHeadlineProgress = new Progress<string>(msg => statusVM.StatusLabel1 = msg); // details/errors
-        private readonly IProgress<string> _detailsAndErrorsProgress = new Progress<string>(msg => statusVM.StatusLabel2 = msg); // details/errors
-        private readonly IProgress<string> _stepNameAndAttemptProgress = new Progress<string>(msg => statusVM.StatusLabel3 = msg); // step + attempt
-        private readonly IProgress<int> _percentProgress = new Progress<int>(p => statusVM.ProgressValue = p);
+        private IProgressContext _progress = ProgressContext.NoOp;
+        public void SetProgress(IProgress<SetupProgress>? progress) => _progress = progress is null ? ProgressContext.NoOp : new ProgressContext(progress);
+
 
         // Use case: orchestrates the first-time database preparation steps
         public async Task<OperationResult> FirstTimeDbPrepOrchetrator(int defaultDelay = 3000)
@@ -39,11 +57,11 @@ namespace CollectaMundo.ApplicationServices
             // 1) Internet precheck
             if (!await _internetConnectivityService.IsInternetAvailableAsync())
             {
-                return new OperationResult(OperationResultCode.Error, "Internet not available");
+                return new OperationResult(OperationResultCode.NoInternet, "Internet not available");
             }
 
-            _overallStepHeadlineProgress.Report("Performing first-time setup of card database - please wait ...");
-            _statusVM.ProgressVisibility = Visibility.Visible;
+            _progress.Headline.Report("Performing first-time setup of card database - please wait ...");
+            _progress.ProgressBarVisible.Report(true);
 
             // Always start from a clean slate on a single run
             try { CleanupPartialDatabaseFiles(_dbPath, _settings.UserDownloadsPath); }
@@ -61,9 +79,9 @@ namespace CollectaMundo.ApplicationServices
                     _settings.CardPricesUrl, _pricesPath, "Price File",
                     retryDelayInMs: defaultDelay,
                     stepName: step1Name,
-                    stepNameAndNumberProgress: _stepNameAndAttemptProgress,
-                    stepDetailAndErrorProgress: _detailsAndErrorsProgress,
-                    percentProgress: _percentProgress);
+                    stepNameAndNumberProgress: _progress.Step,
+                    stepDetailAndErrorProgress: _progress.Detail,
+                    percentProgress: _progress.Percent);
 
                 if (downloadResult.Code != OperationResultCode.Success)
                 {
@@ -187,10 +205,10 @@ namespace CollectaMundo.ApplicationServices
             var steps = new List<(string Label, Func<Task> Work, bool ShowProgress)>
             {
                 ($"Step {stepNumberStart++}. Creating custom tables...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn)) ),false),
-                ($"Step {stepNumberStart++}. Generating mana symbols...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn, _percentProgress)),true),
-                ($"Step {stepNumberStart++}. Generating mana cost images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, _percentProgress)),true),
-                ($"Step {stepNumberStart++}. Generating set icon images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, _percentProgress)),true),
-                ($"Step {stepNumberStart++}. Processing card prices...",() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(_pricesPath, conn, _detailsAndErrorsProgress, _percentProgress)),true),
+                ($"Step {stepNumberStart++}. Generating mana symbols...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn, _progress.Percent)),true),
+                ($"Step {stepNumberStart++}. Generating mana cost images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, _progress.Percent)),true),
+                ($"Step {stepNumberStart++}. Generating set icon images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, _progress.Percent)),true),
+                ($"Step {stepNumberStart++}. Processing card prices...",() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(_pricesPath, conn, _progress.Detail, _progress.Percent)),true),
                 ($"Step {stepNumberStart++}. Creating views...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket"))),false),
                 ($"Step {stepNumberStart++}. Creating indices...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn))),false),
                 ($"Step {stepNumberStart++}. Optimizing database...",() => Task.Run(() => ExecuteWithConnectionAsync(conn => _dbSchemaRepo.OptimizeAsync(conn))),false),
@@ -198,8 +216,13 @@ namespace CollectaMundo.ApplicationServices
 
             foreach (var (label, work, showProgress) in steps)
             {
-                _statusVM.ProgressVisibility = showProgress ? Visibility.Visible : Visibility.Collapsed;
-                _statusVM.StatusLabel2 = string.Empty;
+                if (!showProgress)
+                {
+                    _progress.ProgressBarVisible.Report(false);
+                }
+
+                // Reset detail label for each step
+                _progress.Detail.Report(string.Empty);
 
                 var result = await RetryHelper.RetryLoopAsync(
                     async () =>
@@ -210,8 +233,8 @@ namespace CollectaMundo.ApplicationServices
                     retryDelayInMs: defaultDelay,
                     maxRetries: 3,
                     stepName: label,
-                    stepNameAndNumberProgress: _stepNameAndAttemptProgress,
-                    stepDetailAndErrorProgress: _detailsAndErrorsProgress);
+                    stepNameAndNumberProgress: _progress.Step,
+                    stepDetailAndErrorProgress: _progress.Detail);
 
                 if (result.Code != OperationResultCode.Success)
                 {
@@ -253,19 +276,6 @@ namespace CollectaMundo.ApplicationServices
             }
 
             Debug.WriteLine("[CardDatabasePrep] Deleted corrupt or partial DB file(s).");
-        }
-        private async Task DbSetupFailed(string statusAboveBar, string statusBelowBar, string statusLabelMain, int defaultDelay)
-        {
-            //  If we reach here, all attempts have failed
-            _statusVM.ProgressVisibility = Visibility.Collapsed;
-            _statusVM.LogoVisibility = Visibility.Collapsed;
-            _statusVM.SetupFailVisibility = Visibility.Visible;
-            _statusVM.StatusLabel1 = statusAboveBar;
-            _statusVM.StatusLabel2 = statusBelowBar;
-            _statusVM.StatusLabel3 = statusLabelMain;
-
-            await Task.Delay(defaultDelay * 3);
-            _shutdownApp?.Invoke();
         }
     }
 }

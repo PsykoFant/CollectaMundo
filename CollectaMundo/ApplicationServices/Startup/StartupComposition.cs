@@ -41,7 +41,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var internetCheckService = new InternetConnectivityService();
 
                 var schemaInitializer = new DatabaseSchemaRepository();
-                var prepService = new CardDatabasePreparationService(settings, dbFactory, schemaInitializer, priceService, missingPngService, downloadService, internetCheckService, statusVM);
+                var prepService = new CardDatabasePreparationService(settings, dbFactory, schemaInitializer, priceService, missingPngService, downloadService, internetCheckService);
                 var integrityService = new DatabaseIntegrityService(settings);
 
                 statusVM.ShowStatusOverlay("Checking database integrity…");
@@ -51,17 +51,55 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
                 {
+
+                    var progress = new Progress<SetupProgress>(u =>
+                    {
+                        if (u.Headline is not null) statusVM.StatusLabel1 = u.Headline;
+                        if (u.Detail is not null) statusVM.StatusLabel2 = u.Detail;
+                        if (u.Step is not null) statusVM.StatusLabel3 = u.Step;
+                        if (u.Percent is not null) statusVM.ProgressValue = u.Percent.Value;
+                        if (u.IsProgressVisible is not null)
+                            statusVM.ProgressVisibility = u.IsProgressVisible.Value ? Visibility.Visible : Visibility.Collapsed;
+                    });
+
+                    prepService.SetProgress(progress);
+
                     var prepResult = await prepService.FirstTimeDbPrepOrchetrator();
                     if (prepResult.Code != OperationResultCode.Success)
                     {
                         switch (prepResult.Code)
                         {
                             case OperationResultCode.Error:
-                                ShowStartupFatal(statusVM, main: "First time setup failed! CollectaMundo cannot continue", above: prepResult.Message, below: "CollectaMundo will close down shortly.");
+                                ShowStartupFatal(
+                                    statusVM,
+                                    main: "First time setup failed! CollectaMundo cannot continue",
+                                    above: prepResult.Message,
+                                    below: "CollectaMundo will close down shortly.");
+                                break;
+
+                            case OperationResultCode.NoInternet:
+                                ShowStartupFatal(
+                                    statusVM,
+                                    main: "No internet connection! Internet connection is required to continue.",
+                                    above: prepResult.Message,
+                                    below: "CollectaMundo will close down shortly.");
+                                break;
+
                             case OperationResultCode.DownloadFailed:
-                                ShowStartupFatal(statusVM, main: "First time setup failed! Could not download necessary resource files.", above: prepResult.Message, below: "CollectaMundo will close down shortly.");
+                                ShowStartupFatal(
+                                    statusVM,
+                                    main: "First time setup failed! Could not download necessary resource files.",
+                                    above: prepResult.Message,
+                                    below: "CollectaMundo will close down shortly.");
+                                break;
+
                             default:
-                                ShowStartupFatal(statusVM, "Unknown error", "Please check your settings and try again.", "An unknown error occurred during database preparation.");
+                                ShowStartupFatal(
+                                    statusVM,
+                                    main: "An unknown error occurred during database preparation.",
+                                    above: "Unknown error",
+                                    below: "CollectaMundo will close down shortly.");
+                                break;
                         }
                         throw new InvalidOperationException("Database preparation did not complete successfully.");
                     }
@@ -95,11 +133,13 @@ namespace CollectaMundo.ApplicationServices.Startup
         }
         private static void ShowStartupFatal(StatusViewModel vm, string main, string above, string below)
         {
-            vm.ShowStatusOverlay(above);           // your existing overlay method
-            vm.StatusLabel1 = main;                // details/error
-            vm.StatusLabel2 = below;               // “The app will close shortly…” etc.
+            vm.ShowStatusOverlay(main);           // your existing overlay method
+            vm.StatusLabel2 = above;                // details/error
+            vm.StatusLabel3 = below;               // “The app will close shortly…” etc.
             vm.ProgressVisibility = Visibility.Collapsed;
-            vm.ProgressValue = 0;
+            vm.ProgressVisibility = Visibility.Collapsed;
+            vm.LogoVisibility = Visibility.Collapsed;
+            vm.SetupFailVisibility = Visibility.Visible;
         }
     }
 

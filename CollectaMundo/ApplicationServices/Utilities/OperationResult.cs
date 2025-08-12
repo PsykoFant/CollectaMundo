@@ -8,6 +8,7 @@
         Empty = 2,
         UpToDate = 3,
         NeedsUpdate = 4,
-        DownloadFailed = 5
+        DownloadFailed = 5,
+        NoInternet = 6
     }
 }

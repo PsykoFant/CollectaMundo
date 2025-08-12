@@ -13,14 +13,15 @@ namespace CollectaMundo
         private StatusWindow? _statusWindow;
         protected override async void OnStartup(StartupEventArgs e)
         {
+
+            base.OnStartup(e);
+
+            var statusVM = new StatusViewModel();
+            _statusWindow = new StatusWindow { DataContext = statusVM };
+            _statusWindow.Show();
+
             try
             {
-                base.OnStartup(e);
-
-                var statusVM = new StatusViewModel();
-                _statusWindow = new StatusWindow { DataContext = statusVM };
-                _statusWindow.Show();
-
                 var rootVM = await StartupComposition.BuildAndStartAsync(statusVM);
 
                 var mainWindow = new MainWindow
@@ -33,7 +34,9 @@ namespace CollectaMundo
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Application startup failed: {ex.Message}");
+                Debug.WriteLine(ex);
+                await Task.Delay(10000);
+                Shutdown(-1);
             }
         }
     }
