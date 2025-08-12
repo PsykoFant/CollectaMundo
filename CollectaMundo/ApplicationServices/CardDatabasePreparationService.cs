@@ -33,10 +33,11 @@ namespace CollectaMundo.ApplicationServices
         public IProgress<int> Percent { get; } = new Progress<int>(v => p.Report(new SetupProgress(Percent: v)));
         public IProgress<bool> ProgressBarVisible { get; } = new Progress<bool>(v => p.Report(new SetupProgress(IsProgressVisible: v)));
     }
-    public class CardDatabasePreparationService(IAppSettings settings, IDbConnectionFactory dbFactory, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IDownloadService downloadService, IInternetConnectivityService internetConnectivityService) : ICardDatabasePreparationService
+    public class CardDatabasePreparationService(IAppSettings settings, IDbConnectionFactory dbFactory, IProgressContext progress, IDatabaseSchemaRepository dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IDownloadService downloadService, IInternetConnectivityService internetConnectivityService) : ICardDatabasePreparationService
     {
         private readonly IAppSettings _settings = settings;
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
+        private readonly IProgressContext _progress = progress;
         private readonly IDatabaseSchemaRepository _dbSchemaRepo = dbSchemaRepo;
         private readonly ICardPriceService _priceService = priceService;
         private readonly IGenerateMissingPngService _missingPngService = missingPngService;
@@ -46,10 +47,6 @@ namespace CollectaMundo.ApplicationServices
         // Paths (precomputed)
         private readonly string _dbPath = Path.Combine(settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
         private readonly string _pricesPath = Path.Combine(settings.UserDownloadsPath, "prices.json");
-
-        private IProgressContext _progress = ProgressContext.NoOp;
-        public void SetProgress(IProgress<SetupProgress>? progress) => _progress = progress is null ? ProgressContext.NoOp : new ProgressContext(progress);
-
 
         // Use case: orchestrates the first-time database preparation steps
         public async Task<OperationResult> FirstTimeDbPrepOrchetrator(int defaultDelay = 3000)
