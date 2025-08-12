@@ -22,7 +22,6 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
                 stepDetailAndErrorProgress
             );
         }
-
         public async Task<OperationResult> DownloadParallelAsync(
             string url1, string targetPath1, string label1,
             string url2, string targetPath2, string label2,

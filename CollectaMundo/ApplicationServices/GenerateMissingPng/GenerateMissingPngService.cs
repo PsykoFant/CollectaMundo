@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ScryfallLookups;
 using CollectaMundo.DomainLogic.GenerateMissingPng;

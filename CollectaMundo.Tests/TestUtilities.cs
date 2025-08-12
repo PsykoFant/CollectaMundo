@@ -1,9 +1,11 @@
 ﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Utilities.InternetCheck;
 using CollectaMundo.Data;
+using CollectaMundo.Data.CardDatabaseManagement;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.ViewModels;
 using Moq;
@@ -186,7 +188,7 @@ namespace CollectaMundo.Tests
 
     public class FirstTimeSetupTestContext
     {
-        public Mock<IDatabaseSchemaRepository> SchemaRepo { get; } = new();
+        public Mock<ICardDatabasePreparationRepo> SchemaRepo { get; } = new();
         public Mock<ICardPriceService> PriceService { get; } = new();
         public Mock<IGenerateMissingPngService> PngService { get; } = new();
         public Mock<IDownloadService> DownloadService { get; } = new();

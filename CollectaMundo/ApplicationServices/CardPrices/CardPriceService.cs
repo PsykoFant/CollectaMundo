@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data.CardPrices;
 using CollectaMundo.DomainLogic.CardPrices;
 using System.Collections.Concurrent;

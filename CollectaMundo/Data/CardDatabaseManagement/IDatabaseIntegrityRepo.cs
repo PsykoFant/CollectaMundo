@@ -1,8 +1,8 @@
 ﻿using System.Data.SQLite;
 
-namespace CollectaMundo.Data
+namespace CollectaMundo.Data.CardDatabaseManagement
 {
-    public interface IDatabaseHealthRepository
+    public interface IDatabaseIntegrityRepo
     {
         Task<bool> HasExpectedTablesAndViewsAsync(SQLiteConnection conn);
         Task<bool> QuickCheckAsync(SQLiteConnection conn);

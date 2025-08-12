@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Utilities;
-namespace CollectaMundo.ApplicationServices
+namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 {
     public interface ICardDatabasePreparationService
     {

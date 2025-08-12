@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.CardPrices;
+﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
@@ -7,7 +8,9 @@ using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.UpdateDB;
 using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.ApplicationServices.Utilities.InternetCheck;
+using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data;
+using CollectaMundo.Data.CardDatabaseManagement;
 using CollectaMundo.Data.CardPrices;
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ImportExport;
@@ -22,7 +25,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 {
     public static class StartupComposition
     {
-        public static async Task<RootViewModel> BuildAndStartAsync(StatusViewModel statusVM)
+        public static async Task<RootViewModel> BuildAndStartAsync(StatusViewModel statusVM, ProgressContext progressCtx)
         {
             try
             {
@@ -40,19 +43,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var downloadService = new DownloadService();
                 var internetCheckService = new InternetConnectivityService();
 
-                var schemaInitializer = new DatabaseSchemaRepository();
-
-                var progressAdapter = new Progress<SetupProgress>(u =>
-                {
-                    if (u.Headline is not null) statusVM.StatusLabel1 = u.Headline;
-                    if (u.Detail is not null) statusVM.StatusLabel2 = u.Detail;
-                    if (u.Step is not null) statusVM.StatusLabel3 = u.Step;
-                    if (u.Percent is not null) statusVM.ProgressValue = u.Percent.Value;
-                    if (u.IsProgressVisible is not null)
-                        statusVM.ProgressVisibility = u.IsProgressVisible.Value ? Visibility.Visible : Visibility.Collapsed;
-                });
-
-                var progressCtx = new ProgressContext(progressAdapter);
+                var schemaInitializer = new CardDatabasePreparationRepo();
 
                 var prepService = new CardDatabasePreparationService(settings, dbFactory, progressCtx, schemaInitializer, priceService, missingPngService, downloadService, internetCheckService);
                 var integrityService = new DatabaseIntegrityService(settings);

@@ -1,8 +1,8 @@
 ﻿using System.Data.SQLite;
 
-namespace CollectaMundo.Data
+namespace CollectaMundo.Data.CardDatabaseManagement
 {
-    public class DatabaseHealthRepository : IDatabaseHealthRepository
+    public class DatabaseIntegrityRepo : IDatabaseIntegrityRepo
     {
         private static readonly List<string> RequiredObjects =
         [
