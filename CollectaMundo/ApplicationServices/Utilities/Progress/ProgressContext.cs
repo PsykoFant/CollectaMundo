@@ -1,12 +1,12 @@
-﻿namespace CollectaMundo.ApplicationServices.Utilities.Progress
+﻿namespace CollectaMundo.ApplicationServices.Utilities.Progress;
+
+public sealed record ProgressContext(IProgress<string> Headline, IProgress<string> Detail, IProgress<string> Step, IProgress<int> Percent, IProgress<bool> ProgressBarVisible) : IProgressContext
 {
-    public sealed class ProgressContext(IProgress<SetupProgress> p) : IProgressContext
-    {
-        public static readonly IProgressContext NoOp = new ProgressContext(new Progress<SetupProgress>(_ => { }));
-        public IProgress<string> Headline { get; } = new Progress<string>(s => p.Report(new SetupProgress(Headline: s)));
-        public IProgress<string> Detail { get; } = new Progress<string>(s => p.Report(new SetupProgress(Detail: s)));
-        public IProgress<string> Step { get; } = new Progress<string>(s => p.Report(new SetupProgress(Step: s)));
-        public IProgress<int> Percent { get; } = new Progress<int>(v => p.Report(new SetupProgress(Percent: v)));
-        public IProgress<bool> ProgressBarVisible { get; } = new Progress<bool>(v => p.Report(new SetupProgress(IsProgressVisible: v)));
-    }
+    public static readonly IProgressContext NoOp = new ProgressContext(
+        new Progress<string>(_ => { }),
+        new Progress<string>(_ => { }),
+        new Progress<string>(_ => { }),
+        new Progress<int>(_ => { }),
+        new Progress<bool>(_ => { })
+    );
 }

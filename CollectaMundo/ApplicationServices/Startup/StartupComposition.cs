@@ -25,7 +25,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 {
     public static class StartupComposition
     {
-        public static async Task<RootViewModel> BuildAndStartAsync(StatusViewModel statusVM, ProgressContext progressCtx)
+        public static async Task<RootViewModel> BuildAndStartAsync(StatusViewModel statusVM)
         {
             try
             {
@@ -45,7 +45,16 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var schemaInitializer = new CardDatabasePreparationRepo();
 
-                var prepService = new CardDatabasePreparationService(settings, dbFactory, progressCtx, schemaInitializer, priceService, missingPngService, downloadService, internetCheckService);
+                var ctx = new ProgressContext(
+                    new Progress<string>(s => statusVM.StatusLabel1 = s),
+                    new Progress<string>(s => statusVM.StatusLabel2 = s),
+                    new Progress<string>(s => statusVM.StatusLabel3 = s),
+                    new Progress<int>(p => statusVM.ProgressValue = p),
+                    new Progress<bool>(v => statusVM.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
+                );
+
+                var prepService = new CardDatabasePreparationService(settings, dbFactory, ctx, schemaInitializer, priceService, missingPngService, downloadService, internetCheckService);
+
                 var integrityService = new DatabaseIntegrityService(settings);
 
                 statusVM.ShowStatusOverlay("Checking database integrity…");
