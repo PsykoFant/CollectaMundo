@@ -4,7 +4,6 @@ using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.UpdateDB;
-using CollectaMundo.ApplicationServices.Utilities.InternetCheck;
 using CollectaMundo.Data.ImportExport;
 using CollectaMundo.Data.UpdateDB;
 using CollectaMundo.DomainLogic.EditCollection.Models;
@@ -13,10 +12,7 @@ using CollectaMundo.ViewModels;
 
 namespace CollectaMundo.Tests
 {
-    sealed class OfflineInternetConnectivityService : IInternetConnectivityService
-    {
-        public Task<bool> IsInternetAvailableAsync() => Task.FromResult(false);
-    }
+
     public sealed class IntegrationTests(InMemoryDatabaseFixture fixture)
         : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
@@ -28,11 +24,6 @@ namespace CollectaMundo.Tests
         // ---- IAsyncLifetime ----
         public async Task InitializeAsync()
         {
-            await SetupTestClassAsync(); // clearer name; still fulfills the interface
-        }
-
-        private async Task SetupTestClassAsync()
-        {
             // IMPORTANT: point the factory at THIS fixture instance's DB name
             var dbFactory = TestUtilities.CreateInMemoryDbFactory(_fx.DbName);
             AppGlobals.DbFactory = dbFactory;
@@ -41,22 +32,17 @@ namespace CollectaMundo.Tests
 
             // Build services (you already stubbed internet offline elsewhere)
             var settings = new JsonAppSettings();
-            var filteringService = new FilteringService();
             var editService = new EditCollectionService();
             var importExportService = new ImportExportService(new ImportExportRepo());
             var downloadService = new DownloadService();
-            var updateService = new UpdateService(
-                settings,
-                AppGlobals.DbFactory,
-                downloadService,
-                new OfflineInternetConnectivityService(), // stays offline to avoid background churn
+            var updateService = new UpdateService(settings, AppGlobals.DbFactory, downloadService, new OfflineInternetConnectivityService(), // stays offline to avoid background churn
                 new UpdateDbRepo(),
                 new UpdateDbRemoteData());
 
             var statusVM = new StatusViewModel();
 
             _mainVM = await MainWindowViewModel.CreateAsync(
-                filteringService,
+                _filteringService,
                 editService,
                 importExportService,
                 updateService,

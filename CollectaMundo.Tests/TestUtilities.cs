@@ -149,7 +149,7 @@ namespace CollectaMundo.Tests
                 }
             ];
         }
-        public static IDbConnectionFactory CreateInMemoryDbFactory() => CreateInMemoryDbFactory("MasterDb"); // keeps your existing callers working
+        //public static IDbConnectionFactory CreateInMemoryDbFactory() => CreateInMemoryDbFactory("MasterDb"); // keeps your existing callers working
         public static IDbConnectionFactory CreateInMemoryDbFactory(string dbName)
         {
             // Unique name per test -> isolated in-memory DB
@@ -181,6 +181,10 @@ namespace CollectaMundo.Tests
                 try { _persistentConnection?.Dispose(); } catch { /* meh */ }
             }
         }
+    }
+    sealed class OfflineInternetConnectivityService : IInternetConnectivityService
+    {
+        public Task<bool> IsInternetAvailableAsync() => Task.FromResult(false);
     }
     public sealed class FirstTimeSetupTestContext : IDisposable
     {

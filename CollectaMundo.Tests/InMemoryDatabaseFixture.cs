@@ -10,24 +10,18 @@ namespace CollectaMundo.Tests
     // A fixture class to set up an in‑memory SQLite database and seed it from CSV strings.
     public class InMemoryDatabaseFixture : IAsyncLifetime, IDisposable
     {
-        // NEW: unique DB name per fixture instance
+        // Unique DB name per fixture instance
         public string DbName { get; } = $"MasterDb_{Guid.NewGuid():N}";
 
         // Build a connection string that points to this instance's DB name
         private string MasterConnectionString => $"Data Source=file:{DbName}?mode=memory&cache=shared;Version=3;URI=True;";
 
-        // CHANGED: instance fields (were static)
+        // Instance fields 
         private SQLiteConnection? _masterConnection;
         private Task? _seedingTask;
 
         // ---- IAsyncLifetime ----
         public async Task InitializeAsync()
-        {
-            await InitializeDatabaseAsync();
-        }
-
-        // Helper with clearer intent (effectively the “renamed” method)
-        private async Task InitializeDatabaseAsync()
         {
             try
             {
@@ -496,8 +490,6 @@ namespace CollectaMundo.Tests
             }
             transaction.Commit();
         }
-
-
         public Task DisposeAsync()
         {
             _masterConnection?.Dispose();
