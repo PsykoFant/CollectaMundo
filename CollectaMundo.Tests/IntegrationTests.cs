@@ -19,6 +19,7 @@ namespace CollectaMundo.Tests
         private MainWindowViewModel _mainVM = null!;
         private readonly List<CardChangeEventArgs> _changedEvents = [];
         private readonly FilteringService _filteringService = new();
+
         public async Task InitializeAsync()
         {
             var dbFactory = TestUtilities.CreateInMemoryDbFactory();
