@@ -12,11 +12,11 @@ using System.IO;
 
 namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 {
-    public class CardDatabasePreparationService(IAppSettings settings, IDbConnectionFactory dbFactory, IProgressContext progress, ICardDatabasePreparationRepo dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IDownloadService downloadService, IInternetConnectivityService internetConnectivityService) : ICardDatabasePreparationService
+    public class CardDatabasePreparationService(IAppSettings settings, IDbConnectionFactory dbFactory, ProgressSinks progressSinks, ICardDatabasePreparationRepo dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IDownloadService downloadService, IInternetConnectivityService internetConnectivityService) : ICardDatabasePreparationService
     {
         private readonly IAppSettings _settings = settings;
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
-        private readonly IProgressContext _progress = progress;
+        private readonly ProgressSinks _progressSinks = progressSinks ?? ProgressSinks.NoOp;
         private readonly ICardDatabasePreparationRepo _dbSchemaRepo = dbSchemaRepo;
         private readonly ICardPriceService _priceService = priceService;
         private readonly IGenerateMissingPngService _missingPngService = missingPngService;
@@ -36,8 +36,8 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 return new OperationResult(OperationResultCode.NoInternet, "Internet not available");
             }
 
-            _progress.Headline.Report("Performing first-time setup of card database - please wait ...");
-            _progress.ProgressBarVisible.Report(true);
+            _progressSinks.Headline.Report("Performing first-time setup of card database - please wait ...");
+            _progressSinks.ProgressBarVisible.Report(true);
 
             // Always start from a clean slate on a single run
             try { CleanupPartialDatabaseFiles(_dbPath, _settings.UserDownloadsPath); }
@@ -55,9 +55,9 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                     _settings.CardPricesUrl, _pricesPath, "Price File",
                     retryDelayInMs: defaultDelay,
                     stepName: step1Name,
-                    stepNameAndNumberProgress: _progress.Step,
-                    stepDetailAndErrorProgress: _progress.Detail,
-                    percentProgress: _progress.Percent);
+                    stepNameAndNumberProgress: _progressSinks.Step,
+                    stepDetailAndErrorProgress: _progressSinks.Detail,
+                    percentProgress: _progressSinks.Percent);
 
                 if (downloadResult.Code != OperationResultCode.Success)
                 {
@@ -181,10 +181,10 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             var steps = new List<(string Label, Func<Task> Work, bool ShowProgress)>
             {
                 ($"Step {stepNumberStart++}. Creating custom tables...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateTablesAsync(conn)) ),false),
-                ($"Step {stepNumberStart++}. Generating mana symbols...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn, _progress.Percent)),true),
-                ($"Step {stepNumberStart++}. Generating mana cost images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, _progress.Percent)),true),
-                ($"Step {stepNumberStart++}. Generating set icon images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, _progress.Percent)),true),
-                ($"Step {stepNumberStart++}. Processing card prices...",() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(_pricesPath, conn, _progress.Detail, _progress.Percent)),true),
+                ($"Step {stepNumberStart++}. Generating mana symbols...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn, _progressSinks.Percent)),true),
+                ($"Step {stepNumberStart++}. Generating mana cost images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, _progressSinks.Percent)),true),
+                ($"Step {stepNumberStart++}. Generating set icon images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, _progressSinks.Percent)),true),
+                ($"Step {stepNumberStart++}. Processing card prices...",() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(_pricesPath, conn, _progressSinks.Detail, _progressSinks.Percent)),true),
                 ($"Step {stepNumberStart++}. Creating views...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateViewsAsync(conn, "cardmarket"))),false),
                 ($"Step {stepNumberStart++}. Creating indices...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbSchemaRepo.CreateIndicesAsync(conn))),false),
                 ($"Step {stepNumberStart++}. Optimizing database...",() => Task.Run(() => ExecuteWithConnectionAsync(conn => _dbSchemaRepo.OptimizeAsync(conn))),false),
@@ -194,11 +194,11 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             {
                 if (!showProgress)
                 {
-                    _progress.ProgressBarVisible.Report(false);
+                    _progressSinks.ProgressBarVisible.Report(false);
                 }
 
                 // Reset detail label for each step
-                _progress.Detail.Report(string.Empty);
+                _progressSinks.Detail.Report(string.Empty);
 
                 var result = await RetryHelper.RetryLoopAsync(
                     async () =>
@@ -209,8 +209,8 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                     retryDelayInMs: defaultDelay,
                     maxRetries: 3,
                     stepName: label,
-                    stepNameAndNumberProgress: _progress.Step,
-                    stepDetailAndErrorProgress: _progress.Detail);
+                    stepNameAndNumberProgress: _progressSinks.Step,
+                    stepDetailAndErrorProgress: _progressSinks.Detail);
 
                 if (result.Code != OperationResultCode.Success)
                 {

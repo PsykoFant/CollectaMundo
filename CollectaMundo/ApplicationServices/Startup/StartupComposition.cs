@@ -45,15 +45,17 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var schemaInitializer = new CardDatabasePreparationRepo();
 
-                var ctx = new ProgressContext(
-                    new Progress<string>(s => statusVM.StatusLabel1 = s),
-                    new Progress<string>(s => statusVM.StatusLabel2 = s),
-                    new Progress<string>(s => statusVM.StatusLabel3 = s),
-                    new Progress<int>(p => statusVM.ProgressValue = p),
-                    new Progress<bool>(v => statusVM.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
-                );
+                var sinks = new ProgressSinks
+                {
+                    Headline = new Progress<string>(s => statusVM.StatusLabel1 = s),
+                    Detail = new Progress<string>(s => statusVM.StatusLabel2 = s),
+                    Step = new Progress<string>(s => statusVM.StatusLabel3 = s),
+                    Percent = new Progress<int>(p => statusVM.ProgressValue = p),
+                    ProgressBarVisible = new Progress<bool>(v =>
+                        statusVM.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
+                };
 
-                var prepService = new CardDatabasePreparationService(settings, dbFactory, ctx, schemaInitializer, priceService, missingPngService, downloadService, internetCheckService);
+                var prepService = new CardDatabasePreparationService(settings, dbFactory, sinks, schemaInitializer, priceService, missingPngService, downloadService, internetCheckService);
 
                 var integrityService = new DatabaseIntegrityService(settings);
 
@@ -142,5 +144,4 @@ namespace CollectaMundo.ApplicationServices.Startup
             vm.SetupFailVisibility = Visibility.Visible;
         }
     }
-
 }
