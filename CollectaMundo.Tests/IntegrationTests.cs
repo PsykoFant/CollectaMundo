@@ -13,26 +13,46 @@ using CollectaMundo.ViewModels;
 
 namespace CollectaMundo.Tests
 {
-    public sealed class IntegrationTests(InMemoryDatabaseFixture fixture) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
+    sealed class OfflineInternetConnectivityService : IInternetConnectivityService
+    {
+        public Task<bool> IsInternetAvailableAsync() => Task.FromResult(false);
+    }
+    public sealed class IntegrationTests(InMemoryDatabaseFixture fixture)
+        : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
         private readonly InMemoryDatabaseFixture _fx = fixture;
         private MainWindowViewModel _mainVM = null!;
         private readonly List<CardChangeEventArgs> _changedEvents = [];
         private readonly FilteringService _filteringService = new();
 
+        // ---- IAsyncLifetime ----
         public async Task InitializeAsync()
         {
-            var dbFactory = TestUtilities.CreateInMemoryDbFactory();
+            await SetupTestClassAsync(); // clearer name; still fulfills the interface
+        }
+
+        private async Task SetupTestClassAsync()
+        {
+            // IMPORTANT: point the factory at THIS fixture instance's DB name
+            var dbFactory = TestUtilities.CreateInMemoryDbFactory(_fx.DbName);
             AppGlobals.DbFactory = dbFactory;
 
             var readyTcs = new TaskCompletionSource();
 
+            // Build services (you already stubbed internet offline elsewhere)
             var settings = new JsonAppSettings();
             var filteringService = new FilteringService();
             var editService = new EditCollectionService();
             var importExportService = new ImportExportService(new ImportExportRepo());
             var downloadService = new DownloadService();
-            var updateService = new UpdateService(settings, AppGlobals.DbFactory, downloadService, new InternetConnectivityService(), new UpdateDbRepo(), new UpdateDbRemoteData());
+            var updateService = new UpdateService(
+                settings,
+                AppGlobals.DbFactory,
+                downloadService,
+                new OfflineInternetConnectivityService(), // stays offline to avoid background churn
+                new UpdateDbRepo(),
+                new UpdateDbRemoteData());
+
             var statusVM = new StatusViewModel();
 
             _mainVM = await MainWindowViewModel.CreateAsync(
@@ -50,10 +70,9 @@ namespace CollectaMundo.Tests
             _mainVM.AddCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
             _mainVM.EditCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
         }
-        public Task DisposeAsync()
-        {
-            return Task.CompletedTask;
-        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
+
         [Fact]
         public void Seed_has_expected_counts()
         {

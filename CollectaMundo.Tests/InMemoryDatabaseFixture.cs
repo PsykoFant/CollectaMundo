@@ -10,15 +10,27 @@ namespace CollectaMundo.Tests
     // A fixture class to set up an in‑memory SQLite database and seed it from CSV strings.
     public class InMemoryDatabaseFixture : IAsyncLifetime, IDisposable
     {
-        private const string MasterConnectionString = "Data Source=file:MasterDb?mode=memory&cache=shared;Version=3;";
-        private static SQLiteConnection? _masterConnection;
-        private static Task? _seedingTask;
+        // NEW: unique DB name per fixture instance
+        public string DbName { get; } = $"MasterDb_{Guid.NewGuid():N}";
 
+        // Build a connection string that points to this instance's DB name
+        private string MasterConnectionString => $"Data Source=file:{DbName}?mode=memory&cache=shared;Version=3;URI=True;";
+
+        // CHANGED: instance fields (were static)
+        private SQLiteConnection? _masterConnection;
+        private Task? _seedingTask;
+
+        // ---- IAsyncLifetime ----
         public async Task InitializeAsync()
+        {
+            await InitializeDatabaseAsync();
+        }
+
+        // Helper with clearer intent (effectively the “renamed” method)
+        private async Task InitializeDatabaseAsync()
         {
             try
             {
-                // Create and hold the master connection open
                 if (_masterConnection == null)
                 {
                     _masterConnection = new SQLiteConnection(MasterConnectionString);
@@ -36,15 +48,14 @@ namespace CollectaMundo.Tests
                 throw;
             }
 
-            // Wait outside the lock to avoid deadlocks
-            await _seedingTask;
+            await _seedingTask; // wait outside any lock
         }
-        private static async Task InitializeSchemaAndSeedAsync()
+        private async Task InitializeSchemaAndSeedAsync()
         {
             SetupSchema();
             await SeedDataAsync();
         }
-        private static void SetupSchema()
+        private void SetupSchema()
         {
             using var command = new SQLiteCommand(_masterConnection);
             // CREATE TABLE IF NOT EXISTS: cards
@@ -398,7 +409,7 @@ namespace CollectaMundo.Tests
 
 
         }
-        private static async Task SeedDataAsync()
+        private async Task SeedDataAsync()
         {
             // Check if seed is already there
             var cmd = new SQLiteCommand("SELECT COUNT(*) FROM sets", _masterConnection);
@@ -419,7 +430,7 @@ namespace CollectaMundo.Tests
             await SeedTableAsync("view_myCollection", Path.Combine(basePath, "view_myCollection.csv"));
             await SeedTableAsync("view_allCards", Path.Combine(basePath, "view_allCards.csv"));
         }
-        private static async Task SeedTableAsync(string tableName, string filePath)
+        private async Task SeedTableAsync(string tableName, string filePath)
         {
             if (!File.Exists(filePath))
             {
