@@ -212,11 +212,11 @@ namespace CollectaMundo.ViewModels
             set { _mainGridVisibility = value; OnPropertyChanged(); }
         }
 
-        private Visibility _contenSectionVisibility = Visibility.Hidden;
-        public Visibility ContenSectionVisibility
+        private Visibility _contentSectionVisibility = Visibility.Hidden;
+        public Visibility ContentSectionVisibility
         {
-            get => _contenSectionVisibility;
-            set { _contenSectionVisibility = value; OnPropertyChanged(); }
+            get => _contentSectionVisibility;
+            set { _contentSectionVisibility = value; OnPropertyChanged(); }
         }
 
         private Visibility _sideMenuVisibility = Visibility.Hidden;

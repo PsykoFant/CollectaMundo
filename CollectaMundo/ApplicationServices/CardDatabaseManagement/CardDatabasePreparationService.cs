@@ -65,6 +65,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                     return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
                 }
 
+
                 // ---------------------------
                 // Steps 2–9
                 // ---------------------------
@@ -75,6 +76,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 }
 
                 // Success: clean up transient price file
+
                 try { File.Delete(_pricesPath); }
                 catch (IOException ex)
                 {
@@ -192,10 +194,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             foreach (var (label, work, showProgress) in steps)
             {
-                if (!showProgress)
-                {
-                    _progressSinks.ProgressBarVisible.Report(false);
-                }
+                _progressSinks.ProgressBarVisible.Report(showProgress);
 
                 // Reset detail label for each step
                 _progressSinks.Detail.Report(string.Empty);

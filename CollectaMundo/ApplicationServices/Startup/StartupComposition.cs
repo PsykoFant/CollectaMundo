@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+﻿#region using directives
+using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
@@ -20,7 +21,7 @@ using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
 using System.Windows;
-
+#endregion
 namespace CollectaMundo.ApplicationServices.Startup
 {
     public static class StartupComposition
@@ -29,102 +30,63 @@ namespace CollectaMundo.ApplicationServices.Startup
         {
             try
             {
+                // Infrastructure
                 var settings = new JsonAppSettings();
                 var scryfallLookups = new ScryfallLookups();
                 var dbFactory = AppGlobals.DbFactory = new DbConnectionFactory(settings);
+                var downloadService = new DownloadService();
+                var internetService = new InternetConnectivityService();
 
+                // Card DB prep (repos + services)
                 var missingPngRepo = new GenerateMissingPngRepository();
                 var missingPngLogic = new GenerateMissingPngLogic();
-                var missingPngService = new GenerateMissingPngService(missingPngRepo, scryfallLookups, missingPngLogic);
+                var missingPngSvc = new GenerateMissingPngService(missingPngRepo, scryfallLookups, missingPngLogic);
 
                 var cardPriceRepo = new CardPriceRepository();
                 var priceService = new CardPriceService(settings, cardPriceRepo);
 
-                var downloadService = new DownloadService();
-                var internetCheckService = new InternetConnectivityService();
+                var prepRepo = new CardDatabasePreparationRepo();
+                var progressSinks = CreateProgressSinks(statusVM);
 
-                var schemaInitializer = new CardDatabasePreparationRepo();
-
-                var sinks = new ProgressSinks
-                {
-                    Headline = new Progress<string>(s => statusVM.StatusLabel1 = s),
-                    Detail = new Progress<string>(s => statusVM.StatusLabel2 = s),
-                    Step = new Progress<string>(s => statusVM.StatusLabel3 = s),
-                    Percent = new Progress<int>(p => statusVM.ProgressValue = p),
-                    ProgressBarVisible = new Progress<bool>(v =>
-                        statusVM.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
-                };
-
-                var prepService = new CardDatabasePreparationService(settings, dbFactory, sinks, schemaInitializer, priceService, missingPngService, downloadService, internetCheckService);
+                var prepService = new CardDatabasePreparationService(settings, dbFactory, progressSinks, prepRepo, priceService, missingPngSvc, downloadService, internetService);
 
                 var integrityService = new DatabaseIntegrityService(settings);
 
+                // Status overlay
                 statusVM.ShowStatusOverlay("Checking database integrity…");
                 await UIHelper.ForceRenderAsync();
 
+                // First-time setup / repair if needed
                 var dbStatus = await integrityService.GetDatabaseStatusAsync();
-
                 if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
                 {
                     var prepResult = await prepService.FirstTimeDbPrepOrchetrator();
                     if (prepResult.Code != OperationResultCode.Success)
                     {
-                        switch (prepResult.Code)
-                        {
-                            case OperationResultCode.Error:
-                                ShowStartupFatal(
-                                    statusVM,
-                                    main: "First time setup failed! CollectaMundo cannot continue",
-                                    above: prepResult.Message,
-                                    below: "CollectaMundo will close down shortly.");
-                                break;
-
-                            case OperationResultCode.NoInternet:
-                                ShowStartupFatal(
-                                    statusVM,
-                                    main: "No internet connection! Internet connection is required to continue.",
-                                    above: prepResult.Message,
-                                    below: "CollectaMundo will close down shortly.");
-                                break;
-
-                            case OperationResultCode.DownloadFailed:
-                                ShowStartupFatal(
-                                    statusVM,
-                                    main: "First time setup failed! Could not download necessary resource files.",
-                                    above: prepResult.Message,
-                                    below: "CollectaMundo will close down shortly.");
-                                break;
-
-                            default:
-                                ShowStartupFatal(
-                                    statusVM,
-                                    main: "An unknown error occurred during database preparation.",
-                                    above: "Unknown error",
-                                    below: "CollectaMundo will close down shortly.");
-                                break;
-                        }
+                        ShowStartupFailure(statusVM, prepResult);
                         throw new InvalidOperationException("Database preparation did not complete successfully.");
                     }
                 }
 
+                // Main app services (feature layer)
                 statusVM.StatusLabel3 = "Loading ALL the cards…";
                 await UIHelper.ForceRenderAsync();
 
-                // Construct your new DI services
                 var filteringService = new FilteringService();
                 var editService = new EditCollectionService();
                 var importExportService = new ImportExportService(new ImportExportRepo());
-                var updateService = new UpdateService(settings, AppGlobals.DbFactory, downloadService, internetCheckService, new UpdateDbRepo(), new UpdateDbRemoteData());
+                var updateService = new UpdateService(settings, dbFactory, downloadService, internetService, new UpdateDbRepo(), new UpdateDbRemoteData());
 
+                // Build view model off UI thread
                 var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, updateService, downloadService, statusVM));
 
+                // Show initial UI
                 mainVM.FilterVM.NotifyFilterChanged();
                 mainVM.SideMenuVisibility = Visibility.Visible;
-                mainVM.ContenSectionVisibility = Visibility.Visible;
+                mainVM.ContentSectionVisibility = Visibility.Visible;
                 mainVM.MainGridVisibility = Visibility.Visible;
 
                 statusVM.HideStatusOverlay();
-
                 return new RootViewModel(mainVM, statusVM);
             }
             catch (Exception ex)
@@ -132,16 +94,49 @@ namespace CollectaMundo.ApplicationServices.Startup
                 Debug.WriteLine($"Startup failed: {ex.Message}");
                 throw;
             }
-        }
-        private static void ShowStartupFatal(StatusViewModel vm, string main, string above, string below)
-        {
-            vm.ShowStatusOverlay(main);           // your existing overlay method
-            vm.StatusLabel2 = above;                // details/error
-            vm.StatusLabel3 = below;               // “The app will close shortly…” etc.
-            vm.ProgressVisibility = Visibility.Collapsed;
-            vm.ProgressVisibility = Visibility.Collapsed;
-            vm.LogoVisibility = Visibility.Collapsed;
-            vm.SetupFailVisibility = Visibility.Visible;
+
+            // --- local helpers ---
+
+            static ProgressSinks CreateProgressSinks(StatusViewModel vm) => new()
+            {
+                Headline = new Progress<string>(s => vm.StatusLabel1 = s),
+                Detail = new Progress<string>(s => vm.StatusLabel2 = s),
+                Step = new Progress<string>(s => vm.StatusLabel3 = s),
+                Percent = new Progress<int>(p => vm.ProgressValue = p),
+                ProgressBarVisible = new Progress<bool>(v =>
+                    vm.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
+            };
+
+            static void ShowStartupFailure(StatusViewModel vm, OperationResult result)
+            {
+                // Title/above/below mapping
+                string main = result.Code switch
+                {
+                    OperationResultCode.NoInternet => "No internet connection! Internet connection is required to continue.",
+                    OperationResultCode.DownloadFailed => "First time setup failed! Could not download necessary resource files.",
+                    OperationResultCode.Error => "First time setup failed! CollectaMundo cannot continue",
+                    _ => "An unknown error occurred during database preparation."
+                };
+
+                string above = result.Code switch
+                {
+                    OperationResultCode.NoInternet => result.Message,
+                    OperationResultCode.DownloadFailed => result.Message,
+                    OperationResultCode.Error => result.Message,
+                    _ => "Unknown error"
+                };
+
+                const string below = "CollectaMundo will close down shortly.";
+
+                vm.ShowStatusOverlay(main);
+                vm.StatusLabel2 = above;
+                vm.StatusLabel3 = below;
+                vm.ProgressVisibility = Visibility.Collapsed;
+                vm.LogoVisibility = Visibility.Collapsed;
+                vm.SetupFailVisibility = Visibility.Visible;
+                vm.ProgressValue = 0;
+            }
         }
     }
 }
+
