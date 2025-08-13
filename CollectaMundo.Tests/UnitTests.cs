@@ -718,230 +718,159 @@ namespace CollectaMundo.Tests
         }
         public class FirstTimeSetupLogicTests
         {
-            public class RetryBehavior
+
+            [Fact]
+            public async Task FirstTimeDbPrepOrchetrator_AllStepsSucceed_ReturnsSuccess_AndProgressFinishes()
             {
-                [Fact]
-                public async Task FirstTimeDbPrepOrchetrator_AllStepsSucceed_NoRetries()
-                {
-                    // Arrange
-                    var ctx = new FirstTimeSetupTestContext();
+                using var ctx = new FirstTimeSetupTestContext();
+                ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.StubAllStepsAsSuccess();
 
-                    ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
-                    ctx.DownloadService
-                        .Setup(d => d.DownloadParallelAsync(
-                            It.IsAny<string>(), // url1
-                            It.IsAny<string>(), // targetPath1
-                            It.IsAny<string>(), // label1
-                            It.IsAny<string>(), // url2
-                            It.IsAny<string>(), // targetPath2
-                            It.IsAny<string>(), // label2
-                            It.IsAny<int>(),    // retryDelayInMs
-                            It.IsAny<string>(), // stepName
-                            It.IsAny<IProgress<string>>(), // stepNameAndNumberProgress
-                            It.IsAny<IProgress<string>>(), // stepDetailAndErrorProgress
-                            It.IsAny<IProgress<int>>(),    // percentProgress
-                            It.IsAny<CancellationToken>())) // token
-                        .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
-
-                    ctx.StubAllStepsAsSuccess();
-
-                    var service = ctx.BuildService();
-
-                    // Act
-                    await service.FirstTimeDbPrepOrchetrator(0);
-
-                    // Assert
-                    Assert.False(ctx.ShutdownCalled);
-                    ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()), Times.Once);
-                }
-
-                [Fact]
-                public async Task FirstTimeDbPrepOrchetrator_RetriesOnStepFailure()
-                {
-                    // Arrange
-                    var ctx = new FirstTimeSetupTestContext();
-                    ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
-
-                    ctx.StubAllStepsAsSuccess(); // do this first to avoid overwriting your override
-
-                    int callCount = 0;
-                    ctx.SchemaRepo.Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>())).Returns(async () =>
-                    {
-                        await Task.Yield(); // ensures async context
-                        callCount++;
-                        if (callCount < 3)
-                            throw new Exception($"Simulated failure on attempt {callCount}");
-                    });
-
-                    ctx.DownloadService
-                        .Setup(d => d.DownloadParallelAsync(
-                            It.IsAny<string>(), // url1
-                            It.IsAny<string>(), // targetPath1
-                            It.IsAny<string>(), // label1
-                            It.IsAny<string>(), // url2
-                            It.IsAny<string>(), // targetPath2
-                            It.IsAny<string>(), // label2
-                            It.IsAny<int>(),    // retryDelayInMs
-                            It.IsAny<string>(), // stepName
-                            It.IsAny<IProgress<string>>(), // stepNameAndNumberProgress
-                            It.IsAny<IProgress<string>>(), // stepDetailAndErrorProgress
-                            It.IsAny<IProgress<int>>(),    // percentProgress
-                            It.IsAny<CancellationToken>())) // token
-                        .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
-
-                    var service = ctx.BuildService();
-
-                    // Act
-                    await service.FirstTimeDbPrepOrchetrator(0);
-
-                    // Assert
-                    Assert.Equal(3, callCount); // 2 failures, then success
-                }
-
-                [Fact]
-                public async Task Step2FailsAfterRetries_ShutsDown()
-                {
-                    // Arrange
-                    var ctx = new FirstTimeSetupTestContext();
-                    ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
-                    ctx.StubAllStepsAsSuccess();
-
-                    // Downloads succeed so we reach Step 2
-                    ctx.DownloadService
-                        .Setup(d => d.DownloadParallelAsync(
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<int>(), It.IsAny<string>(),
-                            It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
-                            It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
-
-                    int createCalls = 0;
-                    ctx.SchemaRepo
-                        .Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()))
-                        .Returns(async () =>
-                        {
-                            await Task.Yield();
-                            createCalls++;
-                            throw new Exception("Step 2 failure");
-                        });
-
-                    var service = ctx.BuildService();
-
-                    // Act
-                    await service.FirstTimeDbPrepOrchetrator(0);
-
-                    // Assert
-                    Assert.True(ctx.ShutdownCalled);
-                    Assert.Equal(3, createCalls); // RetryHelper tried Step 2 three times
-                                                  // Steps after Step 2 should never run
-                    ctx.SchemaRepo.Verify(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>(), It.IsAny<string>()), Times.Never);
-                }
-
-                [Fact]
-                public async Task DownloadFailsAfterRetries_ShutsDown()
-                {
-                    // Arrange
-                    var ctx = new FirstTimeSetupTestContext();
-                    ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
-                    ctx.StubAllStepsAsSuccess(); // we won’t reach them if download never succeeds
-
-                    int attempts = 0;
-                    ctx.DownloadService
-                        .Setup(d => d.DownloadParallelAsync(
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                            It.IsAny<int>(), It.IsAny<string>(),
-                            It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
-                            It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(() =>
-                        {
-                            attempts++;
-                            // Always fail so RetryHelper hits its 3 attempts and returns Error
-                            return new OperationResult(OperationResultCode.Error, "Download failed");
-                        });
-
-                    var service = ctx.BuildService();
-
-                    // Act
-                    await service.FirstTimeDbPrepOrchetrator(0);
-
-                    // Assert
-                    Assert.True(ctx.ShutdownCalled);
-
-                    // The orchestrator should only call into the download service once;
-                    // internal retries are the service's responsibility.
-                    ctx.DownloadService.Verify(d => d.DownloadParallelAsync(
+                ctx.DownloadService
+                    .Setup(d => d.DownloadParallelAsync(
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                         It.IsAny<int>(), It.IsAny<string>(),
                         It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
-                        It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
-                        Times.Once);
+                        It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                    .Callback((
+                        string u1, string p1, string l1,
+                        string u2, string p2, string l2,
+                        int retryDelay, string stepName,
+                        IProgress<string> stepProg, IProgress<string> detailProg,
+                        IProgress<int> percentProg, CancellationToken _) =>
+                    {
+                        stepProg?.Report(stepName);
+                        detailProg?.Report("starting…");
+                        percentProg?.Report(15);
+                        percentProg?.Report(60);
+                        percentProg?.Report(100);
+                    })
+                    .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
 
-                    ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()), Times.Never);
+                var svc = ctx.BuildService();
 
-                }
+                var result = await svc.FirstTimeDbPrepOrchetrator(0);
 
+                Assert.Equal(OperationResultCode.Success, result.Code);
 
+                // repo/service calls
+                ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()), Times.Once);
+
+                // progress assertions
+                Assert.Contains(ctx.VisibleToggles, v => v);          // bar was shown
+                Assert.Contains(ctx.VisibleToggles, v => v == false); // bar was hidden
+                Assert.Contains(ctx.PercentSamples, p => p == 100);   // finished
+                Assert.NotEmpty(ctx.Steps);                         // at least one step label
             }
-            public class ShutdownLogic
+
+            [Fact]
+            public async Task FirstTimeDbPrepOrchetrator_RetriesCreateTables_ThenSucceeds()
             {
-                [Fact]
-                public async Task ExhaustsAllOuterRetries_CallsShutdown()
-                {
-                    // Arrange
-                    var ctx = new FirstTimeSetupTestContext();
-                    ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
-                    ctx.StubAllStepsAsSuccess(); // all steps will succeed... if we ever reach them
+                using var ctx = new FirstTimeSetupTestContext();
+                ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.StubAllStepsAsSuccess();
 
-                    // Download always fails → triggers all outer loop retries
+                int attempts = 0;
+                ctx.SchemaRepo
+                   .Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()))
+                   .Returns(async () =>
+                   {
+                       await Task.Yield();
+                       attempts++;
+                       if (attempts < 3) throw new Exception("boom");
+                   });
 
-                    ctx.DownloadService.Setup(d => d.DownloadParallelAsync(
-                        It.IsAny<string>(), // url1
-                        It.IsAny<string>(), // targetPath1
-                        It.IsAny<string>(), // label1
-                        It.IsAny<string>(), // url2
-                        It.IsAny<string>(), // targetPath2
-                        It.IsAny<string>(), // label2
-                        It.IsAny<int>(),    // retryDelayInMs
-                        It.IsAny<string>(), // stepName
-                        It.IsAny<IProgress<string>>(), // stepNameAndNumberProgress
-                        It.IsAny<IProgress<string>>(), // stepDetailAndErrorProgress
-                        It.IsAny<IProgress<int>>(),    // percentProgress
-                        It.IsAny<CancellationToken>())) // token
-                    .ReturnsAsync(new OperationResult(OperationResultCode.Error, "fail"));
+                ctx.DownloadService
+                    .Setup(d => d.DownloadParallelAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<int>(), It.IsAny<string>(),
+                        It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
+                        It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
 
-                    var service = ctx.BuildService();
+                var svc = ctx.BuildService();
 
-                    // Act
-                    await service.FirstTimeDbPrepOrchetrator(0); // 0ms retry delay
+                var result = await svc.FirstTimeDbPrepOrchetrator(0);
 
-                    // Assert
-                    Assert.True(ctx.ShutdownCalled);
-                }
-
-                [Fact]
-                public async Task NoInternet_CallsShutdownImmediately()
-                {
-                    // Arrange
-                    var ctx = new FirstTimeSetupTestContext();
-
-                    // Simulate no internet
-                    ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(false);
-
-                    // We don't need to stub any steps — setup should short-circuit before reaching them
-                    var service = ctx.BuildService();
-
-                    // Act
-                    await service.FirstTimeDbPrepOrchetrator(0);
-
-                    // Assert
-                    Assert.True(ctx.ShutdownCalled);
-                }
-
-
+                Assert.Equal(OperationResultCode.Success, result.Code);
+                Assert.Equal(3, attempts); // 2 failures + 1 success
             }
+
+            [Fact]
+            public async Task Step2FailsAfterRetries_ReturnsError_AndStopsPipeline()
+            {
+                using var ctx = new FirstTimeSetupTestContext();
+                ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.StubAllStepsAsSuccess();
+
+                ctx.DownloadService
+                    .Setup(d => d.DownloadParallelAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<int>(), It.IsAny<string>(),
+                        It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
+                        It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
+
+                int createCalls = 0;
+                ctx.SchemaRepo.Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>())).Returns(async () => { createCalls++; await Task.Yield(); throw new Exception("Step 2 fails"); });
+
+                var svc = ctx.BuildService();
+
+                var result = await svc.FirstTimeDbPrepOrchetrator(0);
+
+                Assert.Equal(OperationResultCode.Error, result.Code);
+                Assert.Equal(3, createCalls); // max retries
+                ctx.SchemaRepo.Verify(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>(), It.IsAny<string>()), Times.Never);
+            }
+
+            [Fact]
+            public async Task DownloadFails_ReturnsDownloadFailed_DoesNotRunSteps()
+            {
+                using var ctx = new FirstTimeSetupTestContext();
+                ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.StubAllStepsAsSuccess();
+
+                ctx.DownloadService
+                    .Setup(d => d.DownloadParallelAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<int>(), It.IsAny<string>(),
+                        It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
+                        It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new OperationResult(OperationResultCode.DownloadFailed, "net fail"));
+
+                var svc = ctx.BuildService();
+
+                var result = await svc.FirstTimeDbPrepOrchetrator(0);
+
+                Assert.Equal(OperationResultCode.DownloadFailed, result.Code);
+                ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()), Times.Never);
+                ctx.DownloadService.Verify(d => d.DownloadParallelAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<int>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
+                    Times.Once);
+            }
+
+            [Fact]
+            public async Task NoInternet_ReturnsNoInternet_AndSkipsEverything()
+            {
+                using var ctx = new FirstTimeSetupTestContext();
+                ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(false);
+
+                var svc = ctx.BuildService();
+                var result = await svc.FirstTimeDbPrepOrchetrator(0);
+
+                Assert.Equal(OperationResultCode.NoInternet, result.Code);
+                ctx.DownloadService.VerifyNoOtherCalls();
+                ctx.SchemaRepo.VerifyNoOtherCalls();
+            }
+
         }
     }
 }

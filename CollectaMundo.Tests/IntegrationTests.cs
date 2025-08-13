@@ -49,8 +49,6 @@ namespace CollectaMundo.Tests
             _mainVM.AddCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
             _mainVM.EditCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
         }
-
-
         public Task DisposeAsync()
         {
             return Task.CompletedTask;
