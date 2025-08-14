@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data.GenerateMissingPng;
-using CollectaMundo.Data.ScryfallLookups;
+using CollectaMundo.Data.RemoteLookups;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using Newtonsoft.Json.Linq;
 using System.Data.SQLite;
@@ -9,10 +9,10 @@ using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.GenerateMissingPng
 {
-    public class GenerateMissingPngService(IGenerateMissingPngRepository repository, IScryfallLookups scryfallLookups, IGenerateMissingPngLogic logic) : IGenerateMissingPngService
+    public class GenerateMissingPngService(IGenerateMissingPngRepository repository, IRemoteLookups scryfallLookups, IGenerateMissingPngLogic logic) : IGenerateMissingPngService
     {
         private readonly IGenerateMissingPngRepository _repository = repository;
-        private readonly IScryfallLookups _scryfallLookups = scryfallLookups;
+        private readonly IRemoteLookups _scryfallLookups = scryfallLookups;
         private readonly IGenerateMissingPngLogic _logic = logic;
         public async Task GenerateMissingManaSymbolImagesAsync(SQLiteConnection conn, IProgress<int>? percentProgress = null)
         {

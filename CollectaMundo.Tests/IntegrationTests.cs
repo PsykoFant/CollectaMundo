@@ -1,14 +1,22 @@
 ﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
+using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.ImportExport;
-using CollectaMundo.ApplicationServices.UpdateDB;
+using CollectaMundo.ApplicationServices.Utilities.Progress;
+using CollectaMundo.Data.CardDatabaseManagement;
+using CollectaMundo.Data.CardPrices;
+using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ImportExport;
-using CollectaMundo.Data.UpdateDB;
+using CollectaMundo.Data.RemoteLookups;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering;
+using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
+using System.Windows;
 
 namespace CollectaMundo.Tests
 {
@@ -24,38 +32,79 @@ namespace CollectaMundo.Tests
         // ---- IAsyncLifetime ----
         public async Task InitializeAsync()
         {
-            // IMPORTANT: point the factory at THIS fixture instance's DB name
+            // 1) Point the app at THIS fixture’s in-memory DB instance
             var dbFactory = TestUtilities.CreateInMemoryDbFactory(_fx.DbName);
             AppGlobals.DbFactory = dbFactory;
 
-            var readyTcs = new TaskCompletionSource();
-
-            // Build services (you already stubbed internet offline elsewhere)
-            var settings = new JsonAppSettings();
-            var editService = new EditCollectionService();
-            var importExportService = new ImportExportService(new ImportExportRepo());
-            var downloadService = new DownloadService();
-            var updateService = new UpdateService(settings, AppGlobals.DbFactory, downloadService, new OfflineInternetConnectivityService(), // stays offline to avoid background churn
-                new UpdateDbRepo(),
-                new UpdateDbRemoteData());
-
+            // 2) Status overlay (same object the app would use)
             var statusVM = new StatusViewModel();
 
+            // 3) Build the merged/updated stack (mirrors BuildAndStartAsync, minus integrity/FTS)
+            var settings = new JsonAppSettings();
+            var remoteLookups = new RemoteLookups();
+            var downloadService = new DownloadService();
+
+            var missingPngRepo = new GenerateMissingPngRepository();
+            var missingPngLogic = new GenerateMissingPngLogic();
+            var missingPngSvc = new GenerateMissingPngService(missingPngRepo, remoteLookups, missingPngLogic);
+
+            var cardPriceRepo = new CardPriceRepository();
+            var priceService = new CardPriceService(settings, cardPriceRepo);
+
+            var prepRepo = new CardDatabasePreparationRepo();
+            var progressSinks = CreateProgressSinks(statusVM); // <- local helper (below)
+
+            // IMPORTANT: inject the fixture-backed DbFactory so all DB calls stay in-memory
+            var prepService = new CardDatabasePreparationService(
+                                      settings,
+                                      AppGlobals.DbFactory!,
+                                      progressSinks,
+                                      prepRepo,
+                                      priceService,
+                                      missingPngSvc,
+                                      downloadService,
+                                      remoteLookups);
+
+            // 4) Feature-layer services
+            var editService = new EditCollectionService();
+            var importExportService = new ImportExportService(new ImportExportRepo());
+
+            // 5) Build the Main VM (same signature as in BuildAndStartAsync)
             _mainVM = await MainWindowViewModel.CreateAsync(
-                _filteringService,
-                editService,
-                importExportService,
-                updateService,
-                downloadService,
-                statusVM,
-                () => readyTcs.TrySetResult()
-            );
+                            _filteringService,    // use the field to match your test’s expectations
+                            editService,
+                            importExportService,
+                            prepService,
+                            downloadService,
+                            statusVM);
 
-            await readyTcs.Task;
+            // 6) Bring the VM to a “ready” state consistent with the app
+            _mainVM.FilterVM.NotifyFilterChanged();
+            _mainVM.SideMenuVisibility = Visibility.Visible;
+            _mainVM.ContentSectionVisibility = Visibility.Visible;
+            _mainVM.MainGridVisibility = Visibility.Visible;
 
+            // Optional readiness spin (tiny) in case CreateAsync schedules initial loads
+            SpinWait.SpinUntil(
+                () => _mainVM.AllCardsVM.Cards.Count >= 61 && _mainVM.MyCollectionVM.Cards.Count >= 22,
+                millisecondsTimeout: 500);
+
+            // 7) Hook events for the scenario test
             _mainVM.AddCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
             _mainVM.EditCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
         }
+
+        // Local test helper mirroring your StartupComposition helper
+        private static ProgressSinks CreateProgressSinks(StatusViewModel vm) => new()
+        {
+            Headline = new Progress<string>(s => vm.StatusLabel1 = s),
+            Detail = new Progress<string>(s => vm.StatusLabel2 = s),
+            Step = new Progress<string>(s => vm.StatusLabel3 = s),
+            Percent = new Progress<int>(p => vm.ProgressValue = p),
+            ProgressBarVisible = new Progress<bool>(v =>
+                vm.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
+        };
+
 
         public Task DisposeAsync() => Task.CompletedTask;
 

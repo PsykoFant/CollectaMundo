@@ -10,7 +10,7 @@ namespace CollectaMundo.Data.CardDatabaseManagement
         Task OptimizeAsync(SQLiteConnection conn);
 
         // Update DB methods
-        Task<int> GetNumberOfSetsAsync(SQLiteConnection conn)
+        Task<int> GetNumberOfSetsAsync(SQLiteConnection conn);
         Task AttachTempDbAsync(SQLiteConnection conn, string newDbPath, IProgress<string> progress);
         Task DropTablesAsync(SQLiteConnection conn, IProgress<string> progress);
         Task CopyTablesAsync(SQLiteConnection conn, IProgress<string> progress);

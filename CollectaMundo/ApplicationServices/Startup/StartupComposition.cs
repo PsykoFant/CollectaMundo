@@ -7,14 +7,13 @@ using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Utilities;
-using CollectaMundo.ApplicationServices.Utilities.InternetCheck;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data;
 using CollectaMundo.Data.CardDatabaseManagement;
 using CollectaMundo.Data.CardPrices;
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ImportExport;
-using CollectaMundo.Data.ScryfallLookups;
+using CollectaMundo.Data.RemoteLookups;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
@@ -30,15 +29,14 @@ namespace CollectaMundo.ApplicationServices.Startup
             {
                 // Infrastructure
                 var settings = new JsonAppSettings();
-                var scryfallLookups = new ScryfallLookups();
+                var RemoteLookups = new RemoteLookups();
                 var dbFactory = AppGlobals.DbFactory = new DbConnectionFactory(settings);
                 var downloadService = new DownloadService();
-                var internetService = new InternetConnectivityService();
 
                 // Card DB prep (repos + services)
                 var missingPngRepo = new GenerateMissingPngRepository();
                 var missingPngLogic = new GenerateMissingPngLogic();
-                var missingPngSvc = new GenerateMissingPngService(missingPngRepo, scryfallLookups, missingPngLogic);
+                var missingPngSvc = new GenerateMissingPngService(missingPngRepo, RemoteLookups, missingPngLogic);
 
                 var cardPriceRepo = new CardPriceRepository();
                 var priceService = new CardPriceService(settings, cardPriceRepo);
@@ -46,7 +44,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var prepRepo = new CardDatabasePreparationRepo();
                 var progressSinks = CreateProgressSinks(statusVM);
 
-                var prepService = new CardDatabasePreparationService(settings, dbFactory, progressSinks, prepRepo, priceService, missingPngSvc, downloadService, internetService);
+                var prepService = new CardDatabasePreparationService(settings, dbFactory, progressSinks, prepRepo, priceService, missingPngSvc, downloadService, RemoteLookups);
 
                 var integrityService = new DatabaseIntegrityService(settings);
 

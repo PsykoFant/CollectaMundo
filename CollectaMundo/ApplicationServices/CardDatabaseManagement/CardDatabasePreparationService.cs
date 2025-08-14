@@ -2,17 +2,17 @@
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Utilities;
-using CollectaMundo.ApplicationServices.Utilities.InternetCheck;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data;
 using CollectaMundo.Data.CardDatabaseManagement;
+using CollectaMundo.Data.RemoteLookups;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.IO;
 
 namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 {
-    public class CardDatabasePreparationService(IAppSettings settings, IDbConnectionFactory dbFactory, ProgressSinks progressSinks, ICardDatabasePreparationRepo dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IDownloadService downloadService, IInternetConnectivityService internetConnectivityService) : ICardDatabasePreparationService
+    public class CardDatabasePreparationService(IAppSettings settings, IDbConnectionFactory dbFactory, ProgressSinks progressSinks, ICardDatabasePreparationRepo dbSchemaRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IDownloadService downloadService, IRemoteLookups remoteLookups) : ICardDatabasePreparationService
     {
         private readonly IAppSettings _settings = settings;
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
@@ -21,7 +21,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         private readonly ICardPriceService _priceService = priceService;
         private readonly IGenerateMissingPngService _missingPngService = missingPngService;
         private readonly IDownloadService _downloadService = downloadService;
-        private readonly IInternetConnectivityService _internetConnectivityService = internetConnectivityService;
+        private readonly IRemoteLookups _remoteLookups = remoteLookups;
 
         // Paths (precomputed)
         private readonly string _dbPath = Path.Combine(settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
@@ -33,7 +33,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             // ---------------------------
             // Step 0. Online check
             // ---------------------------
-            if (!await _internetConnectivityService.IsInternetAvailableAsync())
+            if (!await _remoteLookups.IsInternetAvailableAsync())
             {
                 return new OperationResult(OperationResultCode.NoInternet, "Internet not available");
             }
@@ -99,7 +99,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         public async Task<OperationResult> CheckForDbUpdatesAsync()
         {
 
-            var internetAvailable = await _internetConnectivityService.IsInternetAvailableAsync();
+            var internetAvailable = await _remoteLookups.IsInternetAvailableAsync();
 
             if (!internetAvailable)
             {
@@ -132,7 +132,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             // Get the number of sets on the server
             try
             {
-                numberOfSetsOnServer = await _remoteData.FetchSetsCountAsync();
+                numberOfSetsOnServer = await _remoteLookups.FetchSetsCountAsync();
             }
             catch (Exception ex)
             {
@@ -158,7 +158,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             // ---------------------------
             // Step 0. Online check
             // ---------------------------
-            if (!await _internetConnectivityService.IsInternetAvailableAsync())
+            if (!await _remoteLookups.IsInternetAvailableAsync())
             {
                 return new OperationResult(OperationResultCode.NoInternet, "Internet not available");
             }

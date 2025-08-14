@@ -3,10 +3,10 @@ using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
-using CollectaMundo.ApplicationServices.Utilities.InternetCheck;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data;
 using CollectaMundo.Data.CardDatabaseManagement;
+using CollectaMundo.Data.RemoteLookups;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using Moq;
 using System.Data.SQLite;
@@ -149,7 +149,6 @@ namespace CollectaMundo.Tests
                 }
             ];
         }
-        //public static IDbConnectionFactory CreateInMemoryDbFactory() => CreateInMemoryDbFactory("MasterDb"); // keeps your existing callers working
         public static IDbConnectionFactory CreateInMemoryDbFactory(string dbName)
         {
             // Unique name per test -> isolated in-memory DB
@@ -182,17 +181,13 @@ namespace CollectaMundo.Tests
             }
         }
     }
-    sealed class OfflineInternetConnectivityService : IInternetConnectivityService
-    {
-        public Task<bool> IsInternetAvailableAsync() => Task.FromResult(false);
-    }
     public sealed class FirstTimeSetupTestContext : IDisposable
     {
         public Mock<ICardDatabasePreparationRepo> SchemaRepo { get; } = new();
         public Mock<ICardPriceService> PriceService { get; } = new();
         public Mock<IGenerateMissingPngService> PngService { get; } = new();
         public Mock<IDownloadService> DownloadService { get; } = new();
-        public Mock<IInternetConnectivityService> InternetService { get; } = new();
+        public Mock<IRemoteLookups> RemoteLookups { get; } = new();
         public Mock<IAppSettings> Settings { get; } = new();
 
         public List<int> PercentSamples { get; } = new();
@@ -201,9 +196,10 @@ namespace CollectaMundo.Tests
 
         private IDisposable? _dbFactoryDisposable;
         private string? _tmpRoot;
+
         public CardDatabasePreparationService BuildService()
         {
-            // db factory
+            // db factory (unique in-memory DB)
             var dbName = $"cmtests-{Guid.NewGuid():N}";
             var factory = TestUtilities.CreateInMemoryDbFactory(dbName);
             AppGlobals.DbFactory = factory;
@@ -231,7 +227,7 @@ namespace CollectaMundo.Tests
                 ProgressBarVisible = new InlineProgress<bool>(v => VisibleToggles.Add(v))
             };
 
-
+            // Build the service with the **updated** ctor (no InternetService, **with** RemoteLookups)
             return new CardDatabasePreparationService(
                 Settings.Object,
                 AppGlobals.DbFactory,
@@ -240,7 +236,8 @@ namespace CollectaMundo.Tests
                 PriceService.Object,
                 PngService.Object,
                 DownloadService.Object,
-                InternetService.Object);
+                RemoteLookups.Object
+            );
         }
 
         public void StubAllStepsAsSuccess()
@@ -251,16 +248,14 @@ namespace CollectaMundo.Tests
             SchemaRepo.Setup(r => r.OptimizeAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
 
             PriceService.Setup(p => p.ImportPricesFromJsonAsync(
-                It.IsAny<string>(), It.IsAny<SQLiteConnection>(),
-                It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>()))
-            .Returns(Task.CompletedTask);
+                    It.IsAny<string>(), It.IsAny<SQLiteConnection>(),
+                    It.IsAny<IProgress<string>>(), It.IsAny<IProgress<int>>()))
+                .Returns(Task.CompletedTask);
 
-            PngService.Setup(p => p.GenerateMissingManaSymbolImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>()))
-                      .Returns(Task.CompletedTask);
-            PngService.Setup(p => p.GenerateMissingManaCostImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>()))
-                      .Returns(Task.CompletedTask);
-            PngService.Setup(p => p.GenerateMissingKeyRuneImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>()))
-                      .Returns(Task.CompletedTask);
+            PngService.Setup(p => p.GenerateMissingManaSymbolImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+            PngService.Setup(p => p.GenerateMissingManaCostImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+            PngService.Setup(p => p.GenerateMissingKeyRuneImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
+
         }
 
         public void Dispose()
@@ -281,8 +276,5 @@ namespace CollectaMundo.Tests
             public InlineProgress(Action<T> onReport) => _onReport = onReport;
             public void Report(T value) => _onReport(value);
         }
-
     }
-
-
 }

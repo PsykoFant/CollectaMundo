@@ -723,7 +723,7 @@ namespace CollectaMundo.Tests
             public async Task FirstTimeDbPrepOrchetrator_AllStepsSucceed_ReturnsSuccess_AndProgressFinishes()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
                 ctx.DownloadService
@@ -768,7 +768,7 @@ namespace CollectaMundo.Tests
             public async Task FirstTimeDbPrepOrchetrator_RetriesCreateTables_ThenSucceeds()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
                 int attempts = 0;
@@ -802,7 +802,7 @@ namespace CollectaMundo.Tests
             public async Task Step2FailsAfterRetries_ReturnsError_AndStopsPipeline()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
                 ctx.DownloadService
@@ -830,7 +830,7 @@ namespace CollectaMundo.Tests
             public async Task DownloadFails_ReturnsDownloadFailed_DoesNotRunSteps()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
                 ctx.DownloadService
@@ -861,7 +861,7 @@ namespace CollectaMundo.Tests
             public async Task NoInternet_ReturnsNoInternet_AndSkipsEverything()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.InternetService.Setup(i => i.IsInternetAvailableAsync()).ReturnsAsync(false);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(false);
 
                 var svc = ctx.BuildService();
                 var result = await svc.FirstTimeDbPrepOrchetrator(0);

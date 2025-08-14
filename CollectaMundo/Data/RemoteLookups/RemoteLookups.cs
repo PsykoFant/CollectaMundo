@@ -1,10 +1,24 @@
 ﻿using Newtonsoft.Json.Linq;
+using System.Diagnostics;
 using System.Net.Http;
 
-namespace CollectaMundo.Data.ScryfallLookups
+namespace CollectaMundo.Data.RemoteLookups
 {
-    public class ScryfallLookups : IScryfallLookups
+    public class RemoteLookups : IRemoteLookups
     {
+        public async Task<bool> IsInternetAvailableAsync()
+        {
+            try
+            {
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+                var result = await client.GetAsync("https://www.google.com");
+                return result.IsSuccessStatusCode;
+            }
+            catch
+            {
+                return false;
+            }
+        }
         public async Task<JArray?> FetchSetMetadataAsync()
         {
             using var client = new HttpClient();
@@ -33,6 +47,16 @@ namespace CollectaMundo.Data.ScryfallLookups
             client.DefaultRequestHeaders.Add("User-Agent", "CollectaMundo/1.0");
 
             return await client.GetStringAsync(svgUrl);
+        }
+        public async Task<int> FetchSetsCountAsync()
+        {
+            using var httpClient = new HttpClient();
+            var response = await httpClient.GetStringAsync("https://mtgjson.com/api/v5/SetList.json");
+            var json = JObject.Parse(response);
+            var sets = json["data"] as JArray;
+            int count = sets?.Count ?? 0;
+            Debug.WriteLine($"Number of sets fetched: {count}");
+            return count;
         }
 
     }

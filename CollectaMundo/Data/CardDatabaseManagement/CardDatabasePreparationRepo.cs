@@ -7,6 +7,7 @@ namespace CollectaMundo.Data.CardDatabaseManagement
 {
     public class CardDatabasePreparationRepo : ICardDatabasePreparationRepo
     {
+        // Create
         private static readonly string[] first = ["uuid TEXT UNIQUE PRIMARY KEY"];
         public async Task CreateTablesAsync(SQLiteConnection conn)
         {
