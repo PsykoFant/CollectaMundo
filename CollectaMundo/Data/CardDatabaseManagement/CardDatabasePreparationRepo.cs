@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.CardPrices;
+﻿using CollectaMundo.Data.Common;
+using CollectaMundo.DomainLogic.CardPrices;
 using System.Data.SQLite;
 using System.Diagnostics;
 
@@ -389,6 +390,11 @@ namespace CollectaMundo.Data.CardDatabaseManagement
 
 
         // Update
+        public async Task<int> GetNumberOfSetsAsync(SQLiteConnection conn)
+        {
+            var sets = await DbHelpers.GetUniqueValuesAsync(conn, "sets", "code");
+            return sets.Count;
+        }
         public async Task AttachTempDbAsync(SQLiteConnection conn, string newDbPath, IProgress<string> progress)
         {
             var attachSql = $"ATTACH DATABASE '{newDbPath}' AS tempDb;";

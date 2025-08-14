@@ -1,10 +1,10 @@
-﻿using CollectaMundo.ApplicationServices.CardLists;
+﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Startup;
-using CollectaMundo.ApplicationServices.UpdateDB;
 using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
@@ -27,17 +27,17 @@ namespace CollectaMundo.ViewModels
         private readonly StatusViewModel _statusOverlayVM;
         private readonly IFilteringService _filteringService;
         private readonly IImportExportService _importExportService;
-        private readonly IUpdateService _updateService;
+        private readonly ICardDatabasePreparationService _prepService;
         private readonly IDownloadService _downloadService;
 
         // Constructor
-        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, IUpdateService updateService, IDownloadService downloadService, StatusViewModel statusOverlayVM)
+        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, IDownloadService downloadService, StatusViewModel statusOverlayVM)
         {
             _statusOverlayVM = statusOverlayVM;
 
             _filteringService = filteringService;
             _importExportService = importExportService;
-            _updateService = updateService;
+            _prepService = prepService;
             _downloadService = downloadService;
 
             CurrentPage = Page.SearchAndFilter;
@@ -76,7 +76,7 @@ namespace CollectaMundo.ViewModels
         {
             _statusOverlayVM.ShowStatusOverlay("One moment - checking for updates...", false);
 
-            var result = await _updateService.CheckForDbUpdatesAsync();
+            var result = await _prepService.CheckForDbUpdatesAsync();
 
             switch (result.Code)
             {
@@ -110,7 +110,8 @@ namespace CollectaMundo.ViewModels
             var percentProgress = new Progress<int>(percent => _statusOverlayVM.ProgressValue = percent);
 
             // Start the update process
-            var result = await _updateService.UpdateDbAsync(stepDetailAndErrorProgress: statusLabel2Progress, stepNameAndNumberProgress: statusLabel3Progress, percentProgress);
+            //var result = await _updateService.UpdateDbAsync(stepDetailAndErrorProgress: statusLabel2Progress, stepNameAndNumberProgress: statusLabel3Progress, percentProgress);
+            var result = await _prepService.UpdateDbPrepOrchetrator();
 
             // Handle the result of the update
             if (result.Code == OperationResultCode.Error)
@@ -348,9 +349,9 @@ namespace CollectaMundo.ViewModels
 
 
         // Factory method to create the ViewModel
-        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, IUpdateService updateService, IDownloadService downloadService, StatusViewModel statusVM, Action? onStartupComplete = null)
+        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, IDownloadService downloadService, StatusViewModel statusVM, Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(filteringService, editService, importExportService, updateService, downloadService, statusVM)
+            var vm = new MainWindowViewModel(filteringService, editService, importExportService, prepService, downloadService, statusVM)
             {
                 OnStartupComplete = onStartupComplete
             };

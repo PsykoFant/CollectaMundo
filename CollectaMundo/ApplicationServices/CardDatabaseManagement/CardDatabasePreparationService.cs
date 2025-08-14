@@ -30,7 +30,9 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         // Use case: orchestrates the first-time database preparation steps
         public async Task<OperationResult> FirstTimeDbPrepOrchetrator(int defaultDelay = 3000)
         {
-            // 1) Internet precheck
+            // ---------------------------
+            // Step 0. Online check
+            // ---------------------------
             if (!await _internetConnectivityService.IsInternetAvailableAsync())
             {
                 return new OperationResult(OperationResultCode.NoInternet, "Internet not available");
@@ -39,7 +41,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             _progressSinks.Headline.Report("Performing first-time setup of card database - please wait ...");
             _progressSinks.ProgressBarVisible.Report(true);
 
-            // Always start from a clean slate on a single run
+            // Always start from a clean slate
             try { CleanupPartialDatabaseFiles(_dbPath, _settings.UserDownloadsPath); }
             catch (Exception ex) { Debug.WriteLine($"[Cleanup] {ex.Message}"); }
 
@@ -67,7 +69,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
 
                 // ---------------------------
-                // Steps 2–9
+                // Steps 2–9. Prepare database
                 // ---------------------------
                 var prepResult = await PrepareDatabaseAsync(defaultDelay, stepNumberStart: 2);
                 if (prepResult.Code != OperationResultCode.Success)
@@ -93,91 +95,140 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             }
         }
 
+        // Use case: check for updates to the card database
+        public async Task<OperationResult> CheckForDbUpdatesAsync()
+        {
+
+            var internetAvailable = await _internetConnectivityService.IsInternetAvailableAsync();
+
+            if (!internetAvailable)
+            {
+                return new OperationResult(OperationResultCode.Error, "Internet not available - unable to check server...");
+            }
+
+            int numberOfSetsInDb;
+            int numberOfSetsOnServer;
+
+            // Get the number of sets in the database
+            await using var uow = new UnitOfWork();
+            await uow.BeginAsync();
+            try
+            {
+                numberOfSetsInDb = await _dbSchemaRepo.GetNumberOfSetsAsync(uow.CurrentConnection);
+                await uow.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                // Roll back on any error
+                await uow.RollbackAsync();
+                return new OperationResult(OperationResultCode.Error, $"Error querying your db for sets: {ex.Message}");
+            }
+            finally
+            {
+                // Tear down the connection
+                await uow.DisposeAsync();
+            }
+
+            // Get the number of sets on the server
+            try
+            {
+                numberOfSetsOnServer = await _remoteData.FetchSetsCountAsync();
+            }
+            catch (Exception ex)
+            {
+                return new OperationResult(OperationResultCode.Error, $"Error querying server for updates: {ex.Message}");
+            }
+
+            // Compare the number of sets in the database with the number of sets on the server
+            if (numberOfSetsInDb < numberOfSetsOnServer)
+            {
+                return new OperationResult(OperationResultCode.NeedsUpdate, $"Your local card database has {numberOfSetsInDb} sets, server has {numberOfSetsOnServer} sets — update available!");
+            }
+            else
+            {
+                return new OperationResult(OperationResultCode.UpToDate, $"Your local card database is up to date! ({numberOfSetsInDb} sets).");
+            }
+        }
+
+
         // Use case: orchestrates card database update
-        //public async Task<OperationResult> UpdateDbPrepOrchetrator(int defaultDelay = 3000)
-        //{
+        public async Task<OperationResult> UpdateDbPrepOrchetrator(int defaultDelay = 3000)
+        {
 
-        //    var internetAvailable = await _internetConnectivityService.IsInternetAvailableAsync();
+            // ---------------------------
+            // Step 0. Online check
+            // ---------------------------
+            if (!await _internetConnectivityService.IsInternetAvailableAsync())
+            {
+                return new OperationResult(OperationResultCode.NoInternet, "Internet not available");
+            }
 
-        //    if (!internetAvailable)
-        //    {
-        //        return new OperationResult(OperationResultCode.Error, "Internet not available - unable download updated resource files...");
-        //    }
-        //    _statusVM.ProgressVisibility = Visibility.Visible;
+            _progressSinks.Headline.Report("Updating card database - please wait ...");
+            _progressSinks.ProgressBarVisible.Report(true);
 
-        //    // ---------------------------
-        //    // Step 1. Download resources
-        //    // ---------------------------
-        //    var downloadResult = await _downloadService.DownloadParallelAsync(
-        //        _settings.CardDatabaseUrl, _dbPath, "Card database",
-        //        _settings.CardPricesUrl, _pricesPath, "Price File",
-        //        retryDelayInMs: 3000,
-        //        stepName: "Step 1 / 4. Downloading resource files for update...",
-        //        _stepNameAndAttemptProgress, _detailsAndErrorsProgress, _percentProgress);
+            // ---------------------------
+            // Step 1. Download resources
+            // ---------------------------
 
-        //    if (downloadResult.Code != OperationResultCode.Success)
-        //    {
-        //        return new OperationResult(OperationResultCode.Error, downloadResult.Message);
-        //    }
+            var step1Name = "Step 1 / 4. Downloading card database and prices...";
+            var downloadResult = await _downloadService.DownloadParallelAsync(
+                _settings.CardDatabaseUrl, _dbPath, "Card database",
+                _settings.CardPricesUrl, _pricesPath, "Price File",
+                retryDelayInMs: defaultDelay,
+                stepName: step1Name,
+                stepNameAndNumberProgress: _progressSinks.Step,
+                stepDetailAndErrorProgress: _progressSinks.Detail,
+                percentProgress: _progressSinks.Percent);
 
-        //    // ---------------------------
-        //    // Step 2 - Copy tables from new DB
-        //    // ---------------------------
-        //    _stepNameAndAttemptProgress.Report("Step 2 / 4 - Copying new tables...");
+            if (downloadResult.Code != OperationResultCode.Success)
+            {
+                Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
+                return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
+            }
 
-        //    try
-        //    {
-        //        await using var conn = await _dbFactory.OpenConnectionAsync();
+            // ---------------------------
+            // Step 2 - Copy tables from new DB
+            // ---------------------------
+            _progressSinks.Step.Report("Step 2 / 4 - Copying new tables...");
 
-        //        await Task.Run(async () =>
-        //        {
-        //            await _dbSchemaRepo.AttachTempDbAsync(conn, _dbPath, _detailsAndErrorsProgress);
-        //            await _dbSchemaRepo.DropTablesAsync(conn, _detailsAndErrorsProgress);
-        //            await _dbSchemaRepo.CopyTablesAsync(conn, _detailsAndErrorsProgress);
-        //            await _dbSchemaRepo.DetachTempDbAsync(conn, _detailsAndErrorsProgress);
-        //        });
+            try
+            {
+                await using var conn = await _dbFactory.OpenConnectionAsync();
 
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _detailsAndErrorsProgress.Report($"Table copy failed: {ex.Message}");
-        //        return new OperationResult(OperationResultCode.Error, $"Table copy failed: {ex.Message}");
-        //    }
+                await Task.Run(async () =>
+                {
+                    await _dbSchemaRepo.AttachTempDbAsync(conn, _dbPath, _progressSinks.Detail);
+                    await _dbSchemaRepo.DropTablesAsync(conn, _progressSinks.Detail);
+                    await _dbSchemaRepo.CopyTablesAsync(conn, _progressSinks.Detail);
+                    await _dbSchemaRepo.DetachTempDbAsync(conn, _progressSinks.Detail);
+                });
+
+            }
+            catch (Exception ex)
+            {
+                _progressSinks.Detail.Report($"Table copy failed: {ex.Message}");
+                return new OperationResult(OperationResultCode.Error, $"Table copy failed: {ex.Message}");
+            }
 
 
-        //    // prepare database
-        //    await PrepareDatabase(defaultDelay);
+            // ---------------------------
+            // Steps 3–10. Prepare database
+            // ---------------------------
+            var prepResult = await PrepareDatabaseAsync(defaultDelay, stepNumberStart: 3);
+            if (prepResult.Code != OperationResultCode.Success)
+            {
+                return new OperationResult(OperationResultCode.Error, prepResult.Message);
+            }
 
-        //    // finish
+            // finish
+            // delete temp files
 
-        //    try
-        //    {
+            return new OperationResult(OperationResultCode.Success);
 
-        //        // ---------------------------
-        //        // Steps 2–9
-        //        // ---------------------------
-        //        await PrepareDatabase(defaultDelay);
+        }
 
-        //        // Success: clean up transient price file
-        //        try { File.Delete(_pricesPath); }
-        //        catch (IOException ex) { Debug.WriteLine($"Couldn't delete prices.json: {ex.Message}"); }
 
-        //        // Clear UI on success
-        //        _statusVM.ProgressValue = 0;
-        //        _statusVM.StatusLabel1 = string.Empty;
-        //        _statusVM.StatusLabel2 = string.Empty;
-        //        _statusVM.StatusLabel3 = string.Empty;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Fatal error: {ex.Message}");
-        //        await DbSetupFailed(
-        //            statusAboveBar: "Setup failed.",
-        //            statusBelowBar: "CollectaMundo will automatically shutdown shortly ...",
-        //            statusLabelMain: ex.Message,
-        //            defaultDelay);
-        //    }
-        //}
+
         private async Task<OperationResult> PrepareDatabaseAsync(int defaultDelay, int stepNumberStart)
         {
             var steps = new List<(string Label, Func<Task> Work, bool ShowProgress)>

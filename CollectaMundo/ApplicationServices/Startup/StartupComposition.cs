@@ -6,7 +6,6 @@ using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.ImportExport;
-using CollectaMundo.ApplicationServices.UpdateDB;
 using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.ApplicationServices.Utilities.InternetCheck;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
@@ -16,7 +15,6 @@ using CollectaMundo.Data.CardPrices;
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ImportExport;
 using CollectaMundo.Data.ScryfallLookups;
-using CollectaMundo.Data.UpdateDB;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
@@ -58,6 +56,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 // First-time setup / repair if needed
                 var dbStatus = await integrityService.GetDatabaseStatusAsync();
+
                 if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
                 {
                     var prepResult = await prepService.FirstTimeDbPrepOrchetrator();
@@ -75,10 +74,10 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var filteringService = new FilteringService();
                 var editService = new EditCollectionService();
                 var importExportService = new ImportExportService(new ImportExportRepo());
-                var updateService = new UpdateService(settings, dbFactory, downloadService, internetService, new UpdateDbRepo(), new UpdateDbRemoteData());
+                //var updateService = new UpdateService(settings, dbFactory, downloadService, internetService, new UpdateDbRepo(), new UpdateDbRemoteData());
 
                 // Build view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, updateService, downloadService, statusVM));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, prepService, downloadService, statusVM));
 
                 // Show initial UI
                 mainVM.FilterVM.NotifyFilterChanged();
