@@ -26,6 +26,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         // Paths (precomputed)
         private readonly string _dbPath = Path.Combine(settings.DatabaseSettings.SQLitePath, "AllPrintings.sqlite");
         private readonly string _pricesPath = Path.Combine(settings.UserDownloadsPath, "prices.json");
+        private readonly string _tempDbPath = Path.Combine(settings.UserDownloadsPath, "AllPrintings.sqlite");
 
         // Use case: orchestrates the first-time database preparation steps
         public async Task<OperationResult> FirstTimeDbPrepOrchetrator(int defaultDelay = 3000)
@@ -171,7 +172,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             var step1Name = "Step 1 / 4. Downloading card database and prices...";
             var downloadResult = await _downloadService.DownloadParallelAsync(
-                _settings.CardDatabaseUrl, _dbPath, "Card database",
+                _settings.CardDatabaseUrl, _tempDbPath, "Card database",
                 _settings.CardPricesUrl, _pricesPath, "Price File",
                 retryDelayInMs: defaultDelay,
                 stepName: step1Name,
