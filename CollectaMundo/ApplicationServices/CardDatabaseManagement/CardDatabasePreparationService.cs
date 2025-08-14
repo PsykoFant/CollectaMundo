@@ -150,7 +150,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             }
         }
 
-
         // Use case: orchestrates card database update
         public async Task<OperationResult> UpdateDbPrepOrchetrator(int defaultDelay = 3000)
         {
