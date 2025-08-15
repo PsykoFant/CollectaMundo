@@ -2,8 +2,7 @@ TO DO
 - MVVM refactor
 
 - Gå videre med update scenarie
-	- bug: top menu
-	- load kort efter update
+	- Reload (diff only)
 	- Slet temp set ikoner
 	- Slet temp filer
 	- Tilføj backup af database step	

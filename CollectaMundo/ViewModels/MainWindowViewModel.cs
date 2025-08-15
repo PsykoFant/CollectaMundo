@@ -115,22 +115,23 @@ namespace CollectaMundo.ViewModels
             var result = await _prepService.UpdateDbPrepOrchetrator();
 
             _statusOverlayVM.ResetStatusOverlay();
-            _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
-            IsTopMenuEnabled = true; // Re-enable top menu after update
-            SideMenuUtilsVisibility = Visibility.Visible; // Show utilities menu again
+
 
             // Handle the result of the update
             if (result.Code != OperationResultCode.Success)
             {
-
                 _statusOverlayVM.StatusLabel1 = "Update failed!";
                 _statusOverlayVM.StatusLabel3 = result.Message;
             }
             else
             {
                 _statusOverlayVM.StatusLabel1 = "Database updated successfully!";
-                // Reload the card lists
+                await ReloadAllCardListsAsync();
             }
+
+            _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
+            IsTopMenuEnabled = true; // Re-enable top menu after update
+            SideMenuUtilsVisibility = Visibility.Visible; // Show utilities menu again
         }
         // Page navigation
         private Page _currentPage = Page.SearchAndFilter;
@@ -355,20 +356,28 @@ namespace CollectaMundo.ViewModels
                 OnStartupComplete = onStartupComplete
             };
 
-            await MainWindowInitializer.InitializeAsync(
-                [
-                    (vm.AllCardsVM, CardListQueryCatalog.AllCards),
-                    (vm.MyCollectionVM, CardListQueryCatalog.MyCollection),
-                    (vm.AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
-                    (vm.AllCardsInDecksVM, CardListQueryCatalog.AllCardsInDecks),
-                    (vm.ColorIcons, CardListQueryCatalog.ColorIcons)
-                ],
-                vm.FilterVM.Filters, vm.FilterVM
-            );
+            await vm.ReloadAllCardListsAsync();
 
-            vm.FilterVM.NotifyFilterChanged();
             vm.OnStartupComplete?.Invoke();
             return vm;
+        }
+
+        private async Task ReloadAllCardListsAsync()
+        {
+            await MainWindowInitializer.InitializeAsync(
+                [
+            (AllCardsVM,         CardListQueryCatalog.AllCards),
+            (MyCollectionVM,     CardListQueryCatalog.MyCollection),
+            (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
+            (AllCardsInDecksVM,  CardListQueryCatalog.AllCardsInDecks),
+            (ColorIcons,         CardListQueryCatalog.ColorIcons),
+                ],
+                FilterVM.Filters,
+                FilterVM
+            );
+
+            // Reapply current filters so UI reflects fresh data immediately
+            FilterVM.NotifyFilterChanged();
         }
 
     }
