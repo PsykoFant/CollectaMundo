@@ -94,6 +94,11 @@ namespace CollectaMundo.ViewModels
         {
             StatusOverlayVisibilitiy = Visibility.Collapsed;
 
+            ResetStatusOverlay();
+        }
+
+        public void ResetStatusOverlay()
+        {
             LogoVisibility = Visibility.Visible;
             ProgressVisibility = Visibility.Collapsed;
             AckButtonVisibility = Visibility.Collapsed;

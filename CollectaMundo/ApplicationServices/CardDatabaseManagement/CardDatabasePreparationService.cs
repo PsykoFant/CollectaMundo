@@ -170,21 +170,21 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             // Step 1. Download resources
             // ---------------------------
 
-            var step1Name = "Step 1 / 4. Downloading card database and prices...";
-            var downloadResult = await _downloadService.DownloadParallelAsync(
-                _settings.CardDatabaseUrl, _tempDbPath, "Card database",
-                _settings.CardPricesUrl, _pricesPath, "Price File",
-                retryDelayInMs: defaultDelay,
-                stepName: step1Name,
-                stepNameAndNumberProgress: _progressSinks.Step,
-                stepDetailAndErrorProgress: _progressSinks.Detail,
-                percentProgress: _progressSinks.Percent);
+            //var step1Name = "Step 1 / 4. Downloading card database and prices...";
+            //var downloadResult = await _downloadService.DownloadParallelAsync(
+            //    _settings.CardDatabaseUrl, _tempDbPath, "Card database",
+            //    _settings.CardPricesUrl, _pricesPath, "Price File",
+            //    retryDelayInMs: defaultDelay,
+            //    stepName: step1Name,
+            //    stepNameAndNumberProgress: _progressSinks.Step,
+            //    stepDetailAndErrorProgress: _progressSinks.Detail,
+            //    percentProgress: _progressSinks.Percent);
 
-            if (downloadResult.Code != OperationResultCode.Success)
-            {
-                Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
-                return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
-            }
+            //if (downloadResult.Code != OperationResultCode.Success)
+            //{
+            //    Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
+            //    return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
+            //}
 
             // ---------------------------
             // Step 2 - Copy tables from new DB
@@ -195,13 +195,13 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             {
                 await using var conn = await _dbFactory.OpenConnectionAsync();
 
-                await Task.Run(async () =>
-                {
-                    await _dbSchemaRepo.AttachTempDbAsync(conn, _dbPath, _progressSinks.Detail);
-                    await _dbSchemaRepo.DropTablesAsync(conn, _progressSinks.Detail);
-                    await _dbSchemaRepo.CopyTablesAsync(conn, _progressSinks.Detail);
-                    await _dbSchemaRepo.DetachTempDbAsync(conn, _progressSinks.Detail);
-                });
+                //await Task.Run(async () =>
+                //{
+                await _dbSchemaRepo.AttachTempDbAsync(conn, _dbPath, _progressSinks.Detail);
+                await _dbSchemaRepo.DropTablesAsync(conn, _progressSinks.Detail);
+                await _dbSchemaRepo.CopyTablesAsync(conn, _progressSinks.Detail);
+                await _dbSchemaRepo.DetachTempDbAsync(conn, _progressSinks.Detail);
+                //});
 
             }
             catch (Exception ex)

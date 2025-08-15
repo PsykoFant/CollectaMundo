@@ -66,6 +66,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 }
 
                 // Main app services (feature layer)
+                statusVM.ResetStatusOverlay();
                 statusVM.StatusLabel3 = "Loading ALL the cards…";
                 await UIHelper.ForceRenderAsync();
 
