@@ -813,7 +813,7 @@
                 </Grid>
             </Grid>
             <!-- Content section -->
-            <Grid Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="{Binding ContenSectionVisibility}">
+            <Grid Grid.Row="1" Grid.Column="1" Margin="5,0,5,0" Visibility="{Binding ContentSectionVisibility}">
                 <Image Source="/Resources/Images/Logo.png"
                        Stretch="Fill"
                        VerticalAlignment="Top"
