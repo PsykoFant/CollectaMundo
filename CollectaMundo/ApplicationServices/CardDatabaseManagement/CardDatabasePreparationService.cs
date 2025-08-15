@@ -170,7 +170,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             // Step 1. Download resources
             // ---------------------------
 
-            //var step1Name = "Step 1 / 4. Downloading card database and prices...";
+            //var step1Name = "Step 1. Downloading card database and prices...";
             //var downloadResult = await _downloadService.DownloadParallelAsync(
             //    _settings.CardDatabaseUrl, _tempDbPath, "Card database",
             //    _settings.CardPricesUrl, _pricesPath, "Price File",
@@ -189,19 +189,28 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             // ---------------------------
             // Step 2 - Copy tables from new DB
             // ---------------------------
-            _progressSinks.Step.Report("Step 2 / 4 - Copying new tables...");
+            _progressSinks.ProgressBarVisible.Report(false);
+            _progressSinks.Step.Report("Step 2. Copying new tables...");
 
             try
             {
-                await using var conn = await _dbFactory.OpenConnectionAsync();
+                await Task.Run(async () =>
+                {
+                    await using var conn = await _dbFactory.OpenConnectionAsync().ConfigureAwait(false);
 
-                //await Task.Run(async () =>
-                //{
-                await _dbSchemaRepo.AttachTempDbAsync(conn, _dbPath, _progressSinks.Detail);
-                await _dbSchemaRepo.DropTablesAsync(conn, _progressSinks.Detail);
-                await _dbSchemaRepo.CopyTablesAsync(conn, _progressSinks.Detail);
-                await _dbSchemaRepo.DetachTempDbAsync(conn, _progressSinks.Detail);
-                //});
+                    using (var tx = conn.BeginTransaction())
+                    {
+                        await _dbSchemaRepo.AttachTempDbAsync(conn, _tempDbPath, _progressSinks.Detail);
+                        await _dbSchemaRepo.DropTablesAsync(conn, _progressSinks.Detail);
+                        Debug.WriteLine("[CardDatabasePrep] Dropped old tables.");
+                        await _dbSchemaRepo.CopyTablesAsync(conn, _progressSinks.Detail);
+                        Debug.WriteLine("[CardDatabasePrep] Copied new tables.");
+
+                        tx.Commit();
+                    }
+
+                    await _dbSchemaRepo.DetachTempDbAsync(conn, _progressSinks.Detail);
+                });
 
             }
             catch (Exception ex)

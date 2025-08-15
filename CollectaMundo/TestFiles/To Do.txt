@@ -2,12 +2,14 @@ TO DO
 - MVVM refactor
 
 - Gå videre med update scenarie
-	- Status updates
-	- Check om step 2 (kopier) får ryddet ordentligt op, når der ikke er close-connection
-	- Gå videre med step 3 (nye png'er)
-	- Gå videre med step 4 (priser)
-	- Tilføj backup af database step
-	- Cancel update
+	- bug: top menu
+	- load kort efter update
+	- Slet temp set ikoner
+	- Slet temp filer
+	- Tilføj backup af database step	
+	- Cancel update under download
+
+
 - Update priser scenarie
 - Check for genbrug mellem 1st time prep og update service igen
 - Test af update og db prep. 

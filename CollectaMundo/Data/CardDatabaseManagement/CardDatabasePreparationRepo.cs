@@ -425,9 +425,10 @@ namespace CollectaMundo.Data.CardDatabaseManagement
                 using var copyCommand = new SQLiteCommand(copySql, conn);
                 await copyCommand.ExecuteNonQueryAsync();
                 progress.Report($"Copied {item.Key}");
+                Debug.WriteLine($"Copied {item.Key}");
             }
 
-            progress.Report("Copy complete. Finalizing handles...");
+            progress.Report("Copy complete...");
 
             GC.Collect();
             GC.WaitForPendingFinalizers();

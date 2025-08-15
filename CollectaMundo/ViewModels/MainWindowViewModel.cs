@@ -102,7 +102,9 @@ namespace CollectaMundo.ViewModels
         private async Task UpdateDBAsync()
         {
             _statusOverlayVM.ShowStatusOverlay("Updating database, please wait...", true);
-            _isTopMenuEnabled = false; // Disable top menu during update
+            IsTopMenuEnabled = false; // Disable top menu during update
+            SideMenuUtilsVisibility = Visibility.Collapsed; // Hide utilities menu during update
+
 
             // Create progress handlers for status updates
             var statusLabel2Progress = new Progress<string>(msg => _statusOverlayVM.StatusLabel2 = msg);
@@ -110,26 +112,24 @@ namespace CollectaMundo.ViewModels
             var percentProgress = new Progress<int>(percent => _statusOverlayVM.ProgressValue = percent);
 
             // Start the update process
-            //var result = await _updateService.UpdateDbAsync(stepDetailAndErrorProgress: statusLabel2Progress, stepNameAndNumberProgress: statusLabel3Progress, percentProgress);
             var result = await _prepService.UpdateDbPrepOrchetrator();
 
+            _statusOverlayVM.ResetStatusOverlay();
+            _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
+            IsTopMenuEnabled = true; // Re-enable top menu after update
+            SideMenuUtilsVisibility = Visibility.Visible; // Show utilities menu again
+
             // Handle the result of the update
-            if (result.Code == OperationResultCode.Error)
+            if (result.Code != OperationResultCode.Success)
             {
+
                 _statusOverlayVM.StatusLabel1 = "Update failed!";
-                _statusOverlayVM.StatusLabel2 = string.Empty;
                 _statusOverlayVM.StatusLabel3 = result.Message;
-                _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
-                _statusOverlayVM.ProgressVisibility = Visibility.Collapsed;
-                _statusOverlayVM.AckButtonText = "  OK!  ";
-                return;
             }
             else
             {
-                _isTopMenuEnabled = true; // Re-enable top menu after update
-                _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
-                _statusOverlayVM.AckButtonText = "  OK!  ";
-                _statusOverlayVM.ShowStatusOverlay(result.Message);
+                _statusOverlayVM.StatusLabel1 = "Database updated successfully!";
+                // Reload the card lists
             }
         }
         // Page navigation
@@ -346,7 +346,6 @@ namespace CollectaMundo.ViewModels
             AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
             EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
         }
-
 
         // Factory method to create the ViewModel
         public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, IDownloadService downloadService, StatusViewModel statusVM, Action? onStartupComplete = null)
