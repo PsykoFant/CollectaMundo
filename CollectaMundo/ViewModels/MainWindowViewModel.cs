@@ -126,7 +126,8 @@ namespace CollectaMundo.ViewModels
             else
             {
                 _statusOverlayVM.StatusLabel1 = "Database updated successfully!";
-                await ReloadAllCardListsAsync();
+                _statusOverlayVM.StatusLabel3 = "Reloading card lists…";
+                await Task.Run(() => ReloadAllCardListsAsync());
             }
 
             _statusOverlayVM.AckButtonVisibility = Visibility.Visible;

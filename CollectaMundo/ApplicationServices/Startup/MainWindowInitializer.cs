@@ -65,7 +65,7 @@ namespace CollectaMundo.ApplicationServices.Startup
             {
                 await uow.DisposeAsync();
 
-                // Force GC collection to test cleanup behavior
+                // Force GC collection 
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
                 GC.Collect();
