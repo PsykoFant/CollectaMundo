@@ -365,13 +365,11 @@ namespace CollectaMundo.ViewModels
         private async Task ReloadAllCardListsAsync()
         {
             await MainWindowInitializer.InitializeAsync(
-                [
-            (AllCardsVM,         CardListQueryCatalog.AllCards),
-            (MyCollectionVM,     CardListQueryCatalog.MyCollection),
-            (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
-            (AllCardsInDecksVM,  CardListQueryCatalog.AllCardsInDecks),
-            (ColorIcons,         CardListQueryCatalog.ColorIcons),
-                ],
+                [(AllCardsVM,         CardListQueryCatalog.AllCards),
+                (MyCollectionVM,     CardListQueryCatalog.MyCollection),
+                (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
+                (AllCardsInDecksVM,  CardListQueryCatalog.AllCardsInDecks),
+                (ColorIcons,         CardListQueryCatalog.ColorIcons),],
                 FilterVM.Filters,
                 FilterVM
             );
