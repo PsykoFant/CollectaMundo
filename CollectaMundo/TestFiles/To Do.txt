@@ -11,6 +11,9 @@ TO DO
 	laptop:
 	- 10891, 10980, 10210 ms. 
 
+	Stationær:
+	- 12407, 14895, 10296, 10134
+
 
 
 	- Slet temp set ikoner

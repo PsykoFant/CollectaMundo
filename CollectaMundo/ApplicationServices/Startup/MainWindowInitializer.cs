@@ -8,10 +8,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 {
     public class MainWindowInitializer
     {
-        public static async Task InitializeAllCardsOnlyAsync(
-    CardViewModel allCardsVM,
-    Dictionary<string, FilterItemViewModel> filters,
-    FilterViewModel filterVM)
+        public static async Task InitializeAllCardsOnlyAsync(CardViewModel allCardsVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork();
             try

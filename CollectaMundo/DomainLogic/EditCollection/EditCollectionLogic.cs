@@ -60,48 +60,67 @@ namespace CollectaMundo.DomainLogic.EditCollection
         }
         private async Task<CardSet> CloneWithMetadataHelperAsync(CardSet src, SQLiteConnection connection)
         {
-            if (src.Uuid == null)
-            {
+            if (src?.Uuid == null)
                 throw new ArgumentException("UUID cannot be null", nameof(src));
-            }
 
             // fetch just once
             var finishes = await _repo.FetchFinishesForCardAsync(src.Uuid, connection);
             var languages = await _repo.FetchLanguagesForCardAsync(src.Uuid, connection);
 
-            // shallow‐clone of every “view” field
-            var c = new CardSet
+            // New: build clone from Core so image byte forwarders work
+            CardSet clone;
+            if (src.Core != null)
             {
-                Name = src.Name,
-                ManaCostRaw = src.ManaCostRaw,
-                ManaCost = src.ManaCost,
-                ManaValue = src.ManaValue,
-                Colors = src.Colors,
-                Type = src.Type,
-                //ManaCostImageBytes = src.ManaCostImageBytes,
+                clone = CardSet.FromCore(src.Core);
+            }
+            else
+            {
+                // Fallback (shouldn't happen in the new flow): reconstruct a minimal Core from src
+                var core = new CardCore
+                {
+                    Uuid = src.Uuid,
+                    Name = src.Name ?? "",
+                    SetName = src.SetName,
+                    ReleaseDate = src.ReleaseDate,
+                    ManaCostRaw = src.ManaCostRaw,
+                    ManaCost = src.ManaCost,
+                    ManaValue = src.ManaValue,
+                    Colors = src.Colors,
+                    Type = src.Type,
+                    Types = src.Types,
+                    SuperTypes = src.SuperTypes,
+                    SubTypes = src.SubTypes,
+                    Keywords = src.Keywords,
+                    Text = src.Text,
+                    Side = src.Side,
+                    Rarity = src.Rarity,
+                    Finishes = src.Finishes,
+                    Language = src.Language,
+                    NormalPrice = src.NormalPrice,
+                    FoilPrice = src.FoilPrice,
+                    EtchedPrice = src.EtchedPrice,
 
-                Types = src.Types,
-                SuperTypes = src.SuperTypes,
-                SubTypes = src.SubTypes,
-                Keywords = src.Keywords,
-                Text = src.Text,
-                Side = src.Side,
+                    // These read from src’s forwarders; will be null if src had no Core
+                    KeyRuneImageBytes = src.KeyRuneImageBytes,
+                    ManaCostImageBytes = src.ManaCostImageBytes,
+                };
 
-                Uuid = src.Uuid,
-                SetName = src.SetName,
-                Rarity = src.Rarity,
-                Finishes = src.Finishes,
-                ReleaseDate = src.ReleaseDate,
-                //KeyRuneImageBytes = src.KeyRuneImageBytes,
-                CardInCollectionPrice = src.CardInCollectionPrice,
+                clone = CardSet.FromCore(core);
+            }
 
-                // lookup lists
-                AvailableFinishes = finishes,
-                OtherLanguages = languages,
-            };
+            // Copy over mutable / view-only extras you previously set in the initializer
+            clone.CardInCollectionPrice = src.CardInCollectionPrice;
+            clone.SelectedFinish = src.SelectedFinish;
+            clone.SelectedCondition = src.SelectedCondition;
+            clone.Count = src.Count; // if relevant
 
-            return c;
+            // Attach lookup lists
+            clone.AvailableFinishes = finishes ?? new List<string>();
+            clone.OtherLanguages = languages;
+
+            return clone;
         }
+
 
         // Save a card and return the changes to viewmodel
         public async Task<IReadOnlyList<CardChangeEventArgs>> SaveBatchAsync(IEnumerable<CardSet> cards, bool isEdit, SQLiteConnection connection)

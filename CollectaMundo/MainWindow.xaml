@@ -184,8 +184,19 @@
                                                             <Setter.Value>
                                                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                     <CheckBox Margin="5,2"
-                                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                                              Content="{Binding OptionName}">
+                                                                      Width="225"
+                                                                      Content="{Binding OptionName}"
+                                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                      HorizontalContentAlignment="Left">
+                                                                        <CheckBox.ContentTemplate>
+                                                                            <DataTemplate>
+                                                                                <TextBlock Text="{Binding}" 
+                                                                                   TextTrimming="CharacterEllipsis"
+                                                                                   ToolTip="{Binding}" 
+                                                                                   MaxWidth="215"
+                                                                                   TextWrapping="NoWrap" />
+                                                                            </DataTemplate>
+                                                                        </CheckBox.ContentTemplate>
                                                                     </CheckBox>
                                                                 </ControlTemplate>
                                                             </Setter.Value>
@@ -252,8 +263,19 @@
                                                             <Setter.Value>
                                                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                     <CheckBox Margin="5,2"
-                                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                                              Content="{Binding OptionName}">
+                                                                      Width="225"
+                                                                      Content="{Binding OptionName}"
+                                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                      HorizontalContentAlignment="Left">
+                                                                        <CheckBox.ContentTemplate>
+                                                                            <DataTemplate>
+                                                                                <TextBlock Text="{Binding}" 
+                                                                                   TextTrimming="CharacterEllipsis"
+                                                                                   ToolTip="{Binding}" 
+                                                                                   MaxWidth="215"
+                                                                                   TextWrapping="NoWrap" />
+                                                                            </DataTemplate>
+                                                                        </CheckBox.ContentTemplate>
                                                                     </CheckBox>
                                                                 </ControlTemplate>
                                                             </Setter.Value>
@@ -320,8 +342,19 @@
                                                             <Setter.Value>
                                                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                     <CheckBox Margin="5,2"
-                                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                                              Content="{Binding OptionName}">
+                                                                      Width="225"
+                                                                      Content="{Binding OptionName}"
+                                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                      HorizontalContentAlignment="Left">
+                                                                        <CheckBox.ContentTemplate>
+                                                                            <DataTemplate>
+                                                                                <TextBlock Text="{Binding}" 
+                                                                                   TextTrimming="CharacterEllipsis"
+                                                                                   ToolTip="{Binding}" 
+                                                                                   MaxWidth="215"
+                                                                                   TextWrapping="NoWrap" />
+                                                                            </DataTemplate>
+                                                                        </CheckBox.ContentTemplate>
                                                                     </CheckBox>
                                                                 </ControlTemplate>
                                                             </Setter.Value>
@@ -388,8 +421,19 @@
                                                             <Setter.Value>
                                                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                     <CheckBox Margin="5,2"
-                                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                                              Content="{Binding OptionName}">
+                                                                      Width="225"
+                                                                      Content="{Binding OptionName}"
+                                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                      HorizontalContentAlignment="Left">
+                                                                        <CheckBox.ContentTemplate>
+                                                                            <DataTemplate>
+                                                                                <TextBlock Text="{Binding}" 
+                                                                                   TextTrimming="CharacterEllipsis"
+                                                                                   ToolTip="{Binding}" 
+                                                                                   MaxWidth="215"
+                                                                                   TextWrapping="NoWrap" />
+                                                                            </DataTemplate>
+                                                                        </CheckBox.ContentTemplate>
                                                                     </CheckBox>
                                                                 </ControlTemplate>
                                                             </Setter.Value>
@@ -456,8 +500,19 @@
                                                             <Setter.Value>
                                                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                     <CheckBox Margin="5,2"
-                                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                                              Content="{Binding OptionName}">
+                                                                      Width="225"
+                                                                      Content="{Binding OptionName}"
+                                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                      HorizontalContentAlignment="Left">
+                                                                        <CheckBox.ContentTemplate>
+                                                                            <DataTemplate>
+                                                                                <TextBlock Text="{Binding}" 
+                                                                                   TextTrimming="CharacterEllipsis"
+                                                                                   ToolTip="{Binding}" 
+                                                                                   MaxWidth="215"
+                                                                                   TextWrapping="NoWrap" />
+                                                                            </DataTemplate>
+                                                                        </CheckBox.ContentTemplate>
                                                                     </CheckBox>
                                                                 </ControlTemplate>
                                                             </Setter.Value>
@@ -524,8 +579,19 @@
                                                             <Setter.Value>
                                                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                     <CheckBox Margin="5,2"
-                                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                                              Content="{Binding OptionName}">
+                                                                      Width="225"
+                                                                      Content="{Binding OptionName}"
+                                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                      HorizontalContentAlignment="Left">
+                                                                        <CheckBox.ContentTemplate>
+                                                                            <DataTemplate>
+                                                                                <TextBlock Text="{Binding}" 
+                                                                                   TextTrimming="CharacterEllipsis"
+                                                                                   ToolTip="{Binding}" 
+                                                                                   MaxWidth="215"
+                                                                                   TextWrapping="NoWrap" />
+                                                                            </DataTemplate>
+                                                                        </CheckBox.ContentTemplate>
                                                                     </CheckBox>
                                                                 </ControlTemplate>
                                                             </Setter.Value>
@@ -615,8 +681,19 @@
                                                             <Setter.Value>
                                                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                     <CheckBox Margin="5,2"
-                                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                                              Content="{Binding OptionName}">
+                                                                      Width="225"
+                                                                      Content="{Binding OptionName}"
+                                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                      HorizontalContentAlignment="Left">
+                                                                        <CheckBox.ContentTemplate>
+                                                                            <DataTemplate>
+                                                                                <TextBlock Text="{Binding}" 
+                                                                                   TextTrimming="CharacterEllipsis"
+                                                                                   ToolTip="{Binding}" 
+                                                                                   MaxWidth="215"
+                                                                                   TextWrapping="NoWrap" />
+                                                                            </DataTemplate>
+                                                                        </CheckBox.ContentTemplate>
                                                                     </CheckBox>
                                                                 </ControlTemplate>
                                                             </Setter.Value>
@@ -685,8 +762,19 @@
                                                             <Setter.Value>
                                                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                     <CheckBox Margin="5,2"
-                                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                                              Content="{Binding OptionName}">
+                                                                      Width="225"
+                                                                      Content="{Binding OptionName}"
+                                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                      HorizontalContentAlignment="Left">
+                                                                        <CheckBox.ContentTemplate>
+                                                                            <DataTemplate>
+                                                                                <TextBlock Text="{Binding}" 
+                                                                                   TextTrimming="CharacterEllipsis"
+                                                                                   ToolTip="{Binding}" 
+                                                                                   MaxWidth="215"
+                                                                                   TextWrapping="NoWrap" />
+                                                                            </DataTemplate>
+                                                                        </CheckBox.ContentTemplate>
                                                                     </CheckBox>
                                                                 </ControlTemplate>
                                                             </Setter.Value>
@@ -755,8 +843,19 @@
                                                             <Setter.Value>
                                                                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                                                     <CheckBox Margin="5,2"
-                                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                                              Content="{Binding OptionName}">
+                                                                      Width="225"
+                                                                      Content="{Binding OptionName}"
+                                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                      HorizontalContentAlignment="Left">
+                                                                        <CheckBox.ContentTemplate>
+                                                                            <DataTemplate>
+                                                                                <TextBlock Text="{Binding}" 
+                                                                                   TextTrimming="CharacterEllipsis"
+                                                                                   ToolTip="{Binding}" 
+                                                                                   MaxWidth="215"
+                                                                                   TextWrapping="NoWrap" />
+                                                                            </DataTemplate>
+                                                                        </CheckBox.ContentTemplate>
                                                                     </CheckBox>
                                                                 </ControlTemplate>
                                                             </Setter.Value>
