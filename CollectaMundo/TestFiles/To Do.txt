@@ -1,8 +1,18 @@
 TO DO 
 - MVVM refactor
 
+
+
 - Gå videre med update scenarie
 	- Reload (diff only)
+
+
+
+	laptop:
+	- 10891, 10980, 10210 ms. 
+
+
+
 	- Slet temp set ikoner
 	- Slet temp filer
 	- Tilføj backup af database step	

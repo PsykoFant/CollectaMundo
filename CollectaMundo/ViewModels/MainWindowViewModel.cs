@@ -6,10 +6,12 @@ using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.Data.CardLists;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
@@ -362,22 +364,31 @@ namespace CollectaMundo.ViewModels
             vm.OnStartupComplete?.Invoke();
             return vm;
         }
-
         private async Task ReloadAllCardListsAsync()
         {
+            var sw = Stopwatch.StartNew();
+            Debug.WriteLine("[ReloadAllCardListsAsync] Starting initialization...");
+
             await MainWindowInitializer.InitializeAsync(
-                [(AllCardsVM,         CardListQueryCatalog.AllCards),
-                (MyCollectionVM,     CardListQueryCatalog.MyCollection),
-                (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
-                (AllCardsInDecksVM,  CardListQueryCatalog.AllCardsInDecks),
-                (ColorIcons,         CardListQueryCatalog.ColorIcons),],
+                new List<(CardViewModel, CardListQuerySpec)>
+                {
+            (AllCardsVM,         CardListQueryCatalog.AllCards),
+            (MyCollectionVM,     CardListQueryCatalog.MyCollection),
+            (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
+            (AllCardsInDecksVM,  CardListQueryCatalog.AllCardsInDecks),
+            (ColorIcons,         CardListQueryCatalog.ColorIcons),
+                },
                 FilterVM.Filters,
                 FilterVM
             );
 
             // Reapply current filters so UI reflects fresh data immediately
             FilterVM.NotifyFilterChanged();
+
+            sw.Stop();
+            Debug.WriteLine($"[ReloadAllCardListsAsync] Finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");
         }
+
 
     }
 }
