@@ -78,7 +78,7 @@ namespace CollectaMundo.DomainLogic.EditCollection
                 ManaValue = src.ManaValue,
                 Colors = src.Colors,
                 Type = src.Type,
-                ManaCostImageBytes = src.ManaCostImageBytes,
+                //ManaCostImageBytes = src.ManaCostImageBytes,
 
                 Types = src.Types,
                 SuperTypes = src.SuperTypes,
@@ -92,7 +92,7 @@ namespace CollectaMundo.DomainLogic.EditCollection
                 Rarity = src.Rarity,
                 Finishes = src.Finishes,
                 ReleaseDate = src.ReleaseDate,
-                KeyRuneImageBytes = src.KeyRuneImageBytes,
+                //KeyRuneImageBytes = src.KeyRuneImageBytes,
                 CardInCollectionPrice = src.CardInCollectionPrice,
 
                 // lookup lists

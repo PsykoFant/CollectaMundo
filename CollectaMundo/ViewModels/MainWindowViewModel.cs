@@ -1,12 +1,10 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
-using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.ApplicationServices.Utilities;
-using CollectaMundo.Data.CardLists;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
@@ -364,30 +362,46 @@ namespace CollectaMundo.ViewModels
             vm.OnStartupComplete?.Invoke();
             return vm;
         }
+
+        // in MainWindowViewModel.cs
         private async Task ReloadAllCardListsAsync()
         {
             var sw = Stopwatch.StartNew();
-            Debug.WriteLine("[ReloadAllCardListsAsync] Starting initialization...");
+            Debug.WriteLine("[ReloadAllCardListsAsync] M1: AllCards only…");
 
-            await MainWindowInitializer.InitializeAsync(
-                new List<(CardViewModel, CardListQuerySpec)>
-                {
-            (AllCardsVM,         CardListQueryCatalog.AllCards),
-            (MyCollectionVM,     CardListQueryCatalog.MyCollection),
-            (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
-            (AllCardsInDecksVM,  CardListQueryCatalog.AllCardsInDecks),
-            (ColorIcons,         CardListQueryCatalog.ColorIcons),
-                },
-                FilterVM.Filters,
-                FilterVM
-            );
+            await MainWindowInitializer.InitializeAllCardsOnlyAsync(AllCardsVM, FilterVM.Filters, FilterVM);
 
-            // Reapply current filters so UI reflects fresh data immediately
-            FilterVM.NotifyFilterChanged();
+            // Other lists (MyCollection/Decks) intentionally left empty in M1
+            FilterVM.NotifyFilterChanged(); // existing behavior
 
             sw.Stop();
-            Debug.WriteLine($"[ReloadAllCardListsAsync] Finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");
+            Debug.WriteLine($"[ReloadAllCardListsAsync] M1 finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");
         }
+
+        //private async Task ReloadAllCardListsAsync()
+        //{
+        //    var sw = Stopwatch.StartNew();
+        //    Debug.WriteLine("[ReloadAllCardListsAsync] Starting initialization...");
+
+        //    await MainWindowInitializer.InitializeAsync(
+        //        new List<(CardViewModel, CardListQuerySpec)>
+        //        {
+        //    (AllCardsVM,         CardListQueryCatalog.AllCards),
+        //    (MyCollectionVM,     CardListQueryCatalog.MyCollection),
+        //    (AllCardsForDecksVM, CardListQueryCatalog.AllCardsForDecks),
+        //    (AllCardsInDecksVM,  CardListQueryCatalog.AllCardsInDecks),
+        //    (ColorIcons,         CardListQueryCatalog.ColorIcons),
+        //        },
+        //        FilterVM.Filters,
+        //        FilterVM
+        //    );
+
+        //    // Reapply current filters so UI reflects fresh data immediately
+        //    FilterVM.NotifyFilterChanged();
+
+        //    sw.Stop();
+        //    Debug.WriteLine($"[ReloadAllCardListsAsync] Finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");
+        //}
 
 
     }
