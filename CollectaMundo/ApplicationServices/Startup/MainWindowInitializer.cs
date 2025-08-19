@@ -8,7 +8,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 {
     public class MainWindowInitializer
     {
-        public static async Task InitializeAllCardsOnlyAsync(CardViewModel allCardsVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
+        public static async Task InitializeAllCardLists(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork();
             try
@@ -20,22 +20,52 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var conn = uow.CurrentConnection;
 
                 // 1) Single heavy read (AllCards cores)
-                Debug.WriteLine("[Init M1] Loading cores from view_allCards…");
+                Debug.WriteLine("[InitializeAllCardLists] Loading cores from view_allCards…");
                 var cores = await cardlistRepo.QueryAllCardsCoresAsync(conn);
 
-                // 2) Project cores -> CardSet (CPU only; parallel OK)
-                Debug.WriteLine("[Init M1] Projecting cores to CardSet…");
-                var allCards = cores
-                    .AsParallel()
-                    .AsOrdered()
-                    .Select(CardSet.FromCore)
-                    .ToList();
+                // 2) Build index by UUID for fast join
+                var byUuid = new Dictionary<string, CardCore>(cores.Count, System.StringComparer.OrdinalIgnoreCase);
+                foreach (var core in cores)
+                    byUuid[core.Uuid] = core;
 
-                // 3) Set AllCards VM
+                // 3) Project cores -> CardSet (AllCards VM)
+                Debug.WriteLine("[InitializeAllCardLists] Projecting AllCards…");
+                var allCards = cores.AsParallel().AsOrdered().Select(CardSet.FromCore).ToList();
                 allCardsVM.Cards = allCards;
                 allCardsVM.FilteredCards = allCards;
 
-                // 4) Initialize filters and defaults (no cardSpecs/cardsResults here)
+                // 4) Load myCollection rows (table only)
+                Debug.WriteLine("[InitializeAllCardLists] Loading myCollection table…");
+                var rows = await cardlistRepo.ReadMyCollection(conn);
+
+                // 5) Join rows -> CardSet via shared core
+                Debug.WriteLine("[InitializeAllCardLists] Projecting MyCollection from cores…");
+                var myCollection = rows
+                    .AsParallel()
+                    .Select(r =>
+                    {
+                        if (!byUuid.TryGetValue(r.Uuid, out var core))
+                        {
+                            // If a UUID is missing from AllCards (edge case), skip or log:
+                            Debug.WriteLine($"[Init M2] UUID not found in AllCards: {r.Uuid}");
+                            return null;
+                        }
+                        return CardSet.FromCoreWithCollection(
+                            core,
+                            r.Id,
+                            r.CardsOwned,
+                            r.CardsForTrade,
+                            r.Condition,
+                            r.Language,
+                            r.Finish);
+                    })
+                    .Where(c => c != null)!
+                    .ToList();
+
+                myCollectionVM.Cards = myCollection;
+                myCollectionVM.FilteredCards = myCollection;
+
+                // 6) Initialize filters and defaults (no cardSpecs/cardsResults here)
                 Debug.WriteLine("[Init M1] Loading filter defaults…");
                 var filterDefaults = await filterRepo.GetFilterDefaultsAsync(conn);
 

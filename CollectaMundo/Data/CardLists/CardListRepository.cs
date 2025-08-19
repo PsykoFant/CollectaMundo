@@ -19,7 +19,27 @@ namespace CollectaMundo.Data.CardLists
             }
             return list;
         }
+        public async Task<List<MyCollectionRow>> ReadMyCollection(SQLiteConnection conn)
+        {
+            using var cmd = new SQLiteCommand("SELECT id, uuid, cardsOwned, cardsForTrade, condition, language, finish FROM myCollection", conn);
 
+            var list = new List<MyCollectionRow>();
+            using var rdr = await cmd.ExecuteReaderAsync();
+            while (await rdr.ReadAsync())
+            {
+                list.Add(new MyCollectionRow
+                {
+                    Id = rdr["id"] is long li ? (int)li : (int)(rdr["id"] ?? 0),
+                    Uuid = rdr["uuid"]?.ToString() ?? "",
+                    CardsOwned = rdr["cardsOwned"] is long lo ? (int)lo : (int)(rdr["cardsOwned"] ?? 0),
+                    CardsForTrade = rdr["cardsForTrade"] is long lt ? (int)lt : (int)(rdr["cardsForTrade"] ?? 0),
+                    Condition = rdr["condition"]?.ToString(),
+                    Language = rdr["language"]?.ToString(),
+                    Finish = rdr["finish"]?.ToString()
+                });
+            }
+            return list;
+        }
         public Task<IReadOnlyList<CardSet>> QueryAsync(string sql, SQLiteConnection conn, Func<DbDataReader, CardSet> map) => MapAsync(new SQLiteCommand(sql, conn), map);
         private static async Task<IReadOnlyList<CardSet>> MapAsync(SQLiteCommand cmd, Func<DbDataReader, CardSet> mapRow)
         {

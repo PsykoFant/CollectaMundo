@@ -7,6 +7,7 @@ namespace CollectaMundo.Data.CardLists
     public interface ICardListRepository
     {
         Task<IReadOnlyList<CardCore>> QueryAllCardsCoresAsync(SQLiteConnection conn);
+        Task<List<MyCollectionRow>> ReadMyCollection(SQLiteConnection conn);
         Task<IReadOnlyList<CardSet>> QueryAsync(string sql, SQLiteConnection conn, Func<DbDataReader, CardSet> map);
     }
 

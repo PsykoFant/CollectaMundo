@@ -369,7 +369,7 @@ namespace CollectaMundo.ViewModels
             var sw = Stopwatch.StartNew();
             Debug.WriteLine("[ReloadAllCardListsAsync] M1: AllCards only…");
 
-            await MainWindowInitializer.InitializeAllCardsOnlyAsync(AllCardsVM, FilterVM.Filters, FilterVM);
+            await MainWindowInitializer.InitializeAllCardLists(AllCardsVM, MyCollectionVM, FilterVM.Filters, FilterVM);
 
             // Other lists (MyCollection/Decks) intentionally left empty in M1
             FilterVM.NotifyFilterChanged(); // existing behavior
