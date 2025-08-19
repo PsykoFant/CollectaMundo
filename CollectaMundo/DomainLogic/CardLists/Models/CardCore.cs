@@ -23,7 +23,6 @@
 
         // Image blobs (one copy per UUID)
         public byte[]? KeyRuneImageBytes { get; init; }
-        public byte[]? ManaCostImageBytes { get; init; }
 
         // Prices
         public decimal? NormalPrice { get; init; }

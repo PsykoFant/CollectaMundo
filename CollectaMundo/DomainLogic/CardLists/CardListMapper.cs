@@ -144,7 +144,6 @@ namespace CollectaMundo.DomainLogic.CardLists
                 ManaValue = GetFieldValue<double?>(r, "ManaValue") ?? 0,
 
                 KeyRuneImageBytes = GetFieldValue<byte[]>(r, "KeyRuneImage"),
-                ManaCostImageBytes = GetFieldValue<byte[]>(r, "ManaCostImage"),
 
                 NormalPrice = GetFieldValue<decimal?>(r, "NormalPrice"),
                 FoilPrice = GetFieldValue<decimal?>(r, "FoilPrice"),

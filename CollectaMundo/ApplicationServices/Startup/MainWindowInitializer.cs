@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.Data.CardLists;
 using CollectaMundo.Data.Filtering;
+using CollectaMundo.DomainLogic.CardLists.Images;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
@@ -8,7 +9,11 @@ namespace CollectaMundo.ApplicationServices.Startup
 {
     public class MainWindowInitializer
     {
-        public static async Task InitializeAllCardLists(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
+        public static async Task InitializeAllCardLists(
+    CardViewModel allCardsVM,
+    CardViewModel myCollectionVM,
+    Dictionary<string, FilterItemViewModel> filters,
+    FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork();
             try
@@ -19,24 +24,34 @@ namespace CollectaMundo.ApplicationServices.Startup
                 await uow.BeginAsync();
                 var conn = uow.CurrentConnection;
 
+                // 0) Mana-cost image cache: load once, share across all cards
+                Debug.WriteLine("[InitializeAllCardLists] Loading mana-cost image cache…");
+                var manaCache = await ManaCostImageCache.LoadAsync(conn);
+                CardSet.ManaCostImageProvider = manaCache;
+
                 // 1) Single heavy read (AllCards cores)
                 Debug.WriteLine("[InitializeAllCardLists] Loading cores from view_allCards…");
                 var cores = await cardlistRepo.QueryAllCardsCoresAsync(conn);
 
                 // 2) Build index by UUID for fast join
-                var byUuid = new Dictionary<string, CardCore>(cores.Count, System.StringComparer.OrdinalIgnoreCase);
+                var byUuid = new Dictionary<string, CardCore>(cores.Count, StringComparer.OrdinalIgnoreCase);
                 foreach (var core in cores)
                     byUuid[core.Uuid] = core;
 
                 // 3) Project cores -> CardSet (AllCards VM)
                 Debug.WriteLine("[InitializeAllCardLists] Projecting AllCards…");
-                var allCards = cores.AsParallel().AsOrdered().Select(CardSet.FromCore).ToList();
+                var allCards = cores
+                    .AsParallel()
+                    .AsOrdered()
+                    .Select(CardSet.FromCore)
+                    .ToList();
+
                 allCardsVM.Cards = allCards;
                 allCardsVM.FilteredCards = allCards;
 
                 // 4) Load myCollection rows (table only)
                 Debug.WriteLine("[InitializeAllCardLists] Loading myCollection table…");
-                var rows = await cardlistRepo.ReadMyCollection(conn);
+                var rows = await cardlistRepo.ReadMyCollection(conn); // returns rows with Id, Uuid, CardsOwned, CardsForTrade, Condition, Language, Finish
 
                 // 5) Join rows -> CardSet via shared core
                 Debug.WriteLine("[InitializeAllCardLists] Projecting MyCollection from cores…");
@@ -46,10 +61,10 @@ namespace CollectaMundo.ApplicationServices.Startup
                     {
                         if (!byUuid.TryGetValue(r.Uuid, out var core))
                         {
-                            // If a UUID is missing from AllCards (edge case), skip or log:
-                            Debug.WriteLine($"[Init M2] UUID not found in AllCards: {r.Uuid}");
+                            Debug.WriteLine($"[InitializeAllCardLists] UUID not found in AllCards: {r.Uuid}");
                             return null;
                         }
+
                         return CardSet.FromCoreWithCollection(
                             core,
                             r.Id,
@@ -65,8 +80,8 @@ namespace CollectaMundo.ApplicationServices.Startup
                 myCollectionVM.Cards = myCollection;
                 myCollectionVM.FilteredCards = myCollection;
 
-                // 6) Initialize filters and defaults (no cardSpecs/cardsResults here)
-                Debug.WriteLine("[Init M1] Loading filter defaults…");
+                // 6) Initialize filters and defaults
+                Debug.WriteLine("[InitializeAllCardLists] Loading filter defaults…");
                 var filterDefaults = await filterRepo.GetFilterDefaultsAsync(conn);
 
                 filters.Clear();
@@ -80,7 +95,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                         filterVM,
                         def.NumericCriteria);
                 }
-                Debug.WriteLine("[Init M1] Filter defaults populated");
+                Debug.WriteLine("[InitializeAllCardLists] Filter defaults populated");
 
                 await uow.CommitAsync();
             }
@@ -90,6 +105,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 throw;
             }
         }
+
 
         //public static async Task InitializeAsync(List<(CardViewModel, CardListQuerySpec)> cardSpecs, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         //{
