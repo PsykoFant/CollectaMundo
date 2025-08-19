@@ -24,13 +24,7 @@ namespace CollectaMundo.DomainLogic.EditCollection
             }
             else
             {
-                // new card defaults
-                clone.CardId = null;
-                clone.CardsOwned = 1;
-                clone.CardsForTrade = 0;
-                clone.SelectedCondition = "Near Mint";
-                clone.SelectedFinish = clone.AvailableFinishes.FirstOrDefault() ?? "Near Mint";
-                clone.Language = clone.OtherLanguages?.FirstOrDefault() ?? "English";
+                ApplyNewDefaults(clone);
             }
 
             return clone;
@@ -38,25 +32,79 @@ namespace CollectaMundo.DomainLogic.EditCollection
         public async Task<CardSet> PrepareNewCardWithDefaultsAsync(CardSet selectedCard, SQLiteConnection connection)
         {
             var clone = await CloneWithMetadataHelperAsync(selectedCard, connection);
-
-            // always brand‐new
+            ApplyNewDefaults(clone);
+            return clone;
+        }
+        private static void ApplyNewDefaults(CardSet clone)
+        {
             clone.CardId = null;
             clone.CardsOwned = 1;
             clone.CardsForTrade = 0;
             clone.SelectedCondition = "Near Mint";
+            clone.SelectedFinish = ChooseDefaultFinish(clone.AvailableFinishes);
 
-            // pick “nonfoil” if possible, else first:
-            clone.SelectedFinish = clone.AvailableFinishes
-                                          .FirstOrDefault(f => f.Equals("nonfoil", StringComparison.OrdinalIgnoreCase))
-                                      ?? clone.AvailableFinishes.FirstOrDefault()
-                                      ?? "nonfoil";
+            // prefer English; else first; else "English"
+            clone.Language = ChooseDefaultLanguage(clone.OtherLanguages);
+        }
+        private static string? ChooseDefaultFinish(IList<string>? finishes)
+        {
+            if (finishes == null || finishes.Count == 0) return null;
 
-            // pick English if possible:
-            clone.Language = clone.OtherLanguages?.FirstOrDefault(l => l.Equals("English", StringComparison.OrdinalIgnoreCase))
-                                      ?? clone.OtherLanguages?.FirstOrDefault()
-                                      ?? "English";
+            static int Rank(string s) => s switch
+            {
+                // adjust to your canonical strings
+                var x when x.Equals("nonfoil", StringComparison.OrdinalIgnoreCase) => 0,
+                var x when x.Equals("foil", StringComparison.OrdinalIgnoreCase) => 1,
+                var x when x.Equals("etched", StringComparison.OrdinalIgnoreCase) => 2,
+                _ => 3
+            };
 
-            return clone;
+            return finishes
+                .OrderBy(Rank)
+                .ThenBy(s => s, StringComparer.OrdinalIgnoreCase)
+                .First();
+        }
+        private static string ChooseDefaultLanguage(IList<string>? langs)
+        {
+            if (langs == null || langs.Count == 0) return "English";
+
+            var english = langs.FirstOrDefault(l => l.Equals("English", StringComparison.OrdinalIgnoreCase));
+            return english ?? langs[0];
+        }
+        private static List<string> NormalizeLanguages(IEnumerable<string>? langs, string? primary)
+        {
+            var list = (langs ?? Enumerable.Empty<string>())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            // If we have a primary language from the card itself and it's not in the list, include it
+            if (!string.IsNullOrWhiteSpace(primary) &&
+                !list.Contains(primary, StringComparer.OrdinalIgnoreCase))
+            {
+                list.Add(primary);
+            }
+
+            // Sort with English first (if present), then primary (if not English), then alphabetical
+            list.Sort(StringComparer.OrdinalIgnoreCase);
+            MoveToFront(list, "English");
+            if (!string.Equals(primary, "English", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(primary))
+            {
+                MoveToFront(list, primary);
+            }
+
+            return list;
+        }
+        private static void MoveToFront(List<string> list, string value)
+        {
+            var idx = list.FindIndex(s => string.Equals(s, value, StringComparison.OrdinalIgnoreCase));
+            if (idx > 0)
+            {
+                var v = list[idx];
+                list.RemoveAt(idx);
+                list.Insert(0, v);
+            }
         }
         private async Task<CardSet> CloneWithMetadataHelperAsync(CardSet src, SQLiteConnection connection)
         {
@@ -67,7 +115,8 @@ namespace CollectaMundo.DomainLogic.EditCollection
             var finishes = await _repo.FetchFinishesForCardAsync(src.Uuid, connection);
             var languages = await _repo.FetchLanguagesForCardAsync(src.Uuid, connection);
 
-            // New: build clone from Core so image byte forwarders work
+            // Require Core in the new flow to avoid silent inconsistencies.
+            // If you really want the fallback, keep it — but log loudly.
             CardSet clone;
             if (src.Core != null)
             {
@@ -75,63 +124,42 @@ namespace CollectaMundo.DomainLogic.EditCollection
             }
             else
             {
-                // Fallback (shouldn't happen in the new flow): reconstruct a minimal Core from src
-                var core = new CardCore
-                {
-                    Uuid = src.Uuid,
-                    Name = src.Name ?? "",
-                    SetName = src.SetName,
-                    ReleaseDate = src.ReleaseDate,
-                    ManaCostRaw = src.ManaCostRaw,
-                    ManaCost = src.ManaCost,
-                    ManaValue = src.ManaValue,
-                    Colors = src.Colors,
-                    Type = src.Type,
-                    Types = src.Types,
-                    SuperTypes = src.SuperTypes,
-                    SubTypes = src.SubTypes,
-                    Keywords = src.Keywords,
-                    Text = src.Text,
-                    Side = src.Side,
-                    Rarity = src.Rarity,
-                    Finishes = src.Finishes,
-                    Language = src.Language,
-                    NormalPrice = src.NormalPrice,
-                    FoilPrice = src.FoilPrice,
-                    EtchedPrice = src.EtchedPrice,
-
-                    // These read from src’s forwarders; will be null if src had no Core
-                    KeyRuneImageBytes = src.KeyRuneImageBytes,
-                    ManaCostImageBytes = src.ManaCostImageBytes,
-                };
-
-                clone = CardSet.FromCore(core);
+                // Strong fail is safer in the refactored world:
+                throw new InvalidOperationException("CardSet.Core must be set. Use CardSet.FromCore to create instances.");
             }
 
-            // Copy over mutable / view-only extras you previously set in the initializer
+            // carry over view-only fields if needed
             clone.CardInCollectionPrice = src.CardInCollectionPrice;
             clone.SelectedFinish = src.SelectedFinish;
             clone.SelectedCondition = src.SelectedCondition;
-            clone.Count = src.Count; // if relevant
+            clone.Count = src.Count;
 
-            // Attach lookup lists
+            // Attach lookup lists (never null)
             clone.AvailableFinishes = finishes ?? new List<string>();
-            clone.OtherLanguages = languages;
+
+            // Distinct, English-first normalization; include src.Language as secondary if present
+            clone.OtherLanguages = NormalizeLanguages(languages, src.Language) ?? new List<string>();
 
             return clone;
         }
 
-
         // Save a card and return the changes to viewmodel
         public async Task<IReadOnlyList<CardChangeEventArgs>> SaveBatchAsync(IEnumerable<CardSet> cards, bool isEdit, SQLiteConnection connection)
         {
-            // explicitly tell the compiler what delegate type we're using
-            Func<CardSet, Task<CardChangeEventArgs>> persister = isEdit
-                ? (card) => PersistEditedCardsAndReturnChangesAsync(card, connection)
-                : (card) => PersistAddedCardsAndReturnChangesAsync(card, connection);
+            // Using a single SQLiteConnection: do NOT parallelize DB ops.
+            var results = new List<CardChangeEventArgs>();
 
-            // now Task.WhenAll can infer correctly
-            var results = await Task.WhenAll(cards.Select(card => persister(card)));
+            if (isEdit)
+            {
+                foreach (var card in cards)
+                    results.Add(await PersistEditedCardsAndReturnChangesAsync(card, connection));
+            }
+            else
+            {
+                foreach (var card in cards)
+                    results.Add(await PersistAddedCardsAndReturnChangesAsync(card, connection));
+            }
+
             return results;
         }
         private async Task<CardChangeEventArgs> PersistAddedCardsAndReturnChangesAsync(CardSet card, SQLiteConnection connection)
