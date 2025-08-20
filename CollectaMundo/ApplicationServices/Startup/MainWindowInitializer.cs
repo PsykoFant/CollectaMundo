@@ -9,34 +9,30 @@ namespace CollectaMundo.ApplicationServices.Startup
 {
     public class MainWindowInitializer
     {
-        public static async Task InitializeAllCardLists(
-    CardViewModel allCardsVM,
-    CardViewModel myCollectionVM,
-    Dictionary<string, FilterItemViewModel> filters,
-    FilterViewModel filterVM)
+        public static async Task InitializeAllCardLists(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterInitDefaultsRepository filterRepo, CardListRepository cardlistRepo, FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork();
             try
             {
-                var cardlistRepo = new CardListRepository();
-                var filterRepo = new FilterInitDefaultsRepository();
-
                 await uow.BeginAsync();
                 var conn = uow.CurrentConnection;
 
                 // 0) Mana-cost image cache: load once, share across all cards
                 Debug.WriteLine("[InitializeAllCardLists] Loading mana-cost image cache…");
-                var manaCache = await ManaCostImageCache.LoadAsync(conn);
+                var bytesMap = await cardlistRepo.ReadManaCostImagesAsync(conn);
+                var manaCache = new ManaCostImageCache(bytesMap);
                 CardSet.ManaCostImageProvider = manaCache;
 
                 // 1) Single heavy read (AllCards cores)
                 Debug.WriteLine("[InitializeAllCardLists] Loading cores from view_allCards…");
-                var cores = await cardlistRepo.QueryAllCardsCoresAsync(conn);
+                var cores = await cardlistRepo.ReadAllCardsCoresAsync(conn);
 
                 // 2) Build index by UUID for fast join
                 var byUuid = new Dictionary<string, CardCore>(cores.Count, StringComparer.OrdinalIgnoreCase);
                 foreach (var core in cores)
+                {
                     byUuid[core.Uuid] = core;
+                }
 
                 // 3) Project cores -> CardSet (AllCards VM)
                 Debug.WriteLine("[InitializeAllCardLists] Projecting AllCards…");
@@ -51,18 +47,16 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 // 4) Load myCollection rows (table only)
                 Debug.WriteLine("[InitializeAllCardLists] Loading myCollection table…");
-                var rows = await cardlistRepo.ReadMyCollection(conn); // returns rows with Id, Uuid, CardsOwned, CardsForTrade, Condition, Language, Finish
+                var rows = await cardlistRepo.ReadMyCollectionAsync(conn); // returns rows with Id, Uuid, CardsOwned, CardsForTrade, Condition, Language, Finish
 
                 // 5) Join rows -> CardSet via shared core
                 Debug.WriteLine("[InitializeAllCardLists] Projecting MyCollection from cores…");
-                var myCollection = rows
-                    .AsParallel()
-                    .Select(r =>
+                var myCollection = rows.AsParallel().Select(r =>
                     {
                         if (!byUuid.TryGetValue(r.Uuid, out var core))
                         {
                             Debug.WriteLine($"[InitializeAllCardLists] UUID not found in AllCards: {r.Uuid}");
-                            return null;
+                            return null; // nullable here
                         }
 
                         return CardSet.FromCoreWithCollection(
@@ -73,9 +67,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                             r.Condition,
                             r.Language,
                             r.Finish);
-                    })
-                    .Where(c => c != null)!
-                    .ToList();
+                    }).Where(c => c != null).Cast<CardSet>().ToList();
 
                 myCollectionVM.Cards = myCollection;
                 myCollectionVM.FilteredCards = myCollection;

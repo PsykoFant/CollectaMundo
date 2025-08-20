@@ -362,12 +362,10 @@ namespace CollectaMundo.ViewModels
             vm.OnStartupComplete?.Invoke();
             return vm;
         }
-
-        // in MainWindowViewModel.cs
         private async Task ReloadAllCardListsAsync()
         {
             var sw = Stopwatch.StartNew();
-            Debug.WriteLine("[ReloadAllCardListsAsync] M1: AllCards only…");
+            Debug.WriteLine("[ReloadAllCardListsAsync] Initializing card lists");
 
             await MainWindowInitializer.InitializeAllCardLists(AllCardsVM, MyCollectionVM, FilterVM.Filters, FilterVM);
 
