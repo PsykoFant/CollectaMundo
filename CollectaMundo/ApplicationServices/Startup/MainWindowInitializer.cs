@@ -9,13 +9,16 @@ namespace CollectaMundo.ApplicationServices.Startup
 {
     public class MainWindowInitializer
     {
-        public static async Task InitializeAllCardLists(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterInitDefaultsRepository filterRepo, CardListRepository cardlistRepo, FilterViewModel filterVM)
+        public static async Task InitializeAllCardLists(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork();
             try
             {
                 await uow.BeginAsync();
                 var conn = uow.CurrentConnection;
+
+                var cardlistRepo = new CardListRepository();
+                var filterRepo = new FilterInitDefaultsRepository();
 
                 // 0) Mana-cost image cache: load once, share across all cards
                 Debug.WriteLine("[InitializeAllCardLists] Loading mana-cost image cache…");
