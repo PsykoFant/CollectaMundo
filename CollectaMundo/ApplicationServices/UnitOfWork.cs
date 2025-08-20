@@ -60,5 +60,4 @@ namespace CollectaMundo.ApplicationServices
             }
         }
     }
-
 }

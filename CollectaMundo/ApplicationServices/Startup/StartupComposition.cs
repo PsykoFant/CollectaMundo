@@ -1,5 +1,6 @@
 ﻿#region using directives
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
@@ -10,7 +11,9 @@ using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data;
 using CollectaMundo.Data.CardDatabaseManagement;
+using CollectaMundo.Data.CardLists;
 using CollectaMundo.Data.CardPrices;
+using CollectaMundo.Data.Filtering;
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ImportExport;
 using CollectaMundo.Data.RemoteLookups;
@@ -74,8 +77,14 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var editService = new EditCollectionService();
                 var importExportService = new ImportExportService(new ImportExportRepo());
 
+                var cardListRepo = new CardListRepository();
+                var filterDefaultsRepo = new FilterInitDefaultsRepository();
+
+                var cardListService = new CardListService(cardListRepo, filterDefaultsRepo);
+
+
                 // Build view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, prepService, downloadService, statusVM));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, prepService, downloadService, statusVM, cardListService));
 
                 // Show initial UI
                 mainVM.FilterVM.NotifyFilterChanged();

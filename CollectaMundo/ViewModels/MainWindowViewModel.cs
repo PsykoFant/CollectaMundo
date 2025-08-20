@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
@@ -29,9 +30,10 @@ namespace CollectaMundo.ViewModels
         private readonly IImportExportService _importExportService;
         private readonly ICardDatabasePreparationService _prepService;
         private readonly IDownloadService _downloadService;
+        private readonly ICardListService _cardListService;
 
         // Constructor
-        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, IDownloadService downloadService, StatusViewModel statusOverlayVM)
+        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, IDownloadService downloadService, StatusViewModel statusOverlayVM, ICardListService cardListService)
         {
             _statusOverlayVM = statusOverlayVM;
 
@@ -39,6 +41,7 @@ namespace CollectaMundo.ViewModels
             _importExportService = importExportService;
             _prepService = prepService;
             _downloadService = downloadService;
+            _cardListService = cardListService;
 
             CurrentPage = Page.SearchAndFilter;
 
@@ -350,9 +353,9 @@ namespace CollectaMundo.ViewModels
         }
 
         // Factory method to create the ViewModel
-        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, IDownloadService downloadService, StatusViewModel statusVM, Action? onStartupComplete = null)
+        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, IDownloadService downloadService, StatusViewModel statusVM, ICardListService cardListService, Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(filteringService, editService, importExportService, prepService, downloadService, statusVM)
+            var vm = new MainWindowViewModel(filteringService, editService, importExportService, prepService, downloadService, statusVM, cardListService)
             {
                 OnStartupComplete = onStartupComplete
             };
