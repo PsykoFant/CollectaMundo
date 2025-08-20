@@ -4,7 +4,6 @@ using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
-using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
@@ -370,7 +369,7 @@ namespace CollectaMundo.ViewModels
             var sw = Stopwatch.StartNew();
             Debug.WriteLine("[ReloadAllCardListsAsync] Initializing card lists");
 
-            await MainWindowInitializer.InitializeAllCardLists(AllCardsVM, MyCollectionVM, FilterVM.Filters, FilterVM);
+            await _cardListService.InitializeAsync(AllCardsVM, MyCollectionVM, FilterVM.Filters, FilterVM);
 
             // Other lists (MyCollection/Decks) intentionally left empty in M1
             FilterVM.NotifyFilterChanged(); // existing behavior
