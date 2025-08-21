@@ -10,13 +10,12 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
 {
     public sealed class CardSet : INotifyPropertyChanged   // sealed for small perf win; preserves public API
     {
-        // in CardSet.cs (top of class)
         public static IImageProvider<string>? ManaCostImages { get; set; }
 
-        // ========= NEW: shared core payload (built once per UUID) =========
+        // shared core payload
         public CardCore? Core { get; private set; }
 
-        // ========= Existing fields preserved (public API unchanged) =========
+
         public string? Artist { get; set; }
         public List<string>? ArtistIds { get; set; }
         public string? BorderColor { get; set; }
@@ -99,7 +98,10 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             get
             {
                 if (_manaCostImage == null)
+                {
                     _manaCostImage = ManaCostImages?.GetImage(Core?.ManaCostRaw ?? ManaCostRaw ?? string.Empty);
+                }
+
                 return _manaCostImage;
             }
             set => _manaCostImage = value;
