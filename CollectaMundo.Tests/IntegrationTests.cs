@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices;
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardIcons;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
@@ -9,6 +10,7 @@ using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data.CardDatabaseManagement;
+using CollectaMundo.Data.CardIcons;
 using CollectaMundo.Data.CardLists;
 using CollectaMundo.Data.CardPrices;
 using CollectaMundo.Data.Filtering;
@@ -57,9 +59,12 @@ namespace CollectaMundo.Tests
             var prepRepo = new CardDatabasePreparationRepo();
             var progressSinks = CreateProgressSinks(statusVM); // <- local helper (below)
 
+            var cardIconsRepo = new CardIconsRepo();
+            var cardIconService = new CardIconsService(cardIconsRepo);
+
             var cardListRepo = new CardListRepository();
             var filterDefaultsRepo = new FilterInitDefaultsRepository();
-            var cardlistService = new CardListService(cardListRepo, filterDefaultsRepo);
+            var cardListService = new CardListService(cardListRepo, filterDefaultsRepo, cardIconService);
 
             // IMPORTANT: inject the fixture-backed DbFactory so all DB calls stay in-memory
             var prepService = new CardDatabasePreparationService(settings, AppGlobals.DbFactory!, progressSinks, prepRepo, priceService, missingPngSvc, downloadService, remoteLookups);
@@ -76,7 +81,7 @@ namespace CollectaMundo.Tests
                             prepService,
                             downloadService,
                             statusVM,
-                            cardlistService);
+                            cardListService);
 
             // 6) Bring the VM to a “ready” state consistent with the app
             _mainVM.FilterVM.NotifyFilterChanged();

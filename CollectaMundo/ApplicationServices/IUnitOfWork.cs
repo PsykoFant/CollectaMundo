@@ -5,6 +5,7 @@ namespace CollectaMundo.ApplicationServices
     public interface IUnitOfWork : IAsyncDisposable
     {
         Task BeginAsync();
+        Task BeginReadOnlyAsync();
         Task CommitAsync();
         Task RollbackAsync();
 

@@ -1,7 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.CardIcons;
 using CollectaMundo.Data;
 using CollectaMundo.Data.CardLists;
-using CollectaMundo.DomainLogic.CardIcons;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.ViewModels;
 
@@ -14,23 +13,17 @@ namespace CollectaMundo.ApplicationServices.CardLists
         private readonly ICardListRepository _cardListRepo = cardListRepo;
         private readonly IFilterInitDefaultsRepository _filterRepo = filterRepo;
         private readonly ICardIconsService _iconService = iconService;
-
-        // Lazy singletons created on first InitializeAsync
-        private IImageBytesLogic<string>? _manaBytes;            // Domain: key -> bytes
-        private IImageProvider<string>? _manaImages;          // AppSvc: key -> ImageSource
-
         public async Task InitializeAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
-            // Ensure icon providers are ready (no-op after first call)
-            await _iconService.InitializeAsync();
-
             await using var uow = new UnitOfWork();
             try
             {
-                await uow.BeginAsync();
+                // use read-only for this whole startup pass
+                await uow.BeginReadOnlyAsync();
                 var conn = uow.CurrentConnection;
 
-
+                // Ensure icon providers using the SAME connection (no parallel connection/txn)
+                await _iconService.InitializeAsync(conn);
 
                 // 1) AllCards cores
                 var cores = await _cardListRepo.ReadAllCardsCoresAsync(conn);

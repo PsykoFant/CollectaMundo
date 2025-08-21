@@ -22,7 +22,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             try
             {
                 await using var uow = new UnitOfWork();
-                await uow.BeginAsync();
+                await uow.BeginReadOnlyAsync();
 
                 bool isValid = await _healthRepo.HasExpectedTablesAndViewsAsync(uow.CurrentConnection) && await _healthRepo.QuickCheckAsync(uow.CurrentConnection);
 

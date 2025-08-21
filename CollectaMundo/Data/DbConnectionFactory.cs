@@ -16,5 +16,4 @@ namespace CollectaMundo.Data
             return conn;
         }
     }
-
 }
