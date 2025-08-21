@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CardIcons;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -33,7 +34,7 @@ namespace CollectaMundo.ApplicationServices.CardIcons
                     bmp.Freeze();
                     return bmp;
                 }
-                catch { return null; }
+                catch (Exception ex) { Debug.WriteLine($"[ImageProvider] Decode failed for key '{k}': {ex.Message}"); return null; }
             });
         }
     }
