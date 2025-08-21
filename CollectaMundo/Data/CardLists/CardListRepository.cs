@@ -1,7 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using System.Data.Common;
 using System.Data.SQLite;
-using System.Diagnostics;
 
 namespace CollectaMundo.Data.CardLists
 {
@@ -41,8 +40,7 @@ namespace CollectaMundo.Data.CardLists
         }
         public async Task<IReadOnlyDictionary<string, byte[]>> ReadManaCostImagesAsync(SQLiteConnection conn)
         {
-            using var cmd = new SQLiteCommand(
-                "SELECT uniqueManaCost, manaCostImage FROM uniqueManaCostImages", conn);
+            using var cmd = new SQLiteCommand("SELECT uniqueManaCost, manaCostImage FROM uniqueManaCostImages", conn);
 
             var map = new Dictionary<string, byte[]>(capacity: 4096, comparer: StringComparer.Ordinal);
             using var rdr = await cmd.ExecuteReaderAsync();
@@ -62,31 +60,9 @@ namespace CollectaMundo.Data.CardLists
             return map;
         }
 
-        // old
-        public Task<IReadOnlyList<CardSet>> QueryAsync(string sql, SQLiteConnection conn, Func<DbDataReader, CardSet> map) => MapAsync(new SQLiteCommand(sql, conn), map);
-        private static async Task<IReadOnlyList<CardSet>> MapAsync(SQLiteCommand cmd, Func<DbDataReader, CardSet> mapRow)
-        {
-            try
-            {
-                var cards = new List<CardSet>();
-                await using var rdr = await cmd.ExecuteReaderAsync();
-                while (await rdr.ReadAsync())
-                {
-                    cards.Add(mapRow(rdr));
-                }
 
-                Debug.WriteLine($"Loaded {cards.Count} cards");
-                return cards;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in MapAsync: {ex.Message}");
-                return [];
-            }
-        }
         private static CardCore CoreFromAllCardsRow(DbDataReader r)
         {
-            // Reuse your existing helpers like GetFieldValue<T>, ProcessManaCost, GetUniqueCommaSeparatedField, ParseDate
             return new CardCore
             {
                 Name = GetFieldValue<string>(r, "Name") ?? "",

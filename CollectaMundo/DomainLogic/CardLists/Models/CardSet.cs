@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Images;
+﻿using CollectaMundo.ApplicationServices.CardIcons;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -11,7 +11,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
     public sealed class CardSet : INotifyPropertyChanged   // sealed for small perf win; preserves public API
     {
         // in CardSet.cs (top of class)
-        public static IManaCostImageProvider? ManaCostImageProvider { get; set; }
+        public static IImageProvider<string>? ManaCostImages { get; set; }
 
         // ========= NEW: shared core payload (built once per UUID) =========
         public CardCore? Core { get; private set; }
@@ -98,7 +98,8 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         {
             get
             {
-                _manaCostImage ??= ManaCostImageProvider?.GetImage(Core?.ManaCostRaw ?? ManaCostRaw);
+                if (_manaCostImage == null)
+                    _manaCostImage = ManaCostImages?.GetImage(Core?.ManaCostRaw ?? ManaCostRaw ?? string.Empty);
                 return _manaCostImage;
             }
             set => _manaCostImage = value;

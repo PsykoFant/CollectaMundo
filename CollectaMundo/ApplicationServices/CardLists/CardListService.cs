@@ -1,6 +1,7 @@
-﻿using CollectaMundo.Data;
+﻿using CollectaMundo.ApplicationServices.CardIcons;
+using CollectaMundo.Data;
 using CollectaMundo.Data.CardLists;
-using CollectaMundo.DomainLogic.CardLists.Images;
+using CollectaMundo.DomainLogic.CardIcons;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
@@ -14,8 +15,9 @@ namespace CollectaMundo.ApplicationServices.CardLists
         private readonly ICardListRepository _cardListRepo = cardListRepo;
         private readonly IFilterInitDefaultsRepository _filterRepo = filterRepo;
 
-        // Lazily built once on the first InitializeAsync call
-        private IManaCostImageProvider? _manaProvider;
+        // Lazy singletons created on first InitializeAsync
+        private IImageBytesLogic<string>? _manaBytes;            // Domain: key -> bytes
+        private IImageProvider<string>? _manaImages;          // AppSvc: key -> ImageSource
 
         public async Task InitializeAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
@@ -25,15 +27,21 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 await uow.BeginAsync();
                 var conn = uow.CurrentConnection;
 
-                // --- Ensure mana provider is built exactly once ---
-                if (_manaProvider is null)
+                // --- Ensure the providers are built exactly once ---
+                if (_manaImages is null)
                 {
-                    var map = await _cardListRepo.ReadManaCostImagesAsync(conn);
-                    _manaProvider = new ManaCostImageCache(map);
-                }
+                    // 1) Data → bytes map
+                    var manaMap = await _cardListRepo.ReadManaCostImagesAsync(conn);
 
-                // Hook provider (idempotent; safe if already set)
-                CardSet.ManaCostImageProvider = _manaProvider;
+                    // 2) Domain → bytes logic (no WPF)
+                    _manaBytes = new ManaCostBytesLogic(manaMap);
+
+                    // 3) AppServices → image provider (WPF decode + cache)
+                    _manaImages = new ManaCostImageService(_manaBytes);
+
+                    // 4) Hook into CardSet (static, app‑wide)
+                    CardSet.ManaCostImages = _manaImages;
+                }
 
                 // 1) Load AllCards cores
                 Debug.WriteLine("[CardListService] Loading AllCards cores…");
@@ -94,3 +102,4 @@ namespace CollectaMundo.ApplicationServices.CardLists
         }
     }
 }
+
