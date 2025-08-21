@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices;
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
@@ -8,7 +9,9 @@ using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data.CardDatabaseManagement;
+using CollectaMundo.Data.CardLists;
 using CollectaMundo.Data.CardPrices;
+using CollectaMundo.Data.Filtering;
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ImportExport;
 using CollectaMundo.Data.RemoteLookups;
@@ -54,16 +57,12 @@ namespace CollectaMundo.Tests
             var prepRepo = new CardDatabasePreparationRepo();
             var progressSinks = CreateProgressSinks(statusVM); // <- local helper (below)
 
+            var cardListRepo = new CardListRepository();
+            var filterDefaultsRepo = new FilterInitDefaultsRepository();
+            var cardlistService = new CardListService(cardListRepo, filterDefaultsRepo);
+
             // IMPORTANT: inject the fixture-backed DbFactory so all DB calls stay in-memory
-            var prepService = new CardDatabasePreparationService(
-                                      settings,
-                                      AppGlobals.DbFactory!,
-                                      progressSinks,
-                                      prepRepo,
-                                      priceService,
-                                      missingPngSvc,
-                                      downloadService,
-                                      remoteLookups);
+            var prepService = new CardDatabasePreparationService(settings, AppGlobals.DbFactory!, progressSinks, prepRepo, priceService, missingPngSvc, downloadService, remoteLookups);
 
             // 4) Feature-layer services
             var editService = new EditCollectionService();
@@ -71,12 +70,13 @@ namespace CollectaMundo.Tests
 
             // 5) Build the Main VM (same signature as in BuildAndStartAsync)
             _mainVM = await MainWindowViewModel.CreateAsync(
-                            _filteringService,    // use the field to match your test’s expectations
+                            _filteringService,
                             editService,
                             importExportService,
                             prepService,
                             downloadService,
-                            statusVM);
+                            statusVM,
+                            cardlistService);
 
             // 6) Bring the VM to a “ready” state consistent with the app
             _mainVM.FilterVM.NotifyFilterChanged();
