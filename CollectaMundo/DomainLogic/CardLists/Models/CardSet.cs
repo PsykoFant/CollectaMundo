@@ -1,10 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.CardIcons;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace CollectaMundo.DomainLogic.CardLists.Models
 {
@@ -105,28 +102,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             }
             set => _manaCostImage = value;
         }
-        private static BitmapImage? ConvertImage(byte[] imageData)
-        {
-            try
-            {
-                using (MemoryStream ms = new(imageData))
-                {
-                    BitmapImage image = new();
-                    ms.Position = 0;
-                    image.BeginInit();
-                    image.CacheOption = BitmapCacheOption.OnLoad;
-                    image.StreamSource = ms;
-                    image.EndInit();
-                    image.Freeze();
-                    return image;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to convert image: {ex.Message}");
-                return null;
-            }
-        }
+
 
         public int? CardId { get; set; }
 
@@ -179,7 +155,6 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             "Played",
             "Poor"
         ];
-
         public string? SelectedCondition
         {
             get => _selectedCondition;
@@ -192,7 +167,6 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
                 }
             }
         }
-
         public List<string> AvailableFinishes { get; set; } = [];
 
         private string? _selectedFinish;

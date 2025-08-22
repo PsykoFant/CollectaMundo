@@ -15,7 +15,9 @@ TO DO
 	- 12407, 14895, 10296, 10134
 	- Refactor 1: 5511, 5549, 5685
 
-
+    - Fix tests og views
+    - Farve ikoner
+    - Filter defaults fra allcards objektet
 
 	- Slet temp set ikoner
 	- Slet temp filer

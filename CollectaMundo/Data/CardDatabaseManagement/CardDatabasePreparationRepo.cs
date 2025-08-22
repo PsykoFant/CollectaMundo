@@ -176,88 +176,81 @@ namespace CollectaMundo.Data.CardDatabaseManagement
                 LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost;
             ";
             string createAllCardsViewQuery = $@"
-                CREATE VIEW IF NOT EXISTS view_allCards AS
-                SELECT * FROM (
-                    SELECT 
-                        c.name AS Name, 
-                        s.name AS SetName, 
-                        s.releaseDate AS ReleaseDate,
-                        k.keyruneImage AS KeyRuneImage, 
-                        c.manaCost AS ManaCost, 
-                        u.manaCostImage AS ManaCostImage, 
-                        c.types AS Types, 
-                        CAST(COALESCE(ccol.AggregatedColors, c.colors) AS TEXT) AS Colors,
-                        c.supertypes AS SuperTypes, 
-                        c.subtypes AS SubTypes, 
-                        c.type AS Type, 
-                        CAST(COALESCE(cg.AggregatedKeywords, c.keywords) AS TEXT) AS Keywords,
-                        c.text AS RulesText, 
-                        c.manaValue AS ManaValue, 
-                        c.language AS Language,
-                        c.uuid AS Uuid, 
-                        c.finishes AS Finishes, 
-                        c.side AS Side,
-                        c.rarity AS Rarity,
-                        {normalPriceColumn},
-                        {foilPriceColumn},
-                        {etchedPriceColumn}
-                    FROM cards c
-                    JOIN sets s ON c.setCode = s.code
-                    LEFT JOIN keyruneImages k ON c.setCode = k.setCode
-                    LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-                    LEFT JOIN cardPrices p ON c.uuid = p.uuid
-                    LEFT JOIN (
-                        SELECT cc.Name, REPLACE(GROUP_CONCAT(DISTINCT cc.keywords), ',', ',') AS AggregatedKeywords
-                        FROM cards cc GROUP BY cc.Name
-                    ) cg ON c.Name = cg.Name
-                    LEFT JOIN (
-                        SELECT cc.Name, REPLACE(GROUP_CONCAT(DISTINCT cc.colors), ' ', '') AS AggregatedColors
-                        FROM cards cc GROUP BY cc.Name
-                    ) ccol ON c.Name = ccol.Name
-                    WHERE c.side IS NULL OR c.side = 'a'
+                CREATE VIEW view_allCards AS
+                    SELECT * FROM (
+                        SELECT 
+                            c.name        AS Name,
+                            s.name        AS SetName,
+		                    c.setCode     AS SetCode,
+                            s.releaseDate AS ReleaseDate,
+                            c.manaCost    AS ManaCost,
+                            c.types       AS Types,
+                            CAST(COALESCE(ccol.AggregatedColors, c.colors) AS TEXT) AS Colors,
+                            c.supertypes  AS SuperTypes,
+                            c.subtypes    AS SubTypes,
+                            c.type        AS Type,
+                            CAST(COALESCE(cg.AggregatedKeywords, c.keywords) AS TEXT) AS Keywords,
+                            c.text        AS RulesText,
+                            c.manaValue   AS ManaValue,
+                            c.language    AS Language,
+                            c.uuid        AS Uuid,
+                            c.finishes    AS Finishes,
+                            c.side        AS Side,
+                            c.rarity      AS Rarity,
+                            {normalPriceColumn},
+                            {foilPriceColumn},
+                            {etchedPriceColumn}
+                        FROM cards c
+                        JOIN sets s ON c.setCode = s.code
+                        LEFT JOIN cardPrices p ON c.uuid = p.uuid
+                        LEFT JOIN (
+                            SELECT cc.Name, REPLACE(GROUP_CONCAT(DISTINCT cc.keywords), ',', ',') AS AggregatedKeywords
+                            FROM cards cc GROUP BY cc.Name
+                        ) cg ON c.Name = cg.Name
+                        LEFT JOIN (
+                            SELECT cc.Name, REPLACE(GROUP_CONCAT(DISTINCT cc.colors), ' ', '') AS AggregatedColors
+                            FROM cards cc GROUP BY cc.Name
+                        ) ccol ON c.Name = ccol.Name
+                        WHERE c.side IS NULL OR c.side = 'a'
 
-                    UNION ALL
+                        UNION ALL
 
-                    SELECT 
-                        t.name AS Name, 
-                        s.name AS SetName, 
-                        s.releaseDate AS ReleaseDate,
-                        k.keyruneImage AS KeyRuneImage, 
-                        t.manaCost AS ManaCost, 
-                        u.manaCostImage AS ManaCostImage, 
-                        t.types AS Types, 
-                        t.colors AS Colors,
-                        t.supertypes AS SuperTypes, 
-                        t.subtypes AS SubTypes, 
-                        t.type AS Type, 
-                        t.keywords AS Keywords, 
-                        t.text AS RulesText, 
-                        NULL AS ManaValue, 
-                        t.language AS Language,
-                        t.uuid AS Uuid, 
-                        t.finishes AS Finishes, 
-                        t.side AS Side,
-                        NULL AS Rarity,
-                        {normalPriceColumn},
-                        {foilPriceColumn},
-                        {etchedPriceColumn}
-                    FROM tokens t 
-                    JOIN sets s ON t.setCode = s.tokenSetCode 
-                    LEFT JOIN keyruneImages k ON t.setCode = k.setCode
-                    LEFT JOIN uniqueManaCostImages u ON t.manaCost = u.uniqueManaCost
-                    LEFT JOIN cardPrices p ON t.uuid = p.uuid
-                    WHERE t.side IS NULL OR t.side = 'a'
-                ) 
-                ORDER BY ReleaseDate DESC, SetName, Types,
-                    CASE Colors
-                        WHEN 'W' THEN 1
-                        WHEN 'U' THEN 2
-                        WHEN 'B' THEN 3
-                        WHEN 'R' THEN 4
-                        WHEN 'G' THEN 5
-                        ELSE 7
-                    END;
-            ";
+                        SELECT 
+                            t.name        AS Name,
+                            s.name        AS SetName,
+		                    t.setCode     AS SetCode,
+                            s.releaseDate AS ReleaseDate,
+                            t.manaCost    AS ManaCost,
+                            t.types       AS Types,
+                            t.colors      AS Colors,
+                            t.supertypes  AS SuperTypes,
+                            t.subtypes    AS SubTypes,
+                            t.type        AS Type,
+                            t.keywords    AS Keywords,
+                            t.text        AS RulesText,
+                            NULL          AS ManaValue,
+                            t.language    AS Language,
+                            t.uuid        AS Uuid,
+                            t.finishes    AS Finishes,
+                            t.side        AS Side,
+                            NULL          AS Rarity,
+                            {normalPriceColumn},
+                            {foilPriceColumn},
+                            {etchedPriceColumn}
+                        FROM tokens t
+                        JOIN sets s ON t.setCode = s.tokenSetCode
+                        LEFT JOIN cardPrices p ON t.uuid = p.uuid
+                        WHERE t.side IS NULL OR t.side = 'a'
+                    )
+                    ORDER BY ReleaseDate DESC, SetName, Types,
+                        CASE Colors
+                            WHEN 'W' THEN 1
+                            WHEN 'U' THEN 2
+                            WHEN 'B' THEN 3
+                            WHEN 'R' THEN 4
+                            WHEN 'G' THEN 5
+                            ELSE 7
+                        END";
             string createMyCollectionViewQuery = $@"
                 CREATE VIEW IF NOT EXISTS view_myCollection AS
                 SELECT * FROM (
