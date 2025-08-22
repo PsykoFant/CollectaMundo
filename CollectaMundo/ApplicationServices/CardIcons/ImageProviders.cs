@@ -6,6 +6,11 @@ using System.Windows.Media.Imaging;
 
 namespace CollectaMundo.ApplicationServices.CardIcons
 {
+    public interface IImageProvider<TKey>
+    {
+        ImageSource? GetImage(TKey key);
+    }
+
     public sealed class ImageProvider<TKey>(IImageBytesLogic<TKey> bytes) : IImageProvider<TKey> where TKey : notnull
     {
         private readonly IImageBytesLogic<TKey> _bytes = bytes;
@@ -16,10 +21,7 @@ namespace CollectaMundo.ApplicationServices.CardIcons
             return _cache.GetOrAdd(key, k =>
             {
                 var data = _bytes.GetBytes(k);
-                if (data is null || data.Length == 0)
-                {
-                    return null;
-                }
+                if (data is null || data.Length == 0) return null;
 
                 try
                 {
