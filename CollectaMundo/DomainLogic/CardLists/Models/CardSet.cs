@@ -11,6 +11,8 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
     public sealed class CardSet : INotifyPropertyChanged   // sealed for small perf win; preserves public API
     {
         public static IImageProvider<string>? ManaCostImages { get; set; }
+        public static IImageProvider<string>? SetIconImages { get; set; }
+
 
         // shared core payload
         public CardCore? Core { get; private set; }
@@ -72,24 +74,21 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public string? Types { get; set; }
         public string? Uuid { get; set; }
 
-        // ======== Images (lazy decode preserved; bytes shared via Core) ========
         private ImageSource? _keyRuneImage;
         public ImageSource? KeyRuneImage
         {
             get
             {
-                if (_keyRuneImage == null && KeyRuneImageBytes != null)
+                if (_keyRuneImage == null)
                 {
-                    _keyRuneImage = ConvertImage(KeyRuneImageBytes);
+                    var key = Core?.SetCode ?? SetCode;
+                    if (!string.IsNullOrWhiteSpace(key))
+                        _keyRuneImage = SetIconImages?.GetImage(key);
                 }
                 return _keyRuneImage;
             }
             set => _keyRuneImage = value;
         }
-
-        // Keep property for compatibility; value references Core’s byte[] set by factories
-        public byte[]? KeyRuneImageBytes => Core?.KeyRuneImageBytes;   // forwarder to shared core
-
         public string? ManaCostRaw { get; set; }
 
         private ImageSource? _manaCostImage;

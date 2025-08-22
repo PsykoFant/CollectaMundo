@@ -6,12 +6,10 @@ using System.Windows.Media.Imaging;
 
 namespace CollectaMundo.ApplicationServices.CardIcons
 {
-    public sealed class ImageProvider<TKey> : IImageProvider<TKey> where TKey : notnull
+    public sealed class ImageProvider<TKey>(IImageBytesLogic<TKey> bytes) : IImageProvider<TKey> where TKey : notnull
     {
-        private readonly IImageBytesLogic<TKey> _bytes;
+        private readonly IImageBytesLogic<TKey> _bytes = bytes;
         private readonly ConcurrentDictionary<TKey, ImageSource?> _cache = new();
-
-        public ImageProvider(IImageBytesLogic<TKey> bytes) => _bytes = bytes;
 
         public ImageSource? GetImage(TKey key)
         {

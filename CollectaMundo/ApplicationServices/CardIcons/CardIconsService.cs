@@ -13,7 +13,7 @@ namespace CollectaMundo.ApplicationServices.CardIcons
         private bool _initialized;
 
         public IImageProvider<string>? ManaCostImages { get; private set; }
-        public IImageProvider<string>? SetIconImages { get; private set; } // future
+        public IImageProvider<string>? SetIconImages { get; private set; }
 
         public async Task InitializeAsync(SQLiteConnection conn)
         {
@@ -30,15 +30,19 @@ namespace CollectaMundo.ApplicationServices.CardIcons
                 }
             }
 
-            // Read using the supplied connection
+            // --- Mana cost ---
             var manaMap = await _repo.ReadManaCostImagesAsync(conn);
             var manaBytes = new ManaCostBytesLogic(manaMap);
             var manaImgs = new ManaCostImageService(manaBytes);
-
             CardSet.ManaCostImages = manaImgs;
             ManaCostImages = manaImgs;
 
-            // (future: set icons use same conn)
+            // --- Set icons ---
+            var setMap = await _repo.ReadSetIconImagesAsync(conn);
+            var setBytes = new SetIconBytesLogic(setMap);
+            var setImgs = new SetIconImageService(setBytes);
+            CardSet.SetIconImages = setImgs;
+            SetIconImages = setImgs;
 
             lock (_initLock) { _initialized = true; }
         }

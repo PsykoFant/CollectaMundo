@@ -61,8 +61,6 @@ namespace CollectaMundo.Data.CardLists
                 ReleaseDate = ParseDate(GetFieldValue<string>(r, "ReleaseDate")),
                 ManaValue = GetFieldValue<double?>(r, "ManaValue") ?? 0,
 
-                KeyRuneImageBytes = GetFieldValue<byte[]>(r, "KeyRuneImage"),
-
                 NormalPrice = GetFieldValue<decimal?>(r, "NormalPrice"),
                 FoilPrice = GetFieldValue<decimal?>(r, "FoilPrice"),
                 EtchedPrice = GetFieldValue<decimal?>(r, "EtchedPrice"),

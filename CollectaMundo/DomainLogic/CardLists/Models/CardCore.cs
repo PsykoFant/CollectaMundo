@@ -5,6 +5,7 @@
         public required string Uuid { get; init; }
         public required string Name { get; init; }
         public string? SetName { get; init; }
+        public string? SetCode { get; init; }
         public DateTime? ReleaseDate { get; init; }
         public string? ManaCost { get; init; }
         public string? ManaCostRaw { get; init; }
@@ -21,8 +22,6 @@
         public double ManaValue { get; init; }
         public string? Language { get; init; }
 
-        // Image blobs (one copy per UUID)
-        public byte[]? KeyRuneImageBytes { get; init; }
 
         // Prices
         public decimal? NormalPrice { get; init; }
