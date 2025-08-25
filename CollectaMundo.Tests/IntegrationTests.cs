@@ -21,6 +21,7 @@ using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
+using System.Diagnostics;
 using System.Windows;
 
 namespace CollectaMundo.Tests
@@ -307,7 +308,7 @@ namespace CollectaMundo.Tests
                     if (image == null)
                     {
                         // Log the card and key that failed
-                        Console.WriteLine($"Missing image for card '{card.Name}' with mana cost key '{key}'");
+                        Debug.WriteLine($"Missing image for card '{card.Name}' with mana cost key '{key}'");
                     }
                     Assert.NotNull(image);
                     Assert.IsAssignableFrom<System.Windows.Media.ImageSource>(image);
