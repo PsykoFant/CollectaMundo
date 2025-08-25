@@ -263,6 +263,58 @@ namespace CollectaMundo.Tests
             // Assert: 3 entries are marked as foil finish
             var foilCount = _mainVM.MyCollectionVM.Cards.Count(c => string.Equals(c.SelectedFinish, "foil", StringComparison.OrdinalIgnoreCase));
             Assert.Equal(3, foilCount);
+
+            // New: Assert that cards with a mana cost have a non-null ManaCostImage
+            // Let's say you load your CSV keys like this (pseudo-code):
+            var validManaCostKeys = new HashSet<string>
+            {
+                "{1}{B}",
+                "{1}{G}",
+                "{1}{G}{G}",
+                "{1}{G}{U}",
+                "{1}{R}",
+                "{1}{W}",
+                "{1}{W}{U}",
+                "{2}",
+                "{2}{B}",
+                "{2}{G}",
+                "{2}{G}{G}",
+                "{2}{U}",
+                "{2}{W}",
+                "{2}{W}{W}",
+                "{3}{B}",
+                "{3}{G}",
+                "{3}{R}",
+                "{3}{U}",
+                "{4}",
+                "{4}{G}",
+                "{4}{G}{G}",
+                "{4}{R}",
+                "{5}{R}",
+                "{5}{W}{W}",
+                "{B}",
+                "{W}",
+                "{X}{G}{U}",
+                "{X}{W}"
+            };
+
+            foreach (var card in _mainVM.AllCardsVM.Cards)
+            {
+                var key = card.ManaCostRaw ?? card.ManaCost ?? string.Empty;
+                if (!string.IsNullOrEmpty(key) && validManaCostKeys.Contains(key))
+                {
+                    var image = card.ManaCostImage;
+                    if (image == null)
+                    {
+                        // Log the card and key that failed
+                        Console.WriteLine($"Missing image for card '{card.Name}' with mana cost key '{key}'");
+                    }
+                    Assert.NotNull(image);
+                    Assert.IsAssignableFrom<System.Windows.Media.ImageSource>(image);
+                }
+            }
+
+
         }
 
         [Fact]

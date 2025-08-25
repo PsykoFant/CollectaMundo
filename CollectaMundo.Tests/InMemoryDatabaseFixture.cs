@@ -222,6 +222,10 @@ namespace CollectaMundo.Tests
             ";
             command.ExecuteNonQuery();
 
+            // CREATE TABLE IF NOT EXISTS: keyruneImages
+            command.CommandText = @"CREATE TABLE keyruneImages(setCode TEXT PRIMARY KEY, keyruneImage BLOB);";
+            command.ExecuteNonQuery();
+
             // CREATE TABLE IF NOT EXISTS: cardForeignData
             command.CommandText = @"
                 CREATE TABLE IF NOT EXISTS cardForeignData (
@@ -236,6 +240,10 @@ namespace CollectaMundo.Tests
 	            uuid TEXT
             )
             ";
+            command.ExecuteNonQuery();
+
+            // CREATE TABLE IF NOT EXISTS: cardPrices
+            command.CommandText = @"CREATE TABLE cardPrices (uuid TEXT UNIQUE PRIMARY KEY, cardkingdomNormal DECIMAL(10, 2), cardkingdomFoil DECIMAL(10, 2), cardkingdomEtched DECIMAL(10, 2), cardmarketNormal DECIMAL(10, 2), cardmarketFoil DECIMAL(10, 2), cardmarketEtched DECIMAL(10, 2), cardsphereNormal DECIMAL(10, 2), cardsphereFoil DECIMAL(10, 2), cardsphereEtched DECIMAL(10, 2), tcgplayerNormal DECIMAL(10, 2), tcgplayerFoil DECIMAL(10, 2), tcgplayerEtched DECIMAL(10, 2), cardhoarderNormal DECIMAL(10, 2), cardhoarderFoil DECIMAL(10, 2), cardhoarderEtched DECIMAL(10, 2))";
             command.ExecuteNonQuery();
 
             // CREATE TABLE IF NOT EXISTS: myCollection
@@ -272,97 +280,73 @@ namespace CollectaMundo.Tests
 
             // CREATE VIEW IF NOT EXISTS: view_allCards
             command.CommandText = @"
-                CREATE TABLE IF NOT EXISTS view_allCards(
-                    Name            TEXT,
-                    SetName         TEXT,
-                    ReleaseDate     TEXT,
-                    KeyRuneImage    BLOB,
-                    ManaCost        TEXT,
-                    ManaCostImage   BLOB,
-                    Types           TEXT,
-                    Colors          TEXT,
-                    SuperTypes      TEXT,
-                    SubTypes        TEXT,
-                    Type            TEXT,
-                    Keywords        TEXT,
-                    RulesText       TEXT,
-                    ManaValue       REAL,
-                    Language        TEXT,
-                    Uuid            VARCHAR(36),
-                    Finishes        TEXT,
-                    Side            TEXT,
-                    Rarity          TEXT,
-                    NormalPrice     DECIMAL(10, 2),
-                    FoilPrice       DECIMAL(10, 2),
-                    EtchedPrice     DECIMAL(10, 2)
-                );
-            ";
-            command.ExecuteNonQuery();
-
-            // CREATE VIEW IF NOT EXISTS: view_myCollection
-            command.CommandText = @"
-                CREATE TABLE IF NOT EXISTS view_myCollection(
-                    Name            TEXT,
-                    SetName         TEXT,
-                    ReleaseDate     TEXT,
-                    KeyRuneImage    BLOB,
-                    ManaCost        TEXT,
-                    ManaCostImage   BLOB,
-                    Types           TEXT,
-                    Colors          TEXT,
-                    SuperTypes      TEXT,
-                    SubTypes        TEXT,
-                    Type            TEXT,
-                    Keywords        TEXT,
-                    RulesText       TEXT,
-                    ManaValue       REAL,
-                    Finishes        TEXT,                    
-                    Uuid            VARCHAR(36),
-                    CardId          INTEGER,
-                    CardsOwned      INTEGER,
-                    CardsForTrade   INTEGER,
-                    Condition       TEXT,
-                    Language        TEXT,
-                    Finish          TEXT,
-                    Side            TEXT,
-                    Rarity          TEXT,
-                    NormalPrice     DECIMAL(10, 2),
-                    FoilPrice       DECIMAL(10, 2),
-                    EtchedPrice     DECIMAL(10, 2)
-                );
-            ";
-            command.ExecuteNonQuery();
-
-            // CREATE VIEW IF NOT EXISTS: view_allCardsForDecks
-            command.CommandText = @"
-                CREATE VIEW IF NOT EXISTS view_allCardsForDecks AS
+                CREATE VIEW view_allCards AS
                     SELECT * FROM (
                         SELECT 
-                            DISTINCT c.name AS Name, 
-                            c.manaCost AS ManaCost, 
-                            u.manaCostImage AS ManaCostImage, 
-                            c.types AS Types, 
-                            c.colors AS Colors,
-                            c.supertypes AS SuperTypes, 
-                            c.subtypes AS SubTypes, 
-                            c.type AS Type, 
-                            COALESCE(cg.AggregatedKeywords, c.keywords) AS Keywords,
-                            c.text AS RulesText, 
-                            c.manaValue AS ManaValue, 
-                            c.side AS Side
+                            c.name        AS Name,
+                            s.name        AS SetName,
+		                    c.setCode     AS SetCode,
+                            s.releaseDate AS ReleaseDate,
+                            c.manaCost    AS ManaCost,
+                            c.types       AS Types,
+                            CAST(COALESCE(ccol.AggregatedColors, c.colors) AS TEXT) AS Colors,
+                            c.supertypes  AS SuperTypes,
+                            c.subtypes    AS SubTypes,
+                            c.type        AS Type,
+                            CAST(COALESCE(cg.AggregatedKeywords, c.keywords) AS TEXT) AS Keywords,
+                            c.text        AS RulesText,
+                            c.manaValue   AS ManaValue,
+                            c.language    AS Language,
+                            c.uuid        AS Uuid,
+                            c.finishes    AS Finishes,
+                            c.side        AS Side,
+                            c.rarity      AS Rarity,
+                            p.cardmarketNormal AS NormalPrice,
+                            p.cardmarketFoil   AS FoilPrice,
+                            p.cardmarketEtched AS EtchedPrice
                         FROM cards c
                         JOIN sets s ON c.setCode = s.code
-                        LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
+                        LEFT JOIN cardPrices p ON c.uuid = p.uuid
                         LEFT JOIN (
-                             SELECT 
-                                cc.Name, 
-                                GROUP_CONCAT(cc.keywords, ', ') AS AggregatedKeywords
-                             FROM cards cc
-                             GROUP BY cc.Name
-                            ) cg ON c.Name = cg.Name
+                            SELECT cc.Name, REPLACE(GROUP_CONCAT(DISTINCT cc.keywords), ',', ',') AS AggregatedKeywords
+                            FROM cards cc GROUP BY cc.Name
+                        ) cg ON c.Name = cg.Name
+                        LEFT JOIN (
+                            SELECT cc.Name, REPLACE(GROUP_CONCAT(DISTINCT cc.colors), ' ', '') AS AggregatedColors
+                            FROM cards cc GROUP BY cc.Name
+                        ) ccol ON c.Name = ccol.Name
                         WHERE c.side IS NULL OR c.side = 'a'
-                    ) 
-                    ORDER BY Types,
+
+                        UNION ALL
+
+                        SELECT 
+                            t.name        AS Name,
+                            s.name        AS SetName,
+		                    t.setCode     AS SetCode,
+                            s.releaseDate AS ReleaseDate,
+                            t.manaCost    AS ManaCost,
+                            t.types       AS Types,
+                            t.colors      AS Colors,
+                            t.supertypes  AS SuperTypes,
+                            t.subtypes    AS SubTypes,
+                            t.type        AS Type,
+                            t.keywords    AS Keywords,
+                            t.text        AS RulesText,
+                            NULL          AS ManaValue,
+                            t.language    AS Language,
+                            t.uuid        AS Uuid,
+                            t.finishes    AS Finishes,
+                            t.side        AS Side,
+                            NULL          AS Rarity,
+                            p.cardmarketNormal AS NormalPrice,
+                            p.cardmarketFoil   AS FoilPrice,
+                            p.cardmarketEtched AS EtchedPrice
+                        FROM tokens t
+                        JOIN sets s ON t.setCode = s.tokenSetCode
+                        LEFT JOIN cardPrices p ON t.uuid = p.uuid
+                        WHERE t.side IS NULL OR t.side = 'a'
+                    )
+                    ORDER BY ReleaseDate DESC, SetName, Types,
                         CASE Colors
                             WHEN 'W' THEN 1
                             WHEN 'U' THEN 2
@@ -373,35 +357,6 @@ namespace CollectaMundo.Tests
                         END
             ";
             command.ExecuteNonQuery();
-
-            // CREATE VIEW IF NOT EXISTS: view_cardsInDecks
-            command.CommandText = @"
-                        CREATE VIEW IF NOT EXISTS view_cardsInDecks AS
-                        SELECT 
-                            cardsInDecks.id AS CardId,
-                            cardsInDecks.name AS Name,
-                            cardsInDecks.deckId AS DeckId,
-                            cardsInDecks.uuid AS Uuid,
-                            cardsInDecks.count AS Count,
-                            c.manaCost AS ManaCost,
-	                        c.colors AS Colors,
-	                        c.manaValue AS ManaValue, 
-	                        u.manaCostImage AS ManaCostImage, 
-	                        c.type AS Type
-                        FROM 
-                            cardsInDecks
-                        LEFT JOIN 
-                            (
-                                SELECT name, colors, manaCost, manaValue, type
-                                FROM cards
-                                GROUP BY name
-                            ) c
-	                        ON cardsInDecks.name = c.name
-                        LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost
-            ";
-            command.ExecuteNonQuery();
-
-
         }
         private async Task SeedDataAsync()
         {
@@ -416,13 +371,22 @@ namespace CollectaMundo.Tests
 
             string basePath = Path.Combine(AppContext.BaseDirectory, "TestResources");
 
-            await SeedTableAsync("cards", Path.Combine(basePath, "cards.csv"));
-            await SeedTableAsync("tokens", Path.Combine(basePath, "tokens.csv"));
-            await SeedTableAsync("sets", Path.Combine(basePath, "sets.csv"));
-            await SeedTableAsync("cardForeignData", Path.Combine(basePath, "cardForeignData.csv"));
-            await SeedTableAsync("myCollection", Path.Combine(basePath, "myCollection.csv"));
-            await SeedTableAsync("view_myCollection", Path.Combine(basePath, "view_myCollection.csv"));
-            await SeedTableAsync("view_allCards", Path.Combine(basePath, "view_allCards.csv"));
+            try
+            {
+                await SeedTableAsync("cards", Path.Combine(basePath, "cards.csv"));
+                await SeedTableAsync("tokens", Path.Combine(basePath, "tokens.csv"));
+                await SeedTableAsync("sets", Path.Combine(basePath, "sets.csv"));
+                await SeedTableAsync("keyruneImages", Path.Combine(basePath, "keyruneImages.csv"));
+                await SeedTableAsync("uniqueManaCostImages", Path.Combine(basePath, "uniqueManaCostImages.csv"));
+                await SeedTableAsync("cardForeignData", Path.Combine(basePath, "cardForeignData.csv"));
+                await SeedTableAsync("cardPrices", Path.Combine(basePath, "cardPrices.csv"));
+                await SeedTableAsync("myCollection", Path.Combine(basePath, "myCollection.csv"));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error seeding tables: {ex.Message}");
+                throw;
+            }
         }
         private async Task SeedTableAsync(string tableName, string filePath)
         {
@@ -489,6 +453,8 @@ namespace CollectaMundo.Tests
                 }
             }
             transaction.Commit();
+
+            Debug.WriteLine($"Seeding completed!");
         }
         public Task DisposeAsync()
         {
