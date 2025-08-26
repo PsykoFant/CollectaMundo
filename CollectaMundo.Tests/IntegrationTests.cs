@@ -64,7 +64,7 @@ namespace CollectaMundo.Tests
             var cardIconService = new CardIconsService(cardIconsRepo);
 
             var cardListRepo = new CardListRepository();
-            var filterDefaultsRepo = new FilterInitDefaultsRepository();
+            var filterDefaultsRepo = new FilterDefaultsLogic();
             var cardListService = new CardListService(cardListRepo, filterDefaultsRepo, cardIconService);
 
             // IMPORTANT: inject the fixture-backed DbFactory so all DB calls stay in-memory

@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace CollectaMundo.Data.Filtering
 {
-    public partial class FilterInitDefaultsRepository() : IFilterInitDefaultsRepository
+    public partial class FilterDefaultsLogic() : IFilterDefaultsLogic
     {
         public List<FilterDefaults> Build(IEnumerable<CardSet> allCards, IEnumerable<CardSet> myCollection)
         {

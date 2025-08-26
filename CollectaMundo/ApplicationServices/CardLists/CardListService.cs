@@ -1,17 +1,17 @@
 ﻿using CollectaMundo.ApplicationServices.CardIcons;
-using CollectaMundo.Data;
 using CollectaMundo.Data.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.ViewModels;
 
 
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(ICardListRepository cardListRepo, IFilterInitDefaultsRepository filterRepo, ICardIconsService iconService) : ICardListService
+    public sealed class CardListService(ICardListRepository cardListRepo, IFilterDefaultsLogic filterRepo, ICardIconsService iconService) : ICardListService
     {
         private readonly ICardListRepository _cardListRepo = cardListRepo;
-        private readonly IFilterInitDefaultsRepository _filterRepo = filterRepo;
+        private readonly IFilterDefaultsLogic _filterRepo = filterRepo;
         private readonly ICardIconsService _iconService = iconService;
         public async Task InitializeAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {

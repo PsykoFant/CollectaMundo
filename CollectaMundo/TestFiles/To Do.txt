@@ -5,26 +5,9 @@ TO DO
 
 - Gå videre med update scenarie
 	- Reload (diff only)
-
-
-
-	laptop:
-	- 10891, 10980, 10210 ms. 
-
-	Stationær:
-	Stationær - inden refactor:
-	- ca. 9,4 sekunder
-	- 680 mb
-	
-	Stationær - mana cost refactored
-	- ca. 5,3 sekunder
-	- 520 mb	
-	
-	Stationær - set icons refactored, view updated
-	- ca. 4,4 sekunder
-	- 460 mb	
-    
+       
     - Filter defaults fra allcards objektet
+        - Bug: Opdater filter defaults når der er ændringer i mycollection
     - Farve ikoner
 
 	- Slet temp set ikoner
@@ -51,6 +34,22 @@ TO DO
 
  - Performance - startup
 	- Bruger vi AggregatedCardKeywords table til noget?
+
+	laptop:
+	- 10891, 10980, 10210 ms. 
+
+	Stationær:
+	Stationær - inden refactor:
+	- ca. 9,4 sekunder
+	- 680 mb
+	
+	Stationær - mana cost refactored
+	- ca. 5,3 sekunder
+	- 520 mb	
+	
+	Stationær - set icons refactored, view updated
+	- ca. 4,4 sekunder
+	- 460 mb	
 
 
 	//public static CardSet FromAllCardsRow(DbDataReader r)
