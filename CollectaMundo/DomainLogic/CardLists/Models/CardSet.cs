@@ -261,7 +261,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             return c;
         }
 
-        // ========= NEW: helper to recompute collection price on finish change =========
+        // helper to recompute collection price on finish change 
         private void RecomputeCollectionPrice()
         {
             CardInCollectionPrice = SelectedFinish?.ToLowerInvariant() switch

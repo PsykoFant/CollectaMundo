@@ -12,12 +12,20 @@ TO DO
 	- 10891, 10980, 10210 ms. 
 
 	Stationær:
-	- 12407, 14895, 10296, 10134
-	- Refactor 1: 5511, 5549, 5685
-
-    - Fix tests og views
-    - Farve ikoner
+	Stationær - inden refactor:
+	- ca. 9,4 sekunder
+	- 680 mb
+	
+	Stationær - mana cost refactored
+	- ca. 5,3 sekunder
+	- 520 mb	
+	
+	Stationær - set icons refactored, view updated
+	- ca. 4,4 sekunder
+	- 460 mb	
+    
     - Filter defaults fra allcards objektet
+    - Farve ikoner
 
 	- Slet temp set ikoner
 	- Slet temp filer
