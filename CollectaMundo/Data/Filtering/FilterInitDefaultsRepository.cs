@@ -1,114 +1,104 @@
-﻿using CollectaMundo.DomainLogic.Filtering;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Models;
-using System.Data.SQLite;
-using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace CollectaMundo.Data.Filtering
 {
-    public class FilterInitDefaultsRepository() : IFilterInitDefaultsRepository
+    public partial class FilterInitDefaultsRepository() : IFilterInitDefaultsRepository
     {
-        public async Task<List<FilterDefaults>> GetFilterDefaultsAsync(SQLiteConnection connection)
+        public List<FilterDefaults> Build(IEnumerable<CardSet> allCards, IEnumerable<CardSet> myCollection)
         {
             var filterDefaultsList = new List<FilterDefaults>();
 
-            // Iterate over each filter criterion defined in your mappings.
             foreach (var entry in FilterCriteriaMappings.CriteriaMappings)
             {
-                string criteriaKey = entry.Key;
+                var criteriaKey = entry.Key;
                 var mapping = entry.Value;
-                List<string> distinctValues = [];
+                List<string> rawValues = [];
 
-                // For colors, skip the query and use hardcoded values.
+                // Handled special cases first
                 if (criteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
                 {
-                    distinctValues = ["W", "U", "B", "R", "G", "C", "X", "Colorless"];
+                    rawValues = ["W", "U", "B", "R", "G", "C", "X", "Colorless"];
                 }
-                // Text and CardsForTrade do not need default values
-                else if (criteriaKey.Equals("Text", StringComparison.OrdinalIgnoreCase))
+                else if (criteriaKey.Equals("Text", StringComparison.OrdinalIgnoreCase) || criteriaKey.Equals("CardsForTrade", StringComparison.OrdinalIgnoreCase))
                 {
-                    distinctValues = [];
+                    rawValues = [];
                 }
-                else if (criteriaKey.Equals("CardsForTrade", StringComparison.OrdinalIgnoreCase))
-                {
-                    distinctValues = [];
-                }
-
                 else
                 {
-                    string query = criteriaKey switch
+                    // Build from in-memory objects, matching the fields the SQL would return
+                    switch (criteriaKey)
                     {
-                        "Name" => "SELECT DISTINCT name FROM cards UNION ALL SELECT DISTINCT name FROM tokens AS Name;",
-                        "SetName" => "SELECT DISTINCT name AS SetName FROM sets;",
-                        "Rarity" => "SELECT DISTINCT rarity AS Rarity FROM cards;",
-                        "SuperTypes" => "SELECT DISTINCT supertypes FROM cards UNION ALL SELECT DISTINCT supertypes FROM tokens AS SuperTypes;",
-                        "Types" => "SELECT DISTINCT types FROM cards UNION ALL SELECT DISTINCT types FROM tokens AS Types;",
-                        "SubTypes" => "SELECT DISTINCT subtypes FROM cards UNION ALL SELECT DISTINCT subtypes FROM tokens AS SubTypes;",
-                        "Keywords" => "SELECT DISTINCT keywords FROM cards UNION ALL SELECT DISTINCT keywords FROM tokens AS Keywords;",
-                        "Finishes" => "SELECT DISTINCT finishes FROM cards UNION ALL SELECT DISTINCT finishes FROM tokens AS Finishes;",
-                        "SelectedFinish" => "SELECT DISTINCT finish AS Finish FROM myCollection;",
-                        "Language" => "SELECT DISTINCT language AS Language FROM myCollection;",
-                        "SelectedCondition" => "SELECT DISTINCT condition AS Condition FROM myCollection;",
-                        "ManaValue" => "SELECT DISTINCT manaValue AS ManaValue FROM cards;",
-                        _ => throw new Exception($"Unhandled criteria key: {criteriaKey}")
-                    };
+                        case "Name":
+                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.Name)));
+                            break;
+                        case "SetName":
+                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.SetName)));
+                            break;
+                        case "Rarity":
+                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.Rarity)));
+                            break;
+                        case "SuperTypes":
+                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.SuperTypes)));
+                            break;
+                        case "Types":
+                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.Types)));
+                            break;
+                        case "SubTypes":
+                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.SubTypes)));
+                            break;
+                        case "Keywords":
+                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.Keywords)));
+                            break;
+                        case "Finishes":
+                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.Finishes)));
+                            break;
 
-                    try
-                    {
-                        await using var command = new SQLiteCommand(query, connection);
-                        await using var reader = await command.ExecuteReaderAsync();
-                        while (await reader.ReadAsync())
-                        {
-                            string? value = criteriaKey switch
-                            {
-                                "Name" => reader["Name"] as string,
-                                "SetName" => reader["SetName"] as string,
-                                "Rarity" => reader["Rarity"] as string,
-                                "SuperTypes" => reader["SuperTypes"] as string,
-                                "Types" => reader["Types"] as string,
-                                "SubTypes" => reader["SubTypes"] as string,
-                                "Keywords" => reader["Keywords"] as string,
-                                "Finishes" => reader["Finishes"] as string,
-                                "SelectedFinish" => reader["Finish"] as string,
-                                "Language" => reader["Language"] as string,
-                                "SelectedCondition" => reader["Condition"] as string,
-                                "ManaValue" => reader["ManaValue"].ToString(),
-                                _ => null
-                            };
+                        // Collection-backed fields come from myCollection (not the DB)
+                        case "SelectedFinish":
+                            rawValues.AddRange(NotNullOrWhite(myCollection.Select(c => c.SelectedFinish)));
+                            break;
+                        case "Language":
+                            rawValues.AddRange(NotNullOrWhite(myCollection.Select(c => c.Language)));
+                            break;
+                        case "SelectedCondition":
+                            rawValues.AddRange(NotNullOrWhite(myCollection.Select(c => c.SelectedCondition)));
+                            break;
 
-                            if (!string.IsNullOrEmpty(value))
-                            {
-                                distinctValues.Add(value.Trim());
-                            }
-                        }
+                        case "ManaValue":
+                            // Persist as strings first; we’ll parse/sort numerics below to match repo behavior
+                            rawValues.AddRange(allCards.Select(c => c.ManaValue.ToString()));
+                            break;
+
+                        default:
+                            throw new Exception($"Unhandled criteria key: {criteriaKey}");
                     }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"Error querying distinct values for {criteriaKey}: {ex.Message}");
-                        continue;
-                    }
+
                 }
 
-                // Apply cleaning and filtering.
+                // Clean + split
                 var removeItems = GetUnwantedItems(criteriaKey);
                 bool shouldNotSplit = mapping.ShouldNotSplit;
-                var cleanedValues = CleanAndFilter(distinctValues, removeItems, shouldNotSplit);
+                var cleanedValues = CleanAndFilter(rawValues, removeItems, shouldNotSplit);
 
-                // Special handling for Colors: Here the cleanedValues already match the hardcoded values.
+                // Colors were hard-coded already
                 if (criteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
                 {
-                    cleanedValues = distinctValues;
+                    cleanedValues = rawValues;
                 }
 
-                // Process numeric filters.
+                // Numeric list (for numeric filters)
                 List<int>? numericValues = null;
                 if (mapping.Type == FilterType.Numeric)
                 {
                     numericValues = [.. cleanedValues.Where(v => int.TryParse(v, out _)).Select(int.Parse)];
                 }
 
-                var filterOptions = cleanedValues.Select(value => new FilterOption(value)).ToList();
+                var filterOptions = cleanedValues.Select(v => new FilterOption(v)).ToList();
 
-                // Determine default text.
+                // Default text
                 string defaultText = string.Empty;
                 if (mapping.Type == FilterType.Multi || criteriaKey == "Text")
                 {
@@ -135,79 +125,73 @@ namespace CollectaMundo.Data.Filtering
         }
         private static List<string> CleanAndFilter(IEnumerable<string> input, HashSet<string>? removeItems, bool shouldNotSplit)
         {
-            // Use a HashSet for uniqueness; using StringComparer.OrdinalIgnoreCase if needed.
-            var uniqueItems = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var unique = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            // Process input in a single loop.
             foreach (var item in input)
             {
-                if (string.IsNullOrEmpty(item))
-                {
-                    continue;
-                }
+                if (string.IsNullOrWhiteSpace(item)) continue;
 
                 IEnumerable<string> parts;
+
                 if (shouldNotSplit)
                 {
                     parts = [item];
                 }
                 else
                 {
-                    parts = item.Split([','], StringSplitOptions.RemoveEmptyEntries);
+                    // Use regex split instead of naive Split(',')
+                    parts = SplitCommaRegex.Split(item);
                 }
 
-                foreach (var part in parts)
+                foreach (var p in parts)
                 {
-                    string trimmed = part.Trim();
-                    // Skip if the trimmed string is empty or should be removed.
-                    if (string.IsNullOrEmpty(trimmed))
-                    {
-                        continue;
-                    }
-
-                    if (removeItems != null && removeItems.Contains(trimmed))
-                    {
-                        continue;
-                    }
-
-                    uniqueItems.Add(trimmed);
+                    string trimmed = p.Trim();
+                    if (string.IsNullOrEmpty(trimmed)) continue;
+                    if (removeItems != null && removeItems.Contains(trimmed)) continue;
+                    unique.Add(trimmed);
                 }
             }
 
-            // Separate unique items into numeric and non-numeric lists.
-            var numericList = new List<int>();
-            var stringList = new List<string>();
-
-            foreach (var item in uniqueItems)
+            var numerics = new List<int>();
+            var strings = new List<string>();
+            foreach (var v in unique)
             {
-                if (int.TryParse(item, out int num))
-                {
-                    numericList.Add(num);
-                }
-                else
-                {
-                    stringList.Add(item);
-                }
+                if (int.TryParse(v, out var n)) numerics.Add(n);
+                else strings.Add(v);
             }
 
-            // Sort numeric values and convert them back to strings.
-            numericList.Sort();
-            var numericStrings = numericList.Select(n => n.ToString());
+            numerics.Sort();
+            strings.Sort(StringComparer.OrdinalIgnoreCase);
 
-            // Sort string values alphabetically.
-            stringList.Sort(StringComparer.OrdinalIgnoreCase);
-
-            // Combine numeric values first, then non-numeric.
-            return [.. numericStrings, .. stringList];
+            return [.. numerics.Select(n => n.ToString()), .. strings];
         }
+
+        // Remove weirdo types from unsets etc. 
         private static HashSet<string>? GetUnwantedItems(string criteriaKey)
         {
             return criteriaKey switch
             {
-                "Types" => ["Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards"],
-                "SubTypes" => ["(creature", "and/or", "type)|Judge", "The", "pLAnE"],
+                "Types" => new(StringComparer.OrdinalIgnoreCase)
+                { "Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards" },
+                "SubTypes" => new(StringComparer.OrdinalIgnoreCase)
+                { "(creature", "and/or", "type)|Judge", "The", "pLAnE" },
                 _ => null
             };
         }
+        private static IEnumerable<string> NotNullOrWhite(IEnumerable<string?> src)
+        {
+            // Works for IEnumerable<string> and IEnumerable<string?> alike.
+            foreach (var s in src)
+            {
+                if (!string.IsNullOrWhiteSpace(s))
+                    yield return s!;
+            }
+        }
+        // Comma NOT followed by exactly 3 digits at word boundary. To catch keywords with comma in them. E.g. "Flying, vigilance" should split, but "10,000" should not.
+        private static readonly Regex SplitCommaRegex = MyRegex();
+
+        [GeneratedRegex(@",(?!\d{3}\b)", RegexOptions.Compiled)]
+        private static partial Regex MyRegex();
     }
 }
+

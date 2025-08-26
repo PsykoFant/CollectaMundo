@@ -51,7 +51,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 myCollectionVM.FilteredCards = myCollection;
 
                 // 3) Filters
-                var defs = await _filterRepo.GetFilterDefaultsAsync(conn);
+                var defs = _filterRepo.Build(allCardsVM.Cards, myCollectionVM.Cards);
                 filters.Clear();
                 foreach (var def in defs)
                 {

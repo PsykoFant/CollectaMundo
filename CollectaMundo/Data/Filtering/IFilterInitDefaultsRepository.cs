@@ -1,10 +1,10 @@
-﻿using CollectaMundo.DomainLogic.Filtering.Models;
-using System.Data.SQLite;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.Filtering.Models;
 
 namespace CollectaMundo.Data
 {
     public interface IFilterInitDefaultsRepository
     {
-        Task<List<FilterDefaults>> GetFilterDefaultsAsync(SQLiteConnection connection);
+        List<FilterDefaults> Build(IEnumerable<CardSet> allCards, IEnumerable<CardSet> myCollection);
     }
 }
