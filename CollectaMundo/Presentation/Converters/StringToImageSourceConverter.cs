@@ -14,16 +14,19 @@ namespace CollectaMundo.Presentation.Converters
 
             try
             {
-                return new BitmapImage(new Uri(imageUrl, UriKind.Absolute));
+                var uri = new Uri(imageUrl, UriKind.Absolute);
+                return new BitmapImage(uri);
             }
             catch
             {
-                return null;  // In case the URL is not valid
+                return null;  // In case the URI is not valid
             }
         }
+
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotSupportedException();
         }
     }
+
 }

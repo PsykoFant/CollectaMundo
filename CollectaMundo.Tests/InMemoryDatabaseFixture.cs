@@ -391,14 +391,11 @@ namespace CollectaMundo.Tests
         private async Task SeedTableAsync(string tableName, string filePath)
         {
             if (!File.Exists(filePath))
-            {
                 throw new FileNotFoundException($"CSV file for {tableName} not found at {filePath}");
-            }
 
             Debug.WriteLine($"Seeding database {tableName} with initial data from CSV files.");
 
             string csvData = await File.ReadAllTextAsync(filePath);
-            // Use CsvHelper to parse the CSV.
             using var reader = new StringReader(csvData);
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
@@ -410,12 +407,12 @@ namespace CollectaMundo.Tests
             using var csv = new CsvReader(reader, config);
             await csv.ReadAsync();
             csv.ReadHeader();
-            // Using the null-forgiving operator because we know headers is not null from our check.
             var headers = csv.HeaderRecord!;
             if (headers.Length == 0)
-            {
                 throw new Exception("CSV file missing headers.");
-            }
+
+            // Discover which columns are BLOBs in this table
+            var blobColumns = await GetBlobColumnsAsync(tableName);
 
             // Build the INSERT command.
             var parameters = string.Join(", ", headers.Select((h, i) => $"@p{i}"));
@@ -424,9 +421,14 @@ namespace CollectaMundo.Tests
 
             using var transaction = _masterConnection.BeginTransaction();
             using var cmd = new SQLiteCommand(insertSql, _masterConnection, transaction);
+
+            // Create parameters with correct DbType for blobs
             for (int i = 0; i < headers.Length; i++)
             {
-                cmd.Parameters.Add(new SQLiteParameter($"@p{i}"));
+                var p = new SQLiteParameter($"@p{i}");
+                if (blobColumns.Contains(headers[i]))
+                    p.DbType = System.Data.DbType.Binary; // << important for BLOB
+                cmd.Parameters.Add(p);
             }
 
             int rowIndex = 1;
@@ -434,9 +436,31 @@ namespace CollectaMundo.Tests
             {
                 for (int i = 0; i < headers.Length; i++)
                 {
-                    // Get the field and default to string.Empty if it is null.
                     string field = csv.GetField(headers[i]) ?? string.Empty;
-                    cmd.Parameters[$"@p{i}"].Value = string.IsNullOrWhiteSpace(field) ? (object)DBNull.Value : field;
+
+                    if (string.IsNullOrWhiteSpace(field))
+                    {
+                        cmd.Parameters[$"@p{i}"].Value = DBNull.Value;
+                        continue;
+                    }
+
+                    if (blobColumns.Contains(headers[i]))
+                    {
+                        try
+                        {
+                            // Your CSV stores the image as base64; convert to real bytes for BLOB
+                            cmd.Parameters[$"@p{i}"].Value = Convert.FromBase64String(field.Trim());
+                        }
+                        catch (FormatException fe)
+                        {
+                            Debug.WriteLine($"Base64 decode failed for table '{tableName}', column '{headers[i]}', row {rowIndex}: {fe.Message}");
+                            throw;
+                        }
+                    }
+                    else
+                    {
+                        cmd.Parameters[$"@p{i}"].Value = field;
+                    }
                 }
 
                 try
@@ -446,16 +470,36 @@ namespace CollectaMundo.Tests
                 }
                 catch (Exception ex)
                 {
-                    // Retrieve the raw record safely.
                     string rawRecord = csv.Context.Parser?.RawRecord ?? "[no raw record available]";
                     Debug.WriteLine($"Error inserting row {rowIndex} into table '{tableName}'. Raw row: {rawRecord}. Exception: {ex.Message}");
                     throw;
                 }
             }
-            transaction.Commit();
 
-            Debug.WriteLine($"Seeding completed!");
+            transaction.Commit();
+            Debug.WriteLine("Seeding completed!");
         }
+        private async Task<HashSet<string>> GetBlobColumnsAsync(string tableName)
+        {
+            var blobCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            using var cmd = new SQLiteCommand($"PRAGMA table_info({tableName});", _masterConnection);
+            using var rdr = await cmd.ExecuteReaderAsync();
+            while (await rdr.ReadAsync())
+            {
+                var name = rdr["name"]?.ToString();
+                var type = rdr["type"]?.ToString() ?? string.Empty;
+
+                // SQLite is loose with types, but your schema uses "BLOB" for image columns.
+                if (!string.IsNullOrWhiteSpace(name) &&
+                    type.IndexOf("BLOB", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    blobCols.Add(name);
+                }
+            }
+            return blobCols;
+        }
+
         public Task DisposeAsync()
         {
             _masterConnection?.Dispose();

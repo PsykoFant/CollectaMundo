@@ -75,14 +75,7 @@ namespace CollectaMundo.Tests
             var importExportService = new ImportExportService(new ImportExportRepo());
 
             // 5) Build the Main VM (same signature as in BuildAndStartAsync)
-            _mainVM = await MainWindowViewModel.CreateAsync(
-                            _filteringService,
-                            editService,
-                            importExportService,
-                            prepService,
-                            downloadService,
-                            statusVM,
-                            cardListService);
+            _mainVM = await MainWindowViewModel.CreateAsync(_filteringService, editService, importExportService, prepService, downloadService, statusVM, cardListService);
 
             // 6) Bring the VM to a “ready” state consistent with the app
             _mainVM.FilterVM.NotifyFilterChanged();
@@ -110,8 +103,6 @@ namespace CollectaMundo.Tests
             ProgressBarVisible = new Progress<bool>(v =>
                 vm.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
         };
-
-
         public Task DisposeAsync() => Task.CompletedTask;
 
         [Fact]
@@ -194,10 +185,7 @@ namespace CollectaMundo.Tests
                 "Sokrates, Athenian Teacher"
             };
 
-            var actualAllCardsNames = _mainVM.AllCardsVM.Cards
-                .Select(card => card.Name ?? string.Empty)
-                .OrderBy(name => name)
-                .ToList();
+            var actualAllCardsNames = _mainVM.AllCardsVM.Cards.Select(card => card.Name ?? string.Empty).OrderBy(name => name).ToList();
             var sortedAllcardsExpected = expectedAllCardsNames.OrderBy(name => name).ToList();
             Assert.Equal(sortedAllcardsExpected, actualAllCardsNames);
 
@@ -226,10 +214,7 @@ namespace CollectaMundo.Tests
                 "Thallid Devourer",
                 "Resurrection"
             };
-            var actualMyCollectionNames = _mainVM.MyCollectionVM.Cards
-                .Select(card => card.Name ?? string.Empty)
-                .OrderBy(name => name)
-                .ToList();
+            var actualMyCollectionNames = _mainVM.MyCollectionVM.Cards.Select(card => card.Name ?? string.Empty).OrderBy(name => name).ToList();
             var sortedMyCollectionExpected = expectedMyCollectionNames.OrderBy(name => name).ToList();
             Assert.Equal(sortedMyCollectionExpected, actualMyCollectionNames);
 
@@ -265,8 +250,7 @@ namespace CollectaMundo.Tests
             var foilCount = _mainVM.MyCollectionVM.Cards.Count(c => string.Equals(c.SelectedFinish, "foil", StringComparison.OrdinalIgnoreCase));
             Assert.Equal(3, foilCount);
 
-            // New: Assert that cards with a mana cost have a non-null ManaCostImage
-            // Let's say you load your CSV keys like this (pseudo-code):
+            // Assert mana cost images load correctly for known keys for both CardViewModel objects
             var validManaCostKeys = new HashSet<string>
             {
                 "{1}{B}",
@@ -304,17 +288,121 @@ namespace CollectaMundo.Tests
                 var key = card.ManaCostRaw ?? card.ManaCost ?? string.Empty;
                 if (!string.IsNullOrEmpty(key) && validManaCostKeys.Contains(key))
                 {
-                    var image = card.ManaCostImage;
-                    if (image == null)
-                    {
-                        // Log the card and key that failed
-                        Debug.WriteLine($"Missing image for card '{card.Name}' with mana cost key '{key}'");
-                    }
-                    Assert.NotNull(image);
-                    Assert.IsAssignableFrom<System.Windows.Media.ImageSource>(image);
+                    var img = card.ManaCostImage; // triggers provider decode
+                    if (img == null) Debug.WriteLine($"Missing ManaCostImage for '{card.Name}' key '{key}'");
+                    Assert.NotNull(img);
+                    Assert.IsType<System.Windows.Media.ImageSource>(img, exactMatch: false);
+
+                    // Optional: ensure thread-safety perf
+                    if (img is System.Windows.Media.Imaging.BitmapImage bmp)
+                        Assert.True(bmp.IsFrozen, "Bitmap should be frozen.");
                 }
             }
 
+            foreach (var card in _mainVM.MyCollectionVM.Cards)
+            {
+                var key = card.ManaCostRaw ?? card.ManaCost ?? string.Empty;
+                if (!string.IsNullOrEmpty(key) && validManaCostKeys.Contains(key))
+                {
+                    var img = card.ManaCostImage; // triggers provider decode
+                    if (img == null) Debug.WriteLine($"Missing ManaCostImage for '{card.Name}' key '{key}'");
+                    Assert.NotNull(img);
+                    Assert.IsType<System.Windows.Media.ImageSource>(img, exactMatch: false);
+
+                    // Optional: ensure thread-safety perf
+                    if (img is System.Windows.Media.Imaging.BitmapImage bmp)
+                        Assert.True(bmp.IsFrozen, "Bitmap should be frozen.");
+                }
+            }
+
+            // Assert set icons images load correctly for known keys for both CardViewModel objects
+            var validSetCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "3ED",
+                "5DN",
+                "ACLB",
+                "ACR",
+                "AKR",
+                "AMH1",
+                "AMH2",
+                "AMH3",
+                "AMID",
+                "AONE",
+                "ASTX",
+                "AVOW",
+                "BFZ",
+                "ELD",
+                "FEM",
+                "FJ25",
+                "GRN",
+                "HML",
+                "ICE",
+                "IMA",
+                "INV",
+                "J25",
+                "JOU",
+                "LRW",
+                "ME3",
+                "MH2",
+                "MID",
+                "MMQ",
+                "OGW",
+                "ONS",
+                "PAVR",
+                "PEMN",
+                "PIO",
+                "PKHM",
+                "PLST",
+                "PRM",
+                "RAV",
+                "RTR",
+                "SPG",
+                "THB",
+                "UND",
+                "USG",
+                "WHO",
+                "ZEN"
+            };
+
+            foreach (var card in _mainVM.AllCardsVM.Cards)
+            {
+                var setCode = card.Core?.SetCode ?? card.SetCode ?? string.Empty;
+                if (!string.IsNullOrEmpty(setCode) && validSetCodes.Contains(setCode))
+                {
+                    var image = card.KeyRuneImage;
+                    if (image == null)
+                    {
+                        Debug.WriteLine($"Missing SetIconImage for card '{card.Name}' set '{setCode}'");
+                    }
+                    Assert.NotNull(image);
+                    Assert.IsAssignableFrom<System.Windows.Media.ImageSource>(image);
+
+                    if (image is System.Windows.Media.Imaging.BitmapImage bmp)
+                    {
+                        Assert.True(bmp.IsFrozen, "Bitmap should be frozen for thread safety.");
+                    }
+                }
+            }
+
+            foreach (var card in _mainVM.MyCollectionVM.Cards)
+            {
+                var setCode = card.Core?.SetCode ?? card.SetCode ?? string.Empty;
+                if (!string.IsNullOrEmpty(setCode) && validSetCodes.Contains(setCode))
+                {
+                    var image = card.KeyRuneImage;
+                    if (image == null)
+                    {
+                        Debug.WriteLine($"Missing SetIconImage for card '{card.Name}' set '{setCode}'");
+                    }
+                    Assert.NotNull(image);
+                    Assert.IsAssignableFrom<System.Windows.Media.ImageSource>(image);
+
+                    if (image is System.Windows.Media.Imaging.BitmapImage bmp)
+                    {
+                        Assert.True(bmp.IsFrozen, "Bitmap should be frozen for thread safety.");
+                    }
+                }
+            }
 
         }
 
