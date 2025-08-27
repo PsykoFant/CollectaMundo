@@ -8,10 +8,10 @@ using CollectaMundo.ViewModels;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(ICardListRepository cardListRepo, IFilterDefaultsLogic filterRepo, ICardIconsService iconService) : ICardListService
+    public sealed class CardListService(ICardListRepository cardListRepo, IFilterDefaultsLogic filterLogic, ICardIconsService iconService) : ICardListService
     {
         private readonly ICardListRepository _cardListRepo = cardListRepo;
-        private readonly IFilterDefaultsLogic _filterRepo = filterRepo;
+        private readonly IFilterDefaultsLogic _filterLogic = filterLogic;
         private readonly ICardIconsService _iconService = iconService;
         public async Task InitializeAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
@@ -51,7 +51,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 myCollectionVM.FilteredCards = myCollection;
 
                 // 3) Filters
-                var defs = _filterRepo.Build(allCardsVM.Cards, myCollectionVM.Cards);
+                var defs = _filterLogic.Build(allCardsVM.Cards, myCollectionVM.Cards);
                 filters.Clear();
                 foreach (var def in defs)
                 {

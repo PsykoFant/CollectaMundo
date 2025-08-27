@@ -13,10 +13,12 @@ using CollectaMundo.Data.CardDatabaseManagement;
 using CollectaMundo.Data.CardIcons;
 using CollectaMundo.Data.CardLists;
 using CollectaMundo.Data.CardPrices;
+using CollectaMundo.Data.EditCollection;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ImportExport;
 using CollectaMundo.Data.RemoteLookups;
+using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
@@ -71,7 +73,8 @@ namespace CollectaMundo.Tests
             var prepService = new CardDatabasePreparationService(settings, AppGlobals.DbFactory!, progressSinks, prepRepo, priceService, missingPngSvc, downloadService, remoteLookups);
 
             // 4) Feature-layer services
-            var editService = new EditCollectionService();
+            var editCollectionRepo = new EditCollectionRepository();
+            var editService = new EditCollectionService((new EditCollectionLogic(editCollectionRepo)));
             var importExportService = new ImportExportService(new ImportExportRepo());
 
             // 5) Build the Main VM (same signature as in BuildAndStartAsync)

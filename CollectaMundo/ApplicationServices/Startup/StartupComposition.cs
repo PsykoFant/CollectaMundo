@@ -15,10 +15,12 @@ using CollectaMundo.Data.CardDatabaseManagement;
 using CollectaMundo.Data.CardIcons;
 using CollectaMundo.Data.CardLists;
 using CollectaMundo.Data.CardPrices;
+using CollectaMundo.Data.EditCollection;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ImportExport;
 using CollectaMundo.Data.RemoteLookups;
+using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
@@ -76,15 +78,18 @@ namespace CollectaMundo.ApplicationServices.Startup
                 await UIHelper.ForceRenderAsync();
 
                 var filteringService = new FilteringService();
-                var editService = new EditCollectionService();
+
+                var editCollectionRepo = new EditCollectionRepository();
+                var editService = new EditCollectionService(new EditCollectionLogic(editCollectionRepo));
+
                 var importExportService = new ImportExportService(new ImportExportRepo());
 
                 var cardIconsRepo = new CardIconsRepo();
                 var cardIconService = new CardIconsService(cardIconsRepo);
 
                 var cardListRepo = new CardListRepository();
-                var filterDefaultsRepo = new FilterDefaultsLogic();
-                var cardListService = new CardListService(cardListRepo, filterDefaultsRepo, cardIconService);
+                var filterDefaultsLogic = new FilterDefaultsLogic();
+                var cardListService = new CardListService(cardListRepo, filterDefaultsLogic, cardIconService);
 
 
                 // Build view model off UI thread

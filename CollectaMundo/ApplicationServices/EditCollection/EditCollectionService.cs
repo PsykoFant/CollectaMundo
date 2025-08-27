@@ -1,18 +1,18 @@
-﻿using CollectaMundo.Data.EditCollection;
-using CollectaMundo.DomainLogic.CardLists.Models;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices.EditCollection
 {
-    public class EditCollectionService : IEditCollectionService
+    public class EditCollectionService(IEditCollectionLogic editLogic) : IEditCollectionService
     {
+        private readonly IEditCollectionLogic _editLogic = editLogic;
 
         // Adding cards to an add or edit listview
         public Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewHelperAsync(selectedCard, targetCollection, false);
         public Task AddCardToEditCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewHelperAsync(selectedCard, targetCollection, true);
-        private static async Task AddCardToListViewHelperAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection, bool isEdit)
+        private async Task AddCardToListViewHelperAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection, bool isEdit)
         {
             CardSet newItem;
 
@@ -21,8 +21,7 @@ namespace CollectaMundo.ApplicationServices.EditCollection
             await uow.BeginAsync();
             try
             {
-                var domainLogic = CreateLogic();
-                newItem = await domainLogic.PrepareCardForListAsync(selectedCard, isEdit, uow.CurrentConnection);
+                newItem = await _editLogic.PrepareCardForListAsync(selectedCard, isEdit, uow.CurrentConnection);
 
                 // Commit if everything succeeded
                 await uow.CommitAsync();
@@ -78,15 +77,14 @@ namespace CollectaMundo.ApplicationServices.EditCollection
             {
                 // Prepare each raw into a fully‐populated CardSet
                 var prepared = new List<CardSet>();
-                var domainLogic = CreateLogic();
 
                 foreach (var raw in cards)
                 {
-                    prepared.Add(await domainLogic.PrepareNewCardWithDefaultsAsync(raw, uow.CurrentConnection));
+                    prepared.Add(await _editLogic.PrepareNewCardWithDefaultsAsync(raw, uow.CurrentConnection));
                 }
 
                 // Hand off to your pure domain‐logic batch (no further UoW calls inside)
-                var changes = await domainLogic.SaveBatchAsync(prepared, isEdit, uow.CurrentConnection);
+                var changes = await _editLogic.SaveBatchAsync(prepared, isEdit, uow.CurrentConnection);
 
                 // Commit on success
                 await uow.CommitAsync();
@@ -116,8 +114,7 @@ namespace CollectaMundo.ApplicationServices.EditCollection
 
             try
             {
-                var domainLogic = CreateLogic();
-                var results = await domainLogic.SaveBatchAsync(cards, isEdit, uow.CurrentConnection);
+                var results = await _editLogic.SaveBatchAsync(cards, isEdit, uow.CurrentConnection);
 
                 await uow.CommitAsync();
                 return [.. results];
@@ -133,13 +130,6 @@ namespace CollectaMundo.ApplicationServices.EditCollection
                 // Tear down connection
                 await uow.DisposeAsync();
             }
-        }
-
-        // Helper to create the EditCollectionLogic with a connection from the UoW
-        private static EditCollectionLogic CreateLogic()
-        {
-            var repo = new EditCollectionRepository();
-            return new EditCollectionLogic(repo);
         }
     }
 }
