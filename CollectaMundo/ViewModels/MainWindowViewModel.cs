@@ -6,7 +6,6 @@ using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.DomainLogic.EditCollection.Models;
-using CollectaMundo.DomainLogic.Filtering.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -31,7 +30,8 @@ namespace CollectaMundo.ViewModels
         private readonly IImportExportService _importExportService;
         private readonly ICardDatabasePreparationService _prepService;
         private readonly ICardListService _cardListService;
-        private readonly DispatcherTimer _facetDebounce = new() { Interval = TimeSpan.FromMilliseconds(150) }; // debounce timer for facet updates
+        private DispatcherTimer? _facetDebounce;
+        private readonly IFacetUpdater _facetUpdater = new FacetUpdater();
 
         // Constructor
         private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, StatusViewModel statusOverlayVM, ICardListService cardListService)
@@ -69,11 +69,6 @@ namespace CollectaMundo.ViewModels
             CheckForDbUpdatesCommand = new RelayCommand<object>(async _ => await CheckForDbUpdatesAsync());
             UpdateDBCommand = new RelayCommand<object>(async _ => await UpdateDBAsync());
 
-            _facetDebounce.Tick += (s, e) =>
-            {
-                _facetDebounce.Stop();
-                RefreshCollectionFacetsFromMyCollection();
-            };
         }
         // Command methods
         private async Task BackupCollectionAsync()
@@ -344,58 +339,27 @@ namespace CollectaMundo.ViewModels
             // reapply filters
             MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
 
-            // Coalesce bursts of per-card events into one facet refresh
-            _facetDebounce.Stop();
-            _facetDebounce.Start();
+            EnsureFacetTimer();
+            _facetDebounce!.Stop();
+            _facetDebounce!.Start();
         }
-
-        private void RefreshCollectionFacetsFromMyCollection()
+        private void EnsureFacetTimer()
         {
-            // Conditions: aggregate across all cards
-            var conditions = MyCollectionVM.Cards
-                .SelectMany(c => c.Conditions ?? Enumerable.Empty<string>()) // flatten all card Conditions
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            if (_facetDebounce != null)
+            {
+                return;
+            }
 
-            // Languages: flatten OtherLanguages lists + include the single Language property
-            var languages = MyCollectionVM.Cards
-                .SelectMany(c =>
-                    (c.OtherLanguages ?? Enumerable.Empty<string>())
-                    .Concat(new[] { c.Language ?? string.Empty }))
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            // Finishes: flatten
-            var finishes = MyCollectionVM.Cards
-                .SelectMany(c => c.AvailableFinishes ?? Enumerable.Empty<string>())
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            // Push into FilterItemViewModels
-            UpdateFilterOptions("SelectedCondition", conditions);
-            UpdateFilterOptions("Language", languages);
-            UpdateFilterOptions("SelectedFinish", finishes);
-        }
-
-
-        private void UpdateFilterOptions(string key, IReadOnlyList<string> newValues)
-        {
-            if (!FilterVM.Filters.TryGetValue(key, out var item) || item is null) return;
-
-            var current = item.FilterOptions.Select(o => o.OptionName).ToList();
-            bool same = current.Count == newValues.Count &&
-                        current.SequenceEqual(newValues, StringComparer.OrdinalIgnoreCase);
-            if (same) return;
-
-            item.FilterOptions.Clear();
-            foreach (var v in newValues)
-                item.FilterOptions.Add(new FilterOption(v));
+            var disp = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
+            _facetDebounce = new DispatcherTimer(DispatcherPriority.Background, disp)
+            {
+                Interval = TimeSpan.FromMilliseconds(150)
+            };
+            _facetDebounce.Tick += (s, e) =>
+            {
+                _facetDebounce!.Stop();
+                _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters);
+            };
         }
 
 

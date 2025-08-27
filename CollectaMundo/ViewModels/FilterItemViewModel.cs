@@ -276,7 +276,6 @@ namespace CollectaMundo.ViewModels
                 }
             }
         }
-
         private void ResetTypingDelay()
         {
             _typingTimer?.Stop();
@@ -427,6 +426,63 @@ namespace CollectaMundo.ViewModels
                     TextForeground = Brushes.Gray;
                 }
             });
+        }
+
+        //
+        public void ResetOptions(IEnumerable<string> newOptionNames)
+        {
+            // Fast no-op if identical (order-insensitive compare)
+            var incoming = newOptionNames
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var current = FilterOptions.Select(o => o.OptionName).ToList();
+            bool same = current.Count == incoming.Count &&
+                        current.SequenceEqual(incoming, StringComparer.OrdinalIgnoreCase);
+            if (same)
+            {
+                return;
+            }
+
+            // 1) Unsubscribe old handlers to avoid leaks
+            foreach (var opt in FilterOptions)
+            {
+                opt.PropertyChanged -= FilterOption_PropertyChanged;
+            }
+
+            // 2) Replace FilterOptions
+            FilterOptions.Clear();
+            foreach (var name in incoming)
+            {
+                var opt = new FilterOption(name);
+                opt.PropertyChanged += FilterOption_PropertyChanged;
+                FilterOptions.Add(opt);
+            }
+
+            // 3) Refresh FilteredOptions right now (so ToggleButton path shows latest)
+            if (string.IsNullOrWhiteSpace(FilterText) || FilterText == DefaultText)
+            {
+                // Show all if there is no active text filter
+                FilteredOptions = new ObservableCollection<FilterOption>(FilterOptions);
+            }
+            else
+            {
+                ApplyTextFilter();
+            }
+
+            // 4) AvailableOptions depends on FilterOptions
+            OnPropertyChanged(nameof(AvailableOptions));
+        }
+
+        // centralize the handler so we can attach/detach
+        private void FilterOption_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(FilterOption.IsSelected))
+            {
+                UpdateSelectedOptions();
+            }
         }
     }
 }
