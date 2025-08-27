@@ -292,13 +292,19 @@ namespace CollectaMundo.Tests
                 if (!string.IsNullOrEmpty(key) && validManaCostKeys.Contains(key))
                 {
                     var img = card.ManaCostImage; // triggers provider decode
-                    if (img == null) Debug.WriteLine($"Missing ManaCostImage for '{card.Name}' key '{key}'");
+                    if (img == null)
+                    {
+                        Debug.WriteLine($"Missing ManaCostImage for '{card.Name}' key '{key}'");
+                    }
+
                     Assert.NotNull(img);
                     Assert.IsType<System.Windows.Media.ImageSource>(img, exactMatch: false);
 
                     // Optional: ensure thread-safety perf
                     if (img is System.Windows.Media.Imaging.BitmapImage bmp)
+                    {
                         Assert.True(bmp.IsFrozen, "Bitmap should be frozen.");
+                    }
                 }
             }
 
@@ -308,13 +314,19 @@ namespace CollectaMundo.Tests
                 if (!string.IsNullOrEmpty(key) && validManaCostKeys.Contains(key))
                 {
                     var img = card.ManaCostImage; // triggers provider decode
-                    if (img == null) Debug.WriteLine($"Missing ManaCostImage for '{card.Name}' key '{key}'");
+                    if (img == null)
+                    {
+                        Debug.WriteLine($"Missing ManaCostImage for '{card.Name}' key '{key}'");
+                    }
+
                     Assert.NotNull(img);
                     Assert.IsType<System.Windows.Media.ImageSource>(img, exactMatch: false);
 
                     // Optional: ensure thread-safety perf
                     if (img is System.Windows.Media.Imaging.BitmapImage bmp)
+                    {
                         Assert.True(bmp.IsFrozen, "Bitmap should be frozen.");
+                    }
                 }
             }
 
@@ -834,7 +846,7 @@ namespace CollectaMundo.Tests
 
 
             // 1) pick the one FilteredCards item you want
-            var uuidToAdd = "e4dcfe4f-8441-5eec-9f74-a7b3672e90e0";
+            var uuidToAdd = "e4dcfe4f-8441-5eec-9f74-a7b3672e90e0"; // Karox Bladewing
             var cardToAdd = _mainVM.AllCardsVM.FilteredCards.Single(c => c.Uuid == uuidToAdd);
 
             // 2) “fake” the DataGrid selection by wrapping it in an object‐array
@@ -848,6 +860,26 @@ namespace CollectaMundo.Tests
 
             _mainVM.AddCardsVM.SubmitNewCardsCommand.Execute(null);
             Assert.Equal(23, _mainVM.MyCollectionVM.Cards.Count);
+
+            // Act: Search up card Sokrates, Athenian Teacher
+            nameFilter.SelectedSingleOption = "sokrates";
+
+            // Assert: Sokrates appears
+            expectedNames = [.. new List<string> { "Sokrates, Athenian Teacher" }.OrderBy(n => n)];
+            actualNames = [.. _mainVM.AllCardsVM.FilteredCards.Select(c => c.Name!).OrderBy(n => n)];
+
+            Assert.Equal(expectedNames, actualNames);
+            Assert.Empty(_mainVM.MyCollectionVM.FilteredCards);
+
+            // Act: Select Sokrates to be added
+            // 1) pick the one FilteredCards item you want
+            uuidToAdd = "3c389f9c-e459-5b16-87b5-d51644f05b25"; // Sokrates, Athenian Teacher
+            cardToAdd = _mainVM.AllCardsVM.FilteredCards.Single(c => c.Uuid == uuidToAdd);
+            selection = [cardToAdd];
+            _mainVM.AddCardsVM.AddSelectedCardsCommand.Execute(selection);
+
+            // Assert: addVM.CardsToAdd contains your card
+            Assert.Single(_mainVM.AddCardsVM.CardsToAdd, c => c.Uuid == uuidToAdd);
         }
     }
 }

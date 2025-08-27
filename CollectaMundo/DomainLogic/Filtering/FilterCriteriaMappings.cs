@@ -1,4 +1,4 @@
-﻿using static CollectaMundo.MainWindow;
+﻿using CollectaMundo.DomainLogic.CardLists.Models; // for CardSet
 
 namespace CollectaMundo.DomainLogic.Filtering
 {
@@ -12,29 +12,47 @@ namespace CollectaMundo.DomainLogic.Filtering
         Numeric  // A numeric-based filter (e.g., ManaValue, CardsForTrade)
     }
 
+    /// <summary>
+    /// Describes configuration for a filter criteria.
+    /// </summary>
+    public sealed record CriteriaSpec(
+        string? ReadableLabel,
+        FilterType Type,
+        OperatorType[]? Operators,
+        bool ShouldNotSplit,
+        bool IsCollectionFacet = false,
+        Func<CardSet, string?>? SelectedExtractor = null
+    );
+
     public static class FilterCriteriaMappings
     {
         /// <summary>
-        /// Maps each filter criteria to its corresponding list name,
-        /// filter type, valid operators, and whether it should not split values.
+        /// Maps each filter criteria to its configuration, including UI labels,
+        /// operator support, split behavior, and (optionally) how to extract
+        /// values from CardSet at runtime for collection-backed facets.
         /// </summary>
-        public static readonly Dictionary<string, (string? ReadableLabel, FilterType Type, OperatorType[]? Operators, bool ShouldNotSplit)> CriteriaMappings = new()
+        public static readonly Dictionary<string, CriteriaSpec> CriteriaMappings = new()
         {
-            { "Name", ("Card Name", FilterType.Single, null, true) },
-            { "SetName", ("Set Name", FilterType.Single, null, true) },
-            { "Text", ("Rulestext", FilterType.Single, new[] { OperatorType.CONTAINS, OperatorType.DOES_NOT_CONTAIN }, false) },
-            { "Colors", ("", FilterType.Multi, new[] { OperatorType.OR, OperatorType.AND, OperatorType.NOT }, false) },
-            { "Rarity", ("", FilterType.Multi, new[] { OperatorType.OR, OperatorType.NOT }, false) },
-            { "SuperTypes", ("Supertypes", FilterType.Multi, new[] { OperatorType.OR, OperatorType.AND, OperatorType.NOT }, false) },
-            { "Types", ("Card type", FilterType.Multi, new[] { OperatorType.OR, OperatorType.AND, OperatorType.NOT }, false) },
-            { "SubTypes", ("Subtypes", FilterType.Multi, new[] { OperatorType.OR, OperatorType.AND, OperatorType.NOT }, false) },
-            { "Keywords", ("", FilterType.Multi, new[] { OperatorType.OR, OperatorType.AND, OperatorType.NOT }, false) },
-            { "Finishes", ("", FilterType.Multi, new[] { OperatorType.OR, OperatorType.NOT }, false) },
-            { "SelectedFinish", ("Chosen finish", FilterType.Multi, new[] { OperatorType.OR, OperatorType.NOT }, false) },
-            { "Language", ("", FilterType.Multi, new[] { OperatorType.OR, OperatorType.NOT }, false) },
-            { "SelectedCondition", ("Condition", FilterType.Multi, new[] { OperatorType.OR, OperatorType.NOT }, false) },
-            { "ManaValue", ("", FilterType.Numeric, new[] { OperatorType.GREATER_THAN, OperatorType.LESS_THAN, OperatorType.EQUALS, OperatorType.GREATER_THAN_OR_EQUALS, OperatorType.LESS_THAN_OR_EQUALS }, false) },
-            { "CardsForTrade", ("", FilterType.Numeric, new[] { OperatorType.GREATER_THAN, OperatorType.EQUALS }, false) }
+            { "Name",              new("Card Name", FilterType.Single, null, true) },
+            { "SetName",           new("Set Name",  FilterType.Single, null, true) },
+            { "Text",              new("Rulestext", FilterType.Single,[OperatorType.CONTAINS, OperatorType.DOES_NOT_CONTAIN],false) },
+            { "Colors",            new("", FilterType.Multi,[OperatorType.OR, OperatorType.AND, OperatorType.NOT],false) },
+            { "Rarity",            new("", FilterType.Multi,[OperatorType.OR, OperatorType.NOT],false) },
+            { "SuperTypes",        new("Supertypes", FilterType.Multi,[OperatorType.OR, OperatorType.AND, OperatorType.NOT],false) },
+            { "Types",             new("Card type", FilterType.Multi,[OperatorType.OR, OperatorType.AND, OperatorType.NOT],false) },
+            { "SubTypes",          new("Subtypes", FilterType.Multi,[OperatorType.OR, OperatorType.AND, OperatorType.NOT],false) },
+            { "Keywords",          new("", FilterType.Multi,[OperatorType.OR, OperatorType.AND, OperatorType.NOT],false) },
+            { "Finishes",          new("", FilterType.Multi,[OperatorType.OR, OperatorType.NOT],false) },
+
+            // === Collection-backed facets (live updates at runtime) ===
+            { "SelectedFinish",    new("Chosen finish", FilterType.Multi,[OperatorType.OR, OperatorType.NOT],false,IsCollectionFacet: true,SelectedExtractor: c => c.SelectedFinish) },
+
+            { "Language",          new("", FilterType.Multi,[OperatorType.OR, OperatorType.NOT],false,IsCollectionFacet: true,SelectedExtractor: c => c.Language) },
+            { "SelectedCondition", new("Condition", FilterType.Multi,[OperatorType.OR, OperatorType.NOT],false,IsCollectionFacet: true,SelectedExtractor: c => c.SelectedCondition) },
+
+            // === Numeric filters ===
+            { "ManaValue",         new("", FilterType.Numeric,[ OperatorType.GREATER_THAN,OperatorType.LESS_THAN,OperatorType.EQUALS,OperatorType.GREATER_THAN_OR_EQUALS,OperatorType.LESS_THAN_OR_EQUALS ],false) },
+            { "CardsForTrade",     new("", FilterType.Numeric,[OperatorType.GREATER_THAN, OperatorType.EQUALS],false) }
         };
     }
 }
