@@ -6,6 +6,7 @@ using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
+using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
@@ -28,6 +29,11 @@ using System.Windows;
 
 namespace CollectaMundo.Tests
 {
+    public sealed class ImmediateScheduler : IFacetUpdateScheduler
+    {
+        public void Schedule(Action run) => run();
+        public void Cancel() { }
+    }
 
     public sealed class IntegrationTests(InMemoryDatabaseFixture fixture)
         : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
@@ -69,6 +75,8 @@ namespace CollectaMundo.Tests
             var filterDefaultsRepo = new FilterDefaultsLogic();
             var cardListService = new CardListService(cardListRepo, filterDefaultsRepo, cardIconService);
 
+            var scheduler = new ImmediateScheduler();
+
             // IMPORTANT: inject the fixture-backed DbFactory so all DB calls stay in-memory
             var prepService = new CardDatabasePreparationService(settings, AppGlobals.DbFactory!, progressSinks, prepRepo, priceService, missingPngSvc, downloadService, remoteLookups);
 
@@ -78,7 +86,7 @@ namespace CollectaMundo.Tests
             var importExportService = new ImportExportService(new ImportExportRepo());
 
             // 5) Build the Main VM (same signature as in BuildAndStartAsync)
-            _mainVM = await MainWindowViewModel.CreateAsync(_filteringService, editService, importExportService, prepService, downloadService, statusVM, cardListService);
+            _mainVM = await MainWindowViewModel.CreateAsync(_filteringService, editService, importExportService, prepService, downloadService, statusVM, cardListService, facetScheduler: scheduler);
 
             // 6) Bring the VM to a “ready” state consistent with the app
             _mainVM.FilterVM.NotifyFilterChanged();
@@ -880,6 +888,29 @@ namespace CollectaMundo.Tests
 
             // Assert: addVM.CardsToAdd contains your card
             Assert.Single(_mainVM.AddCardsVM.CardsToAdd, c => c.Uuid == uuidToAdd);
+
+            // Arrange: modify fields before submit
+            var pending = _mainVM.AddCardsVM.CardsToAdd.Single(c => c.Uuid == uuidToAdd);
+            pending.SelectedCondition = "Played";
+            pending.CardsForTrade = 1;
+
+            // Act: submit (this clears CardsToAdd on success)
+            _mainVM.AddCardsVM.SubmitNewCardsCommand.Execute(null);
+
+            // Assert: card moved into MyCollection with updated fields
+            Assert.Equal(24, _mainVM.MyCollectionVM.Cards.Count);
+
+            var inCollection = _mainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidToAdd);
+            Assert.Equal("Played", inCollection.SelectedCondition);
+            Assert.Equal(1, inCollection.CardsForTrade);
+
+            // Assert: the staging list was cleared by the command
+            Assert.Empty(_mainVM.AddCardsVM.CardsToAdd);
+
+            // Now assert filter options include the new value
+            var conditionFilter = _mainVM.FilterVM.Filters["SelectedCondition"];
+            Assert.Contains("Played", conditionFilter.AvailableOptions);
+
         }
     }
 }

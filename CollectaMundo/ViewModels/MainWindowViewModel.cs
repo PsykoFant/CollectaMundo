@@ -3,9 +3,11 @@ using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
+using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.DomainLogic.EditCollection.Models;
+using CollectaMundo.Presentation;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -13,7 +15,6 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Threading;
 using static CollectaMundo.DomainLogic.EditCollection.Models.CardChangeEventArgs;
 
 namespace CollectaMundo.ViewModels
@@ -30,11 +31,11 @@ namespace CollectaMundo.ViewModels
         private readonly IImportExportService _importExportService;
         private readonly ICardDatabasePreparationService _prepService;
         private readonly ICardListService _cardListService;
-        private DispatcherTimer? _facetDebounce;
-        private readonly IFacetUpdater _facetUpdater = new FacetUpdater();
+        private readonly IFacetUpdateScheduler _facetScheduler;
+        private readonly IFacetUpdater _facetUpdater;
 
         // Constructor
-        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, StatusViewModel statusOverlayVM, ICardListService cardListService)
+        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, StatusViewModel statusOverlayVM, ICardListService cardListService, IFacetUpdateScheduler? facetScheduler = null, IFacetUpdater? facetUpdater = null)
         {
             _statusOverlayVM = statusOverlayVM;
 
@@ -42,6 +43,8 @@ namespace CollectaMundo.ViewModels
             _importExportService = importExportService;
             _prepService = prepService;
             _cardListService = cardListService;
+            _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
+            _facetUpdater = facetUpdater ?? new FacetUpdater();
 
             CurrentPage = Page.SearchAndFilter;
 
@@ -339,29 +342,11 @@ namespace CollectaMundo.ViewModels
             // reapply filters
             MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
 
-            EnsureFacetTimer();
-            _facetDebounce!.Stop();
-            _facetDebounce!.Start();
-        }
-        private void EnsureFacetTimer()
-        {
-            if (_facetDebounce != null)
-            {
-                return;
-            }
 
-            var disp = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
-            _facetDebounce = new DispatcherTimer(DispatcherPriority.Background, disp)
-            {
-                Interval = TimeSpan.FromMilliseconds(150)
-            };
-            _facetDebounce.Tick += (s, e) =>
-            {
-                _facetDebounce!.Stop();
-                _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters);
-            };
+            // debounce via scheduler (no direct DispatcherTimer usage here anymore)
+            _facetScheduler.Cancel();
+            _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters));
         }
-
 
         // When filters are updated
         private void OnFilterChanged(object? sender, EventArgs e)
@@ -377,9 +362,9 @@ namespace CollectaMundo.ViewModels
         }
 
         // Factory method to create the ViewModel
-        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, IDownloadService downloadService, StatusViewModel statusVM, ICardListService cardListService, Action? onStartupComplete = null)
+        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, IDownloadService downloadService, StatusViewModel statusVM, ICardListService cardListService, IFacetUpdateScheduler? facetScheduler = null, IFacetUpdater? facetUpdater = null, Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(filteringService, editService, importExportService, prepService, statusVM, cardListService)
+            var vm = new MainWindowViewModel(filteringService, editService, importExportService, prepService, statusVM, cardListService, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };

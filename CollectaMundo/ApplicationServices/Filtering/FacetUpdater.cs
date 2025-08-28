@@ -30,5 +30,4 @@ namespace CollectaMundo.ApplicationServices.Filtering
             }
         }
     }
-
 }
