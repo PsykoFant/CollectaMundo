@@ -4,11 +4,15 @@ TO DO
 
 
 - Gå videre med update scenarie
-	- Reload (diff only)
-       
-    - Filter defaults fra allcards objektet
-        - Bug: Opdater filter defaults når der er ændringer i mycollection
+    <side track>
     - Farve ikoner
+    - Performance startup ... 
+    </side track>
+
+	- Reload (diff only)
+
+
+
 
 	- Slet temp set ikoner
 	- Slet temp filer

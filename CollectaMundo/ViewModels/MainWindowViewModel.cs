@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+﻿#region usings & namespace
+using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
@@ -19,21 +20,178 @@ using static CollectaMundo.DomainLogic.EditCollection.Models.CardChangeEventArgs
 
 namespace CollectaMundo.ViewModels
 {
-    public class MainWindowViewModel : INotifyPropertyChanged
+    #endregion
+    public sealed class MainWindowViewModel : INotifyPropertyChanged
     {
-        // INotifyPropertyChanged boilerplate
+        #region class: MainWindowViewModel (fields, ctor, factory)
+
+        #region INotifyPropertyChanged boilerplate
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        public Action? OnStartupComplete { get; set; }
+        #endregion
 
-        private readonly StatusViewModel _statusOverlayVM;
+        #region readonly dependencies
+        // Services
         private readonly IFilteringService _filteringService;
         private readonly IImportExportService _importExportService;
         private readonly ICardDatabasePreparationService _prepService;
         private readonly ICardListService _cardListService;
+
+        // Filtering infrastructure
         private readonly IFacetUpdateScheduler _facetScheduler;
         private readonly IFacetUpdater _facetUpdater;
+        #endregion
 
+        #region child viewmodels (visible to XAML)
+        public CardViewModel AllCardsVM { get; }
+        public CardViewModel AllCardsForDecksVM { get; }
+        public CardViewModel AllCardsInDecksVM { get; }
+        public CardViewModel MyCollectionVM { get; }
+        public CardViewModel ColorIcons { get; }
+        public EditCollectionViewModel AddCardsVM { get; }
+        public EditCollectionViewModel EditCardsVM { get; }
+        public FilterViewModel FilterVM { get; }
+        #endregion
+
+        #region ui state
+        public Action? OnStartupComplete { get; set; }
+        // What page are we on?
+        private Page _currentPage = Page.SearchAndFilter;
+        public Page CurrentPage
+        {
+            get => _currentPage;
+            set
+            {
+                // If we are on the same page, do nothing
+                if (_currentPage == value)
+                {
+                    return;
+                }
+
+                _currentPage = value;
+
+                // Reset and hide the status overlay
+                _statusOverlayVM.HideStatusOverlay();
+
+                if (_currentPage == Page.MyCollection)
+                {
+                    AddCardsVM.StatusMessage = string.Empty;
+                    SideMenuFilterVisibility = Visibility.Visible;
+                    SideMenuUtilsVisibility = Visibility.Collapsed;
+                }
+                else if (_currentPage == Page.SearchAndFilter)
+                {
+                    EditCardsVM.StatusMessage = string.Empty;
+                    SideMenuFilterVisibility = Visibility.Visible;
+                    SideMenuUtilsVisibility = Visibility.Collapsed;
+                }
+                else if (_currentPage == Page.Utilities)
+                {
+                    SideMenuFilterVisibility = Visibility.Collapsed;
+                    SideMenuUtilsVisibility = Visibility.Visible;
+                }
+                // CurrentPage changed
+                OnPropertyChanged();
+
+                // MiniLogoVisibility depends on CurrentPage
+                OnPropertyChanged(nameof(MiniLogoVisibility));
+            }
+        }
+        public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [[50, 50], [50, 50], [50]];
+
+        // Enable/disable top menu 
+        private bool _isTopMenuEnabled = true;
+        public bool IsTopMenuEnabled
+        {
+            get => _isTopMenuEnabled;
+            set
+            {
+                if (_isTopMenuEnabled != value)
+                {
+                    _isTopMenuEnabled = value;
+                    OnPropertyChanged(); // Required for WPF to update bindings
+                }
+            }
+        }
+        private void MiniLogoVisibilityFlipper()
+        {
+            AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
+            EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
+        }
+
+        #region Visibility properties
+        public Visibility MiniLogoVisibility
+        {
+            get
+            {
+                // if *either* status box is Visible, hide our logo
+                bool addBusy = AddCardsVM.StatusVisibility == Visibility.Visible;
+                bool editBusy = EditCardsVM.StatusVisibility == Visibility.Visible;
+                bool isLogoPage = CurrentPage == Page.MyCollection || CurrentPage == Page.SearchAndFilter;
+
+                return (addBusy || editBusy || !isLogoPage)
+                  ? Visibility.Collapsed
+                  : Visibility.Visible;
+            }
+        }
+
+        private Visibility _mainGridVisibility = Visibility.Collapsed;
+        public Visibility MainGridVisibility
+        {
+            get => _mainGridVisibility;
+            set { _mainGridVisibility = value; OnPropertyChanged(); }
+        }
+
+        private Visibility _contentSectionVisibility = Visibility.Hidden;
+        public Visibility ContentSectionVisibility
+        {
+            get => _contentSectionVisibility;
+            set { _contentSectionVisibility = value; OnPropertyChanged(); }
+        }
+
+        private Visibility _sideMenuVisibility = Visibility.Hidden;
+        public Visibility SideMenuVisibility
+        {
+            get => _sideMenuVisibility;
+            set { _sideMenuVisibility = value; OnPropertyChanged(); }
+        }
+
+        // Side menu visibility properties
+        private Visibility _sideMenuFilterVisibility = Visibility.Visible;
+        public Visibility SideMenuFilterVisibility
+        {
+            get => _sideMenuFilterVisibility;
+            set { _sideMenuFilterVisibility = value; OnPropertyChanged(); }
+        }
+
+        private Visibility _sideMenuUtilsVisibility = Visibility.Hidden;
+        public Visibility SideMenuUtilsVisibility
+        {
+            get => _sideMenuUtilsVisibility;
+            set { _sideMenuUtilsVisibility = value; OnPropertyChanged(); }
+        }
+
+        private Visibility _sideMenuUtilsCheckForUpdatesVisibility = Visibility.Visible;
+        public Visibility SideMenuUtilsCheckForUpdatesVisibility
+        {
+            get => _sideMenuUtilsCheckForUpdatesVisibility;
+            set { _sideMenuUtilsCheckForUpdatesVisibility = value; OnPropertyChanged(); }
+        }
+
+        private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
+        public Visibility SideMenuUtilsUpdateDbVisibility
+        {
+            get => _sideMenuUtilsUpdateDbVisibility;
+            set { _sideMenuUtilsUpdateDbVisibility = value; OnPropertyChanged(); }
+        }
+        #endregion
+
+        // Status overlay vm (owned by main window)
+        private readonly StatusViewModel _statusOverlayVM;
+
+        #endregion
+
+        #region Constructor and factory method
         // Constructor
         private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, StatusViewModel statusOverlayVM, ICardListService cardListService, IFacetUpdateScheduler? facetScheduler = null, IFacetUpdater? facetUpdater = null)
         {
@@ -43,36 +201,163 @@ namespace CollectaMundo.ViewModels
             _importExportService = importExportService;
             _prepService = prepService;
             _cardListService = cardListService;
+
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
             _facetUpdater = facetUpdater ?? new FacetUpdater();
 
             CurrentPage = Page.SearchAndFilter;
 
+            // card lists
             AllCardsVM = new CardViewModel();
             MyCollectionVM = new CardViewModel();
             AllCardsForDecksVM = new CardViewModel();
             AllCardsInDecksVM = new CardViewModel();
             ColorIcons = new CardViewModel();
 
+            // edit collection
             AddCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);
             EditCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: false);
-            AddCardsVM.CardChanged += OnCardChanged;
-            EditCardsVM.CardChanged += OnCardChanged;
 
+            // filtering
             FilterVM = new FilterViewModel(_filteringService);
-            FilterVM.FilterChanged += OnFilterChanged;
 
+            // event wiring
+            SubscribeChildVmEvents();
+            BuildCommands();
             MiniLogoVisibilityFlipper();
+        }
+        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, IDownloadService downloadService, StatusViewModel statusVM, ICardListService cardListService, IFacetUpdateScheduler? facetScheduler = null, IFacetUpdater? facetUpdater = null, Action? onStartupComplete = null)
+        {
+            var vm = new MainWindowViewModel(filteringService, editService, importExportService, prepService, statusVM, cardListService, facetScheduler, facetUpdater)
+            {
+                OnStartupComplete = onStartupComplete
+            };
 
+            await vm.ReloadAllCardListsAsync();
+
+            vm.OnStartupComplete?.Invoke();
+            return vm;
+        }
+        #endregion
+
+        #endregion
+
+        #region commands (construction + handlers)
+        // Commands to switch pages
+        public ICommand ShowSearchAndFilterCommand { get; private set; } = null!;
+        public ICommand ShowMyCollectionCommand { get; private set; } = null!;
+        public ICommand ShowDecksCommand { get; private set; } = null!;
+        public ICommand ShowUtilitiesCommand { get; private set; } = null!;
+        public ICommand BackupCollectionCommand { get; private set; } = null!;
+        public ICommand CheckForDbUpdatesCommand { get; private set; } = null!;
+        public ICommand UpdateDBCommand { get; private set; } = null!;
+        private void BuildCommands()
+        {
             ShowSearchAndFilterCommand = new RelayCommand<object>(_ => { CurrentPage = Page.SearchAndFilter; });
             ShowMyCollectionCommand = new RelayCommand<object>(_ => { CurrentPage = Page.MyCollection; });
             ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
+
             BackupCollectionCommand = new RelayCommand<object>(async _ => await BackupCollectionAsync());
             CheckForDbUpdatesCommand = new RelayCommand<object>(async _ => await CheckForDbUpdatesAsync());
             UpdateDBCommand = new RelayCommand<object>(async _ => await UpdateDBAsync());
-
         }
+        #endregion
+
+        #region event wiring (subscribe/unsubscribe)
+        private void SubscribeChildVmEvents()
+        {
+            AddCardsVM.CardChanged += OnCardChanged;
+            EditCardsVM.CardChanged += OnCardChanged;
+            FilterVM.FilterChanged += OnFilterChanged;
+        }
+        private void UnsubscribeChildVmEvents()
+        {
+            AddCardsVM.CardChanged -= OnCardChanged;
+            EditCardsVM.CardChanged -= OnCardChanged;
+            FilterVM.FilterChanged -= OnFilterChanged;
+        }
+        #endregion
+
+        #region event handlers (FilterChanged, CardChanged)
+        // When a card is added/updated/deleted from collection
+        private void OnCardChanged(object? sender, CardChangeEventArgs e)
+        {
+            // exactly your old MainWindow code, minus the Dispatcher.Invoke:
+            switch (e.Type)
+            {
+                case ChangeType.Delete:
+                    var dead = e.Removed.Single();
+                    var toRm = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == dead);
+                    if (toRm != null)
+                    {
+                        MyCollectionVM.Cards.Remove(toRm);
+                    }
+
+                    break;
+
+                case ChangeType.Upsert:
+                    var inc = e.Survivor!;
+                    var exist = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == inc.CardId);
+                    if (exist != null)
+                    {
+                        exist.CardsOwned = inc.CardsOwned;
+                        exist.CardsForTrade = inc.CardsForTrade;
+                        exist.SelectedCondition = inc.SelectedCondition;
+                        exist.Language = inc.Language;
+                        exist.SelectedFinish = inc.SelectedFinish;
+                    }
+                    else
+                    {
+                        MyCollectionVM.Cards.Add(inc);
+                    }
+
+                    foreach (var dupId in e.Removed)
+                    {
+                        var dup = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == dupId);
+                        if (dup != null)
+                        {
+                            MyCollectionVM.Cards.Remove(dup);
+                        }
+                    }
+                    break;
+            }
+
+            // reapply filters
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
+
+
+            // debounce via scheduler (no direct DispatcherTimer usage here anymore)
+            _facetScheduler.Cancel();
+            _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters));
+        }
+
+        // When filters are updated
+        private void OnFilterChanged(object? sender, EventArgs e)
+        {
+            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, FilterVM.Filters.Values);
+            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
+            AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
+        }
+
+        #endregion
+
+        #region startup / reload
+        private async Task ReloadAllCardListsAsync()
+        {
+            var sw = Stopwatch.StartNew();
+            Debug.WriteLine("[ReloadAllCardListsAsync] Initializing card lists");
+
+            await _cardListService.InitializeAsync(AllCardsVM, MyCollectionVM, FilterVM.Filters, FilterVM);
+
+            FilterVM.NotifyFilterChanged();
+
+            sw.Stop();
+            Debug.WriteLine($"[ReloadAllCardListsAsync] M1 finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");
+        }
+        #endregion
+
+        #region status overlay / maintenance tasks (backup, update db)
         // Command methods
         private async Task BackupCollectionAsync()
         {
@@ -141,250 +426,14 @@ namespace CollectaMundo.ViewModels
             IsTopMenuEnabled = true; // Re-enable top menu after update
             SideMenuUtilsVisibility = Visibility.Visible; // Show utilities menu again
         }
-        // Page navigation
-        private Page _currentPage = Page.SearchAndFilter;
-        public Page CurrentPage
+        #endregion
+
+        #region disposal
+        public void Dispose()
         {
-            get => _currentPage;
-            set
-            {
-                // If we are on the same page, do nothing
-                if (_currentPage == value)
-                {
-                    return;
-                }
-
-                _currentPage = value;
-
-                // Reset and hide the status overlay
-                _statusOverlayVM.HideStatusOverlay();
-
-                if (_currentPage == Page.MyCollection)
-                {
-                    AddCardsVM.StatusMessage = string.Empty;
-                    SideMenuFilterVisibility = Visibility.Visible;
-                    SideMenuUtilsVisibility = Visibility.Collapsed;
-                }
-                else if (_currentPage == Page.SearchAndFilter)
-                {
-                    EditCardsVM.StatusMessage = string.Empty;
-                    SideMenuFilterVisibility = Visibility.Visible;
-                    SideMenuUtilsVisibility = Visibility.Collapsed;
-                }
-                else if (_currentPage == Page.Utilities)
-                {
-                    SideMenuFilterVisibility = Visibility.Collapsed;
-                    SideMenuUtilsVisibility = Visibility.Visible;
-                }
-                // CurrentPage changed
-                OnPropertyChanged();
-
-                // MiniLogoVisibility depends on CurrentPage
-                OnPropertyChanged(nameof(MiniLogoVisibility));
-            }
+            UnsubscribeChildVmEvents();
+            _facetScheduler.Cancel(); // \ safety
         }
-
-        // Viewmodels
-        public CardViewModel AllCardsVM { get; }
-        public CardViewModel AllCardsForDecksVM { get; }
-        public CardViewModel AllCardsInDecksVM { get; }
-        public CardViewModel MyCollectionVM { get; }
-        public CardViewModel ColorIcons { get; }
-        public EditCollectionViewModel AddCardsVM { get; }
-        public EditCollectionViewModel EditCardsVM { get; }
-        public FilterViewModel FilterVM { get; }
-
-        // Misc. properties
-        public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [[50, 50], [50, 50], [50]];
-        // HideStatusOverlay mini logo at appropriate times
-        public Visibility MiniLogoVisibility
-        {
-            get
-            {
-                // if *either* status box is Visible, hide our logo
-                bool addBusy = AddCardsVM.StatusVisibility == Visibility.Visible;
-                bool editBusy = EditCardsVM.StatusVisibility == Visibility.Visible;
-                bool isLogoPage = CurrentPage == Page.MyCollection || CurrentPage == Page.SearchAndFilter;
-
-                return (addBusy || editBusy || !isLogoPage)
-                  ? Visibility.Collapsed
-                  : Visibility.Visible;
-            }
-        }
-
-        // Grid visibility properties
-
-        // Main Grids
-        private Visibility _mainGridVisibility = Visibility.Collapsed;
-        public Visibility MainGridVisibility
-        {
-            get => _mainGridVisibility;
-            set { _mainGridVisibility = value; OnPropertyChanged(); }
-        }
-
-        private Visibility _contentSectionVisibility = Visibility.Hidden;
-        public Visibility ContentSectionVisibility
-        {
-            get => _contentSectionVisibility;
-            set { _contentSectionVisibility = value; OnPropertyChanged(); }
-        }
-
-        private Visibility _sideMenuVisibility = Visibility.Hidden;
-        public Visibility SideMenuVisibility
-        {
-            get => _sideMenuVisibility;
-            set { _sideMenuVisibility = value; OnPropertyChanged(); }
-        }
-
-
-        // Side menu visibility properties
-        private Visibility _sideMenuFilterVisibility = Visibility.Visible;
-        public Visibility SideMenuFilterVisibility
-        {
-            get => _sideMenuFilterVisibility;
-            set { _sideMenuFilterVisibility = value; OnPropertyChanged(); }
-        }
-
-        private Visibility _sideMenuUtilsVisibility = Visibility.Hidden;
-        public Visibility SideMenuUtilsVisibility
-        {
-            get => _sideMenuUtilsVisibility;
-            set { _sideMenuUtilsVisibility = value; OnPropertyChanged(); }
-        }
-
-        private Visibility _sideMenuUtilsCheckForUpdatesVisibility = Visibility.Visible;
-        public Visibility SideMenuUtilsCheckForUpdatesVisibility
-        {
-            get => _sideMenuUtilsCheckForUpdatesVisibility;
-            set { _sideMenuUtilsCheckForUpdatesVisibility = value; OnPropertyChanged(); }
-        }
-
-        //private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
-        // debug - always visible
-        private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Visible;
-
-        public Visibility SideMenuUtilsUpdateDbVisibility
-        {
-            get => _sideMenuUtilsUpdateDbVisibility;
-            set { _sideMenuUtilsUpdateDbVisibility = value; OnPropertyChanged(); }
-        }
-
-        // Enable/disable top menu 
-        private bool _isTopMenuEnabled = true;
-        public bool IsTopMenuEnabled
-        {
-            get => _isTopMenuEnabled;
-            set
-            {
-                if (_isTopMenuEnabled != value)
-                {
-                    _isTopMenuEnabled = value;
-                    OnPropertyChanged(); // Required for WPF to update bindings
-                }
-            }
-        }
-
-        // Commands to switch pages
-        public ICommand ShowSearchAndFilterCommand { get; }
-        public ICommand ShowMyCollectionCommand { get; }
-        public ICommand ShowDecksCommand { get; }
-        public ICommand ShowUtilitiesCommand { get; }
-
-        // Utilities commands
-        public ICommand BackupCollectionCommand { get; }
-        public ICommand CheckForDbUpdatesCommand { get; }
-        public ICommand UpdateDBCommand { get; }
-
-
-        // When a card is added/updated/deleted from collection
-        private void OnCardChanged(object? sender, CardChangeEventArgs e)
-        {
-            // exactly your old MainWindow code, minus the Dispatcher.Invoke:
-            switch (e.Type)
-            {
-                case ChangeType.Delete:
-                    var dead = e.Removed.Single();
-                    var toRm = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == dead);
-                    if (toRm != null)
-                    {
-                        MyCollectionVM.Cards.Remove(toRm);
-                    }
-
-                    break;
-
-                case ChangeType.Upsert:
-                    var inc = e.Survivor!;
-                    var exist = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == inc.CardId);
-                    if (exist != null)
-                    {
-                        exist.CardsOwned = inc.CardsOwned;
-                        exist.CardsForTrade = inc.CardsForTrade;
-                        exist.SelectedCondition = inc.SelectedCondition;
-                        exist.Language = inc.Language;
-                        exist.SelectedFinish = inc.SelectedFinish;
-                    }
-                    else
-                    {
-                        MyCollectionVM.Cards.Add(inc);
-                    }
-
-                    foreach (var dupId in e.Removed)
-                    {
-                        var dup = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == dupId);
-                        if (dup != null)
-                        {
-                            MyCollectionVM.Cards.Remove(dup);
-                        }
-                    }
-                    break;
-            }
-
-            // reapply filters
-            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
-
-
-            // debounce via scheduler (no direct DispatcherTimer usage here anymore)
-            _facetScheduler.Cancel();
-            _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters));
-        }
-
-        // When filters are updated
-        private void OnFilterChanged(object? sender, EventArgs e)
-        {
-            AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, FilterVM.Filters.Values);
-            MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
-            AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
-        }
-        private void MiniLogoVisibilityFlipper()
-        {
-            AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
-            EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
-        }
-
-        // Factory method to create the ViewModel
-        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, IDownloadService downloadService, StatusViewModel statusVM, ICardListService cardListService, IFacetUpdateScheduler? facetScheduler = null, IFacetUpdater? facetUpdater = null, Action? onStartupComplete = null)
-        {
-            var vm = new MainWindowViewModel(filteringService, editService, importExportService, prepService, statusVM, cardListService, facetScheduler, facetUpdater)
-            {
-                OnStartupComplete = onStartupComplete
-            };
-
-            await vm.ReloadAllCardListsAsync();
-
-            vm.OnStartupComplete?.Invoke();
-            return vm;
-        }
-        private async Task ReloadAllCardListsAsync()
-        {
-            var sw = Stopwatch.StartNew();
-            Debug.WriteLine("[ReloadAllCardListsAsync] Initializing card lists");
-
-            await _cardListService.InitializeAsync(AllCardsVM, MyCollectionVM, FilterVM.Filters, FilterVM);
-
-            FilterVM.NotifyFilterChanged();
-
-            sw.Stop();
-            Debug.WriteLine($"[ReloadAllCardListsAsync] M1 finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");
-        }
+        #endregion
     }
 }

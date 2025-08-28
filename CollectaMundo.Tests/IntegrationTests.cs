@@ -19,6 +19,7 @@ using CollectaMundo.Data.Filtering;
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ImportExport;
 using CollectaMundo.Data.RemoteLookups;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering;
@@ -114,7 +115,11 @@ namespace CollectaMundo.Tests
             ProgressBarVisible = new Progress<bool>(v =>
                 vm.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
         };
-        public Task DisposeAsync() => Task.CompletedTask;
+        public Task DisposeAsync()
+        {
+            _mainVM?.Dispose();   // ensures child-VM event handlers and schedulers are cleared
+            return Task.CompletedTask;
+        }
 
         [Fact]
         public void Seed_has_expected_counts()
@@ -720,198 +725,279 @@ namespace CollectaMundo.Tests
         }
 
         [Fact]
-        public void Filter_Integration_Test_Simple()
+        public async Task Filter_Integration_Test_Scenario_With_Event_Subscription()
         {
-            // Arrange: Filter on ManaValue > 1.
+            // local helper: apply current filters to both views
+            void ApplyAll()
+            {
+                _mainVM.AllCardsVM.FilteredCards = _filteringService.ApplyFilters(_mainVM.AllCardsVM.Cards, _mainVM.FilterVM.Filters.Values);
+                _mainVM.MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(_mainVM.MyCollectionVM.Cards, _mainVM.FilterVM.Filters.Values);
+            }
+
+            // local helper: find card by uuid from either AllCards or MyCollection
+            CardSet FindCard(IEnumerable<CardSet> source, string uuid) => source.Single(c => string.Equals(c.Uuid, uuid, StringComparison.OrdinalIgnoreCase));
+
+            // ===== Section A: "Simple" test =====
+
+            // Arrange: ManaValue > 1
             var numericFilter = _mainVM.FilterVM.Filters["ManaValue"];
             numericFilter.SelectedNumericValue = 1;
             numericFilter.OperatorSelection = OperatorType.GREATER_THAN;
 
-            // Filter on Rarity not being mythic or rare.
+            // Arrange: Rarity NOT (mythic OR rare)
             var rarityFilter = _mainVM.FilterVM.Filters["Rarity"];
             foreach (var opt in rarityFilter.FilterOptions.Where(o => o.OptionName is "mythic" or "rare"))
             {
-                opt.IsSelected = true;          // this setter calls NotifyFilterChanged
+                opt.IsSelected = true;
             }
+
             rarityFilter.OperatorSelection = OperatorType.NOT;
 
-            // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
-            _mainVM.AllCardsVM.FilteredCards = _filteringService.ApplyFilters(_mainVM.AllCardsVM.Cards, _mainVM.FilterVM.Filters.Values);
-            var filteredAllCards = _mainVM.AllCardsVM.FilteredCards;
+            // Act
+            ApplyAll();
 
-            _mainVM.MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(_mainVM.MyCollectionVM.Cards, _mainVM.FilterVM.Filters.Values);
-            var filteredMyCollection = _mainVM.MyCollectionVM.FilteredCards;
-
-            // Assert: Expected summary string
-            string expectedSummary = "Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
+            // Assert
+            var expectedSummary = "Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
             Assert.Equal(expectedSummary, _mainVM.FilterVM.FilterSummary);
+            Assert.Equal(22, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(17, _mainVM.MyCollectionVM.FilteredCards.Count);
 
-            // Assert: Number of cards in filteredAllCards and filteredMyCollection.
-            Assert.Equal(22, filteredAllCards.Count);
-            Assert.Equal(17, filteredMyCollection.Count);
-
-            // Arrange: Add color filters to existing filters.
+            // Arrange: Colors {R OR G}
             var colorFilter = _mainVM.FilterVM.Filters["Colors"];
             foreach (var opt in colorFilter.FilterOptions.Where(o => o.OptionName is "R" or "G"))
             {
-                opt.IsSelected = true;          // this setter calls NotifyFilterChanged
+                opt.IsSelected = true;
             }
+
             colorFilter.OperatorSelection = OperatorType.OR;
 
-            // Act: Apply filtering to TestAllCardsVM and TestMyCollectionVM.
-            _mainVM.AllCardsVM.FilteredCards = _filteringService.ApplyFilters(_mainVM.AllCardsVM.Cards, _mainVM.FilterVM.Filters.Values);
-            filteredAllCards = _mainVM.AllCardsVM.FilteredCards;
+            // Act
+            ApplyAll();
 
-            _mainVM.MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(_mainVM.MyCollectionVM.Cards, _mainVM.FilterVM.Filters.Values);
-            filteredMyCollection = _mainVM.MyCollectionVM.FilteredCards;
-
-            // Assert: Expected summary string
+            // Assert
             expectedSummary = "Colors: {R OR G} AND Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
             Assert.Equal(expectedSummary, _mainVM.FilterVM.FilterSummary);
+            Assert.Equal(12, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(10, _mainVM.MyCollectionVM.FilteredCards.Count);
 
-            // Assert: Number of cards in filteredAllCards and filteredMyCollection.
-            Assert.Equal(12, filteredAllCards.Count);
-            Assert.Equal(10, filteredMyCollection.Count);
-        }
+            // Reset for main scenario
+            _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
 
-        [Fact]
-        public void Filter_Integration_Test_Scenario_With_Event_Subscription()
-        {
+            // ===== Section B: search by Name ("Ranger") =====
 
-            // Act: Apply first filter – Name contains "Ranger"
+            // Act
             var nameFilter = _mainVM.FilterVM.Filters["Name"];
             nameFilter.SelectedSingleOption = "Ranger";
 
-            // Assert: only the two “Ranger” cards appear, none in MyCollection
+            // Assert
             var expectedNames = new List<string> { "Boundary Lands Ranger", "Ranger-Captain of Eos // Ranger-Captain of Eos" }.OrderBy(n => n).ToList();
 
-            var actualNames = _mainVM.AllCardsVM.FilteredCards
-                               .Select(c => c.Name!)   // names are non‑null in seed data
-                               .OrderBy(n => n)
-                               .ToList();
+            var actualNames = _mainVM.AllCardsVM.FilteredCards.Select(c => c.Name!).OrderBy(n => n).ToList();
 
             Assert.Equal(expectedNames, actualNames);
             Assert.Empty(_mainVM.MyCollectionVM.FilteredCards);
 
-            // Arrange: Clear all filters via the command 
-            _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);   // raises FilterChanged again
+            // Reset
+            _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
 
-            // Assert: lists are back to their full size and summary text is empty
             Assert.Equal(61, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(22, _mainVM.MyCollectionVM.FilteredCards.Count);
             Assert.True(string.IsNullOrEmpty(_mainVM.FilterVM.FilterSummary));
 
-            // Act: Start over with filtering – filter on rules text
+            // ===== Section C: text + set filters =====
+
+            // Act: Text contains “+1/+1 counter”
             var rulesFilter = _mainVM.FilterVM.Filters["Text"];
             rulesFilter.SelectedSingleOption = "+1/+1 counter";
 
-            // Assert: three cards in AllCards, two in MyCollection with +1/+1 counter in their rules text
+            // Assert
             Assert.Equal(3, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(2, _mainVM.MyCollectionVM.FilteredCards.Count);
 
-            // Act: Add one more filter - SetName contains "The List"
+            // Act: SetName contains "The List"
             var setFilter = _mainVM.FilterVM.Filters["SetName"];
             setFilter.SelectedSingleOption = "The List";
             _mainVM.FilterVM.NotifyFilterChanged();
 
-            // Assert: two cards in AllCards, two in MyCollection with +1/+1 counter in their rules text and from the set "The List"
+            // Assert
             Assert.Equal(2, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(2, _mainVM.MyCollectionVM.FilteredCards.Count);
             Assert.Equal("SetName: \"The List\" AND Text: \"+1/+1 counter\"", _mainVM.FilterVM.FilterSummary);
 
+            // Reset
+            _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
 
-            // Arrange: Clear all filters via the command for the second time
-            _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);   // raises FilterChanged again
-
-            // Assert: lists are back to their full size and summary text is empty
             Assert.Equal(61, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(22, _mainVM.MyCollectionVM.FilteredCards.Count);
             Assert.True(string.IsNullOrEmpty(_mainVM.FilterVM.FilterSummary));
 
-            // Act: Add a filter on the "Types" filter - select "Creature" and "Planeswalker"
+            // ===== Section D: types + supertypes =====
+
+            // Arrange: Types {Creature OR Planeswalker}
             var typesFilter = _mainVM.FilterVM.Filters["Types"];
             foreach (var opt in typesFilter.FilterOptions.Where(o => o.OptionName is "Creature" or "Planeswalker"))
             {
                 opt.IsSelected = true;
             }
+
             typesFilter.OperatorSelection = OperatorType.OR;
 
-            // Assert: 25 cards in AllCards, 10 in MyCollection with type "Creature" or "Planeswalker"
+            // Assert
             Assert.Equal(27, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(10, _mainVM.MyCollectionVM.FilteredCards.Count);
 
-            // Act: Add a filter on the "SuperTypes" filter - select "Legendary"
+            // Arrange: SuperTypes {Legendary}
             var superTypesFilter = _mainVM.FilterVM.Filters["SuperTypes"];
             foreach (var opt in superTypesFilter.FilterOptions.Where(o => o.OptionName is "Legendary"))
             {
                 opt.IsSelected = true;
             }
 
-            // Assert: 3 cards in AllCards, none in MyCollection with type "Creature" or "Planeswalker" and supertype "Legendary"
+            // Assert
             Assert.Equal(5, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Empty(_mainVM.MyCollectionVM.FilteredCards);
             Assert.Equal("SuperTypes: {Legendary} AND Types: {Creature OR Planeswalker}", _mainVM.FilterVM.FilterSummary);
 
+            // ===== Section E: add one card (Karox) via AddSelectedCards =====
 
-            // 1) pick the one FilteredCards item you want
-            var uuidToAdd = "e4dcfe4f-8441-5eec-9f74-a7b3672e90e0"; // Karox Bladewing
-            var cardToAdd = _mainVM.AllCardsVM.FilteredCards.Single(c => c.Uuid == uuidToAdd);
+            // Arrange
+            const string uuidKarox = "e4dcfe4f-8441-5eec-9f74-a7b3672e90e0";
+            var karox = FindCard(_mainVM.AllCardsVM.FilteredCards, uuidKarox);
 
-            // 2) “fake” the DataGrid selection by wrapping it in an object‐array
-            var selection = new object[] { cardToAdd };
+            // Act
+            _mainVM.AddCardsVM.AddSelectedCardsCommand.Execute(new object[] { karox });
 
-            // 3) call the command exactly as the UI would
-            _mainVM.AddCardsVM.AddSelectedCardsCommand.Execute(selection);
+            // Assert: staged
+            Assert.Single(_mainVM.AddCardsVM.CardsToAdd, c => c.Uuid == uuidKarox);
 
-            // at that point addVM.CardsToAdd contains your card
-            Assert.Single(_mainVM.AddCardsVM.CardsToAdd, c => c.Uuid == uuidToAdd);
-
+            // Act: submit
             _mainVM.AddCardsVM.SubmitNewCardsCommand.Execute(null);
+
+            // Assert: now in MyCollection
             Assert.Equal(23, _mainVM.MyCollectionVM.Cards.Count);
 
-            // Act: Search up card Sokrates, Athenian Teacher
+            // ===== Section F: add Sokrates with field edits =====
+
+            // Act: filter by name "sokrates"
             nameFilter.SelectedSingleOption = "sokrates";
 
-            // Assert: Sokrates appears
-            expectedNames = [.. new List<string> { "Sokrates, Athenian Teacher" }.OrderBy(n => n)];
+            // Assert
+            expectedNames = new[] { "Sokrates, Athenian Teacher" }.OrderBy(n => n).ToList();
             actualNames = [.. _mainVM.AllCardsVM.FilteredCards.Select(c => c.Name!).OrderBy(n => n)];
-
             Assert.Equal(expectedNames, actualNames);
             Assert.Empty(_mainVM.MyCollectionVM.FilteredCards);
 
-            // Act: Select Sokrates to be added
-            // 1) pick the one FilteredCards item you want
-            uuidToAdd = "3c389f9c-e459-5b16-87b5-d51644f05b25"; // Sokrates, Athenian Teacher
-            cardToAdd = _mainVM.AllCardsVM.FilteredCards.Single(c => c.Uuid == uuidToAdd);
-            selection = [cardToAdd];
-            _mainVM.AddCardsVM.AddSelectedCardsCommand.Execute(selection);
+            // Arrange
+            const string uuidSokrates = "3c389f9c-e459-5b16-87b5-d51644f05b25";
+            var sokrates = FindCard(_mainVM.AllCardsVM.FilteredCards, uuidSokrates);
 
-            // Assert: addVM.CardsToAdd contains your card
-            Assert.Single(_mainVM.AddCardsVM.CardsToAdd, c => c.Uuid == uuidToAdd);
+            // Act: stage Sokrates
+            _mainVM.AddCardsVM.AddSelectedCardsCommand.Execute(new object[] { sokrates });
 
-            // Arrange: modify fields before submit
-            var pending = _mainVM.AddCardsVM.CardsToAdd.Single(c => c.Uuid == uuidToAdd);
+            // Assert: staged
+            Assert.Single(_mainVM.AddCardsVM.CardsToAdd, c => c.Uuid == uuidSokrates);
+
+            // Arrange: modify before submit
+            var pending = _mainVM.AddCardsVM.CardsToAdd.Single(c => c.Uuid == uuidSokrates);
             pending.SelectedCondition = "Played";
             pending.CardsForTrade = 1;
 
-            // Act: submit (this clears CardsToAdd on success)
+            // Act: submit
             _mainVM.AddCardsVM.SubmitNewCardsCommand.Execute(null);
 
-            // Assert: card moved into MyCollection with updated fields
+            // Assert: now in MyCollection with edits
             Assert.Equal(24, _mainVM.MyCollectionVM.Cards.Count);
 
-            var inCollection = _mainVM.MyCollectionVM.Cards.Single(c => c.Uuid == uuidToAdd);
-            Assert.Equal("Played", inCollection.SelectedCondition);
-            Assert.Equal(1, inCollection.CardsForTrade);
+            var sokratesInCollection = FindCard(_mainVM.MyCollectionVM.Cards, uuidSokrates);
+            Assert.Equal("Played", sokratesInCollection.SelectedCondition);
+            Assert.Equal(1, sokratesInCollection.CardsForTrade);
 
-            // Assert: the staging list was cleared by the command
+            // Assert: staging cleared
             Assert.Empty(_mainVM.AddCardsVM.CardsToAdd);
 
-            // Now assert filter options include the new value
+            // Assert: filter facets include new values
             var conditionFilter = _mainVM.FilterVM.Filters["SelectedCondition"];
             Assert.Contains("Played", conditionFilter.AvailableOptions);
 
+            var languageFilter = _mainVM.FilterVM.Filters["Language"];
+            Assert.Contains("Ancient Greek", languageFilter.AvailableOptions);
+
+            // ===== Section G: delete two specific cards (etched + German) =====
+
+            // Arrange
+            const string uuidEtched = "0add0930-720f-5bf5-bcf5-ee208eeb9040"; // Once Upon a Time (etched)
+            const string uuidGerman = "5e6a3099-2597-5755-8a6f-67f1569a3b8a"; // Leave No Trace (German)
+
+            var etchedCard = FindCard(_mainVM.MyCollectionVM.Cards, uuidEtched);
+            var germanCard = FindCard(_mainVM.MyCollectionVM.Cards, uuidGerman);
+
+            var deletionSelection = new object[] { etchedCard, germanCard };
+
+            // Act
+            _mainVM.AddCardsVM.DeleteSelectedCardsCommand.Execute(deletionSelection);
+
+            // Wait defensively for async path to complete
+            SpinWait.SpinUntil(() => !_mainVM.MyCollectionVM.Cards.Any(c => c.Uuid == uuidEtched || c.Uuid == uuidGerman), millisecondsTimeout: 1000);
+
+            // Assert: removed from collection
+            Assert.DoesNotContain(_mainVM.MyCollectionVM.Cards, c => c.Uuid == uuidEtched);
+            Assert.DoesNotContain(_mainVM.MyCollectionVM.Cards, c => c.Uuid == uuidGerman);
+
+            // Assert: facets updated (ImmediateScheduler makes this synchronous)
+            var finishFilter = _mainVM.FilterVM.Filters["SelectedFinish"];
+            Assert.DoesNotContain(finishFilter.AvailableOptions, s => string.Equals(s, "etched", StringComparison.OrdinalIgnoreCase));
+
+            var langFilter = _mainVM.FilterVM.Filters["Language"];
+            Assert.DoesNotContain(langFilter.AvailableOptions, s => string.Equals(s, "German", StringComparison.OrdinalIgnoreCase));
+
+            // Assert: count back to 22
+            Assert.Equal(22, _mainVM.MyCollectionVM.Cards.Count);
+
+            // ===== Section H: merge scenario (Hypnotic Cloud defaults) =====
+
+            // Arrange
+            const string uuidMerge = "413e11a5-35a1-51c7-928b-219b4453a094"; // Hypnotic Cloud
+            var toMerge = _mainVM.AllCardsVM.Cards.Single(c => c.Uuid == uuidMerge);
+            var mergeSelection = new object[] { toMerge };
+
+            // Act
+            _mainVM.AddCardsVM.SubmitNewCardsWithDefaultsCommand.Execute(mergeSelection);
+
+            // Assert: still 22 after merge
+            Assert.Equal(22, _mainVM.MyCollectionVM.Cards.Count);
+
+            // Assert: merged survivor has the incremented total (VM + DB agree)
+            const string cond = "Near Mint";
+            const string lang = "English";
+            const string finish = "nonfoil";
+
+            int OwnedTotal(IEnumerable<CardSet> list) =>
+                list.Where(c => c.Uuid == uuidMerge &&
+                                string.Equals(c.SelectedCondition, cond, StringComparison.OrdinalIgnoreCase) &&
+                                string.Equals(c.Language, lang, StringComparison.OrdinalIgnoreCase) &&
+                                string.Equals(c.SelectedFinish, finish, StringComparison.OrdinalIgnoreCase))
+                    .Sum(c => c.CardsOwned);
+
+            var ownedVm = OwnedTotal(_mainVM.MyCollectionVM.Cards);
+
+            var survivor = _mainVM.MyCollectionVM.Cards.Single(c =>
+                c.Uuid == uuidMerge &&
+                string.Equals(c.SelectedCondition, cond, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.Language, lang, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(c.SelectedFinish, finish, StringComparison.OrdinalIgnoreCase));
+
+            Assert.Equal(ownedVm, survivor.CardsOwned);
+
+            await using (var uow = new UnitOfWork())
+            {
+                await uow.BeginReadOnlyAsync();
+                var repo = new EditCollectionRepository();
+                var (sumOwnedDb, _) = await repo.GetTotalsAsync(uuidMerge, cond, lang, finish, uow.CurrentConnection);
+                Assert.Equal(ownedVm, sumOwnedDb);
+                await uow.CommitAsync();
+            }
         }
+
     }
 }
 
