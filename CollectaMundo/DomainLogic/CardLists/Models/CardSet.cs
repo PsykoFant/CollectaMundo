@@ -5,7 +5,7 @@ using System.Windows.Media;
 
 namespace CollectaMundo.DomainLogic.CardLists.Models
 {
-    public sealed class CardSet : INotifyPropertyChanged   // sealed for small perf win; preserves public API
+    public sealed class CardSet : INotifyPropertyChanged
     {
         public static IImageProvider<string>? ManaCostImages { get; set; }
         public static IImageProvider<string>? SetIconImages { get; set; }
@@ -195,11 +195,9 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         // ======== Deck field (preserved) ========
         public int Count { get; set; }
 
-        // ========= NEW: factory helpers to construct from a shared Core =========
+        // Factory helpers to construct from a shared Core 
 
-        /// <summary>
-        /// Build an AllCards entry from a shared CardCore. Public surface stays the same.
-        /// </summary>
+        // Build an AllCards entry from a shared CardCore. Public surface stays the same.
         public static CardSet FromCore(CardCore core)
         {
             var c = new CardSet
@@ -234,17 +232,8 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             return c;
         }
 
-        /// <summary>
-        /// Build a MyCollection entry by overlaying per-user fields on top of a shared Core.
-        /// </summary>
-        public static CardSet FromCoreWithCollection(
-            CardCore core,
-            int cardId,
-            int cardsOwned,
-            int cardsForTrade,
-            string? condition,
-            string? language,
-            string? finish)
+        // Build a MyCollection entry by overlaying per-user fields on top of a shared Core.
+        public static CardSet FromCoreWithCollection(CardCore core, int cardId, int cardsOwned, int cardsForTrade, string? condition, string? language, string? finish)
         {
             var c = FromCore(core);
 
@@ -259,6 +248,13 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             c.RecomputeCollectionPrice();
 
             return c;
+        }
+        public static CardSet FromManaKey(string key)
+        {
+            return new CardSet
+            {
+                ManaCostRaw = key
+            };
         }
 
         // helper to recompute collection price on finish change 

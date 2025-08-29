@@ -7,6 +7,7 @@ using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Presentation;
 using CollectaMundo.Utilities;
@@ -40,6 +41,9 @@ namespace CollectaMundo.ViewModels
         // Filtering infrastructure
         private readonly IFacetUpdateScheduler _facetScheduler;
         private readonly IFacetUpdater _facetUpdater;
+
+        // Mana keys for ColorIcons
+        private readonly string[] ManaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
         #endregion
 
         #region child viewmodels (visible to XAML)
@@ -212,7 +216,7 @@ namespace CollectaMundo.ViewModels
             MyCollectionVM = new CardViewModel();
             AllCardsForDecksVM = new CardViewModel();
             AllCardsInDecksVM = new CardViewModel();
-            ColorIcons = new CardViewModel();
+            ColorIcons = new CardViewModel { Cards = [.. ManaKeys.Select(CardSet.FromManaKey)] };
 
             // edit collection
             AddCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);
