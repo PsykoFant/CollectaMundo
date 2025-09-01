@@ -56,6 +56,27 @@ TO DO
 	- 460 mb	
 
 
+
+
+
+    Table sizes
+    select count(*) from cards: 105961
+    select count(*) from tokens: 7940
+    select count(*) from sets: 823
+    select count(*) from cardPrices: 100478
+
+    Db search times:
+    select * from cards: approx. 1200 ms
+    select * from tokens: approx. 45 ms
+    select * from sets: apporx. 8 ms
+    select * from cardPrices: approx. 350 ms
+
+    select * from view_allCards: approx. 3500 ms
+    select * from view_allCards (modified, without joining on table sets): approx. 1950 ms
+    select name, releaseDate, code from sets: approx. 5 ms
+
+
+
 	//public static CardSet FromAllCardsRow(DbDataReader r)
         //{
         //    var c = MapCommon(r);
