@@ -55,11 +55,9 @@ namespace CollectaMundo.Data.CardLists
                 Side = GetFieldValue<string>(r, "Side"),
                 Language = GetFieldValue<string>(r, "Language"),
                 Uuid = GetFieldValue<string>(r, "Uuid") ?? "",
-                SetName = GetFieldValue<string>(r, "SetName"),
                 SetCode = GetFieldValue<string>(r, "SetCode"),
                 Rarity = GetFieldValue<string>(r, "Rarity"),
                 Finishes = GetFieldValue<string>(r, "Finishes"),
-                ReleaseDate = ParseDate(GetFieldValue<string>(r, "ReleaseDate")),
                 ManaValue = GetFieldValue<double?>(r, "ManaValue") ?? 0,
 
                 NormalPrice = GetFieldValue<decimal?>(r, "NormalPrice"),

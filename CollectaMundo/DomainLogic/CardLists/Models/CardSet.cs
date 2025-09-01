@@ -9,6 +9,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
     {
         public static IImageProvider<string>? ManaCostImages { get; set; }
         public static IImageProvider<string>? SetIconImages { get; set; }
+        public static IValueProvider<string, SetMeta>? SetMetaProvider { get; set; }
 
 
         // shared core payload
@@ -58,9 +59,25 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public List<string>? PromoTypes { get; set; }
         public string? Rarity { get; set; }
         public List<string>? RebalancedPrintings { get; set; }
-        public DateTime? ReleaseDate { get; set; }
+        public DateTime? ReleaseDate
+        {
+            get
+            {
+                var code = SetCode ?? Core?.SetCode;
+                if (string.IsNullOrWhiteSpace(code)) return null;
+                return SetMetaProvider?.Get(code)?.ReleaseDate;
+            }
+        }
         public string? SetCode { get; set; }
-        public string? SetName { get; set; }
+        public string? SetName
+        {
+            get
+            {
+                var code = SetCode ?? Core?.SetCode;
+                if (string.IsNullOrWhiteSpace(code)) return null;
+                return SetMetaProvider?.Get(code)?.Name;
+            }
+        }
         public string? Side { get; set; }
         public List<string>? Subsets { get; set; }
         public string? SubTypes { get; set; }
@@ -102,8 +119,6 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             }
             set => _manaCostImage = value;
         }
-
-
         public int? CardId { get; set; }
 
         // ========= INPC & per-collection fields (unchanged) =========
@@ -207,8 +222,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
                 // Assign public props from Core so existing filters/bindings keep working
                 Uuid = core.Uuid,
                 Name = core.Name,
-                SetName = core.SetName,
-                ReleaseDate = core.ReleaseDate,
+                SetCode = core.SetCode,
                 ManaCost = core.ManaCost,
                 ManaCostRaw = core.ManaCostRaw,
                 Colors = core.Colors,

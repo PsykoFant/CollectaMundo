@@ -1,4 +1,5 @@
-﻿using System.Data.SQLite;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using System.Data.SQLite;
 
 namespace CollectaMundo.Data.CardLists
 {
@@ -6,5 +7,6 @@ namespace CollectaMundo.Data.CardLists
     {
         Task<IReadOnlyDictionary<string, byte[]>> ReadManaCostImagesAsync(SQLiteConnection conn);
         Task<IReadOnlyDictionary<string, byte[]>> ReadSetIconImagesAsync(SQLiteConnection conn);
+        Task<IReadOnlyDictionary<string, SetMeta>> ReadSetsAsync(SQLiteConnection conn);
     }
 }

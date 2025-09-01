@@ -21,22 +21,29 @@ namespace CollectaMundo.ApplicationServices.CardLists
             if (_initialized) return;
             lock (_initLock) if (_initialized) return;
 
-            // icons only (for now)
+            // --- Icons  ---
             if (opts.HasFlag(CardLookupsOptions.Icons))
             {
-                // --- Mana cost ---
                 var manaMap = await _repo.ReadManaCostImagesAsync(conn);
                 var manaBytes = new DictionaryBytesLogic<string>(manaMap);
                 var manaImgs = new ImageProvider<string>(manaBytes);
                 CardSet.ManaCostImages = manaImgs;
                 ManaCostImages = manaImgs;
 
-                // --- Set icons ---
                 var setMap = await _repo.ReadSetIconImagesAsync(conn);
                 var setBytes = new DictionaryBytesLogic<string>(setMap);
                 var setImgs = new ImageProvider<string>(setBytes);
                 CardSet.SetIconImages = setImgs;
                 SetIconImages = setImgs;
+            }
+
+            // --- Sets ---
+            if (opts.HasFlag(CardLookupsOptions.Sets))
+            {
+                var sets = await _repo.ReadSetsAsync(conn); // code -> SetMeta
+                var provider = new ValueProvider<string, SetMeta>(sets);
+                CardSet.SetMetaProvider = provider;
+                //SetMetaProvider = provider;
             }
 
             lock (_initLock) _initialized = true;

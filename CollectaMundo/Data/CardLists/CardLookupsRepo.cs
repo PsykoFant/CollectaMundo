@@ -1,4 +1,5 @@
-﻿using System.Data.SQLite;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using System.Data.SQLite;
 
 namespace CollectaMundo.Data.CardLists
 {
@@ -39,6 +40,28 @@ namespace CollectaMundo.Data.CardLists
                 if (rdr["keyruneImage"] is byte[] blob && blob.Length > 0)
                     map[key] = blob;
             }
+            return map;
+        }
+        public async Task<IReadOnlyDictionary<string, SetMeta>> ReadSetsAsync(SQLiteConnection conn)
+        {
+            var map = new Dictionary<string, SetMeta>(capacity: 1024, StringComparer.OrdinalIgnoreCase);
+            const string sql = "SELECT code, name, releaseDate FROM sets";
+
+            using var cmd = new SQLiteCommand(sql, conn);
+            using var rdr = await cmd.ExecuteReaderAsync();
+            while (await rdr.ReadAsync())
+            {
+                var code = rdr["code"]?.ToString();
+                if (string.IsNullOrWhiteSpace(code)) continue;
+
+                var name = rdr["name"]?.ToString() ?? "";
+                DateTime? release = null;
+                if (DateTime.TryParse(rdr["releaseDate"]?.ToString(), out var dt))
+                    release = dt;
+
+                map[code] = new SetMeta { Code = code, Name = name, ReleaseDate = release };
+            }
+
             return map;
         }
     }
