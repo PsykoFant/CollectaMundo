@@ -21,6 +21,12 @@ namespace CollectaMundo.Tests
         public class Filtering
         {
             private readonly static List<CardSet> cards = GetTestCards();
+
+            static Filtering()
+            {
+                // Ensure SetMetaProvider is populated for these tests
+                TestUtilities.SeedSetMetaForTests(cards);
+            }
             public class FilterByNumericOptionsTests
             {
 
