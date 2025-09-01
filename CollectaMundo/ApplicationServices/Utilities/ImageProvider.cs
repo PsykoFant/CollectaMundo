@@ -1,22 +1,15 @@
-﻿using CollectaMundo.DomainLogic.CardLookups;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace CollectaMundo.ApplicationServices.Utilities
 {
-    public interface IImageProvider<TKey>
+    public sealed class ImageProvider<TKey>(IByteSource<TKey> bytes) : ILookupProvider<TKey, ImageSource> where TKey : notnull
     {
-        ImageSource? GetImage(TKey key);
-    }
-
-    public sealed class ImageProvider<TKey>(IImageBytesLogic<TKey> bytes) : IImageProvider<TKey> where TKey : notnull
-    {
-        private readonly IImageBytesLogic<TKey> _bytes = bytes;
+        private readonly IByteSource<TKey> _bytes = bytes;
         private readonly ConcurrentDictionary<TKey, ImageSource?> _cache = new();
-
-        public ImageSource? GetImage(TKey key)
+        public ImageSource? Get(TKey key)
         {
             return _cache.GetOrAdd(key, k =>
             {
@@ -32,7 +25,7 @@ namespace CollectaMundo.ApplicationServices.Utilities
                     bmp.CacheOption = BitmapCacheOption.OnLoad;
                     bmp.StreamSource = ms;
                     bmp.EndInit();
-                    bmp.Freeze();
+                    bmp.Freeze(); // WPF requirement for cross-thread usage
                     return bmp;
                 }
                 catch
@@ -40,6 +33,12 @@ namespace CollectaMundo.ApplicationServices.Utilities
                     return null;
                 }
             });
+        }
+        public bool Contains(TKey key)
+        {
+            if (_cache.ContainsKey(key)) return true;
+            var data = _bytes.GetBytes(key);
+            return data is { Length: > 0 };
         }
     }
 }

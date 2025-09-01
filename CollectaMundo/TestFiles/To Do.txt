@@ -56,7 +56,9 @@ TO DO
 	- 460 mb	
 
 
-
+    Stationær - sets refactored, view updated
+    - Ca. 4,1 sekunder
+    - 460 mb
 
 
     Table sizes

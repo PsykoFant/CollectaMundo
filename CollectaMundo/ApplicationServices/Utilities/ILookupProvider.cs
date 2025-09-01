@@ -1,7 +1,8 @@
 ﻿namespace CollectaMundo.ApplicationServices.Utilities
 {
-    public interface IValueProvider<TKey, TValue>
+    public interface ILookupProvider<TKey, TValue>
     {
         TValue? Get(TKey key);
+        bool Contains(TKey key);
     }
 }

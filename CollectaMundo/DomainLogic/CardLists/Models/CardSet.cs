@@ -7,9 +7,13 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
 {
     public sealed class CardSet : INotifyPropertyChanged
     {
-        public static IImageProvider<string>? ManaCostImages { get; set; }
-        public static IImageProvider<string>? SetIconImages { get; set; }
-        public static IValueProvider<string, SetMeta>? SetMetaProvider { get; set; }
+        // images
+        public static ILookupProvider<string, ImageSource>? ManaCostImages { get; set; }
+        public static ILookupProvider<string, ImageSource>? SetIconImages { get; set; }
+
+        // metadata
+        public static ILookupProvider<string, SetMeta>? SetMetaProvider { get; set; }
+
 
 
         // shared core payload
@@ -97,7 +101,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
                 {
                     var key = Core?.SetCode ?? SetCode;
                     if (!string.IsNullOrWhiteSpace(key))
-                        _keyRuneImage = SetIconImages?.GetImage(key);
+                        _keyRuneImage = SetIconImages?.Get(key);
                 }
                 return _keyRuneImage;
             }
@@ -112,9 +116,9 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             {
                 if (_manaCostImage == null)
                 {
-                    _manaCostImage = ManaCostImages?.GetImage(Core?.ManaCostRaw ?? ManaCostRaw ?? string.Empty);
+                    var key = Core?.ManaCostRaw ?? ManaCostRaw ?? string.Empty;
+                    _manaCostImage = ManaCostImages?.Get(key);
                 }
-
                 return _manaCostImage;
             }
             set => _manaCostImage = value;

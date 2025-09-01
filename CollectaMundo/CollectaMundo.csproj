@@ -88,4 +88,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="ApplicationServices\CardLists\Lookups\" />
+  </ItemGroup>
+
 </Project>
