@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.CardIcons;
+﻿using CollectaMundo.ApplicationServices.Utilities;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;

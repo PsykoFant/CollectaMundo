@@ -1,8 +1,8 @@
 ﻿using System.Data.SQLite;
 
-namespace CollectaMundo.Data.CardIcons
+namespace CollectaMundo.Data.CardLists
 {
-    public class CardIconsRepo : ICardIconsRepo
+    public class CardLookupsRepo : ICardLookupsRepo
     {
         public async Task<IReadOnlyDictionary<string, byte[]>> ReadManaCostImagesAsync(SQLiteConnection conn)
         {

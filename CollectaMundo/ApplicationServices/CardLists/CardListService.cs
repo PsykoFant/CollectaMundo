@@ -1,5 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.CardIcons;
-using CollectaMundo.Data.CardLists;
+﻿using CollectaMundo.Data.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.ViewModels;
@@ -8,11 +7,11 @@ using CollectaMundo.ViewModels;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(ICardListRepository cardListRepo, IFilterDefaultsLogic filterLogic, ICardIconsService iconService) : ICardListService
+    public sealed class CardListService(ICardListRepository cardListRepo, IFilterDefaultsLogic filterLogic, ICardLookupsService lookupService) : ICardListService
     {
         private readonly ICardListRepository _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterLogic = filterLogic;
-        private readonly ICardIconsService _iconService = iconService;
+        private readonly ICardLookupsService _lookupService = lookupService;
         public async Task InitializeAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork();
@@ -23,7 +22,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 var conn = uow.CurrentConnection;
 
                 // Ensure icon providers using the SAME connection (no parallel connection/txn)
-                await _iconService.InitializeAsync(conn);
+                await _lookupService.InitializeAsync(conn, CardLookupsOptions.Icons);
 
                 // 1) AllCards cores
                 var cores = await _cardListRepo.ReadAllCardsCoresAsync(conn);

@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.DomainLogic.CardIcons
+﻿namespace CollectaMundo.DomainLogic.CardLookups
 {
     public interface IImageBytesLogic<TKey>
     {

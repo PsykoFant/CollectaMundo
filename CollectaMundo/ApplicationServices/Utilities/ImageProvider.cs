@@ -1,10 +1,10 @@
-﻿using CollectaMundo.DomainLogic.CardIcons;
+﻿using CollectaMundo.DomainLogic.CardLookups;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace CollectaMundo.ApplicationServices.CardIcons
+namespace CollectaMundo.ApplicationServices.Utilities
 {
     public interface IImageProvider<TKey>
     {

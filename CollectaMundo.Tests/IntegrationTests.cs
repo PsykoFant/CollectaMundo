@@ -1,6 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices;
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
-using CollectaMundo.ApplicationServices.CardIcons;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
@@ -11,7 +10,6 @@ using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data.CardDatabaseManagement;
-using CollectaMundo.Data.CardIcons;
 using CollectaMundo.Data.CardLists;
 using CollectaMundo.Data.CardPrices;
 using CollectaMundo.Data.EditCollection;
@@ -69,12 +67,12 @@ namespace CollectaMundo.Tests
             var prepRepo = new CardDatabasePreparationRepo();
             var progressSinks = CreateProgressSinks(statusVM); // <- local helper (below)
 
-            var cardIconsRepo = new CardIconsRepo();
-            var cardIconService = new CardIconsService(cardIconsRepo);
+            var cardLookupsRepo = new CardLookupsRepo();
+            var cardLookupsService = new CardLookupsService(cardLookupsRepo);
 
             var cardListRepo = new CardListRepository();
             var filterDefaultsRepo = new FilterDefaultsLogic();
-            var cardListService = new CardListService(cardListRepo, filterDefaultsRepo, cardIconService);
+            var cardListService = new CardListService(cardListRepo, filterDefaultsRepo, cardLookupsService);
 
             var scheduler = new ImmediateScheduler();
 

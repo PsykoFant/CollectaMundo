@@ -1,6 +1,5 @@
 ﻿#region using directives
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
-using CollectaMundo.ApplicationServices.CardIcons;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
@@ -12,7 +11,6 @@ using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data;
 using CollectaMundo.Data.CardDatabaseManagement;
-using CollectaMundo.Data.CardIcons;
 using CollectaMundo.Data.CardLists;
 using CollectaMundo.Data.CardPrices;
 using CollectaMundo.Data.EditCollection;
@@ -84,12 +82,12 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var importExportService = new ImportExportService(new ImportExportRepo());
 
-                var cardIconsRepo = new CardIconsRepo();
-                var cardIconService = new CardIconsService(cardIconsRepo);
+                var cardLookupsRepo = new CardLookupsRepo();
+                var cardLookupsService = new CardLookupsService(cardLookupsRepo);
 
                 var cardListRepo = new CardListRepository();
                 var filterDefaultsLogic = new FilterDefaultsLogic();
-                var cardListService = new CardListService(cardListRepo, filterDefaultsLogic, cardIconService);
+                var cardListService = new CardListService(cardListRepo, filterDefaultsLogic, cardLookupsService);
 
 
                 // Build view model off UI thread
