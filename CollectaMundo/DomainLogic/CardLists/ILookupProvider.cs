@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.ApplicationServices.Utilities
+﻿namespace CollectaMundo.DomainLogic.CardLists
 {
     public interface ILookupProvider<TKey, TValue>
     {

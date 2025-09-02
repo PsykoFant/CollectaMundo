@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.ApplicationServices.CardLists
+﻿namespace CollectaMundo.ApplicationServices.CardLists.Lookups
 {
     [Flags]
     public enum CardLookupsOptions

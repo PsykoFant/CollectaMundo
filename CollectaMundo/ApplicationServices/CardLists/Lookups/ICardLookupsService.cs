@@ -1,10 +1,10 @@
 ﻿using System.Data.SQLite;
 
-namespace CollectaMundo.ApplicationServices.CardLists
+namespace CollectaMundo.ApplicationServices.CardLists.Lookups
 {
     public interface ICardLookupsService
     {
-        /// Ensures data providers exist (no-op if already initialized).
+        // Ensures data providers exist (no-op if already initialized).
         Task InitializeAsync(SQLiteConnection conn, CardLookupsOptions opts);
     }
 }

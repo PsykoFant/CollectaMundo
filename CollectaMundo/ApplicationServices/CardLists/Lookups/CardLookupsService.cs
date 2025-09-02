@@ -1,9 +1,10 @@
-﻿using CollectaMundo.ApplicationServices.Utilities;
+﻿using CollectaMundo.ApplicationServices.CardLists.Lookups.Providers;
+using CollectaMundo.ApplicationServices.CardLists.Lookups.Sources;
 using CollectaMundo.Data.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using System.Data.SQLite;
 
-namespace CollectaMundo.ApplicationServices.CardLists
+namespace CollectaMundo.ApplicationServices.CardLists.Lookups
 {
 
     public sealed class CardLookupsService(ICardLookupsRepo repo) : ICardLookupsService

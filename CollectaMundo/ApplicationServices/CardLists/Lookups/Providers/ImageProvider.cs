@@ -1,11 +1,12 @@
-﻿using System.Collections.Concurrent;
+﻿using CollectaMundo.DomainLogic.CardLists;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace CollectaMundo.ApplicationServices.Utilities
+namespace CollectaMundo.ApplicationServices.CardLists.Lookups.Providers
 {
-    public sealed class ImageProvider<TKey>(IByteSource<TKey> bytes) : ILookupProvider<TKey, ImageSource> where TKey : notnull
+    internal sealed class ImageProvider<TKey>(IByteSource<TKey> bytes) : ILookupProvider<TKey, ImageSource> where TKey : notnull
     {
         private readonly IByteSource<TKey> _bytes = bytes;
         private readonly ConcurrentDictionary<TKey, ImageSource?> _cache = new();

@@ -109,16 +109,5 @@ namespace CollectaMundo.Data.CardLists
             return (T)value;
         }
 
-        // Utility to parse nullable decimal price fields
-        private static decimal? ParsePrice(string priceColumn, DbDataReader reader)
-        {
-            return decimal.TryParse(reader[priceColumn]?.ToString(), out decimal price) ? price : null;
-        }
-
-        // Utility to parse nullable DateTime fields
-        private static DateTime? ParseDate(string? dateRaw)
-        {
-            return DateTime.TryParse(dateRaw, out DateTime parsedDate) ? parsedDate : null;
-        }
     }
 }

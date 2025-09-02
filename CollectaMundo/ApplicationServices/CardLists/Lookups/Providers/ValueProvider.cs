@@ -1,7 +1,9 @@
-﻿namespace CollectaMundo.ApplicationServices.Utilities
+﻿using CollectaMundo.DomainLogic.CardLists;
+
+namespace CollectaMundo.ApplicationServices.CardLists.Lookups.Providers
 {
     // Wraps a dictionary for plain data (strings, DTOs, prices, etc.)
-    public sealed class ValueProvider<TKey, TValue>(IReadOnlyDictionary<TKey, TValue> map) : ILookupProvider<TKey, TValue> where TKey : notnull
+    internal sealed class ValueProvider<TKey, TValue>(IReadOnlyDictionary<TKey, TValue> map) : ILookupProvider<TKey, TValue> where TKey : notnull
     {
         private readonly IReadOnlyDictionary<TKey, TValue> _map = map;
 
