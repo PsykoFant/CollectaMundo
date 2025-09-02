@@ -25,7 +25,7 @@ namespace CollectaMundo.Tests
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(
                     keySelector: s => s!,
-                    elementSelector: s => new SetMeta
+                    elementSelector: s => new SetDto
                     {
                         Code = s!,            // use SetCode as both code and display name for tests
                         Name = s!,
@@ -33,7 +33,7 @@ namespace CollectaMundo.Tests
                     },
                     comparer: StringComparer.OrdinalIgnoreCase);
 
-            CardSet.SetMetaProvider = new ValueProvider<string, SetMeta>(dict);
+            CardSet.SetMetaProvider = new ValueProvider<string, SetDto>(dict);
         }
 
         public static List<CardSet> GetTestCards()

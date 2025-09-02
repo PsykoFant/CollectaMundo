@@ -34,8 +34,15 @@ namespace CollectaMundo.ApplicationServices.CardLists.Lookups
             // --- Sets (metadata to avoid DB join in view) ---
             if (opts.HasFlag(CardLookupsOptions.Sets))
             {
-                var setsDict = await _repo.ReadSetsAsync(conn);               // code -> SetMeta
-                CardSet.SetMetaProvider = new ValueProvider<string, SetMeta>(setsDict);
+                var setsDict = await _repo.ReadSetsAsync(conn);
+                CardSet.SetMetaProvider = new ValueProvider<string, SetDto>(setsDict);
+            }
+
+            // --- Sets (metadata to avoid DB join in view) ---
+            if (opts.HasFlag(CardLookupsOptions.Prices))
+            {
+                var pricesDict = await _repo.ReadPricesAsync(conn, "cardmarket"); // TODO: read from config
+                CardSet.PriceMetaProvider = new ValueProvider<string, PriceDto>(pricesDict);
             }
 
             lock (_initLock) _initialized = true;

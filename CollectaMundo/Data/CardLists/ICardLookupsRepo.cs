@@ -7,6 +7,7 @@ namespace CollectaMundo.Data.CardLists
     {
         Task<IReadOnlyDictionary<string, byte[]>> ReadManaCostImagesAsync(SQLiteConnection conn);
         Task<IReadOnlyDictionary<string, byte[]>> ReadSetIconImagesAsync(SQLiteConnection conn);
-        Task<IReadOnlyDictionary<string, SetMeta>> ReadSetsAsync(SQLiteConnection conn);
+        Task<IReadOnlyDictionary<string, SetDto>> ReadSetsAsync(SQLiteConnection conn);
+        Task<IReadOnlyDictionary<string, PriceDto>> ReadPricesAsync(SQLiteConnection conn, string retailer, string format = "paper");
     }
 }

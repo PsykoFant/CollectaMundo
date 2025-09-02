@@ -23,7 +23,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 var conn = uow.CurrentConnection;
 
                 // Ensure icon providers using the SAME connection (no parallel connection/txn)
-                await _lookupService.InitializeAsync(conn, CardLookupsOptions.Icons | CardLookupsOptions.Sets);
+                await _lookupService.InitializeAsync(conn, CardLookupsOptions.All);
 
                 // 1) AllCards cores
                 var cores = await _cardListRepo.ReadAllCardsCoresAsync(conn);

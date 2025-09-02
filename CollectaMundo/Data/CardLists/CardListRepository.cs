@@ -8,7 +8,56 @@ namespace CollectaMundo.Data.CardLists
     {
         public async Task<IReadOnlyList<CardCore>> ReadAllCardsCoresAsync(SQLiteConnection conn)
         {
-            using var cmd = new SQLiteCommand("SELECT * FROM view_allCards", conn);
+            const string query = $@"
+                        SELECT 
+                            c.name        AS Name,
+		                    c.setCode     AS SetCode,
+                            c.manaCost    AS ManaCost,
+                            c.types       AS Types,
+                            CAST(COALESCE(ccol.AggregatedColors, c.colors) AS TEXT) AS Colors,
+                            c.supertypes  AS SuperTypes,
+                            c.subtypes    AS SubTypes,
+                            c.type        AS Type,
+                            CAST(COALESCE(cg.AggregatedKeywords, c.keywords) AS TEXT) AS Keywords,
+                            c.text        AS RulesText,
+                            c.manaValue   AS ManaValue,
+                            c.language    AS Language,
+                            c.uuid        AS Uuid,
+                            c.finishes    AS Finishes,
+                            c.side        AS Side,
+                            c.rarity      AS Rarity
+                        FROM cards c
+                        LEFT JOIN (
+                            SELECT cc.Name, REPLACE(GROUP_CONCAT(DISTINCT cc.keywords), ',', ',') AS AggregatedKeywords
+                            FROM cards cc GROUP BY cc.Name
+                        ) cg ON c.Name = cg.Name
+                        LEFT JOIN (
+                            SELECT cc.Name, REPLACE(GROUP_CONCAT(DISTINCT cc.colors), ' ', '') AS AggregatedColors
+                            FROM cards cc GROUP BY cc.Name
+                        ) ccol ON c.Name = ccol.Name
+                        WHERE c.side IS NULL OR c.side = 'a'
+                        UNION ALL
+                        SELECT 
+                            t.name        AS Name,
+		                    t.setCode     AS SetCode,
+                            t.manaCost    AS ManaCost,
+                            t.types       AS Types,
+                            t.colors      AS Colors,
+                            t.supertypes  AS SuperTypes,
+                            t.subtypes    AS SubTypes,
+                            t.type        AS Type,
+                            t.keywords    AS Keywords,
+                            t.text        AS RulesText,
+                            NULL          AS ManaValue,
+                            t.language    AS Language,
+                            t.uuid        AS Uuid,
+                            t.finishes    AS Finishes,
+                            t.side        AS Side,
+                            NULL          AS Rarity
+                        FROM tokens t
+                        WHERE t.side IS NULL OR t.side = 'a'";
+
+            using var cmd = new SQLiteCommand(query, conn);
             var list = new List<CardCore>(capacity: 120000);
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -59,10 +108,6 @@ namespace CollectaMundo.Data.CardLists
                 Rarity = GetFieldValue<string>(r, "Rarity"),
                 Finishes = GetFieldValue<string>(r, "Finishes"),
                 ManaValue = GetFieldValue<double?>(r, "ManaValue") ?? 0,
-
-                NormalPrice = GetFieldValue<decimal?>(r, "NormalPrice"),
-                FoilPrice = GetFieldValue<decimal?>(r, "FoilPrice"),
-                EtchedPrice = GetFieldValue<decimal?>(r, "EtchedPrice"),
             };
         }
 

@@ -19,12 +19,5 @@
         public string? Finishes { get; init; }
         public double ManaValue { get; init; }
         public string? Language { get; init; }
-
-
-        // Prices
-        public decimal? NormalPrice { get; init; }
-        public decimal? FoilPrice { get; init; }
-        public decimal? EtchedPrice { get; init; }
     }
-
 }

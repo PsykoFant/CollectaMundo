@@ -60,6 +60,13 @@ TO DO
     - Ca. 4,1 sekunder
     - 460 mb
 
+    Stationær - prices refactored, deleted view (query instead)
+    - Ca. 3,6 sekunder
+    - 487 mb
+
+
+
+
 
     Table sizes
     select count(*) from cards: 105961

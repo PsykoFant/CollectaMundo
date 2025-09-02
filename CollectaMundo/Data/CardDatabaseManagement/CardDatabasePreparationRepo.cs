@@ -77,12 +77,6 @@ namespace CollectaMundo.Data.CardDatabaseManagement
         }
         public async Task CreateViewsAsync(SQLiteConnection conn, string retailer)
         {
-            string normalPriceColumn = $"p.{retailer}Normal AS NormalPrice";
-            string foilPriceColumn = $"p.{retailer}Foil AS FoilPrice";
-            string etchedPriceColumn = $"p.{retailer}Etched AS EtchedPrice";
-
-            const string dropAllCardsViewQuery = "DROP VIEW IF EXISTS view_allCards;";
-
             string createCardTokenViewQuery = @"
                 CREATE VIEW IF NOT EXISTS view_cardToken AS
                 SELECT 
@@ -174,84 +168,12 @@ namespace CollectaMundo.Data.CardDatabaseManagement
                 ) c ON cardsInDecks.name = c.name
                 LEFT JOIN uniqueManaCostImages u ON c.manaCost = u.uniqueManaCost;
             ";
-            string createAllCardsViewQuery = $@"
-CREATE VIEW view_allCards AS
-                    SELECT * FROM (
-                        SELECT 
-                            c.name        AS Name,
-		                    c.setCode     AS SetCode,
-                            c.manaCost    AS ManaCost,
-                            c.types       AS Types,
-                            CAST(COALESCE(ccol.AggregatedColors, c.colors) AS TEXT) AS Colors,
-                            c.supertypes  AS SuperTypes,
-                            c.subtypes    AS SubTypes,
-                            c.type        AS Type,
-                            CAST(COALESCE(cg.AggregatedKeywords, c.keywords) AS TEXT) AS Keywords,
-                            c.text        AS RulesText,
-                            c.manaValue   AS ManaValue,
-                            c.language    AS Language,
-                            c.uuid        AS Uuid,
-                            c.finishes    AS Finishes,
-                            c.side        AS Side,
-                            c.rarity      AS Rarity,
-                            {normalPriceColumn},
-                            {foilPriceColumn},
-                            {etchedPriceColumn}
-                        FROM cards c
-                        LEFT JOIN cardPrices p ON c.uuid = p.uuid
-                        LEFT JOIN (
-                            SELECT cc.Name, REPLACE(GROUP_CONCAT(DISTINCT cc.keywords), ',', ',') AS AggregatedKeywords
-                            FROM cards cc GROUP BY cc.Name
-                        ) cg ON c.Name = cg.Name
-                        LEFT JOIN (
-                            SELECT cc.Name, REPLACE(GROUP_CONCAT(DISTINCT cc.colors), ' ', '') AS AggregatedColors
-                            FROM cards cc GROUP BY cc.Name
-                        ) ccol ON c.Name = ccol.Name
-                        WHERE c.side IS NULL OR c.side = 'a'
-
-                        UNION ALL
-
-                        SELECT 
-                            t.name        AS Name,
-		                    t.setCode     AS SetCode,
-                            t.manaCost    AS ManaCost,
-                            t.types       AS Types,
-                            t.colors      AS Colors,
-                            t.supertypes  AS SuperTypes,
-                            t.subtypes    AS SubTypes,
-                            t.type        AS Type,
-                            t.keywords    AS Keywords,
-                            t.text        AS RulesText,
-                            NULL          AS ManaValue,
-                            t.language    AS Language,
-                            t.uuid        AS Uuid,
-                            t.finishes    AS Finishes,
-                            t.side        AS Side,
-                            NULL          AS Rarity,
-                            {normalPriceColumn},
-                            {foilPriceColumn},
-                            {etchedPriceColumn}
-                        FROM tokens t
-                        LEFT JOIN cardPrices p ON t.uuid = p.uuid
-                        WHERE t.side IS NULL OR t.side = 'a'
-                    )
-                    ORDER BY Types,
-                        CASE Colors
-                            WHEN 'W' THEN 1
-                            WHEN 'U' THEN 2
-                            WHEN 'B' THEN 3
-                            WHEN 'R' THEN 4
-                            WHEN 'G' THEN 5
-                            ELSE 7
-                        END";
 
             var viewSqls = new[]
             {
                 createCardTokenViewQuery,
                 createAllCardsForDecksViewQuery,
                 createCardsInDecksViewQuery,
-                dropAllCardsViewQuery,
-                createAllCardsViewQuery,
             };
 
             foreach (var sql in viewSqls)

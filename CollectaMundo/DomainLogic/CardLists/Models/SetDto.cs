@@ -1,6 +1,6 @@
 ﻿namespace CollectaMundo.DomainLogic.CardLists.Models
 {
-    public sealed class SetMeta
+    public sealed class SetDto
     {
         public string Code { get; init; } = "";
         public string Name { get; init; } = "";

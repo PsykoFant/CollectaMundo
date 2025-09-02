@@ -11,8 +11,8 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public static ILookupProvider<string, ImageSource>? SetIconImages { get; set; }
 
         // metadata
-        public static ILookupProvider<string, SetMeta>? SetMetaProvider { get; set; }
-
+        public static ILookupProvider<string, SetDto>? SetMetaProvider { get; set; }
+        public static ILookupProvider<string, PriceDto>? PriceMetaProvider { get; set; }
 
 
         // shared core payload
@@ -205,10 +205,11 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
 
         public decimal? CardInCollectionPrice { get; set; }
 
-        // ======== Prices (preserved) ========
-        public decimal? NormalPrice { get; set; }
-        public decimal? FoilPrice { get; set; }
-        public decimal? EtchedPrice { get; set; }
+        // ======== Prices ========
+        public decimal? NormalPrice => PriceMetaProvider?.Get(Uuid ?? string.Empty)?.NormalPrice;
+        public decimal? FoilPrice => PriceMetaProvider?.Get(Uuid ?? string.Empty)?.FoilPrice;
+        public decimal? EtchedPrice => PriceMetaProvider?.Get(Uuid ?? string.Empty)?.EtchedPrice;
+
 
         // ======== Deck field (preserved) ========
         public int Count { get; set; }
@@ -240,10 +241,6 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
                 Finishes = core.Finishes,
                 ManaValue = core.ManaValue,
                 Language = core.Language,
-
-                NormalPrice = core.NormalPrice,
-                FoilPrice = core.FoilPrice,
-                EtchedPrice = core.EtchedPrice
             };
 
             return c;

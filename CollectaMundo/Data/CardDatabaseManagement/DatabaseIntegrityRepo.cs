@@ -7,7 +7,7 @@ namespace CollectaMundo.Data.CardDatabaseManagement
         private static readonly List<string> RequiredObjects =
         [
             "cards", "myCollection", "uniqueManaCostImages", "uniqueManaSymbols",
-            "keyruneImages", "view_allCards", "view_cardToken"
+            "keyruneImages", "view_cardToken"
         ];
         public async Task<bool> HasExpectedTablesAndViewsAsync(SQLiteConnection conn)
         {
