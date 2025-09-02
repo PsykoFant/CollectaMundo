@@ -35,6 +35,14 @@ namespace CollectaMundo.ApplicationServices.Startup
             {
                 // Infrastructure
                 var settings = new JsonAppSettings();
+
+                Func<string> getRetailer = () => settings.PriceInfo.Retailer;
+                Action<string> setRetailerAndPersist = key =>
+                {
+                    // persist to appsettings.json
+                    settings.UpdatePriceInfo(updatedDate: null, retailer: key);
+                };
+
                 var RemoteLookups = new RemoteLookups();
                 var dbFactory = AppGlobals.DbFactory = new DbConnectionFactory(settings);
                 var downloadService = new DownloadService();
@@ -84,7 +92,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var importExportService = new ImportExportService(new ImportExportRepo());
 
                 var cardLookupsRepo = new CardLookupsRepo();
-                var cardLookupsService = new CardLookupsService(cardLookupsRepo);
+                var cardLookupsService = new CardLookupsService(cardLookupsRepo, getRetailer);
 
                 var cardListRepo = new CardListRepository();
                 var filterDefaultsLogic = new FilterDefaultsLogic();
@@ -92,7 +100,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
 
                 // Build view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, prepService, downloadService, statusVM, cardListService));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, prepService, downloadService, statusVM, cardListService, getRetailer, setRetailerAndPersist));
 
                 // Show initial UI
                 mainVM.FilterVM.NotifyFilterChanged();

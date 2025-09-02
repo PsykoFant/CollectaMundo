@@ -39,9 +39,15 @@ namespace CollectaMundo.Data.CardLists
             while (await rdr.ReadAsync())
             {
                 var key = rdr["setCode"]?.ToString();
-                if (string.IsNullOrWhiteSpace(key)) continue;
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
                 if (rdr["keyruneImage"] is byte[] blob && blob.Length > 0)
+                {
                     map[key] = blob;
+                }
             }
             return map;
         }
@@ -55,12 +61,17 @@ namespace CollectaMundo.Data.CardLists
             while (await rdr.ReadAsync())
             {
                 var code = rdr["code"]?.ToString();
-                if (string.IsNullOrWhiteSpace(code)) continue;
+                if (string.IsNullOrWhiteSpace(code))
+                {
+                    continue;
+                }
 
                 var name = rdr["name"]?.ToString() ?? "";
                 DateTime? release = null;
                 if (DateTime.TryParse(rdr["releaseDate"]?.ToString(), out var dt))
+                {
                     release = dt;
+                }
 
                 map[code] = new SetDto { Code = code, Name = name, ReleaseDate = release };
             }
@@ -70,14 +81,22 @@ namespace CollectaMundo.Data.CardLists
         public async Task<IReadOnlyDictionary<string, PriceDto>> ReadPricesAsync(SQLiteConnection conn, string retailer, string format = "paper")
         {
             ArgumentNullException.ThrowIfNull(conn);
-            if (string.IsNullOrWhiteSpace(retailer)) throw new ArgumentException("Retailer required.", nameof(retailer));
+            if (string.IsNullOrWhiteSpace(retailer))
+            {
+                throw new ArgumentException("Retailer required.", nameof(retailer));
+            }
 
             // 1) Normalize & validate retailer against your known set for the format
             var normalized = retailer.Trim().ToLowerInvariant();
 
-            if (!CardPriceDefinitions.RetailersByFormat.TryGetValue(format, out var allowed) || Array.IndexOf(allowed, normalized) < 0)
+            if (!CardPriceDefinitions.RetailersByFormat.TryGetValue(format, out var allowed)
+                || !allowed.ContainsKey(normalized))
             {
-                throw new ArgumentOutOfRangeException(nameof(retailer), retailer, $"Unsupported retailer for format '{format}'. Allowed: {string.Join(", ", allowed ?? [])}");
+                throw new ArgumentOutOfRangeException(
+                    nameof(retailer),
+                    retailer,
+                    $"Unsupported retailer for format '{format}'. Allowed: {string.Join(", ", allowed.Keys)}"
+                );
             }
 
             // 2) Build validated column identifiers and alias them
@@ -101,9 +120,16 @@ namespace CollectaMundo.Data.CardLists
 
             while (await rdr.ReadAsync())
             {
-                if (rdr.IsDBNull(ordUuid)) continue;
+                if (rdr.IsDBNull(ordUuid))
+                {
+                    continue;
+                }
+
                 var uuid = rdr.GetString(ordUuid);
-                if (string.IsNullOrWhiteSpace(uuid)) continue;
+                if (string.IsNullOrWhiteSpace(uuid))
+                {
+                    continue;
+                }
 
                 var dto = new PriceDto
                 {
@@ -120,7 +146,11 @@ namespace CollectaMundo.Data.CardLists
         }
         private static decimal? ReadNullableDecimal(DbDataReader rdr, int ordinal)
         {
-            if (ordinal < 0 || rdr.IsDBNull(ordinal)) return null;
+            if (ordinal < 0 || rdr.IsDBNull(ordinal))
+            {
+                return null;
+            }
+
             object v = rdr.GetValue(ordinal);
 
             return v switch

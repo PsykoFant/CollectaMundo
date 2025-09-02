@@ -67,7 +67,11 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             get
             {
                 var code = SetCode ?? Core?.SetCode;
-                if (string.IsNullOrWhiteSpace(code)) return null;
+                if (string.IsNullOrWhiteSpace(code))
+                {
+                    return null;
+                }
+
                 return SetMetaProvider?.Get(code)?.ReleaseDate;
             }
         }
@@ -77,7 +81,11 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             get
             {
                 var code = SetCode ?? Core?.SetCode;
-                if (string.IsNullOrWhiteSpace(code)) return null;
+                if (string.IsNullOrWhiteSpace(code))
+                {
+                    return null;
+                }
+
                 return SetMetaProvider?.Get(code)?.Name;
             }
         }
@@ -100,7 +108,9 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
                 {
                     var key = Core?.SetCode ?? SetCode;
                     if (!string.IsNullOrWhiteSpace(key))
+                    {
                         _keyRuneImage = SetIconImages?.Get(key);
+                    }
                 }
                 return _keyRuneImage;
             }
@@ -197,8 +207,6 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
                 {
                     _selectedFinish = value;
                     OnPropertyChanged(nameof(SelectedFinish));
-                    // Optional: recompute CardInCollectionPrice when finish changes
-                    RecomputeCollectionPrice();
                 }
             }
         }
@@ -258,9 +266,6 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             c.Language = language ?? core.Language;
             c.SelectedFinish = finish;
 
-            // Initial price compute based on finish (you can keep your existing logic if different)
-            c.RecomputeCollectionPrice();
-
             return c;
         }
         public static CardSet FromManaKey(string key)
@@ -270,17 +275,11 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
                 ManaCostRaw = key
             };
         }
-
-        // helper to recompute collection price on finish change 
-        private void RecomputeCollectionPrice()
+        public void RefreshPricesFromProvider()
         {
-            CardInCollectionPrice = SelectedFinish?.ToLowerInvariant() switch
-            {
-                "foil" => FoilPrice,
-                "etched" => EtchedPrice,
-                _ => NormalPrice
-            };
-            OnPropertyChanged(nameof(CardInCollectionPrice));
+            OnPropertyChanged(nameof(NormalPrice));
+            OnPropertyChanged(nameof(FoilPrice));
+            OnPropertyChanged(nameof(EtchedPrice));
         }
     }
 }

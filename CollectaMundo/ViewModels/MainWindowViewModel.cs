@@ -8,6 +8,7 @@ using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServi
 using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.CardPrices;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Presentation;
 using CollectaMundo.Utilities;
@@ -44,6 +45,10 @@ namespace CollectaMundo.ViewModels
 
         // Mana keys for ColorIcons
         private readonly string[] ManaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
+
+        // Retailer selection
+        private readonly Func<string> _getRetailer;
+        private readonly Action<string> _setRetailerAndPersist;
         #endregion
 
         #region child viewmodels (visible to XAML)
@@ -123,6 +128,17 @@ namespace CollectaMundo.ViewModels
             EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
         }
 
+        // Retailer options 
+        public sealed record RetailerOption(string Key, string Display);
+        public ObservableCollection<RetailerOption> Retailers { get; }
+
+        private RetailerOption? _selectedRetailer;
+        public RetailerOption? SelectedRetailer
+        {
+            get => _selectedRetailer;
+            set { if (_selectedRetailer != value) { _selectedRetailer = value; OnPropertyChanged(); } }
+        }
+
         #region Visibility properties
         public Visibility MiniLogoVisibility
         {
@@ -197,7 +213,17 @@ namespace CollectaMundo.ViewModels
 
         #region Constructor and factory method
         // Constructor
-        private MainWindowViewModel(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, StatusViewModel statusOverlayVM, ICardListService cardListService, IFacetUpdateScheduler? facetScheduler = null, IFacetUpdater? facetUpdater = null)
+        private MainWindowViewModel(
+            IFilteringService filteringService,
+            IEditCollectionService editService,
+            IImportExportService importExportService,
+            ICardDatabasePreparationService prepService,
+            StatusViewModel statusOverlayVM,
+            ICardListService cardListService,
+            Func<string> getRetailer,
+            Action<string> setRetailerAndPersist,
+            IFacetUpdateScheduler? facetScheduler = null,
+            IFacetUpdater? facetUpdater = null)
         {
             _statusOverlayVM = statusOverlayVM;
 
@@ -225,14 +251,37 @@ namespace CollectaMundo.ViewModels
             // filtering
             FilterVM = new FilterViewModel(_filteringService);
 
+            // retailers
+            _getRetailer = getRetailer;
+            _setRetailerAndPersist = setRetailerAndPersist;
+
+            // build retailer list (purely static definitions)
+            Retailers = new ObservableCollection<RetailerOption>(CardPriceDefinitions.RetailersByFormat["paper"].Select(kv => new RetailerOption(kv.Key, kv.Value)));
+
+            // pick initial from settings via delegate
+            var savedKey = _getRetailer();
+            SelectedRetailer = Retailers.FirstOrDefault(r => string.Equals(r.Key, savedKey, StringComparison.OrdinalIgnoreCase)) ?? Retailers.First();
+
             // event wiring
             SubscribeChildVmEvents();
             BuildCommands();
             MiniLogoVisibilityFlipper();
         }
-        public static async Task<MainWindowViewModel> CreateAsync(IFilteringService filteringService, IEditCollectionService editService, IImportExportService importExportService, ICardDatabasePreparationService prepService, IDownloadService downloadService, StatusViewModel statusVM, ICardListService cardListService, IFacetUpdateScheduler? facetScheduler = null, IFacetUpdater? facetUpdater = null, Action? onStartupComplete = null)
+        public static async Task<MainWindowViewModel> CreateAsync(
+            IFilteringService filteringService,
+            IEditCollectionService editService,
+            IImportExportService importExportService,
+            ICardDatabasePreparationService prepService,
+            IDownloadService downloadService,
+            StatusViewModel statusVM,
+            ICardListService cardListService,
+            Func<string> getRetailer,
+            Action<string> setRetailerAndPersist,
+            IFacetUpdateScheduler? facetScheduler = null,
+            IFacetUpdater? facetUpdater = null,
+            Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(filteringService, editService, importExportService, prepService, statusVM, cardListService, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(filteringService, editService, importExportService, prepService, statusVM, cardListService, getRetailer, setRetailerAndPersist, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };
@@ -255,6 +304,7 @@ namespace CollectaMundo.ViewModels
         public ICommand BackupCollectionCommand { get; private set; } = null!;
         public ICommand CheckForDbUpdatesCommand { get; private set; } = null!;
         public ICommand UpdateDBCommand { get; private set; } = null!;
+        public ICommand ChangeRetailerCommand { get; private set; } = null!;
         private void BuildCommands()
         {
             ShowSearchAndFilterCommand = new RelayCommand<object>(_ => { CurrentPage = Page.SearchAndFilter; });
@@ -265,7 +315,27 @@ namespace CollectaMundo.ViewModels
             BackupCollectionCommand = new RelayCommand<object>(async _ => await BackupCollectionAsync());
             CheckForDbUpdatesCommand = new RelayCommand<object>(async _ => await CheckForDbUpdatesAsync());
             UpdateDBCommand = new RelayCommand<object>(async _ => await UpdateDBAsync());
+
+            ChangeRetailerCommand = new RelayCommand<object>(async _ =>
+            {
+                if (SelectedRetailer is null)
+                {
+                    return;
+                }
+
+                _setRetailerAndPersist(SelectedRetailer.Key);
+
+                var sample = AllCardsVM.FilteredCards.FirstOrDefault();
+                Debug.WriteLine($"Before: {sample?.Uuid} -> {sample?.NormalPrice}");
+
+                await _cardListService.ReloadPriceLookupsAsync(SelectedRetailer.Key);
+
+                RefreshAllPrices();
+                Debug.WriteLine($"After: {sample?.Uuid} -> {sample?.NormalPrice}");
+            });
+
         }
+
         #endregion
 
         #region event wiring (subscribe/unsubscribe)
@@ -343,6 +413,21 @@ namespace CollectaMundo.ViewModels
             MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
             AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
         }
+
+        // When retailer is changed, refresh prices on all cards
+        void RefreshAllPrices()
+        {
+            foreach (var c in AllCardsVM.Cards)
+            {
+                c.RefreshPricesFromProvider();
+            }
+
+            foreach (var c in MyCollectionVM.Cards)
+            {
+                c.RefreshPricesFromProvider();
+            }
+        }
+
 
         #endregion
 

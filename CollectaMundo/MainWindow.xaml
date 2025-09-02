@@ -894,12 +894,17 @@
                     <Button x:Name="ImportCollectionButton" Content="The Import Wizard" HorizontalAlignment="Left" Margin="10,30,0,0" Width="180" Height="20" VerticalAlignment="Top" Click="ImportCollectionButton_Click"/>
                     <Button x:Name="UpdatePricesButton" Content="Update card prices" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,60,0,0" Width="180" Height="20"/>
                     <Label Content="Show prices from:" Margin="10,90,0,0"/>
-                    <ComboBox x:Name="RetailSelector" SelectionChanged="RetailSelector_SelectionChanged" Width="180" Height="20" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,120,0,0">
-                        <ComboBoxItem Content="Cardmarket" />
-                        <ComboBoxItem Content="Card Kingdom" />
-                        <ComboBoxItem Content="Cardsphere" />
-                        <ComboBoxItem Content="TCG Player" />
-                        <ComboBoxItem Content="Cardhoarder" />
+
+                    <ComboBox ItemsSource="{Binding Retailers}"
+                              SelectedItem="{Binding SelectedRetailer, Mode=TwoWay}"
+                              DisplayMemberPath="Display" SelectedValuePath="Key" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,120,0,0">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="SelectionChanged">
+                                <i:InvokeCommandAction
+                                    Command="{Binding ChangeRetailerCommand}"
+                                    CommandParameter="{Binding SelectedValue, RelativeSource={RelativeSource AncestorType=ComboBox}}" />
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
                     </ComboBox>
                     <Button Command="{Binding CheckForDbUpdatesCommand}"
                             Content="Check for card database updates"

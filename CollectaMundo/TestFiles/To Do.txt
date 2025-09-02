@@ -5,8 +5,20 @@ TO DO
 
 - Gå videre med update scenarie
     <side track>
-    - Farve ikoner
-    - Performance startup ... 
+
+
+     - Kolonneoverskrifter
+	    - Bug: Pris i my collection (husk change finish metode, bring tilbage)
+	    - Bug: Navn og set dropdown bredde
+     - Slet gammelt code-behind
+     - Review
+     - Test
+     - Sorter list
+     - Fjern coalesce (måske?)
+     - Optimer app
+     - Optimer db
+     - Tilbage til update/reload
+ 
     </side track>
 
 	- Reload (diff only)

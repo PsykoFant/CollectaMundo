@@ -67,6 +67,13 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 throw;
             }
         }
+        public async Task ReloadPriceLookupsAsync(string retailerKey)
+        {
+            await using var uow = new UnitOfWork();
+            await uow.BeginReadOnlyAsync();
+            await _lookupService.ReloadPricesAsync(uow.CurrentConnection, retailerKey);
+            await uow.CommitAsync();
+        }
     }
 }
 

@@ -3,7 +3,6 @@ using CollectaMundo.DomainLogic.DeckManagement.Models;
 using CollectaMundo.Presentation.Behaviors;
 using CollectaMundo.ViewModels;
 using System.ComponentModel;
-using System.Data;
 using System.Data.Common;
 using System.Data.SQLite;
 using System.Diagnostics;
@@ -132,45 +131,6 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"Error loading decks: {ex.Message}");
                 MessageBox.Show($"Error loading decks: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-        private async Task PopulateAllFormatsListAsync()
-        {
-            try
-            {
-                // Query to fetch column names, excluding 'uuid'
-                string query = @"PRAGMA table_info(cardLegalities);";
-
-                using SQLiteCommand command = new(query, DBAccess.connection);
-                using SQLiteDataReader reader = (SQLiteDataReader)await command.ExecuteReaderAsync();
-                List<string> columnNames = [];
-
-                while (await reader.ReadAsync())
-                {
-                    string columnName = reader["name"]?.ToString() ?? string.Empty;
-
-                    // Exclude 'uuid' column
-                    if (!string.Equals(columnName, "uuid", StringComparison.OrdinalIgnoreCase))
-                    {
-                        columnNames.Add(columnName);
-                    }
-                }
-
-                // Assign to allFormats as an array and change first letter to capital
-                allFormats = [.. columnNames];
-                allFormats = allFormats.Select(s => char.ToUpper(s[0]) + s.Substring(1)).ToList();
-                allFormats.Insert(0, "Casual/kitchen table");
-
-                // Update ComboBox ItemsSource on the UI thread
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    NewDeckFormatComboBox.ItemsSource = allFormats;
-                    ExistingDeckFormatComboBox.ItemsSource = allFormats;
-                });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error populating formats list: {ex.Message}");
             }
         }
 
@@ -596,23 +556,23 @@ namespace CollectaMundo
 
             await DBAccess.OpenConnectionAsync();
 
-            if (RetailSelector.SelectedItem is ComboBoxItem selectedItem)
-            {
-                // Determine the selected retailer based on the ComboBoxItem content
-                string retailer = selectedItem.Content switch
-                {
-                    "Cardmarket" => "cardmarket",
-                    "Card Kingdom" => "cardkingdom",
-                    "Cardsphere" => "cardsphere",
-                    "TCG Player" => "tcgplayer",
-                    "Cardhoarder" => "cardhoarder",
-                    _ => throw new NotImplementedException()
-                };
+            //if (RetailSelector.SelectedItem is ComboBoxItem selectedItem)
+            //{
+            //    // Determine the selected retailer based on the ComboBoxItem content
+            //    string retailer = selectedItem.Content switch
+            //    {
+            //        "Cardmarket" => "cardmarket",
+            //        "Card Kingdom" => "cardkingdom",
+            //        "Cardsphere" => "cardsphere",
+            //        "TCG Player" => "tcgplayer",
+            //        "Cardhoarder" => "cardhoarder",
+            //        _ => throw new NotImplementedException()
+            //    };
 
-                // Update the retailer in appsettings
-                //AppSettings.UpdatePriceInfo(null, retailer);
-                //appsettingsRetailer = retailer;
-            }
+            //    // Update the retailer in appsettings
+            //    //AppSettings.UpdatePriceInfo(null, retailer);
+            //    //appsettingsRetailer = retailer;
+            //}
 
             // Update the db views to load prices from the selected retailer
             await DownloadAndPrepDB.CreateViews();
