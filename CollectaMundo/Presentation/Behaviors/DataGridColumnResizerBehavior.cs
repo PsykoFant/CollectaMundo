@@ -1,185 +1,182 @@
 ﻿using CollectaMundo.ViewModels;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace CollectaMundo.Presentation.Behaviors
 {
     public static class DataGridColumnResizerBehavior
     {
-        public static readonly DependencyProperty EnableAutoResizeProperty = DependencyProperty.RegisterAttached("EnableAutoResize", typeof(bool), typeof(DataGridColumnResizerBehavior), new PropertyMetadata(false, OnEnableAutoResizeChanged));
-        public static void ForceUpdate(DataGrid dataGrid)
-        {
-            UpdateColumnWidths(dataGrid);
-        }
-        public static bool GetEnableAutoResize(DependencyObject obj) => (bool)obj.GetValue(EnableAutoResizeProperty);
+        // =============== Attached properties ===============
+
+        public static readonly DependencyProperty EnableAutoResizeProperty =
+            DependencyProperty.RegisterAttached(
+                "EnableAutoResize",
+                typeof(bool),
+                typeof(DataGridColumnResizerBehavior),
+                new PropertyMetadata(false, OnEnableAutoResizeChanged));
+
         public static void SetEnableAutoResize(DependencyObject obj, bool value) => obj.SetValue(EnableAutoResizeProperty, value);
+        public static bool GetEnableAutoResize(DependencyObject obj) => (bool)obj.GetValue(EnableAutoResizeProperty);
 
         public static readonly DependencyProperty DataGridIndexProperty = DependencyProperty.RegisterAttached("DataGridIndex", typeof(int), typeof(DataGridColumnResizerBehavior), new PropertyMetadata(-1));
-        public static int GetDataGridIndex(DependencyObject obj) => (int)obj.GetValue(DataGridIndexProperty);
         public static void SetDataGridIndex(DependencyObject obj, int value) => obj.SetValue(DataGridIndexProperty, value);
+        public static int GetDataGridIndex(DependencyObject obj) => (int)obj.GetValue(DataGridIndexProperty);
+
+
+        // External “poke” from VM to force recompute (e.g., when page becomes visible)
+        public static readonly DependencyProperty UpdateOnTokenProperty = DependencyProperty.RegisterAttached("UpdateOnToken", typeof(int), typeof(DataGridColumnResizerBehavior), new PropertyMetadata(0, OnUpdateOnTokenChanged));
+        public static void SetUpdateOnToken(DependencyObject d, int value) => d.SetValue(UpdateOnTokenProperty, value);
+        public static int GetUpdateOnToken(DependencyObject d) => (int)d.GetValue(UpdateOnTokenProperty);
+
+
+        // =============== Wiring ===============
         private static void OnEnableAutoResizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is DataGrid dataGrid)
+            if (d is not DataGrid dg) return;
+
+            var enable = (bool)e.NewValue;
+            if (enable)
             {
-                bool enable = (bool)e.NewValue;
-                if (enable)
+                dg.Loaded += DataGrid_Loaded;
+                dg.SizeChanged += OnDataGridSizeChanged;
+                dg.IsVisibleChanged += OnIsVisibleChanged;
+
+                // If already loaded & visible, do an initial render-late update
+                if (dg.IsLoaded && dg.IsVisible && PresentationSource.FromVisual(dg) != null)
                 {
-                    dataGrid.SizeChanged += OnDataGridSizeChanged;
-                    // If the DataGrid is not loaded, subscribe to Loaded event.
-                    if (dataGrid.IsLoaded)
-                    {
-                        UpdateColumnWidths(dataGrid);
-                    }
-                    else
-                    {
-                        dataGrid.Loaded += DataGrid_Loaded;
-                    }
-                }
-                else
-                {
-                    dataGrid.SizeChanged -= OnDataGridSizeChanged;
-                    dataGrid.Loaded -= DataGrid_Loaded;
+                    BeginRenderUpdate(dg);
                 }
             }
-        }
-        private static void DataGrid_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (sender is DataGrid dataGrid)
+            else
             {
-                dataGrid.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    UpdateColumnWidths(dataGrid);
-                }), System.Windows.Threading.DispatcherPriority.Loaded);
-                dataGrid.Loaded -= DataGrid_Loaded;
+                dg.Loaded -= DataGrid_Loaded;
+                dg.SizeChanged -= OnDataGridSizeChanged;
+                dg.IsVisibleChanged -= OnIsVisibleChanged;
+            }
+        }
+        private static void DataGrid_Loaded(object? sender, RoutedEventArgs e)
+        {
+            if (sender is not DataGrid dg) return;
+            BeginRenderUpdate(dg);
+        }
+        private static void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (sender is not DataGrid dg) return;
+            if (dg.IsVisible && PresentationSource.FromVisual(dg) != null)
+            {
+                // When the grid first becomes visible, do a render-priority update
+                BeginRenderUpdate(dg);
             }
         }
         private static void OnDataGridSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (sender is not DataGrid dataGrid)
-                return;
-            UpdateColumnWidths(dataGrid);
+            if (sender is not DataGrid dg) return;
+            if (!dg.IsLoaded || !dg.IsVisible) return;
+            if (PresentationSource.FromVisual(dg) is null) return;
+
+            // Use a short throttle to coalesce layout noise during resize
+            ThrottledUpdate(dg, reason: "SizeChanged");
         }
-        private static void UpdateColumnWidths(DataGrid dataGrid)
-        {
-            // Check if running in design mode.
-            if (DesignerProperties.GetIsInDesignMode(dataGrid))
-                return;
-
-            int dataGridIndex = GetDataGridIndex(dataGrid);
-            if (dataGrid.DataContext is not MainWindowViewModel vm)
-                return;
-            var list = vm.ColumnWidths;
-            if (dataGridIndex < 0 || dataGridIndex >= list.Count)
-                return;
-
-            List<int[]> paddingsList = new List<int[]>
-            {
-                new int[] {65, 50}, // For AllCardsDataGrid (index 0)
-                new int[] {65, 50}, // For MyCollectionDataGrid (index 1)
-                new int[] {65}      // For AllCardsForDecksDataGrid (index 2)
-            };
-
-            if (dataGridIndex >= paddingsList.Count)
-                return;
-
-            int[] paddings = paddingsList[dataGridIndex];
-            for (int colIndex = 0; colIndex < paddings.Length; colIndex++)
-            {
-                if (colIndex >= list[dataGridIndex].Count)
-                    continue;
-
-                double currentWidth = dataGrid.Columns[colIndex].ActualWidth;
-                double newWidth = currentWidth - paddings[colIndex];
-
-                if (newWidth > 0 && Math.Abs(list[dataGridIndex][colIndex] - newWidth) > 0.5)
-                {
-                    list[dataGridIndex][colIndex] = newWidth;
-                }
-            }
-        }
-
-        public static readonly DependencyProperty UpdateOnTokenProperty =
-        DependencyProperty.RegisterAttached(
-            "UpdateOnToken",
-            typeof(int),
-            typeof(DataGridColumnResizerBehavior),
-            new PropertyMetadata(0, OnUpdateOnTokenChanged));
-
-        public static void SetUpdateOnToken(DependencyObject d, int value) =>
-            d.SetValue(UpdateOnTokenProperty, value);
-
-        public static int GetUpdateOnToken(DependencyObject d) =>
-            (int)d.GetValue(UpdateOnTokenProperty);
-
         private static void OnUpdateOnTokenChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not DataGrid dg) return;
+            if (!dg.IsLoaded || !dg.IsVisible) return;
+            if (PresentationSource.FromVisual(dg) is null) return;
 
-            // If not yet loaded, retry once when Loaded fires
-            if (!dg.IsLoaded)
-            {
-                RoutedEventHandler? loaded = null;
-                loaded = (_, __) =>
-                {
-                    dg.Loaded -= loaded;
-                    KickWhenReady(dg);
-                };
-                dg.Loaded += loaded;
-                return;
-            }
-
-            // If not visible, retry when it becomes visible
-            if (!dg.IsVisible)
-            {
-                DependencyPropertyChangedEventHandler? vis = null;
-                vis = (_, __) =>
-                {
-                    if (!dg.IsVisible) return;
-                    dg.IsVisibleChanged -= vis;
-                    KickWhenReady(dg);
-                };
-                dg.IsVisibleChanged += vis;
-                return;
-            }
-
-            KickWhenReady(dg);
+            BeginRenderUpdate(dg);
         }
 
-        private static void KickWhenReady(DataGrid dg)
+        // =============== Update helpers ===============
+
+        private static void BeginRenderUpdate(DataGrid dg)
         {
-            // If there is no visual source yet, defer
-            if (PresentationSource.FromVisual(dg) is null)
-            {
-                dg.Dispatcher.BeginInvoke(
-                    new Action(() => KickWhenReady(dg)),
-                    System.Windows.Threading.DispatcherPriority.Loaded);
-                return;
-            }
-
-            // If size is still 0 (first show after Collapsed), wait for first non-zero size
-            if (dg.ActualWidth <= 0 || dg.ActualHeight <= 0)
-            {
-                SizeChangedEventHandler? sz = null;
-                sz = (_, __) =>
-                {
-                    if (dg.ActualWidth <= 0 || dg.ActualHeight <= 0) return;
-                    dg.SizeChanged -= sz;
-                    KickAtRender(dg);
-                };
-                dg.SizeChanged += sz;
-                return;
-            }
-
-            KickAtRender(dg);
+            dg.Dispatcher.BeginInvoke((Action)(() => UpdateColumnWidths(dg)), DispatcherPriority.Render);
         }
-
-        private static void KickAtRender(DataGrid dg)
+        private static void ThrottledUpdate(DataGrid dg, string reason)
         {
-            dg.Dispatcher.BeginInvoke(
-                new Action(() => UpdateColumnWidths(dg)),
-                System.Windows.Threading.DispatcherPriority.Render);
-        }
+            if (dg.Tag is not ConditionalWeakTable<DataGrid, DispatcherTimer> table)
+            {
+                table = [];
+                dg.Tag = table;
+            }
 
+            if (!table.TryGetValue(dg, out var timer))
+            {
+                timer = new DispatcherTimer(DispatcherPriority.Background)
+                {
+                    Interval = TimeSpan.FromMilliseconds(80)
+                };
+                timer.Tick += (_, _) =>
+                {
+                    timer.Stop();
+                    BeginRenderUpdate(dg);
+                };
+                table.Add(dg, timer);
+            }
+
+            timer.Stop();
+            timer.Start();
+        }
+        private static void UpdateColumnWidths(DataGrid dataGrid)
+        {
+            try
+            {
+                if (DesignerProperties.GetIsInDesignMode(dataGrid)) return;
+                if (!dataGrid.IsLoaded || !dataGrid.IsVisible) return;
+                if (PresentationSource.FromVisual(dataGrid) is null) return;
+                if (dataGrid.Columns.Count == 0) return;
+
+                int index = GetDataGridIndex(dataGrid);
+                if (index < 0)
+                {
+                    return;
+                }
+
+                if (dataGrid.DataContext is not MainWindowViewModel vm)
+                {
+                    return;
+                }
+
+                var list = vm.ColumnWidths;
+                if (index >= list.Count)
+                {
+                    return;
+                }
+
+                // Per-grid padding model (index-aligned)
+                var paddingsList = new[]
+                {
+                    new[] { 65, 50 }, // grid 0 (AllCards)
+                    new[] { 65, 50 }, // grid 1 (MyCollection)
+                    new[] { 65 }      // grid 2 (Decks)
+                };
+                if (index >= paddingsList.Length) return;
+
+                var paddings = paddingsList[index];
+
+                // Defensive bound checks against columns & VM-tracked column-count
+                int cols = Math.Min(Math.Min(paddings.Length, dataGrid.Columns.Count), list[index].Count);
+
+                for (int col = 0; col < cols; col++)
+                {
+                    double actual = dataGrid.Columns[col].ActualWidth;
+                    double desired = Math.Max(0, actual - paddings[col]);
+
+                    // Update only if changed meaningfully (avoid chatter)
+                    if (Math.Abs(list[index][col] - desired) > 0.5)
+                    {
+                        list[index][col] = desired;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"{dataGrid} update ERROR: {ex.Message}");
+            }
+        }
     }
 }

@@ -64,6 +64,7 @@ namespace CollectaMundo.ViewModels
 
         #region ui state
         public Action? OnStartupComplete { get; set; }
+
         // What page are we on?
         private Page _currentPage = Page.SearchAndFilter;
         public Page CurrentPage
@@ -102,6 +103,7 @@ namespace CollectaMundo.ViewModels
             }
         }
 
+        // Column resize
         private int _myCollectionResizeToken;
         public int MyCollectionResizeToken
         {
@@ -129,9 +131,6 @@ namespace CollectaMundo.ViewModels
             AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
             EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
         }
-
-        // Column resize
-
 
         // Retailer options 
         public sealed record RetailerOption(string Key, string Display);
@@ -166,7 +165,7 @@ namespace CollectaMundo.ViewModels
             private set { if (_etchedPriceHeader != value) { _etchedPriceHeader = value; OnPropertyChanged(); } }
         }
 
-        // simple mapping; extend if you add more retailers
+        // simple mapping
         private static string GetCurrencyForRetailer(string key) => string.Equals(key, "cardmarket", StringComparison.OrdinalIgnoreCase) ? "EUR" : "USD";
         private void UpdatePriceHeaders()
         {

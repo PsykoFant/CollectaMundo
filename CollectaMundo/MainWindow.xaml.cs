@@ -1,6 +1,5 @@
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.DeckManagement.Models;
-using CollectaMundo.Presentation.Behaviors;
 using CollectaMundo.ViewModels;
 using System.ComponentModel;
 using System.Data.Common;
@@ -264,7 +263,7 @@ namespace CollectaMundo
 
                 _ = MyCollectionDataGrid.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    DataGridColumnResizerBehavior.ForceUpdate(MyCollectionDataGrid);
+                    //DataGridColumnResizerBehavior.ForceUpdate(MyCollectionDataGrid);
                 }), System.Windows.Threading.DispatcherPriority.Loaded);
 
                 GridDecksOverview.Visibility = Visibility.Collapsed;
