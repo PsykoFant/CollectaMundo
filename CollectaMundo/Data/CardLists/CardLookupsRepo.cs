@@ -89,13 +89,12 @@ namespace CollectaMundo.Data.CardLists
             // 1) Normalize & validate retailer against your known set for the format
             var normalized = retailer.Trim().ToLowerInvariant();
 
-            if (!CardPriceDefinitions.RetailersByFormat.TryGetValue(format, out var allowed)
-                || !allowed.ContainsKey(normalized))
+            if (!CardPriceDefinitions.RetailersByFormat.TryGetValue(format, out var allowed))
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(retailer),
                     retailer,
-                    $"Unsupported retailer for format '{format}'. Allowed: {string.Join(", ", allowed.Keys)}"
+                    $"Unsupported format '{format}'. Known formats: {string.Join(", ", CardPriceDefinitions.RetailersByFormat.Keys)}"
                 );
             }
 

@@ -1115,8 +1115,9 @@
                                   behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding AddCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
                         <i:Interaction.Triggers>
                             <i:EventTrigger EventName="MouseDoubleClick">
-                                <i:InvokeCommandAction Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
-                                                   CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
+                                <i:InvokeCommandAction 
+                                    Command="{Binding AddCardsVM.AddSelectedCardsCommand}"
+                                    CommandParameter="{Binding SelectedItems, ElementName=AllCardsDataGrid}" />
                             </i:EventTrigger>
                         </i:Interaction.Triggers>
                         <DataGrid.Columns>
@@ -1216,24 +1217,39 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Price" Width="*" SortMemberPath="NormalPrice">
+                            <DataGridTemplateColumn SortMemberPath="NormalPrice" Width="*">
+                                <DataGridTemplateColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DataContext.Main.PriceHeader, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.HeaderTemplate>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding NormalPrice}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding NormalPrice}" TextWrapping="Wrap"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Foil Price" Width="*" SortMemberPath="FoilPrice">
+                            <DataGridTemplateColumn SortMemberPath="FoilPrice" Width="*">
+                                <DataGridTemplateColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DataContext.Main.FoilPriceHeader, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.HeaderTemplate>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding FoilPrice}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding FoilPrice}" TextWrapping="Wrap"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Etched Price" Width="*" SortMemberPath="EtchedPrice">
+                            <DataGridTemplateColumn SortMemberPath="EtchedPrice" Width="*">
+                                <DataGridTemplateColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DataContext.Main.EtchedPriceHeader, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.HeaderTemplate>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding EtchedPrice}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding EtchedPrice}" TextWrapping="Wrap"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -1472,7 +1488,8 @@
                               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                               behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
                               behaviors:DataGridColumnResizerBehavior.DataGridIndex="1"
-                              behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding EditCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
+                              behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding EditCardsVM.ClearSelectionTrigger, Mode=TwoWay}"
+                              behaviors:DataGridColumnResizerBehavior.KickOnVisible="True">
                                 <i:Interaction.Triggers>
                                     <i:EventTrigger EventName="MouseDoubleClick">
                                         <i:InvokeCommandAction Command="{Binding EditCardsVM.EditSelectedCardsCommand}"

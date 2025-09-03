@@ -23,7 +23,7 @@ using static CollectaMundo.DomainLogic.EditCollection.Models.CardChangeEventArgs
 namespace CollectaMundo.ViewModels
 {
     #endregion
-    public sealed class MainWindowViewModel : INotifyPropertyChanged
+    public class MainWindowViewModel : INotifyPropertyChanged
     {
         #region class: MainWindowViewModel (fields, ctor, factory)
 
@@ -137,6 +137,40 @@ namespace CollectaMundo.ViewModels
         {
             get => _selectedRetailer;
             set { if (_selectedRetailer != value) { _selectedRetailer = value; OnPropertyChanged(); } }
+        }
+
+        // Price column headers (dynamic based on retailer)
+        private string _priceHeader = "Price";
+        public string PriceHeader
+        {
+            get => _priceHeader;
+            private set { if (_priceHeader != value) { _priceHeader = value; OnPropertyChanged(); } }
+        }
+
+        private string _foilPriceHeader = "Foil Price";
+        public string FoilPriceHeader
+        {
+            get => _foilPriceHeader;
+            private set { if (_foilPriceHeader != value) { _foilPriceHeader = value; OnPropertyChanged(); } }
+        }
+
+        private string _etchedPriceHeader = "Etched Price";
+        public string EtchedPriceHeader
+        {
+            get => _etchedPriceHeader;
+            private set { if (_etchedPriceHeader != value) { _etchedPriceHeader = value; OnPropertyChanged(); } }
+        }
+
+        // simple mapping; extend if you add more retailers
+        private static string GetCurrencyForRetailer(string key) => string.Equals(key, "cardmarket", StringComparison.OrdinalIgnoreCase) ? "EUR" : "USD";
+
+        private void UpdatePriceHeaders()
+        {
+            var key = SelectedRetailer?.Key ?? "cardmarket";
+            var currency = GetCurrencyForRetailer(key);
+            PriceHeader = $"Price ({currency})";
+            FoilPriceHeader = $"Foil Price ({currency})";
+            EtchedPriceHeader = $"Etched Price ({currency})";
         }
 
         #region Visibility properties
@@ -266,6 +300,7 @@ namespace CollectaMundo.ViewModels
             SubscribeChildVmEvents();
             BuildCommands();
             MiniLogoVisibilityFlipper();
+            UpdatePriceHeaders();
         }
         public static async Task<MainWindowViewModel> CreateAsync(
             IFilteringService filteringService,
@@ -316,24 +351,7 @@ namespace CollectaMundo.ViewModels
             CheckForDbUpdatesCommand = new RelayCommand<object>(async _ => await CheckForDbUpdatesAsync());
             UpdateDBCommand = new RelayCommand<object>(async _ => await UpdateDBAsync());
 
-            ChangeRetailerCommand = new RelayCommand<object>(async _ =>
-            {
-                if (SelectedRetailer is null)
-                {
-                    return;
-                }
-
-                _setRetailerAndPersist(SelectedRetailer.Key);
-
-                var sample = AllCardsVM.FilteredCards.FirstOrDefault();
-                Debug.WriteLine($"Before: {sample?.Uuid} -> {sample?.NormalPrice}");
-
-                await _cardListService.ReloadPriceLookupsAsync(SelectedRetailer.Key);
-
-                RefreshAllPrices();
-                Debug.WriteLine($"After: {sample?.Uuid} -> {sample?.NormalPrice}");
-            });
-
+            ChangeRetailerCommand = new RelayCommand<object>(async _ => await ChangeRetailerAsync());
         }
 
         #endregion
@@ -446,8 +464,7 @@ namespace CollectaMundo.ViewModels
         }
         #endregion
 
-        #region status overlay / maintenance tasks (backup, update db)
-        // Command methods
+        #region Command methods - status overlay / maintenance tasks (backup, update db)
         private async Task BackupCollectionAsync()
         {
             var result = await _importExportService.ExportCollectionAsync();
@@ -515,6 +532,18 @@ namespace CollectaMundo.ViewModels
             IsTopMenuEnabled = true; // Re-enable top menu after update
             SideMenuUtilsVisibility = Visibility.Visible; // Show utilities menu again
         }
+        private async Task ChangeRetailerAsync()
+        {
+            if (SelectedRetailer is null)
+            {
+                return;
+            }
+            _setRetailerAndPersist(SelectedRetailer.Key);
+            await _cardListService.ReloadPriceLookupsAsync(SelectedRetailer.Key);
+            RefreshAllPrices();
+            UpdatePriceHeaders();
+        }
+
         #endregion
 
         #region disposal

@@ -98,5 +98,52 @@ namespace CollectaMundo.Presentation.Behaviors
                 }
             }
         }
+
+        // Kick once when the DataGrid becomes visible
+        public static readonly DependencyProperty KickOnVisibleProperty =
+            DependencyProperty.RegisterAttached(
+                "KickOnVisible",
+                typeof(bool),
+                typeof(DataGridColumnResizerBehavior),
+                new PropertyMetadata(false, OnKickOnVisibleChanged));
+
+        public static void SetKickOnVisible(DependencyObject d, bool value) =>
+            d.SetValue(KickOnVisibleProperty, value);
+
+        public static bool GetKickOnVisible(DependencyObject d) =>
+            (bool)d.GetValue(KickOnVisibleProperty);
+
+        private static void OnKickOnVisibleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not DataGrid dg) return;
+
+            if ((bool)e.NewValue)
+            {
+                // subscribe
+                dg.IsVisibleChanged += Dg_IsVisibleChanged;
+            }
+            else
+            {
+                // unsubscribe
+                dg.IsVisibleChanged -= Dg_IsVisibleChanged;
+            }
+        }
+
+        private static void Dg_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            var dg = sender as DataGrid;
+            if (dg is null) return;
+
+            if (dg.IsVisible)
+            {
+                // Run after layout so ActualWidth is valid
+                dg.Dispatcher.BeginInvoke(
+                    new Action(() => UpdateColumnWidths(dg)),
+                    System.Windows.Threading.DispatcherPriority.Render);
+
+                // One-shot: remove the handler to avoid repeated kicks
+                dg.IsVisibleChanged -= Dg_IsVisibleChanged;
+            }
+        }
     }
 }
