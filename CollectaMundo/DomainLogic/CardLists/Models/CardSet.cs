@@ -207,13 +207,18 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
                 {
                     _selectedFinish = value;
                     OnPropertyChanged(nameof(SelectedFinish));
+                    // Recompute CardInCollectionPrice when finish changes
+                    RecomputeCollectionPrice();
                 }
             }
         }
 
-        public decimal? CardInCollectionPrice { get; set; }
-
         // ======== Prices ========
+        public decimal? CardInCollectionPrice =>
+            (SelectedFinish ?? "").Equals("foil", StringComparison.OrdinalIgnoreCase) ? FoilPrice :
+            (SelectedFinish ?? "").Equals("etched", StringComparison.OrdinalIgnoreCase) ? EtchedPrice :
+            NormalPrice;
+
         public decimal? NormalPrice => PriceMetaProvider?.Get(Uuid ?? string.Empty)?.NormalPrice;
         public decimal? FoilPrice => PriceMetaProvider?.Get(Uuid ?? string.Empty)?.FoilPrice;
         public decimal? EtchedPrice => PriceMetaProvider?.Get(Uuid ?? string.Empty)?.EtchedPrice;
@@ -266,6 +271,9 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             c.Language = language ?? core.Language;
             c.SelectedFinish = finish;
 
+            // Initial price compute based on finish
+            c.RecomputeCollectionPrice();
+
             return c;
         }
         public static CardSet FromManaKey(string key)
@@ -280,6 +288,13 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             OnPropertyChanged(nameof(NormalPrice));
             OnPropertyChanged(nameof(FoilPrice));
             OnPropertyChanged(nameof(EtchedPrice));
+            RecomputeCollectionPrice();
+        }
+
+        // helper to recompute collection price on finish change 
+        public void RecomputeCollectionPrice()
+        {
+            OnPropertyChanged(nameof(CardInCollectionPrice));
         }
     }
 }

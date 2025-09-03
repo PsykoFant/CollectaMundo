@@ -21,6 +21,9 @@ namespace CollectaMundo.DomainLogic.EditCollection
                 clone.SelectedCondition = selectedCard.SelectedCondition!;
                 clone.SelectedFinish = selectedCard.SelectedFinish!;
                 clone.Language = selectedCard.Language!;
+
+                clone.RecomputeCollectionPrice(); // raises PropertyChanged for CardInCollectionPrice
+
             }
             else
             {
@@ -129,17 +132,17 @@ namespace CollectaMundo.DomainLogic.EditCollection
             }
 
             // carry over view-only fields if needed
-            clone.CardInCollectionPrice = src.CardInCollectionPrice;
             clone.SelectedFinish = src.SelectedFinish;
             clone.SelectedCondition = src.SelectedCondition;
             clone.Count = src.Count;
 
             // Attach lookup lists (never null)
-            clone.AvailableFinishes = finishes ?? new List<string>();
+            clone.AvailableFinishes = finishes ?? [];
 
             // Distinct, English-first normalization; include src.Language as secondary if present
-            clone.OtherLanguages = NormalizeLanguages(languages, src.Language) ?? new List<string>();
+            clone.OtherLanguages = NormalizeLanguages(languages, src.Language) ?? [];
 
+            clone.RecomputeCollectionPrice();
             return clone;
         }
 

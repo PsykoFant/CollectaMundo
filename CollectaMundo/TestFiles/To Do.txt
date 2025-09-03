@@ -8,7 +8,6 @@ TO DO
 
 
      - Kolonneoverskrifter
-	    - Bug: Pris i my collection (husk change finish metode, bring tilbage)
 	    - Bug: Navn og set dropdown bredde
      - Slet gammelt code-behind
      - Review
