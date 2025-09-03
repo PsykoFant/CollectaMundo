@@ -13,7 +13,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
         private readonly ICardListRepository _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterLogic = filterLogic;
         private readonly ICardLookupsService _lookupService = lookupService;
-        public async Task InitializeAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
+        public async Task InitializeCardListsAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork();
             try
@@ -23,7 +23,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 var conn = uow.CurrentConnection;
 
                 // Ensure icon providers using the SAME connection (no parallel connection/txn)
-                await _lookupService.InitializeAsync(conn, CardLookupsOptions.All);
+                await _lookupService.InitializeLookupMapsAsync(conn, CardLookupsOptions.All);
 
                 // 1) AllCards cores
                 var cores = await _cardListRepo.ReadAllCardsCoresAsync(conn);

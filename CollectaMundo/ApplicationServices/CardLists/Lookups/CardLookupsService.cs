@@ -16,7 +16,7 @@ namespace CollectaMundo.ApplicationServices.CardLists.Lookups
         // NEW: delegate to read the current retailer key (e.g., "cardmarket")
         private readonly Func<string> _getRetailer = getRetailer;
 
-        public async Task InitializeAsync(SQLiteConnection conn, CardLookupsOptions opts)
+        public async Task InitializeLookupMapsAsync(SQLiteConnection conn, CardLookupsOptions opts)
         {
             if (_initialized)
             {

@@ -5,9 +5,6 @@ TO DO
 
 - Gå videre med update scenarie
     <side track>
-
-     - Review
-     - Test
      - Sorter list
      - Fjern coalesce (måske?)
      - Optimer app

@@ -36,12 +36,12 @@ namespace CollectaMundo.ApplicationServices.Startup
                 // Infrastructure
                 var settings = new JsonAppSettings();
 
-                Func<string> getRetailer = () => settings.PriceInfo.Retailer;
-                Action<string> setRetailerAndPersist = key =>
+                string getRetailer() => settings.PriceInfo.Retailer;
+                void setRetailerAndPersist(string key)
                 {
                     // persist to appsettings.json
                     settings.UpdatePriceInfo(updatedDate: null, retailer: key);
-                };
+                }
 
                 var RemoteLookups = new RemoteLookups();
                 var dbFactory = AppGlobals.DbFactory = new DbConnectionFactory(settings);

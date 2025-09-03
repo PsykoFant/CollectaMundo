@@ -458,7 +458,7 @@ namespace CollectaMundo.ViewModels
             var sw = Stopwatch.StartNew();
             Debug.WriteLine("[ReloadAllCardListsAsync] Initializing card lists");
 
-            await _cardListService.InitializeAsync(AllCardsVM, MyCollectionVM, FilterVM.Filters, FilterVM);
+            await _cardListService.InitializeCardListsAsync(AllCardsVM, MyCollectionVM, FilterVM.Filters, FilterVM);
 
             FilterVM.NotifyFilterChanged();
 
