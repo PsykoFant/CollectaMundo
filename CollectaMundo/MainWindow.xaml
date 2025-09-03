@@ -1311,7 +1311,7 @@
                     </DataGrid>
                 </Grid>
                 <!-- My Collection -->
-                <Grid Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}" d:IsHidden="True">
+                <Grid Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">
                     <Label Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                     <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" Visibility="{Binding EditCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}">
                         <Label.Content>
@@ -1487,9 +1487,9 @@
                               HorizontalAlignment="Stretch"
                               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                               behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
-                              behaviors:DataGridColumnResizerBehavior.DataGridIndex="1"
-                              behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding EditCardsVM.ClearSelectionTrigger, Mode=TwoWay}"
-                              behaviors:DataGridColumnResizerBehavior.KickOnVisible="True">
+                              behaviors:DataGridColumnResizerBehavior.DataGridIndex="1"                              
+                              behaviors:DataGridColumnResizerBehavior.UpdateOnToken="{Binding DataContext.Main.MyCollectionResizeToken, RelativeSource={RelativeSource AncestorType=Window}}"
+                              behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding EditCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
                                 <i:Interaction.Triggers>
                                     <i:EventTrigger EventName="MouseDoubleClick">
                                         <i:InvokeCommandAction Command="{Binding EditCardsVM.EditSelectedCardsCommand}"

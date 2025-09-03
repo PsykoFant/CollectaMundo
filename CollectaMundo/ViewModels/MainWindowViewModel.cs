@@ -71,15 +71,9 @@ namespace CollectaMundo.ViewModels
             get => _currentPage;
             set
             {
-                // If we are on the same page, do nothing
-                if (_currentPage == value)
-                {
-                    return;
-                }
-
+                if (_currentPage == value) return;
                 _currentPage = value;
 
-                // Reset and hide the status overlay
                 _statusOverlayVM.HideStatusOverlay();
 
                 if (_currentPage == Page.MyCollection)
@@ -87,6 +81,9 @@ namespace CollectaMundo.ViewModels
                     AddCardsVM.StatusMessage = string.Empty;
                     SideMenuFilterVisibility = Visibility.Visible;
                     SideMenuUtilsVisibility = Visibility.Collapsed;
+
+                    // Nudge the second grid once it’s about to be shown
+                    MyCollectionResizeToken++;
                 }
                 else if (_currentPage == Page.SearchAndFilter)
                 {
@@ -99,12 +96,17 @@ namespace CollectaMundo.ViewModels
                     SideMenuFilterVisibility = Visibility.Collapsed;
                     SideMenuUtilsVisibility = Visibility.Visible;
                 }
-                // CurrentPage changed
-                OnPropertyChanged();
 
-                // MiniLogoVisibility depends on CurrentPage
+                OnPropertyChanged();                  // CurrentPage
                 OnPropertyChanged(nameof(MiniLogoVisibility));
             }
+        }
+
+        private int _myCollectionResizeToken;
+        public int MyCollectionResizeToken
+        {
+            get => _myCollectionResizeToken;
+            private set { _myCollectionResizeToken = value; OnPropertyChanged(); }
         }
         public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [[50, 50], [50, 50], [50]];
 
@@ -127,6 +129,9 @@ namespace CollectaMundo.ViewModels
             AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
             EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
         }
+
+        // Column resize
+
 
         // Retailer options 
         public sealed record RetailerOption(string Key, string Display);
@@ -163,7 +168,6 @@ namespace CollectaMundo.ViewModels
 
         // simple mapping; extend if you add more retailers
         private static string GetCurrencyForRetailer(string key) => string.Equals(key, "cardmarket", StringComparison.OrdinalIgnoreCase) ? "EUR" : "USD";
-
         private void UpdatePriceHeaders()
         {
             var key = SelectedRetailer?.Key ?? "cardmarket";

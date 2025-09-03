@@ -99,51 +99,87 @@ namespace CollectaMundo.Presentation.Behaviors
             }
         }
 
-        // Kick once when the DataGrid becomes visible
-        public static readonly DependencyProperty KickOnVisibleProperty =
-            DependencyProperty.RegisterAttached(
-                "KickOnVisible",
-                typeof(bool),
-                typeof(DataGridColumnResizerBehavior),
-                new PropertyMetadata(false, OnKickOnVisibleChanged));
+        public static readonly DependencyProperty UpdateOnTokenProperty =
+        DependencyProperty.RegisterAttached(
+            "UpdateOnToken",
+            typeof(int),
+            typeof(DataGridColumnResizerBehavior),
+            new PropertyMetadata(0, OnUpdateOnTokenChanged));
 
-        public static void SetKickOnVisible(DependencyObject d, bool value) =>
-            d.SetValue(KickOnVisibleProperty, value);
+        public static void SetUpdateOnToken(DependencyObject d, int value) =>
+            d.SetValue(UpdateOnTokenProperty, value);
 
-        public static bool GetKickOnVisible(DependencyObject d) =>
-            (bool)d.GetValue(KickOnVisibleProperty);
+        public static int GetUpdateOnToken(DependencyObject d) =>
+            (int)d.GetValue(UpdateOnTokenProperty);
 
-        private static void OnKickOnVisibleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static void OnUpdateOnTokenChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not DataGrid dg) return;
 
-            if ((bool)e.NewValue)
+            // If not yet loaded, retry once when Loaded fires
+            if (!dg.IsLoaded)
             {
-                // subscribe
-                dg.IsVisibleChanged += Dg_IsVisibleChanged;
+                RoutedEventHandler? loaded = null;
+                loaded = (_, __) =>
+                {
+                    dg.Loaded -= loaded;
+                    KickWhenReady(dg);
+                };
+                dg.Loaded += loaded;
+                return;
             }
-            else
+
+            // If not visible, retry when it becomes visible
+            if (!dg.IsVisible)
             {
-                // unsubscribe
-                dg.IsVisibleChanged -= Dg_IsVisibleChanged;
+                DependencyPropertyChangedEventHandler? vis = null;
+                vis = (_, __) =>
+                {
+                    if (!dg.IsVisible) return;
+                    dg.IsVisibleChanged -= vis;
+                    KickWhenReady(dg);
+                };
+                dg.IsVisibleChanged += vis;
+                return;
             }
+
+            KickWhenReady(dg);
         }
 
-        private static void Dg_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        private static void KickWhenReady(DataGrid dg)
         {
-            var dg = sender as DataGrid;
-            if (dg is null) return;
-
-            if (dg.IsVisible)
+            // If there is no visual source yet, defer
+            if (PresentationSource.FromVisual(dg) is null)
             {
-                // Run after layout so ActualWidth is valid
                 dg.Dispatcher.BeginInvoke(
-                    new Action(() => UpdateColumnWidths(dg)),
-                    System.Windows.Threading.DispatcherPriority.Render);
-
-                // One-shot: remove the handler to avoid repeated kicks
-                dg.IsVisibleChanged -= Dg_IsVisibleChanged;
+                    new Action(() => KickWhenReady(dg)),
+                    System.Windows.Threading.DispatcherPriority.Loaded);
+                return;
             }
+
+            // If size is still 0 (first show after Collapsed), wait for first non-zero size
+            if (dg.ActualWidth <= 0 || dg.ActualHeight <= 0)
+            {
+                SizeChangedEventHandler? sz = null;
+                sz = (_, __) =>
+                {
+                    if (dg.ActualWidth <= 0 || dg.ActualHeight <= 0) return;
+                    dg.SizeChanged -= sz;
+                    KickAtRender(dg);
+                };
+                dg.SizeChanged += sz;
+                return;
+            }
+
+            KickAtRender(dg);
         }
+
+        private static void KickAtRender(DataGrid dg)
+        {
+            dg.Dispatcher.BeginInvoke(
+                new Action(() => UpdateColumnWidths(dg)),
+                System.Windows.Threading.DispatcherPriority.Render);
+        }
+
     }
 }
