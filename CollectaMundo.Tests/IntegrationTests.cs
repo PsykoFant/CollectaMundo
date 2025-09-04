@@ -18,6 +18,7 @@ using CollectaMundo.Data.Filtering;
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ImportExport;
 using CollectaMundo.Data.RemoteLookups;
+using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
@@ -81,8 +82,9 @@ namespace CollectaMundo.Tests
             var cardLookupsService = new CardLookupsService(cardLookupsRepo, getRetailer);
 
             var cardListRepo = new CardListRepository();
-            var filterDefaultsRepo = new FilterDefaultsLogic();
-            var cardListService = new CardListService(cardListRepo, filterDefaultsRepo, cardLookupsService);
+            var filterDefaultsLogic = new FilterDefaultsLogic();
+            var coreAggregator = new CardCoreAggregator();
+            var cardListService = new CardListService(cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
 
             var scheduler = new ImmediateScheduler();
             var facetUpdater = new FacetUpdater();

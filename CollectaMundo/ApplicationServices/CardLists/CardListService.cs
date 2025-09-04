@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.CardLists.Lookups;
 using CollectaMundo.Data.CardLists;
+using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.ViewModels;
@@ -8,11 +9,12 @@ using CollectaMundo.ViewModels;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(ICardListRepository cardListRepo, IFilterDefaultsLogic filterLogic, ICardLookupsService lookupService) : ICardListService
+    public sealed class CardListService(ICardListRepository cardListRepo, IFilterDefaultsLogic filterLogic, ICardLookupsService lookupService, ICardCoreAggregator aggregator) : ICardListService
     {
         private readonly ICardListRepository _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterLogic = filterLogic;
         private readonly ICardLookupsService _lookupService = lookupService;
+        private readonly ICardCoreAggregator _aggregator = aggregator;
         public async Task InitializeCardListsAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork();
@@ -25,17 +27,25 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 // Ensure icon providers using the SAME connection (no parallel connection/txn)
                 await _lookupService.InitializeLookupMapsAsync(conn, CardLookupsOptions.All);
 
-                // 1) AllCards cores
+                // 1) AllCards cores (load and aggregate)
                 var cores = await _cardListRepo.ReadAllCardsCoresAsync(conn);
-                var byUuid = new Dictionary<string, CardCore>(cores.Count, StringComparer.OrdinalIgnoreCase);
-                foreach (var core in cores)
-                {
-                    byUuid[core.Uuid] = core;
-                }
 
-                var allCards = cores.AsParallel().AsOrdered().Select(CardSet.FromCore).ToList();
+                // Aggregate multi-face cards (merges keywords/colors/text)
+                var aggregatedCores = _aggregator.Aggregate(cores);
+
+                // Index by UUID (used later for MyCollection lookup)
+                var byUuid = aggregatedCores.ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
+
+                // Materialize CardSet instances
+                var allCards = aggregatedCores
+                    .AsParallel()
+                    .AsOrdered()
+                    .Select(CardSet.FromCore)
+                    .ToList();
+
                 allCardsVM.Cards = allCards;
                 allCardsVM.FilteredCards = allCards;
+
 
                 // 2) MyCollection
                 var rows = await _cardListRepo.ReadMyCollectionAsync(conn);

@@ -4,6 +4,7 @@
     {
         public required string Uuid { get; init; }
         public required string Name { get; init; }
+        public List<string> OtherFaceIds { get; init; } = [];
         public string? SetCode { get; init; }
         public string? ManaCost { get; init; }
         public string? ManaCostRaw { get; init; }

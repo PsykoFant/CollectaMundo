@@ -14,28 +14,20 @@ namespace CollectaMundo.Data.CardLists
 		                    c.setCode     AS SetCode,
                             c.manaCost    AS ManaCost,
                             c.types       AS Types,
-                            CAST(COALESCE(ccol.AggregatedColors, c.colors) AS TEXT) AS Colors,
+                            c.colors      AS Colors,
                             c.supertypes  AS SuperTypes,
                             c.subtypes    AS SubTypes,
                             c.type        AS Type,
-                            CAST(COALESCE(cg.AggregatedKeywords, c.keywords) AS TEXT) AS Keywords,
+                            c.keywords    AS Keywords,
                             c.text        AS RulesText,
                             c.manaValue   AS ManaValue,
                             c.language    AS Language,
                             c.uuid        AS Uuid,
+							c.otherFaceIds AS OtherIDs,
                             c.finishes    AS Finishes,
                             c.side        AS Side,
                             c.rarity      AS Rarity
                         FROM cards c
-                        LEFT JOIN (
-                            SELECT cc.Name, REPLACE(GROUP_CONCAT(DISTINCT cc.keywords), ',', ',') AS AggregatedKeywords
-                            FROM cards cc GROUP BY cc.Name
-                        ) cg ON c.Name = cg.Name
-                        LEFT JOIN (
-                            SELECT cc.Name, REPLACE(GROUP_CONCAT(DISTINCT cc.colors), ' ', '') AS AggregatedColors
-                            FROM cards cc GROUP BY cc.Name
-                        ) ccol ON c.Name = ccol.Name
-                        WHERE c.side IS NULL OR c.side = 'a'
                         UNION ALL
                         SELECT 
                             t.name        AS Name,
@@ -51,11 +43,11 @@ namespace CollectaMundo.Data.CardLists
                             NULL          AS ManaValue,
                             t.language    AS Language,
                             t.uuid        AS Uuid,
+							t.otherFaceIds AS OtherIDs,
                             t.finishes    AS Finishes,
                             t.side        AS Side,
                             NULL          AS Rarity
-                        FROM tokens t
-                        WHERE t.side IS NULL OR t.side = 'a'";
+                        FROM tokens t";
 
             using var cmd = new SQLiteCommand(query, conn);
             var list = new List<CardCore>(capacity: 120000);
@@ -104,6 +96,7 @@ namespace CollectaMundo.Data.CardLists
                 Side = GetFieldValue<string>(r, "Side"),
                 Language = GetFieldValue<string>(r, "Language"),
                 Uuid = GetFieldValue<string>(r, "Uuid") ?? "",
+                OtherFaceIds = ParseOtherFaceIds(GetFieldValue<string>(r, "OtherIDs")),
                 SetCode = GetFieldValue<string>(r, "SetCode"),
                 Rarity = GetFieldValue<string>(r, "Rarity"),
                 Finishes = GetFieldValue<string>(r, "Finishes"),
@@ -153,6 +146,13 @@ namespace CollectaMundo.Data.CardLists
 
             return (T)value;
         }
+        private static List<string> ParseOtherFaceIds(string? raw)
+        {
+            return string.IsNullOrWhiteSpace(raw)
+                ? []
+                : raw.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
+        }
+
 
     }
 }

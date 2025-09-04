@@ -19,6 +19,7 @@ using CollectaMundo.Data.Filtering;
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ImportExport;
 using CollectaMundo.Data.RemoteLookups;
+using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
@@ -96,8 +97,8 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var cardListRepo = new CardListRepository();
                 var filterDefaultsLogic = new FilterDefaultsLogic();
-                var cardListService = new CardListService(cardListRepo, filterDefaultsLogic, cardLookupsService);
-
+                var coreAggregator = new CardCoreAggregator();
+                var cardListService = new CardListService(cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
 
                 // Build view model off UI thread
                 var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, prepService, downloadService, statusVM, cardListService, getRetailer, setRetailerAndPersist));

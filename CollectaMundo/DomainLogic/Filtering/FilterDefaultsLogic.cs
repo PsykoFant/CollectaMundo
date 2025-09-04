@@ -172,7 +172,7 @@ namespace CollectaMundo.Data.Filtering
             return criteriaKey switch
             {
                 "Types" => new(StringComparer.OrdinalIgnoreCase)
-                { "Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "instant", "Cards" },
+                { "Eaturecray", "Summon", "Scariest", "You'll", "Ever", "See", "Jaguar", "Dragon", "Knights", "Legend", "Cards" },
                 "SubTypes" => new(StringComparer.OrdinalIgnoreCase)
                 { "(creature", "and/or", "type)|Judge", "The", "pLAnE" },
                 _ => null
