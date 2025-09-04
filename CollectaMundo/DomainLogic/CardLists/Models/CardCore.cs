@@ -1,4 +1,6 @@
-﻿namespace CollectaMundo.DomainLogic.CardLists.Models
+﻿using System.Text;
+
+namespace CollectaMundo.DomainLogic.CardLists.Models
 {
     public sealed class CardCore
     {
@@ -52,19 +54,38 @@
         {
             if (string.IsNullOrWhiteSpace(csv)) return string.Empty;
 
-            return string.Join(",", csv
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(s => s.Trim())
-                .Distinct(StringComparer.OrdinalIgnoreCase));
-        }
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var segments = csv.Split(',');
 
+            var sb = new StringBuilder();
+
+            foreach (var s in segments)
+            {
+                var trimmed = s.Trim();
+                if (trimmed.Length == 0 || !seen.Add(trimmed)) continue;
+
+                if (sb.Length > 0) sb.Append(',');
+                sb.Append(trimmed);
+            }
+
+            return sb.ToString();
+        }
         private static List<string> ParseOtherFaceIds(string? raw)
         {
-            return string.IsNullOrWhiteSpace(raw)
-                ? []
-                : [.. raw.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim())];
-        }
+            if (string.IsNullOrWhiteSpace(raw)) return [];
 
+            var parts = raw.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            var result = new List<string>(parts.Length);
+
+            foreach (var part in parts)
+            {
+                var trimmed = part.Trim();
+                if (trimmed.Length > 0)
+                    result.Add(trimmed);
+            }
+
+            return result;
+        }
         private static string ProcessManaCost(string raw)
         {
             char[] separators = ['{', '}'];

@@ -83,7 +83,6 @@ namespace CollectaMundo.Data.CardLists
                 ManaValue = GetFieldValue<double?>(r, "ManaValue"),
             };
         }
-
         public async Task<List<MyCollectionRow>> ReadMyCollectionAsync(SQLiteConnection conn)
         {
             using var cmd = new SQLiteCommand("SELECT id, uuid, cardsOwned, cardsForTrade, condition, language, finish FROM myCollection", conn);
@@ -105,16 +104,6 @@ namespace CollectaMundo.Data.CardLists
             }
             return list;
         }
-
-
-        // Utility to process ManaCost string
-        private static string ProcessManaCost(string manaCostRaw)
-        {
-            char[] separator = ['{', '}'];
-            return string.Join(",", manaCostRaw.Split(separator, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
-        }
-
-        // Utility to safely retrieve field values
         private static T? GetFieldValue<T>(DbDataReader reader, string columnName)
         {
             if (reader[columnName] == DBNull.Value)
@@ -132,21 +121,5 @@ namespace CollectaMundo.Data.CardLists
 
             return (T)value;
         }
-        private static List<string> ParseCommaSeparated(string? input, bool deduplicate = false)
-        {
-            if (string.IsNullOrWhiteSpace(input))
-                return [];
-
-            var parts = input
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(s => s.Trim())
-                .Where(s => !string.IsNullOrEmpty(s));
-
-            return deduplicate
-                ? parts.Distinct(StringComparer.OrdinalIgnoreCase).ToList()
-                : parts.ToList();
-        }
-
-
     }
 }

@@ -4,6 +4,7 @@ using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.ViewModels;
+using System.Diagnostics;
 
 
 namespace CollectaMundo.ApplicationServices.CardLists
@@ -15,11 +16,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
         private readonly IFilterDefaultsLogic _filterLogic = filterLogic;
         private readonly ICardLookupsService _lookupService = lookupService;
         private readonly ICardCoreAggregator _aggregator = aggregator;
-        public async Task InitializeCardListsAsync(
-            CardViewModel allCardsVM,
-            CardViewModel myCollectionVM,
-            Dictionary<string, FilterItemViewModel> filters,
-            FilterViewModel filterVM)
+        public async Task InitializeCardListsAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork();
             try
@@ -28,11 +25,18 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 await uow.BeginReadOnlyAsync();
                 var conn = uow.CurrentConnection;
 
+                var dbIoSw = Stopwatch.StartNew();
+
                 // Phase 1: DB I/O only (in order)
                 var lookupPackage = await _lookupService.LoadLookupDataAsync(conn, CardLookupsOptions.All);
                 var coreDtos = await _cardListRepo.ReadAllCardsCoreDtosAsync(conn);
                 var collectionRows = await _cardListRepo.ReadMyCollectionAsync(conn);
                 await uow.CommitAsync(); // DB done
+
+                dbIoSw.Stop();
+                Debug.WriteLine($"[InitializeCardListsAsync] phase 1: {dbIoSw.ElapsedMilliseconds} ms");
+
+                var phase2aSw = Stopwatch.StartNew();
 
                 // Phase 2a: Assign static providers (must be done before CardSet.FromCore)
                 CardSet.ManaCostImages = lookupPackage.ManaCostImages;
@@ -40,18 +44,21 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 CardSet.SetMetaProvider = lookupPackage.SetMetaProvider;
                 CardSet.PriceMetaProvider = lookupPackage.PriceMetaProvider;
 
+                phase2aSw.Stop();
+                Debug.WriteLine($"[InitializeCardListsAsync] phase 2a: {phase2aSw.ElapsedMilliseconds} ms");
+
+                var phase2bSw = Stopwatch.StartNew();
+
                 // Phase 2b: Hydrate + aggregate
-                var cores = coreDtos
-                    .AsParallel()
-                    .AsOrdered()
-                    .Select(CardCore.FromDto) // ✨ domain logic hydration here
-                    .ToList();
+                var cores = new CardCore[coreDtos.Count];
+                Parallel.For(0, coreDtos.Count, i => { cores[i] = CardCore.FromDto(coreDtos[i]); });
 
                 var aggregatedCores = _aggregator.Aggregate(cores);
+                var byUuid = aggregatedCores.ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
 
-                var byUuid = aggregatedCores
-                    .ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
+                Debug.WriteLine($"[InitializeCardListsAsync] phase 2b: {phase2bSw.ElapsedMilliseconds} ms");
 
+                var phase3aSw = Stopwatch.StartNew();
                 // Phase 3a: Build AllCards
                 var allCards = aggregatedCores
                     .AsParallel()
@@ -61,6 +68,11 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
                 allCardsVM.Cards = allCards;
                 allCardsVM.FilteredCards = allCards;
+
+                phase3aSw.Stop();
+                Debug.WriteLine($"[InitializeCardListsAsync] phase 3a: {phase3aSw.ElapsedMilliseconds} ms");
+
+                var phase3bSw = Stopwatch.StartNew();
 
                 // Phase 3b: Build MyCollection
                 var myCollection = collectionRows
@@ -76,6 +88,10 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 myCollectionVM.Cards = myCollection;
                 myCollectionVM.FilteredCards = myCollection;
 
+                phase3bSw.Stop();
+                Debug.WriteLine($"[InitializeCardListsAsync] phase 3b: {phase3bSw.ElapsedMilliseconds} ms");
+
+                var phase3cSw = Stopwatch.StartNew();
                 // Phase 3c: Build Filters
                 var defs = _filterLogic.Build(allCards, myCollection);
                 filters.Clear();
@@ -90,6 +106,9 @@ namespace CollectaMundo.ApplicationServices.CardLists
                         filterVM,
                         def.NumericCriteria);
                 }
+
+                phase3cSw.Stop();
+                Debug.WriteLine($"[InitializeCardListsAsync] phase 3c: {phase3cSw.ElapsedMilliseconds} ms");
             }
             catch
             {
