@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices;
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardLists;
+using CollectaMundo.ApplicationServices.CardLists.Lookups;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
@@ -54,6 +55,15 @@ namespace CollectaMundo.Tests
 
             // 3) Build the merged/updated stack (mirrors BuildAndStartAsync, minus integrity/FTS)
             var settings = new JsonAppSettings();
+
+            string getRetailer() => settings.PriceInfo.Retailer;
+            void setRetailerAndPersist(string key)
+            {
+                // persist to appsettings.json
+                settings.UpdatePriceInfo(updatedDate: null, retailer: key);
+            }
+
+
             var remoteLookups = new RemoteLookups();
             var downloadService = new DownloadService();
 
@@ -68,24 +78,27 @@ namespace CollectaMundo.Tests
             var progressSinks = CreateProgressSinks(statusVM); // <- local helper (below)
 
             var cardLookupsRepo = new CardLookupsRepo();
-            var cardLookupsService = new CardLookupsService(cardLookupsRepo);
+            var cardLookupsService = new CardLookupsService(cardLookupsRepo, getRetailer);
 
             var cardListRepo = new CardListRepository();
             var filterDefaultsRepo = new FilterDefaultsLogic();
             var cardListService = new CardListService(cardListRepo, filterDefaultsRepo, cardLookupsService);
 
             var scheduler = new ImmediateScheduler();
+            var facetUpdater = new FacetUpdater();
 
             // IMPORTANT: inject the fixture-backed DbFactory so all DB calls stay in-memory
             var prepService = new CardDatabasePreparationService(settings, AppGlobals.DbFactory!, progressSinks, prepRepo, priceService, missingPngSvc, downloadService, remoteLookups);
 
             // 4) Feature-layer services
+            var filteringService = new FilteringService();
             var editCollectionRepo = new EditCollectionRepository();
             var editService = new EditCollectionService((new EditCollectionLogic(editCollectionRepo)));
             var importExportService = new ImportExportService(new ImportExportRepo());
 
             // 5) Build the Main VM (same signature as in BuildAndStartAsync)
-            _mainVM = await MainWindowViewModel.CreateAsync(_filteringService, editService, importExportService, prepService, downloadService, statusVM, cardListService, facetScheduler: scheduler);
+            //_mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, prepService, downloadService, statusVM, cardListService, getRetailer, setRetailerAndPersist));
+            _mainVM = await MainWindowViewModel.CreateAsync(_filteringService, editService, importExportService, prepService, downloadService, statusVM, cardListService, getRetailer, setRetailerAndPersist, facetScheduler: scheduler);
 
             // 6) Bring the VM to a “ready” state consistent with the app
             _mainVM.FilterVM.NotifyFilterChanged();
@@ -913,7 +926,7 @@ namespace CollectaMundo.Tests
             // Assert: staging cleared
             Assert.Empty(_mainVM.AddCardsVM.CardsToAdd);
 
-            // Assert: filter facets include new values
+            //// Assert: filter facets include new values
             var conditionFilter = _mainVM.FilterVM.Filters["SelectedCondition"];
             Assert.Contains("Played", conditionFilter.AvailableOptions);
 
@@ -951,7 +964,7 @@ namespace CollectaMundo.Tests
             // Assert: count back to 22
             Assert.Equal(22, _mainVM.MyCollectionVM.Cards.Count);
 
-            // ===== Section H: merge scenario (Hypnotic Cloud defaults) =====
+            //// ===== Section H: merge scenario (Hypnotic Cloud defaults) =====
 
             // Arrange
             const string uuidMerge = "413e11a5-35a1-51c7-928b-219b4453a094"; // Hypnotic Cloud
