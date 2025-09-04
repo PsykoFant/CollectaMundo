@@ -6,7 +6,7 @@ namespace CollectaMundo.Data.CardLists
 {
     public class CardListRepository() : ICardListRepository
     {
-        public async Task<IReadOnlyList<CardCore>> ReadAllCardsCoresAsync(SQLiteConnection conn)
+        public async Task<IReadOnlyList<CardCoreDto>> ReadAllCardsCoreDtosAsync(SQLiteConnection conn)
         {
             const string query = $@"
                         SELECT 
@@ -50,14 +50,40 @@ namespace CollectaMundo.Data.CardLists
                         FROM tokens t";
 
             using var cmd = new SQLiteCommand(query, conn);
-            var list = new List<CardCore>(capacity: 120000);
+            var list = new List<CardCoreDto>(capacity: 120000);
             using var reader = await cmd.ExecuteReaderAsync();
+
             while (await reader.ReadAsync())
             {
-                list.Add(CoreFromAllCardsRow(reader));
+                list.Add(DtoFromReader(reader));
             }
+
             return list;
         }
+        private static CardCoreDto DtoFromReader(DbDataReader r)
+        {
+            return new CardCoreDto
+            {
+                Name = GetFieldValue<string>(r, "Name"),
+                ManaCostRaw = GetFieldValue<string>(r, "ManaCost"),
+                Colors = GetFieldValue<string>(r, "Colors"),
+                Type = GetFieldValue<string>(r, "Type"),
+                Types = GetFieldValue<string>(r, "Types"),
+                SuperTypes = GetFieldValue<string>(r, "SuperTypes"),
+                SubTypes = GetFieldValue<string>(r, "SubTypes"),
+                Keywords = GetFieldValue<string>(r, "Keywords"),
+                RulesText = GetFieldValue<string>(r, "RulesText"),
+                Side = GetFieldValue<string>(r, "Side"),
+                Language = GetFieldValue<string>(r, "Language"),
+                Uuid = GetFieldValue<string>(r, "Uuid"),
+                OtherFaceIds = GetFieldValue<string>(r, "OtherIDs"),
+                SetCode = GetFieldValue<string>(r, "SetCode"),
+                Rarity = GetFieldValue<string>(r, "Rarity"),
+                Finishes = GetFieldValue<string>(r, "Finishes"),
+                ManaValue = GetFieldValue<double?>(r, "ManaValue"),
+            };
+        }
+
         public async Task<List<MyCollectionRow>> ReadMyCollectionAsync(SQLiteConnection conn)
         {
             using var cmd = new SQLiteCommand("SELECT id, uuid, cardsOwned, cardsForTrade, condition, language, finish FROM myCollection", conn);
@@ -79,30 +105,7 @@ namespace CollectaMundo.Data.CardLists
             }
             return list;
         }
-        private static CardCore CoreFromAllCardsRow(DbDataReader r)
-        {
-            return new CardCore
-            {
-                Name = GetFieldValue<string>(r, "Name") ?? "",
-                ManaCostRaw = GetFieldValue<string>(r, "ManaCost"),
-                ManaCost = ProcessManaCost(GetFieldValue<string>(r, "ManaCost") ?? ""),
-                Colors = string.Join(",", ParseCommaSeparated(GetFieldValue<string>(r, "Colors"), deduplicate: true)),
-                Type = string.Join(",", ParseCommaSeparated(GetFieldValue<string>(r, "Type"), deduplicate: true)),
-                Types = string.Join(",", ParseCommaSeparated(GetFieldValue<string>(r, "Types"), deduplicate: true)),
-                SuperTypes = string.Join(",", ParseCommaSeparated(GetFieldValue<string>(r, "SuperTypes"), deduplicate: true)),
-                SubTypes = string.Join(",", ParseCommaSeparated(GetFieldValue<string>(r, "SubTypes"), deduplicate: true)),
-                Keywords = string.Join(",", ParseCommaSeparated(GetFieldValue<string>(r, "Keywords"), deduplicate: true)),
-                Text = GetFieldValue<string>(r, "RulesText"),
-                Side = GetFieldValue<string>(r, "Side"),
-                Language = GetFieldValue<string>(r, "Language"),
-                Uuid = GetFieldValue<string>(r, "Uuid") ?? "",
-                OtherFaceIds = ParseCommaSeparated(GetFieldValue<string>(r, "OtherIDs")),
-                SetCode = GetFieldValue<string>(r, "SetCode"),
-                Rarity = GetFieldValue<string>(r, "Rarity"),
-                Finishes = GetFieldValue<string>(r, "Finishes"),
-                ManaValue = GetFieldValue<double?>(r, "ManaValue") ?? 0,
-            };
-        }
+
 
         // Utility to process ManaCost string
         private static string ProcessManaCost(string manaCostRaw)

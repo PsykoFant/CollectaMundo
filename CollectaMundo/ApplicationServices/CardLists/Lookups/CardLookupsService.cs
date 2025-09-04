@@ -1,61 +1,43 @@
 ﻿using CollectaMundo.ApplicationServices.CardLists.Lookups.Providers;
-using CollectaMundo.ApplicationServices.CardLists.Lookups.Sources;
 using CollectaMundo.Data.CardLists;
+using CollectaMundo.DomainLogic.CardLists.Lookups;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.CardLists.Lookups
 {
 
-    public sealed class CardLookupsService(ICardLookupsRepo repo, Func<string> getRetailer) : ICardLookupsService
+    public sealed class CardLookupsService(CardLookupsRepo repo, CardLookupBuilder builder, Func<string> getRetailer) : ICardLookupsService
     {
-        private readonly ICardLookupsRepo _repo = repo;
-        private readonly object _initLock = new();
-        private bool _initialized;
-
-        // NEW: delegate to read the current retailer key (e.g., "cardmarket")
+        private readonly CardLookupsRepo _repo = repo;
+        private readonly CardLookupBuilder _builder = builder;
         private readonly Func<string> _getRetailer = getRetailer;
-
-        public async Task InitializeLookupMapsAsync(SQLiteConnection conn, CardLookupsOptions opts)
+        public async Task<CardLookupPackage> LoadLookupDataAsync(SQLiteConnection conn, CardLookupsOptions opts)
         {
-            if (_initialized)
-            {
-                return;
-            }
+            IReadOnlyDictionary<string, byte[]> manaIcons = new Dictionary<string, byte[]>();
+            IReadOnlyDictionary<string, byte[]> setIcons = new Dictionary<string, byte[]>();
+            IReadOnlyDictionary<string, SetDto> sets = new Dictionary<string, SetDto>();
+            IReadOnlyDictionary<string, PriceDto> prices = new Dictionary<string, PriceDto>();
 
-            lock (_initLock)
-            {
-                if (_initialized)
-                {
-                    return;
-                }
-            }
 
             if (opts.HasFlag(CardLookupsOptions.Icons))
             {
-                var manaMap = await _repo.ReadManaCostImagesAsync(conn);
-                CardSet.ManaCostImages = new ImageProvider<string>(new DictionaryByteSource<string>(manaMap));
-
-                var setMap = await _repo.ReadSetIconImagesAsync(conn);
-                CardSet.SetIconImages = new ImageProvider<string>(new DictionaryByteSource<string>(setMap));
+                manaIcons = await _repo.ReadManaCostImagesAsync(conn);
+                setIcons = await _repo.ReadSetIconImagesAsync(conn);
             }
 
             if (opts.HasFlag(CardLookupsOptions.Sets))
             {
-                var setsDict = await _repo.ReadSetsAsync(conn);
-                CardSet.SetMetaProvider = new ValueProvider<string, SetDto>(setsDict);
+                sets = await _repo.ReadSetsAsync(conn);
             }
 
             if (opts.HasFlag(CardLookupsOptions.Prices))
             {
                 var retailerKey = _getRetailer();
-                await ReloadPricesAsync(conn, retailerKey);
+                prices = await _repo.ReadPricesAsync(conn, retailerKey);
             }
 
-            lock (_initLock)
-            {
-                _initialized = true;
-            }
+            return _builder.Build(manaIcons, setIcons, sets, prices);
         }
 
         public async Task ReloadPricesAsync(SQLiteConnection conn, string retailerKey)

@@ -1,11 +1,12 @@
-﻿using System.Data.SQLite;
+﻿using CollectaMundo.DomainLogic.CardLists.Lookups;
+using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.CardLists.Lookups
 {
     public interface ICardLookupsService
     {
         // Ensures data providers exist (no-op if already initialized).
-        Task InitializeLookupMapsAsync(SQLiteConnection conn, CardLookupsOptions opts);
+        Task<CardLookupPackage> LoadLookupDataAsync(SQLiteConnection conn, CardLookupsOptions opts);
         Task ReloadPricesAsync(SQLiteConnection conn, string retailerKey);
     }
 }

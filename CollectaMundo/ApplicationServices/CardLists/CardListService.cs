@@ -15,7 +15,11 @@ namespace CollectaMundo.ApplicationServices.CardLists
         private readonly IFilterDefaultsLogic _filterLogic = filterLogic;
         private readonly ICardLookupsService _lookupService = lookupService;
         private readonly ICardCoreAggregator _aggregator = aggregator;
-        public async Task InitializeCardListsAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
+        public async Task InitializeCardListsAsync(
+            CardViewModel allCardsVM,
+            CardViewModel myCollectionVM,
+            Dictionary<string, FilterItemViewModel> filters,
+            FilterViewModel filterVM)
         {
             await using var uow = new UnitOfWork();
             try
@@ -24,19 +28,31 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 await uow.BeginReadOnlyAsync();
                 var conn = uow.CurrentConnection;
 
-                // Ensure icon providers using the SAME connection (no parallel connection/txn)
-                await _lookupService.InitializeLookupMapsAsync(conn, CardLookupsOptions.All);
+                // Phase 1: DB I/O only (in order)
+                var lookupPackage = await _lookupService.LoadLookupDataAsync(conn, CardLookupsOptions.All);
+                var coreDtos = await _cardListRepo.ReadAllCardsCoreDtosAsync(conn);
+                var collectionRows = await _cardListRepo.ReadMyCollectionAsync(conn);
+                await uow.CommitAsync(); // DB done
 
-                // 1) AllCards cores (load and aggregate)
-                var cores = await _cardListRepo.ReadAllCardsCoresAsync(conn);
+                // Phase 2a: Assign static providers (must be done before CardSet.FromCore)
+                CardSet.ManaCostImages = lookupPackage.ManaCostImages;
+                CardSet.SetIconImages = lookupPackage.SetIconImages;
+                CardSet.SetMetaProvider = lookupPackage.SetMetaProvider;
+                CardSet.PriceMetaProvider = lookupPackage.PriceMetaProvider;
 
-                // Aggregate multi-face cards (merges keywords/colors/text)
+                // Phase 2b: Hydrate + aggregate
+                var cores = coreDtos
+                    .AsParallel()
+                    .AsOrdered()
+                    .Select(CardCore.FromDto) // ✨ domain logic hydration here
+                    .ToList();
+
                 var aggregatedCores = _aggregator.Aggregate(cores);
 
-                // Index by UUID (used later for MyCollection lookup)
-                var byUuid = aggregatedCores.ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
+                var byUuid = aggregatedCores
+                    .ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
 
-                // Materialize CardSet instances
+                // Phase 3a: Build AllCards
                 var allCards = aggregatedCores
                     .AsParallel()
                     .AsOrdered()
@@ -46,30 +62,34 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 allCardsVM.Cards = allCards;
                 allCardsVM.FilteredCards = allCards;
 
-
-                // 2) MyCollection
-                var rows = await _cardListRepo.ReadMyCollectionAsync(conn);
-                var myCollection = rows.AsParallel()
-                    .Select(r => byUuid.TryGetValue(r.Uuid, out var core)
-                        ? CardSet.FromCoreWithCollection(core, r.Id, r.CardsOwned, r.CardsForTrade, r.Condition, r.Language, r.Finish)
-                        : null)
-                    .Where(x => x is not null)
+                // Phase 3b: Build MyCollection
+                var myCollection = collectionRows
+                    .AsParallel()
+                    .Select(r =>
+                        byUuid.TryGetValue(r.Uuid, out var core)
+                            ? CardSet.FromCoreWithCollection(core, r.Id, r.CardsOwned, r.CardsForTrade, r.Condition, r.Language, r.Finish)
+                            : null)
+                    .Where(c => c is not null)
                     .Cast<CardSet>()
                     .ToList();
 
                 myCollectionVM.Cards = myCollection;
                 myCollectionVM.FilteredCards = myCollection;
 
-                // 3) Filters
-                var defs = _filterLogic.Build(allCardsVM.Cards, myCollectionVM.Cards);
+                // Phase 3c: Build Filters
+                var defs = _filterLogic.Build(allCards, myCollection);
                 filters.Clear();
+
                 foreach (var def in defs)
                 {
                     filters[def.CriteriaKey] = new FilterItemViewModel(
-                        def.CriteriaKey, def.FilterOptions, def.DefaultText, def.ReadableLabel, filterVM, def.NumericCriteria);
+                        def.CriteriaKey,
+                        def.FilterOptions,
+                        def.DefaultText,
+                        def.ReadableLabel,
+                        filterVM,
+                        def.NumericCriteria);
                 }
-
-                await uow.CommitAsync();
             }
             catch
             {
@@ -77,6 +97,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 throw;
             }
         }
+
         public async Task ReloadPriceLookupsAsync(string retailerKey)
         {
             await using var uow = new UnitOfWork();

@@ -6,9 +6,12 @@ TO DO
 - Gå videre med update scenarie
     <side track>
      - Sorter list
-     - Fjern coalesce (måske?)
+     
+
      - Optimer app
-     - Optimer db
+     
+     - unit test og integration test til aggregation
+     
      - Tilbage til update/reload
  
     </side track>

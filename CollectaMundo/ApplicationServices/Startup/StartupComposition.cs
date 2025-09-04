@@ -20,6 +20,7 @@ using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ImportExport;
 using CollectaMundo.Data.RemoteLookups;
 using CollectaMundo.DomainLogic.CardLists;
+using CollectaMundo.DomainLogic.CardLists.Lookups;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
@@ -93,7 +94,8 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var importExportService = new ImportExportService(new ImportExportRepo());
 
                 var cardLookupsRepo = new CardLookupsRepo();
-                var cardLookupsService = new CardLookupsService(cardLookupsRepo, getRetailer);
+                var cardLookupsBuilder = new CardLookupBuilder();
+                var cardLookupsService = new CardLookupsService(cardLookupsRepo, cardLookupsBuilder, getRetailer);
 
                 var cardListRepo = new CardListRepository();
                 var filterDefaultsLogic = new FilterDefaultsLogic();

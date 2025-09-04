@@ -19,6 +19,7 @@ using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.ImportExport;
 using CollectaMundo.Data.RemoteLookups;
 using CollectaMundo.DomainLogic.CardLists;
+using CollectaMundo.DomainLogic.CardLists.Lookups;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
@@ -79,7 +80,8 @@ namespace CollectaMundo.Tests
             var progressSinks = CreateProgressSinks(statusVM); // <- local helper (below)
 
             var cardLookupsRepo = new CardLookupsRepo();
-            var cardLookupsService = new CardLookupsService(cardLookupsRepo, getRetailer);
+            var cardLookupsBuilder = new CardLookupBuilder();
+            var cardLookupsService = new CardLookupsService(cardLookupsRepo, cardLookupsBuilder, getRetailer);
 
             var cardListRepo = new CardListRepository();
             var filterDefaultsLogic = new FilterDefaultsLogic();
