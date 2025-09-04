@@ -8,9 +8,7 @@ namespace CollectaMundo.DomainLogic.CardLists
         {
             var byUuid = cores.ToDictionary(c => c.Uuid, StringComparer.OrdinalIgnoreCase);
 
-            var primaryCores = cores
-                .Where(c => string.IsNullOrWhiteSpace(c.Side) || c.Side.Equals("a", StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            var primaryCores = cores.Where(c => string.IsNullOrWhiteSpace(c.Side) || c.Side.Equals("a", StringComparison.OrdinalIgnoreCase)).ToList();
 
             var results = new List<CardCore>(primaryCores.Count);
 
@@ -74,7 +72,7 @@ namespace CollectaMundo.DomainLogic.CardLists
                     Language = core.Language,
                     OtherFaceIds = core.OtherFaceIds,
 
-                    Keywords = string.Join(", ", allKeywords),
+                    Keywords = string.Join(",", allKeywords),
                     Colors = string.Join(",", allColors),
                     Text = string.Join(" // ", allTexts)
                 });

@@ -86,17 +86,17 @@ namespace CollectaMundo.Data.CardLists
                 Name = GetFieldValue<string>(r, "Name") ?? "",
                 ManaCostRaw = GetFieldValue<string>(r, "ManaCost"),
                 ManaCost = ProcessManaCost(GetFieldValue<string>(r, "ManaCost") ?? ""),
-                Colors = GetUniqueCommaSeparatedField(r, "Colors"),
-                Type = GetUniqueCommaSeparatedField(r, "Type"),
-                Types = GetUniqueCommaSeparatedField(r, "Types"),
-                SuperTypes = GetUniqueCommaSeparatedField(r, "SuperTypes"),
-                SubTypes = GetUniqueCommaSeparatedField(r, "SubTypes"),
-                Keywords = GetUniqueCommaSeparatedField(r, "Keywords"),
+                Colors = string.Join(",", ParseCommaSeparated(GetFieldValue<string>(r, "Colors"), deduplicate: true)),
+                Type = string.Join(",", ParseCommaSeparated(GetFieldValue<string>(r, "Type"), deduplicate: true)),
+                Types = string.Join(",", ParseCommaSeparated(GetFieldValue<string>(r, "Types"), deduplicate: true)),
+                SuperTypes = string.Join(",", ParseCommaSeparated(GetFieldValue<string>(r, "SuperTypes"), deduplicate: true)),
+                SubTypes = string.Join(",", ParseCommaSeparated(GetFieldValue<string>(r, "SubTypes"), deduplicate: true)),
+                Keywords = string.Join(",", ParseCommaSeparated(GetFieldValue<string>(r, "Keywords"), deduplicate: true)),
                 Text = GetFieldValue<string>(r, "RulesText"),
                 Side = GetFieldValue<string>(r, "Side"),
                 Language = GetFieldValue<string>(r, "Language"),
                 Uuid = GetFieldValue<string>(r, "Uuid") ?? "",
-                OtherFaceIds = ParseOtherFaceIds(GetFieldValue<string>(r, "OtherIDs")),
+                OtherFaceIds = ParseCommaSeparated(GetFieldValue<string>(r, "OtherIDs")),
                 SetCode = GetFieldValue<string>(r, "SetCode"),
                 Rarity = GetFieldValue<string>(r, "Rarity"),
                 Finishes = GetFieldValue<string>(r, "Finishes"),
@@ -109,23 +109,6 @@ namespace CollectaMundo.Data.CardLists
         {
             char[] separator = ['{', '}'];
             return string.Join(",", manaCostRaw.Split(separator, StringSplitOptions.RemoveEmptyEntries)).Trim(',');
-        }
-        private static string GetUniqueCommaSeparatedField(DbDataReader reader, string columnName)
-        {
-            // Get the raw string (using our existing generic method)
-            string? rawValue = GetFieldValue<string>(reader, columnName);
-            if (string.IsNullOrEmpty(rawValue))
-            {
-                return string.Empty;
-            }
-
-            // Split on commas, trim, deduplicate (case-insensitive), and rejoin.
-            var uniqueItems = rawValue
-                .Split([','], StringSplitOptions.RemoveEmptyEntries)
-                .Select(item => item.Trim())
-                .Distinct(StringComparer.OrdinalIgnoreCase);
-
-            return string.Join(",", uniqueItems);
         }
 
         // Utility to safely retrieve field values
@@ -146,11 +129,19 @@ namespace CollectaMundo.Data.CardLists
 
             return (T)value;
         }
-        private static List<string> ParseOtherFaceIds(string? raw)
+        private static List<string> ParseCommaSeparated(string? input, bool deduplicate = false)
         {
-            return string.IsNullOrWhiteSpace(raw)
-                ? []
-                : raw.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
+            if (string.IsNullOrWhiteSpace(input))
+                return [];
+
+            var parts = input
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => !string.IsNullOrEmpty(s));
+
+            return deduplicate
+                ? parts.Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+                : parts.ToList();
         }
 
 

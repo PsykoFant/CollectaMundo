@@ -68,6 +68,9 @@ TO DO
     - Ca. 3,6 sekunder
     - 487 mb
 
+    Stationær - coalesce removed 
+    - Ca. 3,5 sekunder
+    - 514 mb
 
 
 
