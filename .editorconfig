@@ -4,12 +4,14 @@ root = true
 # C# files
 [*.cs]
 
-#### Core EditorConfig Options ####
-
 # Indentation and spacing
 indent_size = 4
 indent_style = space
 tab_width = 4
+
+# Line endings
+end_of_line = lf
+insert_final_newline = true
 
 # New line preferences
 [*.{xaml,csproj,props,targets,xml,json,yml,yaml,config,cmd,bat,ps1,md,txt}]
