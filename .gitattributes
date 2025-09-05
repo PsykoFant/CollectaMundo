@@ -27,3 +27,5 @@
 *.dll     binary
 *.exe     binary
 *.pdf     binary
+*.xlsx 	  binary
+
