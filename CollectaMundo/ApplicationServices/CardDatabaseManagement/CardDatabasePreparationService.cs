@@ -235,9 +235,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             return new OperationResult(OperationResultCode.Success);
 
         }
-
-
-
         private async Task<OperationResult> PrepareDatabaseAsync(int defaultDelay, int stepNumberStart)
         {
             var steps = new List<(string Label, Func<Task> Work, bool ShowProgress)>

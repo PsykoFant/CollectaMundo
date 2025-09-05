@@ -148,6 +148,8 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
             await _repository.InsertMissingFromColumnAsync(conn, "sets", "code", "keyruneImages", "setCode");
             await _repository.InsertMissingFromColumnAsync(conn, "sets", "code", "keyruneImages", "setCode");
 
+            // slet default set koder
+
             var missingSetCodes = await _repository.GetValuesWithNullAsync(conn, "keyruneImages", "setCode", "keyruneImage");
 
             JArray? metadata = await _scryfallLookups.FetchSetMetadataAsync();

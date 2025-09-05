@@ -24,7 +24,6 @@ namespace CollectaMundo.Data.CardDatabaseManagement
                 ["uniqueManaSymbols"] = "CREATE TABLE IF NOT EXISTS uniqueManaSymbols (uniqueManaSymbol TEXT PRIMARY KEY, manaSymbolImage BLOB);",
                 ["uniqueManaCostImages"] = "CREATE TABLE IF NOT EXISTS uniqueManaCostImages (uniqueManaCost TEXT PRIMARY KEY, manaCostImage BLOB);",
                 ["keyruneImages"] = "CREATE TABLE IF NOT EXISTS keyruneImages (setCode TEXT PRIMARY KEY, keyruneImage BLOB);",
-                ["AggregatedCardKeywords"] = "CREATE TABLE IF NOT EXISTS AggregatedCardKeywords (uuid TEXT PRIMARY KEY, aggregatedKeywords TEXT);",
                 ["myCollection"] = "CREATE TABLE IF NOT EXISTS myCollection (id INTEGER PRIMARY KEY AUTOINCREMENT, uuid TEXT, cardsOwned INTEGER, cardsForTrade INTEGER, condition TEXT, language TEXT, finish TEXT);",
                 ["myDecks"] = "CREATE TABLE IF NOT EXISTS myDecks (id INTEGER PRIMARY KEY AUTOINCREMENT, deckName TEXT, deckDescription TEXT, targetFormat TEXT);",
                 ["cardsInDecks"] = "CREATE TABLE IF NOT EXISTS cardsInDecks (id INTEGER PRIMARY KEY AUTOINCREMENT, deckId INTEGER, name TEXT, uuid TEXT, count INTEGER);",
@@ -252,7 +251,6 @@ namespace CollectaMundo.Data.CardDatabaseManagement
             await new SQLiteCommand(detachSql, conn).ExecuteNonQueryAsync();
             progress.Report("Detached temp DB.");
         }
-
 
         private static readonly Dictionary<string, string> TablesToCopy = new()
             {

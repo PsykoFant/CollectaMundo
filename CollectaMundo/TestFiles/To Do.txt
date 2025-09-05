@@ -1,21 +1,6 @@
 TO DO 
 - MVVM refactor
 
-
-
-- Gå videre med update scenarie
-    <side track>
-     - unit test og integration test til aggregation
-     
-     - Tilbage til update/reload
- 
-    </side track>
-
-	- Reload (diff only)
-
-
-
-
 	- Slet temp set ikoner
 	- Slet temp filer
 	- Tilføj backup af database step	
