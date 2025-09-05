@@ -5,11 +5,6 @@ TO DO
 
 - Gå videre med update scenarie
     <side track>
-     - Sorter list
-     
-
-     - Optimer app
-     
      - unit test og integration test til aggregation
      
      - Tilbage til update/reload

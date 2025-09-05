@@ -69,8 +69,11 @@ namespace CollectaMundo.ApplicationServices.CardLists
                         .Select(CardSet.FromCore)
                         .ToList();
 
-                    allCardsVM.Cards = allCards;
-                    allCardsVM.FilteredCards = allCards;
+                    var sortSw = Stopwatch.StartNew();
+                    allCardsVM.Cards = SortCards(allCards);
+                    allCardsVM.FilteredCards = allCardsVM.Cards;
+                    sortSw.Stop();
+                    Debug.WriteLine($"Sorted allCards in {sortSw.ElapsedMilliseconds} ms");
                     return allCards;
                 });
 
@@ -86,8 +89,8 @@ namespace CollectaMundo.ApplicationServices.CardLists
                         .Cast<CardSet>()
                         .ToList();
 
-                    myCollectionVM.Cards = myCollection;
-                    myCollectionVM.FilteredCards = myCollection;
+                    myCollectionVM.Cards = SortCards(myCollection);
+                    myCollectionVM.FilteredCards = myCollectionVM.Cards;
                     return myCollection;
                 });
                 await Task.WhenAll(allCardsTask, myCollectionTask); // Required
@@ -121,7 +124,6 @@ namespace CollectaMundo.ApplicationServices.CardLists
             }
         }
 
-
         public async Task ReloadPriceLookupsAsync(string retailerKey)
         {
             await using var uow = new UnitOfWork();
@@ -129,6 +131,33 @@ namespace CollectaMundo.ApplicationServices.CardLists
             await _lookupService.ReloadPricesAsync(uow.CurrentConnection, retailerKey);
             await uow.CommitAsync();
         }
+        private static List<CardSet> SortCards(IEnumerable<CardSet> cards)
+        {
+            static int ColorRank(string? colorCode)
+            {
+                return colorCode switch
+                {
+                    "W" => 0,
+                    "U" => 1,
+                    "B" => 2,
+                    "R" => 3,
+                    "G" => 4,
+                    "C" => 5,
+                    _ => 6 // Any unrecognized or multicolor at the end
+                };
+            }
+
+            return [.. cards
+                .OrderByDescending(c => c.ReleaseDate) // Assuming DateTime or sortable type
+                .ThenBy(c =>
+                {
+                    var colors = c.Colors?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    if (colors is null || colors.Length == 0) return 6;
+                    return colors.Min(ColorRank); // Use lowest rank as primary color
+                })
+                .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)];
+        }
+
     }
 }
 

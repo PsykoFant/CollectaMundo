@@ -9,5 +9,7 @@ namespace CollectaMundo.ApplicationServices.CardLists.Lookups.Providers
 
         public TValue? Get(TKey key) => _map.TryGetValue(key, out var v) ? v : default;
         public bool Contains(TKey key) => _map.ContainsKey(key);
+        public IEnumerable<TValue> Values => _map.Values;
+
     }
 }

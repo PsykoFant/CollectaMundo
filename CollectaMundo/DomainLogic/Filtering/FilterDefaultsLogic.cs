@@ -1,6 +1,8 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
+﻿using CollectaMundo.ApplicationServices.CardLists.Lookups.Providers;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Models;
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 
 namespace CollectaMundo.Data.Filtering
@@ -9,15 +11,15 @@ namespace CollectaMundo.Data.Filtering
     {
         public List<FilterDefaults> Build(IEnumerable<CardSet> allCards, IEnumerable<CardSet> myCollection)
         {
-            var filterDefaultsList = new List<FilterDefaults>();
+            var filterDefaultsDict = new ConcurrentDictionary<string, FilterDefaults>();
 
-            foreach (var entry in FilterCriteriaMappings.CriteriaMappings)
+            Parallel.ForEach(FilterCriteriaMappings.CriteriaMappings, entry =>
             {
                 var criteriaKey = entry.Key;
                 var mapping = entry.Value;
                 List<string> rawValues = [];
 
-                // Handled special cases first
+                // Special case handling
                 if (criteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
                 {
                     rawValues = ["W", "U", "B", "R", "G", "C", "X", "Colorless"];
@@ -28,48 +30,77 @@ namespace CollectaMundo.Data.Filtering
                 }
                 else
                 {
-                    // Build from in-memory objects, matching the fields the SQL would return
                     switch (criteriaKey)
                     {
                         case "Name":
-                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.Name)));
-                            break;
-                        case "SetName":
-                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.SetName)));
-                            break;
-                        case "Rarity":
-                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.Rarity)));
-                            break;
-                        case "SuperTypes":
-                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.SuperTypes)));
-                            break;
-                        case "Types":
-                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.Types)));
-                            break;
-                        case "SubTypes":
-                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.SubTypes)));
-                            break;
-                        case "Keywords":
-                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.Keywords)));
-                            break;
-                        case "Finishes":
-                            rawValues.AddRange(NotNullOrWhite(allCards.Select(c => c.Finishes)));
+                            foreach (var c in allCards)
+                                if (!string.IsNullOrWhiteSpace(c.Name))
+                                    rawValues.Add(c.Name);
                             break;
 
-                        // Collection-backed fields come from myCollection (not the DB)
+                        case "SetName":
+                            foreach (var c in allCards)
+                                if (!string.IsNullOrWhiteSpace(c.SetName))
+                                    rawValues.Add(c.SetName);
+                            break;
+
+                        case "Rarity":
+                            foreach (var c in allCards)
+                                if (!string.IsNullOrWhiteSpace(c.Rarity))
+                                    rawValues.Add(c.Rarity);
+                            break;
+
+                        case "SuperTypes":
+                            foreach (var c in allCards)
+                                if (!string.IsNullOrWhiteSpace(c.SuperTypes))
+                                    rawValues.Add(c.SuperTypes);
+                            break;
+
+                        case "Types":
+                            foreach (var c in allCards)
+                                if (!string.IsNullOrWhiteSpace(c.Types))
+                                    rawValues.Add(c.Types);
+                            break;
+
+                        case "SubTypes":
+                            foreach (var c in allCards)
+                                if (!string.IsNullOrWhiteSpace(c.SubTypes))
+                                    rawValues.Add(c.SubTypes);
+                            break;
+
+                        case "Keywords":
+                            foreach (var c in allCards)
+                                if (!string.IsNullOrWhiteSpace(c.Keywords))
+                                    rawValues.Add(c.Keywords);
+                            break;
+
+                        case "Finishes":
+                            foreach (var c in allCards)
+                                if (!string.IsNullOrWhiteSpace(c.Finishes))
+                                    rawValues.Add(c.Finishes);
+                            break;
+
                         case "SelectedFinish":
-                            rawValues.AddRange(NotNullOrWhite(myCollection.Select(c => c.SelectedFinish)));
+                            foreach (var c in myCollection)
+                                if (!string.IsNullOrWhiteSpace(c.SelectedFinish))
+                                    rawValues.Add(c.SelectedFinish);
                             break;
+
                         case "Language":
-                            rawValues.AddRange(NotNullOrWhite(myCollection.Select(c => c.Language)));
+                            foreach (var c in myCollection)
+                                if (!string.IsNullOrWhiteSpace(c.Language))
+                                    rawValues.Add(c.Language);
                             break;
+
                         case "SelectedCondition":
-                            rawValues.AddRange(NotNullOrWhite(myCollection.Select(c => c.SelectedCondition)));
+                            foreach (var c in myCollection)
+                                if (!string.IsNullOrWhiteSpace(c.SelectedCondition))
+                                    rawValues.Add(c.SelectedCondition);
                             break;
 
                         case "ManaValue":
-                            // Persist as strings first; we’ll parse/sort numerics below to match repo behavior
-                            rawValues.AddRange(allCards.Select(c => c.ManaValue.ToString()));
+                            foreach (var c in allCards)
+                                rawValues.Add(c.ManaValue.ToString());
                             break;
 
                         default:
@@ -78,18 +109,23 @@ namespace CollectaMundo.Data.Filtering
 
                 }
 
-                // Clean + split
                 var removeItems = GetUnwantedItems(criteriaKey);
                 bool shouldNotSplit = mapping.ShouldNotSplit;
                 var cleanedValues = CleanAndFilter(rawValues, removeItems, shouldNotSplit);
 
-                // Colors were hard-coded already
+                // Special sorting for SetName by release date descending
+                if (criteriaKey.Equals("SetName", StringComparison.OrdinalIgnoreCase) && CardSet.SetMetaProvider is ValueProvider<string, SetDto> provider)
+                {
+                    var releaseDateMap = provider.Values.Where(s => !string.IsNullOrWhiteSpace(s.Name) && s.ReleaseDate.HasValue).ToDictionary(s => s.Name, s => s.ReleaseDate!.Value, StringComparer.OrdinalIgnoreCase);
+                    cleanedValues = [.. cleanedValues.OrderByDescending(name => releaseDateMap.TryGetValue(name, out var date) ? date : DateTime.MinValue)];
+                }
+
+                // Skip cleaning for hardcoded
                 if (criteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
                 {
                     cleanedValues = rawValues;
                 }
 
-                // Numeric list (for numeric filters)
                 List<int>? numericValues = null;
                 if (mapping.Type == FilterType.Numeric)
                 {
@@ -98,7 +134,6 @@ namespace CollectaMundo.Data.Filtering
 
                 var filterOptions = cleanedValues.Select(v => new FilterOption(v)).ToList();
 
-                // Default text
                 string defaultText = string.Empty;
                 if (mapping.Type == FilterType.Multi || criteriaKey == "Text")
                 {
@@ -111,17 +146,18 @@ namespace CollectaMundo.Data.Filtering
                     ? criteriaKey
                     : mapping.ReadableLabel;
 
-                filterDefaultsList.Add(new FilterDefaults
+                filterDefaultsDict[criteriaKey] = new FilterDefaults
                 {
                     CriteriaKey = criteriaKey,
                     FilterOptions = filterOptions,
                     NumericCriteria = numericValues,
                     DefaultText = defaultText,
                     ReadableLabel = readableLabel
-                });
-            }
+                };
+            });
 
-            return filterDefaultsList;
+            return [.. FilterCriteriaMappings.CriteriaMappings.Keys.Select(k => filterDefaultsDict[k])];
+
         }
         private static List<string> CleanAndFilter(IEnumerable<string> input, HashSet<string>? removeItems, bool shouldNotSplit)
         {
