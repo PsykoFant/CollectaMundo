@@ -152,8 +152,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 .ThenBy(c =>
                 {
                     var colors = c.Colors?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                    if (colors is null || colors.Length == 0) return 6;
-                    return colors.Min(ColorRank); // Use lowest rank as primary color
+                    if (colors is null || colors.Length == 0) { return 6; } return colors.Min(ColorRank); // Use lowest rank as primary color
                 })
                 .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)];
         }

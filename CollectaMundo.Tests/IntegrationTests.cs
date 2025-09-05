@@ -142,7 +142,7 @@ namespace CollectaMundo.Tests
             var allCards = _mainVM.AllCardsVM.Cards;
             var myCollection = _mainVM.MyCollectionVM.Cards;
 
-            Assert.Equal(61, allCards.Count);
+            Assert.Equal(62, allCards.Count);
             Assert.Equal(22, myCollection.Count);
         }
 
@@ -154,6 +154,7 @@ namespace CollectaMundo.Tests
             var expectedAllCardsNames = new List<string>
             {
                 "Boundary Lands Ranger",
+                "Bruna, the Fading Light // Brisela, Voice of Nightmares",
                 "Island // Island",
                 "Ancient Greenwarden",
                 "Warriors",
@@ -218,6 +219,21 @@ namespace CollectaMundo.Tests
 
             var actualAllCardsNames = _mainVM.AllCardsVM.Cards.Select(card => card.Name ?? string.Empty).OrderBy(name => name).ToList();
             var sortedAllcardsExpected = expectedAllCardsNames.OrderBy(name => name).ToList();
+
+            for (int i = 0; i < sortedAllcardsExpected.Count; i++)
+            {
+                var expected = sortedAllcardsExpected[i];
+                var actual = actualAllCardsNames[i];
+
+                if (expected != actual)
+                {
+                    Debug.WriteLine($"Mismatch at index {i}:\nExpected: '{expected}'\nActual:   '{actual}'");
+                    Debug.WriteLine($"Expected (UTF-16): {string.Join(" ", expected.Select(c => ((int)c).ToString("X4")))}");
+                    Debug.WriteLine($"Actual   (UTF-16): {string.Join(" ", actual.Select(c => ((int)c).ToString("X4")))}");
+                }
+
+                Assert.Equal(expected, actual); // keep the original assertion
+            }
             Assert.Equal(sortedAllcardsExpected, actualAllCardsNames);
 
             var expectedMyCollectionNames = new List<string>
@@ -522,7 +538,7 @@ namespace CollectaMundo.Tests
                 "Goblin",
                 "Jan Jansen, Chaos Crafter // Jan Jansen, Chaos Crafter",
                 "Gisela, the Broken Blade // Brisela, Voice of Nightmares",
-                "Sokrates, Athenian Teacher"
+                "Sokrates, Athenian Teacher",
             };
 
             // Assert that the filter options contain all expected names.
@@ -571,7 +587,8 @@ namespace CollectaMundo.Tests
                 "Scry",
                 "Sokratic Dialogue",
                 "Ingest",
-                "Prowess"
+                "Prowess",
+                "Vigilance"
             };
             var expectedKeyWordsOperators = new[]
             {
@@ -815,7 +832,7 @@ namespace CollectaMundo.Tests
             // Reset
             _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
 
-            Assert.Equal(61, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(62, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(22, _mainVM.MyCollectionVM.FilteredCards.Count);
             Assert.True(string.IsNullOrEmpty(_mainVM.FilterVM.FilterSummary));
 
@@ -842,7 +859,7 @@ namespace CollectaMundo.Tests
             // Reset
             _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
 
-            Assert.Equal(61, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(62, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(22, _mainVM.MyCollectionVM.FilteredCards.Count);
             Assert.True(string.IsNullOrEmpty(_mainVM.FilterVM.FilterSummary));
 
@@ -858,7 +875,7 @@ namespace CollectaMundo.Tests
             typesFilter.OperatorSelection = OperatorType.OR;
 
             // Assert
-            Assert.Equal(27, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(28, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(10, _mainVM.MyCollectionVM.FilteredCards.Count);
 
             // Arrange: SuperTypes {Legendary}
@@ -869,7 +886,7 @@ namespace CollectaMundo.Tests
             }
 
             // Assert
-            Assert.Equal(5, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(6, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Empty(_mainVM.MyCollectionVM.FilteredCards);
             Assert.Equal("SuperTypes: {Legendary} AND Types: {Creature OR Planeswalker}", _mainVM.FilterVM.FilterSummary);
 
@@ -897,7 +914,7 @@ namespace CollectaMundo.Tests
             nameFilter.SelectedSingleOption = "sokrates";
 
             // Assert
-            expectedNames = new[] { "Sokrates, Athenian Teacher" }.OrderBy(n => n).ToList();
+            expectedNames = [.. new[] { "Sokrates, Athenian Teacher" }.OrderBy(n => n)];
             actualNames = [.. _mainVM.AllCardsVM.FilteredCards.Select(c => c.Name!).OrderBy(n => n)];
             Assert.Equal(expectedNames, actualNames);
             Assert.Empty(_mainVM.MyCollectionVM.FilteredCards);
@@ -1011,6 +1028,21 @@ namespace CollectaMundo.Tests
                 Assert.Equal(ownedVm, sumOwnedDb);
                 await uow.CommitAsync();
             }
+
+            // ===== Section I: Check keyword aggregation from b-side of card =====
+            // Reset
+            _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
+
+            // Arrange
+            _mainVM.FilterVM.Filters["Keywords"].FilterOptions.FirstOrDefault(o => o.OptionName == "Vigilance")!.IsSelected = true;
+            expectedNames = [.. new List<string> { "Bruna, the Fading Light // Brisela, Voice of Nightmares", "Gisela, the Broken Blade // Brisela, Voice of Nightmares" }.OrderBy(n => n)];
+            actualNames = [.. _mainVM.AllCardsVM.FilteredCards.Select(c => c.Name!).OrderBy(n => n)];
+
+            // Assert
+            Assert.Equal(expectedNames, actualNames);
+            Assert.Empty(_mainVM.MyCollectionVM.FilteredCards);
+            Assert.Equal(2, _mainVM.AllCardsVM.FilteredCards.Count);
+
         }
 
     }
