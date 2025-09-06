@@ -86,6 +86,7 @@ namespace CollectaMundo.ViewModels
                     AddCardsVM.StatusMessage = string.Empty;
                     SideMenuFilterVisibility = Visibility.Visible;
                     SideMenuUtilsVisibility = Visibility.Collapsed;
+                    CardViewSectionVisibility = Visibility.Visible;
 
                     // Nudge the second grid once it’s about to be shown
                     MyCollectionResizeToken++;
@@ -95,11 +96,13 @@ namespace CollectaMundo.ViewModels
                     EditCardsVM.StatusMessage = string.Empty;
                     SideMenuFilterVisibility = Visibility.Visible;
                     SideMenuUtilsVisibility = Visibility.Collapsed;
+                    CardViewSectionVisibility = Visibility.Visible;
                 }
                 else if (_currentPage == Page.Utilities)
                 {
                     SideMenuFilterVisibility = Visibility.Collapsed;
                     SideMenuUtilsVisibility = Visibility.Visible;
+                    CardViewSectionVisibility = Visibility.Collapsed;
                 }
 
                 OnPropertyChanged();                  // CurrentPage
@@ -245,6 +248,15 @@ namespace CollectaMundo.ViewModels
             get => _sideMenuUtilsUpdateDbVisibility;
             set { _sideMenuUtilsUpdateDbVisibility = value; OnPropertyChanged(); }
         }
+
+        // Card view visibility
+        private Visibility _cardViewSectionVisibility = Visibility.Visible;
+        public Visibility CardViewSectionVisibility
+        {
+            get => _cardViewSectionVisibility;
+            set { _cardViewSectionVisibility = value; OnPropertyChanged(); }
+        }
+
         #endregion
 
         // Status overlay vm (owned by main window)
@@ -508,6 +520,7 @@ namespace CollectaMundo.ViewModels
             _statusOverlayVM.ShowStatusOverlay("Updating database, please wait...", true);
             IsTopMenuEnabled = false; // Disable top menu during update
             SideMenuUtilsVisibility = Visibility.Collapsed; // Hide utilities menu during update
+            SideMenuUtilsUpdateDbVisibility = Visibility.Collapsed; // Hide update db option after starting update
 
 
             // Create progress handlers for status updates

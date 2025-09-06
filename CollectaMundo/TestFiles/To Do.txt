@@ -1,9 +1,6 @@
 TO DO 
 - MVVM refactor
 
-	- Bug: behold sort når filter
-    - Bug: cardview synlig under update
-    - Bug: sluk for update db når update er slut
 	- Tilføj backup af database step	
 	- Cancel update under download
 

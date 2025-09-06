@@ -1098,7 +1098,7 @@
                     </ListView>
                     <!--The main card view datagrid-->
                     <DataGrid x:Name="AllCardsDataGrid"
-                                  ItemsSource="{Binding AllCardsVM.FilteredCards}"
+                                  ItemsSource="{Binding AllCardsVM.FilteredCards, NotifyOnTargetUpdated=True}"
                                   Margin="0,280,0,0"
                                   AutoGenerateColumns="False"
                                   SelectionChanged="CardImageSelectionChangedHandler"
@@ -1110,6 +1110,7 @@
                                   HorizontalAlignment="Stretch"
                                   IsReadOnly="True"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  behaviors:DataGridPersistSortBehavior.Enable="True"
                                   behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
                                   behaviors:DataGridColumnResizerBehavior.DataGridIndex="0"
                                   behaviors:DataGridClearSelectionBehavior.ClearSelectionTrigger="{Binding AddCardsVM.ClearSelectionTrigger, Mode=TwoWay}">
@@ -1207,13 +1208,6 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Type}" TextWrapping="Wrap" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Keywords" Width="*" SortMemberPath="Keywords">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding Keywords}" TextWrapping="Wrap" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -1482,7 +1476,7 @@
                     </ListView>
                     <!--The my collection datagrid-->
                     <DataGrid x:Name="MyCollectionDataGrid"
-                              ItemsSource="{Binding MyCollectionVM.FilteredCards}"
+                              ItemsSource="{Binding MyCollectionVM.FilteredCards, NotifyOnTargetUpdated=True}"
                               Margin="0,280,0,0"
                               AutoGenerateColumns="False"
                               SelectionChanged="CardImageSelectionChangedHandler"
@@ -1493,6 +1487,7 @@
                               CanUserSortColumns="True"
                               HorizontalAlignment="Stretch"
                               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              behaviors:DataGridPersistSortBehavior.Enable="True"
                               behaviors:DataGridColumnResizerBehavior.EnableAutoResize="True"
                               behaviors:DataGridColumnResizerBehavior.DataGridIndex="1"                              
                               behaviors:DataGridColumnResizerBehavior.UpdateOnToken="{Binding DataContext.Main.MyCollectionResizeToken, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -2217,7 +2212,7 @@
                 <!-- Status window -->
                 <local:StatusOverlay DataContext="{Binding DataContext.StatusOverlay, RelativeSource={RelativeSource AncestorType=Window}}" d:IsHidden="True"/>
             </Grid>
-            <Grid x:Name="GridCardImages" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Right" Width="250" Margin="0,0,0,0">
+            <Grid x:Name="GridCardImages" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Right" Width="250" Margin="0,0,0,0" Visibility="{Binding CardViewSectionVisibility}">
                 <Label x:Name="ImagePromoLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="250" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="ImageSetLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="250" Margin="0,35,0,0" Style="{StaticResource BelerenBold}"/>
                 <Image x:Name="CardImage"
@@ -2225,7 +2220,6 @@
                        HorizontalAlignment="Center"
                        VerticalAlignment="Top"
                        Margin="0,80,10,0"/>
-
                 <Image x:Name="CardImageSecondary"
                        Source="{Binding ImageSourceUrl2nd, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}"
                        HorizontalAlignment="Center"
