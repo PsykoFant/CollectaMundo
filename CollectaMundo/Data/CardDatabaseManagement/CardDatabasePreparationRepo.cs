@@ -12,12 +12,22 @@ namespace CollectaMundo.Data.CardDatabaseManagement
         public async Task CreateTablesAsync(SQLiteConnection conn)
         {
             var finishes = CardPriceDefinitions.Finishes;
-            var retailerColumns = CardPriceDefinitions.RetailersByFormat
-                .SelectMany(kvp => kvp.Value.SelectMany(r => finishes.Select(f => $"{r}{f} DECIMAL(10, 2)")))
+
+            // Use KEYS (canonical ids) across all formats
+            var retailerIds = CardPriceDefinitions.RetailersByFormat
+                .SelectMany(kvp => kvp.Value.Keys)
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+
+            // Build columns like: cardmarketNormal, cardmarketFoil, cardmarketEtched, ...
+            var retailerColumns = retailerIds
+                .SelectMany(id => finishes.Select(f => $"{id}{f} DECIMAL(10, 2)"))
                 .ToList();
 
             var cardPricesColumns = string.Join(", ", first.Concat(retailerColumns));
             var cardPricesSql = $"CREATE TABLE IF NOT EXISTS cardPrices ({cardPricesColumns});";
+
+            Debug.WriteLine(cardPricesSql);
+
 
             var tables = new Dictionary<string, string>
             {
