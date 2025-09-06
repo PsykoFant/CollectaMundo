@@ -170,21 +170,21 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             // Step 1. Download resources
             // ---------------------------
 
-            //var step1Name = "Step 1. Downloading card database and prices...";
-            //var downloadResult = await _downloadService.DownloadParallelAsync(
-            //    _settings.CardDatabaseUrl, _tempDbPath, "Card database",
-            //    _settings.CardPricesUrl, _pricesPath, "Price File",
-            //    retryDelayInMs: defaultDelay,
-            //    stepName: step1Name,
-            //    stepNameAndNumberProgress: _progressSinks.Step,
-            //    stepDetailAndErrorProgress: _progressSinks.Detail,
-            //    percentProgress: _progressSinks.Percent);
+            var step1Name = "Step 1. Downloading card database and prices...";
+            var downloadResult = await _downloadService.DownloadParallelAsync(
+                _settings.CardDatabaseUrl, _tempDbPath, "Card database",
+                _settings.CardPricesUrl, _pricesPath, "Price File",
+                retryDelayInMs: defaultDelay,
+                stepName: step1Name,
+                stepNameAndNumberProgress: _progressSinks.Step,
+                stepDetailAndErrorProgress: _progressSinks.Detail,
+                percentProgress: _progressSinks.Percent);
 
-            //if (downloadResult.Code != OperationResultCode.Success)
-            //{
-            //    Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
-            //    return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
-            //}
+            if (downloadResult.Code != OperationResultCode.Success)
+            {
+                Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
+                return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
+            }
 
             // ---------------------------
             // Step 2 - Copy tables from new DB
@@ -219,7 +219,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 return new OperationResult(OperationResultCode.Error, $"Table copy failed: {ex.Message}");
             }
 
-
             // ---------------------------
             // Steps 3–10. Prepare database
             // ---------------------------
@@ -229,9 +228,17 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 return new OperationResult(OperationResultCode.Error, prepResult.Message);
             }
 
-            // finish
-            // delete temp files
-
+            // Success: clean up temporary db and price file
+            try
+            {
+                File.Delete(_pricesPath);
+                File.Delete(_tempDbPath);
+            }
+            catch (IOException ex)
+            {
+                Debug.WriteLine($"Cleanup failed: {ex.Message}");
+                return new OperationResult(OperationResultCode.Error, ex.Message);
+            }
             return new OperationResult(OperationResultCode.Success);
 
         }

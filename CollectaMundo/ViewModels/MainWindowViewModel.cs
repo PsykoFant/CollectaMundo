@@ -72,7 +72,11 @@ namespace CollectaMundo.ViewModels
             get => _currentPage;
             set
             {
-                if (_currentPage == value) return;
+                if (_currentPage == value)
+                {
+                    return;
+                }
+
                 _currentPage = value;
 
                 _statusOverlayVM.HideStatusOverlay();
@@ -456,10 +460,9 @@ namespace CollectaMundo.ViewModels
         private async Task ReloadAllCardListsAsync()
         {
             var sw = Stopwatch.StartNew();
+
             Debug.WriteLine("[ReloadAllCardListsAsync] Initializing card lists");
-
             await _cardListService.InitializeCardListsAsync(AllCardsVM, MyCollectionVM, FilterVM.Filters, FilterVM);
-
             FilterVM.NotifyFilterChanged();
 
             sw.Stop();
@@ -526,9 +529,15 @@ namespace CollectaMundo.ViewModels
             }
             else
             {
-                _statusOverlayVM.StatusLabel1 = "Database updated successfully!";
                 _statusOverlayVM.StatusLabel3 = "Reloading card lists…";
                 await Task.Run(() => ReloadAllCardListsAsync());
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    FilterVM.NotifyFiltersRebuilt();
+                    FilterVM.NotifyFilterChanged(); // keep summary + event behavior
+                });
+                _statusOverlayVM.ResetStatusOverlay();
+                _statusOverlayVM.StatusLabel1 = "Database updated successfully!";
             }
 
             _statusOverlayVM.AckButtonVisibility = Visibility.Visible;

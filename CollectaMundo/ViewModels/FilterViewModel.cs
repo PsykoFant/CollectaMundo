@@ -26,6 +26,10 @@ namespace CollectaMundo.ViewModels
                 }
             }
         }
+        public void NotifyFiltersRebuilt()
+        {
+            OnPropertyChanged(nameof(Filters));
+        }
 
         public ICommand ClearFiltersCommand { get; }
 

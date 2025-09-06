@@ -49,6 +49,21 @@ namespace CollectaMundo.Data.GenerateMissingPng
             int rowsAffected = await command.ExecuteNonQueryAsync();
             return rowsAffected > 0;
         }
+        public async Task<bool> UpdateKeyruneImageAsync(SQLiteConnection conn, string setCode, byte[] imageData, bool usedDefaultSvg)
+        {
+            const string query = @"UPDATE keyruneImages
+                                    SET keyruneImage = @imageData,defaultSvgUsed = @usedDefaultSvg
+                                    WHERE setCode = @setCode
+                                    AND keyruneImage IS NULL;";
+
+            using var command = new SQLiteCommand(query, conn);
+            command.Parameters.AddWithValue("@imageData", imageData);
+            command.Parameters.AddWithValue("@setCode", setCode);
+            command.Parameters.AddWithValue("@usedDefaultSvg", usedDefaultSvg ? 1 : 0);
+
+            int rowsAffected = await command.ExecuteNonQueryAsync();
+            return rowsAffected > 0;
+        }
         public async Task InsertIfNotExistsAsync(SQLiteConnection conn, string tableName, string columnName, string value)
         {
             string query = $@"
@@ -107,5 +122,15 @@ namespace CollectaMundo.Data.GenerateMissingPng
             using var command = new SQLiteCommand(query, conn);
             await command.ExecuteNonQueryAsync();
         }
+        public async Task DeleteWhereDefaultSvgUsedAsync(SQLiteConnection conn)
+        {
+            string query = $@"
+                            UPDATE keyruneImages 
+                            SET keyruneImage = NULL, defaultSvgUsed = 0
+                            WHERE defaultSvgUsed = 1;";
+            using var command = new SQLiteCommand(query, conn);
+            await command.ExecuteNonQueryAsync();
+        }
+
     }
 }

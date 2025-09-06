@@ -5,6 +5,7 @@ using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 
 namespace CollectaMundo.ApplicationServices.CardLists
@@ -63,17 +64,14 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 var phase3abSw = Stopwatch.StartNew();
                 var allCardsTask = Task.Run(() =>
                 {
-                    var allCards = aggregatedCores
-                        .AsParallel()
-                        .AsOrdered()
-                        .Select(CardSet.FromCore)
-                        .ToList();
+                    var allCards = aggregatedCores.AsParallel().AsOrdered().Select(CardSet.FromCore).ToList();
 
                     var sortSw = Stopwatch.StartNew();
                     allCardsVM.Cards = SortCards(allCards);
-                    allCardsVM.FilteredCards = allCardsVM.Cards;
                     sortSw.Stop();
-                    Debug.WriteLine($"Sorted allCards in {sortSw.ElapsedMilliseconds} ms");
+                    Debug.WriteLine($"[InitializeCardListsAsync]   - sorting AllCards: {sortSw.ElapsedMilliseconds} ms");
+
+                    allCardsVM.FilteredCards = allCardsVM.Cards;
                     return allCards;
                 });
 
@@ -123,7 +121,6 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 throw;
             }
         }
-
         public async Task ReloadPriceLookupsAsync(string retailerKey)
         {
             await using var uow = new UnitOfWork();
@@ -133,29 +130,41 @@ namespace CollectaMundo.ApplicationServices.CardLists
         }
         private static List<CardSet> SortCards(IEnumerable<CardSet> cards)
         {
-            static int ColorRank(string? colorCode)
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            static int ColorRankFast(string? colors)
             {
-                return colorCode switch
+                // W(0), U(1), B(2), R(3), G(4), MULTI(5), C(6), Unknown(7)
+                if (colors is null)
                 {
-                    "W" => 0,
-                    "U" => 1,
-                    "B" => 2,
-                    "R" => 3,
-                    "G" => 4,
-                    "C" => 5,
-                    _ => 6 // Any unrecognized or multicolor at the end
-                };
+                    return 7;
+                }
+
+                // Monocolor -> exactly one char
+                if (colors.Length == 1)
+                {
+                    return colors[0] switch
+                    {
+                        'W' => 0,
+                        'U' => 1,
+                        'B' => 2,
+                        'R' => 3,
+                        'G' => 4,
+                        _ => 7,
+                    };
+                }
+
+                // Anything longer than 1 char we treat as multicolor (no allocations / parsing)
+                return 5;
             }
 
             return [.. cards
-                .OrderByDescending(c => c.ReleaseDate) // Assuming DateTime or sortable type
-                .ThenBy(c =>
-                {
-                    var colors = c.Colors?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                    if (colors is null || colors.Length == 0) { return 6; } return colors.Min(ColorRank); // Use lowest rank as primary color
-                })
+                .OrderByDescending(c => c.ReleaseDate)
+                .ThenBy(c => c.SetCode, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(c => ColorRankFast(c.Colors))
                 .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)];
         }
+
+
 
     }
 }

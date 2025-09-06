@@ -35,10 +35,7 @@ namespace CollectaMundo.Data.RemoteLookups
         }
         public string? TryGetIconUriForSetCode(JArray setMetadata, string setCode)
         {
-            var match = setMetadata?
-                .FirstOrDefault(x =>
-                    x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
-
+            var match = setMetadata?.FirstOrDefault(x => x["code"]?.ToString().Equals(setCode, StringComparison.OrdinalIgnoreCase) == true);
             return match?["icon_svg_uri"]?.ToString();
         }
         public async Task<string?> FetchSvgContentAsync(string svgUrl)

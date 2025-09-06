@@ -1,8 +1,9 @@
 TO DO 
 - MVVM refactor
 
-	- Slet temp set ikoner
-	- Slet temp filer
+	- Bug: behold sort når filter
+    - Bug: cardview synlig under update
+    - Bug: sluk for update db når update er slut
 	- Tilføj backup af database step	
 	- Cancel update under download
 
@@ -22,57 +23,6 @@ TO DO
  - Deck manager brug MVVM (unit test)
 
  - Hvorfor er der ingen kort fra Mystery Booster
-
- - Performance - startup
-	- Bruger vi AggregatedCardKeywords table til noget?
-
-	laptop:
-	- 10891, 10980, 10210 ms. 
-
-	Stationær:
-	Stationær - inden refactor:
-	- ca. 9,4 sekunder
-	- 680 mb
-	
-	Stationær - mana cost refactored
-	- ca. 5,3 sekunder
-	- 520 mb	
-	
-	Stationær - set icons refactored, view updated
-	- ca. 4,4 sekunder
-	- 460 mb	
-
-
-    Stationær - sets refactored, view updated
-    - Ca. 4,1 sekunder
-    - 460 mb
-
-    Stationær - prices refactored, deleted view (query instead)
-    - Ca. 3,6 sekunder
-    - 487 mb
-
-    Stationær - coalesce removed 
-    - Ca. 3,5 sekunder
-    - 514 mb
-
-
-
-
-    Table sizes
-    select count(*) from cards: 105961
-    select count(*) from tokens: 7940
-    select count(*) from sets: 823
-    select count(*) from cardPrices: 100478
-
-    Db search times:
-    select * from cards: approx. 1200 ms
-    select * from tokens: approx. 45 ms
-    select * from sets: apporx. 8 ms
-    select * from cardPrices: approx. 350 ms
-
-    select * from view_allCards: approx. 3500 ms
-    select * from view_allCards (modified, without joining on table sets): approx. 1950 ms
-    select name, releaseDate, code from sets: approx. 5 ms
 
 
 

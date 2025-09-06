@@ -144,60 +144,74 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
         }
         public async Task GenerateMissingKeyRuneImagesAsync(SQLiteConnection conn, IProgress<int>? percentProgress = null)
         {
-            // Setup
-            await _repository.InsertMissingFromColumnAsync(conn, "sets", "code", "keyruneImages", "setCode");
+            // Ensure all set codes are present
             await _repository.InsertMissingFromColumnAsync(conn, "sets", "code", "keyruneImages", "setCode");
 
-            // slet default set koder
+            // Clear previously stored default.svg blobs so they can be regenerated
+            await _repository.DeleteWhereDefaultSvgUsedAsync(conn);
 
+            // Worklist = rows with NULL image
             var missingSetCodes = await _repository.GetValuesWithNullAsync(conn, "keyruneImages", "setCode", "keyruneImage");
 
+            // Fetch metadata once
             JArray? metadata = await _scryfallLookups.FetchSetMetadataAsync();
             if (metadata == null)
             {
-                Debug.WriteLine($"Failed to fetch keyrune metadata. Aborting.");
+                Debug.WriteLine("Failed to fetch keyrune metadata. Aborting.");
                 return;
             }
 
             // Parallel processing with progress
             int maxParallelism = Math.Max(2, Environment.ProcessorCount / 2);
-            using var coordinator = new ParallelWorkCoordinator<(string SetCode, byte[] PngData)>(percentProgress ?? new Progress<int>(_ => { }), missingSetCodes.Count, maxParallelism);
+            using var coordinator = new ParallelWorkCoordinator<(string SetCode, byte[] PngData, bool IsFallback)>(
+                percentProgress ?? new Progress<int>(_ => { }),
+                missingSetCodes.Count,
+                maxParallelism);
 
             await Task.WhenAll(missingSetCodes.Select(setCode =>
                 coordinator.DoAsync(async () =>
                 {
-                    string svgUrl = _scryfallLookups.TryGetIconUriForSetCode(metadata, setCode) ?? "https://svgs.scryfall.io/sets/default.svg";
+                    string svgUrl = _scryfallLookups.TryGetIconUriForSetCode(metadata, setCode)
+                                    ?? "https://svgs.scryfall.io/sets/default.svg";
+
+                    bool isFallback = svgUrl.IndexOf("default.svg", StringComparison.OrdinalIgnoreCase) >= 0;
+                    if (isFallback)
+                    {
+                        Debug.WriteLine($"[PNGService] Using default.svg fallback for set {setCode}");
+                    }
 
                     string? svgContent = await _scryfallLookups.FetchSvgContentAsync(svgUrl);
                     byte[] png = string.IsNullOrWhiteSpace(svgContent)
-                        ? []
+                        ? Array.Empty<byte>()
                         : await _logic.ConvertSvgToPngAsync(svgContent);
 
-                    return (SetCode: setCode, PngData: png);
+                    return (SetCode: setCode, PngData: png, IsFallback: isFallback);
                 })
             ));
 
             var results = coordinator.Results;
 
-            // Database update
+            // Persist in one transaction
             using var transaction = conn.BeginTransaction();
             int updatedCount = 0;
 
-            foreach (var (SetCode, PngData) in results)
+            foreach (var (SetCode, PngData, IsFallback) in results)
             {
                 if (PngData.Length > 0)
                 {
-                    bool updated = await _repository.UpdateImageAsync(
+                    bool updated = await _repository.UpdateKeyruneImageAsync(
                         conn,
-                        tableName: "keyruneImages",
-                        imageColumn: "keyruneImage",
-                        referenceColumn: "setCode",
-                        referenceValue: SetCode,
-                        imageData: PngData);
+                        setCode: SetCode,
+                        imageData: PngData,
+                        usedDefaultSvg: IsFallback);
 
                     if (updated)
                     {
                         updatedCount++;
+                        if (IsFallback)
+                        {
+                            Debug.WriteLine($"[PNGService] Persisted default.svg fallback for set {SetCode}");
+                        }
                     }
                     else
                     {
@@ -211,6 +225,8 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
             }
 
             transaction.Commit();
+            Debug.WriteLine($"[PNGService] Keyrune regeneration complete. Updated {updatedCount} row(s).");
         }
+
     }
 }
