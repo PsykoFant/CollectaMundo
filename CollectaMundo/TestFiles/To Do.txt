@@ -5,7 +5,8 @@ TO DO
 	- Cancel update under download
 
     Bug: cancel update check (ikke starte mere end en)
-
+    - Download og remote lookups?
+    - Download i service lag
 
 - Update priser scenarie
 - Check for genbrug mellem 1st time prep og update service igen

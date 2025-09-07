@@ -50,8 +50,9 @@ namespace CollectaMundo.ViewModels
         private readonly Func<string> _getRetailer;
         private readonly Action<string> _setRetailerAndPersist;
 
-        // For cancelling downloads
+        // Cancellation tokens
         private CancellationTokenSource? _updateCts;
+        private CancellationTokenSource? _checkCts;
         #endregion
 
         #region child viewmodels (visible to XAML)
@@ -245,8 +246,7 @@ namespace CollectaMundo.ViewModels
             set { _sideMenuUtilsCheckForUpdatesVisibility = value; OnPropertyChanged(); }
         }
 
-        //private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
-        private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Visible;
+        private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
         public Visibility SideMenuUtilsUpdateDbVisibility
         {
             get => _sideMenuUtilsUpdateDbVisibility;
@@ -494,17 +494,41 @@ namespace CollectaMundo.ViewModels
         }
         private async Task CheckForDbUpdatesAsync()
         {
+            // Prevent duplicate checks
+            if (_checkCts != null)
+            {
+                return;
+            }
+
+            _checkCts = new CancellationTokenSource();
+
+            // UI state preparation
+            IsTopMenuEnabled = false;
+            SideMenuUtilsVisibility = Visibility.Collapsed;
+            SideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
+            _statusOverlayVM.PrimaryButtonText = "Cancel";
+            _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
             _statusOverlayVM.ShowStatusOverlay("One moment - checking for updates...", false);
 
-            var result = await _prepService.CheckForDbUpdatesAsync();
+            // Hook up cancel action
+            _statusOverlayVM.SetPrimaryAction(_ =>
+            {
+                _statusOverlayVM.StatusLabel2 = "Cancelling…";
+                _checkCts?.Cancel();
+            });
+
+            // Run check
+            var result = await _prepService.CheckForDbUpdatesAsync(_checkCts.Token);
+
+            // Reset UI state
+            _statusOverlayVM.SetPrimaryAction(null);
+            _statusOverlayVM.PrimaryButtonText = "OK";
+            _checkCts = null;
 
             switch (result.Code)
             {
                 case OperationResultCode.UpToDate:
                     _statusOverlayVM.StatusLabel3 = result.Message;
-                    _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
-                    _statusOverlayVM.PrimaryButtonText = "Got it!";
-
                     break;
 
                 case OperationResultCode.NeedsUpdate:
@@ -512,36 +536,46 @@ namespace CollectaMundo.ViewModels
                     _statusOverlayVM.StatusLabel3 = result.Message;
                     break;
 
-                case OperationResultCode.Error:
-                    _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
-                    _statusOverlayVM.PrimaryButtonText = "OK";
+                case OperationResultCode.CancelledByUser:
+                    _statusOverlayVM.StatusLabel1 = "Cancelled";
+                    _statusOverlayVM.StatusLabel3 = "No check was performed.";
+                    break;
+
+                default:
                     _statusOverlayVM.StatusLabel3 = result.Message;
                     break;
             }
+
+            _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
+            IsTopMenuEnabled = true;
+            SideMenuUtilsVisibility = Visibility.Visible;
         }
         private async Task UpdateDBAsync()
         {
-            _statusOverlayVM.ShowStatusOverlay("Updating database, please wait...", true);
+            _updateCts = new CancellationTokenSource();
+
+            // UI state preparation
             IsTopMenuEnabled = false;
             SideMenuUtilsVisibility = Visibility.Collapsed;
             SideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
-
-            _updateCts = new CancellationTokenSource();
-
             _statusOverlayVM.PrimaryButtonText = "Cancel";
             _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
+            _statusOverlayVM.ShowStatusOverlay("Updating database, please wait...", true);
             _statusOverlayVM.SetPrimaryAction(_ =>
             {
                 _statusOverlayVM.StatusLabel2 = "Cancelling…";
                 _updateCts?.Cancel();
             });
 
+            // Run the update
             var result = await _prepService.UpdateDbPrepOrchetrator(ct: _updateCts.Token);
 
+            // Reset UI state before showing result
             _statusOverlayVM.SetPrimaryAction(null);
             _statusOverlayVM.PrimaryButtonText = "OK";
             _statusOverlayVM.ResetStatusOverlay();
 
+            // Show result
             switch (result.Code)
             {
                 case OperationResultCode.Success:

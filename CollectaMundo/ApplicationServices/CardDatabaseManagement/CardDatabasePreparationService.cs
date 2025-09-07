@@ -97,10 +97,19 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         }
 
         // Use case: check for updates to the card database
-        public async Task<OperationResult> CheckForDbUpdatesAsync()
+        public async Task<OperationResult> CheckForDbUpdatesAsync(CancellationToken ct = default)
         {
 
+            if (ct.IsCancellationRequested)
+            {
+                return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled update check");
+            }
+
             var internetAvailable = await _remoteLookups.IsInternetAvailableAsync();
+            if (ct.IsCancellationRequested)
+            {
+                return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled update check");
+            }
 
             if (!internetAvailable)
             {
