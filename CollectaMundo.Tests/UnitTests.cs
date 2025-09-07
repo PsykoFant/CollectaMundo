@@ -723,7 +723,7 @@ namespace CollectaMundo.Tests
                 repo.Verify(r => r.MergeDuplicateRecordsAsync(newCard.Uuid, newCard.SelectedCondition, newCard.Language, newCard.SelectedFinish, 123, dummyConn), Times.Once);
             }
         }
-        public class FirstTimeSetupLogicTests
+        public class FirstTimeSetupAndUpdateLogicTests
         {
 
             [Fact]
@@ -880,6 +880,151 @@ namespace CollectaMundo.Tests
                 ctx.DownloadService.VerifyNoOtherCalls();
                 ctx.SchemaRepo.VerifyNoOtherCalls();
             }
+
+            [Fact]
+            public async Task UpdateDbPrepOrchetrator_UserCancelsDuringDownload_ReturnsCancelledByUser()
+            {
+                using var ctx = new FirstTimeSetupTestContext();
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.StubAllStepsAsSuccess();
+
+                var cts = new CancellationTokenSource();
+                cts.Cancel(); // Simulate user cancellation before download starts
+
+                ctx.DownloadService
+                    .Setup(d => d.DownloadParallelAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<int>(), It.IsAny<string>(),
+                        It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
+                        It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new OperationResult(OperationResultCode.CancelledByUser, "User cancelled"));
+
+                var svc = ctx.BuildService();
+
+                var result = await svc.UpdateDbPrepOrchetrator(0, cts.Token);
+
+                Assert.Equal(OperationResultCode.CancelledByUser, result.Code);
+                ctx.SchemaRepo.VerifyNoOtherCalls(); // No further steps run
+            }
+            [Fact]
+            public async Task FirstTimeDbPrepOrchetrator_DownloadThrowsHttpException_ReturnsDownloadFailed()
+            {
+                using var ctx = new FirstTimeSetupTestContext();
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.StubAllStepsAsSuccess();
+
+                ctx.DownloadService
+                .Setup(d => d.DownloadParallelAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<int>(), It.IsAny<string>(),
+                    It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
+                    It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new OperationResult(OperationResultCode.DownloadFailed, "boom"));
+
+
+                var svc = ctx.BuildService();
+                var result = await svc.FirstTimeDbPrepOrchetrator(0);
+
+                Assert.Equal(OperationResultCode.DownloadFailed, result.Code); // Gracefully mapped
+            }
+            [Fact]
+            public async Task UpdateDbPrepOrchetrator_ProgressReportsBeforeCancel_AreCaptured()
+            {
+                using var ctx = new FirstTimeSetupTestContext();
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.StubAllStepsAsSuccess();
+
+                var cts = new CancellationTokenSource();
+
+                ctx.DownloadService
+                    .Setup(d => d.DownloadParallelAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<int>(), It.IsAny<string>(),
+                        It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
+                        It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                    .Callback((
+                        string u1, string p1, string l1,
+                        string u2, string p2, string l2,
+                        int retryDelay, string stepName,
+                        IProgress<string> stepProg, IProgress<string> detailProg,
+                        IProgress<int> percentProg, CancellationToken _) =>
+                    {
+                        percentProg.Report(15);
+                        percentProg.Report(50);
+                        cts.Cancel(); // simulate cancel mid-progress
+                    })
+                    .ReturnsAsync(new OperationResult(OperationResultCode.CancelledByUser, "cancelled"));
+
+                var svc = ctx.BuildService();
+                var result = await svc.UpdateDbPrepOrchetrator(0, cts.Token);
+
+                Assert.Equal(OperationResultCode.CancelledByUser, result.Code);
+                Assert.Contains(ctx.PercentSamples, p => p == 50); // Assert progress was tracked
+            }
+
+            [Fact]
+            public async Task UpdateDbPrepOrchetrator_CancelDuringRetryDelay_AbortsImmediately()
+            {
+                using var ctx = new FirstTimeSetupTestContext();
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.StubAllStepsAsSuccess();
+
+                var cts = new CancellationTokenSource();
+
+                int callCount = 0;
+                ctx.DownloadService
+                    .Setup(d => d.DownloadParallelAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<int>(), It.IsAny<string>(),
+                        It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
+                        It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                    .Returns(async () =>
+                    {
+                        callCount++;
+                        if (callCount == 1)
+                        {
+                            cts.Cancel(); // simulate user cancelling *after* first failure
+                            return new OperationResult(OperationResultCode.DownloadFailed, "Simulated failure");
+                        }
+
+                        return new OperationResult(OperationResultCode.Success);
+                    });
+
+                var svc = ctx.BuildService();
+                var result = await svc.UpdateDbPrepOrchetrator(0, cts.Token);
+
+                Assert.Equal(OperationResultCode.CancelledByUser, result.Code);
+                Assert.Equal(1, callCount); // Should abort before retrying
+            }
+            [Fact]
+            public async Task UpdateDbPrepOrchetrator_OneFileFailsInParallel_ReturnsDownloadFailed()
+            {
+                using var ctx = new FirstTimeSetupTestContext();
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.StubAllStepsAsSuccess();
+
+                // Simulate a download result where one file failed
+                ctx.DownloadService
+                    .Setup(d => d.DownloadParallelAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                        It.IsAny<int>(), It.IsAny<string>(),
+                        It.IsAny<IProgress<string>>(), It.IsAny<IProgress<string>>(),
+                        It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new OperationResult(OperationResultCode.DownloadFailed, "One file failed"));
+
+                var svc = ctx.BuildService();
+                var result = await svc.UpdateDbPrepOrchetrator(0, CancellationToken.None);
+
+                Assert.Equal(OperationResultCode.DownloadFailed, result.Code);
+                Assert.Contains("One file failed", result.Message);
+                ctx.SchemaRepo.VerifyNoOtherCalls(); // No further processing after failed download
+            }
+
 
         }
         public class CardCoreAggregatorTests

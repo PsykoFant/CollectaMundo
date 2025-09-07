@@ -49,6 +49,9 @@ namespace CollectaMundo.ViewModels
         // Retailer selection
         private readonly Func<string> _getRetailer;
         private readonly Action<string> _setRetailerAndPersist;
+
+        // For cancelling downloads
+        private CancellationTokenSource? _updateCts;
         #endregion
 
         #region child viewmodels (visible to XAML)
@@ -242,7 +245,8 @@ namespace CollectaMundo.ViewModels
             set { _sideMenuUtilsCheckForUpdatesVisibility = value; OnPropertyChanged(); }
         }
 
-        private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
+        //private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
+        private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Visible;
         public Visibility SideMenuUtilsUpdateDbVisibility
         {
             get => _sideMenuUtilsUpdateDbVisibility;
@@ -518,44 +522,54 @@ namespace CollectaMundo.ViewModels
         private async Task UpdateDBAsync()
         {
             _statusOverlayVM.ShowStatusOverlay("Updating database, please wait...", true);
-            IsTopMenuEnabled = false; // Disable top menu during update
-            SideMenuUtilsVisibility = Visibility.Collapsed; // Hide utilities menu during update
-            SideMenuUtilsUpdateDbVisibility = Visibility.Collapsed; // Hide update db option after starting update
+            IsTopMenuEnabled = false;
+            SideMenuUtilsVisibility = Visibility.Collapsed;
+            SideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
 
+            _updateCts = new CancellationTokenSource();
 
-            // Create progress handlers for status updates
-            var statusLabel2Progress = new Progress<string>(msg => _statusOverlayVM.StatusLabel2 = msg);
-            var statusLabel3Progress = new Progress<string>(msg => _statusOverlayVM.StatusLabel3 = msg);
-            var percentProgress = new Progress<int>(percent => _statusOverlayVM.ProgressValue = percent);
+            _statusOverlayVM.PrimaryButtonText = "Cancel";
+            _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
+            _statusOverlayVM.SetPrimaryAction(_ =>
+            {
+                _statusOverlayVM.StatusLabel2 = "Cancelling…";
+                _updateCts?.Cancel();
+            });
 
-            // Start the update process
-            var result = await _prepService.UpdateDbPrepOrchetrator();
+            var result = await _prepService.UpdateDbPrepOrchetrator(ct: _updateCts.Token);
 
+            _statusOverlayVM.SetPrimaryAction(null);
+            _statusOverlayVM.PrimaryButtonText = "OK";
             _statusOverlayVM.ResetStatusOverlay();
 
+            switch (result.Code)
+            {
+                case OperationResultCode.Success:
+                    _statusOverlayVM.StatusLabel3 = "Reloading card lists…";
+                    await Task.Run(() => ReloadAllCardListsAsync());
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        FilterVM.NotifyFiltersRebuilt();
+                        FilterVM.NotifyFilterChanged();
+                    });
+                    _statusOverlayVM.ResetStatusOverlay();
+                    _statusOverlayVM.StatusLabel1 = "Database updated successfully!";
+                    break;
 
-            // Handle the result of the update
-            if (result.Code != OperationResultCode.Success)
-            {
-                _statusOverlayVM.StatusLabel1 = "Update failed!";
-                _statusOverlayVM.StatusLabel3 = result.Message;
-            }
-            else
-            {
-                _statusOverlayVM.StatusLabel3 = "Reloading card lists…";
-                await Task.Run(() => ReloadAllCardListsAsync());
-                await Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    FilterVM.NotifyFiltersRebuilt();
-                    FilterVM.NotifyFilterChanged(); // keep summary + event behavior
-                });
-                _statusOverlayVM.ResetStatusOverlay();
-                _statusOverlayVM.StatusLabel1 = "Database updated successfully!";
+                case OperationResultCode.CancelledByUser:
+                    _statusOverlayVM.StatusLabel1 = "Update canceled";
+                    _statusOverlayVM.StatusLabel3 = "Download aborted. No files were imported.";
+                    break;
+
+                default:
+                    _statusOverlayVM.StatusLabel1 = "Update failed!";
+                    _statusOverlayVM.StatusLabel3 = result.Message;
+                    break;
             }
 
             _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
-            IsTopMenuEnabled = true; // Re-enable top menu after update
-            SideMenuUtilsVisibility = Visibility.Visible; // Show utilities menu again
+            IsTopMenuEnabled = true;
+            SideMenuUtilsVisibility = Visibility.Visible;
         }
         private async Task ChangeRetailerAsync()
         {

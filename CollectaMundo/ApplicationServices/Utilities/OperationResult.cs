@@ -9,6 +9,7 @@
         UpToDate = 3,
         NeedsUpdate = 4,
         DownloadFailed = 5,
-        NoInternet = 6
+        NoInternet = 6,
+        CancelledByUser = 7
     }
 }

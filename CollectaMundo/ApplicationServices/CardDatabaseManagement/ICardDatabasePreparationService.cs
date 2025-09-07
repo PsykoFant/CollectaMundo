@@ -5,7 +5,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
     {
         Task<OperationResult> FirstTimeDbPrepOrchetrator(int defaultDelay = 3000);
         Task<OperationResult> CheckForDbUpdatesAsync();
-        Task<OperationResult> UpdateDbPrepOrchetrator(int defaultDelay = 3000);
+        Task<OperationResult> UpdateDbPrepOrchetrator(int defaultDelay = 3000, CancellationToken ct = default);
     }
 
 }

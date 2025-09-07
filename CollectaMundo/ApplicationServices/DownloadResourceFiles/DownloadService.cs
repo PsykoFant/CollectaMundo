@@ -2,16 +2,17 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Net.Sockets;
 
 namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
 {
     public class DownloadService : IDownloadService
     {
-        public async Task<OperationResult> DownloadAsync(string url, string targetPath, string label, int retryDelayInMs, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, IProgress<int>? percentProgress = null, CancellationToken token = default)
+        public async Task<OperationResult> DownloadAsync(string url, string targetPath, string label, int retryDelayInMs, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, IProgress<int>? percentProgress = null, CancellationToken cancelToken = default)
         {
             return await RetryHelper.RetryLoopAsync(async () =>
                 {
-                    var (success, error) = await DownloadFileAsync(url, targetPath, label, stepDetailAndErrorProgress, percentProgress, token);
+                    var (success, error) = await DownloadFileAsync(url, targetPath, label, stepDetailAndErrorProgress, percentProgress, cancelToken);
                     return success
                         ? new OperationResult(OperationResultCode.Success, $"{label} download succeeded.")
                         : new OperationResult(OperationResultCode.Error, error ?? $"{label} download failed.");
@@ -25,15 +26,21 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
         public async Task<OperationResult> DownloadParallelAsync(
             string url1, string targetPath1, string label1,
             string url2, string targetPath2, string label2,
-            int retryDelayInMs, string stepName, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, IProgress<int>? percentProgress = null, CancellationToken token = default)
+            int retryDelayInMs, string stepName, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, IProgress<int>? percentProgress = null, CancellationToken cancelToken = default)
         {
             return await RetryHelper.RetryLoopAsync(
                 async () =>
                 {
-                    var (success, errorMessage) = await RunParallelDownloadsAsync(
+                    var (success, errorMessage, cancelled) = await RunParallelDownloadsAsync(
                         url1, targetPath1, label1,
                         url2, targetPath2, label2,
-                        stepDetailAndErrorProgress, percentProgress, token);
+                        stepDetailAndErrorProgress, percentProgress,
+                        cancelToken);
+
+                    if (cancelled)
+                    {
+                        return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled download");
+                    }
 
                     return success
                         ? new OperationResult(OperationResultCode.Success, "Parallel download succeeded.")
@@ -42,11 +49,11 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
                 retryDelayInMs,
                 stepName,
                 stepNameAndNumberProgress,
-                stepDetailAndErrorProgress
+                stepDetailAndErrorProgress,
+                cancelToken: cancelToken
             );
         }
-
-        private static async Task<(bool success, string? errorMessage)> RunParallelDownloadsAsync(
+        private static async Task<(bool success, string? errorMessage, bool cancelled)> RunParallelDownloadsAsync(
             string url1, string targetPath1, string label1,
             string url2, string targetPath2, string label2,
             IProgress<string>? stepDetailAndErrorProgress, IProgress<int>? percentProgress, CancellationToken token)
@@ -63,23 +70,42 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
 
             if (!firstResult.success)
             {
-                innerCts.Cancel(); // cancel the other download
-                await Task.WhenAll(task1, task2); // ensure cleanup
-                return firstResult;
+                // Cancel the other task
+                innerCts.Cancel();
+
+                // Await both safely without surfacing exceptions
+                await SafeAwait(task1);
+                await SafeAwait(task2);
+
+                return (false, firstResult.errorMessage, token.IsCancellationRequested);
             }
 
+            // Now wait for both normally, results already captured
             var result1 = await task1;
             var result2 = await task2;
 
             if (!result1.success || !result2.success)
             {
                 var error = result1.errorMessage ?? result2.errorMessage ?? "Unknown error during parallel download.";
-                return (false, error);
+                return (false, error, token.IsCancellationRequested);
             }
 
-            return (true, null);
+            return (true, null, false);
         }
-        private static async Task<(bool success, string? errorMessage)> DownloadFileAsync(string url, string targetPath, string label, IProgress<string>? stepDetailAndErrorProgress, IProgress<int>? percentProgress, CancellationToken token)
+
+        private static async Task SafeAwait(Task<(bool success, string? errorMessage)> task)
+        {
+            try
+            {
+                await task;
+            }
+            catch
+            {
+                // Suppress any faulted or canceled task
+            }
+        }
+
+        private static async Task<(bool success, string? errorMessage)> DownloadFileAsync(string url, string targetPath, string label, IProgress<string>? stepDetailAndErrorProgress, IProgress<int>? percentProgress, CancellationToken cancelToken)
         {
             try
             {
@@ -87,13 +113,13 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
 
                 using var httpClient = new HttpClient();
                 using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
+                using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelToken);
                 response.EnsureSuccessStatusCode();
 
                 var totalBytes = response.Content.Headers.ContentLength ?? -1L;
                 var buffer = new byte[8192];
 
-                using var contentStream = await response.Content.ReadAsStreamAsync(token);
+                using var contentStream = await response.Content.ReadAsStreamAsync(cancelToken);
                 using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
 
                 stepDetailAndErrorProgress?.Report($"{label} size: {totalBytes / 1_000_000.0:0.0} MB");
@@ -102,9 +128,9 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
                 int bytesRead;
                 int lastReportedPercent = 0;
 
-                while ((bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length), token)) > 0)
+                while ((bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancelToken)) > 0)
                 {
-                    await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), token);
+                    await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancelToken);
                     totalBytesRead += bytesRead;
 
                     if (totalBytes > 0 && percentProgress != null)
@@ -121,10 +147,10 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
                 Debug.WriteLine($"[Download] Completed: {label}");
                 return (true, null);
             }
-            catch (OperationCanceledException)
+            catch (Exception ex) when (IsCancellation(ex, cancelToken))
             {
-                Debug.WriteLine($"[Download] Cancelled: {label}");
-                return (false, null); // Suppressed
+                Debug.WriteLine($"[Download] Cancelled: {label} — {ex.GetType().Name}: {ex.Message}");
+                return (false, null); // Swallow cleanly
             }
             catch (Exception ex)
             {
@@ -132,6 +158,14 @@ namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
                 return (false, $"{label} failed: {ex.Message}");
             }
         }
+        private static bool IsCancellation(Exception ex, CancellationToken token)
+        {
+            return token.IsCancellationRequested
+                || ex is OperationCanceledException
+                || ex is TaskCanceledException
+                || ex.InnerException is IOException ioEx && ioEx.InnerException is SocketException;
+        }
+
     }
 }
 

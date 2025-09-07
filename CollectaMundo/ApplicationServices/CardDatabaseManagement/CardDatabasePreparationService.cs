@@ -152,7 +152,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         }
 
         // Use case: orchestrates card database update
-        public async Task<OperationResult> UpdateDbPrepOrchetrator(int defaultDelay = 3000)
+        public async Task<OperationResult> UpdateDbPrepOrchetrator(int defaultDelay = 3000, CancellationToken ct = default)
         {
 
             // ---------------------------
@@ -178,7 +178,14 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 stepName: step1Name,
                 stepNameAndNumberProgress: _progressSinks.Step,
                 stepDetailAndErrorProgress: _progressSinks.Detail,
-                percentProgress: _progressSinks.Percent);
+                percentProgress: _progressSinks.Percent,
+                cancelToken: ct);
+
+            if (ct.IsCancellationRequested)
+            {
+                CleanupPartialDownloads();
+                return new OperationResult(OperationResultCode.CancelledByUser, "Update was cancelled by user during download.");
+            }
 
             if (downloadResult.Code != OperationResultCode.Success)
             {
@@ -315,6 +322,21 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             }
 
             Debug.WriteLine("[CardDatabasePrep] Deleted corrupt or partial DB file(s).");
+        }
+        private void CleanupPartialDownloads()
+        {
+            try
+            {
+                CleanupPartialDatabaseFiles(_tempDbPath, _settings.UserDownloadsPath);
+                if (File.Exists(_pricesPath))
+                {
+                    File.Delete(_pricesPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Cleanup on cancel failed: {ex.Message}");
+            }
         }
     }
 }

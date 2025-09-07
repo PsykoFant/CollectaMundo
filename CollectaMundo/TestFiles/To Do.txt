@@ -4,6 +4,8 @@ TO DO
 	- Tilføj backup af database step	
 	- Cancel update under download
 
+    Bug: cancel update check (ikke starte mere end en)
+
 
 - Update priser scenarie
 - Check for genbrug mellem 1st time prep og update service igen
