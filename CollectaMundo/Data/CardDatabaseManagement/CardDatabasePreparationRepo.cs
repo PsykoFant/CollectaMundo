@@ -212,11 +212,12 @@ namespace CollectaMundo.Data.CardDatabaseManagement
 
 
         // Update
-        public async Task<int> GetNumberOfSetsAsync(SQLiteConnection conn)
+        public async Task<int> GetNumberOfSetsAsync(SQLiteConnection conn, CancellationToken ct = default)
         {
-            var sets = await DbHelpers.GetUniqueValuesAsync(conn, "sets", "code");
+            var sets = await DbHelpers.GetUniqueValuesAsync(conn, "sets", "code", ct);
             return sets.Count;
         }
+
         public async Task AttachTempDbAsync(SQLiteConnection conn, string newDbPath, IProgress<string> progress)
         {
             var attachSql = $"ATTACH DATABASE '{newDbPath}' AS tempDb;";

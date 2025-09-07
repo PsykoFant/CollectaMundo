@@ -12,6 +12,7 @@ TO DO
 - Check for genbrug mellem 1st time prep og update service igen
 - Test af update og db prep. 
 
+- Get Unique Values - både static helper og i png tech stack
 
  - Pris update brug MVVM (unit test)
   - Card image brug MVVM (unit test)

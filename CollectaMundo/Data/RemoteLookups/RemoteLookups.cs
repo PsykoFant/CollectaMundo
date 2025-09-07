@@ -6,19 +6,26 @@ namespace CollectaMundo.Data.RemoteLookups
 {
     public class RemoteLookups : IRemoteLookups
     {
-        public async Task<bool> IsInternetAvailableAsync()
+        public async Task<bool> IsInternetAvailableAsync(CancellationToken cancelToken = default)
         {
             try
             {
                 using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-                var result = await client.GetAsync("https://www.google.com");
+                var result = await client.GetAsync("https://www.google.com", cancelToken);
                 return result.IsSuccessStatusCode;
+            }
+            catch (OperationCanceledException)
+            {
+                // Cancellation was requested — propagate or return false depending on behavior
+                throw;
             }
             catch
             {
+                // Network failure or other error
                 return false;
             }
         }
+
         public async Task<JArray?> FetchSetMetadataAsync()
         {
             using var client = new HttpClient();
@@ -45,16 +52,19 @@ namespace CollectaMundo.Data.RemoteLookups
 
             return await client.GetStringAsync(svgUrl);
         }
-        public async Task<int> FetchSetsCountAsync()
+        public async Task<int> FetchSetsCountAsync(CancellationToken ct = default)
         {
             using var httpClient = new HttpClient();
-            var response = await httpClient.GetStringAsync("https://mtgjson.com/api/v5/SetList.json");
+            var response = await httpClient.GetStringAsync("https://mtgjson.com/api/v5/SetList.json", ct);
+
             var json = JObject.Parse(response);
             var sets = json["data"] as JArray;
             int count = sets?.Count ?? 0;
+
             Debug.WriteLine($"Number of sets fetched: {count}");
             return count;
         }
+
 
     }
 }

@@ -494,12 +494,6 @@ namespace CollectaMundo.ViewModels
         }
         private async Task CheckForDbUpdatesAsync()
         {
-            // Prevent duplicate checks
-            if (_checkCts != null)
-            {
-                return;
-            }
-
             _checkCts = new CancellationTokenSource();
 
             // UI state preparation

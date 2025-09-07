@@ -99,66 +99,51 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         // Use case: check for updates to the card database
         public async Task<OperationResult> CheckForDbUpdatesAsync(CancellationToken ct = default)
         {
-
-            if (ct.IsCancellationRequested)
-            {
-                return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled update check");
-            }
-
-            var internetAvailable = await _remoteLookups.IsInternetAvailableAsync();
-            if (ct.IsCancellationRequested)
-            {
-                return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled update check");
-            }
-
-            if (!internetAvailable)
-            {
-                return new OperationResult(OperationResultCode.Error, "Internet not available - unable to check server...");
-            }
-
-            int numberOfSetsInDb;
-            int numberOfSetsOnServer;
-
-            // Get the number of sets in the database
-            await using var uow = new UnitOfWork();
-            await uow.BeginAsync();
             try
             {
-                numberOfSetsInDb = await _dbSchemaRepo.GetNumberOfSetsAsync(uow.CurrentConnection);
-                await uow.CommitAsync();
-            }
-            catch (Exception ex)
-            {
-                // Roll back on any error
-                await uow.RollbackAsync();
-                return new OperationResult(OperationResultCode.Error, $"Error querying your db for sets: {ex.Message}");
-            }
-            finally
-            {
-                // Tear down the connection
-                await uow.DisposeAsync();
-            }
+                ct.ThrowIfCancellationRequested(); // Fast exit if cancelled before start
 
-            // Get the number of sets on the server
-            try
-            {
-                numberOfSetsOnServer = await _remoteLookups.FetchSetsCountAsync();
-            }
-            catch (Exception ex)
-            {
-                return new OperationResult(OperationResultCode.Error, $"Error querying server for updates: {ex.Message}");
-            }
+                // Step 1: Check internet connectivity
+                var internetAvailable = await _remoteLookups.IsInternetAvailableAsync(ct);
+                if (!internetAvailable)
+                {
+                    return new OperationResult(OperationResultCode.Error, "Internet not available - unable to check server...");
+                }
 
-            // Compare the number of sets in the database with the number of sets on the server
-            if (numberOfSetsInDb < numberOfSetsOnServer)
-            {
-                return new OperationResult(OperationResultCode.NeedsUpdate, $"Your local card database has {numberOfSetsInDb} sets, server has {numberOfSetsOnServer} sets — update available!");
+                // Step 2: Query local DB
+                int numberOfSetsInDb;
+                await using var uow = new UnitOfWork();
+                await uow.BeginAsync();
+                try
+                {
+                    numberOfSetsInDb = await _dbSchemaRepo.GetNumberOfSetsAsync(uow.CurrentConnection, ct);
+                    await uow.CommitAsync();
+                }
+                catch (Exception ex)
+                {
+                    await uow.RollbackAsync();
+                    return new OperationResult(OperationResultCode.Error, $"Error querying your db for sets: {ex.Message}");
+                }
+
+                // Step 3: Query server
+                int numberOfSetsOnServer = await _remoteLookups.FetchSetsCountAsync(ct);
+
+                // Step 4: Compare counts
+                if (numberOfSetsInDb < numberOfSetsOnServer)
+                {
+                    return new OperationResult(OperationResultCode.NeedsUpdate,
+                        $"Your local card database has {numberOfSetsInDb} sets, server has {numberOfSetsOnServer} sets — update available!");
+                }
+
+                return new OperationResult(OperationResultCode.UpToDate,
+                    $"Your local card database is up to date! ({numberOfSetsInDb} sets).");
             }
-            else
+            catch (OperationCanceledException)
             {
-                return new OperationResult(OperationResultCode.UpToDate, $"Your local card database is up to date! ({numberOfSetsInDb} sets).");
+                return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled update check.");
             }
         }
+
 
         // Use case: orchestrates card database update
         public async Task<OperationResult> UpdateDbPrepOrchetrator(int defaultDelay = 3000, CancellationToken ct = default)

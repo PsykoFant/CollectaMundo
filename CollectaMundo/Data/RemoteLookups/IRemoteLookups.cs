@@ -4,10 +4,10 @@ namespace CollectaMundo.Data.RemoteLookups
 {
     public interface IRemoteLookups
     {
-        Task<bool> IsInternetAvailableAsync();
+        Task<bool> IsInternetAvailableAsync(CancellationToken cancelToken = default);
         Task<JArray?> FetchSetMetadataAsync();
         string? TryGetIconUriForSetCode(JArray setMetadata, string setCode);
         Task<string?> FetchSvgContentAsync(string svgUrl);
-        Task<int> FetchSetsCountAsync();
+        Task<int> FetchSetsCountAsync(CancellationToken ct = default);
     }
 }
