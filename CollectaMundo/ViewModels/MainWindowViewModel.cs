@@ -498,8 +498,8 @@ namespace CollectaMundo.ViewModels
             {
                 case OperationResultCode.UpToDate:
                     _statusOverlayVM.StatusLabel3 = result.Message;
-                    _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
-                    _statusOverlayVM.AckButtonText = "Got it!";
+                    _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
+                    _statusOverlayVM.PrimaryButtonText = "Got it!";
 
                     break;
 
@@ -509,8 +509,8 @@ namespace CollectaMundo.ViewModels
                     break;
 
                 case OperationResultCode.Error:
-                    _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
-                    _statusOverlayVM.AckButtonText = "OK";
+                    _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
+                    _statusOverlayVM.PrimaryButtonText = "OK";
                     _statusOverlayVM.StatusLabel3 = result.Message;
                     break;
             }
@@ -553,7 +553,7 @@ namespace CollectaMundo.ViewModels
                 _statusOverlayVM.StatusLabel1 = "Database updated successfully!";
             }
 
-            _statusOverlayVM.AckButtonVisibility = Visibility.Visible;
+            _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
             IsTopMenuEnabled = true; // Re-enable top menu after update
             SideMenuUtilsVisibility = Visibility.Visible; // Show utilities menu again
         }

@@ -10,12 +10,12 @@ TO DO
 - Test af update og db prep. 
 
 
-
+ - Pris update brug MVVM (unit test)
   - Card image brug MVVM (unit test)
 	- Commit // Memory bug
 	- Fix meld creatures show bug
 	- One thing you can eliminate right away is your StringToImageSourceConverter
- - Pris update brug MVVM (unit test)
+
  - Import brug MVVM (unit test)
  - Deck manager brug MVVM (unit test)
 

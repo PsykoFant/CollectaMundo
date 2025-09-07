@@ -3,6 +3,7 @@ using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels
 {
@@ -12,14 +13,17 @@ namespace CollectaMundo.ViewModels
         private Visibility _logoVisibility = Visibility.Visible;
         private Visibility _setupFailVisibility = Visibility.Collapsed;
         private Visibility _progressVisibility = Visibility.Collapsed;
-        private Visibility _ackButtonVisibility = Visibility.Collapsed;
         private int _progressValue;
-        private string _ackButtonText = "OK";
         private string _statusLabel1 = string.Empty;
         private string _statusLabel2 = string.Empty;
         private string _statusLabel3 = string.Empty;
 
         public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+        private Action<object?> _primaryAction;
+        public ICommand PrimaryButtonCommand { get; }
+
         private void SetField<T>(ref T field, T value, [CallerMemberName] string? propName = null)
         {
             if (!Equals(field, value))
@@ -53,15 +57,19 @@ namespace CollectaMundo.ViewModels
             get => _progressValue;
             set => SetField(ref _progressValue, value);
         }
-        public Visibility AckButtonVisibility
+
+        private Visibility _primaryButtonVisibility = Visibility.Collapsed;
+        public Visibility PrimaryButtonVisibility
         {
-            get => _ackButtonVisibility;
-            set => SetField(ref _ackButtonVisibility, value);
+            get => _primaryButtonVisibility;
+            set { if (_primaryButtonVisibility != value) { _primaryButtonVisibility = value; OnPropertyChanged(nameof(PrimaryButtonVisibility)); } }
         }
-        public string AckButtonText
+
+        private string _primaryButtonText = "OK";
+        public string PrimaryButtonText
         {
-            get => _ackButtonText;
-            set => SetField(ref _ackButtonText, value);
+            get => _primaryButtonText;
+            set { if (_primaryButtonText != value) { _primaryButtonText = value; OnPropertyChanged(nameof(PrimaryButtonText)); } }
         }
         public string StatusLabel1
         {
@@ -78,11 +86,13 @@ namespace CollectaMundo.ViewModels
             get => _statusLabel3;
             set => SetField(ref _statusLabel3, value);
         }
-        public RelayCommand<object> AckCommand { get; }
         public StatusViewModel()
         {
-            AckCommand = new RelayCommand<object>(_ => HideStatusOverlay());
+            _primaryAction = _ => HideStatusOverlay();
+            PrimaryButtonCommand = new RelayCommand<object>(o => _primaryAction(o));
         }
+        public void SetPrimaryAction(Action<object?>? action) => _primaryAction = action ?? (_ => HideStatusOverlay());
+
         public void ShowStatusOverlay(string message, bool showProgress = false)
         {
 
@@ -101,35 +111,35 @@ namespace CollectaMundo.ViewModels
         {
             LogoVisibility = Visibility.Visible;
             ProgressVisibility = Visibility.Collapsed;
-            AckButtonVisibility = Visibility.Collapsed;
+            PrimaryButtonVisibility = Visibility.Collapsed;
             SetupFailVisibility = Visibility.Collapsed;
-            AckButtonVisibility = Visibility.Collapsed;
+            PrimaryButtonVisibility = Visibility.Collapsed;
 
             StatusLabel1 = string.Empty;
             StatusLabel2 = string.Empty;
             StatusLabel3 = string.Empty;
 
             ProgressValue = 0;
-            AckButtonText = "  OK  ";
+            PrimaryButtonText = "  OK  ";
         }
         public void ShowBackupResult(OperationResult result)
         {
-            AckButtonVisibility = Visibility.Visible;
+            PrimaryButtonVisibility = Visibility.Visible;
 
             switch (result.Code)
             {
                 case OperationResultCode.Success:
-                    AckButtonText = "Awesome!";
+                    PrimaryButtonText = "Awesome!";
                     ShowStatusOverlay(result.Message);
                     break;
 
                 case OperationResultCode.Error:
-                    AckButtonText = "Ok :-/";
+                    PrimaryButtonText = "Ok :-/";
                     ShowStatusOverlay($"Error: {result.Message}");
                     break;
 
                 case OperationResultCode.Empty:
-                    AckButtonText = "Oh ... I guess that makes sense...";
+                    PrimaryButtonText = "Oh ... I guess that makes sense...";
                     ShowStatusOverlay(result.Message);
                     break;
             }
