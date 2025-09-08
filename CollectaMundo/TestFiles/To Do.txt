@@ -2,17 +2,15 @@ TO DO
 - MVVM refactor
 
 	- Tilføj backup af database step	
-	- Cancel update under download
+     - Skip hvis collection er tom - både for update og backup collection
+     - backup cancel aware
 
-    Bug: cancel update check (ikke starte mere end en)
-    - Download og remote lookups?
-    - Download i service lag
+    - Download i service lag?
+
+
 
 - Update priser scenarie
-- Check for genbrug mellem 1st time prep og update service igen
-- Test af update og db prep. 
 
-- Get Unique Values - både static helper og i png tech stack
 
  - Pris update brug MVVM (unit test)
   - Card image brug MVVM (unit test)

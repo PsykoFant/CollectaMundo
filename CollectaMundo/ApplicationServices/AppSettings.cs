@@ -6,7 +6,7 @@ using System.Windows;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class JsonAppSettings : IAppSettings
+    public class AppSettings : IAppSettings
     {
         // backing POCO
         private static AppSettingsDto CurrentSettings { get; set; } = new();
@@ -17,11 +17,16 @@ namespace CollectaMundo.ApplicationServices
         public PriceInfo PriceInfo { get; private set; } = new();
         public string CardDatabaseUrl => "https://mtgjson.com/api/v5/AllPrintings.sqlite";
         public string CardPricesUrl => "https://mtgjson.com/api/v5/AllPricesToday.json";
-        public string UserDownloadsPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+
+        private static readonly string _userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        public string UserDownloadsPath => Path.Combine(_userProfile, "Downloads");
+        public string BackupFolderPath => Path.Combine(_userProfile, "CollectaMundoBackup");
+
+
 
         private static readonly string appSettingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
 
-        public JsonAppSettings()
+        public AppSettings()
         {
             LoadOrCreateAppSettings();
             DatabaseSettings = CurrentSettings.DatabaseSettings;

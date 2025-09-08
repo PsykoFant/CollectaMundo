@@ -1,7 +1,6 @@
 ﻿#region usings & namespace
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardLists;
-using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
@@ -246,7 +245,8 @@ namespace CollectaMundo.ViewModels
             set { _sideMenuUtilsCheckForUpdatesVisibility = value; OnPropertyChanged(); }
         }
 
-        private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
+        //private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
+        private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Visible;
         public Visibility SideMenuUtilsUpdateDbVisibility
         {
             get => _sideMenuUtilsUpdateDbVisibility;
@@ -330,7 +330,6 @@ namespace CollectaMundo.ViewModels
             IEditCollectionService editService,
             IImportExportService importExportService,
             ICardDatabasePreparationService prepService,
-            IDownloadService downloadService,
             StatusViewModel statusVM,
             ICardListService cardListService,
             Func<string> getRetailer,
@@ -489,8 +488,28 @@ namespace CollectaMundo.ViewModels
         #region Command methods - status overlay / maintenance tasks (backup, update db)
         private async Task BackupCollectionAsync()
         {
+            _statusOverlayVM.ShowStatusOverlay("Please wait - backing up up your collection ... ", false);
+
             var result = await _importExportService.ExportCollectionAsync();
-            _statusOverlayVM.ShowBackupResult(result);
+
+            switch (result.Code)
+            {
+                case OperationResultCode.Success:
+                    _statusOverlayVM.StatusLabel1 = $"Backup created successfully at {result.Message}";
+                    _statusOverlayVM.PrimaryButtonText = "Awesome!";
+                    break;
+
+                case OperationResultCode.Empty:
+                    _statusOverlayVM.StatusLabel1 = "Your collection is empty - nothing to back up";
+                    _statusOverlayVM.PrimaryButtonText = "Oh ... I guess that makes sense...";
+                    break;
+
+                case OperationResultCode.Error:
+                    _statusOverlayVM.StatusLabel1 = $"Error: {result.Message}";
+                    _statusOverlayVM.PrimaryButtonText = "Ok :-/";
+                    break;
+            }
+            _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
         }
         private async Task CheckForDbUpdatesAsync()
         {
@@ -546,20 +565,33 @@ namespace CollectaMundo.ViewModels
         }
         private async Task UpdateDBAsync()
         {
-            _updateCts = new CancellationTokenSource();
+            _statusOverlayVM.ShowStatusOverlay("Ready to update card database?", false);
+            _statusOverlayVM.StatusLabel3 = "(we will make a backup of your collection first)";
+            _statusOverlayVM.PrimaryButtonText = "Go for it!";
+            _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
 
-            // UI state preparation
+            // Wait for user confirmation before proceeding
+            var tcs = new TaskCompletionSource();
+            _statusOverlayVM.SetPrimaryAction(_ => tcs.SetResult());
+            await tcs.Task;
+
+            // UI state preparation AFTER user clicked
             IsTopMenuEnabled = false;
             SideMenuUtilsVisibility = Visibility.Collapsed;
             SideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
             _statusOverlayVM.PrimaryButtonText = "Cancel";
             _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
             _statusOverlayVM.ShowStatusOverlay("Updating database, please wait...", true);
+
+            _updateCts = new CancellationTokenSource();
             _statusOverlayVM.SetPrimaryAction(_ =>
             {
                 _statusOverlayVM.StatusLabel2 = "Cancelling…";
                 _updateCts?.Cancel();
             });
+
+            // Make backup first (cancellation awareness to be added later)
+            var backupResult = await _importExportService.ExportCollectionAsync();
 
             // Run the update
             var result = await _prepService.UpdateDbPrepOrchetrator(ct: _updateCts.Token);
@@ -582,6 +614,7 @@ namespace CollectaMundo.ViewModels
                     });
                     _statusOverlayVM.ResetStatusOverlay();
                     _statusOverlayVM.StatusLabel1 = "Database updated successfully!";
+                    _statusOverlayVM.StatusLabel3 = $"Your collection was backed up at {backupResult.Message}!";
                     break;
 
                 case OperationResultCode.CancelledByUser:
@@ -599,6 +632,7 @@ namespace CollectaMundo.ViewModels
             IsTopMenuEnabled = true;
             SideMenuUtilsVisibility = Visibility.Visible;
         }
+
         private async Task ChangeRetailerAsync()
         {
             if (SelectedRetailer is null)

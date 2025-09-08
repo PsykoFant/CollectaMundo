@@ -56,7 +56,7 @@ namespace CollectaMundo.Tests
             var statusVM = new StatusViewModel();
 
             // 3) Build the merged/updated stack (mirrors BuildAndStartAsync, minus integrity/FTS)
-            var settings = new JsonAppSettings();
+            var settings = new ApplicationServices.AppSettings();
 
             string getRetailer() => settings.PriceInfo.Retailer;
             void setRetailerAndPersist(string key)

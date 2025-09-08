@@ -1,5 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.Utilities;
-using CollectaMundo.Utilities;
+﻿using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -92,7 +91,6 @@ namespace CollectaMundo.ViewModels
             PrimaryButtonCommand = new RelayCommand<object>(o => _primaryAction(o));
         }
         public void SetPrimaryAction(Action<object?>? action) => _primaryAction = action ?? (_ => HideStatusOverlay());
-
         public void ShowStatusOverlay(string message, bool showProgress = false)
         {
 
@@ -106,7 +104,6 @@ namespace CollectaMundo.ViewModels
 
             ResetStatusOverlay();
         }
-
         public void ResetStatusOverlay()
         {
             LogoVisibility = Visibility.Visible;
@@ -122,28 +119,5 @@ namespace CollectaMundo.ViewModels
             ProgressValue = 0;
             PrimaryButtonText = "  OK  ";
         }
-        public void ShowBackupResult(OperationResult result)
-        {
-            PrimaryButtonVisibility = Visibility.Visible;
-
-            switch (result.Code)
-            {
-                case OperationResultCode.Success:
-                    PrimaryButtonText = "Awesome!";
-                    ShowStatusOverlay(result.Message);
-                    break;
-
-                case OperationResultCode.Error:
-                    PrimaryButtonText = "Ok :-/";
-                    ShowStatusOverlay($"Error: {result.Message}");
-                    break;
-
-                case OperationResultCode.Empty:
-                    PrimaryButtonText = "Oh ... I guess that makes sense...";
-                    ShowStatusOverlay(result.Message);
-                    break;
-            }
-        }
-
     }
 }

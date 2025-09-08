@@ -6,9 +6,8 @@ namespace CollectaMundo.Data.ImportExport
 {
     public class ImportExportRepo() : IImportExportRepo
     {
-        public async Task<string?> ExportCollectionAsync(SQLiteConnection conn)
+        public async Task<string?> ExportCollectionAsync(SQLiteConnection conn, string backupFolderPath)
         {
-            string backupFolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "CollectaMundoBackup");
             Directory.CreateDirectory(backupFolderPath);
 
             using var command = new SQLiteCommand("SELECT * FROM myCollection", conn);
@@ -19,7 +18,7 @@ namespace CollectaMundo.Data.ImportExport
                 return null; // Signal: nothing to export
             }
 
-            string filePath = Path.Combine(backupFolderPath, $"CollectaMundoMyCollection_backup_{DateTime.Now:yyyyMMdd}.csv");
+            string filePath = Path.Combine(backupFolderPath, $"MyCollection_backup_{DateTime.Now:yyyyMMdd}.csv");
             using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
 
             // Write header

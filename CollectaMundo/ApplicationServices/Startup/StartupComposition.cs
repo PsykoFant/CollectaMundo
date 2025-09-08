@@ -36,7 +36,7 @@ namespace CollectaMundo.ApplicationServices.Startup
             try
             {
                 // Infrastructure
-                var settings = new JsonAppSettings();
+                var settings = new AppSettings();
 
                 string getRetailer() => settings.PriceInfo.Retailer;
                 void setRetailerAndPersist(string key)
@@ -91,7 +91,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var editCollectionRepo = new EditCollectionRepository();
                 var editService = new EditCollectionService(new EditCollectionLogic(editCollectionRepo));
 
-                var importExportService = new ImportExportService(new ImportExportRepo());
+                var importExportService = new ImportExportService(new ImportExportRepo(), settings);
 
                 var cardLookupsRepo = new CardLookupsRepo();
                 var cardLookupsBuilder = new CardLookupBuilder();
@@ -103,7 +103,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardListService = new CardListService(cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
 
                 // Build view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, prepService, downloadService, statusVM, cardListService, getRetailer, setRetailerAndPersist));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, prepService, statusVM, cardListService, getRetailer, setRetailerAndPersist));
 
                 // Show initial UI
                 mainVM.FilterVM.NotifyFilterChanged();
