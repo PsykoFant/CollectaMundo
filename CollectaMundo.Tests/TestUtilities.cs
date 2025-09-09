@@ -259,7 +259,6 @@ namespace CollectaMundo.Tests
                 RemoteLookups.Object
             );
         }
-
         public void StubAllStepsAsSuccess()
         {
             SchemaRepo.Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
@@ -277,7 +276,6 @@ namespace CollectaMundo.Tests
             PngService.Setup(p => p.GenerateMissingKeyRuneImagesAsync(It.IsAny<SQLiteConnection>(), It.IsAny<IProgress<int>>())).Returns(Task.CompletedTask);
 
         }
-
         public void Dispose()
         {
             try

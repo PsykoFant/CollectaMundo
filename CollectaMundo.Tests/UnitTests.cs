@@ -1,4 +1,6 @@
-﻿using CollectaMundo.ApplicationServices.Utilities;
+﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.ImportExport;
+using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
@@ -1025,6 +1027,53 @@ namespace CollectaMundo.Tests
                 ctx.SchemaRepo.VerifyNoOtherCalls(); // No further processing after failed download
             }
 
+
+        }
+        public class UpdateDbControlFlowLogicTests
+        {
+            [Fact]
+            public async Task UpdateDBAsync_BackupSucceeds_UpdateSucceeds_ShowsSuccessAndResetsUI()
+            {
+                // Arrange
+                var importExportService = new Mock<IImportExportService>();
+                var prepService = new Mock<ICardDatabasePreparationService>();
+                var myCollectionVM = new CardViewModel();
+                myCollectionVM.Cards.Add(new CardSet()); // simulate non-empty collection
+
+                var statusOverlayVM = new StatusViewModel();
+                var viewModel = new UpdateViewModel(
+                    importExportService.Object,
+                    prepService.Object,
+                    myCollectionVM,
+                    statusOverlayVM
+                );
+
+                // Set up: Backup succeeds
+                importExportService.Setup(x => x.ExportCollectionAsync(It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
+
+                // Set up: Update succeeds
+                prepService.Setup(x => x.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new OperationResult(OperationResultCode.Success));
+
+                // Act — simulate user clicking "Go for it"
+                var task = viewModel.UpdateDBAsync();
+
+                // Simulate user clicking the PrimaryAction button
+                Assert.NotNull(statusOverlayVM.PrimaryAction);
+                statusOverlayVM.PrimaryAction?.Invoke();
+
+                await task;
+
+                // Assert: Labels and Button
+                Assert.Equal("Database updated successfully!", statusOverlayVM.StatusLabel1);
+                Assert.Equal("Your collection was backed up at OK!", statusOverlayVM.StatusLabel3);
+                Assert.Equal("Cancel", statusOverlayVM.PrimaryButtonText); // It was set before update started
+                Assert.True(statusOverlayVM.PrimaryButtonVisibility);
+
+                // Assert: Cancellation token cleaned up
+                Assert.Null(viewModel._updateCts); // If field is internal, change as needed
+            }
 
         }
         public class CardCoreAggregatorTests
