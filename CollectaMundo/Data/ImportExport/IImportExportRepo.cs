@@ -4,6 +4,6 @@ namespace CollectaMundo.Data.ImportExport
 {
     public interface IImportExportRepo
     {
-        Task<string?> ExportCollectionAsync(SQLiteConnection conn, string backupFolderPath);
+        Task<string?> ExportCollectionAsync(SQLiteConnection conn, string backupFolderPath, CancellationToken ct = default);
     }
 }

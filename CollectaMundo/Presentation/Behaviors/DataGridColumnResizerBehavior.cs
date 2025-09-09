@@ -46,9 +46,16 @@ namespace CollectaMundo.Presentation.Behaviors
                 dg.IsVisibleChanged += OnIsVisibleChanged;
 
                 // If already loaded & visible, do an initial render-late update
-                if (dg.IsLoaded && dg.IsVisible && PresentationSource.FromVisual(dg) != null)
+                try
                 {
-                    BeginRenderUpdate(dg);
+                    if (dg.IsLoaded && dg.IsVisible && PresentationSource.FromVisual(dg) != null)
+                    {
+                        BeginRenderUpdate(dg);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"DataGridColumnResizerBehavior initial update ERROR: {ex.Message}");
                 }
             }
             else
@@ -61,22 +68,49 @@ namespace CollectaMundo.Presentation.Behaviors
         private static void DataGrid_Loaded(object? sender, RoutedEventArgs e)
         {
             if (sender is not DataGrid dg) return;
-            BeginRenderUpdate(dg);
+
+            // Wrap in try-catch to guard against invalid hwnd
+            try
+            {
+                if (PresentationSource.FromVisual(dg) != null)
+                {
+                    BeginRenderUpdate(dg);
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                Debug.WriteLine($"DataGrid_Loaded error: {ex.Message}");
+            }
         }
         private static void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (sender is not DataGrid dg) return;
-            if (dg.IsVisible && PresentationSource.FromVisual(dg) != null)
+
+            try
             {
-                // When the grid first becomes visible, do a render-priority update
-                BeginRenderUpdate(dg);
+                if (dg.IsVisible && PresentationSource.FromVisual(dg) != null)
+                {
+                    BeginRenderUpdate(dg);
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                Debug.WriteLine($"OnIsVisibleChanged error: {ex.Message}");
             }
         }
         private static void OnDataGridSizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (sender is not DataGrid dg) return;
             if (!dg.IsLoaded || !dg.IsVisible) return;
-            if (PresentationSource.FromVisual(dg) is null) return;
+            try
+            {
+                if (PresentationSource.FromVisual(dg) == null) return;
+            }
+            catch (ArgumentException ex)
+            {
+                Debug.WriteLine($"OnDataGridSizeChanged error: {ex.Message}");
+                return;
+            }
 
             // Use a short throttle to coalesce layout noise during resize
             ThrottledUpdate(dg, reason: "SizeChanged");
@@ -85,7 +119,15 @@ namespace CollectaMundo.Presentation.Behaviors
         {
             if (d is not DataGrid dg) return;
             if (!dg.IsLoaded || !dg.IsVisible) return;
-            if (PresentationSource.FromVisual(dg) is null) return;
+            try
+            {
+                if (PresentationSource.FromVisual(dg) == null) return;
+            }
+            catch (ArgumentException ex)
+            {
+                Debug.WriteLine($"OnUpdateOnTokenChanged error: {ex.Message}");
+                return;
+            }
 
             BeginRenderUpdate(dg);
         }
@@ -127,7 +169,15 @@ namespace CollectaMundo.Presentation.Behaviors
             {
                 if (DesignerProperties.GetIsInDesignMode(dataGrid)) return;
                 if (!dataGrid.IsLoaded || !dataGrid.IsVisible) return;
-                if (PresentationSource.FromVisual(dataGrid) is null) return;
+                try
+                {
+                    if (PresentationSource.FromVisual(dataGrid) == null) return;
+                }
+                catch (ArgumentException ex)
+                {
+                    Debug.WriteLine($"UpdateColumnWidths error: {ex.Message}");
+                    return;
+                }
                 if (dataGrid.Columns.Count == 0) return;
 
                 int index = GetDataGridIndex(dataGrid);

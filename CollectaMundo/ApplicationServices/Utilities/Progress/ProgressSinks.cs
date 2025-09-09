@@ -6,6 +6,7 @@ public sealed record ProgressSinks
     public required IProgress<string> Step { get; init; }
     public required IProgress<int> Percent { get; init; }
     public required IProgress<bool> ProgressBarVisible { get; init; }
+    public IProgress<bool>? CancelEnabled { get; init; } // optional
 
     public static readonly ProgressSinks NoOp = new()
     {

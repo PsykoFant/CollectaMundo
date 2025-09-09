@@ -144,7 +144,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             }
         }
 
-
         // Use case: orchestrates card database update
         public async Task<OperationResult> UpdateDbPrepOrchetrator(int defaultDelay = 3000, CancellationToken ct = default)
         {
@@ -164,33 +163,34 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             // Step 1. Download resources
             // ---------------------------
 
-            //var step1Name = "Step 1. Downloading card database and prices...";
-            //var downloadResult = await _downloadService.DownloadParallelAsync(
-            //    _settings.CardDatabaseUrl, _tempDbPath, "Card database",
-            //    _settings.CardPricesUrl, _pricesPath, "Price File",
-            //    retryDelayInMs: defaultDelay,
-            //    stepName: step1Name,
-            //    stepNameAndNumberProgress: _progressSinks.Step,
-            //    stepDetailAndErrorProgress: _progressSinks.Detail,
-            //    percentProgress: _progressSinks.Percent,
-            //    cancelToken: ct);
+            var step1Name = "Step 1. Downloading card database and prices...";
+            var downloadResult = await _downloadService.DownloadParallelAsync(
+                _settings.CardDatabaseUrl, _tempDbPath, "Card database",
+                _settings.CardPricesUrl, _pricesPath, "Price File",
+                retryDelayInMs: defaultDelay,
+                stepName: step1Name,
+                stepNameAndNumberProgress: _progressSinks.Step,
+                stepDetailAndErrorProgress: _progressSinks.Detail,
+                percentProgress: _progressSinks.Percent,
+                cancelToken: ct);
 
-            //if (ct.IsCancellationRequested)
-            //{
-            //    CleanupPartialDownloads();
-            //    return new OperationResult(OperationResultCode.CancelledByUser, "Update was cancelled by user during download.");
-            //}
+            if (ct.IsCancellationRequested)
+            {
+                CleanupPartialDownloads();
+                return new OperationResult(OperationResultCode.CancelledByUser, "Update was cancelled by user during download.");
+            }
 
-            //if (downloadResult.Code != OperationResultCode.Success)
-            //{
-            //    Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
-            //    return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
-            //}
+            if (downloadResult.Code != OperationResultCode.Success)
+            {
+                Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
+                return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
+            }
 
             // ---------------------------
             // Step 2 - Copy tables from new DB
             // ---------------------------
             _progressSinks.ProgressBarVisible.Report(false);
+            _progressSinks.CancelEnabled?.Report(false); // Disable cancel button after download phase
             _progressSinks.Step.Report("Step 2. Copying new tables...");
 
             try
@@ -230,19 +230,21 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             }
 
             // Success: clean up temporary db and price file
-            //try
-            //{
-            //    File.Delete(_pricesPath);
-            //    File.Delete(_tempDbPath);
-            //}
-            //catch (IOException ex)
-            //{
-            //    Debug.WriteLine($"Cleanup failed: {ex.Message}");
-            //    return new OperationResult(OperationResultCode.Error, ex.Message);
-            //}
+            try
+            {
+                File.Delete(_pricesPath);
+                File.Delete(_tempDbPath);
+            }
+            catch (IOException ex)
+            {
+                Debug.WriteLine($"Cleanup failed: {ex.Message}");
+                return new OperationResult(OperationResultCode.Error, ex.Message);
+            }
             return new OperationResult(OperationResultCode.Success);
 
         }
+
+        // Core logic for preparing the database (used by both first-time prep and update)
         private async Task<OperationResult> PrepareDatabaseAsync(int defaultDelay, int stepNumberStart)
         {
             var steps = new List<(string Label, Func<Task> Work, bool ShowProgress)>
@@ -298,6 +300,8 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             await using var conn = await _dbFactory.OpenConnectionAsync();
             await action(conn);
         }
+
+        // Cleanup logic for partial downloads
         private static void CleanupPartialDatabaseFiles(string dbPath, string userDownloads)
         {
             var filesToDelete = new[]

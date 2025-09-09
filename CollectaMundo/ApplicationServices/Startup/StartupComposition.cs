@@ -129,8 +129,20 @@ namespace CollectaMundo.ApplicationServices.Startup
                 Step = new Progress<string>(s => vm.StatusLabel3 = s),
                 Percent = new Progress<int>(p => vm.ProgressValue = p),
                 ProgressBarVisible = new Progress<bool>(v =>
-                    vm.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
+                    vm.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed),
+
+                CancelEnabled = new Progress<bool>(enabled =>
+                {
+                    if (enabled)
+                        vm.SetPrimaryAction(_ => vm.StatusLabel2 = "Cancelling...");
+                    else
+                    {
+                        vm.SetPrimaryAction(null);
+                        vm.PrimaryButtonVisibility = Visibility.Collapsed;
+                    }
+                })
             };
+
 
             static void ShowStartupFailure(StatusViewModel vm, OperationResult result)
             {

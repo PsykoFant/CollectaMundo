@@ -101,7 +101,6 @@ namespace CollectaMundo.ViewModels
         public void HideStatusOverlay()
         {
             StatusOverlayVisibilitiy = Visibility.Collapsed;
-
             ResetStatusOverlay();
         }
         public void ResetStatusOverlay()
