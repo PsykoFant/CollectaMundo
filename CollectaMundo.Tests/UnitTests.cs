@@ -730,7 +730,7 @@ namespace CollectaMundo.Tests
             public async Task FirstTimeDbPrepOrchetrator_AllStepsSucceed_ReturnsSuccess_AndProgressFinishes()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
                 ctx.DownloadService
@@ -775,7 +775,7 @@ namespace CollectaMundo.Tests
             public async Task FirstTimeDbPrepOrchetrator_RetriesCreateTables_ThenSucceeds()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
                 int attempts = 0;
@@ -812,7 +812,7 @@ namespace CollectaMundo.Tests
             public async Task Step2FailsAfterRetries_ReturnsError_AndStopsPipeline()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
                 ctx.DownloadService
@@ -840,7 +840,7 @@ namespace CollectaMundo.Tests
             public async Task DownloadFails_ReturnsDownloadFailed_DoesNotRunSteps()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
                 ctx.DownloadService
@@ -871,7 +871,7 @@ namespace CollectaMundo.Tests
             public async Task NoInternet_ReturnsNoInternet_AndSkipsEverything()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(false);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
                 var svc = ctx.BuildService();
                 var result = await svc.FirstTimeDbPrepOrchetrator(0);
@@ -885,7 +885,7 @@ namespace CollectaMundo.Tests
             public async Task UpdateDbPrepOrchetrator_UserCancelsDuringDownload_ReturnsCancelledByUser()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
                 var cts = new CancellationTokenSource();
@@ -911,7 +911,7 @@ namespace CollectaMundo.Tests
             public async Task FirstTimeDbPrepOrchetrator_DownloadThrowsHttpException_ReturnsDownloadFailed()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
                 ctx.DownloadService
@@ -933,7 +933,7 @@ namespace CollectaMundo.Tests
             public async Task UpdateDbPrepOrchetrator_ProgressReportsBeforeCancel_AreCaptured()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
                 var cts = new CancellationTokenSource();
@@ -969,7 +969,7 @@ namespace CollectaMundo.Tests
             public async Task UpdateDbPrepOrchetrator_CancelDuringRetryDelay_AbortsImmediately()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
                 var cts = new CancellationTokenSource();
@@ -1004,7 +1004,7 @@ namespace CollectaMundo.Tests
             public async Task UpdateDbPrepOrchetrator_OneFileFailsInParallel_ReturnsDownloadFailed()
             {
                 using var ctx = new FirstTimeSetupTestContext();
-                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync()).ReturnsAsync(true);
+                ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
                 // Simulate a download result where one file failed

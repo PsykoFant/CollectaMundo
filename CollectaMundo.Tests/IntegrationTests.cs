@@ -98,11 +98,10 @@ namespace CollectaMundo.Tests
             var filteringService = new FilteringService();
             var editCollectionRepo = new EditCollectionRepository();
             var editService = new EditCollectionService((new EditCollectionLogic(editCollectionRepo)));
-            var importExportService = new ImportExportService(new ImportExportRepo());
+            var importExportService = new ImportExportService(new ImportExportRepo(), settings);
 
             // 5) Build the Main VM (same signature as in BuildAndStartAsync)
-            //_mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, prepService, downloadService, statusVM, cardListService, getRetailer, setRetailerAndPersist));
-            _mainVM = await MainWindowViewModel.CreateAsync(_filteringService, editService, importExportService, prepService, downloadService, statusVM, cardListService, getRetailer, setRetailerAndPersist, facetScheduler: scheduler);
+            _mainVM = await MainWindowViewModel.CreateAsync(_filteringService, editService, importExportService, prepService, statusVM, cardListService, getRetailer, setRetailerAndPersist, scheduler);
 
             // 6) Bring the VM to a “ready” state consistent with the app
             _mainVM.FilterVM.NotifyFilterChanged();
