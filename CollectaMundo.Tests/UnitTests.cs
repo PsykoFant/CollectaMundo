@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
-using CollectaMundo.ApplicationServices.ImportExport;
 using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists;
@@ -1035,8 +1034,8 @@ namespace CollectaMundo.Tests
             public async Task UpdateDBAsync_BackupSucceeds_UpdateSucceeds_ShowsSuccessAndResetsUI()
             {
                 // Arrange
-                var importExportService = new Mock<IImportExportService>();
-                var prepService = new Mock<ICardDatabasePreparationService>();
+                var importExportService = new Mock<IImportService>();
+                var prepService = new Mock<ICardDatabaseManagementService>();
                 var myCollectionVM = new CardViewModel();
                 myCollectionVM.Cards.Add(new CardSet()); // simulate non-empty collection
 

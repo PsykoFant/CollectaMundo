@@ -2,10 +2,12 @@
 using CollectaMundo.DomainLogic.CardPrices;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.IO;
+using System.Text;
 
 namespace CollectaMundo.Data.CardDatabaseManagement
 {
-    public class CardDatabasePreparationRepo : ICardDatabasePreparationRepo
+    public class CardDatabaseManagementRepo : ICardDatabaseManagementRepo
     {
         // Create
         private static readonly string[] first = ["uuid TEXT UNIQUE PRIMARY KEY"];
@@ -217,7 +219,6 @@ namespace CollectaMundo.Data.CardDatabaseManagement
             var sets = await DbHelpers.GetUniqueValuesAsync(conn, "sets", "code", ct);
             return sets.Count;
         }
-
         public async Task AttachTempDbAsync(SQLiteConnection conn, string newDbPath, IProgress<string> progress)
         {
             var attachSql = $"ATTACH DATABASE '{newDbPath}' AS tempDb;";
@@ -261,6 +262,55 @@ namespace CollectaMundo.Data.CardDatabaseManagement
             var detachSql = "DETACH DATABASE tempDb;";
             await new SQLiteCommand(detachSql, conn).ExecuteNonQueryAsync();
             progress.Report("Detached temp DB.");
+        }
+
+        // Export
+        public async Task<string?> ExportCollectionAsync(SQLiteConnection conn, string backupFolderPath, CancellationToken ct = default)
+        {
+            Directory.CreateDirectory(backupFolderPath);
+
+            using var command = new SQLiteCommand("SELECT * FROM myCollection", conn);
+            using var reader = await command.ExecuteReaderAsync(ct);
+
+            if (!reader.HasRows)
+            {
+                return null;
+            }
+
+            string filePath = Path.Combine(backupFolderPath, $"MyCollection_backup_{DateTime.Now:yyyyMMdd}.csv");
+            using var writer = new StreamWriter(filePath, false, Encoding.UTF8);
+
+            // Write header
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                writer.Write(reader.GetName(i));
+                if (i < reader.FieldCount - 1)
+                {
+                    writer.Write(";");
+                }
+            }
+            writer.WriteLine();
+
+            // Write rows
+            while (await reader.ReadAsync(ct))
+            {
+                ct.ThrowIfCancellationRequested();
+
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    string value = reader[i]?.ToString()?.Replace(";", ",") ?? string.Empty;
+                    writer.Write(value);
+                    if (i < reader.FieldCount - 1)
+                    {
+                        writer.Write(";");
+                    }
+                }
+                writer.WriteLine();
+            }
+
+            return filePath;
         }
 
         private static readonly Dictionary<string, string> TablesToCopy = new()

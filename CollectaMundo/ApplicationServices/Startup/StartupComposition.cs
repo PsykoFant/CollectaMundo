@@ -7,7 +7,7 @@ using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
-using CollectaMundo.ApplicationServices.ImportExport;
+using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data;
@@ -17,7 +17,7 @@ using CollectaMundo.Data.CardPrices;
 using CollectaMundo.Data.EditCollection;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.Data.GenerateMissingPng;
-using CollectaMundo.Data.ImportExport;
+using CollectaMundo.Data.Import;
 using CollectaMundo.Data.RemoteLookups;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Lookups;
@@ -57,10 +57,10 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardPriceRepo = new CardPriceRepository();
                 var priceService = new CardPriceService(settings, cardPriceRepo);
 
-                var prepRepo = new CardDatabasePreparationRepo();
+                var cardDbManagementRepo = new CardDatabaseManagementRepo();
                 var progressSinks = CreateProgressSinks(statusVM);
 
-                var prepService = new CardDatabasePreparationService(settings, dbFactory, progressSinks, prepRepo, priceService, missingPngSvc, downloadService, RemoteLookups);
+                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, progressSinks, cardDbManagementRepo, priceService, missingPngSvc, downloadService, RemoteLookups);
 
                 var integrityService = new DatabaseIntegrityService(settings);
 
@@ -73,7 +73,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
                 {
-                    var prepResult = await prepService.FirstTimeDbPrepOrchetrator();
+                    var prepResult = await cardDbManagementService.FirstTimeDbPrepOrchetrator();
                     if (prepResult.Code != OperationResultCode.Success)
                     {
                         ShowStartupFailure(statusVM, prepResult);
@@ -91,7 +91,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var editCollectionRepo = new EditCollectionRepository();
                 var editService = new EditCollectionService(new EditCollectionLogic(editCollectionRepo));
 
-                var importExportService = new ImportExportService(new ImportExportRepo(), settings);
+                var importService = new ImportService(new ImportRepo(), settings);
 
                 var cardLookupsRepo = new CardLookupsRepo();
                 var cardLookupsBuilder = new CardLookupBuilder();
@@ -103,7 +103,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardListService = new CardListService(cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
 
                 // Build view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importExportService, prepService, statusVM, cardListService, getRetailer, setRetailerAndPersist));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importService, cardDbManagementService, statusVM, cardListService, getRetailer, setRetailerAndPersist));
 
                 // Show initial UI
                 mainVM.FilterVM.NotifyFilterChanged();
@@ -134,7 +134,9 @@ namespace CollectaMundo.ApplicationServices.Startup
                 CancelEnabled = new Progress<bool>(enabled =>
                 {
                     if (enabled)
+                    {
                         vm.SetPrimaryAction(_ => vm.StatusLabel2 = "Cancelling...");
+                    }
                     else
                     {
                         vm.SetPrimaryAction(null);

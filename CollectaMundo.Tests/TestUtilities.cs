@@ -203,7 +203,7 @@ namespace CollectaMundo.Tests
     }
     public sealed class FirstTimeSetupTestContext : IDisposable
     {
-        public Mock<ICardDatabasePreparationRepo> SchemaRepo { get; } = new();
+        public Mock<ICardDatabaseManagementRepo> SchemaRepo { get; } = new();
         public Mock<ICardPriceService> PriceService { get; } = new();
         public Mock<IGenerateMissingPngService> PngService { get; } = new();
         public Mock<IDownloadService> DownloadService { get; } = new();
@@ -217,7 +217,7 @@ namespace CollectaMundo.Tests
         private IDisposable? _dbFactoryDisposable;
         private string? _tmpRoot;
 
-        public CardDatabasePreparationService BuildService()
+        public CardDatabaseManagementService BuildService()
         {
             // db factory (unique in-memory DB)
             var dbName = $"cmtests-{Guid.NewGuid():N}";
@@ -248,7 +248,7 @@ namespace CollectaMundo.Tests
             };
 
             // Build the service with the **updated** ctor (no InternetService, **with** RemoteLookups)
-            return new CardDatabasePreparationService(
+            return new CardDatabaseManagementService(
                 Settings.Object,
                 AppGlobals.DbFactory,
                 sinks,

@@ -76,7 +76,7 @@ namespace CollectaMundo.Tests
             var cardPriceRepo = new CardPriceRepository();
             var priceService = new CardPriceService(settings, cardPriceRepo);
 
-            var prepRepo = new CardDatabasePreparationRepo();
+            var prepRepo = new CardDatabaseManagementRepo();
             var progressSinks = CreateProgressSinks(statusVM); // <- local helper (below)
 
             var cardLookupsRepo = new CardLookupsRepo();
@@ -92,7 +92,7 @@ namespace CollectaMundo.Tests
             var facetUpdater = new FacetUpdater();
 
             // IMPORTANT: inject the fixture-backed DbFactory so all DB calls stay in-memory
-            var prepService = new CardDatabasePreparationService(settings, AppGlobals.DbFactory!, progressSinks, prepRepo, priceService, missingPngSvc, downloadService, remoteLookups);
+            var prepService = new CardDatabaseManagementService(settings, AppGlobals.DbFactory!, progressSinks, prepRepo, priceService, missingPngSvc, downloadService, remoteLookups);
 
             // 4) Feature-layer services
             var filteringService = new FilteringService();

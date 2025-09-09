@@ -16,9 +16,7 @@ namespace CollectaMundo.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        //public event EventHandler<CardProcessedEventArgs>? CardProcessed;
         public event EventHandler<CardChangeEventArgs>? CardChanged;
-
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
 
         private readonly IEditCollectionService _service;
@@ -26,7 +24,7 @@ namespace CollectaMundo.ViewModels
         // Constructor
         public EditCollectionViewModel(IEditCollectionService service, bool removeCardWhenZero)
         {
-            _service = service ?? throw new ArgumentNullException(nameof(service));
+            _service = service;
             _removeCardWhenZero = removeCardWhenZero;
             CardsToAdd.CollectionChanged += CardsToAdd_CollectionChanged;
         }

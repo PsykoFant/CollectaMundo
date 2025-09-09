@@ -4,8 +4,7 @@ using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
-using CollectaMundo.ApplicationServices.ImportExport;
-using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.CardPrices;
 using CollectaMundo.DomainLogic.EditCollection.Models;
@@ -22,7 +21,7 @@ using static CollectaMundo.DomainLogic.EditCollection.Models.CardChangeEventArgs
 namespace CollectaMundo.ViewModels
 {
     #endregion
-    public class MainWindowViewModel : INotifyPropertyChanged
+    public class MainWindowViewModel : INotifyPropertyChanged, IUiBlockable
     {
         #region class: MainWindowViewModel (fields, ctor, factory)
 
@@ -34,8 +33,8 @@ namespace CollectaMundo.ViewModels
         #region readonly dependencies
         // Services
         private readonly IFilteringService _filteringService;
-        private readonly IImportExportService _importExportService;
-        private readonly ICardDatabasePreparationService _prepService;
+        private readonly IImportService _importService;
+        private readonly ICardDatabaseManagementService _cardDbManagementService;
         private readonly ICardListService _cardListService;
 
         // Filtering infrastructure
@@ -49,10 +48,6 @@ namespace CollectaMundo.ViewModels
         private readonly Func<string> _getRetailer;
         private readonly Action<string> _setRetailerAndPersist;
 
-        // Cancellation tokens
-        private CancellationTokenSource? _updateCts;
-        private CancellationTokenSource? _checkCts;
-        private CancellationTokenSource? _backupCts;
         #endregion
 
         #region child viewmodels (visible to XAML)
@@ -64,6 +59,7 @@ namespace CollectaMundo.ViewModels
         public EditCollectionViewModel AddCardsVM { get; }
         public EditCollectionViewModel EditCardsVM { get; }
         public FilterViewModel FilterVM { get; }
+        public UpdateViewModel UpdateVM { get; }
         #endregion
 
         #region ui state
@@ -83,7 +79,7 @@ namespace CollectaMundo.ViewModels
 
                 _currentPage = value;
 
-                _statusOverlayVM.HideStatusOverlay();
+                _statusVM.HideStatusOverlay();
 
                 if (_currentPage == Page.MyCollection)
                 {
@@ -176,7 +172,7 @@ namespace CollectaMundo.ViewModels
             private set { if (_etchedPriceHeader != value) { _etchedPriceHeader = value; OnPropertyChanged(); } }
         }
 
-        // simple mapping
+        // simple currency mapping
         private static string GetCurrencyForRetailer(string key) => string.Equals(key, "cardmarket", StringComparison.OrdinalIgnoreCase) ? "EUR" : "USD";
         private void UpdatePriceHeaders()
         {
@@ -188,6 +184,54 @@ namespace CollectaMundo.ViewModels
         }
 
         #region Visibility properties
+
+        // Main sections visibility
+        private Visibility _mainGridVisibility = Visibility.Collapsed;
+        public Visibility MainGridVisibility
+        {
+            get => _mainGridVisibility;
+            set { _mainGridVisibility = value; OnPropertyChanged(); }
+        }
+
+        private Visibility _contentSectionVisibility = Visibility.Hidden;
+        public Visibility ContentSectionVisibility
+        {
+            get => _contentSectionVisibility;
+            set { _contentSectionVisibility = value; OnPropertyChanged(); }
+        }
+
+        // Side menu visibility
+        private Visibility _sideMenuVisibility = Visibility.Hidden;
+        public Visibility SideMenuVisibility
+        {
+            get => _sideMenuVisibility;
+            set { _sideMenuVisibility = value; OnPropertyChanged(); }
+        }
+
+        // Side menu subsections visibility properties
+        private Visibility _sideMenuFilterVisibility = Visibility.Visible;
+        public Visibility SideMenuFilterVisibility
+        {
+            get => _sideMenuFilterVisibility;
+            set { _sideMenuFilterVisibility = value; OnPropertyChanged(); }
+        }
+
+        private Visibility _sideMenuUtilsVisibility = Visibility.Hidden;
+        public Visibility SideMenuUtilsVisibility
+        {
+            get => _sideMenuUtilsVisibility;
+            set { _sideMenuUtilsVisibility = value; OnPropertyChanged(); }
+        }
+
+        // Card view visibility
+        private Visibility _cardViewSectionVisibility = Visibility.Visible;
+        public Visibility CardViewSectionVisibility
+        {
+            get => _cardViewSectionVisibility;
+            set { _cardViewSectionVisibility = value; OnPropertyChanged(); }
+        }
+
+        // Miscellaneous visibility properties
         public Visibility MiniLogoVisibility
         {
             get
@@ -203,68 +247,10 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        private Visibility _mainGridVisibility = Visibility.Collapsed;
-        public Visibility MainGridVisibility
-        {
-            get => _mainGridVisibility;
-            set { _mainGridVisibility = value; OnPropertyChanged(); }
-        }
-
-        private Visibility _contentSectionVisibility = Visibility.Hidden;
-        public Visibility ContentSectionVisibility
-        {
-            get => _contentSectionVisibility;
-            set { _contentSectionVisibility = value; OnPropertyChanged(); }
-        }
-
-        private Visibility _sideMenuVisibility = Visibility.Hidden;
-        public Visibility SideMenuVisibility
-        {
-            get => _sideMenuVisibility;
-            set { _sideMenuVisibility = value; OnPropertyChanged(); }
-        }
-
-        // Side menu visibility properties
-        private Visibility _sideMenuFilterVisibility = Visibility.Visible;
-        public Visibility SideMenuFilterVisibility
-        {
-            get => _sideMenuFilterVisibility;
-            set { _sideMenuFilterVisibility = value; OnPropertyChanged(); }
-        }
-
-        private Visibility _sideMenuUtilsVisibility = Visibility.Hidden;
-        public Visibility SideMenuUtilsVisibility
-        {
-            get => _sideMenuUtilsVisibility;
-            set { _sideMenuUtilsVisibility = value; OnPropertyChanged(); }
-        }
-
-        private Visibility _sideMenuUtilsCheckForUpdatesVisibility = Visibility.Visible;
-        public Visibility SideMenuUtilsCheckForUpdatesVisibility
-        {
-            get => _sideMenuUtilsCheckForUpdatesVisibility;
-            set { _sideMenuUtilsCheckForUpdatesVisibility = value; OnPropertyChanged(); }
-        }
-
-        private Visibility _sideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
-        public Visibility SideMenuUtilsUpdateDbVisibility
-        {
-            get => _sideMenuUtilsUpdateDbVisibility;
-            set { _sideMenuUtilsUpdateDbVisibility = value; OnPropertyChanged(); }
-        }
-
-        // Card view visibility
-        private Visibility _cardViewSectionVisibility = Visibility.Visible;
-        public Visibility CardViewSectionVisibility
-        {
-            get => _cardViewSectionVisibility;
-            set { _cardViewSectionVisibility = value; OnPropertyChanged(); }
-        }
-
         #endregion
 
         // Status overlay vm (owned by main window)
-        private readonly StatusViewModel _statusOverlayVM;
+        private readonly StatusViewModel _statusVM;
 
         #endregion
 
@@ -273,20 +259,20 @@ namespace CollectaMundo.ViewModels
         private MainWindowViewModel(
             IFilteringService filteringService,
             IEditCollectionService editService,
-            IImportExportService importExportService,
-            ICardDatabasePreparationService prepService,
-            StatusViewModel statusOverlayVM,
+            IImportService importExportService,
+            ICardDatabaseManagementService cardDbManagementService,
+            StatusViewModel statusVM,
             ICardListService cardListService,
             Func<string> getRetailer,
             Action<string> setRetailerAndPersist,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null)
         {
-            _statusOverlayVM = statusOverlayVM;
+            _statusVM = statusVM;
 
             _filteringService = filteringService;
-            _importExportService = importExportService;
-            _prepService = prepService;
+            _importService = importExportService;
+            _cardDbManagementService = cardDbManagementService;
             _cardListService = cardListService;
 
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
@@ -294,19 +280,22 @@ namespace CollectaMundo.ViewModels
 
             CurrentPage = Page.SearchAndFilter;
 
-            // card lists
+            // cardlist viewmodels
             AllCardsVM = new CardViewModel();
             MyCollectionVM = new CardViewModel();
             AllCardsForDecksVM = new CardViewModel();
             AllCardsInDecksVM = new CardViewModel();
             ColorIcons = new CardViewModel { Cards = [.. ManaKeys.Select(CardSet.FromManaKey)] };
 
-            // edit collection
+            // edit collection viewmodels
             AddCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);
             EditCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: false);
 
-            // filtering
+            // filtering viewmodel
             FilterVM = new FilterViewModel(_filteringService);
+
+            // update viewmodel
+            UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, () => MyCollectionVM.Cards.Count);
 
             // retailers
             _getRetailer = getRetailer;
@@ -328,8 +317,8 @@ namespace CollectaMundo.ViewModels
         public static async Task<MainWindowViewModel> CreateAsync(
             IFilteringService filteringService,
             IEditCollectionService editService,
-            IImportExportService importExportService,
-            ICardDatabasePreparationService prepService,
+            IImportService importExportService,
+            ICardDatabaseManagementService prepService,
             StatusViewModel statusVM,
             ICardListService cardListService,
             Func<string> getRetailer,
@@ -358,9 +347,6 @@ namespace CollectaMundo.ViewModels
         public ICommand ShowMyCollectionCommand { get; private set; } = null!;
         public ICommand ShowDecksCommand { get; private set; } = null!;
         public ICommand ShowUtilitiesCommand { get; private set; } = null!;
-        public ICommand BackupCollectionCommand { get; private set; } = null!;
-        public ICommand CheckForDbUpdatesCommand { get; private set; } = null!;
-        public ICommand UpdateDBCommand { get; private set; } = null!;
         public ICommand ChangeRetailerCommand { get; private set; } = null!;
         private void BuildCommands()
         {
@@ -368,10 +354,6 @@ namespace CollectaMundo.ViewModels
             ShowMyCollectionCommand = new RelayCommand<object>(_ => { CurrentPage = Page.MyCollection; });
             ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
-
-            BackupCollectionCommand = new RelayCommand<object>(async _ => await BackupCollectionAsync());
-            CheckForDbUpdatesCommand = new RelayCommand<object>(async _ => await CheckForDbUpdatesAsync());
-            UpdateDBCommand = new RelayCommand<object>(async _ => await UpdateDBAsync());
 
             ChangeRetailerCommand = new RelayCommand<object>(async _ => await ChangeRetailerAsync());
         }
@@ -485,202 +467,9 @@ namespace CollectaMundo.ViewModels
         }
         #endregion
 
-        #region Command methods - status overlay / maintenance tasks (backup, update db)
-        private async Task BackupCollectionAsync()
-        {
-            _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
-            string emptyMessage = "Your collection is empty - nothing to back up";
-            string emptyAckText = "Oh ... I guess that makes sense...";
-            if (MyCollectionVM.Cards.Count == 0)
-            {
-                _statusOverlayVM.ShowStatusOverlay(emptyMessage, false);
-                _statusOverlayVM.PrimaryButtonText = emptyAckText;
-                return;
-            }
-
-            // Prepare cancellation
-            _backupCts = new CancellationTokenSource();
-            _statusOverlayVM.SetPrimaryAction(_ =>
-            {
-                _statusOverlayVM.StatusLabel2 = "Cancelling…";
-                _backupCts?.Cancel();
-            });
-
-            // Run backup
-            _statusOverlayVM.ShowStatusOverlay("Please wait - backing up up your collection ... ", false);
-            var result = await Task.Run(() => _importExportService.ExportCollectionAsync(_backupCts.Token));
-
-            // Revert primary button to default
-            _statusOverlayVM.SetPrimaryAction(_ =>
-            {
-                _statusOverlayVM.StatusLabel2 = string.Empty;
-                _statusOverlayVM.HideStatusOverlay();
-            });
-
-            // Display result
-            switch (result.Code)
-            {
-                case OperationResultCode.Success:
-                    _statusOverlayVM.StatusLabel1 = $"Backup created successfully at {result.Message}";
-                    _statusOverlayVM.PrimaryButtonText = "Awesome!";
-                    break;
-
-                case OperationResultCode.Empty:
-                    _statusOverlayVM.ShowStatusOverlay(emptyMessage, false);
-                    _statusOverlayVM.PrimaryButtonText = emptyAckText;
-                    break;
-
-                case OperationResultCode.Error:
-                    _statusOverlayVM.StatusLabel1 = $"Error: {result.Message}";
-                    _statusOverlayVM.PrimaryButtonText = "Ok :-/";
-                    break;
-            }
-        }
-        private async Task CheckForDbUpdatesAsync()
-        {
-            _checkCts = new CancellationTokenSource();
-
-            // UI state preparation
-            IsTopMenuEnabled = false;
-            SideMenuUtilsVisibility = Visibility.Collapsed;
-            SideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
-            _statusOverlayVM.PrimaryButtonText = "Cancel";
-            _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
-            _statusOverlayVM.ShowStatusOverlay("One moment - checking for updates...", false);
-
-            // Hook up cancel action
-            _statusOverlayVM.SetPrimaryAction(_ =>
-            {
-                _statusOverlayVM.StatusLabel2 = "Cancelling…";
-                _checkCts?.Cancel();
-            });
-
-            // Run check
-            var result = await _prepService.CheckForDbUpdatesAsync(_checkCts.Token);
-
-            // Reset UI state
-            _statusOverlayVM.SetPrimaryAction(null);
-            _statusOverlayVM.PrimaryButtonText = "OK";
-            _checkCts = null;
-
-            switch (result.Code)
-            {
-                case OperationResultCode.UpToDate:
-                    _statusOverlayVM.StatusLabel3 = result.Message;
-                    break;
-
-                case OperationResultCode.NeedsUpdate:
-                    SideMenuUtilsUpdateDbVisibility = Visibility.Visible;
-                    _statusOverlayVM.StatusLabel3 = result.Message;
-                    break;
-
-                case OperationResultCode.CancelledByUser:
-                    _statusOverlayVM.StatusLabel1 = "Cancelled";
-                    _statusOverlayVM.StatusLabel3 = "No check was performed.";
-                    break;
-
-                default:
-                    _statusOverlayVM.StatusLabel3 = result.Message;
-                    break;
-            }
-
-            _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
-            IsTopMenuEnabled = true;
-            SideMenuUtilsVisibility = Visibility.Visible;
-        }
-        private async Task UpdateDBAsync()
-        {
-            SideMenuUtilsUpdateDbVisibility = Visibility.Collapsed;
-            var skipBackup = MyCollectionVM.Cards.Count == 0;
-            string backupResultMessage = string.Empty;
-
-            _statusOverlayVM.ShowStatusOverlay("Ready to update card database?", false);
-            if (!skipBackup) { _statusOverlayVM.StatusLabel3 = "(we will make a backup of your collection first)"; }
-            _statusOverlayVM.PrimaryButtonText = "Go for it!";
-            _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
-
-            // Wait for user confirmation before proceeding
-            var tcs = new TaskCompletionSource();
-            _statusOverlayVM.SetPrimaryAction(_ => tcs.SetResult());
-            await tcs.Task;
-
-            // UI state preparation AFTER user clicked
-            IsTopMenuEnabled = false;
-            SideMenuUtilsVisibility = Visibility.Collapsed;
-            _statusOverlayVM.PrimaryButtonText = "Cancel";
-            _updateCts = new CancellationTokenSource();
-            _statusOverlayVM.SetPrimaryAction(_ =>
-            {
-                _statusOverlayVM.StatusLabel2 = "Cancelling…";
-                _updateCts?.Cancel();
-            });
+        #region Command methods - status overlay / maintenance tasks (backup, update db)       
 
 
-            if (!skipBackup)
-            {
-                _statusOverlayVM.ShowStatusOverlay("Please wait - backing up up your collection ... ", false);
-                var backupResult = await Task.Run(() => _importExportService.ExportCollectionAsync(_updateCts.Token));
-                if (backupResult.Code != OperationResultCode.Success)
-                {
-                    _statusOverlayVM.StatusLabel1 = "Backup failed - aborting update...";
-                    _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
-                    _statusOverlayVM.PrimaryButtonText = "Ok";
-                    _statusOverlayVM.SetPrimaryAction(_ =>
-                    {
-                        _statusOverlayVM.StatusLabel2 = string.Empty;
-                        _statusOverlayVM.HideStatusOverlay();
-                    });
-                    _updateCts = null;
-                    return;
-                }
-                backupResultMessage = backupResult.Message;
-            }
-            if (_updateCts.IsCancellationRequested)
-            {
-                _updateCts = null;
-                return;
-            }
-
-            _statusOverlayVM.ShowStatusOverlay("Updating database, please wait...", true);
-
-            // Run the update
-            var result = await _prepService.UpdateDbPrepOrchetrator(ct: _updateCts.Token);
-
-            // Reset UI state before showing result
-            _statusOverlayVM.SetPrimaryAction(null); // revert to default which is to hide overlay
-            _statusOverlayVM.ResetStatusOverlay();
-
-            // Show result
-            switch (result.Code)
-            {
-                case OperationResultCode.Success:
-                    _statusOverlayVM.StatusLabel3 = "Reloading card lists…";
-                    await Task.Run(() => ReloadAllCardListsAsync());
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        FilterVM.NotifyFiltersRebuilt();
-                        FilterVM.NotifyFilterChanged();
-                    });
-                    _statusOverlayVM.StatusLabel1 = "Database updated successfully!";
-                    if (!skipBackup) { _statusOverlayVM.StatusLabel3 = $"Your collection was backed up at {backupResultMessage}!"; }
-                    _statusOverlayVM.PrimaryButtonVisibility = Visibility.Visible;
-                    break;
-
-                case OperationResultCode.CancelledByUser:
-                    _statusOverlayVM.StatusLabel1 = "Update canceled";
-                    _statusOverlayVM.StatusLabel3 = "Download aborted. No files were imported.";
-                    break;
-
-                default:
-                    _statusOverlayVM.StatusLabel1 = "Update failed!";
-                    _statusOverlayVM.StatusLabel3 = result.Message;
-                    break;
-            }
-
-            _updateCts = null;
-            IsTopMenuEnabled = true;
-            SideMenuUtilsVisibility = Visibility.Visible;
-        }
         private async Task ChangeRetailerAsync()
         {
             if (SelectedRetailer is null)
