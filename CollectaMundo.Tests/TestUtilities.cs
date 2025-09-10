@@ -4,14 +4,18 @@ using CollectaMundo.ApplicationServices.CardLists.Lookups.Providers;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
+using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data;
 using CollectaMundo.Data.CardDatabaseManagement;
 using CollectaMundo.Data.RemoteLookups;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.Utilities;
+using CollectaMundo.ViewModels;
 using Moq;
 using System.Data.SQLite;
 using System.IO;
+using System.Reflection;
 
 namespace CollectaMundo.Tests
 {
@@ -200,6 +204,68 @@ namespace CollectaMundo.Tests
                 try { _persistentConnection?.Dispose(); } catch { /* meh */ }
             }
         }
+
+        public static (TestableUpdateViewModel vm, StatusViewModel statusVM, Mock<ICardDatabaseManagementService> dbService) CreateTestableUpdateViewModel(
+        OperationResult? backupResult = null,
+        OperationResult? updateResult = null,
+        Func<int>? getMyCollectionCount = null)
+        {
+            var dbService = new Mock<ICardDatabaseManagementService>();
+
+            if (backupResult is not null)
+            {
+                dbService.Setup(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()))
+                         .ReturnsAsync(backupResult);
+            }
+
+            if (updateResult is not null)
+            {
+                dbService.Setup(s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                         .ReturnsAsync(updateResult);
+            }
+
+            var statusVM = new StatusViewModel();
+            var uiState = new Mock<IUiBlockable>();
+            var appRefresher = new Mock<IAppRefresher>();
+
+            var updateVM = new TestableUpdateViewModel(
+                dbService.Object,
+                statusVM,
+                uiState.Object,
+                appRefresher.Object,
+                getMyCollectionCount ?? (() => 5)
+            );
+
+            return (updateVM, statusVM, dbService);
+        }
+
+
+        public static void SimulatePrimaryButtonClick(StatusViewModel statusVM)
+        {
+            var field = typeof(StatusViewModel).GetField("_primaryAction", BindingFlags.NonPublic | BindingFlags.Instance);
+            var action = (Action<object?>)field!.GetValue(statusVM)!;
+            action.Invoke(null);
+        }
+    }
+    public class TestableUpdateViewModel : UpdateViewModel
+    {
+        public Task? InternalUpdateTask { get; private set; }
+
+        public TestableUpdateViewModel(
+            ICardDatabaseManagementService dbService,
+            StatusViewModel statusVM,
+            IUiBlockable uiState,
+            IAppRefresher appRefresher,
+            Func<int> getMyCollectionCount)
+            : base(dbService, statusVM, uiState, appRefresher, getMyCollectionCount)
+        {
+            UpdateDBCommand = new RelayCommand<object>(async _ =>
+            {
+                InternalUpdateTask = InvokeUpdateDBAsync(); // Calls private UpdateDBAsync()
+                await InternalUpdateTask;
+            });
+        }
+        public Task InvokeUpdateDBAsync() => (Task)typeof(UpdateViewModel).GetMethod("UpdateDBAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(this, null)!;
     }
     public sealed class FirstTimeSetupTestContext : IDisposable
     {
@@ -282,7 +348,9 @@ namespace CollectaMundo.Tests
             {
                 _dbFactoryDisposable?.Dispose();
                 if (!string.IsNullOrEmpty(_tmpRoot) && Directory.Exists(_tmpRoot))
+                {
                     Directory.Delete(_tmpRoot, recursive: true);
+                }
             }
             catch { /* best effort */ }
         }

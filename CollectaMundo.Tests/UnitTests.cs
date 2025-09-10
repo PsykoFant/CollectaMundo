@@ -1,5 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
-using CollectaMundo.ApplicationServices.Utilities;
+﻿using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
@@ -7,13 +6,11 @@ using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.Presentation.Converters;
-using CollectaMundo.Utilities;
 using CollectaMundo.ViewModels;
 using Moq;
 using ServiceStack;
 using System.Data.SQLite;
 using System.Globalization;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using static CollectaMundo.Tests.TestUtilities;
@@ -1037,38 +1034,18 @@ namespace CollectaMundo.Tests
             public async Task UpdateDbAsync_BackupSucceeds_UpdateSucceeds()
             {
                 // Arrange
-                var backupResult = new OperationResult(OperationResultCode.Success, "mock-backup-path");
-                var updateResult = new OperationResult(OperationResultCode.Success, "Update complete");
-
-                var dbService = new Mock<ICardDatabaseManagementService>();
-                // Simulate successful backup
-                dbService
-                    .Setup(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(new OperationResult(OperationResultCode.Success, "mock-backup-path"));
-
-                // Simulate successful update
-                dbService
-                    .Setup(s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(new OperationResult(OperationResultCode.Success, "Update complete"));
-
-                var statusVM = new StatusViewModel();
-                var uiState = new Mock<IUiBlockable>();
-                var appRefresher = new Mock<IAppRefresher>();
-
-                var updateVM = new TestableUpdateViewModel(
-                    dbService.Object,
-                    statusVM,
-                    uiState.Object,
-                    appRefresher.Object,
-                    getMyCollectionCount: () => 5
-                );
+                var (updateVM, statusVM, dbService) = CreateTestableUpdateViewModel(
+                    backupResult: new OperationResult(OperationResultCode.Success, "mock-backup-path"),
+                    updateResult: new OperationResult(OperationResultCode.Success, "Update complete"));
 
                 // Act: start the update
                 updateVM.UpdateDBCommand.Execute(null);
 
                 // Wait for "Go for it!" prompt
-                while (statusVM.PrimaryButtonText != "Go for it!")
+                while (statusVM.PrimaryButtonText != "   Go for it!   ")
+                {
                     await Task.Delay(1);
+                }
 
                 // Simulate user pressing the button
                 statusVM.PrimaryButtonCommand.Execute(null);
@@ -1086,97 +1063,189 @@ namespace CollectaMundo.Tests
             public async Task UpdateDbAsync_BackupSucceeds_UpdateCancelledByUser()
             {
                 // Arrange
+                var (updateVM, statusVM, dbService) = CreateTestableUpdateViewModel(
+                    backupResult: new OperationResult(OperationResultCode.Success, "mock-backup-path"),
+                    updateResult: new OperationResult(OperationResultCode.CancelledByUser, "Update cancelled by user"));
 
-                // Simulate successful backup
-                var backupResult = new OperationResult(OperationResultCode.Success, "mock-backup-path");
+                // Act: Start the command (this internally calls UpdateDBAsync and captures the task)
+                // Start the command (this internally calls UpdateDBAsync and captures the task)
+                updateVM.UpdateDBCommand.Execute(null);
 
-                // Simulate cancellation during update
-                var updateResult = new OperationResult(OperationResultCode.CancelledByUser, "Update cancelled by user");
-
-                var dbService = new Mock<ICardDatabaseManagementService>();
-                dbService.Setup(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()))
-                         .ReturnsAsync(backupResult);
-                dbService.Setup(s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                         .ReturnsAsync(updateResult);
-
-                var statusVM = new StatusViewModel();
-                var uiState = new Mock<IUiBlockable>();
-                var appRefresher = new Mock<IAppRefresher>();
-
-                // Simulate a non-empty collection
-                var updateVM = new TestableUpdateViewModel(
-                    dbService.Object,
-                    statusVM,
-                    uiState.Object,
-                    appRefresher.Object,
-                    getMyCollectionCount: () => 5
-                );
-
-                // Act: start the update
-                var updateTask = Task.Run(() => updateVM.UpdateDBCommand.Execute(null));
-
-                // Wait for button to become "clickable"
-                while (statusVM.PrimaryButtonText != "Go for it!")
-                    await Task.Delay(10);
-
-                // Simulate user pressing the "Go for it!" button
-                statusVM.PrimaryButtonCommand.Execute(null);
-
-                // Wait for the internal UpdateDBAsync to be created
+                // Wait until the UpdateDBAsync method is actually running
                 while (updateVM.InternalUpdateTask is null)
+                {
                     await Task.Delay(10);
+                }
 
-                // Wait a short moment to simulate timing
-                await Task.Delay(50);
-
-                // Simulate user cancelling during update
+                // Simulate user cancel
                 SimulatePrimaryButtonClick(statusVM);
 
-                // Wait for update to finish
-                await updateTask;
+                // Now wait for UpdateDBAsync to complete
+                await updateVM.InternalUpdateTask!;
 
                 // Assert
                 Assert.Equal("Update canceled", statusVM.StatusLabel1);
+
                 Assert.Equal("Download aborted. No files were imported.", statusVM.StatusLabel3);
-                Assert.Equal("Ok", statusVM.PrimaryButtonText);
+                Assert.Equal("  OK  ", statusVM.PrimaryButtonText);
                 Assert.Equal(Visibility.Visible, statusVM.PrimaryButtonVisibility);
             }
-
-
-        }
-
-        private static void SimulatePrimaryButtonClick(StatusViewModel statusVM)
-        {
-            var field = typeof(StatusViewModel).GetField("_primaryAction", BindingFlags.NonPublic | BindingFlags.Instance);
-            var action = (Action<object?>)field!.GetValue(statusVM)!;
-            action.Invoke(null);
-        }
-
-        private class TestableUpdateViewModel : UpdateViewModel
-        {
-            public Task? InternalUpdateTask { get; private set; }
-
-            public TestableUpdateViewModel(
-                ICardDatabaseManagementService dbService,
-                StatusViewModel statusVM,
-                IUiBlockable uiState,
-                IAppRefresher appRefresher,
-                Func<int> getMyCollectionCount)
-                : base(dbService, statusVM, uiState, appRefresher, getMyCollectionCount)
+            [Fact]
+            public async Task UpdateDbAsync_BackupSucceeds_UpdateFails()
             {
-                UpdateDBCommand = new RelayCommand<object>(async _ =>
+                // Arrange
+                var (updateVM, statusVM, dbService) = CreateTestableUpdateViewModel(
+                    backupResult: new OperationResult(OperationResultCode.Success, "mock-backup-path"),
+                    updateResult: new OperationResult(OperationResultCode.Error, "Boom!"));
+
+                // Act: start the update
+                updateVM.UpdateDBCommand.Execute(null);
+
+                // Wait for "Go for it!" prompt
+                while (statusVM.PrimaryButtonText != "   Go for it!   ")
                 {
-                    InternalUpdateTask = InvokeUpdateDBAsync(); // Calls private UpdateDBAsync()
-                    await InternalUpdateTask;
-                });
+                    await Task.Delay(1);
+                }
+
+                // Simulate user pressing the button
+                statusVM.PrimaryButtonCommand.Execute(null);
+
+                // Wait for actual task to complete
+                await updateVM.InternalUpdateTask!;
+
+                // Assert
+                Assert.Equal("Update failed!", statusVM.StatusLabel1);
+
+                Assert.Equal("Boom!", statusVM.StatusLabel3);
+                Assert.Equal("  OK  ", statusVM.PrimaryButtonText);
+                Assert.Equal(Visibility.Visible, statusVM.PrimaryButtonVisibility);
             }
+            [Fact]
+            public async Task UpdateDbAsync_BackupFails_UpdateNotInvoked()
+            {
+                // Arrange
+                var (updateVM, statusVM, dbService) = CreateTestableUpdateViewModel(
+                    backupResult: new OperationResult(OperationResultCode.Error, "Backup Boom!"),
+                    updateResult: null, // Won’t be used since update should not run
+                    getMyCollectionCount: () => 5
+                );
 
-            // 
-            public Task InvokeUpdateDBAsync() =>
-                (Task)typeof(UpdateViewModel).GetMethod("UpdateDBAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(this, null)!;
+                // Act
+                updateVM.UpdateDBCommand.Execute(null);
+
+                // Wait for prompt
+                while (statusVM.PrimaryButtonText != "   Go for it!   ")
+                {
+                    await Task.Delay(1);
+                }
+
+                // Simulate user clicking the button
+                SimulatePrimaryButtonClick(statusVM);
+
+                // Wait for task to complete
+                await updateVM.InternalUpdateTask!;
+
+                // Assert
+                Assert.Equal("Backup failed - aborting update...", statusVM.StatusLabel1);
+                Assert.Equal("Backup Boom!", statusVM.StatusLabel3);
+                Assert.Equal("   OK   ", statusVM.PrimaryButtonText);
+                Assert.Equal(Visibility.Visible, statusVM.PrimaryButtonVisibility);
+
+                // Verify update was not invoked
+                dbService.Verify(s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+            }
+            [Fact]
+            public async Task UpdateDbAsync_BackupCancelled_UpdateNotInvoked()
+            {
+                // Arrange
+                var (updateVM, statusVM, dbService) = CreateTestableUpdateViewModel(
+                    backupResult: new OperationResult(OperationResultCode.CancelledByUser, "Update was cancelled by user during download."),
+                    updateResult: null, // Won’t be used since update should not run
+                    getMyCollectionCount: () => 5
+                );
+
+                // Act
+                updateVM.UpdateDBCommand.Execute(null);
+
+                // Wait for prompt
+                while (statusVM.PrimaryButtonText != "   Go for it!   ")
+                {
+                    await Task.Delay(1);
+                }
+
+                // Simulate user clicking the button
+                SimulatePrimaryButtonClick(statusVM);
+
+                // Wait for task to complete
+                await updateVM.InternalUpdateTask!;
+
+                // Assert
+                Assert.Equal("Backup cancelled - aborting update...", statusVM.StatusLabel1);
+                Assert.Equal("Update was cancelled by user during download.", statusVM.StatusLabel3);
+                Assert.Equal("   OK   ", statusVM.PrimaryButtonText);
+                Assert.Equal(Visibility.Visible, statusVM.PrimaryButtonVisibility);
+
+                // Verify update was not invoked
+                dbService.Verify(s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+            }
+            [Fact]
+            public async Task UpdateDbAsync_EmptyCollection_BackupSkipped_UpdateSucceeds()
+            {
+                // Arrange
+                var (updateVM, statusVM, dbService) = CreateTestableUpdateViewModel(
+                    updateResult: new OperationResult(OperationResultCode.Success, "Update complete"),
+                    getMyCollectionCount: () => 0 // triggers backup skip
+                );
+
+                // Act
+                updateVM.UpdateDBCommand.Execute(null);
+                while (statusVM.PrimaryButtonText != "   Go for it!   ")
+                {
+                    await Task.Delay(1);
+                }
+
+                statusVM.PrimaryButtonCommand.Execute(null);
+                await updateVM.InternalUpdateTask!;
+
+                // Assert
+                Assert.Equal("Database updated successfully!", statusVM.StatusLabel1);
+                Assert.DoesNotContain("backed up", statusVM.StatusLabel3);
+                dbService.Verify(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()), Times.Never);
+            }
+            [Fact]
+            public async Task UpdateDbAsync_EmptyCollection_BackupSkipped_UpdateCancelledByUser()
+            {
+                // Arrange
+                var (updateVM, statusVM, dbService) = CreateTestableUpdateViewModel(
+                    updateResult: new OperationResult(OperationResultCode.CancelledByUser, "Update cancelled by user"),
+                    getMyCollectionCount: () => 0 // triggers backup skip
+                );
+
+                // Act: Start the command (this internally calls UpdateDBAsync and captures the task)
+                // Start the command (this internally calls UpdateDBAsync and captures the task)
+                updateVM.UpdateDBCommand.Execute(null);
+
+                // Wait until the UpdateDBAsync method is actually running
+                while (updateVM.InternalUpdateTask is null)
+                {
+                    await Task.Delay(10);
+                }
+
+                // Simulate user cancel
+                SimulatePrimaryButtonClick(statusVM);
+
+                // Now wait for UpdateDBAsync to complete
+                await updateVM.InternalUpdateTask!;
+
+                // Assert
+                Assert.Equal("Update canceled", statusVM.StatusLabel1);
+
+                Assert.Equal("Download aborted. No files were imported.", statusVM.StatusLabel3);
+                Assert.Equal("  OK  ", statusVM.PrimaryButtonText);
+                Assert.Equal(Visibility.Visible, statusVM.PrimaryButtonVisibility);
+                dbService.Verify(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()), Times.Never);
+            }
         }
-
-
         public class CardCoreAggregatorTests
         {
             private readonly CardCoreAggregator _aggregator = new();

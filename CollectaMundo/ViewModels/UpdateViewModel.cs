@@ -59,7 +59,7 @@ namespace CollectaMundo.ViewModels
             SetUiBusy(true);
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
             string emptyMessage = "Your collection is empty - nothing to back up";
-            string emptyAckText = "Oh ... I guess that makes sense...";
+            string emptyAckText = "   Oh ... I guess that makes sense...   ";
 
             // Check if collection is empty
             if (_getMyCollectionCount() == 0)
@@ -93,7 +93,7 @@ namespace CollectaMundo.ViewModels
                 {
                     case OperationResultCode.Success:
                         _statusVM.StatusLabel1 = $"Backup created successfully at {result.Message}";
-                        _statusVM.PrimaryButtonText = "Awesome!";
+                        _statusVM.PrimaryButtonText = "   Awesome!   ";
                         break;
 
                     case OperationResultCode.Empty:
@@ -103,7 +103,7 @@ namespace CollectaMundo.ViewModels
 
                     case OperationResultCode.Error:
                         _statusVM.StatusLabel1 = $"Error: {result.Message}";
-                        _statusVM.PrimaryButtonText = "Ok :-/";
+                        _statusVM.PrimaryButtonText = "   Ok :-/   ";
                         break;
                 }
             }
@@ -119,7 +119,7 @@ namespace CollectaMundo.ViewModels
 
             // UI state preparation
             SetUiBusy(true);
-            _statusVM.PrimaryButtonText = "Cancel";
+            _statusVM.PrimaryButtonText = "   Cancel   ";
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
             _statusVM.ShowStatusOverlay("One moment - checking for updates...", false);
 
@@ -135,7 +135,7 @@ namespace CollectaMundo.ViewModels
 
             // Reset UI state
             _statusVM.SetPrimaryAction(null);
-            _statusVM.PrimaryButtonText = "OK";
+            _statusVM.PrimaryButtonText = "   OK   ";
             _checkCts = null;
 
             switch (result.Code)
@@ -170,7 +170,7 @@ namespace CollectaMundo.ViewModels
             _statusVM.ShowStatusOverlay("Ready to update card database?", false);
             if (!skipBackup) { _statusVM.StatusLabel3 = "(we will make a backup of your collection first)"; }
 
-            _statusVM.PrimaryButtonText = "Go for it!";
+            _statusVM.PrimaryButtonText = "   Go for it!   ";
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
 
             // Wait for user confirmation before proceeding
@@ -181,7 +181,7 @@ namespace CollectaMundo.ViewModels
             // UI state preparation AFTER user clicked
             SetUiBusy(true);
             UpdateDbVisibility = Visibility.Collapsed;
-            _statusVM.PrimaryButtonText = "Cancel";
+            _statusVM.PrimaryButtonText = "   Cancel   ";
             _updateCts = new CancellationTokenSource();
             _statusVM.SetPrimaryAction(_ =>
             {
@@ -194,19 +194,21 @@ namespace CollectaMundo.ViewModels
             {
                 _statusVM.ShowStatusOverlay("Please wait - backing up up your collection ... ", false);
                 var backupResult = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(_updateCts.Token));
-                if (backupResult.Code != OperationResultCode.Success)
+
+                if (backupResult.Code is OperationResultCode.CancelledByUser or not OperationResultCode.Success)
                 {
-                    _statusVM.StatusLabel1 = "Backup failed - aborting update...";
+                    _statusVM.StatusLabel1 = backupResult.Code == OperationResultCode.CancelledByUser
+                        ? "Backup cancelled - aborting update..."
+                        : "Backup failed - aborting update...";
+
+                    _statusVM.StatusLabel3 = backupResult.Message;
                     _statusVM.PrimaryButtonVisibility = Visibility.Visible;
-                    _statusVM.PrimaryButtonText = "Ok";
-                    _statusVM.SetPrimaryAction(_ =>
-                    {
-                        _statusVM.StatusLabel2 = string.Empty;
-                        _statusVM.HideStatusOverlay();
-                    });
+                    _statusVM.PrimaryButtonText = "   OK   ";
+                    _statusVM.SetPrimaryAction(null);
                     _updateCts = null;
                     return;
                 }
+
                 backupResultMessage = backupResult.Message;
             }
             if (_updateCts.IsCancellationRequested)
@@ -231,11 +233,11 @@ namespace CollectaMundo.ViewModels
                     await _appRefresher.ReloadAllCardListsAndFiltersAsync();
                     _statusVM.StatusLabel1 = "Database updated successfully!";
                     if (!skipBackup) { _statusVM.StatusLabel3 = $"Your collection was backed up at {backupResultMessage}!"; }
-                    _statusVM.PrimaryButtonVisibility = Visibility.Visible;
                     break;
 
                 case OperationResultCode.CancelledByUser:
                     _statusVM.StatusLabel1 = "Update canceled";
+                    _statusVM.StatusLabel2 = string.Empty;
                     _statusVM.StatusLabel3 = "Download aborted. No files were imported.";
                     break;
 
@@ -248,6 +250,7 @@ namespace CollectaMundo.ViewModels
             _updateCts = null;
             SetUiBusy(false);
             _statusVM.SetPrimaryAction(null); // revert to default action (hide overlay)
+            _statusVM.PrimaryButtonVisibility = Visibility.Visible;
         }
 
 
