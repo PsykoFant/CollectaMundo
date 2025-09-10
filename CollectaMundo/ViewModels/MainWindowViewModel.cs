@@ -21,7 +21,7 @@ using static CollectaMundo.DomainLogic.EditCollection.Models.CardChangeEventArgs
 namespace CollectaMundo.ViewModels
 {
     #endregion
-    public class MainWindowViewModel : INotifyPropertyChanged, IUiBlockable
+    public class MainWindowViewModel : INotifyPropertyChanged, IUiBlockable, IAppRefresher
     {
         #region class: MainWindowViewModel (fields, ctor, factory)
 
@@ -295,7 +295,7 @@ namespace CollectaMundo.ViewModels
             FilterVM = new FilterViewModel(_filteringService);
 
             // update viewmodel
-            UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, () => MyCollectionVM.Cards.Count);
+            UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, this, () => MyCollectionVM.Cards.Count);
 
             // retailers
             _getRetailer = getRetailer;
@@ -332,7 +332,7 @@ namespace CollectaMundo.ViewModels
                 OnStartupComplete = onStartupComplete
             };
 
-            await vm.ReloadAllCardListsAsync();
+            await vm.ReloadAllCardListsAndFiltersAsync();
 
             vm.OnStartupComplete?.Invoke();
             return vm;
@@ -454,17 +454,19 @@ namespace CollectaMundo.ViewModels
         #endregion
 
         #region startup / reload
-        private async Task ReloadAllCardListsAsync()
+        public async Task ReloadAllCardListsAndFiltersAsync()
         {
             var sw = Stopwatch.StartNew();
 
             Debug.WriteLine("[ReloadAllCardListsAsync] Initializing card lists");
             await _cardListService.InitializeCardListsAsync(AllCardsVM, MyCollectionVM, FilterVM.Filters, FilterVM);
+            FilterVM.NotifyFiltersRebuilt();
             FilterVM.NotifyFilterChanged();
 
             sw.Stop();
             Debug.WriteLine($"[ReloadAllCardListsAsync] M1 finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");
         }
+
         #endregion
 
         #region Command methods - status overlay / maintenance tasks (backup, update db)       

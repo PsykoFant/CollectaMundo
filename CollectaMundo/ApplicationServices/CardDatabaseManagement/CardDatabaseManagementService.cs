@@ -211,7 +211,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                     }
 
                     await _dbMgmtRepo.DetachTempDbAsync(conn, _progressSinks.Detail);
-                });
+                }, CancellationToken.None);
 
             }
             catch (Exception ex)

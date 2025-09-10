@@ -16,6 +16,7 @@ namespace CollectaMundo.ViewModels
         private readonly ICardDatabaseManagementService _cardDbManagementService;
         private readonly StatusViewModel _statusVM;
         private readonly IUiBlockable _uiState;
+        private readonly IAppRefresher _appRefresher;
         private readonly Func<int> _getMyCollectionCount;
 
         // Cancellation tokens
@@ -37,12 +38,13 @@ namespace CollectaMundo.ViewModels
         }
 
         // Constructor
-        public UpdateViewModel(ICardDatabaseManagementService cardDbManagementService, StatusViewModel statusVM, IUiBlockable uiState, Func<int> getMyCollectionCount)
+        public UpdateViewModel(ICardDatabaseManagementService cardDbManagementService, StatusViewModel statusVM, IUiBlockable uiState, IAppRefresher appRefresher, Func<int> getMyCollectionCount)
 
         {
             _cardDbManagementService = cardDbManagementService;
             _statusVM = statusVM;
             _uiState = uiState;
+            _appRefresher = appRefresher;
             _getMyCollectionCount = getMyCollectionCount;
 
             BackupCollectionCommand = new RelayCommand<object>(async _ => await BackupCollectionAsync());
@@ -167,6 +169,7 @@ namespace CollectaMundo.ViewModels
             string backupResultMessage = string.Empty;
             _statusVM.ShowStatusOverlay("Ready to update card database?", false);
             if (!skipBackup) { _statusVM.StatusLabel3 = "(we will make a backup of your collection first)"; }
+
             _statusVM.PrimaryButtonText = "Go for it!";
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
 
@@ -177,6 +180,7 @@ namespace CollectaMundo.ViewModels
 
             // UI state preparation AFTER user clicked
             SetUiBusy(true);
+            UpdateDbVisibility = Visibility.Collapsed;
             _statusVM.PrimaryButtonText = "Cancel";
             _updateCts = new CancellationTokenSource();
             _statusVM.SetPrimaryAction(_ =>
@@ -224,12 +228,7 @@ namespace CollectaMundo.ViewModels
             {
                 case OperationResultCode.Success:
                     _statusVM.StatusLabel3 = "Reloading card lists…";
-                    await Task.Run(() => ReloadAllCardListsAsync());
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        FilterVM.NotifyFiltersRebuilt();
-                        FilterVM.NotifyFilterChanged();
-                    });
+                    await _appRefresher.ReloadAllCardListsAndFiltersAsync();
                     _statusVM.StatusLabel1 = "Database updated successfully!";
                     if (!skipBackup) { _statusVM.StatusLabel3 = $"Your collection was backed up at {backupResultMessage}!"; }
                     _statusVM.PrimaryButtonVisibility = Visibility.Visible;
