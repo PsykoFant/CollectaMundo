@@ -8,7 +8,7 @@ using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
-using CollectaMundo.ApplicationServices.ImportExport;
+using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
 using CollectaMundo.Data.CardDatabaseManagement;
 using CollectaMundo.Data.CardLists;
@@ -16,7 +16,7 @@ using CollectaMundo.Data.CardPrices;
 using CollectaMundo.Data.EditCollection;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.Data.GenerateMissingPng;
-using CollectaMundo.Data.ImportExport;
+using CollectaMundo.Data.Import;
 using CollectaMundo.Data.RemoteLookups;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Lookups;
@@ -98,7 +98,7 @@ namespace CollectaMundo.Tests
             var filteringService = new FilteringService();
             var editCollectionRepo = new EditCollectionRepository();
             var editService = new EditCollectionService((new EditCollectionLogic(editCollectionRepo)));
-            var importExportService = new ImportExportService(new ImportExportRepo(), settings);
+            var importExportService = new ImportService(new ImportRepo(), settings);
 
             // 5) Build the Main VM (same signature as in BuildAndStartAsync)
             _mainVM = await MainWindowViewModel.CreateAsync(_filteringService, editService, importExportService, prepService, statusVM, cardListService, getRetailer, setRetailerAndPersist, scheduler);

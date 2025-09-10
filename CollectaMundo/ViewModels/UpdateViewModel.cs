@@ -27,7 +27,7 @@ namespace CollectaMundo.ViewModels
         // Commands
         public ICommand BackupCollectionCommand { get; private set; } = null!;
         public ICommand CheckForDbUpdatesCommand { get; private set; } = null!;
-        public ICommand UpdateDBCommand { get; private set; } = null!;
+        public ICommand UpdateDBCommand { get; protected set; } = null!;
 
         // Visibility properties
         private Visibility _updateDbVisibility = Visibility.Collapsed;

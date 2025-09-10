@@ -7,11 +7,14 @@ using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.Presentation.Converters;
+using CollectaMundo.Utilities;
 using CollectaMundo.ViewModels;
 using Moq;
 using ServiceStack;
 using System.Data.SQLite;
 using System.Globalization;
+using System.Reflection;
+using System.Windows;
 using System.Windows.Media.Imaging;
 using static CollectaMundo.Tests.TestUtilities;
 
@@ -1031,50 +1034,149 @@ namespace CollectaMundo.Tests
         public class UpdateDbControlFlowLogicTests
         {
             [Fact]
-            public async Task UpdateDBAsync_BackupSucceeds_UpdateSucceeds_ShowsSuccessAndResetsUI()
+            public async Task UpdateDbAsync_BackupSucceeds_UpdateSucceeds()
             {
                 // Arrange
-                var importExportService = new Mock<IImportService>();
-                var prepService = new Mock<ICardDatabaseManagementService>();
-                var myCollectionVM = new CardViewModel();
-                myCollectionVM.Cards.Add(new CardSet()); // simulate non-empty collection
+                var backupResult = new OperationResult(OperationResultCode.Success, "mock-backup-path");
+                var updateResult = new OperationResult(OperationResultCode.Success, "Update complete");
 
-                var statusOverlayVM = new StatusViewModel();
-                var viewModel = new UpdateViewModel(
-                    importExportService.Object,
-                    prepService.Object,
-                    myCollectionVM,
-                    statusOverlayVM
+                var dbService = new Mock<ICardDatabaseManagementService>();
+                // Simulate successful backup
+                dbService
+                    .Setup(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new OperationResult(OperationResultCode.Success, "mock-backup-path"));
+
+                // Simulate successful update
+                dbService
+                    .Setup(s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(new OperationResult(OperationResultCode.Success, "Update complete"));
+
+                var statusVM = new StatusViewModel();
+                var uiState = new Mock<IUiBlockable>();
+                var appRefresher = new Mock<IAppRefresher>();
+
+                var updateVM = new TestableUpdateViewModel(
+                    dbService.Object,
+                    statusVM,
+                    uiState.Object,
+                    appRefresher.Object,
+                    getMyCollectionCount: () => 5
                 );
 
-                // Set up: Backup succeeds
-                importExportService.Setup(x => x.ExportCollectionAsync(It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(new OperationResult(OperationResultCode.Success, "OK"));
+                // Act: start the update
+                updateVM.UpdateDBCommand.Execute(null);
 
-                // Set up: Update succeeds
-                prepService.Setup(x => x.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                    .ReturnsAsync(new OperationResult(OperationResultCode.Success));
+                // Wait for "Go for it!" prompt
+                while (statusVM.PrimaryButtonText != "Go for it!")
+                    await Task.Delay(1);
 
-                // Act — simulate user clicking "Go for it"
-                var task = viewModel.UpdateDBAsync();
+                // Simulate user pressing the button
+                statusVM.PrimaryButtonCommand.Execute(null);
 
-                // Simulate user clicking the PrimaryAction button
-                Assert.NotNull(statusOverlayVM.PrimaryAction);
-                statusOverlayVM.PrimaryAction?.Invoke();
+                // Wait for actual task to complete
+                await updateVM.InternalUpdateTask!;
 
-                await task;
+                // Assert
+                Assert.Equal("Database updated successfully!", statusVM.StatusLabel1);
+                Assert.Equal("Your collection was backed up at mock-backup-path!", statusVM.StatusLabel3);
+                Assert.Equal("  OK  ", statusVM.PrimaryButtonText);
+                Assert.Equal(Visibility.Visible, statusVM.PrimaryButtonVisibility);
+            }
+            [Fact]
+            public async Task UpdateDbAsync_BackupSucceeds_UpdateCancelledByUser()
+            {
+                // Arrange
 
-                // Assert: Labels and Button
-                Assert.Equal("Database updated successfully!", statusOverlayVM.StatusLabel1);
-                Assert.Equal("Your collection was backed up at OK!", statusOverlayVM.StatusLabel3);
-                Assert.Equal("Cancel", statusOverlayVM.PrimaryButtonText); // It was set before update started
-                Assert.True(statusOverlayVM.PrimaryButtonVisibility);
+                // Simulate successful backup
+                var backupResult = new OperationResult(OperationResultCode.Success, "mock-backup-path");
 
-                // Assert: Cancellation token cleaned up
-                Assert.Null(viewModel._updateCts); // If field is internal, change as needed
+                // Simulate cancellation during update
+                var updateResult = new OperationResult(OperationResultCode.CancelledByUser, "Update cancelled by user");
+
+                var dbService = new Mock<ICardDatabaseManagementService>();
+                dbService.Setup(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()))
+                         .ReturnsAsync(backupResult);
+                dbService.Setup(s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                         .ReturnsAsync(updateResult);
+
+                var statusVM = new StatusViewModel();
+                var uiState = new Mock<IUiBlockable>();
+                var appRefresher = new Mock<IAppRefresher>();
+
+                // Simulate a non-empty collection
+                var updateVM = new TestableUpdateViewModel(
+                    dbService.Object,
+                    statusVM,
+                    uiState.Object,
+                    appRefresher.Object,
+                    getMyCollectionCount: () => 5
+                );
+
+                // Act: start the update
+                var updateTask = Task.Run(() => updateVM.UpdateDBCommand.Execute(null));
+
+                // Wait for button to become "clickable"
+                while (statusVM.PrimaryButtonText != "Go for it!")
+                    await Task.Delay(10);
+
+                // Simulate user pressing the "Go for it!" button
+                statusVM.PrimaryButtonCommand.Execute(null);
+
+                // Wait for the internal UpdateDBAsync to be created
+                while (updateVM.InternalUpdateTask is null)
+                    await Task.Delay(10);
+
+                // Wait a short moment to simulate timing
+                await Task.Delay(50);
+
+                // Simulate user cancelling during update
+                SimulatePrimaryButtonClick(statusVM);
+
+                // Wait for update to finish
+                await updateTask;
+
+                // Assert
+                Assert.Equal("Update canceled", statusVM.StatusLabel1);
+                Assert.Equal("Download aborted. No files were imported.", statusVM.StatusLabel3);
+                Assert.Equal("Ok", statusVM.PrimaryButtonText);
+                Assert.Equal(Visibility.Visible, statusVM.PrimaryButtonVisibility);
             }
 
+
         }
+
+        private static void SimulatePrimaryButtonClick(StatusViewModel statusVM)
+        {
+            var field = typeof(StatusViewModel).GetField("_primaryAction", BindingFlags.NonPublic | BindingFlags.Instance);
+            var action = (Action<object?>)field!.GetValue(statusVM)!;
+            action.Invoke(null);
+        }
+
+        private class TestableUpdateViewModel : UpdateViewModel
+        {
+            public Task? InternalUpdateTask { get; private set; }
+
+            public TestableUpdateViewModel(
+                ICardDatabaseManagementService dbService,
+                StatusViewModel statusVM,
+                IUiBlockable uiState,
+                IAppRefresher appRefresher,
+                Func<int> getMyCollectionCount)
+                : base(dbService, statusVM, uiState, appRefresher, getMyCollectionCount)
+            {
+                UpdateDBCommand = new RelayCommand<object>(async _ =>
+                {
+                    InternalUpdateTask = InvokeUpdateDBAsync(); // Calls private UpdateDBAsync()
+                    await InternalUpdateTask;
+                });
+            }
+
+            // 
+            public Task InvokeUpdateDBAsync() =>
+                (Task)typeof(UpdateViewModel).GetMethod("UpdateDBAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(this, null)!;
+        }
+
+
         public class CardCoreAggregatorTests
         {
             private readonly CardCoreAggregator _aggregator = new();
