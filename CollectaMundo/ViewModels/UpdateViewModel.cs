@@ -253,7 +253,6 @@ namespace CollectaMundo.ViewModels
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
         }
 
-
         private void SetUiBusy(bool isBusy)
         {
             _uiState.IsTopMenuEnabled = !isBusy;

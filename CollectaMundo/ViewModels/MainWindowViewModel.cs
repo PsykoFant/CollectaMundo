@@ -466,8 +466,6 @@ namespace CollectaMundo.ViewModels
         #endregion
 
         #region Command methods - status overlay / maintenance tasks (backup, update db)       
-
-
         private async Task ChangeRetailerAsync()
         {
             if (SelectedRetailer is null)

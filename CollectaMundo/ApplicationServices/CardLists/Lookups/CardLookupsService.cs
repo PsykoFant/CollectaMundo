@@ -9,7 +9,7 @@ namespace CollectaMundo.ApplicationServices.CardLists.Lookups
 
     public sealed class CardLookupsService(CardLookupsRepo repo, CardLookupBuilder builder, Func<string> getRetailer) : ICardLookupsService
     {
-        private readonly CardLookupsRepo _repo = repo;
+        private readonly CardLookupsRepo _cardLookupsRepo = repo;
         private readonly CardLookupBuilder _builder = builder;
         private readonly Func<string> _getRetailer = getRetailer;
         public async Task<CardLookupPackage> LoadLookupDataAsync(SQLiteConnection conn, CardLookupsOptions opts)
@@ -22,19 +22,19 @@ namespace CollectaMundo.ApplicationServices.CardLists.Lookups
 
             if (opts.HasFlag(CardLookupsOptions.Icons))
             {
-                manaIcons = await _repo.ReadManaCostImagesAsync(conn);
-                setIcons = await _repo.ReadSetIconImagesAsync(conn);
+                manaIcons = await _cardLookupsRepo.ReadManaCostImagesAsync(conn);
+                setIcons = await _cardLookupsRepo.ReadSetIconImagesAsync(conn);
             }
 
             if (opts.HasFlag(CardLookupsOptions.Sets))
             {
-                sets = await _repo.ReadSetsAsync(conn);
+                sets = await _cardLookupsRepo.ReadSetsAsync(conn);
             }
 
             if (opts.HasFlag(CardLookupsOptions.Prices))
             {
                 var retailerKey = _getRetailer();
-                prices = await _repo.ReadPricesAsync(conn, retailerKey);
+                prices = await _cardLookupsRepo.ReadPricesAsync(conn, retailerKey);
             }
 
             return _builder.Build(manaIcons, setIcons, sets, prices);
@@ -43,7 +43,7 @@ namespace CollectaMundo.ApplicationServices.CardLists.Lookups
         public async Task ReloadPricesAsync(SQLiteConnection conn, string retailerKey)
         {
             // Load the new map for the requested retailer
-            var dict = await _repo.ReadPricesAsync(conn, retailerKey);
+            var dict = await _cardLookupsRepo.ReadPricesAsync(conn, retailerKey);
 
             // Swap the static provider (all CardSet getters read through this)
             CardSet.PriceMetaProvider = new ValueProvider<string, PriceDto>(dict);
