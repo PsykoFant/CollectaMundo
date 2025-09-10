@@ -33,8 +33,6 @@ namespace CollectaMundo.ViewModels
         #region readonly dependencies
         // Services
         private readonly IFilteringService _filteringService;
-        private readonly IImportService _importService;
-        private readonly ICardDatabaseManagementService _cardDbManagementService;
         private readonly ICardListService _cardListService;
 
         // Filtering infrastructure
@@ -271,8 +269,6 @@ namespace CollectaMundo.ViewModels
             _statusVM = statusVM;
 
             _filteringService = filteringService;
-            _importService = importExportService;
-            _cardDbManagementService = cardDbManagementService;
             _cardListService = cardListService;
 
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
