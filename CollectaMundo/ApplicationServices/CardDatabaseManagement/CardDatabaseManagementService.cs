@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.ApplicationServices.CardPrices;
-using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
@@ -12,7 +11,7 @@ using System.IO;
 
 namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 {
-    public class CardDatabaseManagementService(IAppSettings settings, IDbConnectionFactory dbFactory, ProgressSinks progressSinks, ICardDatabaseManagementRepo dbMgmtRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IDownloadService downloadService, IRemoteLookups remoteLookups) : ICardDatabaseManagementService
+    public class CardDatabaseManagementService(IAppSettings settings, IDbConnectionFactory dbFactory, ProgressSinks progressSinks, ICardDatabaseManagementRepo dbMgmtRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IRemoteLookups remoteLookups) : ICardDatabaseManagementService
     {
         private readonly IAppSettings _settings = settings;
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
@@ -20,7 +19,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         private readonly ICardDatabaseManagementRepo _dbMgmtRepo = dbMgmtRepo;
         private readonly ICardPriceService _priceService = priceService;
         private readonly IGenerateMissingPngService _missingPngService = missingPngService;
-        private readonly IDownloadService _downloadService = downloadService;
+        private readonly CardDatabaseDownloader _downloader = new();
         private readonly IRemoteLookups _remoteLookups = remoteLookups;
 
         // Paths (precomputed)
@@ -53,7 +52,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 // ---------------------------
 
                 var step1Name = "Step 1. Downloading card database and prices...";
-                var downloadResult = await _downloadService.DownloadParallelAsync(
+                var downloadResult = await _downloader.DownloadParallelAsync(
                     _settings.CardDatabaseUrl, _dbPath, "Card database",
                     _settings.CardPricesUrl, _pricesPath, "Price File",
                     retryDelayInMs: defaultDelay,
@@ -164,7 +163,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             // ---------------------------
 
             var step1Name = "Step 1. Downloading card database and prices...";
-            var downloadResult = await _downloadService.DownloadParallelAsync(
+            var downloadResult = await _downloader.DownloadParallelAsync(
                 _settings.CardDatabaseUrl, _tempDbPath, "Card database",
                 _settings.CardPricesUrl, _pricesPath, "Price File",
                 retryDelayInMs: defaultDelay,
@@ -240,6 +239,109 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 Debug.WriteLine($"Cleanup failed: {ex.Message}");
                 return new OperationResult(OperationResultCode.Error, ex.Message);
             }
+            return new OperationResult(OperationResultCode.Success);
+
+        }
+
+        // Use case: orchestrates card database update
+        public async Task<OperationResult> UpdateCardPricesOrchetrator(int defaultDelay = 3000, CancellationToken ct = default)
+        {
+
+            // ---------------------------
+            // Step 0. Online check
+            // ---------------------------
+            if (!await _remoteLookups.IsInternetAvailableAsync(ct))
+            {
+                return new OperationResult(OperationResultCode.NoInternet, "Internet not available");
+            }
+
+            _progressSinks.Headline.Report("Updating card prices - please wait ...");
+            _progressSinks.ProgressBarVisible.Report(true);
+
+            // ---------------------------
+            // Step 1. Download resources
+            // ---------------------------
+
+            var step1Name = "Step 1. Downloading price file...";
+
+
+
+            //var downloadResult = await _downloader.DownloadParallelAsync(
+            //    _settings.CardDatabaseUrl, _tempDbPath, "Card database",
+            //    _settings.CardPricesUrl, _pricesPath, "Price File",
+            //    retryDelayInMs: defaultDelay,
+            //    stepName: step1Name,
+            //    stepNameAndNumberProgress: _progressSinks.Step,
+            //    stepDetailAndErrorProgress: _progressSinks.Detail,
+            //    percentProgress: _progressSinks.Percent,
+            //    cancelToken: ct);
+
+            //if (ct.IsCancellationRequested)
+            //{
+            //    CleanupPartialDownloads();
+            //    return new OperationResult(OperationResultCode.CancelledByUser, "Update was cancelled by user during download.");
+            //}
+
+            //if (downloadResult.Code != OperationResultCode.Success)
+            //{
+            //    Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
+            //    return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
+            //}
+
+            //// ---------------------------
+            //// Step 2 - Copy tables from new DB
+            //// ---------------------------
+            //_progressSinks.ProgressBarVisible.Report(false);
+            //_progressSinks.CancelEnabled?.Report(false); // Disable cancel button after download phase
+            //_progressSinks.Step.Report("Step 2. Copying new tables...");
+
+            //try
+            //{
+            //    await Task.Run(async () =>
+            //    {
+            //        await using var conn = await _dbFactory.OpenConnectionAsync().ConfigureAwait(false);
+
+            //        using (var tx = conn.BeginTransaction())
+            //        {
+            //            await _dbMgmtRepo.AttachTempDbAsync(conn, _tempDbPath, _progressSinks.Detail);
+            //            await _dbMgmtRepo.DropTablesAsync(conn, _progressSinks.Detail);
+            //            Debug.WriteLine("[CardDatabasePrep] Dropped old tables.");
+            //            await _dbMgmtRepo.CopyTablesAsync(conn, _progressSinks.Detail);
+            //            Debug.WriteLine("[CardDatabasePrep] Copied new tables.");
+
+            //            tx.Commit();
+            //        }
+
+            //        await _dbMgmtRepo.DetachTempDbAsync(conn, _progressSinks.Detail);
+            //    }, CancellationToken.None);
+
+            //}
+            //catch (Exception ex)
+            //{
+            //    _progressSinks.Detail.Report($"Table copy failed: {ex.Message}");
+            //    return new OperationResult(OperationResultCode.Error, $"Table copy failed: {ex.Message}");
+            //}
+
+            //// ---------------------------
+            //// Steps 3–10. Prepare database
+            //// ---------------------------
+            //var prepResult = await PrepareDatabaseAsync(defaultDelay, stepNumberStart: 3);
+            //if (prepResult.Code != OperationResultCode.Success)
+            //{
+            //    return new OperationResult(OperationResultCode.Error, prepResult.Message);
+            //}
+
+            //// Success: clean up temporary db and price file
+            //try
+            //{
+            //    File.Delete(_pricesPath);
+            //    File.Delete(_tempDbPath);
+            //}
+            //catch (IOException ex)
+            //{
+            //    Debug.WriteLine($"Cleanup failed: {ex.Message}");
+            //    return new OperationResult(OperationResultCode.Error, ex.Message);
+            //}
             return new OperationResult(OperationResultCode.Success);
 
         }

@@ -3,7 +3,6 @@ using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLists.CardLookups;
 using CollectaMundo.ApplicationServices.CardPrices;
-using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
@@ -47,7 +46,6 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var RemoteLookups = new RemoteLookups();
                 var dbFactory = AppGlobals.DbFactory = new DbConnectionFactory(settings);
-                var downloadService = new DownloadService();
 
                 // Card DB prep (repos + services)
                 var missingPngRepo = new GenerateMissingPngRepository();
@@ -60,7 +58,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardDbManagementRepo = new CardDatabaseManagementRepo();
                 var progressSinks = CreateProgressSinks(statusVM);
 
-                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, progressSinks, cardDbManagementRepo, priceService, missingPngSvc, downloadService, RemoteLookups);
+                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, progressSinks, cardDbManagementRepo, priceService, missingPngSvc, RemoteLookups);
 
                 var integrityService = new DatabaseIntegrityService(settings);
 

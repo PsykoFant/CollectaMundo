@@ -4,9 +4,9 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Sockets;
 
-namespace CollectaMundo.ApplicationServices.DownloadResourceFiles
+namespace CollectaMundo.Data.CardDatabaseManagement
 {
-    public class DownloadService : IDownloadService
+    internal class CardDatabaseDownloader
     {
         public async Task<OperationResult> DownloadAsync(string url, string targetPath, string label, int retryDelayInMs, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, IProgress<int>? percentProgress = null, CancellationToken cancelToken = default)
         {

@@ -2,7 +2,6 @@
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardLists.CardLookups.Providers;
 using CollectaMundo.ApplicationServices.CardPrices;
-using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
@@ -272,9 +271,9 @@ namespace CollectaMundo.Tests
         public Mock<ICardDatabaseManagementRepo> SchemaRepo { get; } = new();
         public Mock<ICardPriceService> PriceService { get; } = new();
         public Mock<IGenerateMissingPngService> PngService { get; } = new();
-        public Mock<IDownloadService> DownloadService { get; } = new();
         public Mock<IRemoteLookups> RemoteLookups { get; } = new();
         public Mock<IAppSettings> Settings { get; } = new();
+        public Mock<CardDatabaseDownloader> DownloadService { get; } = new();
 
         public List<int> PercentSamples { get; } = new();
         public List<bool> VisibleToggles { get; } = new();
@@ -321,7 +320,6 @@ namespace CollectaMundo.Tests
                 SchemaRepo.Object,
                 PriceService.Object,
                 PngService.Object,
-                DownloadService.Object,
                 RemoteLookups.Object
             );
         }

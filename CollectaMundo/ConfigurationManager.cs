@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Windows;
 
 namespace CollectaMundo
@@ -62,77 +61,7 @@ namespace CollectaMundo
                 MessageBox.Show($"Error creating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        public static void UpdatePriceInfo(string? updatedDate, string? retailer)
-        {
-            try
-            {
-                // Update the PriceInfo fields
-                if (updatedDate != null)
-                {
-                    CurrentSettings.PriceInfo.PricesUpdatedDate = updatedDate;
-                }
-                if (retailer != null)
-                {
-                    CurrentSettings.PriceInfo.Retailer = retailer;
-                }
 
-                // Save the updated settings to appsettings.json
-                SaveSettings();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error updating PriceInfo in appsettings.json: {ex.Message}");
-                MessageBox.Show($"Error updating PriceInfo in appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-        private static void SaveSettings()
-        {
-            try
-            {
-                // Serialize the CurrentSettings object back to the JSON file
-                string json = JsonConvert.SerializeObject(CurrentSettings, Formatting.Indented);
-                File.WriteAllText(appSettingsFile, json);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error saving appsettings.json: {ex.Message}");
-                MessageBox.Show($"Error saving appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-        public static object? GetSetting(string settingPath)
-        {
-            try
-            {
-                // Refresh the CurrentSettings object
-                LoadOrCreateAppSettings();
-
-                string[] pathParts = settingPath.Split(':');
-                object? current = CurrentSettings;
-
-                foreach (var part in pathParts)
-                {
-                    if (current == null)
-                    {
-                        return null;
-                    }
-
-                    PropertyInfo? property = current.GetType().GetProperty(part);
-                    if (property == null)
-                    {
-                        return null;
-                    }
-
-                    current = property.GetValue(current, null);
-                }
-
-                return current;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error getting setting '{settingPath}': {ex.Message}");
-                return null;
-            }
-        }
     }
     public class AppSettings
     {

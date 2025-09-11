@@ -3,7 +3,6 @@ using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLists.CardLookups;
 using CollectaMundo.ApplicationServices.CardPrices;
-using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
@@ -67,7 +66,6 @@ namespace CollectaMundo.Tests
 
 
             var remoteLookups = new RemoteLookups();
-            var downloadService = new DownloadService();
 
             var missingPngRepo = new GenerateMissingPngRepository();
             var missingPngLogic = new GenerateMissingPngLogic();
@@ -92,7 +90,7 @@ namespace CollectaMundo.Tests
             var facetUpdater = new FacetUpdater();
 
             // IMPORTANT: inject the fixture-backed DbFactory so all DB calls stay in-memory
-            var prepService = new CardDatabaseManagementService(settings, AppGlobals.DbFactory!, progressSinks, prepRepo, priceService, missingPngSvc, downloadService, remoteLookups);
+            var prepService = new CardDatabaseManagementService(settings, AppGlobals.DbFactory!, progressSinks, prepRepo, priceService, missingPngSvc, remoteLookups);
 
             // 4) Feature-layer services
             var filteringService = new FilteringService();

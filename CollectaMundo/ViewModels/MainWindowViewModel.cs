@@ -404,7 +404,6 @@ namespace CollectaMundo.ViewModels
 
         #endregion
 
-
         #region disposal
         public void Dispose()
         {

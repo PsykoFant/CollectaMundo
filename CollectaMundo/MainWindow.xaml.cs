@@ -31,13 +31,9 @@ namespace CollectaMundo
             private set => _currentInstance = value;
         }
 
-
         // Used for displaying images
         private string? _imageSourceUrl = string.Empty;
         private string? _imageSourceUrl2nd = string.Empty;
-
-        // Location of user's "Downloads" folder
-        public readonly static string currentUserFolders = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         public string? ImageSourceUrl
         {
             get => _imageSourceUrl;
@@ -79,9 +75,6 @@ namespace CollectaMundo
         Button saveButton = new();
         Button cancelButton = new();
         string columnToEdit = string.Empty;
-
-        // Read the price retailer from appsettings.json
-        public string? appsettingsRetailer = ConfigurationManager.GetSetting("PriceInfo:Retailer") as string;
 
         #endregion
         public MainWindow()
