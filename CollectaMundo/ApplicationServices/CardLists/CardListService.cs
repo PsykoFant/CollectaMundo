@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.CardLists.Lookups;
+﻿using CollectaMundo.ApplicationServices.CardLists.CardLookups;
 using CollectaMundo.Data.CardLists;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
@@ -163,9 +163,6 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 .ThenBy(c => ColorRankFast(c.Colors))
                 .ThenBy(c => c.Types, StringComparer.OrdinalIgnoreCase)];
         }
-
-
-
     }
 }
 

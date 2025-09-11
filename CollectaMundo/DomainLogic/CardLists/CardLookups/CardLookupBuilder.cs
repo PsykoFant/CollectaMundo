@@ -1,9 +1,9 @@
-﻿using CollectaMundo.ApplicationServices.CardLists.Lookups.Providers;
-using CollectaMundo.ApplicationServices.CardLists.Lookups.Sources;
+﻿using CollectaMundo.ApplicationServices.CardLists.CardLookups.Providers;
+using CollectaMundo.ApplicationServices.CardLists.CardLookups.Sources;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using System.Windows.Media;
 
-namespace CollectaMundo.DomainLogic.CardLists.Lookups
+namespace CollectaMundo.DomainLogic.CardLists.CardLookups
 {
     public sealed class CardLookupBuilder
     {

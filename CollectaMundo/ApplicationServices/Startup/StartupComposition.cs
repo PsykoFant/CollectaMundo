@@ -1,7 +1,7 @@
 ﻿#region using directives
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardLists;
-using CollectaMundo.ApplicationServices.CardLists.Lookups;
+using CollectaMundo.ApplicationServices.CardLists.CardLookups;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.EditCollection;
@@ -20,7 +20,7 @@ using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.Import;
 using CollectaMundo.Data.RemoteLookups;
 using CollectaMundo.DomainLogic.CardLists;
-using CollectaMundo.DomainLogic.CardLists.Lookups;
+using CollectaMundo.DomainLogic.CardLists.CardLookups;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;

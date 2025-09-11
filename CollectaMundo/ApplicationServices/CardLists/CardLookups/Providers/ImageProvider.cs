@@ -4,7 +4,7 @@ using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace CollectaMundo.ApplicationServices.CardLists.Lookups.Providers
+namespace CollectaMundo.ApplicationServices.CardLists.CardLookups.Providers
 {
     internal sealed class ImageProvider<TKey>(IByteSource<TKey> bytes) : ILookupProvider<TKey, ImageSource> where TKey : notnull
     {

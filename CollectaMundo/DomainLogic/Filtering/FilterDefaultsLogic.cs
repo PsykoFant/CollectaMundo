@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.CardLists.Lookups.Providers;
+﻿using CollectaMundo.ApplicationServices.CardLists.CardLookups.Providers;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Models;

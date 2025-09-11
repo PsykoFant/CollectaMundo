@@ -895,13 +895,13 @@
                     <Button x:Name="UpdatePricesButton" Content="Update card prices" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,60,0,0" Width="180" Height="20"/>
                     <Label Content="Show prices from:" Margin="10,90,0,0"/>
 
-                    <ComboBox ItemsSource="{Binding Retailers}"
-                              SelectedItem="{Binding SelectedRetailer, Mode=TwoWay}"
+                    <ComboBox ItemsSource="{Binding PricesVM.Retailers}"
+                              SelectedItem="{Binding PricesVM.SelectedRetailer, Mode=TwoWay}"
                               DisplayMemberPath="Display" SelectedValuePath="Key" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,120,0,0">
                         <i:Interaction.Triggers>
                             <i:EventTrigger EventName="SelectionChanged">
                                 <i:InvokeCommandAction
-                                    Command="{Binding ChangeRetailerCommand}"
+                                    Command="{Binding PricesVM.ChangeRetailerCommand}"
                                     CommandParameter="{Binding SelectedValue, RelativeSource={RelativeSource AncestorType=ComboBox}}" />
                             </i:EventTrigger>
                         </i:Interaction.Triggers>
@@ -1220,7 +1220,7 @@
                             <DataGridTemplateColumn SortMemberPath="NormalPrice" Width="*">
                                 <DataGridTemplateColumn.HeaderTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding DataContext.Main.PriceHeader, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                        <TextBlock Text="{Binding DataContext.Main.PricesVM.PriceHeader, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.HeaderTemplate>
                                 <DataGridTemplateColumn.CellTemplate>
@@ -1232,7 +1232,7 @@
                             <DataGridTemplateColumn SortMemberPath="FoilPrice" Width="*">
                                 <DataGridTemplateColumn.HeaderTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding DataContext.Main.FoilPriceHeader, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                        <TextBlock Text="{Binding DataContext.Main.PricesVM.FoilPriceHeader, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.HeaderTemplate>
                                 <DataGridTemplateColumn.CellTemplate>
@@ -1244,7 +1244,7 @@
                             <DataGridTemplateColumn SortMemberPath="EtchedPrice" Width="*">
                                 <DataGridTemplateColumn.HeaderTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding DataContext.Main.EtchedPriceHeader, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                        <TextBlock Text="{Binding DataContext.Main.PricesVM.EtchedPriceHeader, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.HeaderTemplate>
                                 <DataGridTemplateColumn.CellTemplate>

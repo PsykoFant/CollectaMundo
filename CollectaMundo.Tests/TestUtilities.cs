@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices;
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
-using CollectaMundo.ApplicationServices.CardLists.Lookups.Providers;
+using CollectaMundo.ApplicationServices.CardLists.CardLookups.Providers;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.DownloadResourceFiles;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;

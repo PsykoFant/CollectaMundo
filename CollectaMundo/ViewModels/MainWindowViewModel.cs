@@ -6,7 +6,6 @@ using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.CardPrices;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Presentation;
 using CollectaMundo.Utilities;
@@ -42,10 +41,6 @@ namespace CollectaMundo.ViewModels
         // Mana keys for ColorIcons
         private readonly string[] ManaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
 
-        // Retailer selection
-        private readonly Func<string> _getRetailer;
-        private readonly Action<string> _setRetailerAndPersist;
-
         #endregion
 
         #region child viewmodels (visible to XAML)
@@ -58,6 +53,7 @@ namespace CollectaMundo.ViewModels
         public EditCollectionViewModel EditCardsVM { get; }
         public FilterViewModel FilterVM { get; }
         public UpdateViewModel UpdateVM { get; }
+        public PricesViewModel PricesVM { get; }
         #endregion
 
         #region ui state
@@ -135,50 +131,6 @@ namespace CollectaMundo.ViewModels
         {
             AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
             EditCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
-        }
-
-        // Retailer options 
-        public sealed record RetailerOption(string Key, string Display);
-        public ObservableCollection<RetailerOption> Retailers { get; }
-
-        private RetailerOption? _selectedRetailer;
-        public RetailerOption? SelectedRetailer
-        {
-            get => _selectedRetailer;
-            set { if (_selectedRetailer != value) { _selectedRetailer = value; OnPropertyChanged(); } }
-        }
-
-        // Price column headers (dynamic based on retailer)
-        private string _priceHeader = "Price";
-        public string PriceHeader
-        {
-            get => _priceHeader;
-            private set { if (_priceHeader != value) { _priceHeader = value; OnPropertyChanged(); } }
-        }
-
-        private string _foilPriceHeader = "Foil Price";
-        public string FoilPriceHeader
-        {
-            get => _foilPriceHeader;
-            private set { if (_foilPriceHeader != value) { _foilPriceHeader = value; OnPropertyChanged(); } }
-        }
-
-        private string _etchedPriceHeader = "Etched Price";
-        public string EtchedPriceHeader
-        {
-            get => _etchedPriceHeader;
-            private set { if (_etchedPriceHeader != value) { _etchedPriceHeader = value; OnPropertyChanged(); } }
-        }
-
-        // simple currency mapping
-        private static string GetCurrencyForRetailer(string key) => string.Equals(key, "cardmarket", StringComparison.OrdinalIgnoreCase) ? "EUR" : "USD";
-        private void UpdatePriceHeaders()
-        {
-            var key = SelectedRetailer?.Key ?? "cardmarket";
-            var currency = GetCurrencyForRetailer(key);
-            PriceHeader = $"Price ({currency})";
-            FoilPriceHeader = $"Foil Price ({currency})";
-            EtchedPriceHeader = $"Etched Price ({currency})";
         }
 
         #region Visibility properties
@@ -293,22 +245,13 @@ namespace CollectaMundo.ViewModels
             // update viewmodel
             UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, this, () => MyCollectionVM.Cards.Count);
 
-            // retailers
-            _getRetailer = getRetailer;
-            _setRetailerAndPersist = setRetailerAndPersist;
-
-            // build retailer list (purely static definitions)
-            Retailers = new ObservableCollection<RetailerOption>(CardPriceDefinitions.RetailersByFormat["paper"].Select(kv => new RetailerOption(kv.Key, kv.Value)));
-
-            // pick initial from settings via delegate
-            var savedKey = _getRetailer();
-            SelectedRetailer = Retailers.FirstOrDefault(r => string.Equals(r.Key, savedKey, StringComparison.OrdinalIgnoreCase)) ?? Retailers.First();
+            // prices viewmodel
+            PricesVM = new PricesViewModel(getRetailer, setRetailerAndPersist, _cardListService, this);
 
             // event wiring
             SubscribeChildVmEvents();
             BuildCommands();
             MiniLogoVisibilityFlipper();
-            UpdatePriceHeaders();
         }
         public static async Task<MainWindowViewModel> CreateAsync(
             IFilteringService filteringService,
@@ -343,15 +286,12 @@ namespace CollectaMundo.ViewModels
         public ICommand ShowMyCollectionCommand { get; private set; } = null!;
         public ICommand ShowDecksCommand { get; private set; } = null!;
         public ICommand ShowUtilitiesCommand { get; private set; } = null!;
-        public ICommand ChangeRetailerCommand { get; private set; } = null!;
         private void BuildCommands()
         {
             ShowSearchAndFilterCommand = new RelayCommand<object>(_ => { CurrentPage = Page.SearchAndFilter; });
             ShowMyCollectionCommand = new RelayCommand<object>(_ => { CurrentPage = Page.MyCollection; });
             ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
             ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
-
-            ChangeRetailerCommand = new RelayCommand<object>(async _ => await ChangeRetailerAsync());
         }
 
         #endregion
@@ -432,21 +372,6 @@ namespace CollectaMundo.ViewModels
             AllCardsForDecksVM.FilteredCards = _filteringService.ApplyFilters(AllCardsForDecksVM.Cards, FilterVM.Filters.Values);
         }
 
-        // When retailer is changed, refresh prices on all cards
-        void RefreshAllPrices()
-        {
-            foreach (var c in AllCardsVM.Cards)
-            {
-                c.RefreshPricesFromProvider();
-            }
-
-            foreach (var c in MyCollectionVM.Cards)
-            {
-                c.RefreshPricesFromProvider();
-            }
-        }
-
-
         #endregion
 
         #region startup / reload
@@ -463,22 +388,22 @@ namespace CollectaMundo.ViewModels
             Debug.WriteLine($"[ReloadAllCardListsAsync] M1 finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");
         }
 
-        #endregion
-
-        #region Command methods - status overlay / maintenance tasks (backup, update db)       
-        private async Task ChangeRetailerAsync()
+        // When retailer is changed, refresh prices on all cards
+        public void RefreshAllPrices()
         {
-            if (SelectedRetailer is null)
+            foreach (var c in AllCardsVM.Cards)
             {
-                return;
+                c.RefreshPricesFromProvider();
             }
-            _setRetailerAndPersist(SelectedRetailer.Key);
-            await _cardListService.ReloadPriceLookupsAsync(SelectedRetailer.Key);
-            RefreshAllPrices();
-            UpdatePriceHeaders();
+
+            foreach (var c in MyCollectionVM.Cards)
+            {
+                c.RefreshPricesFromProvider();
+            }
         }
 
         #endregion
+
 
         #region disposal
         public void Dispose()

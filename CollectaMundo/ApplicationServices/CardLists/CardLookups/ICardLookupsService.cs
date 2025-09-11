@@ -1,7 +1,7 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Lookups;
+﻿using CollectaMundo.DomainLogic.CardLists.CardLookups;
 using System.Data.SQLite;
 
-namespace CollectaMundo.ApplicationServices.CardLists.Lookups
+namespace CollectaMundo.ApplicationServices.CardLists.CardLookups
 {
     public interface ICardLookupsService
     {
