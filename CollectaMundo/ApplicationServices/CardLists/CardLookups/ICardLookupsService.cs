@@ -7,6 +7,6 @@ namespace CollectaMundo.ApplicationServices.CardLists.CardLookups
     {
         // Ensures data providers exist (no-op if already initialized).
         Task<CardLookupPackage> LoadLookupDataAsync(SQLiteConnection conn, CardLookupsOptions opts);
-        Task ReloadPricesAsync(SQLiteConnection conn, string retailerKey);
+        Task ResetPricesMetaProviderAsync(string retailerKey);
     }
 }

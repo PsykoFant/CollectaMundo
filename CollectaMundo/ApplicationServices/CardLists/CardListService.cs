@@ -123,10 +123,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
         }
         public async Task ReloadPriceLookupsAsync(string retailerKey)
         {
-            await using var uow = new UnitOfWork();
-            await uow.BeginReadOnlyAsync();
-            await _lookupService.ReloadPricesAsync(uow.CurrentConnection, retailerKey);
-            await uow.CommitAsync();
+            await _lookupService.ResetPricesMetaProviderAsync(retailerKey);
         }
         private static List<CardSet> SortCards(IEnumerable<CardSet> cards)
         {

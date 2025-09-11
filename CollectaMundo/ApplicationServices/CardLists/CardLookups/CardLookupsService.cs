@@ -39,11 +39,13 @@ namespace CollectaMundo.ApplicationServices.CardLists.CardLookups
 
             return _builder.Build(manaIcons, setIcons, sets, prices);
         }
-
-        public async Task ReloadPricesAsync(SQLiteConnection conn, string retailerKey)
+        public async Task ResetPricesMetaProviderAsync(string retailerKey)
         {
             // Load the new map for the requested retailer
-            var dict = await _cardLookupsRepo.ReadPricesAsync(conn, retailerKey);
+            await using var uow = new UnitOfWork();
+            await uow.BeginReadOnlyAsync();
+            var dict = await _cardLookupsRepo.ReadPricesAsync(uow.CurrentConnection, retailerKey);
+            await uow.CommitAsync();
 
             // Swap the static provider (all CardSet getters read through this)
             CardSet.PriceMetaProvider = new ValueProvider<string, PriceDto>(dict);
