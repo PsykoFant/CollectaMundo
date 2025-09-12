@@ -40,7 +40,6 @@ namespace CollectaMundo.ApplicationServices.Utilities
 
             return new OperationResult(OperationResultCode.Error, $"{stepName} failed after {maxRetries} attempts.");
         }
-
     }
 
 }

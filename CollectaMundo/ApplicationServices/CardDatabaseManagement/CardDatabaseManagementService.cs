@@ -276,7 +276,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             if (ct.IsCancellationRequested)
             {
-                CleanupPartialDownloads();
                 return new OperationResult(OperationResultCode.CancelledByUser, "Update was cancelled by user during download.");
             }
 
@@ -288,60 +287,8 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             Debug.WriteLine("Downloaded prices.json successfully. Now for update stuff...");
 
-            //// ---------------------------
-            //// Step 2 - Copy tables from new DB
-            //// ---------------------------
-            //_progressSinks.ProgressBarVisible.Report(false);
-            //_progressSinks.CancelEnabled?.Report(false); // Disable cancel button after download phase
-            //_progressSinks.Step.Report("Step 2. Copying new tables...");
+            // to be implemented
 
-            //try
-            //{
-            //    await Task.Run(async () =>
-            //    {
-            //        await using var conn = await _dbFactory.OpenConnectionAsync().ConfigureAwait(false);
-
-            //        using (var tx = conn.BeginTransaction())
-            //        {
-            //            await _dbMgmtRepo.AttachTempDbAsync(conn, _tempDbPath, _progressSinks.Detail);
-            //            await _dbMgmtRepo.DropTablesAsync(conn, _progressSinks.Detail);
-            //            Debug.WriteLine("[CardDatabasePrep] Dropped old tables.");
-            //            await _dbMgmtRepo.CopyTablesAsync(conn, _progressSinks.Detail);
-            //            Debug.WriteLine("[CardDatabasePrep] Copied new tables.");
-
-            //            tx.Commit();
-            //        }
-
-            //        await _dbMgmtRepo.DetachTempDbAsync(conn, _progressSinks.Detail);
-            //    }, CancellationToken.None);
-
-            //}
-            //catch (Exception ex)
-            //{
-            //    _progressSinks.Detail.Report($"Table copy failed: {ex.Message}");
-            //    return new OperationResult(OperationResultCode.Error, $"Table copy failed: {ex.Message}");
-            //}
-
-            //// ---------------------------
-            //// Steps 3–10. Prepare database
-            //// ---------------------------
-            //var prepResult = await PrepareDatabaseAsync(defaultDelay, stepNumberStart: 3);
-            //if (prepResult.Code != OperationResultCode.Success)
-            //{
-            //    return new OperationResult(OperationResultCode.Error, prepResult.Message);
-            //}
-
-            //// Success: clean up temporary db and price file
-            //try
-            //{
-            //    File.Delete(_pricesPath);
-            //    File.Delete(_tempDbPath);
-            //}
-            //catch (IOException ex)
-            //{
-            //    Debug.WriteLine($"Cleanup failed: {ex.Message}");
-            //    return new OperationResult(OperationResultCode.Error, ex.Message);
-            //}
             return new OperationResult(OperationResultCode.Success);
 
         }
