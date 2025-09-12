@@ -11,7 +11,7 @@ using System.IO;
 
 namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 {
-    public class CardDatabaseManagementService(IAppSettings settings, IDbConnectionFactory dbFactory, ProgressSinks progressSinks, ICardDatabaseManagementRepo dbMgmtRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IRemoteLookups remoteLookups) : ICardDatabaseManagementService
+    public class CardDatabaseManagementService(IAppSettings settings, IDbConnectionFactory dbFactory, ProgressSinks progressSinks, ICardDatabaseManagementRepo dbMgmtRepo, ICardPriceService priceService, IGenerateMissingPngService missingPngService, IRemoteLookups remoteLookups, ICardDatabaseDownloader? downloader = null) : ICardDatabaseManagementService
     {
         private readonly IAppSettings _settings = settings;
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
@@ -19,7 +19,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         private readonly ICardDatabaseManagementRepo _dbMgmtRepo = dbMgmtRepo;
         private readonly ICardPriceService _priceService = priceService;
         private readonly IGenerateMissingPngService _missingPngService = missingPngService;
-        private readonly CardDatabaseDownloader _downloader = new();
+        private readonly ICardDatabaseDownloader _downloader = downloader ?? new CardDatabaseDownloader(); // default create new, allow mock to be injected for unit test
         private readonly IRemoteLookups _remoteLookups = remoteLookups;
 
         // Paths (precomputed)
@@ -264,17 +264,15 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             var step1Name = "Step 1. Downloading price file...";
 
-
-
-            //var downloadResult = await _downloader.DownloadParallelAsync(
-            //    _settings.CardDatabaseUrl, _tempDbPath, "Card database",
-            //    _settings.CardPricesUrl, _pricesPath, "Price File",
-            //    retryDelayInMs: defaultDelay,
-            //    stepName: step1Name,
-            //    stepNameAndNumberProgress: _progressSinks.Step,
-            //    stepDetailAndErrorProgress: _progressSinks.Detail,
-            //    percentProgress: _progressSinks.Percent,
-            //    cancelToken: ct);
+            var downloadResult = await _downloader.DownloadAsync(
+                url: _settings.CardPricesUrl,
+                targetPath: _pricesPath,
+                label: step1Name,
+                retryDelayInMs: defaultDelay,
+                stepNameAndNumberProgress: _progressSinks.Step,
+                stepDetailAndErrorProgress: progressSinks.Detail,
+                percentProgress: _progressSinks.Percent,
+                cancelToken: ct);
 
             //if (ct.IsCancellationRequested)
             //{
@@ -282,11 +280,13 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             //    return new OperationResult(OperationResultCode.CancelledByUser, "Update was cancelled by user during download.");
             //}
 
-            //if (downloadResult.Code != OperationResultCode.Success)
-            //{
-            //    Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
-            //    return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
-            //}
+            if (downloadResult.Code != OperationResultCode.Success)
+            {
+                Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
+                return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
+            }
+
+            Debug.WriteLine("Downloaded prices.json successfully. Now for update stuff...");
 
             //// ---------------------------
             //// Step 2 - Copy tables from new DB

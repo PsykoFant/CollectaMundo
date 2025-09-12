@@ -28,6 +28,7 @@ namespace CollectaMundo.ViewModels
         public ICommand BackupCollectionCommand { get; private set; } = null!;
         public ICommand CheckForDbUpdatesCommand { get; private set; } = null!;
         public ICommand UpdateDBCommand { get; protected set; } = null!;
+        public ICommand UpdatePricesCommand { get; protected set; } = null!;
 
         // Visibility properties
         private Visibility _updateDbVisibility = Visibility.Collapsed;
@@ -50,6 +51,7 @@ namespace CollectaMundo.ViewModels
             BackupCollectionCommand = new RelayCommand<object>(async _ => await BackupCollectionAsync());
             CheckForDbUpdatesCommand = new RelayCommand<object>(async _ => await CheckForDbUpdatesAsync());
             UpdateDBCommand = new RelayCommand<object>(async _ => await UpdateDBAsync());
+            UpdatePricesCommand = new RelayCommand<object>(async _ => await UpdatePricesAsync());
         }
 
         // Use case: Backup collection
@@ -253,6 +255,70 @@ namespace CollectaMundo.ViewModels
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
         }
 
+        private async Task UpdatePricesAsync()
+        {
+            _statusVM.ShowStatusOverlay("Ready to update card prices?", false);
+            _statusVM.PrimaryButtonText = "   Go for it!   ";
+            _statusVM.PrimaryButtonVisibility = Visibility.Visible;
+
+            // Wait for user confirmation before proceeding
+            var tcs = new TaskCompletionSource();
+            _statusVM.SetPrimaryAction(_ => tcs.SetResult());
+            await tcs.Task;
+
+            // UI state preparation AFTER user clicked
+            SetUiBusy(true);
+            UpdateDbVisibility = Visibility.Collapsed;
+            _statusVM.PrimaryButtonText = "   Cancel   ";
+            _updateCts = new CancellationTokenSource();
+            _statusVM.SetPrimaryAction(_ =>
+            {
+                _statusVM.StatusLabel2 = "Cancelling…";
+                _updateCts?.Cancel();
+            });
+
+            if (_updateCts.IsCancellationRequested)
+            {
+                _updateCts = null;
+                return;
+            }
+
+            _statusVM.ShowStatusOverlay("Updating card prices, please wait...", true);
+
+            // Run the update
+            var result = await _cardDbManagementService.UpdateCardPricesOrchetrator(ct: _updateCts.Token);
+
+            // Reset UI state before showing result
+            _statusVM.ResetStatusOverlay();
+
+            // Show result
+            switch (result.Code)
+            {
+                case OperationResultCode.Success:
+                    _appRefresher.RefreshAllPrices();
+                    _statusVM.StatusLabel1 = "Prices updated successfully!";
+                    break;
+
+                case OperationResultCode.CancelledByUser:
+                    _statusVM.StatusLabel1 = "Update canceled";
+                    _statusVM.StatusLabel2 = string.Empty;
+                    _statusVM.StatusLabel3 = "Download aborted. No prices were updated.";
+                    break;
+
+                default:
+                    _statusVM.StatusLabel1 = "Prices update failed!";
+                    _statusVM.StatusLabel3 = result.Message;
+                    break;
+            }
+
+            _updateCts = null;
+            SetUiBusy(false);
+            _statusVM.SetPrimaryAction(null); // revert to default action (hide overlay)
+            _statusVM.PrimaryButtonVisibility = Visibility.Visible;
+
+
+        }
+
         private void SetUiBusy(bool isBusy)
         {
             _uiState.IsTopMenuEnabled = !isBusy;
@@ -261,3 +327,4 @@ namespace CollectaMundo.ViewModels
         }
     }
 }
+

@@ -892,7 +892,7 @@
                 <Grid x:Name="GridUtilsMenu" Visibility="{Binding SideMenuUtilsVisibility}">
                     <Button Command="{Binding UpdateVM.BackupCollectionCommand}" Content="Create backup of my collection" HorizontalAlignment="Left" Margin="10,0,0,0" Height="20" Width="180" VerticalAlignment="Top"/>
                     <Button x:Name="ImportCollectionButton" Content="The Import Wizard" HorizontalAlignment="Left" Margin="10,30,0,0" Width="180" Height="20" VerticalAlignment="Top" Click="ImportCollectionButton_Click"/>
-                    <Button x:Name="UpdatePricesButton" Content="Update card prices" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,60,0,0" Width="180" Height="20"/>
+                    <Button Command="{Binding UpdateVM.UpdatePricesCommand}" Content="Update card prices" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,60,0,0" Width="180" Height="20"/>
                     <Label Content="Show prices from:" Margin="10,90,0,0"/>
 
                     <ComboBox ItemsSource="{Binding PricesVM.Retailers}"

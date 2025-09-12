@@ -273,11 +273,11 @@ namespace CollectaMundo.Tests
         public Mock<IGenerateMissingPngService> PngService { get; } = new();
         public Mock<IRemoteLookups> RemoteLookups { get; } = new();
         public Mock<IAppSettings> Settings { get; } = new();
-        public Mock<CardDatabaseDownloader> DownloadService { get; } = new();
+        public Mock<ICardDatabaseDownloader> CardDatabaseDownloader { get; } = new();
 
-        public List<int> PercentSamples { get; } = new();
-        public List<bool> VisibleToggles { get; } = new();
-        public List<string> Steps { get; } = new();
+        public List<int> PercentSamples { get; } = [];
+        public List<bool> VisibleToggles { get; } = [];
+        public List<string> Steps { get; } = [];
 
         private IDisposable? _dbFactoryDisposable;
         private string? _tmpRoot;
@@ -320,7 +320,8 @@ namespace CollectaMundo.Tests
                 SchemaRepo.Object,
                 PriceService.Object,
                 PngService.Object,
-                RemoteLookups.Object
+                RemoteLookups.Object,
+                CardDatabaseDownloader.Object
             );
         }
         public void StubAllStepsAsSuccess()

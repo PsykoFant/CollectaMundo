@@ -6,7 +6,7 @@ using System.Net.Sockets;
 
 namespace CollectaMundo.Data.CardDatabaseManagement
 {
-    internal class CardDatabaseDownloader
+    internal class CardDatabaseDownloader : ICardDatabaseDownloader
     {
         public async Task<OperationResult> DownloadAsync(string url, string targetPath, string label, int retryDelayInMs, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, IProgress<int>? percentProgress = null, CancellationToken cancelToken = default)
         {
@@ -20,8 +20,8 @@ namespace CollectaMundo.Data.CardDatabaseManagement
                 retryDelayInMs,
                 stepName: label,
                 stepNameAndNumberProgress,
-                stepDetailAndErrorProgress
-            );
+                stepDetailAndErrorProgress,
+                cancelToken: cancelToken);
         }
         public async Task<OperationResult> DownloadParallelAsync(
             string url1, string targetPath1, string label1,

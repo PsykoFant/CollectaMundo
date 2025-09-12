@@ -734,7 +734,7 @@ namespace CollectaMundo.Tests
                 ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
-                ctx.DownloadService
+                ctx.CardDatabaseDownloader
                     .Setup(d => d.DownloadParallelAsync(
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -792,7 +792,7 @@ namespace CollectaMundo.Tests
                        }
                    });
 
-                ctx.DownloadService
+                ctx.CardDatabaseDownloader
                     .Setup(d => d.DownloadParallelAsync(
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -816,7 +816,7 @@ namespace CollectaMundo.Tests
                 ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
-                ctx.DownloadService
+                ctx.CardDatabaseDownloader
                     .Setup(d => d.DownloadParallelAsync(
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -844,7 +844,7 @@ namespace CollectaMundo.Tests
                 ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
-                ctx.DownloadService
+                ctx.CardDatabaseDownloader
                     .Setup(d => d.DownloadParallelAsync(
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -859,7 +859,7 @@ namespace CollectaMundo.Tests
 
                 Assert.Equal(OperationResultCode.DownloadFailed, result.Code);
                 ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()), Times.Never);
-                ctx.DownloadService.Verify(d => d.DownloadParallelAsync(
+                ctx.CardDatabaseDownloader.Verify(d => d.DownloadParallelAsync(
                     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                     It.IsAny<int>(), It.IsAny<string>(),
@@ -878,7 +878,7 @@ namespace CollectaMundo.Tests
                 var result = await svc.FirstTimeDbPrepOrchetrator(0);
 
                 Assert.Equal(OperationResultCode.NoInternet, result.Code);
-                ctx.DownloadService.VerifyNoOtherCalls();
+                ctx.CardDatabaseDownloader.VerifyNoOtherCalls();
                 ctx.SchemaRepo.VerifyNoOtherCalls();
             }
 
@@ -892,7 +892,7 @@ namespace CollectaMundo.Tests
                 var cts = new CancellationTokenSource();
                 cts.Cancel(); // Simulate user cancellation before download starts
 
-                ctx.DownloadService
+                ctx.CardDatabaseDownloader
                     .Setup(d => d.DownloadParallelAsync(
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -915,7 +915,7 @@ namespace CollectaMundo.Tests
                 ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
                 ctx.StubAllStepsAsSuccess();
 
-                ctx.DownloadService
+                ctx.CardDatabaseDownloader
                 .Setup(d => d.DownloadParallelAsync(
                     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -939,7 +939,7 @@ namespace CollectaMundo.Tests
 
                 var cts = new CancellationTokenSource();
 
-                ctx.DownloadService
+                ctx.CardDatabaseDownloader
                     .Setup(d => d.DownloadParallelAsync(
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -976,7 +976,7 @@ namespace CollectaMundo.Tests
                 var cts = new CancellationTokenSource();
 
                 int callCount = 0;
-                ctx.DownloadService
+                ctx.CardDatabaseDownloader
                     .Setup(d => d.DownloadParallelAsync(
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -1009,7 +1009,7 @@ namespace CollectaMundo.Tests
                 ctx.StubAllStepsAsSuccess();
 
                 // Simulate a download result where one file failed
-                ctx.DownloadService
+                ctx.CardDatabaseDownloader
                     .Setup(d => d.DownloadParallelAsync(
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
