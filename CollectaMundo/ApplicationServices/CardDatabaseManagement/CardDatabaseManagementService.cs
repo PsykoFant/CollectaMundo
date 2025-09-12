@@ -274,11 +274,11 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 percentProgress: _progressSinks.Percent,
                 cancelToken: ct);
 
-            //if (ct.IsCancellationRequested)
-            //{
-            //    CleanupPartialDownloads();
-            //    return new OperationResult(OperationResultCode.CancelledByUser, "Update was cancelled by user during download.");
-            //}
+            if (ct.IsCancellationRequested)
+            {
+                CleanupPartialDownloads();
+                return new OperationResult(OperationResultCode.CancelledByUser, "Update was cancelled by user during download.");
+            }
 
             if (downloadResult.Code != OperationResultCode.Success)
             {
