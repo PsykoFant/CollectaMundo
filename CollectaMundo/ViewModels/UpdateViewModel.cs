@@ -255,6 +255,7 @@ namespace CollectaMundo.ViewModels
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
         }
 
+        // Use case: Update prices
         private async Task UpdatePricesAsync()
         {
             _statusVM.ShowStatusOverlay("Ready to update card prices?", false);
@@ -288,24 +289,26 @@ namespace CollectaMundo.ViewModels
             // Run the update
             var result = await _cardDbManagementService.UpdateCardPricesOrchetrator(ct: _updateCts.Token);
 
-            // Reset UI state before showing result
-            _statusVM.ResetStatusOverlay();
+            // Reset UI state before showing result            
 
             // Show result
             switch (result.Code)
             {
                 case OperationResultCode.Success:
+                    _statusVM.ResetStatusOverlay();
                     _appRefresher.RefreshAllPrices();
                     _statusVM.StatusLabel1 = "Prices updated successfully!";
                     break;
 
                 case OperationResultCode.CancelledByUser:
+                    _statusVM.ResetStatusOverlay();
                     _statusVM.StatusLabel1 = "Update canceled";
-                    _statusVM.StatusLabel2 = string.Empty;
                     _statusVM.StatusLabel3 = "Download aborted. No prices were updated.";
                     break;
 
                 default:
+                    _statusVM.ProgressVisibility = Visibility.Collapsed;
+                    _statusVM.PrimaryButtonText = "   OK   ";
                     _statusVM.StatusLabel1 = "Prices update failed!";
                     _statusVM.StatusLabel3 = result.Message;
                     break;

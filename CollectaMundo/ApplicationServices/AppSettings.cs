@@ -16,7 +16,7 @@ namespace CollectaMundo.ApplicationServices
         public ConnectionStrings ConnectionStrings { get; private set; } = new();
         public PriceInfo PriceInfo { get; private set; } = new();
         public string CardDatabaseUrl => "https://mtgjson.com/api/v5/AllPrintings.sqlite";
-        public string CardPricesUrl => "https://mtgjson.com/api/v5/AllPricesToday.json";
+        public string CardPricesUrl => "https://mtgjson.com/api/v5/AllPricesToday.jsons";
 
         private static readonly string _userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         public string UserDownloadsPath => Path.Combine(_userProfile, "Downloads");
