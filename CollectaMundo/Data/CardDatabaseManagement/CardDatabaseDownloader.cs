@@ -18,6 +18,7 @@ namespace CollectaMundo.Data.CardDatabaseManagement
                     url, targetPath, label,
                     stepDetailAndErrorProgress,
                     percentProgress,
+                    _httpClient,
                     cancelToken);
 
                 if (cancelled)
@@ -60,7 +61,7 @@ namespace CollectaMundo.Data.CardDatabaseManagement
                 cancelToken: cancelToken
             );
         }
-        private static async Task<(bool success, string? errorMessage, bool cancelled)> RunParallelDownloadsAsync(
+        private async Task<(bool success, string? errorMessage, bool cancelled)> RunParallelDownloadsAsync(
             string url1, string targetPath1, string label1,
             string url2, string targetPath2, string label2,
             IProgress<string>? stepDetailAndErrorProgress, IProgress<int>? percentProgress, CancellationToken token)
@@ -69,8 +70,8 @@ namespace CollectaMundo.Data.CardDatabaseManagement
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(innerCts.Token, token);
             var linkedToken = linkedCts.Token;
 
-            var task1 = DownloadFileAsync(url1, targetPath1, label1, stepDetailAndErrorProgress, percentProgress, linkedToken);
-            var task2 = DownloadFileAsync(url2, targetPath2, label2, null, null, linkedToken);
+            var task1 = DownloadFileAsync(url1, targetPath1, label1, stepDetailAndErrorProgress, percentProgress, _httpClient, linkedToken);
+            var task2 = DownloadFileAsync(url2, targetPath2, label2, null, null, _httpClient, linkedToken);
 
             var firstCompleted = await Task.WhenAny(task1, task2);
             var firstResult = await firstCompleted;
@@ -79,11 +80,6 @@ namespace CollectaMundo.Data.CardDatabaseManagement
             {
                 // Cancel the other task
                 innerCts.Cancel();
-
-                // Await both safely without surfacing exceptions
-                //await SafeAwait(task1);
-                //await SafeAwait(task2);
-
                 return (false, firstResult.errorMessage, token.IsCancellationRequested);
             }
 
@@ -99,7 +95,7 @@ namespace CollectaMundo.Data.CardDatabaseManagement
 
             return (true, null, false);
         }
-        private static async Task<(bool success, string? errorMessage, bool cancelled)> DownloadFileAsync(string url, string targetPath, string label, IProgress<string>? stepDetailAndErrorProgress, IProgress<int>? percentProgress, CancellationToken cancelToken)
+        private static async Task<(bool success, string? errorMessage, bool cancelled)> DownloadFileAsync(string url, string targetPath, string label, IProgress<string>? stepDetailAndErrorProgress, IProgress<int>? percentProgress, HttpClient httpClient, CancellationToken cancelToken)
         {
             Debug.WriteLine($"[Download] Starting download: {label} from {url} to {targetPath}");
 
@@ -107,10 +103,8 @@ namespace CollectaMundo.Data.CardDatabaseManagement
 
             try
             {
-                using var _httpClient = new HttpClient();
-
                 Debug.WriteLine($"[Download] Sending GET request for: {url}");
-                var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+                var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancelToken).ConfigureAwait(false);
 
                 Debug.WriteLine($"[Download] Response received: {(int)response.StatusCode} {response.ReasonPhrase}");
 
@@ -126,7 +120,7 @@ namespace CollectaMundo.Data.CardDatabaseManagement
                 var buffer = new byte[8192];
 
                 Debug.WriteLine("[Download] Opening response stream");
-                using var contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                using var contentStream = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
 
                 Debug.WriteLine($"[Download] Creating file stream at: {targetPath}");
                 using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 8192, useAsync: true);
@@ -138,7 +132,7 @@ namespace CollectaMundo.Data.CardDatabaseManagement
 
                 while (true)
                 {
-                    var bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length)).ConfigureAwait(false);
+                    var bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancelToken).ConfigureAwait(false);
                     if (bytesRead == 0) break;
 
                     await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
