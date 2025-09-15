@@ -205,7 +205,7 @@ namespace CollectaMundo.ViewModels
 
                     _statusVM.StatusLabel3 = backupResult.Message;
                     _statusVM.PrimaryButtonVisibility = Visibility.Visible;
-                    _statusVM.PrimaryButtonText = "   OK   ";
+                    _statusVM.PrimaryButtonText = "  OK  ";
                     _statusVM.SetPrimaryAction(null);
                     _updateCts = null;
                     return;
@@ -224,13 +224,11 @@ namespace CollectaMundo.ViewModels
             // Run the update
             var result = await _cardDbManagementService.UpdateDbPrepOrchetrator(ct: _updateCts.Token);
 
-            // Reset UI state before showing result
-            _statusVM.ResetStatusOverlay();
-
             // Show result
             switch (result.Code)
             {
                 case OperationResultCode.Success:
+                    _statusVM.ResetStatusOverlay();
                     _statusVM.StatusLabel3 = "Reloading card lists…";
                     await _appRefresher.ReloadAllCardListsAndFiltersAsync();
                     _statusVM.StatusLabel1 = "Database updated successfully!";
@@ -238,13 +236,15 @@ namespace CollectaMundo.ViewModels
                     break;
 
                 case OperationResultCode.CancelledByUser:
+                    _statusVM.ResetStatusOverlay();
                     _statusVM.StatusLabel1 = "Update canceled";
-                    _statusVM.StatusLabel2 = string.Empty;
                     _statusVM.StatusLabel3 = "Download aborted. No files were imported.";
                     break;
 
                 default:
-                    _statusVM.StatusLabel1 = "Update failed!";
+                    _statusVM.ProgressVisibility = Visibility.Collapsed;
+                    _statusVM.PrimaryButtonText = "  OK  ";
+                    _statusVM.StatusLabel1 = "Card database update failed!";
                     _statusVM.StatusLabel3 = result.Message;
                     break;
             }

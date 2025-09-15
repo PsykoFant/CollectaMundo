@@ -1114,7 +1114,7 @@ namespace CollectaMundo.Tests
                 await updateVM.InternalUpdateTask!;
 
                 // Assert
-                Assert.Equal("Update failed!", statusVM.StatusLabel1);
+                Assert.Equal("Card database update failed!", statusVM.StatusLabel1);
 
                 Assert.Equal("Boom!", statusVM.StatusLabel3);
                 Assert.Equal("  OK  ", statusVM.PrimaryButtonText);
@@ -1148,7 +1148,7 @@ namespace CollectaMundo.Tests
                 // Assert
                 Assert.Equal("Backup failed - aborting update...", statusVM.StatusLabel1);
                 Assert.Equal("Backup Boom!", statusVM.StatusLabel3);
-                Assert.Equal("   OK   ", statusVM.PrimaryButtonText);
+                Assert.Equal("  OK  ", statusVM.PrimaryButtonText);
                 Assert.Equal(Visibility.Visible, statusVM.PrimaryButtonVisibility);
 
                 // Verify update was not invoked
@@ -1182,7 +1182,7 @@ namespace CollectaMundo.Tests
                 // Assert
                 Assert.Equal("Backup cancelled - aborting update...", statusVM.StatusLabel1);
                 Assert.Equal("Update was cancelled by user during download.", statusVM.StatusLabel3);
-                Assert.Equal("   OK   ", statusVM.PrimaryButtonText);
+                Assert.Equal("  OK  ", statusVM.PrimaryButtonText);
                 Assert.Equal(Visibility.Visible, statusVM.PrimaryButtonVisibility);
 
                 // Verify update was not invoked

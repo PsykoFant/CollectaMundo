@@ -96,27 +96,7 @@ namespace CollectaMundo.Data.CardDatabaseManagement
 
             return (true, null, false);
         }
-
-        private static async Task SafeAwait(Task<(bool success, string? errorMessage)> task)
-        {
-            try
-            {
-                await task;
-            }
-            catch
-            {
-                // Suppress any faulted or canceled task
-            }
-        }
-
-
-        private static async Task<(bool success, string? errorMessage, bool cancelled)> DownloadFileAsync(
-    string url,
-    string targetPath,
-    string label,
-    IProgress<string>? stepDetailAndErrorProgress,
-    IProgress<int>? percentProgress,
-    CancellationToken cancelToken)
+        private static async Task<(bool success, string? errorMessage, bool cancelled)> DownloadFileAsync(string url, string targetPath, string label, IProgress<string>? stepDetailAndErrorProgress, IProgress<int>? percentProgress, CancellationToken cancelToken)
         {
             Debug.WriteLine($"[Download] Starting download: {label} from {url} to {targetPath}");
 
