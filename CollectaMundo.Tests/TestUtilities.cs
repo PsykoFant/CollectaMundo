@@ -14,6 +14,7 @@ using CollectaMundo.ViewModels;
 using Moq;
 using System.Data.SQLite;
 using System.IO;
+using System.Net.Http;
 using System.Reflection;
 
 namespace CollectaMundo.Tests
@@ -362,4 +363,18 @@ namespace CollectaMundo.Tests
             public void Report(T value) => _onReport(value);
         }
     }
+    public class FakeHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handlerFunc) : HttpMessageHandler
+    {
+        private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handlerFunc = handlerFunc;
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            => _handlerFunc(request, cancellationToken);
+    }
+    public class NullProgress<T> : IProgress<T>
+    {
+        public void Report(T value) { }
+    }
+
+
+
 }

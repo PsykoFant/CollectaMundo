@@ -2,11 +2,14 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using HttpClient = System.Net.Http.HttpClient;
 
 namespace CollectaMundo.Data.CardDatabaseManagement
 {
-    internal class CardDatabaseDownloader : ICardDatabaseDownloader
+    public class CardDatabaseDownloader(HttpClient? httpClient = null) : ICardDatabaseDownloader
     {
+        private readonly HttpClient _httpClient = httpClient ?? new HttpClient();
+
         public async Task<OperationResult> DownloadAsync(string url, string targetPath, string label, int retryDelayInMs, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, IProgress<int>? percentProgress = null, CancellationToken cancelToken = default)
         {
             return await RetryHelper.RetryLoopAsync(async () =>
@@ -104,10 +107,10 @@ namespace CollectaMundo.Data.CardDatabaseManagement
 
             try
             {
-                using var httpClient = new HttpClient();
+                using var _httpClient = new HttpClient();
 
                 Debug.WriteLine($"[Download] Sending GET request for: {url}");
-                var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+                var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
 
                 Debug.WriteLine($"[Download] Response received: {(int)response.StatusCode} {response.ReasonPhrase}");
 
@@ -126,13 +129,7 @@ namespace CollectaMundo.Data.CardDatabaseManagement
                 using var contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
 
                 Debug.WriteLine($"[Download] Creating file stream at: {targetPath}");
-                using var fileStream = new FileStream(
-                    targetPath,
-                    FileMode.Create,
-                    FileAccess.Write,
-                    FileShare.None,
-                    bufferSize: 8192,
-                    useAsync: true);
+                using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 8192, useAsync: true);
 
                 stepDetailAndErrorProgress?.Report($"{label} size: {totalBytes / 1_000_000.0:0.0} MB");
 
@@ -182,10 +179,6 @@ namespace CollectaMundo.Data.CardDatabaseManagement
                 }
             }
         }
-
-
-
-
         private static void CleanupPartialDownload(string filePath)
         {
             try

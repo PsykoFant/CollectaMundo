@@ -4,14 +4,7 @@ namespace CollectaMundo.ApplicationServices.Utilities
 {
     public static class RetryHelper
     {
-        public static async Task<OperationResult> RetryLoopAsync(
-    Func<Task<OperationResult>> stepWork,
-    int retryDelayInMs,
-    string stepName,
-    IProgress<string> stepNameAndNumberProgress,
-    IProgress<string> stepDetailAndErrorProgress,
-    int maxRetries = 3,
-    CancellationToken cancelToken = default)
+        public static async Task<OperationResult> RetryLoopAsync(Func<Task<OperationResult>> stepWork, int retryDelayInMs, string stepName, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, int maxRetries = 3, CancellationToken cancelToken = default)
         {
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
