@@ -7,15 +7,7 @@ namespace CollectaMundo.Data.CardDatabaseManagement
 {
     internal class CardDatabaseDownloader : ICardDatabaseDownloader
     {
-        public async Task<OperationResult> DownloadAsync(
-    string url,
-    string targetPath,
-    string label,
-    int retryDelayInMs,
-    IProgress<string> stepNameAndNumberProgress,
-    IProgress<string> stepDetailAndErrorProgress,
-    IProgress<int>? percentProgress = null,
-    CancellationToken cancelToken = default)
+        public async Task<OperationResult> DownloadAsync(string url, string targetPath, string label, int retryDelayInMs, IProgress<string> stepNameAndNumberProgress, IProgress<string> stepDetailAndErrorProgress, IProgress<int>? percentProgress = null, CancellationToken cancelToken = default)
         {
             return await RetryHelper.RetryLoopAsync(async () =>
             {
@@ -32,13 +24,8 @@ namespace CollectaMundo.Data.CardDatabaseManagement
                     ? new OperationResult(OperationResultCode.Success, $"{label} download succeeded.")
                     : new OperationResult(OperationResultCode.Error, error ?? $"{label} download failed."); // <== message from HTTP error is preserved
             },
-            retryDelayInMs,
-            stepName: label,
-            stepNameAndNumberProgress,
-            stepDetailAndErrorProgress,
-            cancelToken: cancelToken);
+            retryDelayInMs, stepName: label, stepNameAndNumberProgress, stepDetailAndErrorProgress, cancelToken: cancelToken);
         }
-
 
         public async Task<OperationResult> DownloadParallelAsync(
             string url1, string targetPath1, string label1,

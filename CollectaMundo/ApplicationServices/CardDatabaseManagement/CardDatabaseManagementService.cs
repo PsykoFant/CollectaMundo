@@ -125,23 +125,38 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 }
 
                 // Step 3: Query server
-                int numberOfSetsOnServer = await _remoteLookups.FetchSetsCountAsync(ct);
-
-                // Step 4: Compare counts
-                if (numberOfSetsInDb < numberOfSetsOnServer)
+                int numberOfSetsOnServer;
+                try
                 {
-                    return new OperationResult(OperationResultCode.NeedsUpdate,
-                        $"Your local card database has {numberOfSetsInDb} sets, server has {numberOfSetsOnServer} sets — update available!");
+                    numberOfSetsOnServer = await _remoteLookups.FetchSetsCountAsync(ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    return new OperationResult(OperationResultCode.CancelledByUser, "Cancelled while checking for database updates.");
+                }
+                catch (Exception ex)
+                {
+                    return new OperationResult(OperationResultCode.Error, $"Failed to fetch sets from server: {ex.Message}");
                 }
 
-                return new OperationResult(OperationResultCode.UpToDate,
-                    $"Your local card database is up to date! ({numberOfSetsInDb} sets).");
+                // Step 4: Compare counts
+                if (numberOfSetsOnServer > numberOfSetsInDb)
+                {
+                    return new OperationResult(OperationResultCode.Success, "Updates available!");
+                }
+
+                return new OperationResult(OperationResultCode.Success, "Your local database is up to date.");
             }
             catch (OperationCanceledException)
             {
-                return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled update check.");
+                return new OperationResult(OperationResultCode.CancelledByUser, "Check for DB updates was cancelled.");
+            }
+            catch (Exception ex)
+            {
+                return new OperationResult(OperationResultCode.Error, $"Unexpected error: {ex.Message}");
             }
         }
+
 
         // Use case: orchestrates card database update
         public async Task<OperationResult> UpdateDbPrepOrchetrator(int defaultDelay = 3000, CancellationToken ct = default)
