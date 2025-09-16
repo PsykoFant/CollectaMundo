@@ -37,7 +37,8 @@ namespace CollectaMundo.Tests
         public void Cancel() { }
     }
 
-    public sealed class IntegrationTests(InMemoryDatabaseFixture fixture) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
+    public sealed class IntegrationTests(InMemoryDatabaseFixture fixture)
+        : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
         private readonly InMemoryDatabaseFixture _fx = fixture;
         private MainWindowViewModel _mainVM = null!;
