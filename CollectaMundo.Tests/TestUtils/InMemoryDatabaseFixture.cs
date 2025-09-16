@@ -395,6 +395,11 @@ namespace CollectaMundo.Tests.TestUtils
                 throw new FileNotFoundException($"CSV file for {tableName} not found at {filePath}");
             }
 
+            if (_masterConnection is null)
+            {
+                throw new InvalidOperationException("_masterConnection is not initialized.");
+            }
+
             Debug.WriteLine($"Seeding database {tableName} with initial data from CSV files.");
 
             string csvData = await File.ReadAllTextAsync(filePath);
