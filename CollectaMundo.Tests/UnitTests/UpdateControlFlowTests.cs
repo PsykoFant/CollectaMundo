@@ -58,12 +58,20 @@ namespace CollectaMundo.Tests.UnitTests
 
             // Simulate "user click Go for it!" to begin the orchestration
             while (updateVM.InternalUpdateTask is null)
+            {
                 await Task.Delay(10); // Wait for hook to be ready
+            }
 
-            TestableUpdateViewModel.SimulatePrimaryButtonClick(statusVM); // Click "Go for it!"
+            // Signal that we’re ready for the hook to fire
+            updateVM.ConfirmReady.Set();
 
-            await updateVM.InternalUpdateTask!; // Now wait for task to complete
+            // Simulate button click exactly when we know everything is wired
+            TestableUpdateViewModel.SimulatePrimaryButtonClick(statusVM);
 
+            await updateVM.InternalUpdateTask!;
+
+            // Wait deterministically for UI to update
+            SpinWait.SpinUntil(() => statusVM.StatusLabel1 == "Update canceled", 250);
             // Assert
             Assert.Equal("Update canceled", statusVM.StatusLabel1);
             Assert.Equal("Download aborted. No files were imported.", statusVM.StatusLabel3);
@@ -216,7 +224,10 @@ namespace CollectaMundo.Tests.UnitTests
                 await Task.Delay(10);
             }
 
-            // First click: simulate user saying "Go for it!"
+            // ✅ Signal the test hook to run
+            updateVM.ConfirmReady.Set();
+
+            // Simulate user saying "Go for it!"
             TestableUpdateViewModel.SimulatePrimaryButtonClick(statusVM);
 
             // Wait for the async update flow to complete
@@ -231,6 +242,7 @@ namespace CollectaMundo.Tests.UnitTests
             // No backup should have occurred
             dbService.Verify(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
+
 
     }
 }

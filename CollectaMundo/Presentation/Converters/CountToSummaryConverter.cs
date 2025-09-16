@@ -9,7 +9,9 @@ namespace CollectaMundo.Presentation.Converters
         {
             // Ensure we have two values.
             if (values.Length < 2)
+            {
                 return string.Empty;
+            }
 
             // Try converting both values to int.
             if (values[0] is int filtered && values[1] is int total)

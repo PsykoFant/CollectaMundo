@@ -52,7 +52,10 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         // Helpers
         private static string JoinAndDedup(string? csv)
         {
-            if (string.IsNullOrWhiteSpace(csv)) return string.Empty;
+            if (string.IsNullOrWhiteSpace(csv))
+            {
+                return string.Empty;
+            }
 
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var segments = csv.Split(',');
@@ -62,9 +65,16 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             foreach (var s in segments)
             {
                 var trimmed = s.Trim();
-                if (trimmed.Length == 0 || !seen.Add(trimmed)) continue;
+                if (trimmed.Length == 0 || !seen.Add(trimmed))
+                {
+                    continue;
+                }
 
-                if (sb.Length > 0) sb.Append(',');
+                if (sb.Length > 0)
+                {
+                    sb.Append(',');
+                }
+
                 sb.Append(trimmed);
             }
 
@@ -72,7 +82,10 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         }
         private static List<string> ParseOtherFaceIds(string? raw)
         {
-            if (string.IsNullOrWhiteSpace(raw)) return [];
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                return [];
+            }
 
             var parts = raw.Split(',', StringSplitOptions.RemoveEmptyEntries);
             var result = new List<string>(parts.Length);
@@ -81,7 +94,9 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             {
                 var trimmed = part.Trim();
                 if (trimmed.Length > 0)
+                {
                     result.Add(trimmed);
+                }
             }
 
             return result;

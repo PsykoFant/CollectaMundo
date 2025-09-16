@@ -24,22 +24,34 @@ namespace CollectaMundo.DomainLogic.CardLists
                     if (!string.IsNullOrWhiteSpace(source.Keywords))
                     {
                         foreach (var kw in source.Keywords.Split(','))
+                        {
                             if (!string.IsNullOrWhiteSpace(kw))
+                            {
                                 allKeywords.Add(kw.Trim());
+                            }
+                        }
                     }
 
                     if (!string.IsNullOrWhiteSpace(source.Colors))
                     {
                         foreach (var color in source.Colors.Split(','))
+                        {
                             if (!string.IsNullOrWhiteSpace(color))
+                            {
                                 allColors.Add(color.Trim());
+                            }
+                        }
                     }
 
                     if (!string.IsNullOrWhiteSpace(source.Types))
                     {
                         foreach (var type in source.Types.Split(','))
+                        {
                             if (!string.IsNullOrWhiteSpace(type))
+                            {
                                 allTypes.Add(type.Trim());
+                            }
+                        }
                     }
 
                     if (!string.IsNullOrWhiteSpace(source.Text))
@@ -52,7 +64,9 @@ namespace CollectaMundo.DomainLogic.CardLists
                 foreach (var otherId in core.OtherFaceIds)
                 {
                     if (byUuid.TryGetValue(otherId, out var other))
+                    {
                         MergeFrom(other);
+                    }
                 }
                 results.Add(new CardCore
                 {

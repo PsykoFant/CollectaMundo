@@ -36,7 +36,10 @@ namespace CollectaMundo.Presentation.Behaviors
         // =============== Wiring ===============
         private static void OnEnableAutoResizeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is not DataGrid dg) return;
+            if (d is not DataGrid dg)
+            {
+                return;
+            }
 
             var enable = (bool)e.NewValue;
             if (enable)
@@ -67,7 +70,10 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private static void DataGrid_Loaded(object? sender, RoutedEventArgs e)
         {
-            if (sender is not DataGrid dg) return;
+            if (sender is not DataGrid dg)
+            {
+                return;
+            }
 
             // Wrap in try-catch to guard against invalid hwnd
             try
@@ -84,7 +90,10 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private static void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
-            if (sender is not DataGrid dg) return;
+            if (sender is not DataGrid dg)
+            {
+                return;
+            }
 
             try
             {
@@ -100,11 +109,22 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private static void OnDataGridSizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (sender is not DataGrid dg) return;
-            if (!dg.IsLoaded || !dg.IsVisible) return;
+            if (sender is not DataGrid dg)
+            {
+                return;
+            }
+
+            if (!dg.IsLoaded || !dg.IsVisible)
+            {
+                return;
+            }
+
             try
             {
-                if (PresentationSource.FromVisual(dg) == null) return;
+                if (PresentationSource.FromVisual(dg) == null)
+                {
+                    return;
+                }
             }
             catch (ArgumentException ex)
             {
@@ -117,11 +137,22 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private static void OnUpdateOnTokenChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is not DataGrid dg) return;
-            if (!dg.IsLoaded || !dg.IsVisible) return;
+            if (d is not DataGrid dg)
+            {
+                return;
+            }
+
+            if (!dg.IsLoaded || !dg.IsVisible)
+            {
+                return;
+            }
+
             try
             {
-                if (PresentationSource.FromVisual(dg) == null) return;
+                if (PresentationSource.FromVisual(dg) == null)
+                {
+                    return;
+                }
             }
             catch (ArgumentException ex)
             {
@@ -167,18 +198,32 @@ namespace CollectaMundo.Presentation.Behaviors
         {
             try
             {
-                if (DesignerProperties.GetIsInDesignMode(dataGrid)) return;
-                if (!dataGrid.IsLoaded || !dataGrid.IsVisible) return;
+                if (DesignerProperties.GetIsInDesignMode(dataGrid))
+                {
+                    return;
+                }
+
+                if (!dataGrid.IsLoaded || !dataGrid.IsVisible)
+                {
+                    return;
+                }
+
                 try
                 {
-                    if (PresentationSource.FromVisual(dataGrid) == null) return;
+                    if (PresentationSource.FromVisual(dataGrid) == null)
+                    {
+                        return;
+                    }
                 }
                 catch (ArgumentException ex)
                 {
                     Debug.WriteLine($"UpdateColumnWidths error: {ex.Message}");
                     return;
                 }
-                if (dataGrid.Columns.Count == 0) return;
+                if (dataGrid.Columns.Count == 0)
+                {
+                    return;
+                }
 
                 int index = GetDataGridIndex(dataGrid);
                 if (index < 0)
@@ -204,7 +249,10 @@ namespace CollectaMundo.Presentation.Behaviors
                     new[] { 65, 50 }, // grid 1 (MyCollection)
                     new[] { 65 }      // grid 2 (Decks)
                 };
-                if (index >= paddingsList.Length) return;
+                if (index >= paddingsList.Length)
+                {
+                    return;
+                }
 
                 var paddings = paddingsList[index];
 

@@ -22,7 +22,9 @@ namespace CollectaMundo.Data.CardDatabaseManagement
                     cancelToken);
 
                 if (cancelled)
+                {
                     return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled download");
+                }
 
                 return success
                     ? new OperationResult(OperationResultCode.Success, $"{label} download succeeded.")
@@ -124,7 +126,10 @@ namespace CollectaMundo.Data.CardDatabaseManagement
                 while (true)
                 {
                     var bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancelToken).ConfigureAwait(false);
-                    if (bytesRead == 0) break;
+                    if (bytesRead == 0)
+                    {
+                        break;
+                    }
 
                     await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
                     totalBytesRead += bytesRead;

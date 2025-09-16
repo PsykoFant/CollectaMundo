@@ -10,9 +10,15 @@ namespace CollectaMundo.Utilities
         public bool CanExecute(object? parameter)
         {
             if (_canExecute == null)
+            {
                 return true;
+            }
+
             if (parameter == null && typeof(T).IsValueType)
+            {
                 return _canExecute(default!);
+            }
+
             return _canExecute((T)parameter!);
         }
 

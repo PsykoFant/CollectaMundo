@@ -10,7 +10,9 @@ namespace CollectaMundo.Presentation.Converters
         {
             var imageUrl = value as string;
             if (string.IsNullOrEmpty(imageUrl))
+            {
                 return null;
+            }
 
             try
             {

@@ -11,6 +11,8 @@ namespace CollectaMundo.Tests.TestUtils
     {
         public Task? InternalUpdateTask { get; private set; }
         public Action? AfterUserConfirmedUpdate { get; set; }
+
+        public ManualResetEventSlim ConfirmReady = new();  // Test code will signal this
         public TestableUpdateViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, IUiBlockable uiState, IAppRefresher appRefresher, Func<int> getMyCollectionCount) : base(dbService, statusVM, uiState, appRefresher, getMyCollectionCount)
         {
             UpdateDBCommand = new RelayCommand<object>(async _ =>
@@ -28,10 +30,11 @@ namespace CollectaMundo.Tests.TestUtils
             {
                 var task = (Task)method.Invoke(this, null)!;
 
-                // Delay a bit to let internal token source be created
-                await Task.Delay(50);
-
-                AfterUserConfirmedUpdate?.Invoke(); // Let test hook fire now
+                if (AfterUserConfirmedUpdate is not null)
+                {
+                    ConfirmReady.Wait();          // wait only when test cares
+                    AfterUserConfirmedUpdate();   // safe to invoke
+                }
 
                 await task;
             });

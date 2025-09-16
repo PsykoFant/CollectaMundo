@@ -15,7 +15,10 @@ namespace CollectaMundo.ApplicationServices.CardLists.CardLookups.Providers
             return _cache.GetOrAdd(key, k =>
             {
                 var data = _bytes.GetBytes(k);
-                if (data is null || data.Length == 0) return null;
+                if (data is null || data.Length == 0)
+                {
+                    return null;
+                }
 
                 try
                 {
@@ -37,7 +40,11 @@ namespace CollectaMundo.ApplicationServices.CardLists.CardLookups.Providers
         }
         public bool Contains(TKey key)
         {
-            if (_cache.ContainsKey(key)) return true;
+            if (_cache.ContainsKey(key))
+            {
+                return true;
+            }
+
             var data = _bytes.GetBytes(key);
             return data is { Length: > 0 };
         }

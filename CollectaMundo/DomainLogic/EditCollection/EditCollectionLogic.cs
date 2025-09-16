@@ -51,7 +51,10 @@ namespace CollectaMundo.DomainLogic.EditCollection
         }
         private static string? ChooseDefaultFinish(IList<string>? finishes)
         {
-            if (finishes == null || finishes.Count == 0) return null;
+            if (finishes == null || finishes.Count == 0)
+            {
+                return null;
+            }
 
             static int Rank(string s) => s switch
             {
@@ -69,7 +72,10 @@ namespace CollectaMundo.DomainLogic.EditCollection
         }
         private static string ChooseDefaultLanguage(IList<string>? langs)
         {
-            if (langs == null || langs.Count == 0) return "English";
+            if (langs == null || langs.Count == 0)
+            {
+                return "English";
+            }
 
             var english = langs.FirstOrDefault(l => l.Equals("English", StringComparison.OrdinalIgnoreCase));
             return english ?? langs[0];
@@ -112,7 +118,9 @@ namespace CollectaMundo.DomainLogic.EditCollection
         private async Task<CardSet> CloneWithMetadataHelperAsync(CardSet src, SQLiteConnection connection)
         {
             if (src?.Uuid == null)
+            {
                 throw new ArgumentException("UUID cannot be null", nameof(src));
+            }
 
             // fetch just once
             var finishes = await _repo.FetchFinishesForCardAsync(src.Uuid, connection);
@@ -155,12 +163,16 @@ namespace CollectaMundo.DomainLogic.EditCollection
             if (isEdit)
             {
                 foreach (var card in cards)
+                {
                     results.Add(await PersistEditedCardsAndReturnChangesAsync(card, connection));
+                }
             }
             else
             {
                 foreach (var card in cards)
+                {
                     results.Add(await PersistAddedCardsAndReturnChangesAsync(card, connection));
+                }
             }
 
             return results;

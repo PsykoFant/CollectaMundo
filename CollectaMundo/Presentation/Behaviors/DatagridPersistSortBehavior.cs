@@ -19,7 +19,10 @@ namespace CollectaMundo.Presentation.Behaviors
         private static List<SortDescription>? GetStoredSorts(DependencyObject obj) => (List<SortDescription>?)obj.GetValue(StoredSortsProperty);
         private static void OnEnableChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is not DataGrid grid) return;
+            if (d is not DataGrid grid)
+            {
+                return;
+            }
 
             if ((bool)e.NewValue)
             {
@@ -35,11 +38,18 @@ namespace CollectaMundo.Presentation.Behaviors
         private static void Grid_Sorting(object? sender, DataGridSortingEventArgs e)
         {
             // Let DataGrid perform its sort first, then capture the final SortDescriptions.
-            if (sender is not DataGrid grid) return;
+            if (sender is not DataGrid grid)
+            {
+                return;
+            }
+
             grid.Dispatcher.BeginInvoke(new Action(() =>
             {
                 var view = CollectionViewSource.GetDefaultView(grid.ItemsSource);
-                if (view is null) return;
+                if (view is null)
+                {
+                    return;
+                }
 
                 var snapshot = view.SortDescriptions.ToList();
                 SetStoredSorts(grid, snapshot);
@@ -47,19 +57,30 @@ namespace CollectaMundo.Presentation.Behaviors
         }
         private static void Grid_TargetUpdated(object? sender, DataTransferEventArgs e)
         {
-            if (sender is not DataGrid grid || e.Property != ItemsControl.ItemsSourceProperty) return;
+            if (sender is not DataGrid grid || e.Property != ItemsControl.ItemsSourceProperty)
+            {
+                return;
+            }
 
             var stored = GetStoredSorts(grid);
-            if (stored is null || stored.Count == 0) return;
+            if (stored is null || stored.Count == 0)
+            {
+                return;
+            }
 
             var view = CollectionViewSource.GetDefaultView(grid.ItemsSource);
-            if (view is null) return;
+            if (view is null)
+            {
+                return;
+            }
 
             using (view.DeferRefresh())
             {
                 view.SortDescriptions.Clear();
                 foreach (var sd in stored)
+                {
                     view.SortDescriptions.Add(sd);
+                }
             }
 
             // Update column glyphs

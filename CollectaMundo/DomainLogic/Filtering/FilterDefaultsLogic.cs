@@ -34,73 +34,131 @@ namespace CollectaMundo.Data.Filtering
                     {
                         case "Name":
                             foreach (var c in allCards)
+                            {
                                 if (!string.IsNullOrWhiteSpace(c.Name))
+                                {
                                     rawValues.Add(c.Name);
+                                }
+                            }
+
                             break;
 
                         case "SetName":
                             foreach (var c in allCards)
+                            {
                                 if (!string.IsNullOrWhiteSpace(c.SetName))
+                                {
                                     rawValues.Add(c.SetName);
+                                }
+                            }
+
                             break;
 
                         case "Rarity":
                             foreach (var c in allCards)
+                            {
                                 if (!string.IsNullOrWhiteSpace(c.Rarity))
+                                {
                                     rawValues.Add(c.Rarity);
+                                }
+                            }
+
                             break;
 
                         case "SuperTypes":
                             foreach (var c in allCards)
+                            {
                                 if (!string.IsNullOrWhiteSpace(c.SuperTypes))
+                                {
                                     rawValues.Add(c.SuperTypes);
+                                }
+                            }
+
                             break;
 
                         case "Types":
                             foreach (var c in allCards)
+                            {
                                 if (!string.IsNullOrWhiteSpace(c.Types))
+                                {
                                     rawValues.Add(c.Types);
+                                }
+                            }
+
                             break;
 
                         case "SubTypes":
                             foreach (var c in allCards)
+                            {
                                 if (!string.IsNullOrWhiteSpace(c.SubTypes))
+                                {
                                     rawValues.Add(c.SubTypes);
+                                }
+                            }
+
                             break;
 
                         case "Keywords":
                             foreach (var c in allCards)
+                            {
                                 if (!string.IsNullOrWhiteSpace(c.Keywords))
+                                {
                                     rawValues.Add(c.Keywords);
+                                }
+                            }
+
                             break;
 
                         case "Finishes":
                             foreach (var c in allCards)
+                            {
                                 if (!string.IsNullOrWhiteSpace(c.Finishes))
+                                {
                                     rawValues.Add(c.Finishes);
+                                }
+                            }
+
                             break;
 
                         case "SelectedFinish":
                             foreach (var c in myCollection)
+                            {
                                 if (!string.IsNullOrWhiteSpace(c.SelectedFinish))
+                                {
                                     rawValues.Add(c.SelectedFinish);
+                                }
+                            }
+
                             break;
 
                         case "Language":
                             foreach (var c in myCollection)
+                            {
                                 if (!string.IsNullOrWhiteSpace(c.Language))
+                                {
                                     rawValues.Add(c.Language);
+                                }
+                            }
+
                             break;
 
                         case "SelectedCondition":
                             foreach (var c in myCollection)
+                            {
                                 if (!string.IsNullOrWhiteSpace(c.SelectedCondition))
+                                {
                                     rawValues.Add(c.SelectedCondition);
+                                }
+                            }
+
                             break;
 
                         case "ManaValue":
                             foreach (var c in allCards)
+                            {
                                 rawValues.Add(c.ManaValue.ToString());
+                            }
+
                             break;
 
                         default:
@@ -165,7 +223,10 @@ namespace CollectaMundo.Data.Filtering
 
             foreach (var item in input)
             {
-                if (string.IsNullOrWhiteSpace(item)) continue;
+                if (string.IsNullOrWhiteSpace(item))
+                {
+                    continue;
+                }
 
                 IEnumerable<string> parts;
 
@@ -182,8 +243,16 @@ namespace CollectaMundo.Data.Filtering
                 foreach (var p in parts)
                 {
                     string trimmed = p.Trim();
-                    if (string.IsNullOrEmpty(trimmed)) continue;
-                    if (removeItems != null && removeItems.Contains(trimmed)) continue;
+                    if (string.IsNullOrEmpty(trimmed))
+                    {
+                        continue;
+                    }
+
+                    if (removeItems != null && removeItems.Contains(trimmed))
+                    {
+                        continue;
+                    }
+
                     unique.Add(trimmed);
                 }
             }
@@ -192,8 +261,14 @@ namespace CollectaMundo.Data.Filtering
             var strings = new List<string>();
             foreach (var v in unique)
             {
-                if (int.TryParse(v, out var n)) numerics.Add(n);
-                else strings.Add(v);
+                if (int.TryParse(v, out var n))
+                {
+                    numerics.Add(n);
+                }
+                else
+                {
+                    strings.Add(v);
+                }
             }
 
             numerics.Sort();
@@ -220,7 +295,9 @@ namespace CollectaMundo.Data.Filtering
             foreach (var s in src)
             {
                 if (!string.IsNullOrWhiteSpace(s))
+                {
                     yield return s!;
+                }
             }
         }
         // Comma NOT followed by exactly 3 digits at word boundary. To catch keywords with comma in them. E.g. "Flying, vigilance" should split, but "10,000" should not.
