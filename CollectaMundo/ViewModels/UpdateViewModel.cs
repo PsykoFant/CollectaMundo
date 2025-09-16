@@ -31,8 +31,7 @@ namespace CollectaMundo.ViewModels
         public ICommand UpdatePricesCommand { get; protected set; } = null!;
 
         // Visibility properties
-        //private Visibility _updateDbVisibility = Visibility.Collapsed;
-        private Visibility _updateDbVisibility = Visibility.Visible;
+        private Visibility _updateDbVisibility = Visibility.Collapsed;
         public Visibility UpdateDbVisibility
         {
             get => _updateDbVisibility;
@@ -60,6 +59,7 @@ namespace CollectaMundo.ViewModels
         {
             // UI state preparation
             SetUiBusy(true);
+            _statusVM.ResetStatusOverlay();
 
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
             string emptyMessage = "Your collection is empty - nothing to back up";
@@ -123,6 +123,7 @@ namespace CollectaMundo.ViewModels
 
             // UI state preparation
             SetUiBusy(true);
+            _statusVM.ResetStatusOverlay();
             _statusVM.PrimaryButtonText = "   Cancel   ";
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
             _statusVM.ShowStatusOverlay("One moment - checking for updates...", false);

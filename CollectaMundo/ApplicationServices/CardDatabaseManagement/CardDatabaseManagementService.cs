@@ -142,7 +142,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 // Step 4: Compare counts
                 if (numberOfSetsOnServer > numberOfSetsInDb)
                 {
-                    return new OperationResult(OperationResultCode.Success, $"Number of sets on server: {numberOfSetsOnServer}, number of sets in database: {numberOfSetsInDb}. Update available!");
+                    return new OperationResult(OperationResultCode.NeedsUpdate, $"Number of sets on server: {numberOfSetsOnServer}, number of sets in database: {numberOfSetsInDb}. Update available!");
                 }
 
                 return new OperationResult(OperationResultCode.Success, "Your local database is up to date.");
@@ -156,7 +156,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 return new OperationResult(OperationResultCode.Error, $"Unexpected error: {ex.Message}");
             }
         }
-
 
         // Use case: orchestrates card database update
         public async Task<OperationResult> UpdateDbPrepOrchetrator(int defaultDelay = 3000, CancellationToken ct = default)
@@ -301,54 +300,98 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             Debug.WriteLine("Downloaded prices.json successfully. Now for update stuff...");
 
-            // to be implemented
+            // ---------------------------
+            // Step 2 - Copy tables from new DB
+            // ---------------------------
+            _progressSinks.ProgressBarVisible.Report(false);
+            _progressSinks.CancelEnabled?.Report(false); // Disable cancel button after download phase
+            _progressSinks.Step.Report("Step 2. Importing prices...");
 
+            // ---------------------------
+            // Steps 3–10. Prepare database
+            // ---------------------------
+            var prepResult = await PrepareDatabaseAsync(defaultDelay, stepNumberStart: 2, [DbPrepStep.ImportPrices, DbPrepStep.OptimizeDatabase]);
+
+            if (prepResult.Code != OperationResultCode.Success)
+            {
+                return new OperationResult(OperationResultCode.Error, prepResult.Message);
+            }
+
+            // Success: clean up temporary db and price file
+            try
+            {
+                File.Delete(_pricesPath);
+            }
+            catch (IOException ex)
+            {
+                Debug.WriteLine($"Cleanup failed: {ex.Message}");
+                return new OperationResult(OperationResultCode.Error, ex.Message);
+            }
             return new OperationResult(OperationResultCode.Success);
-
         }
 
         // Core logic for preparing the database (used by both first-time prep and update)
-        private async Task<OperationResult> PrepareDatabaseAsync(int defaultDelay, int stepNumberStart)
+        private async Task<OperationResult> PrepareDatabaseAsync(int defaultDelay, int stepNumberStart, IEnumerable<DbPrepStep>? stepsToRun = null)
         {
-            var steps = new List<(string Label, Func<Task> Work, bool ShowProgress)>
+            var allSteps = new List<(DbPrepStep Key, string Label, Func<Task> Work, bool ShowProgress)>
             {
-                ($"Step {stepNumberStart++}. Creating custom tables...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateTablesAsync(conn)) ),false),
-                ($"Step {stepNumberStart++}. Generating mana symbols...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn, _progressSinks.Percent)),true),
-                ($"Step {stepNumberStart++}. Generating mana cost images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, _progressSinks.Percent)),true),
-                ($"Step {stepNumberStart++}. Generating set icon images...",() => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, _progressSinks.Percent)),true),
-                ($"Step {stepNumberStart++}. Processing card prices...",() => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(_pricesPath, conn, _progressSinks.Detail, _progressSinks.Percent)),true),
-                ($"Step {stepNumberStart++}. Creating views...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateViewsAsync(conn, "cardmarket"))),false),
-                ($"Step {stepNumberStart++}. Creating indices...",() => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateIndicesAsync(conn))),false),
-                ($"Step {stepNumberStart++}. Optimizing database...",() => Task.Run(() => ExecuteWithConnectionAsync(conn => _dbMgmtRepo.OptimizeAsync(conn))),false),
+                (DbPrepStep.CreateTables, "Creating custom tables...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateTablesAsync(conn))), false),
+                (DbPrepStep.GenerateManaSymbols, "Generating mana symbols...", () => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaSymbolImagesAsync(conn, _progressSinks.Percent)), true),
+                (DbPrepStep.GenerateManaCostImages, "Generating mana cost images...", () => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingManaCostImagesAsync(conn, _progressSinks.Percent)), true),
+                (DbPrepStep.GenerateSetIcons, "Generating set icon images...", () => ExecuteWithUnitOfWorkAsync(conn => _missingPngService.GenerateMissingKeyRuneImagesAsync(conn, _progressSinks.Percent)), true),
+                (DbPrepStep.ImportPrices, "Processing card prices...", () => ExecuteWithUnitOfWorkAsync(conn => _priceService.ImportPricesFromJsonAsync(_pricesPath, conn, _progressSinks.Detail, _progressSinks.Percent)), true),
+                (DbPrepStep.CreateViews, "Creating views...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateViewsAsync(conn, "cardmarket"))), false),
+                (DbPrepStep.CreateIndices, "Creating indices...", () => Task.Run(() => ExecuteWithUnitOfWorkAsync(conn => _dbMgmtRepo.CreateIndicesAsync(conn))), false),
+                (DbPrepStep.OptimizeDatabase, "Optimizing database...", () => Task.Run(() => ExecuteWithConnectionAsync(conn => _dbMgmtRepo.OptimizeAsync(conn))), false),
             };
 
-            foreach (var (label, work, showProgress) in steps)
-            {
-                _progressSinks.ProgressBarVisible.Report(showProgress);
+            var runAll = stepsToRun is null || stepsToRun.Contains((DbPrepStep)0); // 0 means "run all"
+            var stepsToRunSet = runAll ? null : stepsToRun!.ToHashSet();
 
-                // Reset detail label for each step
+            foreach (var (key, label, work, showProgress) in allSteps)
+            {
+                if (!runAll && !stepsToRunSet!.Contains(key))
+                {
+                    continue;
+                }
+
+                string stepLabel = $"Step {stepNumberStart++}. {label}"; // ✅ display number is independent
+
+                _progressSinks.ProgressBarVisible.Report(showProgress);
                 _progressSinks.Detail.Report(string.Empty);
 
                 var result = await RetryHelper.RetryLoopAsync(
                     async () =>
                     {
                         await work();
-                        return new OperationResult(OperationResultCode.Success, $"{label} completed.");
+                        return new OperationResult(OperationResultCode.Success, $"{stepLabel} completed.");
                     },
                     retryDelayInMs: defaultDelay,
                     maxRetries: 3,
-                    stepName: label,
+                    stepName: stepLabel,
                     stepNameAndNumberProgress: _progressSinks.Step,
                     stepDetailAndErrorProgress: _progressSinks.Detail);
 
                 if (result.Code != OperationResultCode.Success)
                 {
-                    // Short-circuit on the first failing step, return the error to the caller
                     return result;
                 }
             }
+
             return new OperationResult(OperationResultCode.Success, "Database preparation completed.");
         }
+        private enum DbPrepStep
+        {
+            CreateTables = 1,
+            GenerateManaSymbols = 2,
+            GenerateManaCostImages = 3,
+            GenerateSetIcons = 4,
+            ImportPrices = 5,
+            CreateViews = 6,
+            CreateIndices = 7,
+            OptimizeDatabase = 8
+        }
+
 
         // Use case: export collection to CSV
         public async Task<OperationResult> ExportCollectionAsync(CancellationToken ct = default)

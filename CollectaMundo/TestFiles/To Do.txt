@@ -1,18 +1,11 @@
 TO DO 
 - MVVM refactor
-
-	- Tilføj backup af database step	
-     - Skip hvis collection er tom - både for update og backup collection
-     - backup cancel aware
-
-    - Download i service lag?
-
-
-
 - Update priser scenarie
+    Bug: priser opdateres ikke før genstart
+    Priser senest opdateret....
 
 
- - Pris update brug MVVM (unit test)
+
   - Card image brug MVVM (unit test)
 	- Commit // Memory bug
 	- Fix meld creatures show bug
