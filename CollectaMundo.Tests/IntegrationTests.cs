@@ -24,6 +24,7 @@ using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
+using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
 using System.Windows;
@@ -48,7 +49,7 @@ namespace CollectaMundo.Tests
         public async Task InitializeAsync()
         {
             // 1) Point the app at THIS fixture’s in-memory DB instance
-            var dbFactory = TestUtilities.CreateInMemoryDbFactory(_fx.DbName);
+            var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
             AppGlobals.DbFactory = dbFactory;
 
             // 2) Status overlay (same object the app would use)

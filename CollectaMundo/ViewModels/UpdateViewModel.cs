@@ -31,7 +31,8 @@ namespace CollectaMundo.ViewModels
         public ICommand UpdatePricesCommand { get; protected set; } = null!;
 
         // Visibility properties
-        private Visibility _updateDbVisibility = Visibility.Collapsed;
+        //private Visibility _updateDbVisibility = Visibility.Collapsed;
+        private Visibility _updateDbVisibility = Visibility.Visible;
         public Visibility UpdateDbVisibility
         {
             get => _updateDbVisibility;
@@ -59,6 +60,7 @@ namespace CollectaMundo.ViewModels
         {
             // UI state preparation
             SetUiBusy(true);
+
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
             string emptyMessage = "Your collection is empty - nothing to back up";
             string emptyAckText = "   Oh ... I guess that makes sense...   ";
@@ -169,7 +171,9 @@ namespace CollectaMundo.ViewModels
         {
             var skipBackup = _getMyCollectionCount() == 0;
             string backupResultMessage = string.Empty;
+            _statusVM.ResetStatusOverlay();
             _statusVM.ShowStatusOverlay("Ready to update card database?", false);
+
             if (!skipBackup) { _statusVM.StatusLabel3 = "(we will make a backup of your collection first)"; }
 
             _statusVM.PrimaryButtonText = "   Go for it!   ";
@@ -258,6 +262,7 @@ namespace CollectaMundo.ViewModels
         // Use case: Update prices
         private async Task UpdatePricesAsync()
         {
+            _statusVM.ResetStatusOverlay();
             _statusVM.ShowStatusOverlay("Ready to update card prices?", false);
             _statusVM.PrimaryButtonText = "   Go for it!   ";
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
@@ -321,7 +326,6 @@ namespace CollectaMundo.ViewModels
 
 
         }
-
         private void SetUiBusy(bool isBusy)
         {
             _uiState.IsTopMenuEnabled = !isBusy;

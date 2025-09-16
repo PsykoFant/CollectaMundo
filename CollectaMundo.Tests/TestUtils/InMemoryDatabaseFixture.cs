@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 
-namespace CollectaMundo.Tests
+namespace CollectaMundo.Tests.TestUtils
 {
     // A fixture class to set up an in‑memory SQLite database and seed it from CSV strings.
     public class InMemoryDatabaseFixture : IAsyncLifetime, IDisposable
@@ -391,7 +391,9 @@ namespace CollectaMundo.Tests
         private async Task SeedTableAsync(string tableName, string filePath)
         {
             if (!File.Exists(filePath))
+            {
                 throw new FileNotFoundException($"CSV file for {tableName} not found at {filePath}");
+            }
 
             Debug.WriteLine($"Seeding database {tableName} with initial data from CSV files.");
 
@@ -409,7 +411,9 @@ namespace CollectaMundo.Tests
             csv.ReadHeader();
             var headers = csv.HeaderRecord!;
             if (headers.Length == 0)
+            {
                 throw new Exception("CSV file missing headers.");
+            }
 
             // Discover which columns are BLOBs in this table
             var blobColumns = await GetBlobColumnsAsync(tableName);
@@ -427,7 +431,10 @@ namespace CollectaMundo.Tests
             {
                 var p = new SQLiteParameter($"@p{i}");
                 if (blobColumns.Contains(headers[i]))
+                {
                     p.DbType = System.Data.DbType.Binary; // << important for BLOB
+                }
+
                 cmd.Parameters.Add(p);
             }
 

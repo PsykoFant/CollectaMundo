@@ -8,6 +8,8 @@ namespace CollectaMundo.ApplicationServices.Utilities
         {
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
+                Debug.WriteLine($"This is attempt: {attempt}");
+
                 stepNameAndNumberProgress?.Report(attempt == 1
                     ? stepName
                     : $"{stepName} — Attempt {attempt}...");
@@ -23,10 +25,14 @@ namespace CollectaMundo.ApplicationServices.Utilities
                     var result = await stepWork();
 
                     if (result.Code == OperationResultCode.Success)
+                    {
                         return result;
+                    }
 
                     if (result.Code == OperationResultCode.CancelledByUser)
+                    {
                         return result; // skip retries on user cancel
+                    }
 
                     stepDetailAndErrorProgress?.Report($"❌ {result.Message}");
                 }

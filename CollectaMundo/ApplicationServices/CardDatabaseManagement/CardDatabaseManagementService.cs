@@ -142,7 +142,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                 // Step 4: Compare counts
                 if (numberOfSetsOnServer > numberOfSetsInDb)
                 {
-                    return new OperationResult(OperationResultCode.Success, "Updates available!");
+                    return new OperationResult(OperationResultCode.Success, $"Number of sets on server: {numberOfSetsOnServer}, number of sets in database: {numberOfSetsInDb}. Update available!");
                 }
 
                 return new OperationResult(OperationResultCode.Success, "Your local database is up to date.");
