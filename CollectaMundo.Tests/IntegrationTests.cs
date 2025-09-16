@@ -37,7 +37,7 @@ namespace CollectaMundo.Tests
         public void Cancel() { }
     }
 
-    public sealed class IntegrationTests(InMemoryDatabaseFixture fixture)
+    public sealed class SeedIntegrationTests(InMemoryDatabaseFixture fixture)
         : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
         private readonly InMemoryDatabaseFixture _fx = fixture;
@@ -142,6 +142,103 @@ namespace CollectaMundo.Tests
 
             Assert.Equal(62, allCards.Count);
             Assert.Equal(22, myCollection.Count);
+        }
+    }
+    public sealed class CardViewModelIntegrationTests(InMemoryDatabaseFixture fixture)
+    : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
+    {
+        private readonly InMemoryDatabaseFixture _fx = fixture;
+        private MainWindowViewModel _mainVM = null!;
+        private readonly List<CardChangeEventArgs> _changedEvents = [];
+        private readonly FilteringService _filteringService = new();
+
+        // ---- IAsyncLifetime ----
+        public async ValueTask InitializeAsync()
+        {
+            // 1) Point the app at THIS fixture’s in-memory DB instance
+            var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
+            AppGlobals.DbFactory = dbFactory;
+
+            // 2) Status overlay (same object the app would use)
+            var statusVM = new StatusViewModel();
+
+            // 3) Build the merged/updated stack (mirrors BuildAndStartAsync, minus integrity/FTS)
+            var settings = new ApplicationServices.AppSettings();
+
+            string getRetailer() => settings.PriceInfo.Retailer;
+            void setRetailerAndPersist(string key)
+            {
+                // persist to appsettings.json
+                settings.UpdatePriceInfo(updatedDate: null, retailer: key);
+            }
+
+
+            var remoteLookups = new RemoteLookups();
+
+            var missingPngRepo = new GenerateMissingPngRepository();
+            var missingPngLogic = new GenerateMissingPngLogic();
+            var missingPngSvc = new GenerateMissingPngService(missingPngRepo, remoteLookups, missingPngLogic);
+
+            var cardPriceRepo = new CardPriceRepository();
+            var priceService = new CardPriceService(settings, cardPriceRepo);
+
+            var prepRepo = new CardDatabaseManagementRepo();
+            var progressSinks = CreateProgressSinks(statusVM); // <- local helper (below)
+
+            var cardLookupsRepo = new CardLookupsRepo();
+            var cardLookupsBuilder = new CardLookupBuilder();
+            var cardLookupsService = new CardLookupsService(cardLookupsRepo, cardLookupsBuilder, getRetailer);
+
+            var cardListRepo = new CardListRepository();
+            var filterDefaultsLogic = new FilterDefaultsLogic();
+            var coreAggregator = new CardCoreAggregator();
+            var cardListService = new CardListService(cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
+
+            var scheduler = new ImmediateScheduler();
+            var facetUpdater = new FacetUpdater();
+
+            // IMPORTANT: inject the fixture-backed DbFactory so all DB calls stay in-memory
+            var prepService = new CardDatabaseManagementService(settings, AppGlobals.DbFactory!, progressSinks, prepRepo, priceService, missingPngSvc, remoteLookups);
+
+            // 4) Feature-layer services
+            var filteringService = new FilteringService();
+            var editCollectionRepo = new EditCollectionRepository();
+            var editService = new EditCollectionService((new EditCollectionLogic(editCollectionRepo)));
+            var importExportService = new ImportService(new ImportRepo(), settings);
+
+            // 5) Build the Main VM (same signature as in BuildAndStartAsync)
+            _mainVM = await MainWindowViewModel.CreateAsync(_filteringService, editService, importExportService, prepService, statusVM, cardListService, getRetailer, setRetailerAndPersist, scheduler);
+
+            // 6) Bring the VM to a “ready” state consistent with the app
+            _mainVM.FilterVM.NotifyFilterChanged();
+            _mainVM.SideMenuVisibility = Visibility.Visible;
+            _mainVM.ContentSectionVisibility = Visibility.Visible;
+            _mainVM.MainGridVisibility = Visibility.Visible;
+
+            // Optional readiness spin (tiny) in case CreateAsync schedules initial loads
+            SpinWait.SpinUntil(
+                () => _mainVM.AllCardsVM.Cards.Count >= 61 && _mainVM.MyCollectionVM.Cards.Count >= 22,
+                millisecondsTimeout: 500);
+
+            // 7) Hook events for the scenario test
+            _mainVM.AddCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
+            _mainVM.EditCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
+        }
+
+        // Local test helper mirroring your StartupComposition helper
+        private static ProgressSinks CreateProgressSinks(StatusViewModel vm) => new()
+        {
+            Headline = new Progress<string>(s => vm.StatusLabel1 = s),
+            Detail = new Progress<string>(s => vm.StatusLabel2 = s),
+            Step = new Progress<string>(s => vm.StatusLabel3 = s),
+            Percent = new Progress<int>(p => vm.ProgressValue = p),
+            ProgressBarVisible = new Progress<bool>(v =>
+                vm.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
+        };
+        public ValueTask DisposeAsync()
+        {
+            _mainVM?.Dispose();   // ensures child-VM event handlers and schedulers are cleared
+            return ValueTask.CompletedTask;
         }
 
         [Fact]
@@ -463,6 +560,104 @@ namespace CollectaMundo.Tests
 
         }
 
+    }
+
+    public sealed class FilterViewModelIntegrationTests(InMemoryDatabaseFixture fixture) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
+    {
+        private readonly InMemoryDatabaseFixture _fx = fixture;
+        private MainWindowViewModel _mainVM = null!;
+        private readonly List<CardChangeEventArgs> _changedEvents = [];
+        private readonly FilteringService _filteringService = new();
+
+        // ---- IAsyncLifetime ----
+        public async ValueTask InitializeAsync()
+        {
+            // 1) Point the app at THIS fixture’s in-memory DB instance
+            var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
+            AppGlobals.DbFactory = dbFactory;
+
+            // 2) Status overlay (same object the app would use)
+            var statusVM = new StatusViewModel();
+
+            // 3) Build the merged/updated stack (mirrors BuildAndStartAsync, minus integrity/FTS)
+            var settings = new ApplicationServices.AppSettings();
+
+            string getRetailer() => settings.PriceInfo.Retailer;
+            void setRetailerAndPersist(string key)
+            {
+                // persist to appsettings.json
+                settings.UpdatePriceInfo(updatedDate: null, retailer: key);
+            }
+
+
+            var remoteLookups = new RemoteLookups();
+
+            var missingPngRepo = new GenerateMissingPngRepository();
+            var missingPngLogic = new GenerateMissingPngLogic();
+            var missingPngSvc = new GenerateMissingPngService(missingPngRepo, remoteLookups, missingPngLogic);
+
+            var cardPriceRepo = new CardPriceRepository();
+            var priceService = new CardPriceService(settings, cardPriceRepo);
+
+            var prepRepo = new CardDatabaseManagementRepo();
+            var progressSinks = CreateProgressSinks(statusVM); // <- local helper (below)
+
+            var cardLookupsRepo = new CardLookupsRepo();
+            var cardLookupsBuilder = new CardLookupBuilder();
+            var cardLookupsService = new CardLookupsService(cardLookupsRepo, cardLookupsBuilder, getRetailer);
+
+            var cardListRepo = new CardListRepository();
+            var filterDefaultsLogic = new FilterDefaultsLogic();
+            var coreAggregator = new CardCoreAggregator();
+            var cardListService = new CardListService(cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
+
+            var scheduler = new ImmediateScheduler();
+            var facetUpdater = new FacetUpdater();
+
+            // IMPORTANT: inject the fixture-backed DbFactory so all DB calls stay in-memory
+            var prepService = new CardDatabaseManagementService(settings, AppGlobals.DbFactory!, progressSinks, prepRepo, priceService, missingPngSvc, remoteLookups);
+
+            // 4) Feature-layer services
+            var filteringService = new FilteringService();
+            var editCollectionRepo = new EditCollectionRepository();
+            var editService = new EditCollectionService((new EditCollectionLogic(editCollectionRepo)));
+            var importExportService = new ImportService(new ImportRepo(), settings);
+
+            // 5) Build the Main VM (same signature as in BuildAndStartAsync)
+            _mainVM = await MainWindowViewModel.CreateAsync(_filteringService, editService, importExportService, prepService, statusVM, cardListService, getRetailer, setRetailerAndPersist, scheduler);
+
+            // 6) Bring the VM to a “ready” state consistent with the app
+            _mainVM.FilterVM.NotifyFilterChanged();
+            _mainVM.SideMenuVisibility = Visibility.Visible;
+            _mainVM.ContentSectionVisibility = Visibility.Visible;
+            _mainVM.MainGridVisibility = Visibility.Visible;
+
+            // Optional readiness spin (tiny) in case CreateAsync schedules initial loads
+            SpinWait.SpinUntil(
+                () => _mainVM.AllCardsVM.Cards.Count >= 61 && _mainVM.MyCollectionVM.Cards.Count >= 22,
+                millisecondsTimeout: 500);
+
+            // 7) Hook events for the scenario test
+            _mainVM.AddCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
+            _mainVM.EditCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
+        }
+
+        // Local test helper mirroring your StartupComposition helper
+        private static ProgressSinks CreateProgressSinks(StatusViewModel vm) => new()
+        {
+            Headline = new Progress<string>(s => vm.StatusLabel1 = s),
+            Detail = new Progress<string>(s => vm.StatusLabel2 = s),
+            Step = new Progress<string>(s => vm.StatusLabel3 = s),
+            Percent = new Progress<int>(p => vm.ProgressValue = p),
+            ProgressBarVisible = new Progress<bool>(v =>
+                vm.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
+        };
+        public ValueTask DisposeAsync()
+        {
+            _mainVM?.Dispose();   // ensures child-VM event handlers and schedulers are cleared
+            return ValueTask.CompletedTask;
+        }
+
         [Fact]
         public void FilterViewModel_Object_Creation_Initialization()
         {
@@ -753,6 +948,103 @@ namespace CollectaMundo.Tests
             Assert.Equal(sortedExpectedManavalueOptions, actualManaValueOptions);
             Assert.Equal(expectedManaValueOperators, [.. manaValueFilter.AvailableOperators!]);
         }
+    }
+
+    public sealed class ScenarioWithEventsIntegrationTests(InMemoryDatabaseFixture fixture) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
+    {
+        private readonly InMemoryDatabaseFixture _fx = fixture;
+        private MainWindowViewModel _mainVM = null!;
+        private readonly List<CardChangeEventArgs> _changedEvents = [];
+        private readonly FilteringService _filteringService = new();
+
+        // ---- IAsyncLifetime ----
+        public async ValueTask InitializeAsync()
+        {
+            // 1) Point the app at THIS fixture’s in-memory DB instance
+            var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
+            AppGlobals.DbFactory = dbFactory;
+
+            // 2) Status overlay (same object the app would use)
+            var statusVM = new StatusViewModel();
+
+            // 3) Build the merged/updated stack (mirrors BuildAndStartAsync, minus integrity/FTS)
+            var settings = new ApplicationServices.AppSettings();
+
+            string getRetailer() => settings.PriceInfo.Retailer;
+            void setRetailerAndPersist(string key)
+            {
+                // persist to appsettings.json
+                settings.UpdatePriceInfo(updatedDate: null, retailer: key);
+            }
+
+
+            var remoteLookups = new RemoteLookups();
+
+            var missingPngRepo = new GenerateMissingPngRepository();
+            var missingPngLogic = new GenerateMissingPngLogic();
+            var missingPngSvc = new GenerateMissingPngService(missingPngRepo, remoteLookups, missingPngLogic);
+
+            var cardPriceRepo = new CardPriceRepository();
+            var priceService = new CardPriceService(settings, cardPriceRepo);
+
+            var prepRepo = new CardDatabaseManagementRepo();
+            var progressSinks = CreateProgressSinks(statusVM); // <- local helper (below)
+
+            var cardLookupsRepo = new CardLookupsRepo();
+            var cardLookupsBuilder = new CardLookupBuilder();
+            var cardLookupsService = new CardLookupsService(cardLookupsRepo, cardLookupsBuilder, getRetailer);
+
+            var cardListRepo = new CardListRepository();
+            var filterDefaultsLogic = new FilterDefaultsLogic();
+            var coreAggregator = new CardCoreAggregator();
+            var cardListService = new CardListService(cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
+
+            var scheduler = new ImmediateScheduler();
+            var facetUpdater = new FacetUpdater();
+
+            // IMPORTANT: inject the fixture-backed DbFactory so all DB calls stay in-memory
+            var prepService = new CardDatabaseManagementService(settings, AppGlobals.DbFactory!, progressSinks, prepRepo, priceService, missingPngSvc, remoteLookups);
+
+            // 4) Feature-layer services
+            var filteringService = new FilteringService();
+            var editCollectionRepo = new EditCollectionRepository();
+            var editService = new EditCollectionService((new EditCollectionLogic(editCollectionRepo)));
+            var importExportService = new ImportService(new ImportRepo(), settings);
+
+            // 5) Build the Main VM (same signature as in BuildAndStartAsync)
+            _mainVM = await MainWindowViewModel.CreateAsync(_filteringService, editService, importExportService, prepService, statusVM, cardListService, getRetailer, setRetailerAndPersist, scheduler);
+
+            // 6) Bring the VM to a “ready” state consistent with the app
+            _mainVM.FilterVM.NotifyFilterChanged();
+            _mainVM.SideMenuVisibility = Visibility.Visible;
+            _mainVM.ContentSectionVisibility = Visibility.Visible;
+            _mainVM.MainGridVisibility = Visibility.Visible;
+
+            // Optional readiness spin (tiny) in case CreateAsync schedules initial loads
+            SpinWait.SpinUntil(
+                () => _mainVM.AllCardsVM.Cards.Count >= 61 && _mainVM.MyCollectionVM.Cards.Count >= 22,
+                millisecondsTimeout: 500);
+
+            // 7) Hook events for the scenario test
+            _mainVM.AddCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
+            _mainVM.EditCardsVM.CardChanged += (_, e) => _changedEvents.Add(e);
+        }
+
+        // Local test helper mirroring your StartupComposition helper
+        private static ProgressSinks CreateProgressSinks(StatusViewModel vm) => new()
+        {
+            Headline = new Progress<string>(s => vm.StatusLabel1 = s),
+            Detail = new Progress<string>(s => vm.StatusLabel2 = s),
+            Step = new Progress<string>(s => vm.StatusLabel3 = s),
+            Percent = new Progress<int>(p => vm.ProgressValue = p),
+            ProgressBarVisible = new Progress<bool>(v =>
+                vm.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
+        };
+        public ValueTask DisposeAsync()
+        {
+            _mainVM?.Dispose();   // ensures child-VM event handlers and schedulers are cleared
+            return ValueTask.CompletedTask;
+        }
 
         [Fact]
         public async Task Filter_Integration_Test_Scenario_With_Event_Subscription()
@@ -1042,7 +1334,6 @@ namespace CollectaMundo.Tests
             Assert.Equal(2, _mainVM.AllCardsVM.FilteredCards.Count);
 
         }
-
     }
 }
 
