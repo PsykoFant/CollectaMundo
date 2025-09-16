@@ -37,8 +37,7 @@ namespace CollectaMundo.Tests
         public void Cancel() { }
     }
 
-    public sealed class IntegrationTests(InMemoryDatabaseFixture fixture)
-        : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
+    public sealed class IntegrationTests(InMemoryDatabaseFixture fixture) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
         private readonly InMemoryDatabaseFixture _fx = fixture;
         private MainWindowViewModel _mainVM = null!;
@@ -46,7 +45,7 @@ namespace CollectaMundo.Tests
         private readonly FilteringService _filteringService = new();
 
         // ---- IAsyncLifetime ----
-        public async Task InitializeAsync()
+        public async ValueTask InitializeAsync()
         {
             // 1) Point the app at THIS fixture’s in-memory DB instance
             var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
@@ -128,10 +127,10 @@ namespace CollectaMundo.Tests
             ProgressBarVisible = new Progress<bool>(v =>
                 vm.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
         };
-        public Task DisposeAsync()
+        public ValueTask DisposeAsync()
         {
             _mainVM?.Dispose();   // ensures child-VM event handlers and schedulers are cleared
-            return Task.CompletedTask;
+            return ValueTask.CompletedTask;
         }
 
         [Fact]

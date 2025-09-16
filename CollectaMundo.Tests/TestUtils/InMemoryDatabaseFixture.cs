@@ -21,7 +21,7 @@ namespace CollectaMundo.Tests.TestUtils
         private Task? _seedingTask;
 
         // ---- IAsyncLifetime ----
-        public async Task InitializeAsync()
+        public async ValueTask InitializeAsync()
         {
             try
             {
@@ -388,7 +388,7 @@ namespace CollectaMundo.Tests.TestUtils
                 throw;
             }
         }
-        private async Task SeedTableAsync(string tableName, string filePath)
+        private async ValueTask SeedTableAsync(string tableName, string filePath)
         {
             if (!File.Exists(filePath))
             {
@@ -486,7 +486,7 @@ namespace CollectaMundo.Tests.TestUtils
             transaction.Commit();
             Debug.WriteLine("Seeding completed!");
         }
-        private async Task<HashSet<string>> GetBlobColumnsAsync(string tableName)
+        private async ValueTask<HashSet<string>> GetBlobColumnsAsync(string tableName)
         {
             var blobCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -507,10 +507,10 @@ namespace CollectaMundo.Tests.TestUtils
             return blobCols;
         }
 
-        public Task DisposeAsync()
+        public ValueTask DisposeAsync()
         {
             _masterConnection?.Dispose();
-            return Task.CompletedTask;
+            return ValueTask.CompletedTask;
         }
         public void Dispose()
         {
