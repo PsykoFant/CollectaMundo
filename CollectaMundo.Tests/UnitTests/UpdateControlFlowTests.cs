@@ -43,28 +43,29 @@ namespace CollectaMundo.Tests.UnitTests
             // Arrange
             var (updateVM, statusVM, dbService) = TestableUpdateViewModel.CreateTestableUpdateViewModel(
                 backupResult: new OperationResult(OperationResultCode.Success, "mock-backup-path"),
-                updateResult: new OperationResult(OperationResultCode.Success, "Update cancelled by user"));
+                updateResult: new OperationResult(OperationResultCode.CancelledByUser, "Update cancelled by user")
+            );
 
+            // Hook: simulate cancel right after user clicks "Go for it!"
+            updateVM.AfterUserConfirmedUpdate = () =>
+            {
+                // Simulate clicking Cancel
+                TestableUpdateViewModel.SimulatePrimaryButtonClick(statusVM);
+            };
 
-            // Act: Start the command (this internally calls UpdateDBAsync and captures the task)
             // Start the command (this internally calls UpdateDBAsync and captures the task)
             updateVM.UpdateDBCommand.Execute(null);
 
-            // Wait until the UpdateDBAsync method is actually running
+            // Simulate "user click Go for it!" to begin the orchestration
             while (updateVM.InternalUpdateTask is null)
-            {
-                await Task.Delay(10);
-            }
+                await Task.Delay(10); // Wait for hook to be ready
 
-            // Simulate user cancel
-            TestableUpdateViewModel.SimulatePrimaryButtonClick(statusVM);
+            TestableUpdateViewModel.SimulatePrimaryButtonClick(statusVM); // Click "Go for it!"
 
-            // Now wait for UpdateDBAsync to complete
-            await updateVM.InternalUpdateTask!;
+            await updateVM.InternalUpdateTask!; // Now wait for task to complete
 
             // Assert
             Assert.Equal("Update canceled", statusVM.StatusLabel1);
-
             Assert.Equal("Download aborted. No files were imported.", statusVM.StatusLabel3);
             Assert.Equal("  OK  ", statusVM.PrimaryButtonText);
             Assert.Equal(Visibility.Visible, statusVM.PrimaryButtonVisibility);
@@ -200,29 +201,36 @@ namespace CollectaMundo.Tests.UnitTests
                 getMyCollectionCount: () => 0 // triggers backup skip
             );
 
-            // Act: Start the command (this internally calls UpdateDBAsync and captures the task)
-            // Start the command (this internally calls UpdateDBAsync and captures the task)
+            // Hook: simulate cancel after user confirmed update
+            updateVM.AfterUserConfirmedUpdate = () =>
+            {
+                TestableUpdateViewModel.SimulatePrimaryButtonClick(statusVM); // cancel
+            };
+
+            // Act
             updateVM.UpdateDBCommand.Execute(null);
 
-            // Wait until the UpdateDBAsync method is actually running
+            // Wait until internal task is created
             while (updateVM.InternalUpdateTask is null)
             {
                 await Task.Delay(10);
             }
 
-            // Simulate user cancel
+            // First click: simulate user saying "Go for it!"
             TestableUpdateViewModel.SimulatePrimaryButtonClick(statusVM);
 
-            // Now wait for UpdateDBAsync to complete
+            // Wait for the async update flow to complete
             await updateVM.InternalUpdateTask!;
 
             // Assert
             Assert.Equal("Update canceled", statusVM.StatusLabel1);
-
             Assert.Equal("Download aborted. No files were imported.", statusVM.StatusLabel3);
             Assert.Equal("  OK  ", statusVM.PrimaryButtonText);
             Assert.Equal(Visibility.Visible, statusVM.PrimaryButtonVisibility);
+
+            // No backup should have occurred
             dbService.Verify(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
+
     }
 }

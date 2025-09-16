@@ -8,8 +8,6 @@ namespace CollectaMundo.ApplicationServices.Utilities
         {
             for (int attempt = 1; attempt <= maxRetries; attempt++)
             {
-                Debug.WriteLine($"This is attempt: {attempt}");
-
                 stepNameAndNumberProgress?.Report(attempt == 1
                     ? stepName
                     : $"{stepName} — Attempt {attempt}...");

@@ -10,7 +10,7 @@ namespace CollectaMundo.Tests.TestUtils
     public class TestableUpdateViewModel : UpdateViewModel
     {
         public Task? InternalUpdateTask { get; private set; }
-
+        public Action? AfterUserConfirmedUpdate { get; set; }
         public TestableUpdateViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, IUiBlockable uiState, IAppRefresher appRefresher, Func<int> getMyCollectionCount) : base(dbService, statusVM, uiState, appRefresher, getMyCollectionCount)
         {
             UpdateDBCommand = new RelayCommand<object>(async _ =>
@@ -19,7 +19,23 @@ namespace CollectaMundo.Tests.TestUtils
                 await InternalUpdateTask;
             });
         }
-        public Task InvokeUpdateDBAsync() => (Task)typeof(UpdateViewModel).GetMethod("UpdateDBAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(this, null)!;
+        public Task InvokeUpdateDBAsync()
+        {
+            var method = typeof(UpdateViewModel).GetMethod("UpdateDBAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+            // Use async wrapper so we can inject hook in between
+            return Task.Run(async () =>
+            {
+                var task = (Task)method.Invoke(this, null)!;
+
+                // Delay a bit to let internal token source be created
+                await Task.Delay(50);
+
+                AfterUserConfirmedUpdate?.Invoke(); // Let test hook fire now
+
+                await task;
+            });
+        }
 
         public static (TestableUpdateViewModel vm, StatusViewModel statusVM, Mock<ICardDatabaseManagementService> dbService) CreateTestableUpdateViewModel(
             OperationResult? backupResult = null,

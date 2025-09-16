@@ -272,6 +272,8 @@ namespace CollectaMundo.Tests.UnitTests
                     It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(async () =>
                 {
+                    await Task.Yield(); // Prevents compiler warning
+
                     callCount++;
                     if (callCount == 1)
                     {
@@ -281,6 +283,7 @@ namespace CollectaMundo.Tests.UnitTests
 
                     return new OperationResult(OperationResultCode.Success);
                 });
+
 
             var svc = ctx.BuildService();
             var result = await svc.UpdateDbPrepOrchetrator(0, cts.Token);
@@ -374,13 +377,23 @@ namespace CollectaMundo.Tests.UnitTests
         [Fact]
         public async Task FirstTimeDbPrepOrchetrator_RealDownloader_RecoversAfterTransientHttpFailure()
         {
-            int attempts = 0;
+            var attemptsPerUrl = new Dictionary<string, int>
+            {
+                ["http://localhost/dummy.sqlite"] = 0,
+                ["http://localhost/dummy.json"] = 0
+            };
+
             var httpClient = new HttpClient(new FakeHttpMessageHandler((req, token) =>
             {
-                attempts++;
-                if (attempts < 3)
+                var url = req.RequestUri?.ToString() ?? "";
+                if (!attemptsPerUrl.ContainsKey(url))
+                    throw new InvalidOperationException("Unexpected URL in test: " + url);
+
+                attemptsPerUrl[url]++;
+
+                if (attemptsPerUrl[url] < 2)
                 {
-                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)); // 503
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
                 }
 
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
@@ -391,6 +404,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var downloader = new CardDatabaseDownloader(httpClient);
             using var ctx = new FirstTimeSetupTestContext(downloader);
+
             ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
             ctx.StubAllStepsAsSuccess();
 
@@ -398,8 +412,12 @@ namespace CollectaMundo.Tests.UnitTests
             var result = await svc.FirstTimeDbPrepOrchetrator(0);
 
             Assert.Equal(OperationResultCode.Success, result.Code);
-            Assert.Equal(3, attempts); // 2 failures + 1 success
+
+            // ✅ Validate each URL retried once and then succeeded
+            Assert.Equal(2, attemptsPerUrl["http://localhost/dummy.sqlite"]);
+            Assert.Equal(2, attemptsPerUrl["http://localhost/dummy.json"]);
         }
+
 
     }
 }
