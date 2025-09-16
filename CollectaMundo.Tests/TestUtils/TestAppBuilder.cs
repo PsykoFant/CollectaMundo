@@ -19,6 +19,7 @@ using CollectaMundo.Data.RemoteLookups;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.CardLookups;
 using CollectaMundo.DomainLogic.EditCollection;
+using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.ViewModels;
 using System.Windows;
@@ -27,9 +28,10 @@ namespace CollectaMundo.Tests.TestUtils;
 
 public static class TestAppBuilder
 {
-    public static async Task<(MainWindowViewModel VM, StatusViewModel Status)> BuildAsync(string dbName)
+    public static async Task<(MainWindowViewModel VM, StatusViewModel Status)> BuildAsync(InMemoryDatabaseFixture fixture, List<CardChangeEventArgs>? eventSink = null)
     {
-        var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(dbName);
+        await fixture.InitializeAsync(); // ensures schema and seed are ready
+        var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(fixture.DbName);
         AppGlobals.DbFactory = dbFactory;
 
         var statusVM = new StatusViewModel();
@@ -82,6 +84,11 @@ public static class TestAppBuilder
             setRetailerAndPersist,
             scheduler);
 
+        if (eventSink is not null)
+        {
+            mainVM.AddCardsVM.CardChanged += (_, e) => eventSink.Add(e);
+            mainVM.EditCardsVM.CardChanged += (_, e) => eventSink.Add(e);
+        }
         mainVM.FilterVM.NotifyFilterChanged();
         mainVM.SideMenuVisibility = Visibility.Visible;
         mainVM.ContentSectionVisibility = Visibility.Visible;
@@ -94,7 +101,6 @@ public static class TestAppBuilder
 
         return (mainVM, statusVM);
     }
-
     private static ProgressSinks CreateProgressSinks(StatusViewModel vm) => new()
     {
         Headline = new Progress<string>(s => vm.StatusLabel1 = s),
