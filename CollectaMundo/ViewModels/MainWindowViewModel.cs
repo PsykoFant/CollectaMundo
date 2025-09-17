@@ -413,6 +413,8 @@ namespace CollectaMundo.ViewModels
             {
                 c.RefreshPricesFromProvider();
             }
+
+
         }
 
         #endregion
