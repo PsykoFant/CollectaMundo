@@ -1,5 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.CardLists;
-using CollectaMundo.DomainLogic.CardPrices;
+﻿using CollectaMundo.DomainLogic.CardPrices;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -16,7 +15,6 @@ namespace CollectaMundo.ViewModels
         // Retailer selection
         private readonly Func<string> _getRetailer;
         private readonly Action<string> _setRetailerAndPersist;
-        private readonly ICardListService _cardListService;
         private readonly IAppRefresher _appRefresher;
 
         // Retailer options 
@@ -56,12 +54,11 @@ namespace CollectaMundo.ViewModels
         public ICommand ChangeRetailerCommand { get; private set; } = null!;
 
         // Constructor
-        public PricesViewModel(Func<string> getRetailer, Action<string> setRetailerAndPersist, ICardListService cardListService, IAppRefresher appRefresher)
+        public PricesViewModel(Func<string> getRetailer, Action<string> setRetailerAndPersist, IAppRefresher appRefresher)
         {
             // retailers
             _getRetailer = getRetailer;
             _setRetailerAndPersist = setRetailerAndPersist;
-            _cardListService = cardListService;
             _appRefresher = appRefresher;
 
             // build retailer list (purely static definitions)
@@ -73,21 +70,20 @@ namespace CollectaMundo.ViewModels
 
             UpdatePriceHeaders();
 
-            ChangeRetailerCommand = new RelayCommand<object>(async _ => await ChangeRetailerAsync());
+            ChangeRetailerCommand = new RelayCommand<object>(_ => ChangeRetailerAsync());
         }
 
         // simple currency mapping
         private static string GetCurrencyForRetailer(string key) => string.Equals(key, "cardmarket", StringComparison.OrdinalIgnoreCase) ? "EUR" : "USD";
 
         // Command action
-        private async Task ChangeRetailerAsync()
+        private void ChangeRetailerAsync()
         {
             if (SelectedRetailer is null)
             {
                 return;
             }
             _setRetailerAndPersist(SelectedRetailer.Key);
-            await _cardListService.ReloadPriceLookupsAsync(SelectedRetailer.Key);
             _appRefresher.RefreshAllPrices();
             UpdatePriceHeaders();
         }

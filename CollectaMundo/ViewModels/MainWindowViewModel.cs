@@ -38,6 +38,9 @@ namespace CollectaMundo.ViewModels
         private readonly IFacetUpdateScheduler _facetScheduler;
         private readonly IFacetUpdater _facetUpdater;
 
+        // Retailer getter for PricesViewModel
+        private readonly Func<string> _getRetailer;
+
         // Mana keys for ColorIcons
         private readonly string[] ManaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
 
@@ -226,6 +229,8 @@ namespace CollectaMundo.ViewModels
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
             _facetUpdater = facetUpdater ?? new FacetUpdater();
 
+            _getRetailer = getRetailer;
+
             CurrentPage = Page.SearchAndFilter;
 
             // cardlist viewmodels
@@ -246,7 +251,7 @@ namespace CollectaMundo.ViewModels
             UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, this, () => MyCollectionVM.Cards.Count);
 
             // prices viewmodel
-            PricesVM = new PricesViewModel(getRetailer, setRetailerAndPersist, _cardListService, this);
+            PricesVM = new PricesViewModel(getRetailer, setRetailerAndPersist, this);
 
             // event wiring
             SubscribeChildVmEvents();
@@ -391,6 +396,12 @@ namespace CollectaMundo.ViewModels
         // When retailer is changed, refresh prices on all cards
         public void RefreshAllPrices()
         {
+            string selectedRetailer = _getRetailer();
+
+            // Reset price dictionary
+            _cardListService.ReloadPriceLookupsAsync(selectedRetailer);
+
+            // Refresh prices on all cards in all lists
             foreach (var c in AllCardsVM.Cards)
             {
                 c.RefreshPricesFromProvider();
