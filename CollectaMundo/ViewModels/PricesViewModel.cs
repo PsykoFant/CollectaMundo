@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.CardPrices;
+﻿using CollectaMundo.ApplicationServices;
+using CollectaMundo.DomainLogic.CardPrices;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -12,10 +13,10 @@ namespace CollectaMundo.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
+        // Settings
+        private readonly IAppSettings _appSettings;
+
         // Retailer selection
-        private readonly Func<string> _getRetailer;
-        private readonly Func<string> _getLatestPriceUpdateDate;
-        private readonly Action<string> _setRetailerAndPersist;
         private readonly IAppRefresher _appRefresher;
 
         // Retailer options 
@@ -30,13 +31,7 @@ namespace CollectaMundo.ViewModels
         }
 
         // Last price update date
-        private string _latestPriceUpdateDate;
-        public string LatestPriceUpdateDate
-        {
-            get => _latestPriceUpdateDate;
-            private set { if (_latestPriceUpdateDate != value) { _latestPriceUpdateDate = value; OnPropertyChanged(); } }
-        }
-
+        public string LatestPriceUpdateDate => $"Card prices updated: {_appSettings.PriceInfo.PricesUpdatedDate}";
 
         // Price column headers (dynamic based on retailer)
         private string _priceHeader = "Price";
@@ -60,26 +55,28 @@ namespace CollectaMundo.ViewModels
             private set { if (_etchedPriceHeader != value) { _etchedPriceHeader = value; OnPropertyChanged(); } }
         }
 
+        public void RefreshLatestPriceDate()
+        {
+            OnPropertyChanged(nameof(LatestPriceUpdateDate));
+        }
+
         // Command
         public ICommand ChangeRetailerCommand { get; private set; } = null!;
 
         // Constructor        
-        public PricesViewModel(Func<string> getRetailer, Func<string> getLatestPriceUpdateDate, Action<string> setRetailerAndPersist, IAppRefresher appRefresher)
+        public PricesViewModel(IAppSettings settings, IAppRefresher appRefresher)
         {
-            // retailers
-            _getRetailer = getRetailer;
-            _getLatestPriceUpdateDate = getLatestPriceUpdateDate;
-            _setRetailerAndPersist = setRetailerAndPersist;
-            _appRefresher = appRefresher;
+            // settings
+            _appSettings = settings;
 
-            // last update date
-            _latestPriceUpdateDate = $"Card prices updated: {_getLatestPriceUpdateDate()}";
+            // retailers
+            _appRefresher = appRefresher;
 
             // build retailer list (purely static definitions)
             Retailers = new ObservableCollection<RetailerOption>(CardPriceDefinitions.RetailersByFormat["paper"].Select(kv => new RetailerOption(kv.Key, kv.Value)));
 
-            // pick initial from settings via delegate
-            var savedKey = _getRetailer();
+            // pick initial from settings
+            var savedKey = _appSettings.PriceInfo.Retailer;
             SelectedRetailer = Retailers.FirstOrDefault(r => string.Equals(r.Key, savedKey, StringComparison.OrdinalIgnoreCase)) ?? Retailers.First();
 
             UpdatePriceHeaders();
@@ -97,7 +94,7 @@ namespace CollectaMundo.ViewModels
             {
                 return;
             }
-            _setRetailerAndPersist(SelectedRetailer.Key);
+            _appSettings.UpdatePriceInfo(updatedDate: null, retailer: SelectedRetailer.Key);
             _appRefresher.RefreshAllPrices();
             UpdatePriceHeaders();
         }

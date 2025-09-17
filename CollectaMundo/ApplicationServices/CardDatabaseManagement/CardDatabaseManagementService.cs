@@ -392,7 +392,6 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             OptimizeDatabase = 8
         }
 
-
         // Use case: export collection to CSV
         public async Task<OperationResult> ExportCollectionAsync(CancellationToken ct = default)
         {

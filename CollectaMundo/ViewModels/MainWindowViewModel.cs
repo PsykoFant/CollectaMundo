@@ -1,4 +1,5 @@
 ﻿#region usings & namespace
+using CollectaMundo.ApplicationServices;
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.EditCollection;
@@ -30,6 +31,9 @@ namespace CollectaMundo.ViewModels
         #endregion
 
         #region readonly dependencies
+        // App settings
+        private readonly IAppSettings _settings;
+
         // Services
         private readonly IFilteringService _filteringService;
         private readonly ICardListService _cardListService;
@@ -37,9 +41,6 @@ namespace CollectaMundo.ViewModels
         // Filtering infrastructure
         private readonly IFacetUpdateScheduler _facetScheduler;
         private readonly IFacetUpdater _facetUpdater;
-
-        // Retailer getter for PricesViewModel
-        private readonly Func<string> _getRetailer;
 
         // Mana keys for ColorIcons
         private readonly string[] ManaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
@@ -216,21 +217,19 @@ namespace CollectaMundo.ViewModels
             ICardDatabaseManagementService cardDbManagementService,
             StatusViewModel statusVM,
             ICardListService cardListService,
-            Func<string> getRetailer,
-            Func<string> getLatestPriceUpdateDate,
-            Action<string> setRetailerAndPersist,
+            IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null)
         {
             _statusVM = statusVM;
+
+            _settings = settings;
 
             _filteringService = filteringService;
             _cardListService = cardListService;
 
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
             _facetUpdater = facetUpdater ?? new FacetUpdater();
-
-            _getRetailer = getRetailer;
 
             CurrentPage = Page.SearchAndFilter;
 
@@ -252,7 +251,7 @@ namespace CollectaMundo.ViewModels
             UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, this, () => MyCollectionVM.Cards.Count);
 
             // prices viewmodel
-            PricesVM = new PricesViewModel(getRetailer, getLatestPriceUpdateDate, setRetailerAndPersist, this);
+            PricesVM = new PricesViewModel(_settings, this);
 
             // event wiring
             SubscribeChildVmEvents();
@@ -266,14 +265,12 @@ namespace CollectaMundo.ViewModels
             ICardDatabaseManagementService prepService,
             StatusViewModel statusVM,
             ICardListService cardListService,
-            Func<string> getRetailer,
-            Func<string> getLatestPriceUpdateDate,
-            Action<string> setRetailerAndPersist,
+            IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(filteringService, editService, importExportService, prepService, statusVM, cardListService, getRetailer, getLatestPriceUpdateDate, setRetailerAndPersist, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(filteringService, editService, importExportService, prepService, statusVM, cardListService, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };
@@ -390,7 +387,7 @@ namespace CollectaMundo.ViewModels
             await _cardListService.InitializeCardListsAsync(AllCardsVM, MyCollectionVM, FilterVM.Filters, FilterVM);
             FilterVM.NotifyFiltersRebuilt();
             FilterVM.NotifyFilterChanged();
-
+            PricesVM.RefreshLatestPriceDate();
             sw.Stop();
             Debug.WriteLine($"[ReloadAllCardListsAsync] M1 finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");
         }
@@ -398,10 +395,8 @@ namespace CollectaMundo.ViewModels
         // When retailer is changed, refresh prices on all cards
         public void RefreshAllPrices()
         {
-            string selectedRetailer = _getRetailer();
-
             // Reset price dictionary
-            _cardListService.ReloadPriceLookupsAsync(selectedRetailer);
+            _cardListService.ReloadPriceLookupsAsync(_settings.PriceInfo.Retailer);
 
             // Refresh prices on all cards in all lists
             foreach (var c in AllCardsVM.Cards)
@@ -414,7 +409,8 @@ namespace CollectaMundo.ViewModels
                 c.RefreshPricesFromProvider();
             }
 
-
+            Debug.WriteLine($"latest price date from settings: {_settings.PriceInfo.PricesUpdatedDate}"); // this writes the correct date!
+            PricesVM.RefreshLatestPriceDate();
         }
 
         #endregion

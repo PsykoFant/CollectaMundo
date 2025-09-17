@@ -38,7 +38,6 @@ public static class TestAppBuilder
         var settings = new ApplicationServices.AppSettings();
 
         string getRetailer() => settings.PriceInfo.Retailer;
-        void setRetailerAndPersist(string key) => settings.UpdatePriceInfo(null, key);
 
         var remoteLookups = new RemoteLookups();
 
@@ -80,8 +79,7 @@ public static class TestAppBuilder
             prepService,
             statusVM,
             cardListService,
-            getRetailer,
-            setRetailerAndPersist,
+            settings,
             scheduler);
 
         if (eventSink is not null)
