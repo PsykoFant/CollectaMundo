@@ -37,7 +37,10 @@ namespace CollectaMundo.ApplicationServices.Startup
                 // Infrastructure
                 var settings = new AppSettings();
 
+
+                // Delegates for retailer access from view models                
                 string getRetailer() => settings.PriceInfo.Retailer;
+                string getLatestPriceUpdateDate() => settings.PriceInfo.PricesUpdatedDate;
                 void setRetailerAndPersist(string key)
                 {
                     // persist to appsettings.json
@@ -101,7 +104,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardListService = new CardListService(cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
 
                 // Build view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importService, cardDbManagementService, statusVM, cardListService, getRetailer, setRetailerAndPersist));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importService, cardDbManagementService, statusVM, cardListService, getRetailer, getLatestPriceUpdateDate, setRetailerAndPersist));
 
                 // Show initial UI
                 mainVM.FilterVM.NotifyFilterChanged();

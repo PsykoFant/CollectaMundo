@@ -892,12 +892,13 @@
                 <Grid x:Name="GridUtilsMenu" Visibility="{Binding SideMenuUtilsVisibility}">
                     <Button Command="{Binding UpdateVM.BackupCollectionCommand}" Content="Create backup of my collection" HorizontalAlignment="Left" Margin="10,0,0,0" Height="20" Width="180" VerticalAlignment="Top"/>
                     <Button x:Name="ImportCollectionButton" Content="The Import Wizard" HorizontalAlignment="Left" Margin="10,30,0,0" Width="180" Height="20" VerticalAlignment="Top" Click="ImportCollectionButton_Click"/>
-                    <Button Command="{Binding UpdateVM.UpdatePricesCommand}" Content="Update card prices" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,60,0,0" Width="180" Height="20"/>
-                    <Label Content="Show prices from:" Margin="10,90,0,0"/>
 
+                    <Label Content="{Binding PricesVM.LatestPriceUpdateDate}" Margin="10,70,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                    <Button Command="{Binding UpdateVM.UpdatePricesCommand}" Content="Update card prices" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,100,0,0" Width="180" Height="20"/>                    
+                    <Label Content="Show prices from:" Margin="10,125,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
                     <ComboBox ItemsSource="{Binding PricesVM.Retailers}"
                               SelectedItem="{Binding PricesVM.SelectedRetailer, Mode=TwoWay}"
-                              DisplayMemberPath="Display" SelectedValuePath="Key" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,120,0,0">
+                              DisplayMemberPath="Display" SelectedValuePath="Key" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,155,0,0">
                         <i:Interaction.Triggers>
                             <i:EventTrigger EventName="SelectionChanged">
                                 <i:InvokeCommandAction
@@ -908,11 +909,11 @@
                     </ComboBox>
                     <Button Command="{Binding UpdateVM.CheckForDbUpdatesCommand}"
                             Content="Check for card database updates"                            
-                            HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,150,0,0" Width="180" Height="20"/>
+                            HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,220,0,0" Width="180" Height="20"/>
                     <Button Command="{Binding UpdateVM.UpdateDBCommand}"
                             Content="Update card database"
                             Visibility="{Binding UpdateVM.UpdateDbVisibility}"
-                            HorizontalAlignment="Left" Width="180" Height="20" Margin="10,180,0,0" VerticalAlignment="Top"/>
+                            HorizontalAlignment="Left" Width="180" Height="20" Margin="10,250,0,0" VerticalAlignment="Top"/>
                 </Grid>
             </Grid>
             <!-- Content section -->

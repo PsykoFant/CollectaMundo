@@ -1,7 +1,6 @@
 TO DO 
 - MVVM refactor
 - Update priser scenarie
-    Bug: priser opdateres ikke før genstart
     Priser senest opdateret....
 
 

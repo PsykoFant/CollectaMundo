@@ -217,6 +217,7 @@ namespace CollectaMundo.ViewModels
             StatusViewModel statusVM,
             ICardListService cardListService,
             Func<string> getRetailer,
+            Func<string> getLatestPriceUpdateDate,
             Action<string> setRetailerAndPersist,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null)
@@ -251,7 +252,7 @@ namespace CollectaMundo.ViewModels
             UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, this, () => MyCollectionVM.Cards.Count);
 
             // prices viewmodel
-            PricesVM = new PricesViewModel(getRetailer, setRetailerAndPersist, this);
+            PricesVM = new PricesViewModel(getRetailer, getLatestPriceUpdateDate, setRetailerAndPersist, this);
 
             // event wiring
             SubscribeChildVmEvents();
@@ -266,12 +267,13 @@ namespace CollectaMundo.ViewModels
             StatusViewModel statusVM,
             ICardListService cardListService,
             Func<string> getRetailer,
+            Func<string> getLatestPriceUpdateDate,
             Action<string> setRetailerAndPersist,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(filteringService, editService, importExportService, prepService, statusVM, cardListService, getRetailer, setRetailerAndPersist, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(filteringService, editService, importExportService, prepService, statusVM, cardListService, getRetailer, getLatestPriceUpdateDate, setRetailerAndPersist, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };

@@ -14,6 +14,7 @@ namespace CollectaMundo.ViewModels
 
         // Retailer selection
         private readonly Func<string> _getRetailer;
+        private readonly Func<string> _getLatestPriceUpdateDate;
         private readonly Action<string> _setRetailerAndPersist;
         private readonly IAppRefresher _appRefresher;
 
@@ -27,6 +28,15 @@ namespace CollectaMundo.ViewModels
             get => _selectedRetailer;
             set { if (_selectedRetailer != value) { _selectedRetailer = value; OnPropertyChanged(); } }
         }
+
+        // Last price update date
+        private string _latestPriceUpdateDate;
+        public string LatestPriceUpdateDate
+        {
+            get => _latestPriceUpdateDate;
+            private set { if (_latestPriceUpdateDate != value) { _latestPriceUpdateDate = value; OnPropertyChanged(); } }
+        }
+
 
         // Price column headers (dynamic based on retailer)
         private string _priceHeader = "Price";
@@ -53,13 +63,17 @@ namespace CollectaMundo.ViewModels
         // Command
         public ICommand ChangeRetailerCommand { get; private set; } = null!;
 
-        // Constructor
-        public PricesViewModel(Func<string> getRetailer, Action<string> setRetailerAndPersist, IAppRefresher appRefresher)
+        // Constructor        
+        public PricesViewModel(Func<string> getRetailer, Func<string> getLatestPriceUpdateDate, Action<string> setRetailerAndPersist, IAppRefresher appRefresher)
         {
             // retailers
             _getRetailer = getRetailer;
+            _getLatestPriceUpdateDate = getLatestPriceUpdateDate;
             _setRetailerAndPersist = setRetailerAndPersist;
             _appRefresher = appRefresher;
+
+            // last update date
+            _latestPriceUpdateDate = $"Card prices updated: {_getLatestPriceUpdateDate()}";
 
             // build retailer list (purely static definitions)
             Retailers = new ObservableCollection<RetailerOption>(CardPriceDefinitions.RetailersByFormat["paper"].Select(kv => new RetailerOption(kv.Key, kv.Value)));
