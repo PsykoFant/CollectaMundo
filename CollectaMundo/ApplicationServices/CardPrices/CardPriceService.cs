@@ -76,7 +76,7 @@ namespace CollectaMundo.ApplicationServices.CardPrices
             }
 
             // Step 4: Update settings with the JSON's actual date (retailer remains unchanged)
-            _appSettings.UpdatePriceInfo(jsonDate, _appSettings.PriceInfo.Retailer);
+            _appSettings.PersistPriceInfo(jsonDate, _appSettings.PriceInfo.Retailer);
         }
     }
 }

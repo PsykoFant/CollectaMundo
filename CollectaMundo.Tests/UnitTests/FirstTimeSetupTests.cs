@@ -58,7 +58,6 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Contains(ctx.PercentSamples, p => p == 100);   // finished
             Assert.NotEmpty(ctx.Steps);                         // at least one step label
         }
-
         [Fact]
         public async Task FirstTimeDbPrepOrchetrator_RetriesCreateTables_ThenSucceeds()
         {
@@ -95,7 +94,6 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(OperationResultCode.Success, result.Code);
             Assert.Equal(3, attempts); // 2 failures + 1 success
         }
-
         [Fact]
         public async Task Step2FailsAfterRetries_ReturnsError_AndStopsPipeline()
         {
@@ -123,7 +121,6 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(3, createCalls); // max retries
             ctx.SchemaRepo.Verify(r => r.CreateViewsAsync(It.IsAny<SQLiteConnection>(), It.IsAny<string>()), Times.Never);
         }
-
         [Fact]
         public async Task DownloadFails_ReturnsDownloadFailed_DoesNotRunSteps()
         {
@@ -154,7 +151,6 @@ namespace CollectaMundo.Tests.UnitTests
                 It.IsAny<IProgress<int>>(), It.IsAny<CancellationToken>()),
                 Times.Once);
         }
-
         [Fact]
         public async Task NoInternet_ReturnsNoInternet_AndSkipsEverything()
         {
@@ -168,7 +164,6 @@ namespace CollectaMundo.Tests.UnitTests
             ctx.CardDatabaseDownloaderMock.VerifyNoOtherCalls();
             ctx.SchemaRepo.VerifyNoOtherCalls();
         }
-
         [Fact]
         public async Task UpdateDbPrepOrchetrator_UserCancelsDuringDownload_ReturnsCancelledByUser()
         {
@@ -252,7 +247,6 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(OperationResultCode.CancelledByUser, result.Code);
             Assert.Contains(ctx.PercentSamples, p => p == 50); // Assert progress was tracked
         }
-
         [Fact]
         public async Task UpdateDbPrepOrchetrator_CancelDuringRetryDelay_AbortsImmediately()
         {
@@ -315,7 +309,6 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Contains("One file failed", result.Message);
             ctx.SchemaRepo.VerifyNoOtherCalls(); // No further processing after failed download
         }
-
         [Fact]
         public async Task FirstTimeDbPrepOrchetrator_UsesRealDownloader_WithFakeHttpClient()
         {
@@ -337,7 +330,6 @@ namespace CollectaMundo.Tests.UnitTests
             // Assert
             Assert.Equal(OperationResultCode.Success, result.Code);
         }
-
         [Fact]
         public async Task FirstTimeDbPrepOrchetrator_RealDownloader_Http500_ReturnsDownloadFailed()
         {
@@ -373,7 +365,6 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(OperationResultCode.DownloadFailed, result.Code);
             Assert.Contains("Step 1. Downloading card database and prices... failed after 3 attempts.", result.Message, StringComparison.OrdinalIgnoreCase);
         }
-
         [Fact]
         public async Task FirstTimeDbPrepOrchetrator_RealDownloader_RecoversAfterTransientHttpFailure()
         {
@@ -417,7 +408,6 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(2, attemptsPerUrl["http://localhost/dummy.sqlite"]);
             Assert.Equal(2, attemptsPerUrl["http://localhost/dummy.json"]);
         }
-
 
     }
 }

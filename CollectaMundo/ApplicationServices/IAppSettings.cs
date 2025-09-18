@@ -9,7 +9,7 @@
         string UserDownloadsPath { get; }
         string BackupFolderPath { get; }
         PriceInfo PriceInfo { get; }
-        void UpdatePriceInfo(string? updatedDate, string? retailer);
+        void PersistPriceInfo(string? updatedDate, string? retailer);
     }
 
 }

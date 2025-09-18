@@ -1,15 +1,15 @@
 ﻿using Newtonsoft.Json;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Windows;
 
 namespace CollectaMundo.ApplicationServices
 {
     public class AppSettings : IAppSettings
     {
-        // backing POCO
-        private static AppSettingsDto CurrentSettings { get; set; } = new();
+        private AppSettingsDto _currentSettings;
+
+        private readonly string _settingsFilePath;
 
         // non-nullable, with defaults
         public DatabaseSettings DatabaseSettings { get; private set; } = new();
@@ -21,36 +21,34 @@ namespace CollectaMundo.ApplicationServices
         private static readonly string _userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         public string UserDownloadsPath => Path.Combine(_userProfile, "Downloads");
         public string BackupFolderPath => Path.Combine(_userProfile, "CollectaMundoBackup");
-
-
-
-        private static readonly string appSettingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
-
-        public AppSettings()
+        public AppSettings(string? filePath = null)
         {
-            LoadOrCreateAppSettings();
-            DatabaseSettings = CurrentSettings.DatabaseSettings;
-            ConnectionStrings = CurrentSettings.ConnectionStrings;
-            PriceInfo = CurrentSettings.PriceInfo;
+            _settingsFilePath = filePath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+            _currentSettings = LoadOrCreateAppSettings();
+            DatabaseSettings = _currentSettings.DatabaseSettings;
+            ConnectionStrings = _currentSettings.ConnectionStrings;
+            PriceInfo = _currentSettings.PriceInfo;
         }
-        private static void LoadOrCreateAppSettings()
+        private AppSettingsDto LoadOrCreateAppSettings()
         {
-            if (!File.Exists(appSettingsFile))
+            if (!File.Exists(_settingsFilePath))
             {
-                CreateDefaultAppSettings();
+                CreateDefaultAppSettings(_settingsFilePath);
             }
 
-            // Load the configuration file into strongly typed AppSettingsDto
-            var json = File.ReadAllText(appSettingsFile);
-            CurrentSettings = JsonConvert.DeserializeObject<AppSettingsDto>(json) ?? new AppSettingsDto();
-
-            // Rebuild the connection string with the loaded SQLitePath
-            CurrentSettings.ConnectionStrings.SQLiteConnection = $"Data Source={CurrentSettings.DatabaseSettings.SQLitePath}AllPrintings.sqlite;Version=3;";
+            var json = File.ReadAllText(_settingsFilePath);
+            var settings = JsonConvert.DeserializeObject<AppSettingsDto>(json) ?? new AppSettingsDto();
+            settings.ConnectionStrings.SQLiteConnection = $"Data Source={settings.DatabaseSettings.SQLitePath}AllPrintings.sqlite;Version=3;";
+            return settings;
         }
-        private static void CreateDefaultAppSettings()
+        private static void CreateDefaultAppSettings(string settingsFilePath)
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(settingsFilePath))
+                    throw new ArgumentException("Settings file path is required.", nameof(settingsFilePath));
+
+
                 string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 string sqlitePath = Path.Combine(appDataPath, "CollectaMundo", "CardDatabase");
 
@@ -66,7 +64,7 @@ namespace CollectaMundo.ApplicationServices
                     PriceInfo = new PriceInfo() // Defaults
                 };
 
-                File.WriteAllText(appSettingsFile, JsonConvert.SerializeObject(defaultSettings, Formatting.Indented));
+                File.WriteAllText(settingsFilePath, JsonConvert.SerializeObject(defaultSettings, Formatting.Indented));
             }
             catch (Exception ex)
             {
@@ -74,67 +72,29 @@ namespace CollectaMundo.ApplicationServices
                 MessageBox.Show($"Error creating appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        public void UpdatePriceInfo(string? updatedDate, string? retailer)
+        public void PersistPriceInfo(string? updatedDate, string? retailer)
         {
             // Update the PriceInfo fields
             if (updatedDate != null)
             {
-                CurrentSettings.PriceInfo.PricesUpdatedDate = updatedDate;
+                _currentSettings.PriceInfo.PricesUpdatedDate = updatedDate;
             }
             if (retailer != null)
             {
-                CurrentSettings.PriceInfo.Retailer = retailer;
+                _currentSettings.PriceInfo.Retailer = retailer;
             }
 
             // Save the updated settings to appsettings.json
-            SaveSettings();
-        }
-        private static void SaveSettings()
-        {
             try
             {
                 // Serialize the CurrentSettings object back to the JSON file
-                string json = JsonConvert.SerializeObject(CurrentSettings, Formatting.Indented);
-                File.WriteAllText(appSettingsFile, json);
+                string json = JsonConvert.SerializeObject(_currentSettings, Formatting.Indented);
+                File.WriteAllText(_settingsFilePath, json);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error saving appsettings.json: {ex.Message}");
                 MessageBox.Show($"Error saving appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-        public static object? GetSetting(string settingPath)
-        {
-            try
-            {
-                // Refresh the CurrentSettings object
-                LoadOrCreateAppSettings();
-
-                string[] pathParts = settingPath.Split(':');
-                object? current = CurrentSettings;
-
-                foreach (var part in pathParts)
-                {
-                    if (current == null)
-                    {
-                        return null;
-                    }
-
-                    PropertyInfo? property = current.GetType().GetProperty(part);
-                    if (property == null)
-                    {
-                        return null;
-                    }
-
-                    current = property.GetValue(current, null);
-                }
-
-                return current;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error getting setting '{settingPath}': {ex.Message}");
-                return null;
             }
         }
     }

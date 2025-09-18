@@ -94,7 +94,7 @@ namespace CollectaMundo.ViewModels
             {
                 return;
             }
-            _appSettings.UpdatePriceInfo(updatedDate: null, retailer: SelectedRetailer.Key);
+            _appSettings.PersistPriceInfo(updatedDate: null, retailer: SelectedRetailer.Key);
             _appRefresher.RefreshAllPrices();
             UpdatePriceHeaders();
         }
