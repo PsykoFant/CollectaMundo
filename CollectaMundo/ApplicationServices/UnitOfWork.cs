@@ -1,46 +1,44 @@
-﻿using System.Data.SQLite;
+﻿using CollectaMundo.Data;
+using System.Data.SQLite;
 using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices
 {
-    public class UnitOfWork : IUnitOfWork
+    public class UnitOfWork(IDbConnectionFactory dbFactory) : IUnitOfWork
     {
+        private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private SQLiteConnection? _conn;
         private SQLiteTransaction? _txn;
 
-        /// <summary>
-        /// Begin a normal (write-capable) UoW: opens a connection and starts a transaction.
-        /// </summary>
+        // Begin a normal (write-capable) UoW: opens a connection and starts a transaction.
         public async Task BeginAsync()
         {
-            if (AppGlobals.DbFactory is null)
+            if (_dbFactory is null)
             {
                 throw new InvalidOperationException("AppContext.DbFactory is not initialized.");
             }
 
             if (_conn is null)
             {
-                _conn = await AppGlobals.DbFactory.OpenConnectionAsync(); // <-- your existing factory
+                _conn = await _dbFactory.OpenConnectionAsync();
                 ApplyCommonPragmas(_conn, readOnly: false);
             }
 
             _txn = _conn.BeginTransaction();
         }
 
-        /// <summary>
-        /// Begin a read-only UoW: opens a connection without a transaction and enables PRAGMA query_only.
-        /// Use this for large SELECT-only startup loads to avoid writer/reader contention.
-        /// </summary>
+        // Begin a read-only UoW: opens a connection without a transaction and enables PRAGMA query_only.
+        // Use this for large SELECT-only startup loads to avoid writer/reader contention.
         public async Task BeginReadOnlyAsync()
         {
-            if (AppGlobals.DbFactory is null)
+            if (_dbFactory is null)
             {
                 throw new InvalidOperationException("AppContext.DbFactory is not initialized.");
             }
 
             if (_conn is null)
             {
-                _conn = await AppGlobals.DbFactory.OpenConnectionAsync(); // <-- same factory
+                _conn = await _dbFactory.OpenConnectionAsync();
                 ApplyCommonPragmas(_conn, readOnly: true);
             }
 
@@ -49,21 +47,17 @@ namespace CollectaMundo.ApplicationServices
         }
 
         public SQLiteConnection CurrentConnection => _conn ?? throw new InvalidOperationException("BeginAsync/BeginReadOnlyAsync must be called first.");
-
         public SQLiteTransaction CurrentTransaction => _txn ?? throw new InvalidOperationException("No active transaction. Call BeginAsync() for write operations.");
-
         public Task CommitAsync()
         {
             _txn?.Commit(); // no-op if read-only path
             return Task.CompletedTask;
         }
-
         public Task RollbackAsync()
         {
             _txn?.Rollback(); // no-op if read-only path
             return Task.CompletedTask;
         }
-
         public async ValueTask DisposeAsync()
         {
             try
@@ -88,7 +82,6 @@ namespace CollectaMundo.ApplicationServices
                 Debug.WriteLine($"[UnitOfWork] DisposeAsync error: {ex.Message}");
             }
         }
-
         private static void ApplyCommonPragmas(SQLiteConnection conn, bool readOnly)
         {
             using var cmd = conn.CreateCommand();

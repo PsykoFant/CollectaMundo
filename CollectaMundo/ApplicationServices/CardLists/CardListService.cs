@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardLists.CardLookups;
+using CollectaMundo.Data;
 using CollectaMundo.Data.CardLists;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
@@ -11,15 +12,16 @@ using System.Runtime.CompilerServices;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(ICardListRepository cardListRepo, IFilterDefaultsLogic filterLogic, ICardLookupsService lookupService, ICardCoreAggregator aggregator) : ICardListService
+    public sealed class CardListService(IDbConnectionFactory dbFactory, ICardListRepository cardListRepo, IFilterDefaultsLogic filterLogic, ICardLookupsService lookupService, ICardCoreAggregator aggregator) : ICardListService
     {
+        private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly ICardListRepository _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterLogic = filterLogic;
         private readonly ICardLookupsService _lookupService = lookupService;
         private readonly ICardCoreAggregator _aggregator = aggregator;
         public async Task InitializeCardListsAsync(CardViewModel allCardsVM, CardViewModel myCollectionVM, Dictionary<string, FilterItemViewModel> filters, FilterViewModel filterVM)
         {
-            await using var uow = new UnitOfWork();
+            await using var uow = new UnitOfWork(_dbFactory);
             try
             {
                 await uow.BeginReadOnlyAsync();

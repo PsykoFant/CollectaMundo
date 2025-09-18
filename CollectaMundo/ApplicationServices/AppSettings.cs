@@ -7,7 +7,7 @@ namespace CollectaMundo.ApplicationServices
 {
     public class AppSettings : IAppSettings
     {
-        private AppSettingsDto _currentSettings;
+        private readonly AppSettingsDto _currentSettings;
 
         private readonly string _settingsFilePath;
 

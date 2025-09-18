@@ -55,18 +55,14 @@ namespace CollectaMundo.Tests.TestUtils
             VisibleToggles = [];
             Steps = [];
         }
-
-
-
         public CardDatabaseManagementService BuildService()
         {
-            // db factory (unique in-memory DB)
+            // 1. Create a unique in-memory DB and keep a reference to dispose later
             var dbName = $"cmtests-{Guid.NewGuid():N}";
             var factory = SharedMemoryDbFactory.CreateInMemoryDbFactory(dbName);
-            AppGlobals.DbFactory = factory;
             _dbFactoryDisposable = factory as IDisposable;
 
-            // temp dirs and settings
+            // 2. Set up temp dirs and stubbed settings
             _tmpRoot = Path.Combine(Path.GetTempPath(), "cm-tests", dbName);
             Directory.CreateDirectory(_tmpRoot);
 
@@ -78,7 +74,7 @@ namespace CollectaMundo.Tests.TestUtils
             Settings.Setup(s => s.CardDatabaseUrl).Returns("http://localhost/dummy.sqlite");
             Settings.Setup(s => s.CardPricesUrl).Returns("http://localhost/dummy.json");
 
-            // progress sinks (plain Progress<T>, no WPF)
+            // 3. Create progress sinks (plain Progress<T> objects, no WPF needed)
             var sinks = new ProgressSinks
             {
                 Headline = new InlineProgress<string>(_ => { }),
@@ -88,10 +84,10 @@ namespace CollectaMundo.Tests.TestUtils
                 ProgressBarVisible = new InlineProgress<bool>(v => VisibleToggles.Add(v))
             };
 
-            // Build the service with the **updated** ctor (no InternetService, **with** RemoteLookups)
+            // 4. Inject everything explicitly (no AppGlobals)
             return new CardDatabaseManagementService(
                 Settings.Object,
-                AppGlobals.DbFactory,
+                factory, // <- directly pass the in-memory connection factory here
                 sinks,
                 SchemaRepo.Object,
                 PriceService.Object,
@@ -100,6 +96,7 @@ namespace CollectaMundo.Tests.TestUtils
                 CardDatabaseDownloader
             );
         }
+
         public void StubAllStepsAsSuccess()
         {
             SchemaRepo.Setup(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);

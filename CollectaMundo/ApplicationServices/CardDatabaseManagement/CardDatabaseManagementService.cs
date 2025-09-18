@@ -111,7 +111,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
                 // Step 2: Query local DB
                 int numberOfSetsInDb;
-                await using var uow = new UnitOfWork();
+                await using var uow = new UnitOfWork(_dbFactory);
                 await uow.BeginAsync();
                 try
                 {
@@ -399,7 +399,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             {
                 ct.ThrowIfCancellationRequested();
 
-                await using var uow = new UnitOfWork();
+                await using var uow = new UnitOfWork(_dbFactory);
                 await uow.BeginAsync();
 
                 var filePath = await _dbMgmtRepo.ExportCollectionAsync(uow.CurrentConnection, _settings.BackupFolderPath, ct);
@@ -425,9 +425,9 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         }
 
         // Retry logic for executing database actions
-        private static async Task ExecuteWithUnitOfWorkAsync(Func<SQLiteConnection, Task> action)
+        private async Task ExecuteWithUnitOfWorkAsync(Func<SQLiteConnection, Task> action)
         {
-            await using var uow = new UnitOfWork();
+            await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
             await action(uow.CurrentConnection);
             await uow.CommitAsync();

@@ -387,6 +387,7 @@ namespace CollectaMundo.ViewModels
             await _cardListService.InitializeCardListsAsync(AllCardsVM, MyCollectionVM, FilterVM.Filters, FilterVM);
             FilterVM.NotifyFiltersRebuilt();
             FilterVM.NotifyFilterChanged();
+            Debug.WriteLine($"latest price date from settings: {_settings.PriceInfo.PricesUpdatedDate}");
             PricesVM.RefreshLatestPriceDate();
             sw.Stop();
             Debug.WriteLine($"[ReloadAllCardListsAsync] M1 finished in {sw.ElapsedMilliseconds} ms ({sw.Elapsed}).");
@@ -409,7 +410,7 @@ namespace CollectaMundo.ViewModels
                 c.RefreshPricesFromProvider();
             }
 
-            Debug.WriteLine($"latest price date from settings: {_settings.PriceInfo.PricesUpdatedDate}"); // this writes the correct date!
+            Debug.WriteLine($"latest price date from settings: {_settings.PriceInfo.PricesUpdatedDate}");
             PricesVM.RefreshLatestPriceDate();
         }
 

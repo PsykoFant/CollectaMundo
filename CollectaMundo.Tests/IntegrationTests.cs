@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
+using CollectaMundo.Data;
 using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
@@ -19,12 +20,14 @@ namespace CollectaMundo.Tests
 
     public sealed class SeedIntegrationTests(InMemoryDatabaseFixture fx) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
+        private IDbConnectionFactory _dbFactory = null!;
         private MainWindowViewModel _mainVM = null!;
         private readonly InMemoryDatabaseFixture _fx = fx;
 
         public async ValueTask InitializeAsync()
         {
-            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx);
+            _dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
+            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory);
         }
         public ValueTask DisposeAsync()
         {
@@ -44,12 +47,14 @@ namespace CollectaMundo.Tests
     }
     public sealed class CardViewModelIntegrationTests : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
+        private IDbConnectionFactory _dbFactory = null!;
         private MainWindowViewModel _mainVM = null!;
         private readonly InMemoryDatabaseFixture _fx;
         public CardViewModelIntegrationTests(InMemoryDatabaseFixture fx) => _fx = fx;
         public async ValueTask InitializeAsync()
         {
-            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx);
+            _dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
+            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory);
         }
         public ValueTask DisposeAsync()
         {
@@ -379,12 +384,14 @@ namespace CollectaMundo.Tests
     }
     public sealed class FilterViewModelIntegrationTests(InMemoryDatabaseFixture fx) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
+        private IDbConnectionFactory _dbFactory = null!;
         private MainWindowViewModel _mainVM = null!;
         private readonly InMemoryDatabaseFixture _fx = fx;
 
         public async ValueTask InitializeAsync()
         {
-            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx);
+            _dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
+            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory);
         }
 
         public ValueTask DisposeAsync()
@@ -690,10 +697,12 @@ namespace CollectaMundo.Tests
         private readonly InMemoryDatabaseFixture _fx = fx;
         private readonly List<CardChangeEventArgs> _changedEvents = [];
         private readonly FilteringService _filteringService = new();
+        private IDbConnectionFactory _dbFactory = null!;
 
         public async ValueTask InitializeAsync()
         {
-            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx);
+            _dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(_fx.DbName);
+            (_mainVM, _) = await TestAppBuilder.BuildAsync(_fx, _dbFactory);
         }
 
         public ValueTask DisposeAsync()
@@ -966,7 +975,7 @@ namespace CollectaMundo.Tests
 
             Assert.Equal(ownedVm, survivor.CardsOwned);
 
-            await using (var uow = new UnitOfWork())
+            await using (var uow = new UnitOfWork(_dbFactory))
             {
                 await uow.BeginReadOnlyAsync();
                 var repo = new EditCollectionRepository();

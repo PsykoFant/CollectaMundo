@@ -42,7 +42,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 string getRetailer() => settings.PriceInfo.Retailer;
 
                 var RemoteLookups = new RemoteLookups();
-                var dbFactory = AppGlobals.DbFactory = new DbConnectionFactory(settings);
+                var dbFactory = new DbConnectionFactory(settings);
 
                 // Card DB prep (repos + services)
                 var missingPngRepo = new GenerateMissingPngRepository();
@@ -57,7 +57,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, progressSinks, cardDbManagementRepo, priceService, missingPngSvc, RemoteLookups);
 
-                var integrityService = new DatabaseIntegrityService(settings);
+                var integrityService = new DatabaseIntegrityService(dbFactory, settings);
 
                 // Status overlay
                 statusVM.ShowStatusOverlay("Checking database integrity…");
@@ -84,18 +84,18 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var filteringService = new FilteringService();
 
                 var editCollectionRepo = new EditCollectionRepository();
-                var editService = new EditCollectionService(new EditCollectionLogic(editCollectionRepo));
+                var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(editCollectionRepo));
 
                 var importService = new ImportService(new ImportRepo(), settings);
 
                 var cardLookupsRepo = new CardLookupsRepo();
                 var cardLookupsBuilder = new CardLookupBuilder();
-                var cardLookupsService = new CardLookupsService(cardLookupsRepo, cardLookupsBuilder, getRetailer);
+                var cardLookupsService = new CardLookupsService(dbFactory, cardLookupsRepo, cardLookupsBuilder, getRetailer);
 
                 var cardListRepo = new CardListRepository();
                 var filterDefaultsLogic = new FilterDefaultsLogic();
                 var coreAggregator = new CardCoreAggregator();
-                var cardListService = new CardListService(cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
+                var cardListService = new CardListService(dbFactory, cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
 
                 // Build view model off UI thread
                 var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, importService, cardDbManagementService, statusVM, cardListService, settings));

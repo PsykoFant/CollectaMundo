@@ -1,5 +1,4 @@
-﻿using CollectaMundo.ApplicationServices;
-using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLists.CardLookups;
 using CollectaMundo.ApplicationServices.CardPrices;
@@ -8,6 +7,7 @@ using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Utilities.Progress;
+using CollectaMundo.Data;
 using CollectaMundo.Data.CardDatabaseManagement;
 using CollectaMundo.Data.CardLists;
 using CollectaMundo.Data.CardPrices;
@@ -28,11 +28,10 @@ namespace CollectaMundo.Tests.TestUtils;
 
 public static class TestAppBuilder
 {
-    public static async Task<(MainWindowViewModel VM, StatusViewModel Status)> BuildAsync(InMemoryDatabaseFixture fixture, List<CardChangeEventArgs>? eventSink = null)
+    public static async Task<(MainWindowViewModel VM, StatusViewModel Status)> BuildAsync(InMemoryDatabaseFixture fixture, IDbConnectionFactory dbFactory, List<CardChangeEventArgs>? eventSink = null)
+
     {
-        await fixture.InitializeAsync(); // ensures schema and seed are ready
-        var dbFactory = SharedMemoryDbFactory.CreateInMemoryDbFactory(fixture.DbName);
-        AppGlobals.DbFactory = dbFactory;
+        await fixture.InitializeAsync(); // ensure schema/seed
 
         var statusVM = new StatusViewModel();
         var settings = new ApplicationServices.AppSettings();
@@ -47,9 +46,10 @@ public static class TestAppBuilder
             new GenerateMissingPngLogic());
 
         var priceService = new CardPriceService(settings, new CardPriceRepository());
+
         var prepService = new CardDatabaseManagementService(
             settings,
-            dbFactory,
+            dbFactory, // <- passed in explicitly
             CreateProgressSinks(statusVM),
             new CardDatabaseManagementRepo(),
             priceService,
@@ -57,17 +57,19 @@ public static class TestAppBuilder
             remoteLookups);
 
         var cardLookupsService = new CardLookupsService(
+            dbFactory,
             new CardLookupsRepo(),
             new CardLookupBuilder(),
             getRetailer);
 
         var cardListService = new CardListService(
+            dbFactory,
             new CardListRepository(),
             new FilterDefaultsLogic(),
             cardLookupsService,
             new CardCoreAggregator());
 
-        var editService = new EditCollectionService(new EditCollectionLogic(new EditCollectionRepository()));
+        var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(new EditCollectionRepository()));
         var importService = new ImportService(new ImportRepo(), settings);
         var filteringService = new FilteringService();
         var scheduler = new ImmediateScheduler();
@@ -79,7 +81,7 @@ public static class TestAppBuilder
             prepService,
             statusVM,
             cardListService,
-            settings,
+            settings,          // also passed directly
             scheduler);
 
         if (eventSink is not null)
@@ -87,6 +89,7 @@ public static class TestAppBuilder
             mainVM.AddCardsVM.CardChanged += (_, e) => eventSink.Add(e);
             mainVM.EditCardsVM.CardChanged += (_, e) => eventSink.Add(e);
         }
+
         mainVM.FilterVM.NotifyFilterChanged();
         mainVM.SideMenuVisibility = Visibility.Visible;
         mainVM.ContentSectionVisibility = Visibility.Visible;
@@ -99,6 +102,7 @@ public static class TestAppBuilder
 
         return (mainVM, statusVM);
     }
+
     private static ProgressSinks CreateProgressSinks(StatusViewModel vm) => new()
     {
         Headline = new Progress<string>(s => vm.StatusLabel1 = s),

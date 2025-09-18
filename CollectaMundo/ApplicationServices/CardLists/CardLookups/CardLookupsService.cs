@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardLists.CardLookups.Providers;
+using CollectaMundo.Data;
 using CollectaMundo.Data.CardLists;
 using CollectaMundo.DomainLogic.CardLists.CardLookups;
 using CollectaMundo.DomainLogic.CardLists.Models;
@@ -7,8 +8,9 @@ using System.Data.SQLite;
 namespace CollectaMundo.ApplicationServices.CardLists.CardLookups
 {
 
-    public sealed class CardLookupsService(CardLookupsRepo repo, CardLookupBuilder builder, Func<string> getRetailer) : ICardLookupsService
+    public sealed class CardLookupsService(IDbConnectionFactory dbFactory, CardLookupsRepo repo, CardLookupBuilder builder, Func<string> getRetailer) : ICardLookupsService
     {
+        private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly CardLookupsRepo _cardLookupsRepo = repo;
         private readonly CardLookupBuilder _builder = builder;
         private readonly Func<string> _getRetailer = getRetailer;
@@ -42,7 +44,7 @@ namespace CollectaMundo.ApplicationServices.CardLists.CardLookups
         public async Task ResetPricesMetaProviderAsync(string retailerKey)
         {
             // Load the new map for the requested retailer
-            await using var uow = new UnitOfWork();
+            await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginReadOnlyAsync();
             var dict = await _cardLookupsRepo.ReadPricesAsync(uow.CurrentConnection, retailerKey);
             await uow.CommitAsync();

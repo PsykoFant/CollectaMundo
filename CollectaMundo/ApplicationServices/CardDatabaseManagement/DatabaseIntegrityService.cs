@@ -1,12 +1,14 @@
-﻿using CollectaMundo.Data.CardDatabaseManagement;
+﻿using CollectaMundo.Data;
+using CollectaMundo.Data.CardDatabaseManagement;
 using System.Diagnostics;
 using System.IO;
 
 namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 {
-    public class DatabaseIntegrityService(IAppSettings settings) : IDatabaseIntegrityService
+    public class DatabaseIntegrityService(IDbConnectionFactory dbFactory, IAppSettings settings) : IDatabaseIntegrityService
     {
-        private readonly IAppSettings _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        private readonly IDbConnectionFactory _dbFactory = dbFactory;
+        private readonly IAppSettings _settings = settings;
         private readonly IDatabaseIntegrityRepo _healthRepo = new DatabaseIntegrityRepo();
 
         public async Task<DatabaseStatus> GetDatabaseStatusAsync()
@@ -21,7 +23,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             try
             {
-                await using var uow = new UnitOfWork();
+                await using var uow = new UnitOfWork(_dbFactory);
                 await uow.BeginReadOnlyAsync();
 
                 bool isValid = await _healthRepo.HasExpectedTablesAndViewsAsync(uow.CurrentConnection) && await _healthRepo.QuickCheckAsync(uow.CurrentConnection);
