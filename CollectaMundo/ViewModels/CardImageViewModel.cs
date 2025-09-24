@@ -1,15 +1,16 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
+﻿using CollectaMundo.ApplicationServices.CardImages;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace CollectaMundo.ViewModels
 {
-    public class CardImageViewModel : INotifyPropertyChanged
+    public class CardImageViewModel(ICardImageService cardImageService) : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
+        private readonly ICardImageService _cardImageService = cardImageService;
         private CardSet? _selectedCard;
         public CardSet? SelectedCard
         {
@@ -25,7 +26,7 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        private static void OnCardSelected(CardSet? selectedCard)
+        private void OnCardSelected(CardSet? selectedCard)
         {
             if (selectedCard is null)
             {
@@ -36,6 +37,7 @@ namespace CollectaMundo.ViewModels
             if (!string.IsNullOrEmpty(selectedCard.Uuid))
             {
                 Debug.WriteLine($"Selected card UUID: {selectedCard.Uuid}");
+                _cardImageService.GetImageForCardAsync(selectedCard.Uuid, null);
                 // Future: await ShowImage(selectedCard.Uuid);
             }
             else if (!string.IsNullOrEmpty(selectedCard.Name))
@@ -44,9 +46,6 @@ namespace CollectaMundo.ViewModels
                 // Future: await ShowImage(null, selectedCard.Name);
             }
         }
-
-
-
 
         private string? _imageSourceUrl = string.Empty;
         public string? ImageSourceUrl

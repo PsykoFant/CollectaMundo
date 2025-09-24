@@ -1,5 +1,6 @@
 ﻿#region usings & namespace
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
@@ -37,6 +38,7 @@ namespace CollectaMundo.ViewModels
         // Services
         private readonly IFilteringService _filteringService;
         private readonly ICardListService _cardListService;
+        private readonly ICardImageService _cardImageService;
 
         // Filtering infrastructure
         private readonly IFacetUpdateScheduler _facetScheduler;
@@ -214,6 +216,7 @@ namespace CollectaMundo.ViewModels
         private MainWindowViewModel(
             IFilteringService filteringService,
             IEditCollectionService editService,
+            ICardImageService cardImageService,
             IImportService importExportService,
             ICardDatabaseManagementService cardDbManagementService,
             StatusViewModel statusVM,
@@ -228,6 +231,7 @@ namespace CollectaMundo.ViewModels
 
             _filteringService = filteringService;
             _cardListService = cardListService;
+            _cardImageService = cardImageService;
 
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
             _facetUpdater = facetUpdater ?? new FacetUpdater();
@@ -249,7 +253,7 @@ namespace CollectaMundo.ViewModels
             FilterVM = new FilterViewModel(_filteringService);
 
             // card image viewmodel
-            CardImageVM = new CardImageViewModel();
+            CardImageVM = new CardImageViewModel(_cardImageService);
 
             // update viewmodel
             UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, this, () => MyCollectionVM.Cards.Count);
@@ -265,6 +269,7 @@ namespace CollectaMundo.ViewModels
         public static async Task<MainWindowViewModel> CreateAsync(
             IFilteringService filteringService,
             IEditCollectionService editService,
+            ICardImageService cardImageService,
             IImportService importExportService,
             ICardDatabaseManagementService prepService,
             StatusViewModel statusVM,
@@ -274,7 +279,7 @@ namespace CollectaMundo.ViewModels
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(filteringService, editService, importExportService, prepService, statusVM, cardListService, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(filteringService, editService, cardImageService, importExportService, prepService, statusVM, cardListService, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };
