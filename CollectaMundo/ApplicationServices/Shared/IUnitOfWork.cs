@@ -1,6 +1,6 @@
 ﻿using System.Data.SQLite;
 
-namespace CollectaMundo.ApplicationServices
+namespace CollectaMundo.ApplicationServices.Shared
 {
     public interface IUnitOfWork : IAsyncDisposable
     {

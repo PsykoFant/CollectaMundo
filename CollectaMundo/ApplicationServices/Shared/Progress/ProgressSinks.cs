@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.ApplicationServices.Utilities.Progress;
+﻿namespace CollectaMundo.ApplicationServices.Shared.Progress;
 public sealed record ProgressSinks
 {
     public required IProgress<string> Headline { get; init; }

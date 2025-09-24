@@ -7,6 +7,7 @@
     xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:core="clr-namespace:Microsoft.Xaml.Behaviors.Core;assembly=Microsoft.Xaml.Behaviors"
     xmlns:viewmodels="clr-namespace:CollectaMundo.ViewModels"
+    xmlns:presentation="clr-namespace:CollectaMundo.Presentation"
     xmlns:converters="clr-namespace:CollectaMundo.Presentation.Converters"
     xmlns:behaviors="clr-namespace:CollectaMundo.Presentation.Behaviors"
     xmlns:validation="clr-namespace:CollectaMundo.Presentation.Validation"
@@ -34,7 +35,7 @@
             </Grid.RowDefinitions>
             <Grid x:Name="GridTopMenu" Grid.Row="0" Grid.ColumnSpan="3" VerticalAlignment="Top" HorizontalAlignment="Center" Height="40" IsEnabled="{Binding IsTopMenuEnabled}">
                 <Button Command="{Binding ShowSearchAndFilterCommand}"
-                        Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static viewmodels:Page.SearchAndFilter}}"
+                        Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static presentation:Page.SearchAndFilter}}"
                         Content="All Cards" 
                          HorizontalAlignment="Center" Margin="0,5,510,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}">
                     <Button.Effect>
@@ -42,7 +43,7 @@
                     </Button.Effect>
                 </Button>
                 <Button Command="{Binding ShowMyCollectionCommand}"
-                        Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}"
+                        Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}"
                         Content="My Collection" 
                          HorizontalAlignment="Center" Margin="0,5,170,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}">
                     <Button.Effect>
@@ -50,7 +51,7 @@
                     </Button.Effect>
                 </Button>
                 <Button Command="{Binding ShowDecksCommand}"
-                        Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static viewmodels:Page.Decks}}"
+                        Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static presentation:Page.Decks}}"
                         Content="Decks" 
                          HorizontalAlignment="Center" Margin="170,5,0,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}">
                     <Button.Effect>
@@ -58,7 +59,7 @@
                     </Button.Effect>
                 </Button>
                 <Button Command="{Binding ShowUtilitiesCommand}"
-                        Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static viewmodels:Page.Utilities}}"
+                        Background="{Binding CurrentPage,Converter={StaticResource PageToBrushConverter},ConverterParameter={x:Static presentation:Page.Utilities}}"
                         Content="Utilities" 
                          HorizontalAlignment="Center" Margin="510,5,0,0" VerticalAlignment="Top" Width="160" Height="30" Style="{StaticResource TopMenuButtonStyle}">
                     <Button.Effect>
@@ -642,7 +643,7 @@
                               HorizontalAlignment="Left" VerticalAlignment="Top" 
                               Margin="10,515,0,0" 
                               Width="180" Height="20"
-                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">
+                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}">
                         <ComboBox.Template>
                             <ControlTemplate TargetType="{x:Type ComboBox}">
                                 <Grid>
@@ -714,7 +715,7 @@
                               HorizontalAlignment="Right"
                               ItemsSource="{Binding AvailableOperators}"
                               SelectedItem="{Binding OperatorSelection, Mode=TwoWay}"
-                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">
+                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}">
                     </ComboBox>
 
                     <!--SelectedCondition-->
@@ -723,7 +724,7 @@
                               HorizontalAlignment="Left" VerticalAlignment="Top" 
                               Margin="10,545,0,0" 
                               Width="180" Height="20"
-                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">
+                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}">
                         <ComboBox.Template>
                             <ControlTemplate TargetType="{x:Type ComboBox}">
                                 <Grid>
@@ -795,7 +796,7 @@
                               HorizontalAlignment="Right"
                               ItemsSource="{Binding AvailableOperators}"
                               SelectedItem="{Binding OperatorSelection, Mode=TwoWay}"
-                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">
+                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}">
                     </ComboBox>
 
                     <!--SelectedFinish-->
@@ -804,7 +805,7 @@
                               HorizontalAlignment="Left" VerticalAlignment="Top" 
                               Margin="10,485,0,0" 
                               Width="180" Height="20"
-                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">
+                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}">
                         <ComboBox.Template>
                             <ControlTemplate TargetType="{x:Type ComboBox}">
                                 <Grid>
@@ -876,17 +877,17 @@
                               HorizontalAlignment="Right"
                               ItemsSource="{Binding AvailableOperators}"
                               SelectedItem="{Binding OperatorSelection, Mode=TwoWay}"
-                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">
+                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}">
                     </ComboBox>
 
                     <CheckBox  Content="Filter on cards for trade"
                                IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsTradeChecked, Mode=TwoWay}"
                                HorizontalAlignment="Left" Margin="10,570,0,0" VerticalAlignment="Top"
-                               Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}" />
+                               Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}" />
                     <CheckBox Content="Filter on cards NOT for trade"
                               IsChecked="{Binding FilterVM.Filters[CardsForTrade].IsNotTradeChecked, Mode=TwoWay}"
                               HorizontalAlignment="Left" Margin="10,590,0,0" VerticalAlignment="Top"
-                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}"/>
+                              Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}"/>
 
                 </Grid>
                 <Grid x:Name="GridUtilsMenu" Visibility="{Binding SideMenuUtilsVisibility}">
@@ -934,7 +935,7 @@
                 <!-- Search and Filter -->
                 <Grid Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window}, 
                     Converter={StaticResource PageToVisibilityConverter},
-                    ConverterParameter={x:Static viewmodels:Page.SearchAndFilter}}" d:IsHidden="True">
+                    ConverterParameter={x:Static presentation:Page.SearchAndFilter}}" d:IsHidden="True">
                     <Label Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                     <Label Visibility="{Binding AddCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}"
                        HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" >
@@ -1312,7 +1313,7 @@
                     </DataGrid>
                 </Grid>
                 <!-- My Collection -->
-                <Grid Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static viewmodels:Page.MyCollection}}">
+                <Grid Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}">
                     <Label Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                     <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" Visibility="{Binding EditCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}">
                         <Label.Content>
@@ -1652,7 +1653,7 @@
                 <Grid x:Name="GridDecks" d:IsHidden="True"
                       Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},
                    Converter={StaticResource PageToVisibilityConverter},
-                   ConverterParameter={x:Static viewmodels:Page.Decks}}">
+                   ConverterParameter={x:Static presentation:Page.Decks}}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="40"/>
                         <RowDefinition Height="*"/>
@@ -1872,7 +1873,7 @@
                 <Grid x:Name="GridUtilitiesSection" d:IsHidden="True"
                       Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},
                     Converter={StaticResource PageToVisibilityConverter},
-                    ConverterParameter={x:Static viewmodels:Page.Utilities}}">
+                    ConverterParameter={x:Static presentation:Page.Utilities}}">
                     <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
                     <Label x:Name="UtilsInfoLabel" Content="" HorizontalAlignment="Center" Margin="8,150,0,0" VerticalAlignment="Top" FontSize="16"/>
                     <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Resources/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698"/>

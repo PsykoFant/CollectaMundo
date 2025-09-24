@@ -8,12 +8,12 @@ namespace CollectaMundo
     public static class ConfigurationManager
     {
         private static readonly string appSettingsFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
-        public static AppSettings CurrentSettings { get; private set; }
+        public static AppSettingsOld CurrentSettings { get; private set; }
         static ConfigurationManager()
         {
             // Initialize the CurrentSettings by loading the configuration file or creating a new one
             LoadOrCreateAppSettings();
-            CurrentSettings ??= new AppSettings(); // Ensure it is not null
+            CurrentSettings ??= new AppSettingsOld(); // Ensure it is not null
         }
         public static void LoadOrCreateAppSettings()
         {
@@ -24,7 +24,7 @@ namespace CollectaMundo
 
             // Load the configuration file into strongly typed AppSettingsDto
             var json = File.ReadAllText(appSettingsFile);
-            CurrentSettings = JsonConvert.DeserializeObject<AppSettings>(json) ?? new AppSettings();
+            CurrentSettings = JsonConvert.DeserializeObject<AppSettingsOld>(json) ?? new AppSettingsOld();
 
             // Rebuild the connection string with the loaded SQLitePath
             CurrentSettings.ConnectionStrings.SQLiteConnection =
@@ -42,7 +42,7 @@ namespace CollectaMundo
                 Directory.CreateDirectory(sqlitePath);
 
                 // Create default settings
-                var defaultSettings = new AppSettings
+                var defaultSettings = new AppSettingsOld
                 {
                     DatabaseSettings = new DatabaseSettings { SQLitePath = $"{sqlitePath}\\" },
                     ConnectionStrings = new ConnectionStrings
@@ -63,7 +63,7 @@ namespace CollectaMundo
         }
 
     }
-    public class AppSettings
+    public class AppSettingsOld
     {
         public DatabaseSettings DatabaseSettings { get; set; } = new DatabaseSettings();
         public ConnectionStrings ConnectionStrings { get; set; } = new ConnectionStrings();

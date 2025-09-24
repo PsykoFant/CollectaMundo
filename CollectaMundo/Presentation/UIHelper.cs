@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Threading;
 
-namespace CollectaMundo.ApplicationServices.Utilities
+namespace CollectaMundo.Presentation
 {
     public static class UIHelper
     {

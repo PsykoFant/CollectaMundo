@@ -1,11 +1,11 @@
 ﻿#region usings & namespace
-using CollectaMundo.ApplicationServices;
 using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Import;
+using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Presentation;

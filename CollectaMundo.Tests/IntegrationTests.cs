@@ -1,6 +1,6 @@
-﻿using CollectaMundo.ApplicationServices;
-using CollectaMundo.ApplicationServices.Filtering;
+﻿using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
+using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Data;
 using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;

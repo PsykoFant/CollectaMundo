@@ -6,7 +6,7 @@ using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
-using CollectaMundo.ApplicationServices.Utilities.Progress;
+using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.Data;
 using CollectaMundo.Data.CardDatabaseManagement;
 using CollectaMundo.Data.CardLists;
@@ -34,7 +34,7 @@ public static class TestAppBuilder
         await fixture.InitializeAsync(); // ensure schema/seed
 
         var statusVM = new StatusViewModel();
-        var settings = new ApplicationServices.AppSettings();
+        var settings = new ApplicationServices.Shared.AppSettings();
 
         string getRetailer() => settings.PriceInfo.Retailer;
 

@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.ViewModels
+﻿namespace CollectaMundo.Presentation
 {
     public enum Page
     {

@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices;
+﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardPrices;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;

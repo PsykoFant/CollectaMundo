@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.Utilities.Progress;
+﻿using CollectaMundo.ApplicationServices.Shared.Progress;
 using System.Collections.Concurrent;
 
 namespace CollectaMundo.ApplicationServices.Utilities

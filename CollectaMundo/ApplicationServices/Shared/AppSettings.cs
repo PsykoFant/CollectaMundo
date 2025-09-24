@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 
-namespace CollectaMundo.ApplicationServices
+namespace CollectaMundo.ApplicationServices.Shared
 {
     public class AppSettings : IAppSettings
     {

@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.ApplicationServices
+﻿namespace CollectaMundo.ApplicationServices.Shared
 {
     public interface IAppSettings
     {

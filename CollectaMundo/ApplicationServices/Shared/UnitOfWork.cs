@@ -2,7 +2,7 @@
 using System.Data.SQLite;
 using System.Diagnostics;
 
-namespace CollectaMundo.ApplicationServices
+namespace CollectaMundo.ApplicationServices.Shared
 {
     public class UnitOfWork(IDbConnectionFactory dbFactory) : IUnitOfWork
     {

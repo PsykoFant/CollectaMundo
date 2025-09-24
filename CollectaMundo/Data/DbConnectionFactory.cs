@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices;
+﻿using CollectaMundo.ApplicationServices.Shared;
 using System.Data.SQLite;
 
 namespace CollectaMundo.Data

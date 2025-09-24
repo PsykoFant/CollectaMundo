@@ -1,8 +1,8 @@
-﻿using CollectaMundo.ApplicationServices;
-using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
-using CollectaMundo.ApplicationServices.Utilities.Progress;
+using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.Data.CardDatabaseManagement;
 using CollectaMundo.Data.RemoteLookups;
 using Moq;
@@ -66,7 +66,7 @@ namespace CollectaMundo.Tests.TestUtils
             _tmpRoot = Path.Combine(Path.GetTempPath(), "cm-tests", dbName);
             Directory.CreateDirectory(_tmpRoot);
 
-            Settings.Setup(s => s.DatabaseSettings).Returns(new CollectaMundo.ApplicationServices.DatabaseSettings
+            Settings.Setup(s => s.DatabaseSettings).Returns(new CollectaMundo.ApplicationServices.Shared.DatabaseSettings
             {
                 SQLitePath = _tmpRoot
             });

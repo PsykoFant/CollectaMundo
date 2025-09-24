@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardLists.CardLookups;
+using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Data;
 using CollectaMundo.Data.CardLists;
 using CollectaMundo.DomainLogic.CardLists;

@@ -7,6 +7,4 @@
         Multi,   // A multi-selection filter (e.g., Keywords, Colors, Types)
         Numeric  // A numeric-based filter (e.g., ManaValue, CardsForTrade)
     }
-
-
 }
