@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
-using CollectaMundo.ApplicationServices.Utilities;
+using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Utilities;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;

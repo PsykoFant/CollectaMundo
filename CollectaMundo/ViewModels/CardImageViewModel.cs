@@ -1,8 +1,7 @@
-﻿using CollectaMundo.Utilities;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels
 {
@@ -10,6 +9,43 @@ namespace CollectaMundo.ViewModels
     {
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+        private CardSet? _selectedCard;
+        public CardSet? SelectedCard
+        {
+            get => _selectedCard;
+            set
+            {
+                if (_selectedCard != value)
+                {
+                    _selectedCard = value;
+                    OnPropertyChanged();
+                    OnCardSelected(_selectedCard); // Notify image view model
+                }
+            }
+        }
+
+        private static void OnCardSelected(CardSet? selectedCard)
+        {
+            if (selectedCard is null)
+            {
+                Debug.WriteLine("No card selected.");
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(selectedCard.Uuid))
+            {
+                Debug.WriteLine($"Selected card UUID: {selectedCard.Uuid}");
+                // Future: await ShowImage(selectedCard.Uuid);
+            }
+            else if (!string.IsNullOrEmpty(selectedCard.Name))
+            {
+                Debug.WriteLine($"Selected card Name: {selectedCard.Name}");
+                // Future: await ShowImage(null, selectedCard.Name);
+            }
+        }
+
+
 
 
         private string? _imageSourceUrl = string.Empty;
@@ -39,22 +75,6 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-
-        // Commands
-        public ICommand ShowSelectedCardCommand { get; private set; } = null!;
-
-        // Visibility properties
-
-        // Constructor
-        public CardImageViewModel()
-
-        {
-            ShowSelectedCardCommand = new RelayCommand<object>(async _ => await ShowImage());
-        }
-        private async Task ShowImage()
-        {
-            Debug.WriteLine("ShowImage command executed (TBI).");
-        }
     }
 }
 

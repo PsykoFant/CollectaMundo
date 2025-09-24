@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
+using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.Tests.TestUtils;
 
 namespace CollectaMundo.Tests.UnitTests

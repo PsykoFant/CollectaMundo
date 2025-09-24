@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.Utilities;
+﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Tests.TestUtils;
 using Moq;
 using System.Windows;

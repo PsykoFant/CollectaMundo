@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.Filtering;
+﻿using CollectaMundo.DomainLogic.Filtering.Enums;
 using System.Globalization;
 using System.Windows.Data;
 

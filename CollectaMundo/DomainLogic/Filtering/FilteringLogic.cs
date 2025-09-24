@@ -1,4 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.Filtering.Enums;
+using CollectaMundo.DomainLogic.Filtering.Models;
 using System.Diagnostics;
 using System.Reflection;
 using System.Windows;

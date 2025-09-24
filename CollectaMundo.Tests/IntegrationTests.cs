@@ -5,7 +5,7 @@ using CollectaMundo.Data;
 using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
-using CollectaMundo.DomainLogic.Filtering;
+using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;

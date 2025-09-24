@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.CardLists.CardLookups.Providers;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
+using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.Filtering.Models;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;

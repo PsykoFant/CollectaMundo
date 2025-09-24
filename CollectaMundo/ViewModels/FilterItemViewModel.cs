@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.Filtering;
+﻿using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.Filtering.Models;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;

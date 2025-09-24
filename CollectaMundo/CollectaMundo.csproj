@@ -88,4 +88,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\CardImageRepo\" />
+  </ItemGroup>
+
 </Project>

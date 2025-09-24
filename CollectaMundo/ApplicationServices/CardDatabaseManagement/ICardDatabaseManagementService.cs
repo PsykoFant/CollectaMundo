@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.Utilities;
+﻿using CollectaMundo.ApplicationServices.Shared;
+
 namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 {
     public interface ICardDatabaseManagementService

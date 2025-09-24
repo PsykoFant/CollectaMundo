@@ -1,29 +1,7 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models; // for CardSet
+﻿using CollectaMundo.DomainLogic.Filtering.Enums;
 
-namespace CollectaMundo.DomainLogic.Filtering
+namespace CollectaMundo.DomainLogic.Filtering.Models
 {
-    /// <summary>
-    /// Defines the type of filtering applicable to a criteria.
-    /// </summary>
-    public enum FilterType
-    {
-        Single,  // A single-selection filter (e.g., Name, SetName)
-        Multi,   // A multi-selection filter (e.g., Keywords, Colors, Types)
-        Numeric  // A numeric-based filter (e.g., ManaValue, CardsForTrade)
-    }
-
-    /// <summary>
-    /// Describes configuration for a filter criteria.
-    /// </summary>
-    public sealed record CriteriaSpec(
-        string? ReadableLabel,
-        FilterType Type,
-        OperatorType[]? Operators,
-        bool ShouldNotSplit,
-        bool IsCollectionFacet = false,
-        Func<CardSet, string?>? SelectedExtractor = null
-    );
-
     public static class FilterCriteriaMappings
     {
         /// <summary>

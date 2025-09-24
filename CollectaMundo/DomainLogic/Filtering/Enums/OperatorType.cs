@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.DomainLogic.Filtering
+﻿namespace CollectaMundo.DomainLogic.Filtering.Enums
 {
     public enum OperatorType
     {

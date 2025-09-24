@@ -56,6 +56,7 @@ namespace CollectaMundo.ViewModels
         public EditCollectionViewModel AddCardsVM { get; }
         public EditCollectionViewModel EditCardsVM { get; }
         public FilterViewModel FilterVM { get; }
+        public CardImageViewModel CardImageVM { get; }
         public UpdateViewModel UpdateVM { get; }
         public PricesViewModel PricesVM { get; }
         #endregion
@@ -246,6 +247,9 @@ namespace CollectaMundo.ViewModels
 
             // filtering viewmodel
             FilterVM = new FilterViewModel(_filteringService);
+
+            // card image viewmodel
+            CardImageVM = new CardImageViewModel();
 
             // update viewmodel
             UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, this, () => MyCollectionVM.Cards.Count);
