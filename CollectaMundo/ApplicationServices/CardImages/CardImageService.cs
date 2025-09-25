@@ -17,7 +17,6 @@ namespace CollectaMundo.ApplicationServices.CardImages
         {
             Debug.WriteLine("Starting GetImageForCardAsync...");
             string? scryfallID = string.Empty;
-            string? frontImageUrl = string.Empty;
 
             // Get scryfall ID from UUID
             if (!string.IsNullOrWhiteSpace(uuid))
@@ -57,7 +56,7 @@ namespace CollectaMundo.ApplicationServices.CardImages
             Debug.WriteLine($"ScryfallId found: {scryfallID}");
             Debug.WriteLine("Checking if double-faced...");
 
-            frontImageUrl = _logic.BuildImageUrl(scryfallID, isFront: true);
+            string? frontImageUrl = _logic.BuildImageUrl(scryfallID, isFront: true);
 
             Debug.WriteLine("Returning result object");
             Debug.WriteLine($"Returning {frontImageUrl}");
