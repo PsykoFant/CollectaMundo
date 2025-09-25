@@ -1,10 +1,5 @@
 TO DO 
 - MVVM refactor
-- Update priser scenarie
-    Priser senest opdateret....
-
-
-
   - Card image brug MVVM (unit test)
 	- Commit // Memory bug
 	- Fix meld creatures show bug

@@ -34,10 +34,13 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
+            string frontImageUrl = string.Empty;
+
             if (!string.IsNullOrEmpty(selectedCard.Uuid))
             {
                 Debug.WriteLine($"Selected card UUID: {selectedCard.Uuid}");
-                _cardImageService.GetImageForCardAsync(selectedCard.Uuid, null);
+                var imageResult = _cardImageService.GetImageForCardAsync(selectedCard.Uuid, null);
+                frontImageUrl = imageResult.Result?.FrontImageUrl ?? string.Empty;
                 // Future: await ShowImage(selectedCard.Uuid);
             }
             else if (!string.IsNullOrEmpty(selectedCard.Name))
@@ -45,6 +48,10 @@ namespace CollectaMundo.ViewModels
                 Debug.WriteLine($"Selected card Name: {selectedCard.Name}");
                 // Future: await ShowImage(null, selectedCard.Name);
             }
+
+            ImageSourceUrl = frontImageUrl;
+            OnPropertyChanged();
+
         }
 
         private string? _imageSourceUrl = string.Empty;
@@ -56,10 +63,11 @@ namespace CollectaMundo.ViewModels
                 if (_imageSourceUrl != value)
                 {
                     _imageSourceUrl = value;
-                    OnPropertyChanged(nameof(ImageSourceUrl));
+                    OnPropertyChanged();
                 }
             }
         }
+
         private string? _imageSourceUrl2nd = string.Empty;
         public string? ImageSourceUrl2nd
         {

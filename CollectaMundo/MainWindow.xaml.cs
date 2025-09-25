@@ -159,28 +159,28 @@ namespace CollectaMundo
 
         #region Show selected card image
         // ShowStatusOverlay the card image for the highlighted DataGrid row
-        private async void CardImageSelectionChangedHandler(object sender, SelectionChangedEventArgs e)
-        {
+        //private async void CardImageSelectionChangedHandler(object sender, SelectionChangedEventArgs e)
+        //{
 
-            // ShowStatusOverlay image from a highlighted row in a datagrid
-            if (sender is DataGrid dataGrid && dataGrid.SelectedItem is CardSet selectedCard)
-            {
-                if (selectedCard.Uuid != null)
-                {
-                    await ShowCardImage.ShowImage(selectedCard.Uuid);
-                }
-                else if (selectedCard.Name != null)
-                {
-                    await ShowCardImage.ShowImage(null, selectedCard.Name);
-                }
-            }
+        //    // ShowStatusOverlay image from a highlighted row in a datagrid
+        //    if (sender is DataGrid dataGrid && dataGrid.SelectedItem is CardSet selectedCard)
+        //    {
+        //        if (selectedCard.Uuid != null)
+        //        {
+        //            await ShowCardImage.ShowImage(selectedCard.Uuid);
+        //        }
+        //        else if (selectedCard.Name != null)
+        //        {
+        //            await ShowCardImage.ShowImage(null, selectedCard.Name);
+        //        }
+        //    }
 
-            // ShowStatusOverlay image from import wizards (choose between versions)
-            else if (sender is ComboBox comboBox && comboBox.SelectedItem is UuidVersion selectedVersion && !string.IsNullOrEmpty(selectedVersion.Uuid))
-            {
-                await ShowCardImage.ShowImage(selectedVersion.Uuid);
-            }
-        }
+        //    // ShowStatusOverlay image from import wizards (choose between versions)
+        //    else if (sender is ComboBox comboBox && comboBox.SelectedItem is UuidVersion selectedVersion && !string.IsNullOrEmpty(selectedVersion.Uuid))
+        //    {
+        //        await ShowCardImage.ShowImage(selectedVersion.Uuid);
+        //    }
+        //}
 
         #endregion
 

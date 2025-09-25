@@ -30,5 +30,4 @@ namespace CollectaMundo.Presentation.Converters
             throw new NotSupportedException();
         }
     }
-
 }
