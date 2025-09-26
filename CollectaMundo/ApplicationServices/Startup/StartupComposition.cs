@@ -96,7 +96,8 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardLookupsBuilder = new CardLookupBuilder();
                 var cardLookupsService = new CardLookupsService(dbFactory, cardLookupsRepo, cardLookupsBuilder, getRetailer);
 
-                var cardImageService = new CardImageService(dbFactory, new CardImageRepo(), new CardImageLogic());
+                var cardImageLogic = new CardImageLogic(RemoteLookups);
+                var cardImageService = new CardImageService(dbFactory, new CardImageRepo(), cardImageLogic);
 
                 var cardListRepo = new CardListRepository();
                 var filterDefaultsLogic = new FilterDefaultsLogic();

@@ -4,7 +4,6 @@
              xmlns:converters="clr-namespace:CollectaMundo.Presentation.Converters"
              xmlns:local="clr-namespace:CollectaMundo">
     <Application.Resources>
-        <converters:StringToImageSourceConverter x:Key="StringToImageSourceConverter"/>
         <converters:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
         <converters:ColorlessFontConverter x:Key="ColorlessFontConverter"/>
         <converters:CountToSummaryConverter x:Key="CountToSummaryConverter"/>

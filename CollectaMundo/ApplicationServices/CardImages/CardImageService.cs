@@ -5,12 +5,10 @@ using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using System.Diagnostics;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace CollectaMundo.ApplicationServices.CardImages
 {
-    public sealed class CardImageService(IDbConnectionFactory dbFactory, ICardImageRepo repo, CardImageLogic logic) : ICardImageService
+    public sealed class CardImageService(IDbConnectionFactory dbFactory, ICardImageRepo repo, ICardImageLogic logic) : ICardImageService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly ICardImageRepo _repo = repo;
@@ -56,37 +54,18 @@ namespace CollectaMundo.ApplicationServices.CardImages
                 // Placeholder: resolve name to uuid (future)
             }
 
-            Debug.WriteLine($"ScryfallId found: {scryfallID}");
-
-            string? frontImageUrl = _logic.BuildImageUrl(scryfallID, isFront: true);
-            Debug.WriteLine("Checking if double-faced...");
-
-
-
-            Debug.WriteLine("Returning result object");
-            Debug.WriteLine($"Returning {frontImageUrl}");
-
-            return new CardImageDto
+            if (string.IsNullOrWhiteSpace(scryfallID))
             {
-                FrontImageUrl = frontImageUrl,
-                FrontImageSource = ConvertToImageSource(frontImageUrl),
-                BackImageUrl = "<back-url>"
-            };
-        }
-
-        private static ImageSource? ConvertToImageSource(string url)
-        {
-            try
-            {
-                var uri = new Uri(url, UriKind.Absolute);
-                return new BitmapImage(uri);
-            }
-            catch
-            {
+                Debug.WriteLine("No Scryfall ID found, returning null.");
                 return null;
             }
-        }
 
+            Debug.WriteLine($"ScryfallId found: {scryfallID}");
+
+            CardImageDto cardImageDto = await _logic.BuildImageUrlsAsync(scryfallID, card);
+
+            return cardImageDto;
+        }
     }
 
 }

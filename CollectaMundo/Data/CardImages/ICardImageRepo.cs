@@ -5,6 +5,5 @@ namespace CollectaMundo.Data.CardImages
     public interface ICardImageRepo
     {
         Task<string?> GetScryfallIdByUuidAsync(string uuid, SQLiteConnection conn);
-        Task<bool> IsMultiPartCardAsync(string uuid, SQLiteConnection conn);
     }
 }

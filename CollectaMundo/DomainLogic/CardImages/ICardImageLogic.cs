@@ -1,7 +1,10 @@
-﻿namespace CollectaMundo.DomainLogic.CardImages
+﻿using CollectaMundo.DomainLogic.CardImages.Models;
+using CollectaMundo.DomainLogic.CardLists.Models;
+
+namespace CollectaMundo.DomainLogic.CardImages
 {
     public interface ICardImageLogic
     {
-        string BuildImageUrl(string scryfallId, bool isFront);
+        Task<CardImageDto> BuildImageUrlsAsync(string scryfallId, CardSet card);
     }
 }

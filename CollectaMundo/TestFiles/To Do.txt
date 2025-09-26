@@ -1,9 +1,9 @@
 TO DO 
 - MVVM refactor
-  - Card image brug MVVM (unit test)
-	- Commit // Memory bug
-	- Fix meld creatures show bug
-	- One thing you can eliminate right away is your StringToImageSourceConverter
+  - Meld appraoch
+  - Flyt download metode til det rigtige lag
+  - Download images cache
+  - tests
 
  - Import brug MVVM (unit test)
  - Deck manager brug MVVM (unit test)

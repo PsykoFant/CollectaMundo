@@ -25,7 +25,6 @@ namespace CollectaMundo.Data.RemoteLookups
                 return false;
             }
         }
-
         public async Task<JArray?> FetchSetMetadataAsync()
         {
             using var client = new HttpClient();
@@ -63,6 +62,19 @@ namespace CollectaMundo.Data.RemoteLookups
 
             Debug.WriteLine($"Number of sets fetched: {count}");
             return count;
+        }
+        public async Task<bool> IsValidUrlAsync(string url)
+        {
+            try
+            {
+                using var client = new HttpClient();
+                var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
+                return response.IsSuccessStatusCode;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
 

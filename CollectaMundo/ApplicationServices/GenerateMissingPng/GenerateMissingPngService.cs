@@ -9,18 +9,18 @@ using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.GenerateMissingPng
 {
-    public class GenerateMissingPngService(IGenerateMissingPngRepository repository, IRemoteLookups scryfallLookups, IGenerateMissingPngLogic logic) : IGenerateMissingPngService
+    public class GenerateMissingPngService(IGenerateMissingPngRepository repository, IRemoteLookups remoteLookups, IGenerateMissingPngLogic missingPngLogic) : IGenerateMissingPngService
     {
         private readonly IGenerateMissingPngRepository _repository = repository;
-        private readonly IRemoteLookups _scryfallLookups = scryfallLookups;
-        private readonly IGenerateMissingPngLogic _logic = logic;
+        private readonly IRemoteLookups _remoteLookups = remoteLookups;
+        private readonly IGenerateMissingPngLogic _missingPngLogic = missingPngLogic;
         public async Task GenerateMissingManaSymbolImagesAsync(SQLiteConnection conn, IProgress<int>? percentProgress = null)
         {
             // Step 1: Get unique mana cost strings from 'cards' table
             List<string> uniqueManaCosts = await _repository.GetUniqueValuesAsync(conn, "cards", "manaCost");
 
-            // Step 2: Use logic layer to extract unique symbols from mana cost strings
-            List<string> extractedSymbols = [.. _logic.ExtractSymbolsFromManaCosts(uniqueManaCosts)];
+            // Step 2: Use missingPngLogic layer to extract unique symbols from mana cost strings
+            List<string> extractedSymbols = [.. _missingPngLogic.ExtractSymbolsFromManaCosts(uniqueManaCosts)];
 
             // Step 3: Insert any new symbols into the uniqueManaSymbols table
             foreach (string symbol in extractedSymbols)
@@ -40,10 +40,10 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
                     try
                     {
                         string svgUrl = $"https://svgs.scryfall.io/card-symbols/{symbol.Replace("/", "")}.svg";
-                        string? svgContent = await _scryfallLookups.FetchSvgContentAsync(svgUrl);
+                        string? svgContent = await _remoteLookups.FetchSvgContentAsync(svgUrl);
                         byte[] pngData = string.IsNullOrWhiteSpace(svgContent)
                             ? []
-                            : await _logic.ConvertSvgToPngAsync(svgContent);
+                            : await _missingPngLogic.ConvertSvgToPngAsync(svgContent);
                         return (symbol, pngData);
                     }
                     catch (Exception ex)
@@ -124,7 +124,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
 
             foreach (var manaCost in missingCosts)
             {
-                byte[] pngData = await _logic.ProcessManaCostInputAsync(manaCost, symbolImageMap);
+                byte[] pngData = await _missingPngLogic.ProcessManaCostInputAsync(manaCost, symbolImageMap);
 
                 if (pngData.Length > 0)
                 {
@@ -154,7 +154,7 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
             var missingSetCodes = await _repository.GetValuesWithNullAsync(conn, "keyruneImages", "setCode", "keyruneImage");
 
             // Fetch metadata once
-            JArray? metadata = await _scryfallLookups.FetchSetMetadataAsync();
+            JArray? metadata = await _remoteLookups.FetchSetMetadataAsync();
             if (metadata == null)
             {
                 Debug.WriteLine("Failed to fetch keyrune metadata. Aborting.");
@@ -171,19 +171,18 @@ namespace CollectaMundo.ApplicationServices.GenerateMissingPng
             await Task.WhenAll(missingSetCodes.Select(setCode =>
                 coordinator.DoAsync(async () =>
                 {
-                    string svgUrl = _scryfallLookups.TryGetIconUriForSetCode(metadata, setCode)
-                                    ?? "https://svgs.scryfall.io/sets/default.svg";
+                    string svgUrl = _remoteLookups.TryGetIconUriForSetCode(metadata, setCode) ?? "https://svgs.scryfall.io/sets/default.svg";
 
-                    bool isFallback = svgUrl.IndexOf("default.svg", StringComparison.OrdinalIgnoreCase) >= 0;
+                    bool isFallback = svgUrl.Contains("default.svg", StringComparison.OrdinalIgnoreCase);
                     if (isFallback)
                     {
                         Debug.WriteLine($"[PNGService] Using default.svg fallback for set {setCode}");
                     }
 
-                    string? svgContent = await _scryfallLookups.FetchSvgContentAsync(svgUrl);
+                    string? svgContent = await _remoteLookups.FetchSvgContentAsync(svgUrl);
                     byte[] png = string.IsNullOrWhiteSpace(svgContent)
-                        ? Array.Empty<byte>()
-                        : await _logic.ConvertSvgToPngAsync(svgContent);
+                        ? []
+                        : await _missingPngLogic.ConvertSvgToPngAsync(svgContent);
 
                     return (SetCode: setCode, PngData: png, IsFallback: isFallback);
                 })

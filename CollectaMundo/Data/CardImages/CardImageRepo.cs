@@ -17,18 +17,5 @@ namespace CollectaMundo.Data.CardImages
             }
             return null;
         }
-
-        public async Task<bool> IsMultiPartCardAsync(string uuid, SQLiteConnection conn)
-        {
-            string query = "SELECT side FROM cards WHERE uuid = @uuid UNION ALL SELECT side FROM tokens WHERE uuid = @uuid";
-            using var command = new SQLiteCommand(query, conn);
-            command.Parameters.AddWithValue("@uuid", uuid);
-            using var reader = await command.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
-            {
-                return reader["side"].ToString() == "a";
-            }
-            return false;
-        }
     }
 }

@@ -2214,12 +2214,12 @@
                 <Label x:Name="ImagePromoLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="250" Style="{StaticResource BelerenBold}"/>
                 <Label x:Name="ImageSetLabel" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="250" Margin="0,35,0,0" Style="{StaticResource BelerenBold}"/>
                 <Image x:Name="CardImage"
-                       Source="{Binding CardImageVM.ImageSource}"
+                       Source="{Binding CardImageVM.FrontImageSource}"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Top"
                        Margin="0,80,10,0"/>
                 <Image x:Name="CardImageSecondary"
-                       Source="{Binding ImageSourceUrl2nd, Converter={StaticResource StringToImageSourceConverter}, RelativeSource={RelativeSource AncestorType={x:Type Window}, Mode=FindAncestor}}"
+                       Source="{Binding CardImageVM.BackImageSource}"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Top" Margin="0,461,10,0"/>
             </Grid>
