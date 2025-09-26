@@ -75,7 +75,9 @@ namespace CollectaMundo.ViewModels
         private static async Task<BitmapImage?> DownloadImageAsync(string? url)
         {
             if (string.IsNullOrWhiteSpace(url))
+            {
                 return null;
+            }
 
             try
             {
@@ -89,7 +91,7 @@ namespace CollectaMundo.ViewModels
                 bitmap.CacheOption = BitmapCacheOption.OnLoad;
                 bitmap.StreamSource = stream;
                 bitmap.EndInit();
-                bitmap.Freeze(); // Now safe to freeze — all data is loaded
+                bitmap.Freeze();
 
                 return bitmap;
             }
