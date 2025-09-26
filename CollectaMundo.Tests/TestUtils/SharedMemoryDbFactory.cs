@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Infrastructure;
+﻿using CollectaMundo.Infrastructure.Common;
 using System.Data.SQLite;
 
 namespace CollectaMundo.Tests.TestUtils

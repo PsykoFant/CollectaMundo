@@ -12,7 +12,7 @@ namespace CollectaMundo.Tests.UnitTests
         [Fact]
         public async Task SaveBatchAsync_AddNewCard_WhenNotExisting()
         {
-            var repo = new Mock<IEditCollectionRepository>();
+            var repo = new Mock<IEditCollectionRepo>();
             var dummyConn = new SQLiteConnection();
 
             // When we ask “find existing?”, return “no”
@@ -55,7 +55,7 @@ namespace CollectaMundo.Tests.UnitTests
         [Fact]
         public async Task SaveBatchAsync_AddNewCard_AddToExisting()
         {
-            var repo = new Mock<IEditCollectionRepository>();
+            var repo = new Mock<IEditCollectionRepo>();
             var dummyConn = new SQLiteConnection();
 
             // When we ask “find existing?”, return card id 123
@@ -105,7 +105,7 @@ namespace CollectaMundo.Tests.UnitTests
         [Fact]
         public async Task SaveBatchAsync_EditCard_DeleteByZero()
         {
-            var repo = new Mock<IEditCollectionRepository>();
+            var repo = new Mock<IEditCollectionRepo>();
             var dummyConn = new SQLiteConnection();
 
             // Delete Card 
@@ -138,7 +138,7 @@ namespace CollectaMundo.Tests.UnitTests
         [Fact]
         public async Task SaveBatchAsync_EditCard_Update_no_merge()
         {
-            var repo = new Mock<IEditCollectionRepository>();
+            var repo = new Mock<IEditCollectionRepo>();
             var dummyConn = new SQLiteConnection();
 
             // Mock update
@@ -185,7 +185,7 @@ namespace CollectaMundo.Tests.UnitTests
         [Fact]
         public async Task SaveBatchAsync_EditCard_Update_merge()
         {
-            var repo = new Mock<IEditCollectionRepository>();
+            var repo = new Mock<IEditCollectionRepo>();
             var dummyConn = new SQLiteConnection();
 
             // Mock update

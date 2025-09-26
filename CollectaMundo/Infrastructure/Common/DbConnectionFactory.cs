@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using System.Data.SQLite;
 
-namespace CollectaMundo.Infrastructure
+namespace CollectaMundo.Infrastructure.Common
 {
     public class DbConnectionFactory(IAppSettings settings) : IDbConnectionFactory
     {

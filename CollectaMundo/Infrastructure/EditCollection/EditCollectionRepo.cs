@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace CollectaMundo.Infrastructure.EditCollection
 {
-    public class EditCollectionRepository() : IEditCollectionRepository
+    public class EditCollectionRepo() : IEditCollectionRepo
     {
 
         // Lookups

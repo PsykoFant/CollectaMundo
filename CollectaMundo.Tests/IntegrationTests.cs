@@ -4,7 +4,7 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering.Enums;
-using CollectaMundo.Infrastructure;
+using CollectaMundo.Infrastructure.Common;
 using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels;
@@ -978,7 +978,7 @@ namespace CollectaMundo.Tests
             await using (var uow = new UnitOfWork(_dbFactory))
             {
                 await uow.BeginReadOnlyAsync();
-                var repo = new EditCollectionRepository();
+                var repo = new EditCollectionRepo();
                 var (sumOwnedDb, _) = await repo.GetTotalsAsync(uuidMerge, cond, lang, finish, uow.CurrentConnection);
                 Assert.Equal(ownedVm, sumOwnedDb);
                 await uow.CommitAsync();

@@ -3,7 +3,7 @@ using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.EditCollection
 {
-    public interface IEditCollectionRepository
+    public interface IEditCollectionRepo
     {
         Task<List<string>> FetchLanguagesForCardAsync(string uuid, SQLiteConnection conn);
         Task<List<string>> FetchFinishesForCardAsync(string uuid, SQLiteConnection conn);

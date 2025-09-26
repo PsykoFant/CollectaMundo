@@ -9,6 +9,7 @@ using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
+using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Presentation;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
@@ -38,7 +39,6 @@ namespace CollectaMundo.ViewModels
         // Services
         private readonly IFilteringService _filteringService;
         private readonly ICardListService _cardListService;
-        private readonly ICardImageService _cardImageService;
 
         // Filtering infrastructure
         private readonly IFacetUpdateScheduler _facetScheduler;
@@ -231,7 +231,6 @@ namespace CollectaMundo.ViewModels
 
             _filteringService = filteringService;
             _cardListService = cardListService;
-            _cardImageService = cardImageService;
 
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
             _facetUpdater = facetUpdater ?? new FacetUpdater();
@@ -253,7 +252,7 @@ namespace CollectaMundo.ViewModels
             FilterVM = new FilterViewModel(_filteringService);
 
             // card image viewmodel
-            CardImageVM = new CardImageViewModel(_cardImageService);
+            CardImageVM = new CardImageViewModel(cardImageService, new CardImageDownloader());
 
             // update viewmodel
             UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, this, () => MyCollectionVM.Cards.Count);

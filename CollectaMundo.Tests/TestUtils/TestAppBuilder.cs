@@ -15,11 +15,11 @@ using CollectaMundo.DomainLogic.CardLists.CardLookups;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
-using CollectaMundo.Infrastructure;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.CardPrices;
+using CollectaMundo.Infrastructure.Common;
 using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
@@ -44,7 +44,7 @@ public static class TestAppBuilder
         var remoteLookups = new RemoteLookups();
 
         var missingPngSvc = new GenerateMissingPngService(
-            new GenerateMissingPngRepository(),
+            new GenerateMissingPngRepo(),
             remoteLookups,
             new GenerateMissingPngLogic());
 
@@ -67,12 +67,12 @@ public static class TestAppBuilder
 
         var cardListService = new CardListService(
             dbFactory,
-            new CardListRepository(),
+            new CardListRepo(),
             new FilterDefaultsLogic(),
             cardLookupsService,
             new CardCoreAggregator());
 
-        var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(new EditCollectionRepository()));
+        var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(new EditCollectionRepo()));
 
         var cardImageLogic = new CardImageLogic(remoteLookups);
         var cardImageService = new CardImageService(dbFactory, new CardImageRepo(), cardImageLogic);

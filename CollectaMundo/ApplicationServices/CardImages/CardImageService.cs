@@ -2,8 +2,8 @@
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.Infrastructure;
 using CollectaMundo.Infrastructure.CardImages;
+using CollectaMundo.Infrastructure.Common;
 using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.CardImages

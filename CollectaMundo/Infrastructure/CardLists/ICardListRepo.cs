@@ -3,7 +3,7 @@ using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.CardLists
 {
-    public interface ICardListRepository
+    public interface ICardListRepo
     {
         Task<IReadOnlyList<CardCoreDto>> ReadAllCardsCoreDtosAsync(SQLiteConnection conn);
         Task<List<MyCollectionRow>> ReadMyCollectionAsync(SQLiteConnection conn);

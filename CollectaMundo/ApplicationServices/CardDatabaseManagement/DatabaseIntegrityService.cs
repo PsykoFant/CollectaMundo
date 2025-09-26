@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.Infrastructure;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
+using CollectaMundo.Infrastructure.Common;
 using System.Diagnostics;
 using System.IO;
 

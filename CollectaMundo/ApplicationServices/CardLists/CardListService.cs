@@ -3,8 +3,8 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
-using CollectaMundo.Infrastructure;
 using CollectaMundo.Infrastructure.CardLists;
+using CollectaMundo.Infrastructure.Common;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -13,10 +13,10 @@ using System.Runtime.CompilerServices;
 namespace CollectaMundo.ApplicationServices.CardLists
 {
 
-    public sealed class CardListService(IDbConnectionFactory dbFactory, ICardListRepository cardListRepo, IFilterDefaultsLogic filterLogic, ICardLookupsService lookupService, ICardCoreAggregator aggregator) : ICardListService
+    public sealed class CardListService(IDbConnectionFactory dbFactory, ICardListRepo cardListRepo, IFilterDefaultsLogic filterLogic, ICardLookupsService lookupService, ICardCoreAggregator aggregator) : ICardListService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
-        private readonly ICardListRepository _cardListRepo = cardListRepo;
+        private readonly ICardListRepo _cardListRepo = cardListRepo;
         private readonly IFilterDefaultsLogic _filterLogic = filterLogic;
         private readonly ICardLookupsService _lookupService = lookupService;
         private readonly ICardCoreAggregator _aggregator = aggregator;

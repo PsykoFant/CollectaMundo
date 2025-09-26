@@ -1,19 +1,18 @@
 ﻿using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.Infrastructure.CardImages;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
-using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Windows.Media.Imaging;
 
 namespace CollectaMundo.ViewModels
 {
-    public class CardImageViewModel(ICardImageService cardImageService) : INotifyPropertyChanged
+    public class CardImageViewModel(ICardImageService cardImageService, ICardImageDownloader cardImageDownloader) : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         private readonly ICardImageService _cardImageService = cardImageService;
+        private readonly ICardImageDownloader _cardImageDownloader = cardImageDownloader;
         private CardSet? _selectedCard;
         public CardSet? SelectedCard
         {
@@ -37,11 +36,44 @@ namespace CollectaMundo.ViewModels
             }
 
             var imageResult = await _cardImageService.GetImageForCardAsync(selectedCard);
-            //FrontImageSource = ConvertToImageSource(imageResult?.FrontImageUrl);
-            //FrontImageSource = await DownloadImageAsync("https://cards.scryfall.io/normal/front/x/x/doesnotexist.jpg");
-            FrontImageSource = await DownloadImageAsync(imageResult?.FrontImageUrl);
-            BackImageSource = await DownloadImageAsync(imageResult?.BackImageUrl);
+            FrontImageSource = await _cardImageDownloader.DownloadAsync("https://cards.scryfall.io/normal/front/x/x/doesnotexist.jpg");
+            //FrontImageSource = await _cardImageDownloader.DownloadAsync("bogus");
+
+            //FrontImageSource = await _cardImageDownloader.DownloadAsync(imageResult?.FrontImageUrl);
+            BackImageSource = string.IsNullOrWhiteSpace(imageResult?.BackImageUrl) ? null : await _cardImageDownloader.DownloadAsync(imageResult.BackImageUrl);
+
         }
+
+        // Helper method to convert URL string to BitmapImage
+        //private static async Task<BitmapImage?> DownloadImageAsync(string? url)
+        //{
+        //    if (string.IsNullOrWhiteSpace(url))
+        //    {
+        //        return null;
+        //    }
+
+        //    try
+        //    {
+        //        using var httpClient = new HttpClient();
+        //        var imageBytes = await httpClient.GetByteArrayAsync(url);
+
+        //        using var stream = new MemoryStream(imageBytes);
+
+        //        var bitmap = new BitmapImage();
+        //        bitmap.BeginInit();
+        //        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+        //        bitmap.StreamSource = stream;
+        //        bitmap.EndInit();
+        //        bitmap.Freeze();
+
+        //        return bitmap;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine($"Image load failed: {ex.Message}");
+        //        return null;
+        //    }
+        //}
 
         private BitmapImage? _frontImageSource;
         public BitmapImage? FrontImageSource
@@ -71,56 +103,8 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        // Helper method to convert URL string to BitmapImage
-        private static async Task<BitmapImage?> DownloadImageAsync(string? url)
-        {
-            if (string.IsNullOrWhiteSpace(url))
-            {
-                return null;
-            }
 
-            try
-            {
-                using var httpClient = new HttpClient();
-                var imageBytes = await httpClient.GetByteArrayAsync(url);
-
-                using var stream = new MemoryStream(imageBytes);
-
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.StreamSource = stream;
-                bitmap.EndInit();
-                bitmap.Freeze();
-
-                return bitmap;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Image load failed: {ex.Message}");
-                return null;
-            }
-        }
-
-
-
-
-        //private static BitmapImage? ConvertToImageSource(string? url)
-        //{
-        //    try
-        //    {
-        //        if (string.IsNullOrWhiteSpace(url)) return null;
-        //        //var uri = new Uri(url, UriKind.Absolute);
-        //        //var uri = new Uri("bogus url", UriKind.Absolute);                
-        //        var uri = new Uri("https://cards.scryfall.io/normal/back/8/2/829d91e9-4878-4e55-a262-ac0d55b65d4e.jpg", UriKind.Absolute); // url gives 404
-
-        //        return new BitmapImage(uri);
-        //    }
-        //    catch
-        //    {
-        //        return null;
-        //    }
-        //}
     }
 }
+
 

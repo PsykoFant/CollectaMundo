@@ -5,9 +5,9 @@ using System.Data.SQLite;
 
 namespace CollectaMundo.DomainLogic.EditCollection
 {
-    public class EditCollectionLogic(IEditCollectionRepository repo) : IEditCollectionLogic
+    public class EditCollectionLogic(IEditCollectionRepo repo) : IEditCollectionLogic
     {
-        private readonly IEditCollectionRepository _repo = repo;
+        private readonly IEditCollectionRepo _repo = repo;
         public async Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit, SQLiteConnection connection)
         {
             var clone = await CloneWithMetadataHelperAsync(selectedCard, connection);

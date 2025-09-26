@@ -2,7 +2,7 @@
 
 namespace CollectaMundo.Infrastructure.GenerateMissingPng
 {
-    public interface IGenerateMissingPngRepository
+    public interface IGenerateMissingPngRepo
     {
         Task<List<string>> GetUniqueValuesAsync(SQLiteConnection conn, string table, string column);
         Task<List<string>> GetValuesWithNullAsync(SQLiteConnection conn, string table, string returnColumn, string nullColumn);

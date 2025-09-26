@@ -4,7 +4,7 @@ using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.CardLists
 {
-    public class CardListRepository() : ICardListRepository
+    public class CardListRepo() : ICardListRepo
     {
         public async Task<IReadOnlyList<CardCoreDto>> ReadAllCardsCoreDtosAsync(SQLiteConnection conn)
         {

@@ -16,11 +16,11 @@ using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.CardLookups;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
-using CollectaMundo.Infrastructure;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.CardPrices;
+using CollectaMundo.Infrastructure.Common;
 using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
@@ -49,7 +49,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var dbFactory = new DbConnectionFactory(settings);
 
                 // Card DB prep (repos + services)
-                var missingPngRepo = new GenerateMissingPngRepository();
+                var missingPngRepo = new GenerateMissingPngRepo();
                 var missingPngLogic = new GenerateMissingPngLogic();
                 var missingPngSvc = new GenerateMissingPngService(missingPngRepo, remoteLookups, missingPngLogic);
 
@@ -87,7 +87,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var filteringService = new FilteringService();
 
-                var editCollectionRepo = new EditCollectionRepository();
+                var editCollectionRepo = new EditCollectionRepo();
                 var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(editCollectionRepo));
 
                 var importService = new ImportService(new ImportRepo(), settings);
@@ -99,7 +99,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardImageLogic = new CardImageLogic(remoteLookups);
                 var cardImageService = new CardImageService(dbFactory, new CardImageRepo(), cardImageLogic);
 
-                var cardListRepo = new CardListRepository();
+                var cardListRepo = new CardListRepo();
                 var filterDefaultsLogic = new FilterDefaultsLogic();
                 var coreAggregator = new CardCoreAggregator();
                 var cardListService = new CardListService(dbFactory, cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);

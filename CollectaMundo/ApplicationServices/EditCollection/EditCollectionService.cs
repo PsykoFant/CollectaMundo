@@ -2,7 +2,7 @@
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
-using CollectaMundo.Infrastructure;
+using CollectaMundo.Infrastructure.Common;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices.EditCollection

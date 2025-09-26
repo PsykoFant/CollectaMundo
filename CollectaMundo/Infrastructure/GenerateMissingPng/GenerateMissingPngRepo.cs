@@ -3,7 +3,7 @@ using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.GenerateMissingPng
 {
-    public class GenerateMissingPngRepository : IGenerateMissingPngRepository
+    public class GenerateMissingPngRepo : IGenerateMissingPngRepo
     {
         public async Task<List<string>> GetUniqueValuesAsync(SQLiteConnection conn, string tableName, string columnName)
         {

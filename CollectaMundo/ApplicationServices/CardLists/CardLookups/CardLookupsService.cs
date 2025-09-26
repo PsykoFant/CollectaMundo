@@ -2,8 +2,8 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.CardLookups;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.Infrastructure;
 using CollectaMundo.Infrastructure.CardLists;
+using CollectaMundo.Infrastructure.Common;
 using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.CardLists.CardLookups

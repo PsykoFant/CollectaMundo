@@ -9,9 +9,9 @@ using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.GenerateMissingPng
 {
-    public class GenerateMissingPngService(IGenerateMissingPngRepository repository, IRemoteLookups remoteLookups, IGenerateMissingPngLogic missingPngLogic) : IGenerateMissingPngService
+    public class GenerateMissingPngService(IGenerateMissingPngRepo repository, IRemoteLookups remoteLookups, IGenerateMissingPngLogic missingPngLogic) : IGenerateMissingPngService
     {
-        private readonly IGenerateMissingPngRepository _repository = repository;
+        private readonly IGenerateMissingPngRepo _repository = repository;
         private readonly IRemoteLookups _remoteLookups = remoteLookups;
         private readonly IGenerateMissingPngLogic _missingPngLogic = missingPngLogic;
         public async Task GenerateMissingManaSymbolImagesAsync(SQLiteConnection conn, IProgress<int>? percentProgress = null)

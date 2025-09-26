@@ -1,6 +1,6 @@
 ﻿using System.Data.SQLite;
 
-namespace CollectaMundo.Infrastructure
+namespace CollectaMundo.Infrastructure.Common
 {
     public interface IDbConnectionFactory
     {
