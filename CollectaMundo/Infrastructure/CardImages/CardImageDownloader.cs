@@ -13,6 +13,12 @@ namespace CollectaMundo.Infrastructure.CardImages
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(url) || !Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                {
+                    Debug.WriteLine("Invalid or null URL provided.");
+                    return null;
+                }
+
                 var imageBytes = await _httpClient.GetByteArrayAsync(url);
                 using var stream = new MemoryStream(imageBytes);
 
