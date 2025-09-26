@@ -11,32 +11,46 @@ namespace CollectaMundo.DomainLogic.CardImages
 
         public async Task<CardImageDto> BuildImageUrlsAsync(string scryfallId, CardSet card)
         {
-            var dir1 = scryfallId[0];
-            var dir2 = scryfallId[1];
+            var frontUrl = BuildImageUrl(scryfallId, front: true);
+            string? backUrl = null;
 
-            string frontImageUrl = $"https://cards.scryfall.io/normal/front/{dir1}/{dir2}/{scryfallId}.jpg";
-            string? backImageUrl = card.Side == "a"
-                ? $"https://cards.scryfall.io/normal/back/{dir1}/{dir2}/{scryfallId}.jpg"
-                : null;
-
-            Debug.WriteLine($"Constructed front image URL: {frontImageUrl}");
-
-            if (backImageUrl is not null)
+            if (card.Side == "a")
             {
-                if (!await _remoteLookups.IsValidUrlAsync(backImageUrl))
-                {
-                    backImageUrl = null;
-                }
-
-                Debug.WriteLine($"Back image URL check for {scryfallId}: {(backImageUrl is null ? "Not found" : "Exists")}");
+                var potentialBackUrl = BuildImageUrl(scryfallId, front: false);
+                backUrl = await ValidateUrlOrNullAsync(potentialBackUrl, scryfallId, "Back");
             }
 
             return new CardImageDto
             {
-                FrontImageUrl = frontImageUrl,
-                BackImageUrl = backImageUrl
+                FrontImageUrl = frontUrl,
+                BackImageUrl = backUrl
             };
         }
 
+        public async Task<string?> BuildOtherSideImageUrlAsync(string scryfallId)
+        {
+            var url = BuildImageUrl(scryfallId, front: true); // 'other face' always assumed to be a front
+            return await ValidateUrlOrNullAsync(url, scryfallId, "OtherFace");
+        }
+        private static string BuildImageUrl(string scryfallId, bool front)
+        {
+            var dir1 = scryfallId[0];
+            var dir2 = scryfallId[1];
+            var face = front ? "front" : "back";
+            return $"https://cards.scryfall.io/normal/{face}/{dir1}/{dir2}/{scryfallId}.jpg";
+        }
+
+        private async Task<string?> ValidateUrlOrNullAsync(string url, string scryfallId, string label)
+        {
+            if (!await _remoteLookups.IsValidUrlAsync(url))
+            {
+                Debug.WriteLine($"{label} image URL check for {scryfallId}: Not found");
+                return null;
+            }
+
+            Debug.WriteLine($"{label} image URL check for {scryfallId}: Exists");
+            return url;
+        }
     }
+
 }

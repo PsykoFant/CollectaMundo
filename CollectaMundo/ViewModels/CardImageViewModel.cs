@@ -32,6 +32,7 @@ namespace CollectaMundo.ViewModels
             if (selectedCard is null)
             {
                 FrontImageSource = null;
+                BackImageSource = null;
                 return;
             }
 

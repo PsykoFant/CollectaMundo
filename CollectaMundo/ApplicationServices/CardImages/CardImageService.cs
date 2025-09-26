@@ -4,6 +4,7 @@ using CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.Common;
+using System.Data.SQLite;
 using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.CardImages
@@ -17,42 +18,14 @@ namespace CollectaMundo.ApplicationServices.CardImages
         public async Task<CardImageDto?> GetImageForCardAsync(CardSet card)
         {
             Debug.WriteLine("Starting GetImageForCardAsync...");
-            string? scryfallID = string.Empty;
-
-            // Get scryfall ID from UUID
-            if (!string.IsNullOrWhiteSpace(card.Uuid))
+            if (string.IsNullOrWhiteSpace(card.Uuid))
             {
-                Debug.WriteLine($"Using UUID: {card.Uuid}");
-
-                await using var uow = new UnitOfWork(_dbFactory);
-                await uow.BeginReadOnlyAsync();
-                try
-                {
-                    // Hand off to your pure domain‐logic batch (no further UoW calls inside)
-                    scryfallID = await _repo.GetScryfallIdByUuidAsync(card.Uuid, uow.CurrentConnection);
-
-                    // Commit on success
-                    await uow.CommitAsync();
-                }
-                catch
-                {
-                    // Roll back on any error
-                    await uow.RollbackAsync();
-                    throw;
-                }
-                finally
-                {
-                    // Clean up / close connection
-                    await uow.DisposeAsync();
-                }
-
+                Debug.WriteLine("Card UUID is missing. Cannot fetch image.");
+                return null;
             }
-            // Get scryfall ID from name
-            else if (!string.IsNullOrWhiteSpace(card.Name))
-            {
-                Debug.WriteLine($"Resolving UUID from name: {card.Name}");
-                // Placeholder: resolve name to uuid (future)
-            }
+
+            string? scryfallID = await WithReadOnlyUowAsync(conn => _repo.GetScryfallIdByUuidAsync(card.Uuid, conn));
+
 
             if (string.IsNullOrWhiteSpace(scryfallID))
             {
@@ -64,8 +37,47 @@ namespace CollectaMundo.ApplicationServices.CardImages
 
             CardImageDto cardImageDto = await _logic.BuildImageUrlsAsync(scryfallID, card);
 
+            // If back image URL is null, check if otherFace image exists            
+            if (cardImageDto.BackImageUrl is null && card.Side == "a")
+            {
+                var otherFaceScryfallID = await WithReadOnlyUowAsync(conn =>
+                    _repo.GetOtherFaceScryfallIdByUuidAsync(card.Uuid, conn));
+
+                if (otherFaceScryfallID is not null)
+                {
+                    if (otherFaceScryfallID != scryfallID)
+                    {
+                        Debug.WriteLine("Other face Scryfall ID is not the same as the front face.");
+                        cardImageDto.BackImageUrl = await _logic.BuildOtherSideImageUrlAsync(otherFaceScryfallID);
+
+                    }
+                }
+            }
+
             return cardImageDto;
         }
+
+        private async Task<T> WithReadOnlyUowAsync<T>(Func<SQLiteConnection, Task<T>> work)
+        {
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginReadOnlyAsync();
+            try
+            {
+                var result = await work(uow.CurrentConnection);
+                await uow.CommitAsync();
+                return result;
+            }
+            catch
+            {
+                await uow.RollbackAsync();
+                throw;
+            }
+            finally
+            {
+                await uow.DisposeAsync();
+            }
+        }
+
     }
 
 }
