@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
-using CollectaMundo.Data.CardPrices;
 using CollectaMundo.DomainLogic.CardPrices;
+using CollectaMundo.Infrastructure.CardPrices;
 using CollectaMundo.Presentation;
 using System.Collections.Concurrent;
 using System.Data.SQLite;

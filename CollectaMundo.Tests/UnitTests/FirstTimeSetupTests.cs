@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.Data.CardDatabaseManagement;
+using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Tests.TestUtils;
 using Moq;
 using System.Data.SQLite;
@@ -378,7 +378,9 @@ namespace CollectaMundo.Tests.UnitTests
             {
                 var url = req.RequestUri?.ToString() ?? "";
                 if (!attemptsPerUrl.ContainsKey(url))
+                {
                     throw new InvalidOperationException("Unexpected URL in test: " + url);
+                }
 
                 attemptsPerUrl[url]++;
 

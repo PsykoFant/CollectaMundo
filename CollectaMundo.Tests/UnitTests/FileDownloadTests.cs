@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.Data.CardDatabaseManagement;
+using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Tests.TestUtils;
 using System.IO;
 using System.Net;

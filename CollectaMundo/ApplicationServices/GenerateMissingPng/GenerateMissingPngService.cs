@@ -1,8 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.ApplicationServices.Utilities;
-using CollectaMundo.Data.GenerateMissingPng;
-using CollectaMundo.Data.RemoteLookups;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
+using CollectaMundo.Infrastructure.GenerateMissingPng;
+using CollectaMundo.Infrastructure.RemoteLookups;
 using Newtonsoft.Json.Linq;
 using System.Data.SQLite;
 using System.Diagnostics;

@@ -1,7 +1,7 @@
-﻿using CollectaMundo.Data.EditCollection;
-using CollectaMundo.DomainLogic.CardLists.Models;
+﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
+using CollectaMundo.Infrastructure.EditCollection;
 using Moq;
 using System.Data.SQLite;
 

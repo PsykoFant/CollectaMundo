@@ -1,0 +1,35 @@
+﻿using System.Data.SQLite;
+
+namespace CollectaMundo.Infrastructure.CardDatabaseManagement
+{
+    public class DatabaseIntegrityRepo : IDatabaseIntegrityRepo
+    {
+        private static readonly List<string> RequiredObjects =
+        [
+            "cards", "myCollection", "uniqueManaCostImages", "uniqueManaSymbols",
+            "keyruneImages", "view_cardToken"
+        ];
+        public async Task<bool> HasExpectedTablesAndViewsAsync(SQLiteConnection conn)
+        {
+            var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            await using var cmd = new SQLiteCommand("SELECT name FROM sqlite_master WHERE type IN ('table', 'view');", conn);
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                existing.Add(reader.GetString(0));
+            }
+
+            return RequiredObjects.All(existing.Contains);
+        }
+
+        public async Task<bool> QuickCheckAsync(SQLiteConnection conn)
+        {
+            await using var cmd = new SQLiteCommand("PRAGMA quick_check;", conn);
+            var result = await cmd.ExecuteScalarAsync();
+            return result?.ToString() == "ok";
+        }
+    }
+
+}

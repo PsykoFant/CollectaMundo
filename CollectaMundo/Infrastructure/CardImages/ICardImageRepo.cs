@@ -1,0 +1,9 @@
+﻿using System.Data.SQLite;
+
+namespace CollectaMundo.Infrastructure.CardImages
+{
+    public interface ICardImageRepo
+    {
+        Task<string?> GetScryfallIdByUuidAsync(string uuid, SQLiteConnection conn);
+    }
+}

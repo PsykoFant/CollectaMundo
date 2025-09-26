@@ -1,11 +1,11 @@
 ﻿using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.Data;
-using CollectaMundo.Data.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering.Enums;
+using CollectaMundo.Infrastructure;
+using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;

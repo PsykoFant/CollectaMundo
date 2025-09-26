@@ -1,5 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.Data.Import;
+using CollectaMundo.Infrastructure.Import;
 
 namespace CollectaMundo.ApplicationServices.Import
 {

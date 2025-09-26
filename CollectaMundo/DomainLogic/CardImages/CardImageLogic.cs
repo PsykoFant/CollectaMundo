@@ -1,6 +1,6 @@
-﻿using CollectaMundo.Data.RemoteLookups;
-using CollectaMundo.DomainLogic.CardImages.Models;
+﻿using CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.Infrastructure.RemoteLookups;
 using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic.CardImages

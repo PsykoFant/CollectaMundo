@@ -1,10 +1,10 @@
 ﻿using CollectaMundo.ApplicationServices.CardLists.CardLookups;
 using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.Data;
-using CollectaMundo.Data.CardLists;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
+using CollectaMundo.Infrastructure;
+using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;

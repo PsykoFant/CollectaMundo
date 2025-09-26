@@ -1,9 +1,9 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.Data;
-using CollectaMundo.Data.CardImages;
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.Infrastructure;
+using CollectaMundo.Infrastructure.CardImages;
 using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.CardImages
