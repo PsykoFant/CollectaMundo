@@ -3,6 +3,7 @@ using CollectaMundo.DomainLogic.CardLists.Models;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Windows.Media;
 
 namespace CollectaMundo.ViewModels
 {
@@ -34,27 +35,26 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
-            var imageResult = await _cardImageService.GetImageForCardAsync(selectedCard.Uuid, selectedCard.Name);
+            var imageResult = await _cardImageService.GetImageForCardAsync(selectedCard);
+            ImageSource = imageResult?.FrontImageSource;
 
-            string frontImageUrl = imageResult?.FrontImageUrl ?? string.Empty;
-
-            ImageSourceUrl = frontImageUrl;
         }
 
-
-        private string? _imageSourceUrl = string.Empty;
-        public string? ImageSourceUrl
+        private ImageSource? _imageSource;
+        public ImageSource? ImageSource
         {
-            get => _imageSourceUrl;
+            get => _imageSource;
             set
             {
-                if (_imageSourceUrl != value)
+                if (_imageSource != value)
                 {
-                    _imageSourceUrl = value;
+                    _imageSource = value;
                     OnPropertyChanged();
                 }
             }
         }
+
+
 
         private string? _imageSourceUrl2nd = string.Empty;
         public string? ImageSourceUrl2nd
