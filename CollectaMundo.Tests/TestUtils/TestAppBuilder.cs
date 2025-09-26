@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLists.CardLookups;
 using CollectaMundo.ApplicationServices.CardPrices;
@@ -9,6 +10,7 @@ using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.Data;
 using CollectaMundo.Data.CardDatabaseManagement;
+using CollectaMundo.Data.CardImages;
 using CollectaMundo.Data.CardLists;
 using CollectaMundo.Data.CardPrices;
 using CollectaMundo.Data.EditCollection;
@@ -16,6 +18,7 @@ using CollectaMundo.Data.Filtering;
 using CollectaMundo.Data.GenerateMissingPng;
 using CollectaMundo.Data.Import;
 using CollectaMundo.Data.RemoteLookups;
+using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.CardLookups;
 using CollectaMundo.DomainLogic.EditCollection;
@@ -70,6 +73,10 @@ public static class TestAppBuilder
             new CardCoreAggregator());
 
         var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(new EditCollectionRepository()));
+
+        var cardImageLogic = new CardImageLogic(remoteLookups);
+        var cardImageService = new CardImageService(dbFactory, new CardImageRepo(), cardImageLogic);
+
         var importService = new ImportService(new ImportRepo(), settings);
         var filteringService = new FilteringService();
         var scheduler = new ImmediateScheduler();
@@ -77,6 +84,7 @@ public static class TestAppBuilder
         var mainVM = await MainWindowViewModel.CreateAsync(
             filteringService,
             editService,
+            cardImageService,
             importService,
             prepService,
             statusVM,

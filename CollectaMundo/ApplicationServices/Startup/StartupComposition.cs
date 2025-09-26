@@ -45,13 +45,13 @@ namespace CollectaMundo.ApplicationServices.Startup
                 // Delegate for retailer access from view models                
                 string getRetailer() => settings.PriceInfo.Retailer;
 
-                var RemoteLookups = new RemoteLookups();
+                var remoteLookups = new RemoteLookups();
                 var dbFactory = new DbConnectionFactory(settings);
 
                 // Card DB prep (repos + services)
                 var missingPngRepo = new GenerateMissingPngRepository();
                 var missingPngLogic = new GenerateMissingPngLogic();
-                var missingPngSvc = new GenerateMissingPngService(missingPngRepo, RemoteLookups, missingPngLogic);
+                var missingPngSvc = new GenerateMissingPngService(missingPngRepo, remoteLookups, missingPngLogic);
 
                 var cardPriceRepo = new CardPriceRepository();
                 var priceService = new CardPriceService(settings, cardPriceRepo);
@@ -59,7 +59,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardDbManagementRepo = new CardDatabaseManagementRepo();
                 var progressSinks = CreateProgressSinks(statusVM);
 
-                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, progressSinks, cardDbManagementRepo, priceService, missingPngSvc, RemoteLookups);
+                var cardDbManagementService = new CardDatabaseManagementService(settings, dbFactory, progressSinks, cardDbManagementRepo, priceService, missingPngSvc, remoteLookups);
 
                 var integrityService = new DatabaseIntegrityService(dbFactory, settings);
 
@@ -96,7 +96,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardLookupsBuilder = new CardLookupBuilder();
                 var cardLookupsService = new CardLookupsService(dbFactory, cardLookupsRepo, cardLookupsBuilder, getRetailer);
 
-                var cardImageLogic = new CardImageLogic(RemoteLookups);
+                var cardImageLogic = new CardImageLogic(remoteLookups);
                 var cardImageService = new CardImageService(dbFactory, new CardImageRepo(), cardImageLogic);
 
                 var cardListRepo = new CardListRepository();
