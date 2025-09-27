@@ -17,15 +17,25 @@ namespace CollectaMundo.ApplicationServices.CardImages
 
         public async Task<CardImageDto?> GetImageForCardAsync(CardSet card)
         {
+            string? scryfallID = null;
+
             Debug.WriteLine("Starting GetImageForCardAsync...");
-            if (string.IsNullOrWhiteSpace(card.Uuid))
+
+            // First, try to get Scryfall ID by UUID if available
+            if (!string.IsNullOrWhiteSpace(card.Uuid))
             {
-                Debug.WriteLine("Card UUID is missing. Cannot fetch image.");
+                scryfallID = await WithReadOnlyUowAsync(conn => _repo.GetScryfallIdByUuidAsync(card.Uuid, conn));
+            }
+            else if (!string.IsNullOrWhiteSpace(card.Name))
+            {
+                // If UUID is not available, try to get the oldest card's Scryfall ID by name
+                scryfallID = await WithReadOnlyUowAsync(conn => _repo.GetScryfallIdByNameAsync(card.Name, conn));
+            }
+            else
+            {
+                Debug.WriteLine("Both card UUID and name are missing. Cannot fetch image.");
                 return null;
             }
-
-            string? scryfallID = await WithReadOnlyUowAsync(conn => _repo.GetScryfallIdByUuidAsync(card.Uuid, conn));
-
 
             if (string.IsNullOrWhiteSpace(scryfallID))
             {
@@ -37,11 +47,11 @@ namespace CollectaMundo.ApplicationServices.CardImages
 
             CardImageDto cardImageDto = await _logic.BuildImageUrlsAsync(scryfallID, card);
 
-            // If back image URL is null, check if otherFace image exists            
+            // If it is a card with multiple parts (side == "a") and back image URL is null, check if otherFace image exists
+            // So far, this will only apply to cards with Meld keyword and it will show the melded card as the back image
             if (cardImageDto.BackImageUrl is null && card.Side == "a")
             {
-                var otherFaceScryfallID = await WithReadOnlyUowAsync(conn =>
-                    _repo.GetOtherFaceScryfallIdByUuidAsync(card.Uuid, conn));
+                var otherFaceScryfallID = await WithReadOnlyUowAsync(conn => _repo.GetOtherFaceScryfallIdByUuidAsync(card.Uuid, conn));
 
                 if (otherFaceScryfallID is not null)
                 {

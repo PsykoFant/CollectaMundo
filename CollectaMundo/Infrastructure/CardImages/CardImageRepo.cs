@@ -17,6 +17,18 @@ namespace CollectaMundo.Infrastructure.CardImages
             }
             return null;
         }
+        public async Task<string?> GetScryfallIdByNameAsync(string uuid, SQLiteConnection conn)
+        {
+            string query = "SELECT ci.scryfallId FROM cards c JOIN cardIdentifiers ci ON c.uuid = ci.uuid WHERE c.name = @name ORDER BY c.releaseDate ASC, c.setCode ASC LIMIT 1";
+            using var selectCommand = new SQLiteCommand(query, conn);
+            selectCommand.Parameters.AddWithValue("@name", uuid);
+            using var reader = await selectCommand.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return reader["scryfallId"].ToString();
+            }
+            return null;
+        }
         public async Task<string?> GetOtherFaceScryfallIdByUuidAsync(string uuid, SQLiteConnection conn)
         {
             string query = @"
