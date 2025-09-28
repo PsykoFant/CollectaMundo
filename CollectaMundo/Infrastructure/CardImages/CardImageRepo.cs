@@ -17,11 +17,51 @@ namespace CollectaMundo.Infrastructure.CardImages
             }
             return null;
         }
-        public async Task<string?> GetScryfallIdByNameAsync(string uuid, SQLiteConnection conn)
+        public async Task<string?> GetScryfallIdByNameAsync(string name, SQLiteConnection conn)
         {
-            string query = "SELECT ci.scryfallId FROM cards c JOIN cardIdentifiers ci ON c.uuid = ci.uuid WHERE c.name = @name ORDER BY c.releaseDate ASC, c.setCode ASC LIMIT 1";
+            string query = @"
+                WITH cardName(name) AS (
+                  SELECT @name
+                )
+                select scryfallId from cardIdentifiers
+                where uuid = (
+                    SELECT uuid
+                    FROM cards
+                    WHERE name = (SELECT name FROM cardName)
+	                AND setCode = (
+                      SELECT code
+                      FROM sets
+                      WHERE code IN(
+                        SELECT DISTINCT setCode
+                        FROM cards
+                        WHERE name = (SELECT name FROM cardName)
+	                  )
+	                  ORDER BY releaseDate ASC
+
+                      LIMIT 1
+	                )
+                )
+                UNION ALL
+                select scryfallId from tokenIdentifiers
+                where uuid = (
+                    SELECT uuid
+                    FROM tokens
+                    WHERE name = (SELECT name FROM cardName)
+	                AND setCode = (
+                      SELECT tokenSetCode
+                      FROM sets
+                      WHERE code IN(
+                        SELECT DISTINCT setCode
+                        FROM tokens
+                        WHERE name = (SELECT name FROM cardName)
+	                  )
+	                  ORDER BY releaseDate ASC
+
+                      LIMIT 1
+	                )
+                );";
             using var selectCommand = new SQLiteCommand(query, conn);
-            selectCommand.Parameters.AddWithValue("@name", uuid);
+            selectCommand.Parameters.AddWithValue("@name", name);
             using var reader = await selectCommand.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
