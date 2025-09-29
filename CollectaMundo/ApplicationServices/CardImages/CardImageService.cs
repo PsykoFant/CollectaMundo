@@ -18,25 +18,35 @@ namespace CollectaMundo.ApplicationServices.CardImages
         public async Task<CardImageDto?> GetImageForCardAsync(CardSet card)
         {
             string? scryfallID = null;
+            string? promoteTypes = null;
 
             Debug.WriteLine("Starting GetImageForCardAsync...");
 
             // First, try to get Scryfall ID by UUID if available
             if (!string.IsNullOrWhiteSpace(card.Uuid))
             {
-                scryfallID = await WithReadOnlyUowAsync(conn => _repo.GetScryfallIdByUuidAsync(card.Uuid, conn));
+                await WithReadOnlyUowAsync(async conn =>
+                {
+                    scryfallID = await _repo.GetScryfallIdByUuidAsync(card.Uuid, conn);
+                    promoteTypes = await _repo.GetImagePromoTypeByUuidAsync(card.Uuid, conn);
+                    return true;
+                });
             }
+
+            // If UUID is not available, try to get the oldest card's Scryfall ID by name
             else if (!string.IsNullOrWhiteSpace(card.Name))
             {
-                // If UUID is not available, try to get the oldest card's Scryfall ID by name
                 scryfallID = await WithReadOnlyUowAsync(conn => _repo.GetScryfallIdByNameAsync(card.Name, conn));
             }
+
+            // If neither UUID nor name is available, log and return null
             else
             {
                 Debug.WriteLine("Both card UUID and name are missing. Cannot fetch image.");
                 return null;
             }
 
+            // If no Scryfall ID found, return null
             if (string.IsNullOrWhiteSpace(scryfallID))
             {
                 Debug.WriteLine("No Scryfall ID found, returning null.");
@@ -45,12 +55,15 @@ namespace CollectaMundo.ApplicationServices.CardImages
 
             Debug.WriteLine($"ScryfallId found: {scryfallID}");
 
-            CardImageDto cardImageDto = await _logic.BuildImageUrlsAsync(scryfallID, card);
+            // Build image URLs
+            var imageUrls = await _logic.BuildImageUrlsAsync(scryfallID, card);
+            string frontUrl = imageUrls[0];
+            string? backUrl = imageUrls.Length > 1 ? imageUrls[1] : null;
 
             // If it is a card with multiple parts (side == "a") and back image URL is null, check if otherFace image exists
             // So far, this will only apply to cards with Meld keyword and it will show the melded card as the back image
             // Only do this if we have a UUID
-            if (cardImageDto.BackImageUrl is null && card.Side == "a" && card.Uuid is not null)
+            if (backUrl is null && card.Side == "a" && card.Uuid is not null)
             {
                 var otherFaceScryfallID = await WithReadOnlyUowAsync(conn => _repo.GetOtherFaceScryfallIdByUuidAsync(card.Uuid, conn));
 
@@ -59,13 +72,18 @@ namespace CollectaMundo.ApplicationServices.CardImages
                     if (otherFaceScryfallID != scryfallID)
                     {
                         Debug.WriteLine("Other face Scryfall ID is not the same as the front face.");
-                        cardImageDto.BackImageUrl = await _logic.BuildOtherSideImageUrlAsync(otherFaceScryfallID);
+                        backUrl = await _logic.BuildOtherSideImageUrlAsync(otherFaceScryfallID);
 
                     }
                 }
             }
 
-            return cardImageDto;
+            return new CardImageDto
+            {
+                FrontImageUrl = frontUrl,
+                BackImageUrl = backUrl,
+                PromoType = promoteTypes
+            };
         }
 
         private async Task<T> WithReadOnlyUowAsync<T>(Func<SQLiteConnection, Task<T>> work)

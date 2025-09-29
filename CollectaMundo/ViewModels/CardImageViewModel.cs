@@ -1,31 +1,22 @@
 ﻿using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.Infrastructure.CardImages;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Media.Imaging;
 
 namespace CollectaMundo.ViewModels
 {
-    public class CardImageViewModel(ICardImageService cardImageService, ICardImageDownloader cardImageDownloader) : INotifyPropertyChanged
+    public partial class CardImageViewModel(ICardImageService cardImageService, ICardImageDownloader cardImageDownloader) : ObservableObject
     {
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         private readonly ICardImageService _cardImageService = cardImageService;
         private readonly ICardImageDownloader _cardImageDownloader = cardImageDownloader;
-        private CardSet? _selectedCard;
-        public CardSet? SelectedCard
+
+        [ObservableProperty]
+        private CardSet? selectedCard;
+
+        partial void OnSelectedCardChanged(CardSet? value)
         {
-            get => _selectedCard;
-            set
-            {
-                if (_selectedCard != value)
-                {
-                    _selectedCard = value;
-                    OnPropertyChanged();
-                    OnCardSelected(_selectedCard); // Notify image view model
-                }
-            }
+            OnCardSelected(value);
         }
         private async void OnCardSelected(CardSet? selectedCard)
         {
@@ -39,63 +30,22 @@ namespace CollectaMundo.ViewModels
             var imageResult = await _cardImageService.GetImageForCardAsync(selectedCard);
             FrontImageSource = string.IsNullOrWhiteSpace(imageResult?.FrontImageUrl) ? null : await _cardImageDownloader.DownloadAsync(imageResult.FrontImageUrl);
             BackImageSource = string.IsNullOrWhiteSpace(imageResult?.BackImageUrl) ? null : await _cardImageDownloader.DownloadAsync(imageResult.BackImageUrl);
+            ImageSet = !string.IsNullOrWhiteSpace(selectedCard.SetName) ? selectedCard.SetName : String.Empty;
+            ImagePromotType = string.IsNullOrWhiteSpace(imageResult?.PromoType) ? null : imageResult.PromoType;
         }
 
-        private BitmapImage? _frontImageSource;
-        public BitmapImage? FrontImageSource
-        {
-            get => _frontImageSource;
-            set
-            {
-                if (_frontImageSource != value)
-                {
-                    _frontImageSource = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
 
-        private BitmapImage? _backImageSource;
-        public BitmapImage? BackImageSource
-        {
-            get => _backImageSource;
-            set
-            {
-                if (_backImageSource != value)
-                {
-                    _backImageSource = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
+        [ObservableProperty]
+        private BitmapImage? frontImageSource;
 
-        private string? _imageSet;
-        public string? ImageSet
-        {
-            get => _imageSet;
-            set
-            {
-                if (_imageSet != value)
-                {
-                    _imageSet = value;
-                    OnPropertyChanged(nameof(ImageSet));
-                }
-            }
-        }
+        [ObservableProperty]
+        private BitmapImage? backImageSource;
 
-        private string? _imagePromotype;
-        public string? ImagePromotype
-        {
-            get => _imagePromotype;
-            set
-            {
-                if (_imagePromotype != value)
-                {
-                    _imagePromotype = value;
-                    OnPropertyChanged(nameof(ImagePromotype));
-                }
-            }
-        }
+        [ObservableProperty]
+        private string? imageSet;
+
+        [ObservableProperty]
+        private string? imagePromotType;
     }
 }
 

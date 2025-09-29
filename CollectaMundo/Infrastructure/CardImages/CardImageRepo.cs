@@ -17,6 +17,18 @@ namespace CollectaMundo.Infrastructure.CardImages
             }
             return null;
         }
+        public async Task<string?> GetImagePromoTypeByUuidAsync(string uuid, SQLiteConnection conn)
+        {
+            string query = "SELECT promoTypes FROM cards WHERE uuid = @uuid UNION ALL SELECT promoTypes FROM tokens WHERE uuid = @uuid";
+            using var selectCommand = new SQLiteCommand(query, conn);
+            selectCommand.Parameters.AddWithValue("@uuid", uuid);
+            using var reader = await selectCommand.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return reader["promoTypes"].ToString();
+            }
+            return null;
+        }
         public async Task<string?> GetScryfallIdByNameAsync(string name, SQLiteConnection conn)
         {
             string query = @"
