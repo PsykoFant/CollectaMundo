@@ -15,8 +15,7 @@ namespace CollectaMundo.DomainLogic.CardImages
 
             if (card.Side == "a")
             {
-                var potentialBackUrl = BuildImageUrl(scryfallId, front: false);
-                backUrl = await ValidateUrlOrNullAsync(potentialBackUrl, scryfallId, label: "Back");
+                backUrl = BuildImageUrl(scryfallId, front: false);
             }
 
             return backUrl is not null
@@ -27,7 +26,8 @@ namespace CollectaMundo.DomainLogic.CardImages
         public async Task<string?> BuildOtherSideImageUrlAsync(string scryfallId)
         {
             var url = BuildImageUrl(scryfallId, front: true); // 'other face' always assumed to be a front
-            return await ValidateUrlOrNullAsync(url, scryfallId, "OtherFace");
+            //return await ValidateUrlOrNullAsync(url, scryfallId, "OtherFace");
+            return url;
         }
         private static string BuildImageUrl(string scryfallId, bool front)
         {

@@ -65,13 +65,17 @@ namespace CollectaMundo.ApplicationServices.CardImages
             // Only do this if we have a UUID
             if (backUrl is null && card.Side == "a" && card.Uuid is not null)
             {
+                Debug.WriteLine("Card has side 'a' but no back image URL. Checking for other face image...");
+
                 var otherFaceScryfallID = await WithReadOnlyUowAsync(conn => _repo.GetOtherFaceScryfallIdByUuidAsync(card.Uuid, conn));
 
                 if (otherFaceScryfallID is not null)
                 {
+                    Debug.WriteLine($"Other face Scryfall ID found: {otherFaceScryfallID} - potential meld check");
+
                     if (otherFaceScryfallID != scryfallID)
                     {
-                        Debug.WriteLine("Other face Scryfall ID is not the same as the front face.");
+                        Debug.WriteLine("Other face Scryfall ID is not the same as the front face. Probably a meld creature!");
                         backUrl = await _logic.BuildOtherSideImageUrlAsync(otherFaceScryfallID);
 
                     }
