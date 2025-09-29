@@ -54,7 +54,28 @@ namespace CollectaMundo.ApplicationServices.CardImages
             }
 
             Debug.WriteLine($"ScryfallId found: {scryfallID}");
+			
+			/*
+			I service:
+			- Kald Byg url i logik 
+				I Byg url i logik 
+					Byg for
+					Hvis side = a, byg bag
+					 - virker for dfc
+					 - virker ikke for meld (invalid url)
+					 - virker ikke for splitcards (invalid url)
 
+			I service:
+			- Hvis side = a
+				Invalid bag url? // meld og split
+					Kald find otherside scryfall id i repo
+					Kald byg Byg other side url (scryfall id, for url)
+						I Byg other side url i logik
+							Byg url
+							Hvis bygget url = for url // split cards
+								return null
+								ellers returner bygget url
+			*/
             // Build image URLs
             var imageUrls = await _logic.BuildImageUrlsAsync(scryfallID, card);
             string frontUrl = imageUrls[0];
