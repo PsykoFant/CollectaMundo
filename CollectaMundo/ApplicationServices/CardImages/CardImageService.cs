@@ -49,6 +49,7 @@ namespace CollectaMundo.ApplicationServices.CardImages
 
             // If it is a card with multiple parts (side == "a") and back image URL is null, check if otherFace image exists
             // So far, this will only apply to cards with Meld keyword and it will show the melded card as the back image
+            // Only do this if we have a UUID
             if (cardImageDto.BackImageUrl is null && card.Side == "a" && card.Uuid is not null)
             {
                 var otherFaceScryfallID = await WithReadOnlyUowAsync(conn => _repo.GetOtherFaceScryfallIdByUuidAsync(card.Uuid, conn));
