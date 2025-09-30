@@ -28,20 +28,27 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public double ManaValue { get; init; }
         public string? Name { get; init; }
         public string? Rarity { get; init; }
+
+        private DateTime? _releaseDate;
         public DateTime? ReleaseDate
         {
             get
             {
+                if (_releaseDate.HasValue || _releaseDate is not null)
+                {
+                    return _releaseDate;
+                }
+
                 var code = SetCode ?? Core?.SetCode;
                 if (string.IsNullOrWhiteSpace(code))
                 {
                     return null;
                 }
 
-                return SetMetaProvider?.Get(code)?.ReleaseDate;
+                _releaseDate = SetMetaProvider?.Get(code)?.ReleaseDate;
+                return _releaseDate;
             }
         }
-
         public string? SetCode { get; init; }
         public string? SetName
         {
