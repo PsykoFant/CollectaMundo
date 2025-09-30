@@ -1,16 +1,21 @@
-﻿using System.Diagnostics;
+﻿using CollectaMundo.ApplicationServices.Shared;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Windows.Media.Imaging;
 
 namespace CollectaMundo.Infrastructure.CardImages
 {
-    public class CardImageDownloader : ICardImageDownloader
+    public class CardImageDownloader(IAppSettings settings) : ICardImageDownloader
     {
         private readonly HttpClient _httpClient = new();
+        private readonly IAppSettings _settings = settings;
 
         public async Task<BitmapImage?> DownloadAsync(string? url)
         {
+
+            Debug.WriteLine($"Diskpath for image cache: {_settings.CardImageCachePath}");
+
             try
             {
                 if (string.IsNullOrWhiteSpace(url) || !Uri.TryCreate(url, UriKind.Absolute, out var uri))

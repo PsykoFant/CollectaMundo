@@ -10,6 +10,8 @@ namespace CollectaMundo.ApplicationServices.Shared
         private readonly AppSettingsDto _currentSettings;
 
         private readonly string _settingsFilePath;
+        private static readonly string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        private static readonly string sqlitePath = Path.Combine(appDataPath, "CollectaMundo", "CardDatabase");
 
         // non-nullable, with defaults
         public DatabaseSettings DatabaseSettings { get; private set; } = new();
@@ -21,6 +23,7 @@ namespace CollectaMundo.ApplicationServices.Shared
         private static readonly string _userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         public string UserDownloadsPath => Path.Combine(_userProfile, "Downloads");
         public string BackupFolderPath => Path.Combine(_userProfile, "CollectaMundoBackup");
+        public string CardImageCachePath => Path.Combine(appDataPath, "CollectaMundo", "CardImageCache");
         public AppSettings(string? filePath = null)
         {
             _settingsFilePath = filePath ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
@@ -47,10 +50,6 @@ namespace CollectaMundo.ApplicationServices.Shared
             {
                 if (string.IsNullOrWhiteSpace(settingsFilePath))
                     throw new ArgumentException("Settings file path is required.", nameof(settingsFilePath));
-
-
-                string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                string sqlitePath = Path.Combine(appDataPath, "CollectaMundo", "CardDatabase");
 
                 Directory.CreateDirectory(sqlitePath);
 

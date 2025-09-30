@@ -252,7 +252,7 @@ namespace CollectaMundo.ViewModels
             FilterVM = new FilterViewModel(_filteringService);
 
             // card image viewmodel
-            CardImageVM = new CardImageViewModel(cardImageService, new CardImageDownloader());
+            CardImageVM = new CardImageViewModel(cardImageService, new CardImageDownloader(settings));
 
             // update viewmodel
             UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, this, () => MyCollectionVM.Cards.Count);
