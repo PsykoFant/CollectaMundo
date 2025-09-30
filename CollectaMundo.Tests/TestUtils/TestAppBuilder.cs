@@ -74,8 +74,7 @@ public static class TestAppBuilder
 
         var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(new EditCollectionRepo()));
 
-        var cardImageLogic = new CardImageLogic(remoteLookups);
-        var cardImageService = new CardImageService(dbFactory, new CardImageRepo(), cardImageLogic);
+        var cardImageService = new CardImageService(dbFactory, remoteLookups, new CardImageRepo(), new CardImageLogic());
 
         var importService = new ImportService(new ImportRepo(), settings);
         var filteringService = new FilteringService();

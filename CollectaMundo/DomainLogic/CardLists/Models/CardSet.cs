@@ -19,49 +19,15 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public CardCore? Core { get; private set; }
 
 
-        public string? Artist { get; set; }
-        public List<string>? ArtistIds { get; set; }
-        public string? BorderColor { get; set; }
-        public List<string>? CardParts { get; set; }
-        public List<string>? ColorIdentity { get; set; }
-        public List<string>? ColorIndicator { get; set; }
-        public string? Colors { get; set; }
-        public double? ConvertedManaCost { get; set; }
-        public string? Defense { get; set; }
-        public double? FaceConvertedManaCost { get; set; }
-        public double? FaceManaValue { get; set; }
-        public string? FaceName { get; set; }
-        public string? Finishes { get; set; }
-        public string? FlavorName { get; set; }
-        public string? FlavorText { get; set; }
-        public bool? HasNonFoil { get; set; }
-        public bool? IsAlternative { get; set; }
-        public bool? IsFullArt { get; set; }
-        public bool? IsFunny { get; set; }
-        public bool? IsOnlineOnly { get; set; }
-        public bool? IsOversized { get; set; }
-        public bool? IsPromo { get; set; }
-        public bool? IsRebalanced { get; set; }
-        public bool? IsReprint { get; set; }
-        public bool? IsReserved { get; set; }
-        public bool? IsStarter { get; set; }
-        public bool? IsStorySpotlight { get; set; }
-        public bool? IsTextless { get; set; }
-        public string? Keywords { get; set; }
+        public string? Colors { get; init; }
+        public string? Finishes { get; init; }
+        public string? Keywords { get; init; }
         public string? Language { get; set; }
         public List<string>? OtherLanguages { get; set; }
-        public string? Layout { get; set; }
-        public string? Life { get; set; }
-        public string? Loyalty { get; set; }
-        public string? ManaCost { get; set; }
-        public double ManaValue { get; set; }
-        public string? Name { get; set; }
-        public string? Number { get; set; }
-        public List<string>? OtherFaceIds { get; set; }
-        public string? Power { get; set; }
-        public List<string>? PromoTypes { get; set; }
-        public string? Rarity { get; set; }
-        public List<string>? RebalancedPrintings { get; set; }
+        public string? ManaCost { get; init; }
+        public double ManaValue { get; init; }
+        public string? Name { get; init; }
+        public string? Rarity { get; init; }
         public DateTime? ReleaseDate
         {
             get
@@ -75,7 +41,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
                 return SetMetaProvider?.Get(code)?.ReleaseDate;
             }
         }
-        public string? SetCode { get; set; }
+        public string? SetCode { get; init; }
         public string? SetName
         {
             get
@@ -89,14 +55,12 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
                 return SetMetaProvider?.Get(code)?.Name;
             }
         }
-        public string? Side { get; set; }
-        public List<string>? Subsets { get; set; }
-        public string? SubTypes { get; set; }
-        public string? SuperTypes { get; set; }
-        public string? Text { get; set; }
-        public string? Toughness { get; set; }
-        public string? Type { get; set; }
-        public string? Types { get; set; }
+        public string? Side { get; init; }
+        public string? SubTypes { get; init; }
+        public string? SuperTypes { get; init; }
+        public string? Text { get; init; }
+        public string? Type { get; init; }
+        public string? Types { get; init; }
         public string? Uuid { get; set; }
 
         private ImageSource? _keyRuneImage;
@@ -116,7 +80,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             }
             set => _keyRuneImage = value;
         }
-        public string? ManaCostRaw { get; set; }
+        public string? ManaCostRaw { get; init; }
 
         private ImageSource? _manaCostImage;
         public ImageSource? ManaCostImage
