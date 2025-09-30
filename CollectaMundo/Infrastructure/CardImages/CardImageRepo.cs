@@ -29,58 +29,62 @@ namespace CollectaMundo.Infrastructure.CardImages
             }
             return null;
         }
-        public async Task<string?> GetScryfallIdByNameAsync(string name, SQLiteConnection conn)
+        public async Task<string[]> GetScryfallIdByNameAsync(string name, SQLiteConnection conn)
         {
             string query = @"
                 WITH cardName(name) AS (
-                  SELECT @name
+                    SELECT @name
                 )
-                select scryfallId from cardIdentifiers
-                where uuid = (
+                SELECT scryfallId, uuid FROM cardIdentifiers
+                WHERE uuid = (
                     SELECT uuid
                     FROM cards
                     WHERE name = (SELECT name FROM cardName)
-	                AND setCode = (
-                      SELECT code
-                      FROM sets
-                      WHERE code IN(
-                        SELECT DISTINCT setCode
-                        FROM cards
-                        WHERE name = (SELECT name FROM cardName)
-	                  )
-	                  ORDER BY releaseDate ASC
-
-                      LIMIT 1
-	                )
+                      AND setCode = (
+                          SELECT code
+                          FROM sets
+                          WHERE code IN (
+                              SELECT DISTINCT setCode
+                              FROM cards
+                              WHERE name = (SELECT name FROM cardName)
+                          )
+                          ORDER BY releaseDate ASC
+                          LIMIT 1
+                      )
                 )
                 UNION ALL
-                select scryfallId from tokenIdentifiers
-                where uuid = (
+                SELECT scryfallId, uuid FROM tokenIdentifiers
+                WHERE uuid = (
                     SELECT uuid
                     FROM tokens
                     WHERE name = (SELECT name FROM cardName)
-	                AND setCode = (
-                      SELECT tokenSetCode
-                      FROM sets
-                      WHERE code IN(
-                        SELECT DISTINCT setCode
-                        FROM tokens
-                        WHERE name = (SELECT name FROM cardName)
-	                  )
-	                  ORDER BY releaseDate ASC
-
-                      LIMIT 1
-	                )
+                      AND setCode = (
+                          SELECT tokenSetCode
+                          FROM sets
+                          WHERE code IN (
+                              SELECT DISTINCT setCode
+                              FROM tokens
+                              WHERE name = (SELECT name FROM cardName)
+                          )
+                          ORDER BY releaseDate ASC
+                          LIMIT 1
+                      )
                 );";
+
             using var selectCommand = new SQLiteCommand(query, conn);
             selectCommand.Parameters.AddWithValue("@name", name);
+
             using var reader = await selectCommand.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {
-                return reader["scryfallId"].ToString();
+                string scryfallId = reader["scryfallId"]?.ToString() ?? "";
+                string uuid = reader["uuid"]?.ToString() ?? "";
+                return [scryfallId, uuid];
             }
-            return null;
+
+            return []; // return empty array if no match found
         }
+
         public async Task<string?> GetOtherFaceScryfallIdByUuidAsync(string uuid, SQLiteConnection conn)
         {
             string query = @"

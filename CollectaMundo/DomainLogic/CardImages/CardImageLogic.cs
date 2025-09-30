@@ -1,14 +1,10 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.Infrastructure.RemoteLookups;
-using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic.CardImages
 {
-    public class CardImageLogic(IRemoteLookups remoteLookups) : ICardImageLogic
+    public class CardImageLogic() : ICardImageLogic
     {
-        private readonly IRemoteLookups _remoteLookups = remoteLookups;
-
-        public async Task<string[]> BuildImageUrlsAsync(string scryfallId, CardSet card)
+        public string[] BuildImageUrlsAsync(string scryfallId, CardSet card)
         {
             var frontUrl = BuildImageUrl(scryfallId, front: true);
             string? backUrl = null;
@@ -22,12 +18,10 @@ namespace CollectaMundo.DomainLogic.CardImages
                 ? [frontUrl, backUrl]
                 : [frontUrl];
         }
-
-        public async Task<string?> BuildOtherSideImageUrlAsync(string scryfallId)
+        public string? BuildOtherSideImageUrlAsync(string scryfallId, string frontUrl)
         {
-            var url = BuildImageUrl(scryfallId, front: true); // 'other face' always assumed to be a front
-            //return await ValidateUrlOrNullAsync(url, scryfallId, "OtherFace");
-            return url;
+            var url = BuildImageUrl(scryfallId, front: true); // 'other face' always assumed to be a front            
+            return url != frontUrl ? url : null; // If the URLs are the same, it's probably split, adventure, Aftermath etc. cards where we don't want to show card back
         }
         private static string BuildImageUrl(string scryfallId, bool front)
         {
@@ -36,17 +30,5 @@ namespace CollectaMundo.DomainLogic.CardImages
             var face = front ? "front" : "back";
             return $"https://cards.scryfall.io/normal/{face}/{dir1}/{dir2}/{scryfallId}.jpg";
         }
-        private async Task<string?> ValidateUrlOrNullAsync(string url, string scryfallId, string label)
-        {
-            if (!await _remoteLookups.IsValidUrlAsync(url))
-            {
-                Debug.WriteLine($"{label} image URL check for {scryfallId}: Not found");
-                return null;
-            }
-
-            Debug.WriteLine($"{label} image URL check for {scryfallId}: Exists");
-            return url;
-        }
     }
-
 }

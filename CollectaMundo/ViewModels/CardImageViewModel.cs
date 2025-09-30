@@ -28,6 +28,7 @@ namespace CollectaMundo.ViewModels
             }
 
             var imageResult = await _cardImageService.GetImageForCardAsync(selectedCard);
+
             FrontImageSource = string.IsNullOrWhiteSpace(imageResult?.FrontImageUrl) ? null : await _cardImageDownloader.DownloadAsync(imageResult.FrontImageUrl);
             BackImageSource = string.IsNullOrWhiteSpace(imageResult?.BackImageUrl) ? null : await _cardImageDownloader.DownloadAsync(imageResult.BackImageUrl);
             ImageSet = !string.IsNullOrWhiteSpace(selectedCard.SetName) ? selectedCard.SetName : String.Empty;
