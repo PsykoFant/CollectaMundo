@@ -15,13 +15,13 @@ namespace CollectaMundo.Tests.TestUtils
                     keySelector: s => s!,
                     elementSelector: s => new SetDto
                     {
+                        TokenCode = s!, // no token sets in test data
                         Code = s!,            // use SetCode as both code and display name for tests
                         Name = s!,
                         ReleaseDate = null
                     },
                     comparer: StringComparer.OrdinalIgnoreCase);
-
-            CardSet.SetMetaProvider = new ValueProvider<string, SetDto>(dict);
+            CardSet.SetMetaProvider = new SetDtoLookupProvider(dict);
         }
         public static List<CardSet> GetTestCards()
         {

@@ -7,14 +7,29 @@ namespace CollectaMundo.DomainLogic.CardLists.CardLookups
 {
     public sealed class CardLookupBuilder
     {
-        public CardLookupPackage Build(IReadOnlyDictionary<string, byte[]> manaIcons, IReadOnlyDictionary<string, byte[]> setIcons, IReadOnlyDictionary<string, SetDto> sets, IReadOnlyDictionary<string, PriceDto> prices)
-
+        public static CardLookupPackage Build(
+            IReadOnlyDictionary<string, byte[]> manaIcons,
+            IReadOnlyDictionary<string, byte[]> setIcons,
+            IReadOnlyDictionary<string, SetDto> sets,
+            IReadOnlyDictionary<string, PriceDto> prices)
         {
+            // Build alias map: tokenSetCode → setCode
+            var tokenToCodeMap = sets.Values.Where(s => !string.IsNullOrWhiteSpace(s.TokenCode)).ToDictionary(
+                    s => s.TokenCode,
+                    s => s.Code,
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+            var setIconByteSource = new ByteSourceWithAlias<string>(
+                new DictionaryByteSource<string>(setIcons),
+                tokenToCodeMap
+            );
+
             return new CardLookupPackage
             {
                 ManaCostImages = new ImageProvider<string>(new DictionaryByteSource<string>(manaIcons)),
-                SetIconImages = new ImageProvider<string>(new DictionaryByteSource<string>(setIcons)),
-                SetMetaProvider = new ValueProvider<string, SetDto>(sets),
+                SetIconImages = new ImageProvider<string>(setIconByteSource), // <- uses alias-aware logic
+                SetMetaProvider = new SetDtoLookupProvider(sets),
                 PriceMetaProvider = new ValueProvider<string, PriceDto>(prices)
             };
         }
@@ -26,6 +41,4 @@ namespace CollectaMundo.DomainLogic.CardLists.CardLookups
         public required ILookupProvider<string, SetDto> SetMetaProvider { get; init; }
         public required ILookupProvider<string, PriceDto> PriceMetaProvider { get; init; }
     }
-
-
 }

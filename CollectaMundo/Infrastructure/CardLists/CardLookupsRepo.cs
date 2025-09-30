@@ -2,6 +2,7 @@
 using CollectaMundo.DomainLogic.CardPrices;
 using System.Data.Common;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.Globalization;
 
 namespace CollectaMundo.Infrastructure.CardLists
@@ -54,7 +55,7 @@ namespace CollectaMundo.Infrastructure.CardLists
         public async Task<IReadOnlyDictionary<string, SetDto>> ReadSetsAsync(SQLiteConnection conn)
         {
             var map = new Dictionary<string, SetDto>(capacity: 1024, StringComparer.OrdinalIgnoreCase);
-            const string sql = "SELECT code, name, releaseDate FROM sets";
+            const string sql = "SELECT code, tokenSetCode, name, releaseDate FROM sets";
 
             using var cmd = new SQLiteCommand(sql, conn);
             using var rdr = await cmd.ExecuteReaderAsync();
@@ -66,6 +67,8 @@ namespace CollectaMundo.Infrastructure.CardLists
                     continue;
                 }
 
+                var tokenCode = rdr["tokenSetCode"]?.ToString() ?? "";
+
                 var name = rdr["name"]?.ToString() ?? "";
                 DateTime? release = null;
                 if (DateTime.TryParse(rdr["releaseDate"]?.ToString(), out var dt))
@@ -73,8 +76,10 @@ namespace CollectaMundo.Infrastructure.CardLists
                     release = dt;
                 }
 
-                map[code] = new SetDto { Code = code, Name = name, ReleaseDate = release };
+                map[code] = new SetDto { Code = code, TokenCode = tokenCode, Name = name, ReleaseDate = release };
             }
+
+            Debug.WriteLine($"Loaded {map.Count} sets from database.");
 
             return map;
         }

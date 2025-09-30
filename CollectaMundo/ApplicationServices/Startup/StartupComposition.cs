@@ -13,7 +13,6 @@ using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLists;
-using CollectaMundo.DomainLogic.CardLists.CardLookups;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
@@ -93,8 +92,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var importService = new ImportService(new ImportRepo(), settings);
 
                 var cardLookupsRepo = new CardLookupsRepo();
-                var cardLookupsBuilder = new CardLookupBuilder();
-                var cardLookupsService = new CardLookupsService(dbFactory, cardLookupsRepo, cardLookupsBuilder, getRetailer);
+                var cardLookupsService = new CardLookupsService(dbFactory, cardLookupsRepo, getRetailer);
 
                 var cardImageService = new CardImageService(dbFactory, remoteLookups, new CardImageRepo(), new CardImageLogic());
 

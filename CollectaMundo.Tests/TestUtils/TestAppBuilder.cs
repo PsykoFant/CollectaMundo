@@ -11,7 +11,6 @@ using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLists;
-using CollectaMundo.DomainLogic.CardLists.CardLookups;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
@@ -62,7 +61,6 @@ public static class TestAppBuilder
         var cardLookupsService = new CardLookupsService(
             dbFactory,
             new CardLookupsRepo(),
-            new CardLookupBuilder(),
             getRetailer);
 
         var cardListService = new CardListService(

@@ -9,11 +9,10 @@ using System.Data.SQLite;
 namespace CollectaMundo.ApplicationServices.CardLists.CardLookups
 {
 
-    public sealed class CardLookupsService(IDbConnectionFactory dbFactory, CardLookupsRepo repo, CardLookupBuilder builder, Func<string> getRetailer) : ICardLookupsService
+    public sealed class CardLookupsService(IDbConnectionFactory dbFactory, CardLookupsRepo repo, Func<string> getRetailer) : ICardLookupsService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly CardLookupsRepo _cardLookupsRepo = repo;
-        private readonly CardLookupBuilder _builder = builder;
         private readonly Func<string> _getRetailer = getRetailer;
         public async Task<CardLookupPackage> LoadLookupDataAsync(SQLiteConnection conn, CardLookupsOptions opts)
         {
@@ -40,7 +39,7 @@ namespace CollectaMundo.ApplicationServices.CardLists.CardLookups
                 prices = await _cardLookupsRepo.ReadPricesAsync(conn, retailerKey);
             }
 
-            return _builder.Build(manaIcons, setIcons, sets, prices);
+            return CardLookupBuilder.Build(manaIcons, setIcons, sets, prices);
         }
         public async Task ResetPricesMetaProviderAsync(string retailerKey)
         {

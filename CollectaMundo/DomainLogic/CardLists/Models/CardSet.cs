@@ -41,6 +41,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
                 return SetMetaProvider?.Get(code)?.ReleaseDate;
             }
         }
+
         public string? SetCode { get; init; }
         public string? SetName
         {
