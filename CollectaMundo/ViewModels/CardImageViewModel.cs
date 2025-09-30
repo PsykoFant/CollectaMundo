@@ -32,9 +32,8 @@ namespace CollectaMundo.ViewModels
             FrontImageSource = string.IsNullOrWhiteSpace(imageResult?.FrontImageUrl) ? null : await _cardImageDownloader.DownloadAsync(imageResult.FrontImageUrl);
             BackImageSource = string.IsNullOrWhiteSpace(imageResult?.BackImageUrl) ? null : await _cardImageDownloader.DownloadAsync(imageResult.BackImageUrl);
             ImageSet = !string.IsNullOrWhiteSpace(selectedCard.SetName) ? selectedCard.SetName : String.Empty;
-            ImagePromotType = string.IsNullOrWhiteSpace(imageResult?.PromoType) ? null : imageResult.PromoType;
+            ImagePromoType = string.IsNullOrWhiteSpace(imageResult?.PromoType) ? null : imageResult.PromoType;
         }
-
 
         [ObservableProperty]
         private BitmapImage? frontImageSource;
@@ -46,7 +45,7 @@ namespace CollectaMundo.ViewModels
         private string? imageSet;
 
         [ObservableProperty]
-        private string? imagePromotType;
+        private string? imagePromoType;
     }
 }
 

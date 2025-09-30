@@ -4,7 +4,7 @@ namespace CollectaMundo.DomainLogic.CardImages
 {
     public class CardImageLogic() : ICardImageLogic
     {
-        public string[] BuildImageUrlsAsync(string scryfallId, CardSet card)
+        public (string FrontUrl, string? BackUrl) BuildImageUrls(string scryfallId, CardSet card)
         {
             var frontUrl = BuildImageUrl(scryfallId, front: true);
             string? backUrl = null;
@@ -14,11 +14,10 @@ namespace CollectaMundo.DomainLogic.CardImages
                 backUrl = BuildImageUrl(scryfallId, front: false);
             }
 
-            return backUrl is not null
-                ? [frontUrl, backUrl]
-                : [frontUrl];
+            return (frontUrl, backUrl);
         }
-        public string? BuildOtherSideImageUrlAsync(string scryfallId, string frontUrl)
+
+        public string? BuildOtherSideImageUrl(string scryfallId, string frontUrl)
         {
             var url = BuildImageUrl(scryfallId, front: true); // 'other face' always assumed to be a front            
             return url != frontUrl ? url : null; // If the URLs are the same, it's probably split, adventure, Aftermath etc. cards where we don't want to show card back

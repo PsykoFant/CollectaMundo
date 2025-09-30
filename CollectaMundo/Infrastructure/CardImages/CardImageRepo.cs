@@ -29,7 +29,7 @@ namespace CollectaMundo.Infrastructure.CardImages
             }
             return null;
         }
-        public async Task<string[]> GetScryfallIdByNameAsync(string name, SQLiteConnection conn)
+        public async Task<(string ScryfallId, string Uuid)?> GetScryfallIdByNameAsync(string name, SQLiteConnection conn)
         {
             string query = @"
                 WITH cardName(name) AS (
@@ -79,12 +79,11 @@ namespace CollectaMundo.Infrastructure.CardImages
             {
                 string scryfallId = reader["scryfallId"]?.ToString() ?? "";
                 string uuid = reader["uuid"]?.ToString() ?? "";
-                return [scryfallId, uuid];
+                return (scryfallId, uuid);
             }
 
-            return []; // return empty array if no match found
+            return null;
         }
-
         public async Task<string?> GetOtherFaceScryfallIdByUuidAsync(string uuid, SQLiteConnection conn)
         {
             string query = @"
@@ -119,6 +118,5 @@ namespace CollectaMundo.Infrastructure.CardImages
 
             return null;
         }
-
     }
 }

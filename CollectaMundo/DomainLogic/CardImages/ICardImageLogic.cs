@@ -4,7 +4,7 @@ namespace CollectaMundo.DomainLogic.CardImages
 {
     public interface ICardImageLogic
     {
-        string[] BuildImageUrlsAsync(string scryfallId, CardSet card);
-        string? BuildOtherSideImageUrlAsync(string scryfallId, string frontUrl);
+        (string FrontUrl, string? BackUrl) BuildImageUrls(string scryfallId, CardSet card);
+        string? BuildOtherSideImageUrl(string scryfallId, string frontUrl);
     }
 }

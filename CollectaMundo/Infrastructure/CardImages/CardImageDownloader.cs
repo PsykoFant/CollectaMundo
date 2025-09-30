@@ -34,6 +34,7 @@ namespace CollectaMundo.Infrastructure.CardImages
             catch (Exception ex)
             {
                 Debug.WriteLine($"Image load failed: {ex.Message}");
+                Debug.WriteLine($"Failing url: {url}");
                 return null; // fail silently on 404, etc.
             }
         }

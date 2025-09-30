@@ -35,9 +35,10 @@ namespace CollectaMundo.ApplicationServices.CardImages
             // If UUID is not available, try to get the oldest card's Scryfall ID by name
             else if (!string.IsNullOrWhiteSpace(card.Name))
             {
-                var idList = await WithReadOnlyUowAsync(conn => _repo.GetScryfallIdByNameAsync(card.Name, conn));
-                scryfallID = idList[0];
-                card.Uuid = idList[1]; // Assign the found UUID from the oldest version of the card back to the card object
+                var idTuple = await WithReadOnlyUowAsync(conn => _repo.GetScryfallIdByNameAsync(card.Name, conn));
+                scryfallID = idTuple.Value.ScryfallId;
+                card.Uuid = idTuple.Value.Uuid; // Assign the found UUID from the oldest version of the card back to the card object
+
             }
             // If neither UUID nor name is available, log and return null
             else
@@ -54,9 +55,9 @@ namespace CollectaMundo.ApplicationServices.CardImages
             }
 
             // Build image URLs (logic will only return back is side = "a")
-            var imageUrls = _logic.BuildImageUrlsAsync(scryfallID, card);
-            string frontUrl = imageUrls[0];
-            string? backUrl = imageUrls.Length > 1 ? imageUrls[1] : null;
+            var (FrontUrl, BackUrl) = _logic.BuildImageUrls(scryfallID, card);
+            string frontUrl = FrontUrl;
+            string? backUrl = BackUrl;
 
             // If it is a card with multiple parts (side == "a")
             if (card.Side == "a" && backUrl is not null)
@@ -70,7 +71,7 @@ namespace CollectaMundo.ApplicationServices.CardImages
                     if (!string.IsNullOrWhiteSpace(otherFaceScryfallID))
                     {
                         // Build the other side image URL. This logic will return null if the URL is the same as frontUrl (e.g. variant of split cards)
-                        backUrl = _logic.BuildOtherSideImageUrlAsync(otherFaceScryfallID, frontUrl);
+                        backUrl = _logic.BuildOtherSideImageUrl(otherFaceScryfallID, frontUrl);
                     }
                 }
             }
