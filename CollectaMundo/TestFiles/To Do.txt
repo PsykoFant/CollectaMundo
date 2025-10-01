@@ -1,9 +1,9 @@
 TO DO 
 - MVVM refactor
-  - Meld appraoch
-  - Flyt download metode til det rigtige lag
+
   - Download images cache
   - tests
+    - unit test af lookup set, token kode og alt det pjat. Inkluder det også i scenario
 
  - Import brug MVVM (unit test)
  - Deck manager brug MVVM (unit test)

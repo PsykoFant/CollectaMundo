@@ -1,8 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using System.Diagnostics;
-using System.IO;
 using System.Net.Http;
-using System.Windows.Media.Imaging;
 
 namespace CollectaMundo.Infrastructure.CardImages
 {
@@ -11,9 +9,8 @@ namespace CollectaMundo.Infrastructure.CardImages
         private readonly HttpClient _httpClient = new();
         private readonly IAppSettings _settings = settings;
 
-        public async Task<BitmapImage?> DownloadAsync(string? url)
+        public async Task<byte[]?> DownloadAsync(string? url)
         {
-
             Debug.WriteLine($"Diskpath for image cache: {_settings.CardImageCachePath}");
 
             try
@@ -24,17 +21,8 @@ namespace CollectaMundo.Infrastructure.CardImages
                     return null;
                 }
 
-                var imageBytes = await _httpClient.GetByteArrayAsync(url);
-                using var stream = new MemoryStream(imageBytes);
-
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.StreamSource = stream;
-                bitmap.EndInit();
-                bitmap.Freeze(); // safely cross-thread usable
-
-                return bitmap;
+                // Download the raw bytes directly
+                return await _httpClient.GetByteArrayAsync(url);
             }
             catch (Exception ex)
             {
@@ -44,5 +32,4 @@ namespace CollectaMundo.Infrastructure.CardImages
             }
         }
     }
-
 }

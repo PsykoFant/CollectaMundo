@@ -9,7 +9,6 @@ using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
-using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Presentation;
 using CollectaMundo.Utilities;
 using System.Collections.ObjectModel;
@@ -252,7 +251,7 @@ namespace CollectaMundo.ViewModels
             FilterVM = new FilterViewModel(_filteringService);
 
             // card image viewmodel
-            CardImageVM = new CardImageViewModel(cardImageService, new CardImageDownloader(settings));
+            CardImageVM = new CardImageViewModel(cardImageService);
 
             // update viewmodel
             UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, this, () => MyCollectionVM.Cards.Count);

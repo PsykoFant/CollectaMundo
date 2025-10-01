@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.CardImages.Models;
+﻿using CollectaMundo.DomainLogic.CardImages.Models.CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
 
 namespace CollectaMundo.ApplicationServices.CardImages

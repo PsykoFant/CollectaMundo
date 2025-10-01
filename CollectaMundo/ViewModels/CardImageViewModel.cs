@@ -1,15 +1,14 @@
 ﻿using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.Infrastructure.CardImages;
 using CommunityToolkit.Mvvm.ComponentModel;
+using System.IO;
 using System.Windows.Media.Imaging;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class CardImageViewModel(ICardImageService cardImageService, ICardImageDownloader cardImageDownloader) : ObservableObject
+    public partial class CardImageViewModel(ICardImageService cardImageService) : ObservableObject
     {
         private readonly ICardImageService _cardImageService = cardImageService;
-        private readonly ICardImageDownloader _cardImageDownloader = cardImageDownloader;
 
         [ObservableProperty]
         private CardSet? selectedCard;
@@ -29,11 +28,23 @@ namespace CollectaMundo.ViewModels
 
             var imageResult = await _cardImageService.GetImageForCardAsync(selectedCard);
 
-            FrontImageSource = string.IsNullOrWhiteSpace(imageResult?.FrontImageUrl) ? null : await _cardImageDownloader.DownloadAsync(imageResult.FrontImageUrl);
-            BackImageSource = string.IsNullOrWhiteSpace(imageResult?.BackImageUrl) ? null : await _cardImageDownloader.DownloadAsync(imageResult.BackImageUrl);
-            ImageSet = !string.IsNullOrWhiteSpace(selectedCard.SetName) ? selectedCard.SetName : String.Empty;
-            ImagePromoType = string.IsNullOrWhiteSpace(imageResult?.PromoType) ? null : imageResult.PromoType;
+            FrontImageSource = imageResult?.FrontImageBytes is not null
+                ? LoadBitmapFromBytes(imageResult.FrontImageBytes)
+                : null;
+
+            BackImageSource = imageResult?.BackImageBytes is not null
+                ? LoadBitmapFromBytes(imageResult.BackImageBytes)
+                : null;
+
+            ImageSet = !string.IsNullOrWhiteSpace(selectedCard.SetName)
+                ? selectedCard.SetName
+                : string.Empty;
+
+            ImagePromoType = string.IsNullOrWhiteSpace(imageResult?.PromoType)
+                ? null
+                : imageResult.PromoType;
         }
+
 
         [ObservableProperty]
         private BitmapImage? frontImageSource;
@@ -46,6 +57,18 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private string? imagePromoType;
+        private static BitmapImage LoadBitmapFromBytes(byte[] bytes)
+        {
+            using var stream = new MemoryStream(bytes);
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.StreamSource = stream;
+            image.EndInit();
+            image.Freeze(); // for thread safety
+            return image;
+        }
+
     }
 }
 

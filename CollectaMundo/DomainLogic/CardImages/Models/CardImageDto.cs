@@ -1,10 +1,12 @@
 ﻿namespace CollectaMundo.DomainLogic.CardImages.Models
 {
-    public sealed class CardImageDto
+    namespace CollectaMundo.DomainLogic.CardImages.Models
     {
-        public string? FrontImageUrl { get; init; }
-        public string? BackImageUrl { get; init; }
-        public string? PromoType { get; init; }
+        public sealed class CardImageDto
+        {
+            public byte[]? FrontImageBytes { get; init; }
+            public byte[]? BackImageBytes { get; init; }
+            public string? PromoType { get; init; }
+        }
     }
-
 }
