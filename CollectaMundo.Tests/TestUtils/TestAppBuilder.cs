@@ -72,7 +72,7 @@ public static class TestAppBuilder
 
         var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(new EditCollectionRepo()));
 
-        var cardImageService = new CardImageService(dbFactory, remoteLookups, new CardImageRepo(), new CardImageLogic());
+        var cardImageService = new CardImageService(dbFactory, remoteLookups, new CardImageLogic(), new CardImageRepo(), new CardImageDownloader(settings));
 
         var importService = new ImportService(new ImportRepo(), settings);
         var filteringService = new FilteringService();
