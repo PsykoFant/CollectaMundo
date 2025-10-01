@@ -1,10 +1,9 @@
-﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows.Media;
 
 namespace CollectaMundo.DomainLogic.CardLists.Models
 {
-    public sealed class CardSet : INotifyPropertyChanged
+    public partial class CardSet : ObservableObject
     {
         // images
         public static ILookupProvider<string, ImageSource>? ManaCostImages { get; set; }
@@ -39,7 +38,7 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
                     return _releaseDate;
                 }
 
-                var code = SetCode ?? Core?.SetCode;
+                var code = ResolvedSetCode;
                 if (string.IsNullOrWhiteSpace(code))
                 {
                     return null;
@@ -50,19 +49,42 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             }
         }
         public string? SetCode { get; init; }
+
+        private bool _setNameCached;
+
+        private string? _setName;
+
         public string? SetName
         {
             get
             {
-                var code = SetCode ?? Core?.SetCode;
-                if (string.IsNullOrWhiteSpace(code))
-                {
-                    return null;
-                }
+                if (_setNameCached) return _setName;
+                _setNameCached = true;
 
-                return SetMetaProvider?.Get(code)?.Name;
+                var code = ResolvedSetCode;
+                if (string.IsNullOrWhiteSpace(code))
+                    return null;
+
+                _setName = SetMetaProvider?.Get(code)?.Name;
+                return _setName;
             }
         }
+
+        private bool _resolvedSetCodeCached;
+        private string? _resolvedSetCode;
+
+        private string? ResolvedSetCode
+        {
+            get
+            {
+                if (_resolvedSetCodeCached) return _resolvedSetCode;
+                _resolvedSetCodeCached = true;
+                _resolvedSetCode = SetCode ?? Core?.SetCode;
+                return _resolvedSetCode;
+            }
+        }
+
+
         public string? Side { get; init; }
         public string? SubTypes { get; init; }
         public string? SuperTypes { get; init; }
@@ -78,10 +100,10 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             {
                 if (_keyRuneImage == null)
                 {
-                    var key = Core?.SetCode ?? SetCode;
-                    if (!string.IsNullOrWhiteSpace(key))
+                    var code = ResolvedSetCode;
+                    if (!string.IsNullOrWhiteSpace(code))
                     {
-                        _keyRuneImage = SetIconImages?.Get(key);
+                        _keyRuneImage = SetIconImages?.Get(code);
                     }
                 }
                 return _keyRuneImage;
@@ -107,8 +129,6 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         public int? CardId { get; set; }
 
         // ========= INPC & per-collection fields (unchanged) =========
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         private int _cardsOwned;
         public int CardsOwned
@@ -167,6 +187,8 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
                 }
             }
         }
+
+
         public List<string> AvailableFinishes { get; set; } = [];
 
         private string? _selectedFinish;
@@ -191,10 +213,14 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             (SelectedFinish ?? "").Equals("etched", StringComparison.OrdinalIgnoreCase) ? EtchedPrice :
             NormalPrice;
 
-        public decimal? NormalPrice => PriceMetaProvider?.Get(Uuid ?? string.Empty)?.NormalPrice;
-        public decimal? FoilPrice => PriceMetaProvider?.Get(Uuid ?? string.Empty)?.FoilPrice;
-        public decimal? EtchedPrice => PriceMetaProvider?.Get(Uuid ?? string.Empty)?.EtchedPrice;
+        [ObservableProperty]
+        private decimal? normalPrice;
 
+        [ObservableProperty]
+        private decimal? foilPrice;
+
+        [ObservableProperty]
+        private decimal? etchedPrice;
 
         // ======== Deck field (preserved) ========
         public int Count { get; set; }
@@ -255,13 +281,22 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
                 ManaCostRaw = key
             };
         }
+
+
         public void RefreshPricesFromProvider()
         {
-            OnPropertyChanged(nameof(NormalPrice));
-            OnPropertyChanged(nameof(FoilPrice));
-            OnPropertyChanged(nameof(EtchedPrice));
-            RecomputeCollectionPrice();
+            var price = PriceMetaProvider?.Get(Uuid ?? string.Empty);
+
+            NormalPrice = price?.NormalPrice;
+            FoilPrice = price?.FoilPrice;
+            EtchedPrice = price?.EtchedPrice;
+
+            OnPropertyChanged(nameof(CardInCollectionPrice));
         }
+
+
+
+
 
         // helper to recompute collection price on finish change 
         public void RecomputeCollectionPrice()

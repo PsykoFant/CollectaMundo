@@ -290,17 +290,7 @@ namespace CollectaMundo.Data.Filtering
                 _ => null
             };
         }
-        private static IEnumerable<string> NotNullOrWhite(IEnumerable<string?> src)
-        {
-            // Works for IEnumerable<string> and IEnumerable<string?> alike.
-            foreach (var s in src)
-            {
-                if (!string.IsNullOrWhiteSpace(s))
-                {
-                    yield return s!;
-                }
-            }
-        }
+
         // Comma NOT followed by exactly 3 digits at word boundary. To catch keywords with comma in them. E.g. "Flying, vigilance" should split, but "10,000" should not.
         private static readonly Regex SplitCommaRegex = MyRegex();
 
