@@ -2,7 +2,7 @@
 {
     public interface ICardImageDownloader
     {
-        Task<byte[]?> DownloadAsync(string? url);
+        Task<byte[]?> DownloadAsync(string? url, string uuid, string side);
     }
 
 }

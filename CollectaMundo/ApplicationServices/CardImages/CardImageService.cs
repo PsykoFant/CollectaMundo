@@ -70,8 +70,14 @@ namespace CollectaMundo.ApplicationServices.CardImages
             }
 
             // Download as byte arrays
-            var frontBytes = string.IsNullOrWhiteSpace(frontUrl) ? null : await _downloader.DownloadAsync(frontUrl);
-            var backBytes = string.IsNullOrWhiteSpace(backUrl) ? null : await _downloader.DownloadAsync(backUrl);
+            var frontBytes = string.IsNullOrWhiteSpace(frontUrl)
+                ? null
+                : await _downloader.DownloadAsync(frontUrl, card.Uuid, "front");
+
+            var backBytes = string.IsNullOrWhiteSpace(backUrl)
+                ? null
+                : await _downloader.DownloadAsync(backUrl, card.Uuid, "back");
+
 
             return new CardImageDto
             {
