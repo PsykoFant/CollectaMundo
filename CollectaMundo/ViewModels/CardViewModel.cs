@@ -1,30 +1,22 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using System.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace CollectaMundo.ViewModels
 {
-    public class CardViewModel : INotifyPropertyChanged
+    public partial class CardViewModel : ObservableObject
     {
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         public List<CardSet> Cards { get; set; } = [];
 
-        private List<CardSet> _filteredCards = [];
-        public List<CardSet> FilteredCards
-        {
-            get => _filteredCards;
-            set
-            {
-                if (_filteredCards != value)
-                {
-                    _filteredCards = value;
-                    OnPropertyChanged(nameof(FilteredCards));
-                    OnPropertyChanged(nameof(FilteredCount));
-                    OnPropertyChanged(nameof(TotalCount));
-                }
-            }
-        }
+        [ObservableProperty]
+        private List<CardSet> filteredCards = [];
+
         public int FilteredCount => FilteredCards.Count;
         public int TotalCount => Cards.Count;
+
+        partial void OnFilteredCardsChanged(List<CardSet>? oldValue, List<CardSet> newValue)
+        {
+            OnPropertyChanged(nameof(FilteredCount));
+            OnPropertyChanged(nameof(TotalCount));
+        }
     }
 }

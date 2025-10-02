@@ -10,26 +10,19 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Presentation;
-using CollectaMundo.Utilities;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Input;
 using static CollectaMundo.DomainLogic.EditCollection.Models.CardChangeEventArgs;
 
 namespace CollectaMundo.ViewModels
 {
     #endregion
-    public class MainWindowViewModel : INotifyPropertyChanged, IUiBlockable, IAppRefresher
+    public partial class MainWindowViewModel : ObservableObject, IUiBlockable, IAppRefresher
     {
         #region class: MainWindowViewModel (fields, ctor, factory)
-
-        #region INotifyPropertyChanged boilerplate
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        #endregion
 
         #region readonly dependencies
         // App settings
@@ -66,73 +59,49 @@ namespace CollectaMundo.ViewModels
         public Action? OnStartupComplete { get; set; }
 
         // What page are we on?
-        private Page _currentPage = Page.SearchAndFilter;
-        public Page CurrentPage
+        [ObservableProperty]
+        private Page currentPage = Page.SearchAndFilter;
+        partial void OnCurrentPageChanged(Page oldValue, Page newValue)
         {
-            get => _currentPage;
-            set
+            if (oldValue == newValue)
+                return;
+
+            _statusVM.HideStatusOverlay();
+
+            if (newValue == Page.MyCollection)
             {
-                if (_currentPage == value)
-                {
-                    return;
-                }
-
-                _currentPage = value;
-
-                _statusVM.HideStatusOverlay();
-
-                if (_currentPage == Page.MyCollection)
-                {
-                    AddCardsVM.StatusMessage = string.Empty;
-                    SideMenuFilterVisibility = Visibility.Visible;
-                    SideMenuUtilsVisibility = Visibility.Collapsed;
-                    CardViewSectionVisibility = Visibility.Visible;
-
-                    // Nudge the second grid once it’s about to be shown
-                    MyCollectionResizeToken++;
-                }
-                else if (_currentPage == Page.SearchAndFilter)
-                {
-                    EditCardsVM.StatusMessage = string.Empty;
-                    SideMenuFilterVisibility = Visibility.Visible;
-                    SideMenuUtilsVisibility = Visibility.Collapsed;
-                    CardViewSectionVisibility = Visibility.Visible;
-                }
-                else if (_currentPage == Page.Utilities)
-                {
-                    SideMenuFilterVisibility = Visibility.Collapsed;
-                    SideMenuUtilsVisibility = Visibility.Visible;
-                    CardViewSectionVisibility = Visibility.Collapsed;
-                }
-
-                OnPropertyChanged();                  // CurrentPage
-                OnPropertyChanged(nameof(MiniLogoVisibility));
+                AddCardsVM.StatusMessage = string.Empty;
+                SideMenuFilterVisibility = Visibility.Visible;
+                SideMenuUtilsVisibility = Visibility.Collapsed;
+                CardViewSectionVisibility = Visibility.Visible;
+                MyCollectionResizeToken++;
             }
+            else if (newValue == Page.SearchAndFilter)
+            {
+                EditCardsVM.StatusMessage = string.Empty;
+                SideMenuFilterVisibility = Visibility.Visible;
+                SideMenuUtilsVisibility = Visibility.Collapsed;
+                CardViewSectionVisibility = Visibility.Visible;
+            }
+            else if (newValue == Page.Utilities)
+            {
+                SideMenuFilterVisibility = Visibility.Collapsed;
+                SideMenuUtilsVisibility = Visibility.Visible;
+                CardViewSectionVisibility = Visibility.Collapsed;
+            }
+
+            OnPropertyChanged(nameof(MiniLogoVisibility));
         }
 
         // Column resize
-        private int _myCollectionResizeToken;
-        public int MyCollectionResizeToken
-        {
-            get => _myCollectionResizeToken;
-            private set { _myCollectionResizeToken = value; OnPropertyChanged(); }
-        }
-        public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; set; } = [[50, 50], [50, 50], [50]];
+        [ObservableProperty]
+        private int myCollectionResizeToken;
+        public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; } = new([[50, 50], [50, 50], [50]]);
 
         // Enable/disable top menu 
-        private bool _isTopMenuEnabled = true;
-        public bool IsTopMenuEnabled
-        {
-            get => _isTopMenuEnabled;
-            set
-            {
-                if (_isTopMenuEnabled != value)
-                {
-                    _isTopMenuEnabled = value;
-                    OnPropertyChanged(); // Required for WPF to update bindings
-                }
-            }
-        }
+        [ObservableProperty]
+        private bool isTopMenuEnabled = true;
+
         private void MiniLogoVisibilityFlipper()
         {
             AddCardsVM.PropertyChanged += (_, e) => { if (e.PropertyName == "StatusVisibility") { OnPropertyChanged(nameof(MiniLogoVisibility)); } };
@@ -142,50 +111,26 @@ namespace CollectaMundo.ViewModels
         #region Visibility properties
 
         // Main sections visibility
-        private Visibility _mainGridVisibility = Visibility.Collapsed;
-        public Visibility MainGridVisibility
-        {
-            get => _mainGridVisibility;
-            set { _mainGridVisibility = value; OnPropertyChanged(); }
-        }
+        [ObservableProperty]
+        private Visibility mainGridVisibility = Visibility.Collapsed;
 
-        private Visibility _contentSectionVisibility = Visibility.Hidden;
-        public Visibility ContentSectionVisibility
-        {
-            get => _contentSectionVisibility;
-            set { _contentSectionVisibility = value; OnPropertyChanged(); }
-        }
+        [ObservableProperty]
+        private Visibility contentSectionVisibility = Visibility.Hidden;
 
         // Side menu visibility
-        private Visibility _sideMenuVisibility = Visibility.Hidden;
-        public Visibility SideMenuVisibility
-        {
-            get => _sideMenuVisibility;
-            set { _sideMenuVisibility = value; OnPropertyChanged(); }
-        }
+        [ObservableProperty]
+        private Visibility sideMenuVisibility = Visibility.Hidden;
 
         // Side menu subsections visibility properties
-        private Visibility _sideMenuFilterVisibility = Visibility.Visible;
-        public Visibility SideMenuFilterVisibility
-        {
-            get => _sideMenuFilterVisibility;
-            set { _sideMenuFilterVisibility = value; OnPropertyChanged(); }
-        }
+        [ObservableProperty]
+        private Visibility sideMenuFilterVisibility = Visibility.Hidden;
 
-        private Visibility _sideMenuUtilsVisibility = Visibility.Hidden;
-        public Visibility SideMenuUtilsVisibility
-        {
-            get => _sideMenuUtilsVisibility;
-            set { _sideMenuUtilsVisibility = value; OnPropertyChanged(); }
-        }
+        [ObservableProperty]
+        private Visibility sideMenuUtilsVisibility = Visibility.Hidden;
 
         // Card view visibility
-        private Visibility _cardViewSectionVisibility = Visibility.Visible;
-        public Visibility CardViewSectionVisibility
-        {
-            get => _cardViewSectionVisibility;
-            set { _cardViewSectionVisibility = value; OnPropertyChanged(); }
-        }
+        [ObservableProperty]
+        private Visibility cardViewSectionVisibility = Visibility.Visible;
 
         // Miscellaneous visibility properties
         public Visibility MiniLogoVisibility
@@ -261,7 +206,6 @@ namespace CollectaMundo.ViewModels
 
             // event wiring
             SubscribeChildVmEvents();
-            BuildCommands();
             MiniLogoVisibilityFlipper();
         }
         public static async Task<MainWindowViewModel> CreateAsync(
@@ -291,19 +235,19 @@ namespace CollectaMundo.ViewModels
 
         #endregion
 
-        #region commands (construction + handlers)
+        #region commands
         // Commands to switch pages
-        public ICommand ShowSearchAndFilterCommand { get; private set; } = null!;
-        public ICommand ShowMyCollectionCommand { get; private set; } = null!;
-        public ICommand ShowDecksCommand { get; private set; } = null!;
-        public ICommand ShowUtilitiesCommand { get; private set; } = null!;
-        private void BuildCommands()
-        {
-            ShowSearchAndFilterCommand = new RelayCommand<object>(_ => { CurrentPage = Page.SearchAndFilter; });
-            ShowMyCollectionCommand = new RelayCommand<object>(_ => { CurrentPage = Page.MyCollection; });
-            ShowDecksCommand = new RelayCommand<object>(_ => CurrentPage = Page.Decks);
-            ShowUtilitiesCommand = new RelayCommand<object>(_ => CurrentPage = Page.Utilities);
-        }
+        [RelayCommand]
+        private void ShowSearchAndFilter() => CurrentPage = Page.SearchAndFilter;
+
+        [RelayCommand]
+        private void ShowMyCollection() => CurrentPage = Page.MyCollection;
+
+        [RelayCommand]
+        private void ShowDecks() => CurrentPage = Page.Decks;
+
+        [RelayCommand]
+        private void ShowUtilities() => CurrentPage = Page.Utilities;
 
         #endregion
 

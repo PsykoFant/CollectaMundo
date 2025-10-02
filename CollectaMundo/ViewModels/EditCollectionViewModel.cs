@@ -2,6 +2,8 @@
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Utilities;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using ServiceStack;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -11,11 +13,8 @@ using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels
 {
-    public class EditCollectionViewModel : INotifyPropertyChanged
+    public partial class EditCollectionViewModel : ObservableObject
     {
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
         public event EventHandler<CardChangeEventArgs>? CardChanged;
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
 
@@ -69,59 +68,35 @@ namespace CollectaMundo.ViewModels
         }
 
         // Countertrigger to clear datagrid selection
-        private int _clearSelectionTrigger;
-        public int ClearSelectionTrigger
-        {
-            get => _clearSelectionTrigger;
-            set
-            {
-                if (_clearSelectionTrigger != value)
-                {
-                    _clearSelectionTrigger = value;
-                    OnPropertyChanged(nameof(ClearSelectionTrigger));
-                }
-            }
-        }
+        [ObservableProperty]
+        private int clearSelectionTrigger;
 
         // Countertrigger to resize listview columns
-        private int _refreshColumnsTrigger;
-        public int RefreshColumnsTrigger
-        {
-            get => _refreshColumnsTrigger;
-            set
-            {
-                if (_refreshColumnsTrigger != value)
-                {
-                    _refreshColumnsTrigger = value;
-                    OnPropertyChanged(nameof(RefreshColumnsTrigger));
-                }
-            }
-        }
+        [ObservableProperty]
+        private int refreshColumnsTrigger;
 
         // Controls visibility of the listviews.
         public Visibility CollectionEditVisibility => CardsToAdd.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
 
         // Commands - add to listviews
-        public ICommand AddSelectedCardsCommand => new RelayCommand<object>(async param =>
+        [RelayCommand]
+        private async Task AddSelectedCards(object param)
         {
             if (param is IEnumerable<object> selectedItems)
             {
-                StatusMessage = String.Empty; // Clear status message
+                StatusMessage = string.Empty;
 
                 var cards = selectedItems.OfType<CardSet>();
                 foreach (var card in cards)
                 {
-                    // Call the manager to add the card to the in-memory collection.
                     await _service.AddCardToAddCardsListViewAsync(card, CardsToAdd);
                 }
 
-                // Increment the trigger to signal the view to clear selection.
                 ClearSelectionTrigger++;
-
-                // Now increment the trigger to signal the view to refresh columns.
                 RefreshColumnsTrigger++;
             }
-        });
+        }
+
         public ICommand EditSelectedCardsCommand => new RelayCommand<object>(async param =>
         {
             if (param is IEnumerable<object> selectedItems)
@@ -324,20 +299,13 @@ namespace CollectaMundo.ViewModels
             StatusMessage = sb.ToString().TrimEnd();
         }
 
-        private string _statusMessage = string.Empty;
-        public string StatusMessage
+        [ObservableProperty]
+        private string statusMessage = string.Empty;
+        partial void OnStatusMessageChanged(string? oldValue, string newValue)
         {
-            get => _statusMessage;
-            set
-            {
-                if (_statusMessage != value)
-                {
-                    _statusMessage = value;
-                    OnPropertyChanged(nameof(StatusMessage));
-                    OnPropertyChanged(nameof(StatusVisibility));
-                }
-            }
+            OnPropertyChanged(nameof(StatusVisibility));
         }
+
         public Visibility StatusVisibility
             => string.IsNullOrEmpty(StatusMessage)
                 ? Visibility.Collapsed
