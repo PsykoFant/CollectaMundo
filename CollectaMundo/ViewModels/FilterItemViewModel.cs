@@ -354,6 +354,27 @@ namespace CollectaMundo.ViewModels
             }
         }
 
+        [RelayCommand]
+        public void RulesTextBoxGotFocus(object? _)
+        {
+            FreetextSearch = "";
+            TextForeground = Brushes.Black;
+            IsDropDownOpen = true;
+        }
+
+        [RelayCommand]
+        public void RulesTextBoxLostFocus(object? _)
+        {
+            if (string.IsNullOrWhiteSpace(FreetextSearch))
+            {
+                _suppressFiltering = true;
+                FreetextSearch = DefaultText;
+                _suppressFiltering = false;
+                TextForeground = Brushes.Gray;
+            }
+        }
+
+
         public void ResetOptions(IEnumerable<string> newOptionNames)
         {
             // Fast no-op if identical (order-insensitive compare)
