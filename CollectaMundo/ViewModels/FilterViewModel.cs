@@ -1,53 +1,34 @@
 ﻿using CollectaMundo.ApplicationServices.Filtering;
-using CollectaMundo.Utilities;
-using System.ComponentModel;
-using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 
 namespace CollectaMundo.ViewModels
 {
-    public class FilterViewModel : INotifyPropertyChanged
+    public partial class FilterViewModel(IFilteringService service) : ObservableObject
     {
         // Injected dependencies
-        private readonly IFilteringService _service;
+        private readonly IFilteringService _service = service;
 
         // Exposed filters and summary
         public Dictionary<string, FilterItemViewModel> Filters { get; } = [];
-        private string? _filterSummary;
-        public string? FilterSummary
-        {
-            get => _filterSummary;
-            set
-            {
-                if (_filterSummary != value)
-                {
-                    _filterSummary = value;
-                    OnPropertyChanged(nameof(FilterSummary));
-                }
-            }
-        }
+
+        [ObservableProperty]
+        private string? filterSummary;
         public void NotifyFiltersRebuilt()
         {
             OnPropertyChanged(nameof(Filters));
         }
 
-        public ICommand ClearFiltersCommand { get; }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler? FilterChanged;
-        protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
-        // Constructor
-        public FilterViewModel(IFilteringService service)
+        [RelayCommand]
+        private void ClearFilters()
         {
-            _service = service;
-
-            ClearFiltersCommand = new RelayCommand<object>(_ =>
-            {
-                _service.ResetAllFilters(Filters.Values);
-                NotifyFilterChanged();
-            });
+            _service.ResetAllFilters(Filters.Values);
+            NotifyFilterChanged();
         }
+
         public void NotifyFilterChanged()
         {
             FilterSummary = _service.BuildSummary(Filters.Values);

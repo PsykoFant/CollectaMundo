@@ -1,7 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
-using CollectaMundo.Utilities;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ServiceStack;
@@ -9,7 +8,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Text;
 using System.Windows;
-using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels
 {
@@ -96,8 +94,8 @@ namespace CollectaMundo.ViewModels
                 RefreshColumnsTrigger++;
             }
         }
-
-        public ICommand EditSelectedCardsCommand => new RelayCommand<object>(async param =>
+        [RelayCommand]
+        private async Task EditSelectedCards(object param)
         {
             if (param is IEnumerable<object> selectedItems)
             {
@@ -116,78 +114,110 @@ namespace CollectaMundo.ViewModels
                 // Now increment the trigger to signal the view to refresh columns.
                 RefreshColumnsTrigger++;
             }
-        });
+        }
 
         // Commands - manipulate listviews
-        public ICommand ClearCardsToAddCommand => new RelayCommand<object>(param =>
+        [RelayCommand]
+        private void ClearCardsToAdd()
         {
             // Clear the in-memory collection.
             CardsToAdd.Clear();
 
             // Increment the trigger to signal the view to clear selection.
             ClearSelectionTrigger++;
-        });
-        public ICommand RefreshColumnsCommand => new RelayCommand<object>(param =>
+        }
+        [RelayCommand]
+        private void RefreshColumns()
         {
             RefreshColumnsTrigger++;
-        });
-        public static ICommand IncrementCountCommand => new RelayCommand<object>(param =>
+        }
+
+        [RelayCommand]
+        private static void IncrementCount(CardSet? card)
         {
-            if (param is CardSet card)
+            if (card is not null)
             {
                 card.CardsOwned++;
             }
-        });
-        public ICommand DecrementCountCommand => new RelayCommand<object>(param =>
+        }
+
+        [RelayCommand]
+        private void DecrementCount(CardSet? card)
         {
-            if (param is CardSet card)
+            if (card is not null && card.CardsOwned > 0)
             {
-                if (card.CardsOwned > 0)
-                {
-                    card.CardsOwned--;
-                    RefreshColumnsTrigger++;
-                }
+                card.CardsOwned--;
+                RefreshColumnsTrigger++;
             }
-        });
-        public static ICommand IncrementTradeCommand => new RelayCommand<object>(param =>
+        }
+
+        [RelayCommand]
+        private static void IncrementTrade(CardSet? card)
         {
-            if (param is CardSet card)
+            if (card is not null && card.CardsForTrade < card.CardsOwned)
             {
-                if (card.CardsForTrade < card.CardsOwned)
-                {
-                    card.CardsForTrade++;
-                }
+                card.CardsForTrade++;
             }
-        });
-        public static ICommand DecrementTradeCommand => new RelayCommand<object>(param =>
+        }
+
+        [RelayCommand]
+        private static void DecrementTrade(CardSet? card)
         {
-            if (param is CardSet card)
+            if (card is not null)
             {
                 card.CardsForTrade--;
             }
-        });
+        }
+
 
         // Commands - submit cards from listview
-        public ICommand SubmitNewCardsCommand => new RelayCommand<object>(async _ => await SubmitBatchAsync(CardsToAdd, cards => _service.SubmitCardBatchAsync(cards), clearAfter: true, summaryTitle: "Added the following cards to your collection:"));
-        public ICommand SubmitCardEditsCommand => new RelayCommand<object>(async _ => await SubmitBatchAsync(CardsToAdd, cards => _service.SubmitCardBatchAsync(cards), clearAfter: true, summaryTitle: "Updated the following cards with these values:"));
-        public ICommand SubmitNewCardsWithDefaultsCommand => new RelayCommand<object>(async param =>
-          {
-              if (param is not IEnumerable<object> sel) { return; }
-
-              var originals = sel.OfType<CardSet>().ToList();
-              if (originals.Count == 0) { return; }
-
-              await SubmitBatchAsync(originals, cards => _service.SubmitNewCardsWithDefaultsBatchAsync(cards), clearAfter: false, summaryTitle: "Added the following cards with default values:");
-          });
-        public ICommand DeleteSelectedCardsCommand => new RelayCommand<object>(async param =>
+        [RelayCommand]
+        private async Task SubmitNewCardsAsync()
         {
-            if (param is not IEnumerable<object> sel) { return; }
+            await SubmitBatchAsync(
+                CardsToAdd,
+                cards => _service.SubmitCardBatchAsync(cards),
+                clearAfter: true,
+                summaryTitle: "Added the following cards to your collection:");
+        }
 
-            // 1) Pull out the selected CardSet instances
+        [RelayCommand]
+        private async Task SubmitCardEditsAsync()
+        {
+            await SubmitBatchAsync(
+                CardsToAdd,
+                cards => _service.SubmitCardBatchAsync(cards),
+                clearAfter: true,
+                summaryTitle: "Updated the following cards with these values:");
+        }
+
+        [RelayCommand]
+        private async Task SubmitNewCardsWithDefaults(object? param)
+        {
+            if (param is not IEnumerable<object> sel)
+                return;
+
             var originals = sel.OfType<CardSet>().ToList();
-            if (originals.Count == 0) { return; }
+            if (originals.Count == 0)
+                return;
 
-            // 2) Clone each one and force CardsOwned=0 (so we don’t stomp on the ListView’s binding)
+            await SubmitBatchAsync(
+                originals,
+                cards => _service.SubmitNewCardsWithDefaultsBatchAsync(cards),
+                clearAfter: false,
+                summaryTitle: "Added the following cards with default values:");
+        }
+
+        [RelayCommand]
+        private async Task DeleteSelectedCardsAsync(object? param)
+        {
+            if (param is not IEnumerable<object> sel)
+                return;
+
+            var originals = sel.OfType<CardSet>().ToList();
+            if (originals.Count == 0)
+                return;
+
             var toDelete = originals.Select(o => new CardSet
             {
                 CardId = o.CardId,
@@ -198,56 +228,57 @@ namespace CollectaMundo.ViewModels
                 CardsOwned = 0,
             }).ToList();
 
-            // 3) Reuse SubmitBatchAsync helper,  
-            await SubmitBatchAsync(toDelete, cards => _service.SubmitCardBatchAsync(cards), clearAfter: true, summaryTitle: "Deleted the following cards from your collection:");
-        });
-        public ICommand PutAllForTradeCommand => new RelayCommand<object>(async param =>
+            await SubmitBatchAsync(
+                toDelete,
+                cards => _service.SubmitCardBatchAsync(cards),
+                clearAfter: true,
+                summaryTitle: "Deleted the following cards from your collection:");
+        }
+
+        [RelayCommand]
+        private async Task PutAllForTradeAsync(object? param)
         {
             if (param is not IEnumerable<object> sel)
-            {
                 return;
-            }
 
-            // 1) Grab the selected CardSet instances
             var cards = sel.OfType<CardSet>().ToList();
             if (cards.Count == 0)
-            {
                 return;
-            }
 
-            // 2) Mutate each one in-memory
             foreach (var c in cards)
             {
                 c.CardsForTrade = c.CardsOwned;
             }
 
-            // 3) Call SubmitBatchAsync helper to persist & raise events
-            await SubmitBatchAsync(cards, cards => _service.SubmitCardBatchAsync(cards), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
-        });
-        public ICommand SetNoneForTradeCommand => new RelayCommand<object>(async param =>
+            await SubmitBatchAsync(
+                cards,
+                cards => _service.SubmitCardBatchAsync(cards),
+                clearAfter: false,
+                summaryTitle: "Put the following cards up for trade:");
+        }
+
+        [RelayCommand]
+        private async Task SetNoneForTradeAsync(object? param)
         {
             if (param is not IEnumerable<object> sel)
-            {
                 return;
-            }
 
-            // 1) Grab the selected CardSet instances
             var cards = sel.OfType<CardSet>().ToList();
             if (cards.Count == 0)
-            {
                 return;
-            }
 
-            // 2) Mutate each one in-memory
             foreach (var c in cards)
             {
                 c.CardsForTrade = 0;
             }
 
-            // 3) Call SubmitBatchAsync helper to persist & raise events
-            await SubmitBatchAsync(cards, cards => _service.SubmitCardBatchAsync(cards), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
+            await SubmitBatchAsync(
+                cards,
+                cards => _service.SubmitCardBatchAsync(cards),
+                clearAfter: false,
+                summaryTitle: "Set the following cards not for trade:");
+        }
 
-        });
 
         // Shared helper
         private async Task SubmitBatchAsync(IEnumerable<CardSet> originals, Func<IEnumerable<CardSet>, Task<List<CardChangeEventArgs>>> persistBatch, bool clearAfter, string summaryTitle)

@@ -1,18 +1,13 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardPrices;
-using CollectaMundo.Utilities;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels
 {
-    public class PricesViewModel : INotifyPropertyChanged
+    public partial class PricesViewModel : ObservableObject
     {
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
         // Settings
         private readonly IAppSettings _appSettings;
 
@@ -23,45 +18,26 @@ namespace CollectaMundo.ViewModels
         public sealed record RetailerOption(string Key, string Display);
         public ObservableCollection<RetailerOption> Retailers { get; }
 
-        private RetailerOption? _selectedRetailer;
-        public RetailerOption? SelectedRetailer
-        {
-            get => _selectedRetailer;
-            set { if (_selectedRetailer != value) { _selectedRetailer = value; OnPropertyChanged(); } }
-        }
+        [ObservableProperty]
+        private RetailerOption? selectedRetailer;
 
         // Last price update date
         public string LatestPriceUpdateDate => $"Card prices updated: {_appSettings.PriceInfo.PricesUpdatedDate}";
 
         // Price column headers (dynamic based on retailer)
-        private string _priceHeader = "Price";
-        public string PriceHeader
-        {
-            get => _priceHeader;
-            private set { if (_priceHeader != value) { _priceHeader = value; OnPropertyChanged(); } }
-        }
+        [ObservableProperty]
+        private string priceHeader = "Price";
 
-        private string _foilPriceHeader = "Foil Price";
-        public string FoilPriceHeader
-        {
-            get => _foilPriceHeader;
-            private set { if (_foilPriceHeader != value) { _foilPriceHeader = value; OnPropertyChanged(); } }
-        }
+        [ObservableProperty]
+        private string foilPriceHeader = "Foil Price";
 
-        private string _etchedPriceHeader = "Etched Price";
-        public string EtchedPriceHeader
-        {
-            get => _etchedPriceHeader;
-            private set { if (_etchedPriceHeader != value) { _etchedPriceHeader = value; OnPropertyChanged(); } }
-        }
+        [ObservableProperty]
+        private string etchedPriceHeader = "Etched Price";
 
         public void RefreshLatestPriceDate()
         {
             OnPropertyChanged(nameof(LatestPriceUpdateDate));
         }
-
-        // Command
-        public ICommand ChangeRetailerCommand { get; private set; } = null!;
 
         // Constructor        
         public PricesViewModel(IAppSettings settings, IAppRefresher appRefresher)
@@ -80,20 +56,18 @@ namespace CollectaMundo.ViewModels
             SelectedRetailer = Retailers.FirstOrDefault(r => string.Equals(r.Key, savedKey, StringComparison.OrdinalIgnoreCase)) ?? Retailers.First();
 
             UpdatePriceHeaders();
-
-            ChangeRetailerCommand = new RelayCommand<object>(_ => ChangeRetailerAsync());
         }
 
         // simple currency mapping
         private static string GetCurrencyForRetailer(string key) => string.Equals(key, "cardmarket", StringComparison.OrdinalIgnoreCase) ? "EUR" : "USD";
 
-        // Command action
-        private void ChangeRetailerAsync()
+        // Command and command actions
+        [RelayCommand]
+        private void ChangeRetailer()
         {
             if (SelectedRetailer is null)
-            {
                 return;
-            }
+
             _appSettings.PersistPriceInfo(updatedDate: null, retailer: SelectedRetailer.Key);
             _appRefresher.RefreshAllPrices();
             UpdatePriceHeaders();
@@ -106,6 +80,5 @@ namespace CollectaMundo.ViewModels
             FoilPriceHeader = $"Foil Price ({currency})";
             EtchedPriceHeader = $"Etched Price ({currency})";
         }
-
     }
 }

@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Tests.TestUtils;
+using CommunityToolkit.Mvvm.Input;
 using Moq;
 using System.Windows;
 
@@ -16,20 +17,31 @@ namespace CollectaMundo.Tests.UnitTests
                 backupResult: new OperationResult(OperationResultCode.Success, "mock-backup-path"),
                 updateResult: new OperationResult(OperationResultCode.Success, "Update complete"));
 
-            // Act: start the update
-            updateVM.UpdateDBCommand.Execute(null);
+            // Act: Start the async command
+            await ((IAsyncRelayCommand)updateVM.UpdateDBCommand).ExecuteAsync(null);
 
-            // Wait for "Go for it!" prompt
+            // Wait for overlay prompt
             while (statusVM.PrimaryButtonText != "   Go for it!   ")
             {
                 await Task.Delay(1);
             }
 
-            // Simulate user pressing the button
-            statusVM.PrimaryButtonCommand.Execute(null);
+            // Set hook using statusVM — now fully legal
+            statusVM.SetPrimaryAction(_ =>
+            {
+                updateVM.ConfirmReady.Wait();
+                updateVM.AfterUserConfirmedUpdate();
+                updateVM.TryCaptureUpdateTask(); // encapsulates both the call + tracking
+            });
 
-            // Wait for actual task to complete
-            await updateVM.InternalUpdateTask!;
+            // Simulate user pressing "Go for it!"
+            TestableUpdateViewModel.SimulatePrimaryButtonClick(statusVM);
+
+            // Let async flow proceed
+            updateVM.ConfirmReady.Set();
+
+            // Wait for captured task
+            await updateVM.InternalUpdateTask;
 
             // Assert
             Assert.Equal("Database updated successfully!", statusVM.StatusLabel1);
@@ -37,6 +49,8 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal("  OK  ", statusVM.PrimaryButtonText);
             Assert.Equal(Visibility.Visible, statusVM.PrimaryButtonVisibility);
         }
+
+
         [Fact]
         public async Task UpdateDbAsync_BackupSucceeds_UpdateCancelledByUser()
         {

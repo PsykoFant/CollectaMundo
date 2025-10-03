@@ -1,44 +1,33 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.Utilities;
 using CollectaMundo.ViewModels;
 using Moq;
-using System.Reflection;
 
 namespace CollectaMundo.Tests.TestUtils
 {
     public class TestableUpdateViewModel : UpdateViewModel
     {
-        public Task? InternalUpdateTask { get; private set; }
-        public Action? AfterUserConfirmedUpdate { get; set; }
+        public Task InternalUpdateTask => _internalUpdateTask!;
+        private Task? _internalUpdateTask;
 
-        public ManualResetEventSlim ConfirmReady = new();  // Test code will signal this
-        public TestableUpdateViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, IUiBlockable uiState, IAppRefresher appRefresher, Func<int> getMyCollectionCount) : base(dbService, statusVM, uiState, appRefresher, getMyCollectionCount)
+        public void TryCaptureUpdateTask()
         {
-            UpdateDBCommand = new RelayCommand<object>(async _ =>
-            {
-                InternalUpdateTask = InvokeUpdateDBAsync(); // Calls private UpdateDBAsync()
-                await InternalUpdateTask;
-            });
+            _internalUpdateTask = UpdateDBAsync(); // legal: UpdateDBAsync is protected
         }
-        public Task InvokeUpdateDBAsync()
+
+        public Action AfterUserConfirmedUpdate { get; set; } = () => { };
+        public ManualResetEventSlim ConfirmReady { get; } = new();
+
+        public TestableUpdateViewModel(
+            ICardDatabaseManagementService dbService,
+            StatusViewModel statusVM,
+            IUiBlockable uiState,
+            IAppRefresher appRefresher,
+            Func<int> getMyCollectionCount)
+            : base(dbService, statusVM, uiState, appRefresher, getMyCollectionCount)
         {
-            var method = typeof(UpdateViewModel).GetMethod("UpdateDBAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
-
-            // Use async wrapper so we can inject hook in between
-            return Task.Run(async () =>
-            {
-                var task = (Task)method.Invoke(this, null)!;
-
-                if (AfterUserConfirmedUpdate is not null)
-                {
-                    ConfirmReady.Wait();          // wait only when test cares
-                    AfterUserConfirmedUpdate();   // safe to invoke
-                }
-
-                await task;
-            });
         }
+
 
         public static (TestableUpdateViewModel vm, StatusViewModel statusVM, Mock<ICardDatabaseManagementService> dbService) CreateTestableUpdateViewModel(
             OperationResult? backupResult = null,
@@ -49,14 +38,12 @@ namespace CollectaMundo.Tests.TestUtils
 
             if (backupResult is not null)
             {
-                dbService.Setup(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()))
-                         .ReturnsAsync(backupResult);
+                dbService.Setup(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(backupResult);
             }
 
             if (updateResult is not null)
             {
-                dbService.Setup(s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                         .ReturnsAsync(updateResult);
+                dbService.Setup(s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>())).ReturnsAsync(updateResult);
             }
 
             var statusVM = new StatusViewModel();
@@ -73,11 +60,10 @@ namespace CollectaMundo.Tests.TestUtils
 
             return (updateVM, statusVM, dbService);
         }
+
         public static void SimulatePrimaryButtonClick(StatusViewModel statusVM)
         {
-            var field = typeof(StatusViewModel).GetField("_primaryAction", BindingFlags.NonPublic | BindingFlags.Instance);
-            var action = (Action<object?>)field!.GetValue(statusVM)!;
-            action.Invoke(null);
+            statusVM.PrimaryButtonCommand.Execute(null);
         }
     }
 }

@@ -1,61 +1,31 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.Utilities;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using System.Windows;
-using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels
 {
-    public class UpdateViewModel : INotifyPropertyChanged
+    public partial class UpdateViewModel(ICardDatabaseManagementService cardDbManagementService, StatusViewModel statusVM, IUiBlockable uiState, IAppRefresher appRefresher, Func<int> getMyCollectionCount) : ObservableObject
     {
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string name = "") => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
-        private readonly ICardDatabaseManagementService _cardDbManagementService;
-        private readonly StatusViewModel _statusVM;
-        private readonly IUiBlockable _uiState;
-        private readonly IAppRefresher _appRefresher;
-        private readonly Func<int> _getMyCollectionCount;
+        private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbManagementService;
+        private readonly StatusViewModel _statusVM = statusVM;
+        private readonly IUiBlockable _uiState = uiState;
+        private readonly IAppRefresher _appRefresher = appRefresher;
+        private readonly Func<int> _getMyCollectionCount = getMyCollectionCount;
 
         // Cancellation tokens
         private CancellationTokenSource? _backupCts;
         private CancellationTokenSource? _checkCts;
         private CancellationTokenSource? _updateCts;
 
-        // Commands
-        public ICommand BackupCollectionCommand { get; private set; } = null!;
-        public ICommand CheckForDbUpdatesCommand { get; private set; } = null!;
-        public ICommand UpdateDBCommand { get; protected set; } = null!;
-        public ICommand UpdatePricesCommand { get; protected set; } = null!;
-
-        // Visibility properties
-        private Visibility _updateDbVisibility = Visibility.Collapsed;
-        public Visibility UpdateDbVisibility
-        {
-            get => _updateDbVisibility;
-            set { _updateDbVisibility = value; OnPropertyChanged(); }
-        }
-
-        // Constructor
-        public UpdateViewModel(ICardDatabaseManagementService cardDbManagementService, StatusViewModel statusVM, IUiBlockable uiState, IAppRefresher appRefresher, Func<int> getMyCollectionCount)
-
-        {
-            _cardDbManagementService = cardDbManagementService;
-            _statusVM = statusVM;
-            _uiState = uiState;
-            _appRefresher = appRefresher;
-            _getMyCollectionCount = getMyCollectionCount;
-
-            BackupCollectionCommand = new RelayCommand<object>(async _ => await BackupCollectionAsync());
-            CheckForDbUpdatesCommand = new RelayCommand<object>(async _ => await CheckForDbUpdatesAsync());
-            UpdateDBCommand = new RelayCommand<object>(async _ => await UpdateDBAsync());
-            UpdatePricesCommand = new RelayCommand<object>(async _ => await UpdatePricesAsync());
-        }
+        // Visibility property
+        [ObservableProperty]
+        private Visibility updateDbVisibility = Visibility.Collapsed;
 
         // Use case: Backup collection
-        private async Task BackupCollectionAsync()
+        [RelayCommand]
+        private async Task BackupCollection()
         {
             // UI state preparation
             SetUiBusy(true);
@@ -117,7 +87,8 @@ namespace CollectaMundo.ViewModels
         }
 
         // Use case: Check for database updates
-        private async Task CheckForDbUpdatesAsync()
+        [RelayCommand]
+        private async Task CheckForDbUpdates()
         {
             _checkCts = new CancellationTokenSource();
 
@@ -168,7 +139,8 @@ namespace CollectaMundo.ViewModels
         }
 
         // Use case: Update database
-        private async Task UpdateDBAsync()
+        [RelayCommand]
+        protected virtual async Task UpdateDBAsync()
         {
             var skipBackup = _getMyCollectionCount() == 0;
             string backupResultMessage = string.Empty;
@@ -261,7 +233,8 @@ namespace CollectaMundo.ViewModels
         }
 
         // Use case: Update prices
-        private async Task UpdatePricesAsync()
+        [RelayCommand]
+        protected virtual async Task UpdatePrices()
         {
             _statusVM.ResetStatusOverlay();
             _statusVM.ShowStatusOverlay("Ready to update card prices?", false);

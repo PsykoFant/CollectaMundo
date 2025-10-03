@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.Filtering.Models;
-using CollectaMundo.Utilities;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Timers;
@@ -14,35 +15,14 @@ namespace CollectaMundo.ViewModels
     /// <summary>
     /// Represents a filterable item in the UI, supporting multi-selection and filtering.
     /// </summary>
-    public class FilterItemViewModel : INotifyPropertyChanged
+    public partial class FilterItemViewModel : ObservableObject
     {
         // Core properties
         public string CriteriaKey { get; }
         public FilterType FilterCategory { get; }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-
-        private string? _readableLabel;
-        public string? ReadableLabel
-        {
-            get => _readableLabel;
-            set
-            {
-                if (_readableLabel != value)
-                {
-                    _readableLabel = value;
-                    OnPropertyChanged(nameof(ReadableLabel));
-                }
-            }
-        }
-
-        // Commands
-        public ICommand? EmbeddedTextBoxGotFocusCommand { get; }
-        public ICommand? EmbeddedTextBoxLostFocusCommand { get; }
-        public ICommand? RulesTextBoxGotFocusCommand { get; }
-        public ICommand? RulesTextBoxLostFocusCommand { get; }
-
+        [ObservableProperty]
+        private string? readableLabel;
 
         // Selection-related properties for single-criteria
         private string? _selectedSingleOption;
@@ -72,20 +52,8 @@ namespace CollectaMundo.ViewModels
         // Selection-related properties for mumeric-criteria
         public ObservableCollection<int>? AvailableNumericOptions { get; }
 
-        private int? _selectedNumericValue;
-        public int? SelectedNumericValue
-        {
-            get => _selectedNumericValue;
-            set
-            {
-                if (_selectedNumericValue != value)
-                {
-                    _selectedNumericValue = value;
-                    OnPropertyChanged(nameof(SelectedNumericValue));
-                    _filterViewModel.NotifyFilterChanged();
-                }
-            }
-        }
+        [ObservableProperty]
+        private int? selectedNumericValue;
 
         private bool _isTradeChecked;
         public bool IsTradeChecked
@@ -198,30 +166,11 @@ namespace CollectaMundo.ViewModels
         }
         public string DefaultText { get; }
 
-        private bool _isDropDownOpen;
-        public bool IsDropDownOpen
-        {
-            get => _isDropDownOpen;
-            set
-            {
-                _isDropDownOpen = value;
-                OnPropertyChanged(nameof(IsDropDownOpen));
-            }
-        }
+        [ObservableProperty]
+        private bool isDropDownOpen;
 
-        private Brush _textForeground = Brushes.Gray; // default to gray
-        public Brush TextForeground
-        {
-            get => _textForeground;
-            set
-            {
-                if (_textForeground != value)
-                {
-                    _textForeground = value;
-                    OnPropertyChanged(nameof(TextForeground));
-                }
-            }
-        }
+        [ObservableProperty]
+        private Brush textForeground = Brushes.Gray;
         private void ApplyTextFilter()
         {
             var filtered = FilterOptions.Where(option => string.IsNullOrWhiteSpace(FilterText) || option.OptionName.Contains(FilterText, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -308,21 +257,8 @@ namespace CollectaMundo.ViewModels
         // Operator selection
         public ObservableCollection<OperatorType>? AvailableOperators { get; }
 
-        private OperatorType _operatorSelection;
-        public OperatorType OperatorSelection
-        {
-            get => _operatorSelection;
-            set
-            {
-                if (_operatorSelection != value)
-                {
-                    _operatorSelection = value;
-                    OnPropertyChanged(nameof(OperatorSelection));
-
-                    _filterViewModel.NotifyFilterChanged();
-                }
-            }
-        }
+        [ObservableProperty]
+        private OperatorType operatorSelection;
         public bool IsDefault
         {
             get
@@ -381,13 +317,6 @@ namespace CollectaMundo.ViewModels
                 };
             }
 
-            // Create commands using the helper methods.
-            EmbeddedTextBoxGotFocusCommand = CreateGotFocusCommand(() => FilterText = "");
-            EmbeddedTextBoxLostFocusCommand = CreateLostFocusCommand(() => FilterText, value => FilterText = value);
-
-            RulesTextBoxGotFocusCommand = CreateGotFocusCommand(() => FreetextSearch = "");
-            RulesTextBoxLostFocusCommand = CreateLostFocusCommand(() => FreetextSearch, value => FreetextSearch = value);
-
             // Retrieve filter configuration from FilterCriteriaMappings
             if (FilterCriteriaMappings.CriteriaMappings.TryGetValue(criteriaKey, out var mapping))
             {
@@ -404,31 +333,27 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        // Helper methods for GotFocus/Lostfocus commands.
-        private RelayCommand<object> CreateGotFocusCommand(Action clearTextAction)
+        // Commands for handling focus events on the embedded TextBox in the ComboBox
+        [RelayCommand]
+        private void OnEmbeddedTextBoxGotFocus(object? _)
         {
-            return new RelayCommand<object>(_ =>
-            {
-                clearTextAction();
-                TextForeground = Brushes.Black;
-                IsDropDownOpen = true;
-            });
-        }
-        private RelayCommand<object> CreateLostFocusCommand(Func<string> getText, Action<string> setText)
-        {
-            return new RelayCommand<object>(_ =>
-            {
-                if (string.IsNullOrWhiteSpace(getText()))
-                {
-                    _suppressFiltering = true;
-                    setText(DefaultText);
-                    _suppressFiltering = false;
-                    TextForeground = Brushes.Gray;
-                }
-            });
+            FilterText = "";
+            TextForeground = Brushes.Black;
+            IsDropDownOpen = true;
         }
 
-        //
+        [RelayCommand]
+        private void OnEmbeddedTextBoxLostFocus(object? _)
+        {
+            if (string.IsNullOrWhiteSpace(FilterText))
+            {
+                _suppressFiltering = true;
+                FilterText = DefaultText;
+                _suppressFiltering = false;
+                TextForeground = Brushes.Gray;
+            }
+        }
+
         public void ResetOptions(IEnumerable<string> newOptionNames)
         {
             // Fast no-op if identical (order-insensitive compare)
