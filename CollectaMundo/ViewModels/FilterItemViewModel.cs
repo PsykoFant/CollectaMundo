@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Timers;
 using System.Windows;
 using System.Windows.Input;
@@ -287,8 +286,6 @@ namespace CollectaMundo.ViewModels
         private readonly FilterViewModel _filterViewModel;
         public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, string readableLabel, FilterViewModel filterViewModel, IEnumerable<int>? numericOptions = null)
         {
-            Debug.WriteLine("FilterItemViewModel created: " + criteriaKey);
-
             _filterViewModel = filterViewModel ?? throw new ArgumentNullException(nameof(filterViewModel));
             CriteriaKey = criteriaKey;
             DefaultText = defaultText;
