@@ -156,10 +156,10 @@
                                             Foreground="{Binding TextForeground, Mode=TwoWay}">
                                             <i:Interaction.Triggers>
                                                 <i:EventTrigger EventName="GotFocus">
-                                                <i:InvokeCommandAction Command="{Binding OnEmbeddedTextBoxGotFocusCommand}" />
+                                                <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxGotFocusCommand}" />
                                                 </i:EventTrigger>
                                                 <i:EventTrigger EventName="LostFocus">
-                                                <i:InvokeCommandAction Command="{Binding OnEmbeddedTextBoxLostFocusCommand}" />
+                                                <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxLostFocusCommand}" />
                                                 </i:EventTrigger>
                                             </i:Interaction.Triggers>
                                         </TextBox>
@@ -235,10 +235,10 @@
                                         Foreground="{Binding TextForeground, Mode=TwoWay}">
                                         <i:Interaction.Triggers>
                                             <i:EventTrigger EventName="GotFocus">
-                                                <i:InvokeCommandAction Command="{Binding OnEmbeddedTextBoxGotFocusCommand}" />
+                                                <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxGotFocusCommand}" />
                                             </i:EventTrigger>
                                             <i:EventTrigger EventName="LostFocus">
-                                                <i:InvokeCommandAction Command="{Binding OnEmbeddedTextBoxLostFocusCommand}" />
+                                                <i:InvokeCommandAction Command="{Binding EmbeddedTextBoxLostFocusCommand}" />
                                             </i:EventTrigger>
                                         </i:Interaction.Triggers>
                                     </TextBox>
