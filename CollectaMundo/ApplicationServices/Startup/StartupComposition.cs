@@ -105,13 +105,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 // Build view model off UI thread
                 var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, cardImageService, importService, cardDbManagementService, statusVM, cardListService, settings));
 
-                // Show initial UI
                 mainVM.FilterVM.NotifyFilterChanged();
-                mainVM.SideMenuVisibility = Visibility.Visible;
-                mainVM.SideMenuFilterVisibility = Visibility.Visible; // Has to be set manually here on startup due to wpf timing quirks
-                mainVM.ContentSectionVisibility = Visibility.Visible;
-                mainVM.MainGridVisibility = Visibility.Visible;
-
                 statusVM.HideStatusOverlay();
                 return new RootViewModel(mainVM, statusVM);
             }
