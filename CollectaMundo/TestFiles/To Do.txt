@@ -1,9 +1,10 @@
 TO DO 
 - MVVM refactor
 
-  - Download images cache
+  
   - tests
-    - unit test af lookup set, token kode og alt det pjat. Inkluder det også i scenario
+  - Manuel test af UI
+  - Få unit tests til at virke
 
  - Import brug MVVM (unit test)
  - Deck manager brug MVVM (unit test)
