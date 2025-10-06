@@ -108,6 +108,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 // Show initial UI
                 mainVM.FilterVM.NotifyFilterChanged();
                 mainVM.SideMenuVisibility = Visibility.Visible;
+                mainVM.SideMenuFilterVisibility = Visibility.Visible; // Has to be set manually here on startup due to wpf timing quirks
                 mainVM.ContentSectionVisibility = Visibility.Visible;
                 mainVM.MainGridVisibility = Visibility.Visible;
 

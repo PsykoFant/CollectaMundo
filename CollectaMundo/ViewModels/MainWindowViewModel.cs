@@ -60,7 +60,7 @@ namespace CollectaMundo.ViewModels
 
         // What page are we on?
         [ObservableProperty]
-        private Page currentPage = Page.SearchAndFilter;
+        private Page currentPage;
         partial void OnCurrentPageChanged(Page oldValue, Page newValue)
         {
             if (oldValue == newValue)
@@ -118,22 +118,8 @@ namespace CollectaMundo.ViewModels
         private Visibility contentSectionVisibility = Visibility.Hidden;
 
         // Side menu visibility
-        //[ObservableProperty]
-        //private Visibility sideMenuVisibility = Visibility.Hidden;
-
-        // Side menu visibility
-        private Visibility _sideMenuVisibility = Visibility.Hidden;
-        public Visibility SideMenuVisibility
-        {
-            get => _sideMenuVisibility;
-            set
-            {
-                _sideMenuVisibility = value;
-                Debug.WriteLine($"[DEBUG] SideMenuVisibility set to {value}. DataContext is: {Application.Current.MainWindow.DataContext?.GetType().Name}");
-                OnPropertyChanged();
-            }
-
-        }
+        [ObservableProperty]
+        private Visibility sideMenuVisibility = Visibility.Hidden;
 
         // Side menu subsections visibility properties
         [ObservableProperty]
