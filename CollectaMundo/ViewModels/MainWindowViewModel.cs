@@ -118,8 +118,16 @@ namespace CollectaMundo.ViewModels
         private Visibility contentSectionVisibility = Visibility.Hidden;
 
         // Side menu visibility
-        [ObservableProperty]
-        private Visibility sideMenuVisibility = Visibility.Hidden;
+        //[ObservableProperty]
+        //private Visibility sideMenuVisibility = Visibility.Hidden;
+
+        // Side menu visibility
+        private Visibility _sideMenuVisibility = Visibility.Hidden;
+        public Visibility SideMenuVisibility
+        {
+            get => _sideMenuVisibility;
+            set { _sideMenuVisibility = value; OnPropertyChanged(); }
+        }
 
         // Side menu subsections visibility properties
         [ObservableProperty]
