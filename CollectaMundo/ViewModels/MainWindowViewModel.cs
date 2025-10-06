@@ -126,7 +126,13 @@ namespace CollectaMundo.ViewModels
         public Visibility SideMenuVisibility
         {
             get => _sideMenuVisibility;
-            set { _sideMenuVisibility = value; OnPropertyChanged(); }
+            set
+            {
+                _sideMenuVisibility = value;
+                Debug.WriteLine($"[DEBUG] SideMenuVisibility set to {value}. DataContext is: {Application.Current.MainWindow.DataContext?.GetType().Name}");
+                OnPropertyChanged();
+            }
+
         }
 
         // Side menu subsections visibility properties
