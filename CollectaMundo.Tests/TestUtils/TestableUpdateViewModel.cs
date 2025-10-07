@@ -47,7 +47,6 @@ namespace CollectaMundo.Tests.TestUtils
         public StatusViewModel StatusVM { get; set; } = null!;
         public Mock<ICardDatabaseManagementService> DbServiceMock { get; set; } = null!;
     }
-
     public class UpdateTestContextBuilder
     {
         private OperationResult? _backupResult;
@@ -139,7 +138,4 @@ namespace CollectaMundo.Tests.TestUtils
 
         public static UpdateTestContextBuilder Builder => new();
     }
-
-
-
 }

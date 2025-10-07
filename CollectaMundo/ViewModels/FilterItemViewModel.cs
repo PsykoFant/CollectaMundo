@@ -54,6 +54,10 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private int? selectedNumericValue;
+        partial void OnSelectedNumericValueChanged(int? value)
+        {
+            _filterViewModel.NotifyFilterChanged();
+        }
 
         private bool _isTradeChecked;
         public bool IsTradeChecked
@@ -259,27 +263,9 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private OperatorType operatorSelection;
-        public bool IsDefault
+        partial void OnOperatorSelectionChanged(OperatorType value)
         {
-            get
-            {
-                // For a single filter, it's default if no selection has been made or it equals the default text.
-                if (FilterCategory == FilterType.Single)
-                {
-                    return string.IsNullOrWhiteSpace(SelectedSingleOption) || SelectedSingleOption == DefaultText;
-                }
-                // For a multi filter, it's default if no options are selected.
-                if (FilterCategory == FilterType.Multi)
-                {
-                    return SelectedOptions == null || !SelectedOptions.Any();
-                }
-                // For a numeric filter, it's default if no numeric value is selected.
-                if (FilterCategory == FilterType.Numeric)
-                {
-                    return SelectedNumericValue == null;
-                }
-                return true;
-            }
+            _filterViewModel.NotifyFilterChanged();
         }
 
         // Constructor - Initializes filter options and selection tracking.
@@ -373,7 +359,6 @@ namespace CollectaMundo.ViewModels
                 TextForeground = Brushes.Gray;
             }
         }
-
 
         public void ResetOptions(IEnumerable<string> newOptionNames)
         {
