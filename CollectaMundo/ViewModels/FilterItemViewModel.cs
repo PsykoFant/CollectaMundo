@@ -16,15 +16,13 @@ namespace CollectaMundo.ViewModels
 {
     public partial class FilterItemViewModel : ObservableObject
     {
-        // Core identifiers
+        // Core properties
         public string CriteriaKey { get; }
         public FilterType FilterCategory { get; }
 
-        // Collaborators
+        // Constructor - Initializes filter options and selection tracking.
         private readonly FilterViewModel _filterViewModel;
         private readonly IFilterItemSearchLogic _filterItemSearchLogic;
-
-        // Constructor
         public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, string readableLabel, FilterViewModel filterViewModel, IFilterItemSearchLogic filterItemSearchLogic, IEnumerable<int>? numericOptions = null)
         {
             _filterViewModel = filterViewModel;
@@ -75,24 +73,11 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        // Core state + selections
-        [ObservableProperty] private string? readableLabel;
-        [ObservableProperty] private bool isDropDownOpen;
-        [ObservableProperty] private Brush textForeground = Brushes.Gray;
-
-        [ObservableProperty] private int? selectedNumericValue;
-        partial void OnSelectedNumericValueChanged(int? value)
-        {
-            _filterViewModel.NotifyFilterChanged();
-        }
 
         [ObservableProperty]
-        private OperatorType operatorSelection;
-        partial void OnOperatorSelectionChanged(OperatorType value)
-        {
-            _filterViewModel.NotifyFilterChanged();
-        }
+        private string? readableLabel;
 
+        // Selection-related properties for single-criteria
         private string? _selectedSingleOption;
         public string? SelectedSingleOption
         {
@@ -115,13 +100,82 @@ namespace CollectaMundo.ViewModels
                 }
             }
         }
-        public ObservableCollection<int>? AvailableNumericOptions { get; }
-        public ObservableCollection<OperatorType>? AvailableOperators { get; }
-        public ObservableCollection<FilterOption> FilterOptions { get; }
-        public ObservableCollection<string> AvailableOptions => [.. FilterOptions.Select(o => o.OptionName)];
-        public ObservableCollection<string> SelectedOptions { get; } = [];
+        public ObservableCollection<string> AvailableOptions => [.. FilterOptions.Select(opt => opt.OptionName)];
 
-        // Internal filter logic
+        // Selection-related properties for mumeric-criteria
+        public ObservableCollection<int>? AvailableNumericOptions { get; }
+
+        [ObservableProperty]
+        private int? selectedNumericValue;
+        partial void OnSelectedNumericValueChanged(int? value)
+        {
+            _filterViewModel.NotifyFilterChanged();
+        }
+
+        private bool _isTradeChecked;
+        public bool IsTradeChecked
+        {
+            get => _isTradeChecked;
+            set
+            {
+                if (_isTradeChecked != value)
+                {
+                    _isTradeChecked = value;
+                    OnPropertyChanged(nameof(IsTradeChecked));
+
+                    if (value) // If checked, ensure other checkbox is unchecked
+                    {
+                        IsNotTradeChecked = false;
+                    }
+
+                    ApplyTradeFilter();
+                }
+            }
+        }
+
+        private bool _isNotTradeChecked;
+        public bool IsNotTradeChecked
+        {
+            get => _isNotTradeChecked;
+            set
+            {
+                if (_isNotTradeChecked != value)
+                {
+                    _isNotTradeChecked = value;
+                    OnPropertyChanged(nameof(IsNotTradeChecked));
+
+                    if (value) // If checked, ensure other checkbox is unchecked
+                    {
+                        IsTradeChecked = false;
+                    }
+
+                    ApplyTradeFilter();
+                }
+            }
+        }
+        private void ApplyTradeFilter()
+        {
+            if (IsTradeChecked)
+            {
+                SelectedNumericValue = 0;
+                OperatorSelection = OperatorType.GREATER_THAN; // CardsForTrade > 0
+            }
+            else if (IsNotTradeChecked)
+            {
+                SelectedNumericValue = 0;
+                OperatorSelection = OperatorType.EQUALS; // CardsForTrade == 0
+            }
+            else
+            {
+                SelectedNumericValue = null;
+            }
+
+            _filterViewModel.NotifyFilterChanged();
+        }
+
+        // Selection-related properties for multi-criteria
+        public ObservableCollection<FilterOption> FilterOptions { get; }
+
         private ObservableCollection<FilterOption> _filteredOptions;
         public ObservableCollection<FilterOption> FilteredOptions
         {
@@ -132,6 +186,21 @@ namespace CollectaMundo.ViewModels
                 OnPropertyChanged(nameof(FilteredOptions));
             }
         }
+        public ObservableCollection<string> SelectedOptions { get; } = [];
+
+        // Updates the selected options when checkboxes are toggled.
+        private void UpdateSelectedOptions()
+        {
+
+            SelectedOptions.Clear();
+            foreach (var opt in _filterItemSearchLogic.ExtractSelectedOptions(FilterOptions))
+                SelectedOptions.Add(opt);
+
+            _filterViewModel.NotifyFilterChanged();
+        }
+
+        // Handle UI properties in custom comboboxes (e.g. filtering options in dropdown)
+        public bool _suppressFiltering = false; // Used to temporarily disable filtering.
 
         private string _filterText = string.Empty;
         public string FilterText
@@ -152,6 +221,16 @@ namespace CollectaMundo.ViewModels
             }
         }
         public string DefaultText { get; }
+
+        [ObservableProperty]
+        private bool isDropDownOpen;
+
+        [ObservableProperty]
+        private Brush textForeground = Brushes.Gray;
+        private void ApplyTextFilter()
+        {
+            FilteredOptions = new ObservableCollection<FilterOption>(_filterItemSearchLogic.ApplyTextFilter(FilterOptions, FilterText));
+        }
 
         private string _freetextSearch = string.Empty;
         public string FreetextSearch
@@ -184,78 +263,8 @@ namespace CollectaMundo.ViewModels
         }
 
 
-        // Trade checkbox logic (non-MVVM-observable for toggle binding simplicity)
-        private bool _isTradeChecked;
-        public bool IsTradeChecked
-        {
-            get => _isTradeChecked;
-            set
-            {
-                if (_isTradeChecked != value)
-                {
-                    _isTradeChecked = value;
-                    OnPropertyChanged(nameof(IsTradeChecked));
-
-                    if (value) IsNotTradeChecked = false;
-                    ApplyTradeFilter();
-                }
-            }
-        }
-
-        private bool _isNotTradeChecked;
-        public bool IsNotTradeChecked
-        {
-            get => _isNotTradeChecked;
-            set
-            {
-                if (_isNotTradeChecked != value)
-                {
-                    _isNotTradeChecked = value;
-                    OnPropertyChanged(nameof(IsNotTradeChecked));
-
-                    if (value) IsTradeChecked = false;
-                    ApplyTradeFilter();
-                }
-            }
-        }
-        private void ApplyTradeFilter()
-        {
-            if (IsTradeChecked)
-            {
-                SelectedNumericValue = 0;
-                OperatorSelection = OperatorType.GREATER_THAN; // CardsForTrade > 0
-            }
-            else if (IsNotTradeChecked)
-            {
-                SelectedNumericValue = 0;
-                OperatorSelection = OperatorType.EQUALS; // CardsForTrade == 0
-            }
-            else
-            {
-                SelectedNumericValue = null;
-            }
-
-            _filterViewModel.NotifyFilterChanged();
-        }
-
-        // Logic helpers
-        private void ApplyTextFilter()
-        {
-            FilteredOptions = new ObservableCollection<FilterOption>(_filterItemSearchLogic.ApplyTextFilter(FilterOptions, FilterText));
-        }
-        private void UpdateSelectedOptions()
-        {
-            SelectedOptions.Clear();
-            foreach (var opt in _filterItemSearchLogic.ExtractSelectedOptions(FilterOptions))
-                SelectedOptions.Add(opt);
-
-            _filterViewModel.NotifyFilterChanged();
-        }
-        private void ResetTypingDelay()
-        {
-            _typingTimer?.Stop();
-            _typingTimer?.Start();
-        }
+        // Resets the typing delay timer for rulestext freetext filtering.
+        private readonly Timer? _typingTimer;
         private void TypingTimer_Elapsed(object? sender, ElapsedEventArgs e)
         {
             var disp = Application.Current?.Dispatcher;
@@ -278,39 +287,45 @@ namespace CollectaMundo.ViewModels
                 }
             }
         }
-        internal void ProcessKeyPress(Key key)
+        private void ResetTypingDelay()
+        {
+            _typingTimer?.Stop();
+            _typingTimer?.Start();
+        }
+        public void HandleKeyPress(Key key)
         {
             if (FilterCategory != FilterType.Single)
+            {
                 return;
+            }
 
             if (key == Key.Enter)
             {
-                _typingTimer?.Stop();
+                _typingTimer?.Stop(); // Cancel delay, apply filtering immediately
                 SelectedSingleOption = string.IsNullOrWhiteSpace(FreetextSearch) || FreetextSearch == DefaultText
                     ? null
                     : FreetextSearch;
+
             }
             else if (key == Key.Escape)
             {
+                // Reset search box when Escape is pressed
                 FreetextSearch = DefaultText;
                 SelectedSingleOption = null;
-                TextForeground = Brushes.Gray;
-
-                Application.Current?.Dispatcher?.InvokeAsync(() =>
-                {
-                    var scope = FocusManager.GetFocusScope(Keyboard.FocusedElement as DependencyObject);
-                    FocusManager.SetFocusedElement(scope, null);
-                    Keyboard.ClearFocus();
-                }, DispatcherPriority.Background);
             }
         }
 
+        // Operator selection
+        public ObservableCollection<OperatorType>? AvailableOperators { get; }
 
-        private readonly Timer? _typingTimer;
+        [ObservableProperty]
+        private OperatorType operatorSelection;
+        partial void OnOperatorSelectionChanged(OperatorType value)
+        {
+            _filterViewModel.NotifyFilterChanged();
+        }
 
-        private bool _suppressFiltering = false;
-
-        // Used when a dynamic set of options replaces the current list
+        // Resets the filter options to a new set, preserving selection state where possible.
         public void ResetOptions(IEnumerable<string> newOptionNames)
         {
             // Fast no-op if identical (order-insensitive compare)
@@ -343,6 +358,8 @@ namespace CollectaMundo.ViewModels
             // Also raise any dependent properties
             OnPropertyChanged(nameof(AvailableOptions));
         }
+
+        // centralize the handler so we can attach/detach
         private void FilterOption_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(FilterOption.IsSelected))
@@ -350,6 +367,36 @@ namespace CollectaMundo.ViewModels
                 UpdateSelectedOptions();
             }
         }
+
+        // This method contains the logic that was previously in the KeyPressed RelayCommand
+        internal void ProcessKeyPress(Key key)
+        {
+            if (FilterCategory != FilterType.Single)
+                return;
+
+            if (key == Key.Enter)
+            {
+                _typingTimer?.Stop();
+                SelectedSingleOption = string.IsNullOrWhiteSpace(FreetextSearch) || FreetextSearch == DefaultText
+                    ? null
+                    : FreetextSearch;
+            }
+            else if (key == Key.Escape)
+            {
+                FreetextSearch = DefaultText;
+                SelectedSingleOption = null;
+                TextForeground = Brushes.Gray;
+
+                Application.Current?.Dispatcher?.InvokeAsync(() =>
+                {
+                    var scope = FocusManager.GetFocusScope(Keyboard.FocusedElement as DependencyObject);
+                    FocusManager.SetFocusedElement(scope, null);
+                    Keyboard.ClearFocus();
+                }, DispatcherPriority.Background);
+            }
+        }
+
+
 
         #region RelayCommands
 
@@ -402,5 +449,4 @@ namespace CollectaMundo.ViewModels
 
         #endregion
     }
-
 }
