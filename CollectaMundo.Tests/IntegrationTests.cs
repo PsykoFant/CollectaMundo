@@ -9,6 +9,7 @@ using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Tests.TestUtils;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
+using System.Windows.Input;
 
 namespace CollectaMundo.Tests
 {
@@ -778,11 +779,16 @@ namespace CollectaMundo.Tests
 
             // Assert
             var expectedNames = new List<string> { "Boundary Lands Ranger", "Ranger-Captain of Eos // Ranger-Captain of Eos" }.OrderBy(n => n).ToList();
-
             var actualNames = _mainVM.AllCardsVM.FilteredCards.Select(c => c.Name!).OrderBy(n => n).ToList();
 
             Assert.Equal(expectedNames, actualNames);
             Assert.Empty(_mainVM.MyCollectionVM.FilteredCards);
+
+            // Clear freetext filter via ESC behavior
+            nameFilter.ProcessKeyPress(Key.Escape);
+            Assert.Equal(62, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(22, _mainVM.MyCollectionVM.FilteredCards.Count);
+            Assert.True(string.IsNullOrEmpty(_mainVM.FilterVM.FilterSummary));
 
             // Reset
             _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
@@ -792,6 +798,13 @@ namespace CollectaMundo.Tests
             Assert.True(string.IsNullOrEmpty(_mainVM.FilterVM.FilterSummary));
 
             // ===== Section C: text + set filters =====
+            // New check: Type garbage string into text filter, e.g. "asdfasdf"
+            // Assert: no results in either view
+            // Simulate escape key to clear text filter
+            // Assert: back to full set of cards in both views
+            // Assert: FilterSummary is empty
+            // Assert: Default text is restored: "Rulestext filtering..."
+
 
             // Act: Text contains “+1/+1 counter”
             var rulesFilter = _mainVM.FilterVM.Filters["Text"];

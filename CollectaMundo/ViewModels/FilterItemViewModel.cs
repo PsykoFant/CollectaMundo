@@ -278,6 +278,33 @@ namespace CollectaMundo.ViewModels
                 }
             }
         }
+        internal void ProcessKeyPress(Key key)
+        {
+            if (FilterCategory != FilterType.Single)
+                return;
+
+            if (key == Key.Enter)
+            {
+                _typingTimer?.Stop();
+                SelectedSingleOption = string.IsNullOrWhiteSpace(FreetextSearch) || FreetextSearch == DefaultText
+                    ? null
+                    : FreetextSearch;
+            }
+            else if (key == Key.Escape)
+            {
+                FreetextSearch = DefaultText;
+                SelectedSingleOption = null;
+                TextForeground = Brushes.Gray;
+
+                Application.Current?.Dispatcher?.InvokeAsync(() =>
+                {
+                    var scope = FocusManager.GetFocusScope(Keyboard.FocusedElement as DependencyObject);
+                    FocusManager.SetFocusedElement(scope, null);
+                    Keyboard.ClearFocus();
+                }, DispatcherPriority.Background);
+            }
+        }
+
 
         private readonly Timer? _typingTimer;
 
@@ -369,34 +396,8 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private void KeyPressed(KeyEventArgs e)
         {
-            if (FilterCategory != FilterType.Single)
-                return;
-
-            if (e.Key == Key.Enter)
-            {
-                _typingTimer?.Stop();
-                SelectedSingleOption = string.IsNullOrWhiteSpace(FreetextSearch) || FreetextSearch == DefaultText
-                    ? null
-                    : FreetextSearch;
-
-                e.Handled = true; // Optional: prevent bubbling
-            }
-            else if (e.Key == Key.Escape)
-            {
-                FreetextSearch = DefaultText;
-                SelectedSingleOption = null;
-                TextForeground = Brushes.Gray; // Reset text color
-
-                // Clear focus after slight delay
-                Application.Current?.Dispatcher?.InvokeAsync(() =>
-                {
-                    var scope = FocusManager.GetFocusScope(Keyboard.FocusedElement as DependencyObject);
-                    FocusManager.SetFocusedElement(scope, null);
-                    Keyboard.ClearFocus();
-                }, DispatcherPriority.Background);
-
-                e.Handled = true;
-            }
+            ProcessKeyPress(e.Key);
+            e.Handled = true;
         }
 
         #endregion
