@@ -77,14 +77,21 @@ namespace CollectaMundo.ViewModels
 
         // Core state + selections
         [ObservableProperty] private string? readableLabel;
+        [ObservableProperty] private bool isDropDownOpen;
+        [ObservableProperty] private Brush textForeground = Brushes.Gray;
+
         [ObservableProperty] private int? selectedNumericValue;
         partial void OnSelectedNumericValueChanged(int? value)
         {
             _filterViewModel.NotifyFilterChanged();
         }
-        [ObservableProperty] private OperatorType operatorSelection;
-        [ObservableProperty] private bool isDropDownOpen;
-        [ObservableProperty] private Brush textForeground = Brushes.Gray;
+
+        [ObservableProperty]
+        private OperatorType operatorSelection;
+        partial void OnOperatorSelectionChanged(OperatorType value)
+        {
+            _filterViewModel.NotifyFilterChanged();
+        }
 
         private string? _selectedSingleOption;
         public string? SelectedSingleOption
@@ -113,28 +120,6 @@ namespace CollectaMundo.ViewModels
         public ObservableCollection<FilterOption> FilterOptions { get; }
         public ObservableCollection<string> AvailableOptions => [.. FilterOptions.Select(o => o.OptionName)];
         public ObservableCollection<string> SelectedOptions { get; } = [];
-        public void HandleKeyPress(Key key)
-        {
-            if (FilterCategory != FilterType.Single)
-            {
-                return;
-            }
-
-            if (key == Key.Enter)
-            {
-                _typingTimer?.Stop(); // Cancel delay, apply filtering immediately
-                SelectedSingleOption = string.IsNullOrWhiteSpace(FreetextSearch) || FreetextSearch == DefaultText
-                    ? null
-                    : FreetextSearch;
-
-            }
-            else if (key == Key.Escape)
-            {
-                // Reset search box when Escape is pressed
-                FreetextSearch = DefaultText;
-                SelectedSingleOption = null;
-            }
-        }
 
         // Internal filter logic
         private ObservableCollection<FilterOption> _filteredOptions;
