@@ -5,10 +5,10 @@ using CommunityToolkit.Mvvm.Input;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class FilterViewModel(IFilteringService service) : ObservableObject
+    public partial class FilterViewModel(IFilteringService filteringService) : ObservableObject
     {
         // Injected dependencies
-        private readonly IFilteringService _service = service;
+        private readonly IFilteringService _filteringService = filteringService;
 
         // Exposed filters and summary
         public Dictionary<string, FilterItemViewModel> Filters { get; } = [];
@@ -25,13 +25,13 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private void ClearFilters()
         {
-            _service.ResetAllFilters(Filters.Values);
+            _filteringService.ResetAllFilters(Filters.Values);
             NotifyFilterChanged();
         }
 
         public void NotifyFilterChanged()
         {
-            FilterSummary = _service.BuildSummary(Filters.Values);
+            FilterSummary = _filteringService.BuildSummary(Filters.Values);
             FilterChanged?.Invoke(this, EventArgs.Empty);
         }
     }

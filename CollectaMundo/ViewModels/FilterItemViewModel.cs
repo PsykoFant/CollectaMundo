@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Filtering.Enums;
+﻿using CollectaMundo.DomainLogic.Filtering;
+using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.Filtering.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -8,275 +9,26 @@ using System.Timers;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Timer = System.Timers.Timer;
 
 namespace CollectaMundo.ViewModels
 {
     public partial class FilterItemViewModel : ObservableObject
     {
-        // Core properties
+        // Core identifiers
         public string CriteriaKey { get; }
         public FilterType FilterCategory { get; }
 
-        [ObservableProperty]
-        private string? readableLabel;
-
-        // Selection-related properties for single-criteria
-        private string? _selectedSingleOption;
-        public string? SelectedSingleOption
-        {
-            get => _selectedSingleOption;
-
-            set
-            {
-                if (_selectedSingleOption != value)
-                {
-                    _selectedSingleOption = value;
-                    OnPropertyChanged(nameof(SelectedSingleOption));
-
-                    // For single filters, update the associated text field.
-                    if (FilterCategory == FilterType.Single)
-                    {
-                        FreetextSearch = value ?? DefaultText;
-                    }
-
-                    _filterViewModel.NotifyFilterChanged();
-                }
-            }
-        }
-        public ObservableCollection<string> AvailableOptions => [.. FilterOptions.Select(opt => opt.OptionName)];
-
-        // Selection-related properties for mumeric-criteria
-        public ObservableCollection<int>? AvailableNumericOptions { get; }
-
-        [ObservableProperty]
-        private int? selectedNumericValue;
-        partial void OnSelectedNumericValueChanged(int? value)
-        {
-            _filterViewModel.NotifyFilterChanged();
-        }
-
-        private bool _isTradeChecked;
-        public bool IsTradeChecked
-        {
-            get => _isTradeChecked;
-            set
-            {
-                if (_isTradeChecked != value)
-                {
-                    _isTradeChecked = value;
-                    OnPropertyChanged(nameof(IsTradeChecked));
-
-                    if (value) // If checked, ensure other checkbox is unchecked
-                    {
-                        IsNotTradeChecked = false;
-                    }
-
-                    ApplyTradeFilter();
-                }
-            }
-        }
-
-        private bool _isNotTradeChecked;
-        public bool IsNotTradeChecked
-        {
-            get => _isNotTradeChecked;
-            set
-            {
-                if (_isNotTradeChecked != value)
-                {
-                    _isNotTradeChecked = value;
-                    OnPropertyChanged(nameof(IsNotTradeChecked));
-
-                    if (value) // If checked, ensure other checkbox is unchecked
-                    {
-                        IsTradeChecked = false;
-                    }
-
-                    ApplyTradeFilter();
-                }
-            }
-        }
-        private void ApplyTradeFilter()
-        {
-            if (IsTradeChecked)
-            {
-                SelectedNumericValue = 0;
-                OperatorSelection = OperatorType.GREATER_THAN; // CardsForTrade > 0
-            }
-            else if (IsNotTradeChecked)
-            {
-                SelectedNumericValue = 0;
-                OperatorSelection = OperatorType.EQUALS; // CardsForTrade == 0
-            }
-            else
-            {
-                SelectedNumericValue = null;
-            }
-
-            _filterViewModel.NotifyFilterChanged();
-        }
-
-        // Selection-related properties for multi-criteria
-        public ObservableCollection<FilterOption> FilterOptions { get; }
-
-        private ObservableCollection<FilterOption> _filteredOptions;
-        public ObservableCollection<FilterOption> FilteredOptions
-        {
-            get => _filteredOptions;
-            private set
-            {
-                _filteredOptions = value;
-                OnPropertyChanged(nameof(FilteredOptions));
-            }
-        }
-        public ObservableCollection<string> SelectedOptions { get; } = [];
-
-        // Updates the selected options when checkboxes are toggled.
-        private void UpdateSelectedOptions()
-        {
-            SelectedOptions.Clear();
-            foreach (var option in FilterOptions.Where(opt => opt.IsSelected))
-            {
-                SelectedOptions.Add(option.OptionName);
-            }
-
-            _filterViewModel.NotifyFilterChanged();
-        }
-
-        // Handle UI properties in custom comboboxes (e.g. filtering options in dropdown)
-        public bool _suppressFiltering = false; // Used to temporarily disable filtering.
-
-        private string _filterText = string.Empty;
-        public string FilterText
-        {
-            get => _filterText;
-            set
-            {
-                if (_filterText != value)
-                {
-                    _filterText = value;
-                    OnPropertyChanged(nameof(FilterText));
-
-                    if (!_suppressFiltering)
-                    {
-                        ApplyTextFilter();
-                    }
-                }
-            }
-        }
-        public string DefaultText { get; }
-
-        [ObservableProperty]
-        private bool isDropDownOpen;
-
-        [ObservableProperty]
-        private Brush textForeground = Brushes.Gray;
-        private void ApplyTextFilter()
-        {
-            var filtered = FilterOptions.Where(option => string.IsNullOrWhiteSpace(FilterText) || option.OptionName.Contains(FilterText, StringComparison.OrdinalIgnoreCase)).ToList();
-
-            FilteredOptions = [.. filtered];
-        }
-
-        private string _freetextSearch = string.Empty;
-        public string FreetextSearch
-        {
-            get => _freetextSearch;
-            set
-            {
-                if (_freetextSearch != value)
-                {
-                    _freetextSearch = value;
-                    OnPropertyChanged(nameof(FreetextSearch));
-                    FilterText = value;
-
-                    if (string.IsNullOrWhiteSpace(value))
-                    {
-                        ApplyTextFilter();
-
-                        // Manually reset the selection and trigger filtering
-                        if (FilterCategory == FilterType.Single)
-                        {
-                            SelectedSingleOption = string.Empty;
-                        }
-                    }
-                    else if (FilterCategory == FilterType.Single)
-                    {
-                        ResetTypingDelay();
-                    }
-                }
-            }
-        }
-
-
-        // Resets the typing delay timer for rulestext freetext filtering.
-        private readonly Timer? _typingTimer;
-        private void TypingTimer_Elapsed(object? sender, ElapsedEventArgs e)
-        {
-            var disp = Application.Current?.Dispatcher;
-            if (disp != null)
-            {
-                disp.Invoke(() =>
-                {
-                    if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
-                    {
-                        SelectedSingleOption = FreetextSearch;
-                    }
-                });
-            }
-            else
-            {
-                // fallback: just apply the selection directly
-                if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
-                {
-                    SelectedSingleOption = FreetextSearch;
-                }
-            }
-        }
-        private void ResetTypingDelay()
-        {
-            _typingTimer?.Stop();
-            _typingTimer?.Start();
-        }
-        public void HandleKeyPress(Key key)
-        {
-            if (FilterCategory != FilterType.Single)
-            {
-                return;
-            }
-
-            if (key == Key.Enter)
-            {
-                _typingTimer?.Stop(); // Cancel delay, apply filtering immediately
-                SelectedSingleOption = string.IsNullOrWhiteSpace(FreetextSearch) || FreetextSearch == DefaultText
-                    ? null
-                    : FreetextSearch;
-
-            }
-            else if (key == Key.Escape)
-            {
-                // Reset search box when Escape is pressed
-                FreetextSearch = DefaultText;
-                SelectedSingleOption = null;
-            }
-        }
-
-        // Operator selection
-        public ObservableCollection<OperatorType>? AvailableOperators { get; }
-
-        [ObservableProperty]
-        private OperatorType operatorSelection;
-        partial void OnOperatorSelectionChanged(OperatorType value)
-        {
-            _filterViewModel.NotifyFilterChanged();
-        }
-
-        // Constructor - Initializes filter options and selection tracking.
+        // Collaborators
         private readonly FilterViewModel _filterViewModel;
-        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, string readableLabel, FilterViewModel filterViewModel, IEnumerable<int>? numericOptions = null)
+        private readonly IFilterItemSearchLogic _filterItemSearchLogic;
+
+        // Constructor
+        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, string readableLabel, FilterViewModel filterViewModel, IFilterItemSearchLogic filterItemSearchLogic, IEnumerable<int>? numericOptions = null)
         {
-            _filterViewModel = filterViewModel ?? throw new ArgumentNullException(nameof(filterViewModel));
+            _filterViewModel = filterViewModel;
+            _filterItemSearchLogic = filterItemSearchLogic;
             CriteriaKey = criteriaKey;
             DefaultText = defaultText;
             ReadableLabel = readableLabel;
@@ -323,7 +75,272 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        // Commands for handling focus events on the embedded TextBox in the ComboBox
+        // Core state + selections
+        [ObservableProperty] private string? readableLabel;
+        [ObservableProperty] private int? selectedNumericValue;
+        partial void OnSelectedNumericValueChanged(int? value)
+        {
+            _filterViewModel.NotifyFilterChanged();
+        }
+        [ObservableProperty] private OperatorType operatorSelection;
+        [ObservableProperty] private bool isDropDownOpen;
+        [ObservableProperty] private Brush textForeground = Brushes.Gray;
+
+        private string? _selectedSingleOption;
+        public string? SelectedSingleOption
+        {
+            get => _selectedSingleOption;
+
+            set
+            {
+                if (_selectedSingleOption != value)
+                {
+                    _selectedSingleOption = value;
+                    OnPropertyChanged(nameof(SelectedSingleOption));
+
+                    // For single filters, update the associated text field.
+                    if (FilterCategory == FilterType.Single)
+                    {
+                        FreetextSearch = value ?? DefaultText;
+                    }
+
+                    _filterViewModel.NotifyFilterChanged();
+                }
+            }
+        }
+        public ObservableCollection<int>? AvailableNumericOptions { get; }
+        public ObservableCollection<OperatorType>? AvailableOperators { get; }
+        public ObservableCollection<FilterOption> FilterOptions { get; }
+        public ObservableCollection<string> AvailableOptions => [.. FilterOptions.Select(o => o.OptionName)];
+        public ObservableCollection<string> SelectedOptions { get; } = [];
+        public void HandleKeyPress(Key key)
+        {
+            if (FilterCategory != FilterType.Single)
+            {
+                return;
+            }
+
+            if (key == Key.Enter)
+            {
+                _typingTimer?.Stop(); // Cancel delay, apply filtering immediately
+                SelectedSingleOption = string.IsNullOrWhiteSpace(FreetextSearch) || FreetextSearch == DefaultText
+                    ? null
+                    : FreetextSearch;
+
+            }
+            else if (key == Key.Escape)
+            {
+                // Reset search box when Escape is pressed
+                FreetextSearch = DefaultText;
+                SelectedSingleOption = null;
+            }
+        }
+
+        // Internal filter logic
+        private ObservableCollection<FilterOption> _filteredOptions;
+        public ObservableCollection<FilterOption> FilteredOptions
+        {
+            get => _filteredOptions;
+            private set
+            {
+                _filteredOptions = value;
+                OnPropertyChanged(nameof(FilteredOptions));
+            }
+        }
+
+        private string _filterText = string.Empty;
+        public string FilterText
+        {
+            get => _filterText;
+            set
+            {
+                if (_filterText != value)
+                {
+                    _filterText = value;
+                    OnPropertyChanged(nameof(FilterText));
+
+                    if (!_suppressFiltering)
+                    {
+                        ApplyTextFilter();
+                    }
+                }
+            }
+        }
+        public string DefaultText { get; }
+
+        private string _freetextSearch = string.Empty;
+        public string FreetextSearch
+        {
+            get => _freetextSearch;
+            set
+            {
+                if (_freetextSearch != value)
+                {
+                    _freetextSearch = value;
+                    OnPropertyChanged(nameof(FreetextSearch));
+                    FilterText = value;
+
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        ApplyTextFilter();
+
+                        // Manually reset the selection and trigger filtering
+                        if (FilterCategory == FilterType.Single)
+                        {
+                            SelectedSingleOption = string.Empty;
+                        }
+                    }
+                    else if (FilterCategory == FilterType.Single)
+                    {
+                        ResetTypingDelay();
+                    }
+                }
+            }
+        }
+
+
+        // Trade checkbox logic (non-MVVM-observable for toggle binding simplicity)
+        private bool _isTradeChecked;
+        public bool IsTradeChecked
+        {
+            get => _isTradeChecked;
+            set
+            {
+                if (_isTradeChecked != value)
+                {
+                    _isTradeChecked = value;
+                    OnPropertyChanged(nameof(IsTradeChecked));
+
+                    if (value) IsNotTradeChecked = false;
+                    ApplyTradeFilter();
+                }
+            }
+        }
+
+        private bool _isNotTradeChecked;
+        public bool IsNotTradeChecked
+        {
+            get => _isNotTradeChecked;
+            set
+            {
+                if (_isNotTradeChecked != value)
+                {
+                    _isNotTradeChecked = value;
+                    OnPropertyChanged(nameof(IsNotTradeChecked));
+
+                    if (value) IsTradeChecked = false;
+                    ApplyTradeFilter();
+                }
+            }
+        }
+        private void ApplyTradeFilter()
+        {
+            if (IsTradeChecked)
+            {
+                SelectedNumericValue = 0;
+                OperatorSelection = OperatorType.GREATER_THAN; // CardsForTrade > 0
+            }
+            else if (IsNotTradeChecked)
+            {
+                SelectedNumericValue = 0;
+                OperatorSelection = OperatorType.EQUALS; // CardsForTrade == 0
+            }
+            else
+            {
+                SelectedNumericValue = null;
+            }
+
+            _filterViewModel.NotifyFilterChanged();
+        }
+
+        // Logic helpers
+        private void ApplyTextFilter()
+        {
+            FilteredOptions = new ObservableCollection<FilterOption>(_filterItemSearchLogic.ApplyTextFilter(FilterOptions, FilterText));
+        }
+        private void UpdateSelectedOptions()
+        {
+            SelectedOptions.Clear();
+            foreach (var opt in _filterItemSearchLogic.ExtractSelectedOptions(FilterOptions))
+                SelectedOptions.Add(opt);
+
+            _filterViewModel.NotifyFilterChanged();
+        }
+        private void ResetTypingDelay()
+        {
+            _typingTimer?.Stop();
+            _typingTimer?.Start();
+        }
+        private void TypingTimer_Elapsed(object? sender, ElapsedEventArgs e)
+        {
+            var disp = Application.Current?.Dispatcher;
+            if (disp != null)
+            {
+                disp.Invoke(() =>
+                {
+                    if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
+                    {
+                        SelectedSingleOption = FreetextSearch;
+                    }
+                });
+            }
+            else
+            {
+                // fallback: just apply the selection directly
+                if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
+                {
+                    SelectedSingleOption = FreetextSearch;
+                }
+            }
+        }
+
+        private readonly Timer? _typingTimer;
+
+        private bool _suppressFiltering = false;
+
+        // Used when a dynamic set of options replaces the current list
+        public void ResetOptions(IEnumerable<string> newOptionNames)
+        {
+            // Fast no-op if identical (order-insensitive compare)
+            var incoming = _filterItemSearchLogic.NormalizeOptionNames(newOptionNames);
+            var current = FilterOptions.Select(o => o.OptionName);
+
+            if (_filterItemSearchLogic.IsEquivalentOptionList(current, incoming))
+                return;
+
+            // Unsubscribe old handlers to avoid leaks
+            foreach (var opt in FilterOptions)
+            {
+                opt.PropertyChanged -= FilterOption_PropertyChanged;
+            }
+
+            // Replace contents (preserve the same ObservableCollection instance)
+            FilterOptions.Clear();
+            var newOptions = _filterItemSearchLogic.BuildOptionsFromNames(incoming);
+
+            foreach (var opt in newOptions)
+            {
+                opt.PropertyChanged += FilterOption_PropertyChanged;
+                FilterOptions.Add(opt);
+            }
+
+            // Rebuild filtered view and selected state
+            ApplyTextFilter();
+            UpdateSelectedOptions();
+
+            // Also raise any dependent properties
+            OnPropertyChanged(nameof(AvailableOptions));
+        }
+        private void FilterOption_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(FilterOption.IsSelected))
+            {
+                UpdateSelectedOptions();
+            }
+        }
+
+        #region RelayCommands
+
         [RelayCommand]
         private void OnEmbeddedTextBoxGotFocus(object? _)
         {
@@ -364,60 +381,40 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        public void ResetOptions(IEnumerable<string> newOptionNames)
+        [RelayCommand]
+        private void KeyPressed(KeyEventArgs e)
         {
-            // Fast no-op if identical (order-insensitive compare)
-            var incoming = newOptionNames
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            var current = FilterOptions.Select(o => o.OptionName).ToList();
-            bool same = current.Count == incoming.Count &&
-                        current.SequenceEqual(incoming, StringComparer.OrdinalIgnoreCase);
-            if (same)
-            {
+            if (FilterCategory != FilterType.Single)
                 return;
-            }
 
-            // 1) Unsubscribe old handlers to avoid leaks
-            foreach (var opt in FilterOptions)
+            if (e.Key == Key.Enter)
             {
-                opt.PropertyChanged -= FilterOption_PropertyChanged;
-            }
+                _typingTimer?.Stop();
+                SelectedSingleOption = string.IsNullOrWhiteSpace(FreetextSearch) || FreetextSearch == DefaultText
+                    ? null
+                    : FreetextSearch;
 
-            // 2) Replace FilterOptions
-            FilterOptions.Clear();
-            foreach (var name in incoming)
-            {
-                var opt = new FilterOption(name);
-                opt.PropertyChanged += FilterOption_PropertyChanged;
-                FilterOptions.Add(opt);
+                e.Handled = true; // Optional: prevent bubbling
             }
+            else if (e.Key == Key.Escape)
+            {
+                FreetextSearch = DefaultText;
+                SelectedSingleOption = null;
+                TextForeground = Brushes.Gray; // Reset text color
 
-            // 3) Refresh FilteredOptions right now (so ToggleButton path shows latest)
-            if (string.IsNullOrWhiteSpace(FilterText) || FilterText == DefaultText)
-            {
-                // Show all if there is no active text filter
-                FilteredOptions = new ObservableCollection<FilterOption>(FilterOptions);
-            }
-            else
-            {
-                ApplyTextFilter();
-            }
+                // Clear focus after slight delay
+                Application.Current?.Dispatcher?.InvokeAsync(() =>
+                {
+                    var scope = FocusManager.GetFocusScope(Keyboard.FocusedElement as DependencyObject);
+                    FocusManager.SetFocusedElement(scope, null);
+                    Keyboard.ClearFocus();
+                }, DispatcherPriority.Background);
 
-            // 4) AvailableOptions depends on FilterOptions
-            OnPropertyChanged(nameof(AvailableOptions));
+                e.Handled = true;
+            }
         }
 
-        // centralize the handler so we can attach/detach
-        private void FilterOption_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(FilterOption.IsSelected))
-            {
-                UpdateSelectedOptions();
-            }
-        }
+        #endregion
     }
+
 }

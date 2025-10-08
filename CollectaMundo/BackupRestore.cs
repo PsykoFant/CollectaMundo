@@ -1003,8 +1003,8 @@ namespace CollectaMundo
 
             MainWindow.CurrentInstance.ImagePromoLabel.Content = string.Empty;
             MainWindow.CurrentInstance.ImageSetLabel.Content = string.Empty;
-            MainWindow.CurrentInstance.ImageSourceUrl = null;
-            MainWindow.CurrentInstance.ImageSourceUrl2nd = null;
+            //MainWindow.CurrentInstance.ImageSourceUrl = null;
+            //MainWindow.CurrentInstance.ImageSourceUrl2nd = null;
             MainWindow.CurrentInstance.GridImportAdditionalFieldsMapping.Visibility = Visibility.Visible;
         }
 
@@ -1867,8 +1867,8 @@ namespace CollectaMundo
             // Reset card images
             MainWindow.CurrentInstance.ImagePromoLabel.Content = string.Empty;
             MainWindow.CurrentInstance.ImageSetLabel.Content = string.Empty;
-            MainWindow.CurrentInstance.ImageSourceUrl = null;
-            MainWindow.CurrentInstance.ImageSourceUrl2nd = null;
+            //MainWindow.CurrentInstance.ImageSourceUrl = null;
+            //MainWindow.CurrentInstance.ImageSourceUrl2nd = null;
         }
 
         // Try to guess which column name maps to CardItemsToAdd field by looking for matching column/field names

@@ -1,6 +1,5 @@
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.DeckManagement.Models;
-using CollectaMundo.ViewModels;
 using System.ComponentModel;
 using System.Data.Common;
 using System.Data.SQLite;
@@ -96,35 +95,6 @@ namespace CollectaMundo
             {
                 Debug.WriteLine($"Error loading decks: {ex.Message}");
                 MessageBox.Show($"Error loading decks: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        #endregion
-
-        #region Filter elements handling 
-
-
-        // When combobox textboxes get focus/defocus        
-        private void FilterTextTextBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (sender is TextBox textBox && textBox.DataContext is FilterItemViewModel filterItem)
-            {
-                if (e.Key == Key.Escape)
-                {
-                    filterItem.FreetextSearch = filterItem.DefaultText;
-                    textBox.Foreground = new SolidColorBrush(Colors.Gray);
-
-                    // Use Dispatcher to remove focus with a small delay
-                    Application.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        // Kill logical focus
-                        FocusManager.SetFocusedElement(FocusManager.GetFocusScope(textBox), null);
-                        // Kill keyboard focus
-                        Keyboard.ClearFocus();
-                    }, System.Windows.Threading.DispatcherPriority.Background);
-                }
-
-                filterItem.HandleKeyPress(e.Key);
             }
         }
 

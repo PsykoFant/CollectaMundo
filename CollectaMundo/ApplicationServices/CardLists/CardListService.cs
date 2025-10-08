@@ -111,6 +111,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
                         def.DefaultText,
                         def.ReadableLabel,
                         filterVM,
+                        new FilterItemSearchLogic(),
                         def.NumericCriteria);
                 }
 
