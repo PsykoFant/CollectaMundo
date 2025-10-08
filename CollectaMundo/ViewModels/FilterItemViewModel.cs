@@ -12,9 +12,6 @@ using Timer = System.Timers.Timer;
 
 namespace CollectaMundo.ViewModels
 {
-    /// <summary>
-    /// Represents a filterable item in the UI, supporting multi-selection and filtering.
-    /// </summary>
     public partial class FilterItemViewModel : ObservableObject
     {
         // Core properties
@@ -192,11 +189,19 @@ namespace CollectaMundo.ViewModels
                 {
                     _freetextSearch = value;
                     OnPropertyChanged(nameof(FreetextSearch));
-
-                    // Update FilterText so the combobox dropdown items are filtered immediately.
                     FilterText = value;
 
-                    if (FilterCategory == FilterType.Single)
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        ApplyTextFilter();
+
+                        // Manually reset the selection and trigger filtering
+                        if (FilterCategory == FilterType.Single)
+                        {
+                            SelectedSingleOption = string.Empty;
+                        }
+                    }
+                    else if (FilterCategory == FilterType.Single)
                     {
                         ResetTypingDelay();
                     }
@@ -204,8 +209,8 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        // Resets the typing delay timer for rulestext freetext filtering.
 
+        // Resets the typing delay timer for rulestext freetext filtering.
         private readonly Timer? _typingTimer;
         private void TypingTimer_Elapsed(object? sender, ElapsedEventArgs e)
         {
@@ -248,7 +253,6 @@ namespace CollectaMundo.ViewModels
                     ? null
                     : FreetextSearch;
 
-                //_filterViewModel.DebugFullFilterState();
             }
             else if (key == Key.Escape)
             {

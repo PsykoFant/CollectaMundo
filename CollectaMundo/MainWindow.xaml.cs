@@ -31,33 +31,6 @@ namespace CollectaMundo
             private set => _currentInstance = value;
         }
 
-        // Used for displaying images
-        private string? _imageSourceUrl = string.Empty;
-        private string? _imageSourceUrl2nd = string.Empty;
-        public string? ImageSourceUrl
-        {
-            get => _imageSourceUrl;
-            set
-            {
-                if (_imageSourceUrl != value)
-                {
-                    _imageSourceUrl = value;
-                    OnPropertyChanged(nameof(ImageSourceUrl));
-                }
-            }
-        }
-        public string? ImageSourceUrl2nd
-        {
-            get => _imageSourceUrl2nd;
-            set
-            {
-                if (_imageSourceUrl2nd != value)
-                {
-                    _imageSourceUrl2nd = value;
-                    OnPropertyChanged(nameof(ImageSourceUrl2nd));
-                }
-            }
-        }
         public event PropertyChangedEventHandler? PropertyChanged;
         protected virtual void OnPropertyChanged(string propertyName)
         {

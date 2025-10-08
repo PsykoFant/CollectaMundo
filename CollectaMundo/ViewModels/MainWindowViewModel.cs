@@ -270,7 +270,6 @@ namespace CollectaMundo.ViewModels
         // When a card is added/updated/deleted from collection
         private void OnCardChanged(object? sender, CardChangeEventArgs e)
         {
-            // exactly your old MainWindow code, minus the Dispatcher.Invoke:
             switch (e.Type)
             {
                 case ChangeType.Delete:
