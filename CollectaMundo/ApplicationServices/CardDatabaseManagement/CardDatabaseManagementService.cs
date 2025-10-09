@@ -356,7 +356,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                     continue;
                 }
 
-                string stepLabel = $"Step {stepNumberStart++}. {label}"; // ✅ display number is independent
+                string stepLabel = $"Step {stepNumberStart++}. {label}";
 
                 _progressSinks.ProgressBarVisible.Report(showProgress);
                 _progressSinks.Detail.Report(string.Empty);

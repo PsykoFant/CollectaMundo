@@ -6,13 +6,14 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class UpdateViewModel(ICardDatabaseManagementService cardDbManagementService, StatusViewModel statusVM, IUiBlockable uiState, IAppRefresher appRefresher, Func<int> getMyCollectionCount) : ObservableObject
+    public partial class UpdateViewModel(ICardDatabaseManagementService cardDbManagementService, StatusViewModel statusVM, IUiBlockable uiState, IAppRefresher appRefresher, Func<int> getMyCollectionCount, string backupPath) : ObservableObject
     {
         private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbManagementService;
         private readonly StatusViewModel _statusVM = statusVM;
         private readonly IUiBlockable _uiState = uiState;
         private readonly IAppRefresher _appRefresher = appRefresher;
         private readonly Func<int> _getMyCollectionCount = getMyCollectionCount;
+        private readonly string _backupPath = backupPath;
 
         // Cancellation tokens
         private CancellationTokenSource? _backupCts;
@@ -43,7 +44,23 @@ namespace CollectaMundo.ViewModels
             }
             else
             {
-                // Prepare cancellation
+                _statusVM.ResetStatusOverlay();
+                _statusVM.ShowStatusOverlay("Ready to make some cool backups?", false);
+                _statusVM.PrimaryButtonText = "   HELL YEAh!   ";
+                _statusVM.PrimaryButtonVisibility = Visibility.Visible;
+
+                _statusVM.StatusLabel3 = $"Collection will be backed up to {_backupPath}";
+                _statusVM.SecondaryButtonText = "   Change backup path   ";
+                _statusVM.SecondaryButtonVisibility = Visibility.Visible;
+
+                // Wait for user confirmation before proceeding
+                var tcs = new TaskCompletionSource();
+                _statusVM.SetPrimaryAction(_ => tcs.SetResult());
+                await tcs.Task;
+
+                _statusVM.StatusLabel2 = "Cancelling…";
+
+                // Prepare cancellation token before starting
                 _backupCts = new CancellationTokenSource();
                 _statusVM.SetPrimaryAction(_ =>
                 {

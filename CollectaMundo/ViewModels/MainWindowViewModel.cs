@@ -199,7 +199,7 @@ namespace CollectaMundo.ViewModels
             CardImageVM = new CardImageViewModel(cardImageService);
 
             // update viewmodel
-            UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, this, () => MyCollectionVM.Cards.Count);
+            UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, this, () => MyCollectionVM.Cards.Count, _settings.BackupFolderPath);
 
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, this);

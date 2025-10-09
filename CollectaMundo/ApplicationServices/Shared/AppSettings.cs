@@ -22,7 +22,8 @@ namespace CollectaMundo.ApplicationServices.Shared
 
         private static readonly string _userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         public string UserDownloadsPath => Path.Combine(_userProfile, "Downloads");
-        public string BackupFolderPath => Path.Combine(_userProfile, "CollectaMundoBackup");
+        public string BackupFolderPath => _currentSettings.BackupFolderPath;
+
         public string CardImageCachePath => Path.Combine(appDataPath, "CollectaMundo", "CardImageCache");
         public AppSettings(string? filePath = null)
         {
@@ -56,11 +57,9 @@ namespace CollectaMundo.ApplicationServices.Shared
                 var defaultSettings = new AppSettingsDto
                 {
                     DatabaseSettings = new DatabaseSettings { SQLitePath = $"{sqlitePath}\\" },
-                    ConnectionStrings = new ConnectionStrings
-                    {
-                        SQLiteConnection = $"Data Source={sqlitePath}\\AllPrintings.sqlite;Version=3;"
-                    },
-                    PriceInfo = new PriceInfo() // Defaults
+                    ConnectionStrings = new ConnectionStrings { SQLiteConnection = $"Data Source={sqlitePath}\\AllPrintings.sqlite;Version=3;" },
+                    PriceInfo = new PriceInfo(),
+                    BackupFolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "CollectaMundoBackup")
                 };
 
                 File.WriteAllText(settingsFilePath, JsonConvert.SerializeObject(defaultSettings, Formatting.Indented));
@@ -102,6 +101,9 @@ namespace CollectaMundo.ApplicationServices.Shared
         public DatabaseSettings DatabaseSettings { get; set; } = new DatabaseSettings();
         public ConnectionStrings ConnectionStrings { get; set; } = new ConnectionStrings();
         public PriceInfo PriceInfo { get; set; } = new PriceInfo();
+
+        static readonly string defaultBackupPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "CollectaMundoBackup");
+        public string BackupFolderPath { get; set; } = defaultBackupPath;
     }
     public class DatabaseSettings
     {
@@ -113,8 +115,8 @@ namespace CollectaMundo.ApplicationServices.Shared
     }
     public class PriceInfo
     {
-        public string PricesUpdatedDate { get; set; } = string.Empty;
+        // Default to today in format YYYY-MM-DD
+        public string PricesUpdatedDate { get; set; } = DateTime.UtcNow.ToString("yyyy-MM-dd");
         public string Retailer { get; set; } = "cardmarket";
     }
-
 }

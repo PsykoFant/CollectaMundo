@@ -7,6 +7,7 @@ namespace CollectaMundo.ViewModels
     public partial class StatusViewModel : ObservableObject
     {
         private Action<object?> _primaryAction;
+        private Action<object?> _secondaryAction;
 
         [ObservableProperty]
         private Visibility statusOverlayVisibility;
@@ -30,6 +31,12 @@ namespace CollectaMundo.ViewModels
         private string primaryButtonText = "OK";
 
         [ObservableProperty]
+        private Visibility secondaryButtonVisibility = Visibility.Collapsed;
+
+        [ObservableProperty]
+        private string secondaryButtonText = string.Empty;
+
+        [ObservableProperty]
         private string statusLabel1 = string.Empty;
 
         [ObservableProperty]
@@ -40,6 +47,7 @@ namespace CollectaMundo.ViewModels
         public StatusViewModel()
         {
             _primaryAction = _ => HideStatusOverlay();
+            _secondaryAction = _ => { };
         }
 
         [RelayCommand]
@@ -48,7 +56,15 @@ namespace CollectaMundo.ViewModels
             _primaryAction(param);
         }
 
+        [RelayCommand]
+        private void SecondaryButton(object? param)
+        {
+            _secondaryAction(param);
+        }
+
+
         public void SetPrimaryAction(Action<object?>? action) => _primaryAction = action ?? (_ => HideStatusOverlay());
+        public void SetSecondaryAction(Action<object?>? action) => _secondaryAction = action ?? (_ => { });
         public void ShowStatusOverlay(string message, bool showProgress = false)
         {
 
