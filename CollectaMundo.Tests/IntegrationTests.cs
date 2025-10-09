@@ -722,6 +722,14 @@ namespace CollectaMundo.Tests
                 _mainVM.MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(_mainVM.MyCollectionVM.Cards, _mainVM.FilterVM.Filters.Values);
             }
 
+            void AssertFiltersCleared()
+            {
+                Assert.Equal(62, _mainVM.AllCardsVM.FilteredCards.Count);
+                Assert.Equal(22, _mainVM.MyCollectionVM.FilteredCards.Count);
+                Assert.True(string.IsNullOrEmpty(_mainVM.FilterVM.FilterSummary));
+            }
+
+
             // local helper: find card by uuid from either AllCards or MyCollection
             CardSet FindCard(IEnumerable<CardSet> source, string uuid) => source.Single(c => string.Equals(c.Uuid, uuid, StringComparison.OrdinalIgnoreCase));
 
@@ -790,9 +798,7 @@ namespace CollectaMundo.Tests
             nameFilter.SelectedSingleOption = "";
 
             // Assert
-            Assert.Equal(62, _mainVM.AllCardsVM.FilteredCards.Count);
-            Assert.Equal(22, _mainVM.MyCollectionVM.FilteredCards.Count);
-            Assert.True(string.IsNullOrEmpty(_mainVM.FilterVM.FilterSummary));
+            AssertFiltersCleared();
 
             // ===== Section C: text + set filters =====
 
@@ -807,14 +813,24 @@ namespace CollectaMundo.Tests
             Assert.Equal(0, _mainVM.MyCollectionVM.FilteredCards.Count);
 
             // Act: Clear rules text filter by pressing escape
-            rulesFilter.ProcessKeyPress(Key.Escape);
+            rulesFilter.HandleKeyLogic(Key.Escape);
 
             // Assert: cleared
-            Assert.Equal(62, _mainVM.AllCardsVM.FilteredCards.Count);
-            Assert.Equal(22, _mainVM.MyCollectionVM.FilteredCards.Count);
-            Assert.True(string.IsNullOrEmpty(_mainVM.FilterVM.FilterSummary));
+            AssertFiltersCleared();
 
-            /*
+            // Act: Text type in "a" 
+            rulesFilter.FreetextSearch = "a";
+            rulesFilter.HandleKeyLogic(Key.Enter); // skip delay, apply immediately
+
+            // Assert
+            Assert.Equal(43, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal("Text: \"a\"", _mainVM.FilterVM.FilterSummary);
+            Assert.Equal(21, _mainVM.MyCollectionVM.FilteredCards.Count);
+
+            // Act: Press Backspace to remove "a"
+            rulesFilter.FreetextSearch = rulesFilter.FreetextSearch[..^1];
+            AssertFiltersCleared();
+
             // Act: Text contains “+1/+1 counter”
             rulesFilter.SelectedSingleOption = "+1/+1 counter";
 
@@ -831,14 +847,11 @@ namespace CollectaMundo.Tests
             Assert.Equal(2, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(2, _mainVM.MyCollectionVM.FilteredCards.Count);
             Assert.Equal("SetName: \"The List\" AND Text: \"+1/+1 counter\"", _mainVM.FilterVM.FilterSummary);
-            */
 
             // Reset
             _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
 
-            Assert.Equal(62, _mainVM.AllCardsVM.FilteredCards.Count);
-            Assert.Equal(22, _mainVM.MyCollectionVM.FilteredCards.Count);
-            Assert.True(string.IsNullOrEmpty(_mainVM.FilterVM.FilterSummary));
+            AssertFiltersCleared();
 
             // ===== Section D: types + supertypes =====
 
@@ -1010,6 +1023,8 @@ namespace CollectaMundo.Tests
             // Reset
             _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
 
+            AssertFiltersCleared();
+
             // Arrange
             _mainVM.FilterVM.Filters["Keywords"].FilterOptions.FirstOrDefault(o => o.OptionName == "Vigilance")!.IsSelected = true;
             expectedNames = [.. new List<string> { "Bruna, the Fading Light // Brisela, Voice of Nightmares", "Gisela, the Broken Blade // Brisela, Voice of Nightmares" }.OrderBy(n => n)];
@@ -1023,7 +1038,3 @@ namespace CollectaMundo.Tests
         }
     }
 }
-
-
-
-
