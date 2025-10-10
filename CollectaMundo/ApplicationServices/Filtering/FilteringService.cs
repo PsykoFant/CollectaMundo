@@ -13,39 +13,33 @@ namespace CollectaMundo.ApplicationServices.Filtering
     {
         public List<CardSet> ApplyFilters(IEnumerable<CardSet> cards, IEnumerable<FilterItemViewModel> vmFilters)
         {
-            // nothing to do if no filters selected
             if (vmFilters == null || !vmFilters.Any())
-            {
                 return [.. cards];
-            }
 
-            // map UI-state → domain criteria
             var criteria = vmFilters.Select(vm => new FilteringLogic(
-                    vm.CriteriaKey,
-                    vm.FilterCategory,
-                    vm.SelectedOptions,
-                    vm.SelectedSingleOption,
-                    vm.SelectedNumericValue,
-                    vm.OperatorSelection,
-                    vm.DefaultText)).ToList();
+                vm.CriteriaKey,
+                vm.FilterCategory,
+                vm.SelectedOptions,
+                vm.SelectedSingleOption,
+                vm.SelectedNumericValue,
+                vm.OperatorSelection,
+                vm.DefaultText)).ToList();
 
-            // if after mapping we still have no active criteria, bail out
             if (criteria.Count == 0)
-            {
                 return [.. cards];
-            }
 
             try
             {
-                // only cards matching *all* domain criteria survive
                 return [.. cards.Where(card => criteria.All(c => c.Matches(card)))];
             }
-            catch
+            catch (Exception ex)
             {
-                // on error, show everything rather than crash
-                return [.. cards];
+
+                Debug.WriteLine($"[Filter] ERROR during filtering: {ex}");
+                return [.. cards]; // fallback
             }
         }
+
         public void ResetAllFilters(IEnumerable<FilterItemViewModel> allFilters)
         {
             foreach (var filter in allFilters)

@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Timers;
 using System.Windows;
 using System.Windows.Input;
@@ -48,6 +49,7 @@ namespace CollectaMundo.ViewModels
         private readonly FilterViewModel _filterViewModel;
         private readonly IFilterItemSearchLogic _filterItemSearchLogic;
         private readonly Timer? _typingTimer;
+        private bool _isSelectionInProgress = false;
 
         private string _filterText;
         public string FilterText
@@ -81,20 +83,28 @@ namespace CollectaMundo.ViewModels
                     if (string.IsNullOrWhiteSpace(value))
                     {
                         ApplyTextFilter();
-                        if (FilterCategory == FilterType.Single)
+                        SelectedSingleOption = string.Empty;
+                    }
+                    else
+                    {
+                        if (!_isSelectionInProgress)
                         {
-                            SelectedSingleOption = string.Empty;
+                            if (OperatorSelection == OperatorType.EQUALS)
+                            {
+                                OperatorSelection = OperatorType.CONTAINS;
+                                Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - Switched Operator to CONTAINS due to typing");
+                            }
+
+                            ResetTypingDelay();
                         }
                     }
-                    else if (FilterCategory == FilterType.Single)
-                    {
-                        // TYPING --> CONTAINS
-                        OperatorSelection = OperatorType.CONTAINS;
-                        ResetTypingDelay();
-                    }
+
+                    Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - FreetextSearch changed to: {_freetextSearch}");
                 }
             }
         }
+
+
 
 
         private string? _selectedSingleOption;
@@ -107,19 +117,12 @@ namespace CollectaMundo.ViewModels
                 {
                     _selectedSingleOption = value;
                     OnPropertyChanged(nameof(SelectedSingleOption));
-
-                    if (FilterCategory == FilterType.Single)
-                    {
-                        // SELECTING --> EQUALS
-                        OperatorSelection = OperatorType.EQUALS;
-                        FreetextSearch = value ?? DefaultText;
-                    }
-
                     _filterViewModel.NotifyFilterChanged();
+
+                    Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - SelectedSingleOption changed to: {value}");
                 }
             }
         }
-
 
         private bool _isTradeChecked;
         public bool IsTradeChecked
@@ -248,15 +251,26 @@ namespace CollectaMundo.ViewModels
 
             void applySelection()
             {
+                // If user already selected, don't override with CONTAINS
+                if (OperatorSelection == OperatorType.EQUALS)
+                    return;
+
                 if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
+                {
+                    OperatorSelection = OperatorType.CONTAINS;
                     SelectedSingleOption = FreetextSearch;
+
+                    Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - TypingTimer_Elapsed → CONTAINS: {FreetextSearch}");
+                }
             }
+
 
             if (disp != null)
                 disp.Invoke(applySelection);
             else
                 applySelection();
         }
+
 
         // Resets filter options, preserving selection where possible
         public void ResetOptions(IEnumerable<string> newOptionNames)
@@ -370,6 +384,26 @@ namespace CollectaMundo.ViewModels
 
             e.Handled = key is Key.Enter or Key.Escape;
         }
+
+        [RelayCommand]
+        public void ComboBoxSelectionChanged(object? selectedItem)
+        {
+            if (FilterCategory == FilterType.Single && selectedItem is FilterOption opt)
+            {
+                _typingTimer?.Stop(); // cancel pending debounce
+
+                _isSelectionInProgress = true; // 🔐 set guard flag
+
+                OperatorSelection = OperatorType.EQUALS;
+                SelectedSingleOption = opt.OptionName;
+                FreetextSearch = opt.OptionName;
+
+                _isSelectionInProgress = false; // 🔓 release guard
+
+                Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - ComboBoxSelectionChanged → EQUALS: {opt.OptionName}");
+            }
+        }
+
 
         #endregion
     }

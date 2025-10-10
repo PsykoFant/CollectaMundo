@@ -1140,15 +1140,21 @@
                                             </Grid.ColumnDefinitions>
                                             <Label Content="Name" VerticalAlignment="Center" Grid.Column="0"/>
                                             <ComboBox IsTextSearchEnabled="False"
-                                                          Grid.Column="1"
-                                                          HorizontalAlignment="Stretch"
-                                                          Height="20"
-                                                          IsEditable="True"
-                                                          Width="{Binding DataContext.Main.ColumnWidths[0][0],RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          ItemsSource="{Binding FilteredOptions}"
-                                                          DisplayMemberPath="OptionName"
-                                                          SelectedItem="OptionName"
-                                                          Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                              Grid.Column="1"
+                                              HorizontalAlignment="Stretch"
+                                              Height="20"
+                                              IsEditable="True"
+                                              Width="{Binding DataContext.Main.ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}"
+                                              ItemsSource="{Binding FilteredOptions}"
+                                              DisplayMemberPath="OptionName"
+                                              Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                <i:Interaction.Triggers>
+                                                    <i:EventTrigger EventName="SelectionChanged">
+                                                        <i:InvokeCommandAction
+                                                            Command="{Binding ComboBoxSelectionChangedCommand}"
+                                                            CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
+                                                    </i:EventTrigger>
+                                                </i:Interaction.Triggers>
                                                 <ComboBox.ItemsPanel>
                                                     <ItemsPanelTemplate>
                                                         <VirtualizingStackPanel />
@@ -1174,15 +1180,21 @@
                                             </Grid.ColumnDefinitions>
                                             <Label Content="Set" VerticalAlignment="Center" Grid.Column="0"/>
                                             <ComboBox IsTextSearchEnabled="False"
-                                                          Grid.Column="1"
-                                                          HorizontalAlignment="Stretch"
-                                                          Height="20"
-                                                          IsEditable="True"
-                                                          Width="{Binding DataContext.Main.ColumnWidths[0][1],RelativeSource={RelativeSource AncestorType=Window}}"
-                                                          ItemsSource="{Binding FilteredOptions}"
-                                                          DisplayMemberPath="OptionName"
-                                                          SelectedItem="OptionName"
-                                                          Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                              Grid.Column="1"
+                                              HorizontalAlignment="Stretch"
+                                              Height="20"
+                                              IsEditable="True"
+                                              Width="{Binding DataContext.Main.ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}"
+                                              ItemsSource="{Binding FilteredOptions}"
+                                              DisplayMemberPath="OptionName"
+                                              Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                                <i:Interaction.Triggers>
+                                                    <i:EventTrigger EventName="SelectionChanged">
+                                                        <i:InvokeCommandAction
+                                                            Command="{Binding ComboBoxSelectionChangedCommand}"
+                                                            CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
+                                                    </i:EventTrigger>
+                                                </i:Interaction.Triggers>
                                                 <ComboBox.ItemsPanel>
                                                     <ItemsPanelTemplate>
                                                         <VirtualizingStackPanel />
