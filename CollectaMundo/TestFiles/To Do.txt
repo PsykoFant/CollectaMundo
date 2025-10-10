@@ -1,10 +1,10 @@
 TO DO 
 - MVVM refactor
 
-Lidt mere manuel test omkring single option
-Opdater unit test
 
-// mvvm toolkit refactors followup (filter logic)
+- mvvm toolkit refactors followup (filter logic)
+- Oprydning i filteritemviewmodel klassen
+
 Gå videre med sæt backup sti
 
  - Import brug MVVM (unit test)
