@@ -1184,7 +1184,7 @@
                                               HorizontalAlignment="Stretch"
                                               Height="20"
                                               IsEditable="True"
-                                              Width="{Binding DataContext.Main.ColumnWidths[0][0], RelativeSource={RelativeSource AncestorType=Window}}"
+                                              Width="{Binding DataContext.Main.ColumnWidths[0][1], RelativeSource={RelativeSource AncestorType=Window}}"
                                               ItemsSource="{Binding FilteredOptions}"
                                               DisplayMemberPath="OptionName"
                                               Text="{Binding FreetextSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
@@ -1195,6 +1195,9 @@
                                                             CommandParameter="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"/>
                                                     </i:EventTrigger>
                                                 </i:Interaction.Triggers>
+                                                <i:Interaction.Behaviors>
+                                                    <behaviors:ComboBoxUnselector ClearTrigger="{Binding ClearComboBoxSelectionTrigger}" />
+                                                </i:Interaction.Behaviors>
                                                 <ComboBox.ItemsPanel>
                                                     <ItemsPanelTemplate>
                                                         <VirtualizingStackPanel />

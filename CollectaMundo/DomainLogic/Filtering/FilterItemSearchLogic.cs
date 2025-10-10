@@ -7,7 +7,7 @@ namespace CollectaMundo.DomainLogic.Filtering
         public List<FilterOption> ApplyTextFilter(IEnumerable<FilterOption> allOptions, string filterText)
         {
             if (string.IsNullOrWhiteSpace(filterText))
-                return allOptions.ToList();
+                return [.. allOptions];
 
             return [.. allOptions.Where(option => option.OptionName.Contains(filterText, StringComparison.OrdinalIgnoreCase))];
         }

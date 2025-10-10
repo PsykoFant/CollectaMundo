@@ -68,6 +68,18 @@ namespace CollectaMundo.ViewModels
             }
         }
 
+        private bool _clearComboBoxSelectionTrigger;
+        public bool ClearComboBoxSelectionTrigger
+        {
+            get => _clearComboBoxSelectionTrigger;
+            set
+            {
+                _clearComboBoxSelectionTrigger = value;
+                OnPropertyChanged();
+            }
+        }
+
+
         private string _freetextSearch;
         public string FreetextSearch
         {
@@ -83,8 +95,16 @@ namespace CollectaMundo.ViewModels
                     if (string.IsNullOrWhiteSpace(value))
                     {
                         ApplyTextFilter();
-                        SelectedSingleOption = string.Empty;
+
+                        if (SelectedSingleOption != null)
+                        {
+                            Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - Freetext cleared → resetting SelectedSingleOption");
+                            SelectedSingleOption = null;
+                            ClearComboBoxSelectionTrigger = true; // 🚨 This clears visual selection
+                            ClearComboBoxSelectionTrigger = false; // Immediately reset to allow future triggers
+                        }
                     }
+
                     else
                     {
                         if (!_isSelectionInProgress)
@@ -103,9 +123,6 @@ namespace CollectaMundo.ViewModels
                 }
             }
         }
-
-
-
 
         private string? _selectedSingleOption;
         public string? SelectedSingleOption
