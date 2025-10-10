@@ -13,6 +13,8 @@ using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.EditCollection.Models;
+using CollectaMundo.DomainLogic.Filtering;
+using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardImages;
@@ -30,16 +32,17 @@ namespace CollectaMundo.Tests.TestUtils;
 
 public static class TestAppBuilder
 {
-    public static async Task<(MainWindowViewModel VM, StatusViewModel Status)> BuildAsync(InMemoryDatabaseFixture fixture, IDbConnectionFactory dbFactory, List<CardChangeEventArgs>? eventSink = null)
-
+    public static async Task<(MainWindowViewModel VM, StatusViewModel Status)> BuildAsync(
+    InMemoryDatabaseFixture fixture,
+    IDbConnectionFactory dbFactory,
+    List<CardChangeEventArgs>? eventSink = null)
     {
-        await fixture.InitializeAsync(); // ensure schema/seed
+        await fixture.InitializeAsync();
 
         var statusVM = new StatusViewModel();
         var settings = new ApplicationServices.Shared.AppSettings();
 
         string getRetailer() => settings.PriceInfo.Retailer;
-
         var remoteLookups = new RemoteLookups();
 
         var missingPngSvc = new GenerateMissingPngService(
@@ -51,7 +54,7 @@ public static class TestAppBuilder
 
         var prepService = new CardDatabaseManagementService(
             settings,
-            dbFactory, // <- passed in explicitly
+            dbFactory,
             CreateProgressSinks(statusVM),
             new CardDatabaseManagementRepo(),
             priceService,
@@ -72,7 +75,9 @@ public static class TestAppBuilder
 
         var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(new EditCollectionRepo()));
 
-        var cardImageService = new CardImageService(dbFactory, remoteLookups, new CardImageLogic(), new CardImageRepo(), new CardImageDownloader(settings));
+        var cardImageService = new CardImageService(
+            dbFactory, remoteLookups, new CardImageLogic(),
+            new CardImageRepo(), new CardImageDownloader(settings));
 
         var importService = new ImportService(new ImportRepo(), settings);
         var filteringService = new FilteringService();
@@ -86,13 +91,36 @@ public static class TestAppBuilder
             prepService,
             statusVM,
             cardListService,
-            settings,          // also passed directly
+            settings,
             scheduler);
 
         if (eventSink is not null)
         {
             mainVM.AddCardsVM.CardChanged += (_, e) => eventSink.Add(e);
             mainVM.EditCardsVM.CardChanged += (_, e) => eventSink.Add(e);
+        }
+
+        var searchLogic = new FilterItemSearchLogic();
+
+        foreach (var kvp in mainVM.FilterVM.Filters.ToList())
+        {
+            var old = kvp.Value;
+
+            if (old.FilterCategory == FilterType.Single)
+            {
+                var testable = new TestableFilterItemViewModel(
+                    old.CriteriaKey,
+                    old.FilterOptions,
+                    old.DefaultText,
+                    old.ReadableLabel ?? old.CriteriaKey,
+                    mainVM.FilterVM,
+                    searchLogic,
+                    numericOptions: null);
+
+                testable.OperatorSelection = old.OperatorSelection;
+
+                mainVM.FilterVM.Filters[kvp.Key] = testable;
+            }
         }
 
         mainVM.FilterVM.NotifyFilterChanged();
@@ -107,6 +135,7 @@ public static class TestAppBuilder
 
         return (mainVM, statusVM);
     }
+
 
     private static ProgressSinks CreateProgressSinks(StatusViewModel vm) => new()
     {

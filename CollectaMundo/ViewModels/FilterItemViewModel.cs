@@ -270,27 +270,27 @@ namespace CollectaMundo.ViewModels
         {
             var disp = Application.Current?.Dispatcher;
 
-            void applySelection()
-            {
-                // If user already selected, don't override with CONTAINS
-                if (OperatorSelection == OperatorType.EQUALS)
-                    return;
-
-                if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
-                {
-                    OperatorSelection = OperatorType.CONTAINS;
-                    SelectedSingleOption = FreetextSearch;
-
-                    Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - TypingTimer_Elapsed → CONTAINS: {FreetextSearch}");
-                }
-            }
-
-
             if (disp != null)
-                disp.Invoke(applySelection);
+                disp.Invoke(ApplyTypingSelection);
             else
-                applySelection();
+                ApplyTypingSelection();
         }
+
+        protected virtual void ApplyTypingSelection()
+        {
+            // If user already selected, don't override with CONTAINS
+            if (OperatorSelection == OperatorType.EQUALS)
+                return;
+
+            if (!string.IsNullOrWhiteSpace(FreetextSearch) && FreetextSearch != DefaultText)
+            {
+                OperatorSelection = OperatorType.CONTAINS;
+                SelectedSingleOption = FreetextSearch;
+
+                Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - TypingTimer_Elapsed → CONTAINS: {FreetextSearch}");
+            }
+        }
+
 
 
         // Resets filter options, preserving selection where possible

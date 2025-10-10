@@ -779,7 +779,7 @@ namespace CollectaMundo.Tests
             // Reset for main scenario
             _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
 
-            // ===== Section B: search by Name ("Ranger") =====
+            // ===== Section B: text search by Name and setname =====
 
             // Act
             var nameFilter = _mainVM.FilterVM.Filters["Name"];
@@ -800,15 +800,28 @@ namespace CollectaMundo.Tests
             // Assert
             AssertFiltersCleared();
 
-            var setNameFilter = _mainVM.FilterVM.Filters["SetName"];
+            // Act: type "modern horizons" into SetName free text search
+            var setNameFilter = (TestableFilterItemViewModel)_mainVM.FilterVM.Filters["SetName"];
             setNameFilter.FreetextSearch = "modern horizons";
-            Task.Delay(250).Wait(); // wait for delay to elapse
+            setNameFilter.SimulateTypingComplete();
 
+            // Assert
             Assert.Equal(8, _mainVM.AllCardsVM.FilteredCards.Count);
+
+            // Act: Delete text to clear
+            setNameFilter.FreetextSearch = "";
+
+            // Assert
+            AssertFiltersCleared();
+
+            // Act: SetName = "Modern Horizons Art Series"
+            setNameFilter.SelectedSingleOption = "Modern Horizons Art Series";
+
+            // Assert
+            Assert.Equal(3, _mainVM.AllCardsVM.FilteredCards.Count);
 
             _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
             AssertFiltersCleared();
-
 
             // ===== Section C: text + set filters =====
 
