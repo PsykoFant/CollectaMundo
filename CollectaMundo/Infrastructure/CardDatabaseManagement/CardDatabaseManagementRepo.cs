@@ -313,6 +313,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
             return filePath;
         }
 
+        // Helper
         private static readonly Dictionary<string, string> TablesToCopy = new()
             {
                 {"cardForeignData", "DROP TABLE IF EXISTS cardForeignData;" },

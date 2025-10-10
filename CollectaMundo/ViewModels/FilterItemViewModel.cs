@@ -82,15 +82,20 @@ namespace CollectaMundo.ViewModels
                     {
                         ApplyTextFilter();
                         if (FilterCategory == FilterType.Single)
+                        {
                             SelectedSingleOption = string.Empty;
+                        }
                     }
                     else if (FilterCategory == FilterType.Single)
                     {
+                        // TYPING --> CONTAINS
+                        OperatorSelection = OperatorType.CONTAINS;
                         ResetTypingDelay();
                     }
                 }
             }
         }
+
 
         private string? _selectedSingleOption;
         public string? SelectedSingleOption
@@ -104,12 +109,17 @@ namespace CollectaMundo.ViewModels
                     OnPropertyChanged(nameof(SelectedSingleOption));
 
                     if (FilterCategory == FilterType.Single)
+                    {
+                        // SELECTING --> EQUALS
+                        OperatorSelection = OperatorType.EQUALS;
                         FreetextSearch = value ?? DefaultText;
+                    }
 
                     _filterViewModel.NotifyFilterChanged();
                 }
             }
         }
+
 
         private bool _isTradeChecked;
         public bool IsTradeChecked

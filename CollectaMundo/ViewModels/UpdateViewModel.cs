@@ -29,75 +29,64 @@ namespace CollectaMundo.ViewModels
         private async Task BackupCollection()
         {
             // UI state preparation
+            _statusVM.ResetStatusOverlay();
+            _statusVM.ShowStatusOverlay("Export csv-format backup of My Collection", false);
+
+            _statusVM.StatusLabel3 = $"Export to: {_backupPath}";
+            _statusVM.PrimaryButtonVisibility = Visibility.Visible;
+            _statusVM.PrimaryButtonText = "   Change   ";
+
+            _statusVM.SecondaryButtonVisibility = Visibility.Visible;
+            _statusVM.SecondaryButtonText = "   Start export   ";
+
+            // Wait for user confirmation before proceeding
+            var tcs = new TaskCompletionSource();
+            _statusVM.SetSecondaryAction(_ => tcs.SetResult());
+            await tcs.Task;
+
+            // UI state preparation AFTER user clicked
             SetUiBusy(true);
             _statusVM.ResetStatusOverlay();
-
+            _statusVM.StatusLabel1 = "Please wait - backing up up your collection ... ";
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
-            string emptyMessage = "Your collection is empty - nothing to back up";
-            string emptyAckText = "   Oh ... I guess that makes sense...   ";
 
-            // Check if collection is empty
-            if (_getMyCollectionCount() == 0)
+            // Prepare cancellation token before starting
+            _backupCts = new CancellationTokenSource();
+            _statusVM.SetPrimaryAction(_ =>
             {
-                _statusVM.ShowStatusOverlay(emptyMessage, false);
-                _statusVM.PrimaryButtonText = emptyAckText;
-            }
-            else
+                _statusVM.StatusLabel2 = "Cancelling…";
+                _backupCts?.Cancel();
+            });
+
+            // Run backup
+            var result = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(_backupCts.Token));
+
+            // Revert primary button to default
+            _statusVM.SetPrimaryAction(_ =>
             {
                 _statusVM.ResetStatusOverlay();
-                _statusVM.ShowStatusOverlay("Ready to make some cool backups?", false);
-                _statusVM.PrimaryButtonText = "   HELL YEAh!   ";
-                _statusVM.PrimaryButtonVisibility = Visibility.Visible;
+                _statusVM.HideStatusOverlay();
+            });
 
-                _statusVM.StatusLabel3 = $"Collection will be backed up to {_backupPath}";
-                _statusVM.SecondaryButtonText = "   Change backup path   ";
-                _statusVM.SecondaryButtonVisibility = Visibility.Visible;
+            // Display result
+            switch (result.Code)
+            {
+                case OperationResultCode.Success:
+                    _statusVM.StatusLabel3 = $"Backup created successfully at {result.Message}";
+                    _statusVM.PrimaryButtonText = "   Awesome!   ";
+                    break;
 
-                // Wait for user confirmation before proceeding
-                var tcs = new TaskCompletionSource();
-                _statusVM.SetPrimaryAction(_ => tcs.SetResult());
-                await tcs.Task;
+                case OperationResultCode.Empty:
+                    _statusVM.StatusLabel3 = "Your collection is empty - nothing to back up";
+                    _statusVM.PrimaryButtonText = "   Oh ... I guess that makes sense...   ";
+                    break;
 
-                _statusVM.StatusLabel2 = "Cancelling…";
-
-                // Prepare cancellation token before starting
-                _backupCts = new CancellationTokenSource();
-                _statusVM.SetPrimaryAction(_ =>
-                {
-                    _statusVM.StatusLabel2 = "Cancelling…";
-                    _backupCts?.Cancel();
-                });
-
-                // Run backup
-                _statusVM.ShowStatusOverlay("Please wait - backing up up your collection ... ", false);
-                var result = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(_backupCts.Token));
-
-                // Revert primary button to default
-                _statusVM.SetPrimaryAction(_ =>
-                {
-                    _statusVM.StatusLabel2 = string.Empty;
-                    _statusVM.HideStatusOverlay();
-                });
-
-                // Display result
-                switch (result.Code)
-                {
-                    case OperationResultCode.Success:
-                        _statusVM.StatusLabel1 = $"Backup created successfully at {result.Message}";
-                        _statusVM.PrimaryButtonText = "   Awesome!   ";
-                        break;
-
-                    case OperationResultCode.Empty:
-                        _statusVM.ShowStatusOverlay(emptyMessage, false);
-                        _statusVM.PrimaryButtonText = emptyAckText;
-                        break;
-
-                    case OperationResultCode.Error:
-                        _statusVM.StatusLabel1 = $"Error: {result.Message}";
-                        _statusVM.PrimaryButtonText = "   Ok :-/   ";
-                        break;
-                }
+                case OperationResultCode.Error:
+                    _statusVM.StatusLabel3 = $"Error: {result.Message}";
+                    _statusVM.PrimaryButtonText = "   Ok :-/   ";
+                    break;
             }
+
             // Reset UI state
             _backupCts = null;
             SetUiBusy(false);

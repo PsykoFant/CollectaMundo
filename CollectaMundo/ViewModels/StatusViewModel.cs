@@ -81,9 +81,11 @@ namespace CollectaMundo.ViewModels
         {
             LogoVisibility = Visibility.Visible;
             ProgressVisibility = Visibility.Collapsed;
+
             PrimaryButtonVisibility = Visibility.Collapsed;
+            SecondaryButtonVisibility = Visibility.Collapsed;
+
             SetupFailVisibility = Visibility.Collapsed;
-            PrimaryButtonVisibility = Visibility.Collapsed;
 
             StatusLabel1 = string.Empty;
             StatusLabel2 = string.Empty;
@@ -91,6 +93,10 @@ namespace CollectaMundo.ViewModels
 
             ProgressValue = 0;
             PrimaryButtonText = "  OK  ";
+            SecondaryButtonText = string.Empty;
+
+            _primaryAction = _ => HideStatusOverlay();
+            _secondaryAction = _ => { };
         }
     }
 }

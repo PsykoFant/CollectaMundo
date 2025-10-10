@@ -119,7 +119,13 @@ namespace CollectaMundo.DomainLogic.Filtering
                             return true;
                         }
 
-                        return cardValue.Contains(SelectedSingleOption, StringComparison.OrdinalIgnoreCase);
+                        return OperatorSelection switch
+                        {
+                            OperatorType.EQUALS => cardValue.Equals(SelectedSingleOption, StringComparison.OrdinalIgnoreCase),
+                            OperatorType.CONTAINS => cardValue.Contains(SelectedSingleOption, StringComparison.OrdinalIgnoreCase),
+                            _ => cardValue.Contains(SelectedSingleOption, StringComparison.OrdinalIgnoreCase), // fallback
+                        };
+
 
                     case FilterType.Multi:
                         if (SelectedOptions == null || !SelectedOptions.Any())

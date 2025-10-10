@@ -78,7 +78,7 @@ namespace CollectaMundo.Tests.UnitTests
                 // Now filter the list
                 var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
-                // Assert that only cards with "Lightning" in their name are returned.
+                // Assert that only cards with "fire" in their name are returned.
                 Assert.Equal(2, result.Count);
                 Assert.Contains("Fire // Ice", result[0].Name);
                 Assert.Contains("Tarfire", result[1].Name);
@@ -100,7 +100,7 @@ namespace CollectaMundo.Tests.UnitTests
                 // Now filter the list
                 var result = cards.Where(card => filterLogic.Matches(card)).ToList();
 
-                // Assert that only cards with "Lightning" in their name are returned.
+                // Assert 
                 Assert.Single(result);
                 Assert.Contains("Davros, Dalek Creator", result[0].Name);
             }

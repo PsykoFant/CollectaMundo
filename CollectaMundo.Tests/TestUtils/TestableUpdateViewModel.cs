@@ -6,7 +6,7 @@ using System.Diagnostics;
 
 namespace CollectaMundo.Tests.TestUtils
 {
-    public class TestableUpdateViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, IUiBlockable uiState, IAppRefresher appRefresher, Func<int> getMyCollectionCount) : UpdateViewModel(dbService, statusVM, uiState, appRefresher, getMyCollectionCount)
+    public class TestableUpdateViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, IUiBlockable uiState, IAppRefresher appRefresher, Func<int> getMyCollectionCount) : UpdateViewModel(dbService, statusVM, uiState, appRefresher, getMyCollectionCount, "")
     {
         public Task InternalUpdateTask => _internalUpdateTask!;
         private Task? _internalUpdateTask;
