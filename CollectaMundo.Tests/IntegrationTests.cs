@@ -800,6 +800,16 @@ namespace CollectaMundo.Tests
             // Assert
             AssertFiltersCleared();
 
+            var setNameFilter = _mainVM.FilterVM.Filters["SetName"];
+            setNameFilter.FreetextSearch = "modern horizons";
+            Task.Delay(250).Wait(); // wait for delay to elapse
+
+            Assert.Equal(8, _mainVM.AllCardsVM.FilteredCards.Count);
+
+            _mainVM.FilterVM.ClearFiltersCommand?.Execute(null);
+            AssertFiltersCleared();
+
+
             // ===== Section C: text + set filters =====
 
             // Arrange
