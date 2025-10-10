@@ -1,6 +1,9 @@
 TO DO 
 - MVVM refactor
 
+Lidt mere manuel test omkring single option
+Opdater unit test
+Gå videre med sæt backup sti
 
  - Import brug MVVM (unit test)
  - Deck manager brug MVVM (unit test)
