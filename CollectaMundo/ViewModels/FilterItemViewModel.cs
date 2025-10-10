@@ -50,6 +50,7 @@ namespace CollectaMundo.ViewModels
         private readonly IFilterItemSearchLogic _filterItemSearchLogic;
         private readonly Timer? _typingTimer;
         private bool _isSelectionInProgress = false;
+        private bool _ignoreNextSelectionChanged;
 
         private string _filterText;
         public string FilterText
@@ -99,9 +100,12 @@ namespace CollectaMundo.ViewModels
                         if (SelectedSingleOption != null)
                         {
                             Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - Freetext cleared → resetting SelectedSingleOption");
+
+                            _ignoreNextSelectionChanged = true; // 🛡️ prevent next SelectionChanged handler
+
                             SelectedSingleOption = null;
-                            ClearComboBoxSelectionTrigger = true; // 🚨 This clears visual selection
-                            ClearComboBoxSelectionTrigger = false; // Immediately reset to allow future triggers
+                            ClearComboBoxSelectionTrigger = true;
+                            ClearComboBoxSelectionTrigger = false;
                         }
                     }
 
@@ -405,6 +409,13 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         public void ComboBoxSelectionChanged(object? selectedItem)
         {
+            if (_ignoreNextSelectionChanged)
+            {
+                _ignoreNextSelectionChanged = false;
+                Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - Ignored ComboBoxSelectionChanged (clearing)");
+                return;
+            }
+
             if (FilterCategory == FilterType.Single && selectedItem is FilterOption opt)
             {
                 _typingTimer?.Stop(); // cancel pending debounce
@@ -420,6 +431,7 @@ namespace CollectaMundo.ViewModels
                 Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - ComboBoxSelectionChanged → EQUALS: {opt.OptionName}");
             }
         }
+
 
 
         #endregion
