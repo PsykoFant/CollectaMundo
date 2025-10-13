@@ -80,6 +80,32 @@ namespace CollectaMundo.ViewModels
             }
         }
 
+        [ObservableProperty]
+        private string filterText;
+        partial void OnFilterTextChanged(string value)
+        {
+            if (_initialized && !_suppressFiltering)
+                ApplyTextFilter();
+        }
+
+        [ObservableProperty]
+        private bool isTradeChecked;
+        partial void OnIsTradeCheckedChanged(bool value)
+        {
+            if (value)
+                IsNotTradeChecked = false;
+            ApplyTradeFilter();
+        }
+
+        [ObservableProperty]
+        private bool isNotTradeChecked;
+        partial void OnIsNotTradeCheckedChanged(bool value)
+        {
+            if (value)
+                IsTradeChecked = false;
+            ApplyTradeFilter();
+        }
+
         public ObservableCollection<FilterOption> FilterOptions { get; }
         public ObservableCollection<FilterOption> FilteredOptions { get; private set; }
         public ObservableCollection<string> SelectedOptions { get; } = [];
@@ -87,75 +113,42 @@ namespace CollectaMundo.ViewModels
         public ObservableCollection<OperatorType>? AvailableOperators { get; }
         public ObservableCollection<int>? AvailableNumericOptions { get; }
 
+        // Resets filter options, preserving selection where possible
+        public void ResetOptions(IEnumerable<string> newOptionNames)
+        {
+            var incoming = _filterItemSearchLogic.NormalizeOptionNames(newOptionNames);
+            var current = FilterOptions.Select(o => o.OptionName);
+
+            if (_filterItemSearchLogic.IsEquivalentOptionList(current, incoming))
+                return;
+
+            foreach (var opt in FilterOptions)
+                opt.PropertyChanged -= FilterOption_PropertyChanged;
+
+            FilterOptions.Clear();
+
+            var newOptions = _filterItemSearchLogic.BuildOptionsFromNames(incoming);
+            foreach (var opt in newOptions)
+            {
+                opt.PropertyChanged += FilterOption_PropertyChanged;
+                FilterOptions.Add(opt);
+            }
+
+            ApplyTextFilter();
+            UpdateSelectedOptions();
+            OnPropertyChanged(nameof(AvailableOptions));
+        }
+
         private readonly FilterViewModel _filterViewModel;
         private readonly IFilterItemSearchLogic _filterItemSearchLogic;
         private readonly Timer? _typingTimer;
         private bool _isSelectionInProgress = false;
         private bool _ignoreNextSelectionChanged;
-
-        private string _filterText;
-        public string FilterText
-        {
-            get => _filterText;
-            set
-            {
-                if (_filterText != value)
-                {
-                    _filterText = value;
-                    OnPropertyChanged(nameof(FilterText));
-
-                    if (!_suppressFiltering)
-                        ApplyTextFilter();
-                }
-            }
-        }
-
-
-
-
-        private bool _isTradeChecked;
-        public bool IsTradeChecked
-        {
-            get => _isTradeChecked;
-            set
-            {
-                if (_isTradeChecked != value)
-                {
-                    _isTradeChecked = value;
-                    OnPropertyChanged(nameof(IsTradeChecked));
-
-                    if (value)
-                        IsNotTradeChecked = false;
-
-                    ApplyTradeFilter();
-                }
-            }
-        }
-
-        private bool _isNotTradeChecked;
-        public bool IsNotTradeChecked
-        {
-            get => _isNotTradeChecked;
-            set
-            {
-                if (_isNotTradeChecked != value)
-                {
-                    _isNotTradeChecked = value;
-                    OnPropertyChanged(nameof(IsNotTradeChecked));
-
-                    if (value)
-                        IsTradeChecked = false;
-
-                    ApplyTradeFilter();
-                }
-            }
-        }
-
-        // Used to temporarily suppress filter update
-        public bool _suppressFiltering = false;
+        private readonly bool _initialized = false;
+        private bool _suppressFiltering = false; // Used to temporarily suppress filter update
 
         // Constructor
-        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, string readableLabel, FilterViewModel filterViewModel, IFilterItemSearchLogic filterItemSearchLogic, IEnumerable<int>? numericOptions = null)
+        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, string readableLabel, FilterViewModel filterViewModel, IFilterItemSearchLogic filterItemSearchLogic, IEnumerable<int>? numericOptions = null, int debounceDelayInMs = 200)
         {
             _filterViewModel = filterViewModel;
             _filterItemSearchLogic = filterItemSearchLogic;
@@ -164,7 +157,7 @@ namespace CollectaMundo.ViewModels
             DefaultText = defaultText;
             ReadableLabel = readableLabel;
 
-            _filterText = DefaultText;
+            FilterText = DefaultText;
             FreetextSearch = defaultText;
 
             FilterOptions = [.. filterOptions];
@@ -184,10 +177,11 @@ namespace CollectaMundo.ViewModels
 
                 if (FilterCategory == FilterType.Single)
                 {
-                    _typingTimer = new Timer(200) { AutoReset = false };
+                    _typingTimer = new Timer(debounceDelayInMs) { AutoReset = false };
                     _typingTimer.Elapsed += TypingTimer_Elapsed;
                 }
             }
+            _initialized = true; // allow ApplyTextFilter to trigger from now on
         }
 
         // Update SelectedOptions when checkboxes change
@@ -260,32 +254,6 @@ namespace CollectaMundo.ViewModels
         }
 
 
-
-        // Resets filter options, preserving selection where possible
-        public void ResetOptions(IEnumerable<string> newOptionNames)
-        {
-            var incoming = _filterItemSearchLogic.NormalizeOptionNames(newOptionNames);
-            var current = FilterOptions.Select(o => o.OptionName);
-
-            if (_filterItemSearchLogic.IsEquivalentOptionList(current, incoming))
-                return;
-
-            foreach (var opt in FilterOptions)
-                opt.PropertyChanged -= FilterOption_PropertyChanged;
-
-            FilterOptions.Clear();
-
-            var newOptions = _filterItemSearchLogic.BuildOptionsFromNames(incoming);
-            foreach (var opt in newOptions)
-            {
-                opt.PropertyChanged += FilterOption_PropertyChanged;
-                FilterOptions.Add(opt);
-            }
-
-            ApplyTextFilter();
-            UpdateSelectedOptions();
-            OnPropertyChanged(nameof(AvailableOptions));
-        }
 
         // Handles special key behavior for single filters
         protected internal void HandleKeyLogic(Key key)
@@ -380,7 +348,6 @@ namespace CollectaMundo.ViewModels
             if (_ignoreNextSelectionChanged)
             {
                 _ignoreNextSelectionChanged = false;
-                Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - Ignored ComboBoxSelectionChanged (clearing)");
                 return;
             }
 
@@ -388,19 +355,15 @@ namespace CollectaMundo.ViewModels
             {
                 _typingTimer?.Stop(); // cancel pending debounce
 
-                _isSelectionInProgress = true; // 🔐 set guard flag
+                _isSelectionInProgress = true; // set guard flag
 
                 OperatorSelection = OperatorType.EQUALS;
                 SelectedSingleOption = opt.OptionName;
                 FreetextSearch = opt.OptionName;
 
-                _isSelectionInProgress = false; // 🔓 release guard
-
-                Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - ComboBoxSelectionChanged → EQUALS: {opt.OptionName}");
+                _isSelectionInProgress = false; //release guard
             }
         }
-
-
 
         #endregion
     }
