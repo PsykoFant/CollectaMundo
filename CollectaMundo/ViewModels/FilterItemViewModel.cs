@@ -33,11 +33,52 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private int? selectedNumericValue;
+
+        [ObservableProperty]
+        private bool clearComboBoxSelectionTrigger;
         partial void OnSelectedNumericValueChanged(int? value) => _filterViewModel.NotifyFilterChanged();
 
         [ObservableProperty]
         private OperatorType operatorSelection;
         partial void OnOperatorSelectionChanged(OperatorType value) => _filterViewModel.NotifyFilterChanged();
+
+        [ObservableProperty]
+        private string? selectedSingleOption;
+        partial void OnSelectedSingleOptionChanged(string? value)
+        {
+            _filterViewModel.NotifyFilterChanged();
+        }
+
+        [ObservableProperty]
+        private string freetextSearch = string.Empty;
+        partial void OnFreetextSearchChanged(string value)
+        {
+            FilterText = value;
+
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                ApplyTextFilter();
+
+                if (SelectedSingleOption != null)
+                {
+                    _ignoreNextSelectionChanged = true; // prevent next SelectionChanged handler
+                    SelectedSingleOption = null;
+                    ClearComboBoxSelectionTrigger = true;
+                    ClearComboBoxSelectionTrigger = false;
+                }
+            }
+            else
+            {
+                if (!_isSelectionInProgress)
+                {
+                    if (OperatorSelection == OperatorType.EQUALS)
+                    {
+                        OperatorSelection = OperatorType.CONTAINS;
+                    }
+                    ResetTypingDelay();
+                }
+            }
+        }
 
         public ObservableCollection<FilterOption> FilterOptions { get; }
         public ObservableCollection<FilterOption> FilteredOptions { get; private set; }
@@ -69,81 +110,8 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        private bool _clearComboBoxSelectionTrigger;
-        public bool ClearComboBoxSelectionTrigger
-        {
-            get => _clearComboBoxSelectionTrigger;
-            set
-            {
-                _clearComboBoxSelectionTrigger = value;
-                OnPropertyChanged();
-            }
-        }
 
 
-        private string _freetextSearch;
-        public string FreetextSearch
-        {
-            get => _freetextSearch;
-            set
-            {
-                if (_freetextSearch != value)
-                {
-                    _freetextSearch = value;
-                    OnPropertyChanged(nameof(FreetextSearch));
-                    FilterText = value;
-
-                    if (string.IsNullOrWhiteSpace(value))
-                    {
-                        ApplyTextFilter();
-
-                        if (SelectedSingleOption != null)
-                        {
-                            Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - Freetext cleared → resetting SelectedSingleOption");
-
-                            _ignoreNextSelectionChanged = true; // 🛡️ prevent next SelectionChanged handler
-
-                            SelectedSingleOption = null;
-                            ClearComboBoxSelectionTrigger = true;
-                            ClearComboBoxSelectionTrigger = false;
-                        }
-                    }
-
-                    else
-                    {
-                        if (!_isSelectionInProgress)
-                        {
-                            if (OperatorSelection == OperatorType.EQUALS)
-                            {
-                                OperatorSelection = OperatorType.CONTAINS;
-                                Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - Switched Operator to CONTAINS due to typing");
-                            }
-
-                            ResetTypingDelay();
-                        }
-                    }
-
-                    Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - FreetextSearch changed to: {_freetextSearch}");
-                }
-            }
-        }
-
-        private string? _selectedSingleOption;
-        public string? SelectedSingleOption
-        {
-            get => _selectedSingleOption;
-            set
-            {
-                if (_selectedSingleOption != value)
-                {
-                    _selectedSingleOption = value;
-                    OnPropertyChanged(nameof(SelectedSingleOption));
-                    _filterViewModel.NotifyFilterChanged();
-
-                    Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - SelectedSingleOption changed to: {value}");
-                }
-            }
-        }
 
         private bool _isTradeChecked;
         public bool IsTradeChecked
@@ -197,7 +165,7 @@ namespace CollectaMundo.ViewModels
             ReadableLabel = readableLabel;
 
             _filterText = DefaultText;
-            _freetextSearch = DefaultText;
+            FreetextSearch = defaultText;
 
             FilterOptions = [.. filterOptions];
             FilteredOptions = [.. FilterOptions];
