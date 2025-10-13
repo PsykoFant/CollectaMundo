@@ -115,9 +115,10 @@ public static class TestAppBuilder
                     old.ReadableLabel ?? old.CriteriaKey,
                     mainVM.FilterVM,
                     searchLogic,
-                    numericOptions: null);
-
-                testable.OperatorSelection = old.OperatorSelection;
+                    numericOptions: null)
+                {
+                    OperatorSelection = old.OperatorSelection
+                };
 
                 mainVM.FilterVM.Filters[kvp.Key] = testable;
             }

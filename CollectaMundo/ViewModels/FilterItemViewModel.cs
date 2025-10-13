@@ -148,7 +148,7 @@ namespace CollectaMundo.ViewModels
         private bool _suppressFiltering = false; // Used to temporarily suppress filter update
 
         // Constructor
-        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, string readableLabel, FilterViewModel filterViewModel, IFilterItemSearchLogic filterItemSearchLogic, IEnumerable<int>? numericOptions = null, int debounceDelayInMs = 200)
+        public FilterItemViewModel(string criteriaKey, IEnumerable<FilterOption> filterOptions, string defaultText, string readableLabel, FilterViewModel filterViewModel, IFilterItemSearchLogic filterItemSearchLogic, IEnumerable<int>? numericOptions = null)
         {
             _filterViewModel = filterViewModel;
             _filterItemSearchLogic = filterItemSearchLogic;
@@ -177,7 +177,7 @@ namespace CollectaMundo.ViewModels
 
                 if (FilterCategory == FilterType.Single)
                 {
-                    _typingTimer = new Timer(debounceDelayInMs) { AutoReset = false };
+                    _typingTimer = new Timer(200) { AutoReset = false };
                     _typingTimer.Elapsed += TypingTimer_Elapsed;
                 }
             }
@@ -237,7 +237,6 @@ namespace CollectaMundo.ViewModels
             else
                 ApplyTypingSelection();
         }
-
         protected virtual void ApplyTypingSelection()
         {
             // If user already selected, don't override with CONTAINS
@@ -252,8 +251,6 @@ namespace CollectaMundo.ViewModels
                 Debug.WriteLine($"{DateTime.Now:HH:mm:ss.fff} - TypingTimer_Elapsed → CONTAINS: {FreetextSearch}");
             }
         }
-
-
 
         // Handles special key behavior for single filters
         protected internal void HandleKeyLogic(Key key)

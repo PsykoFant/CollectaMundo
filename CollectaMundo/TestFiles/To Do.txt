@@ -1,10 +1,6 @@
 TO DO 
 - MVVM refactor
 
-
-- mvvm toolkit refactors followup (filter logic)
-- Oprydning i filteritemviewmodel klassen
-
 Gå videre med sæt backup sti
 
  - Import brug MVVM (unit test)

@@ -1,9 +1,8 @@
-﻿using System.ComponentModel;
-using System.Windows;
+﻿using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public interface IUiBlockable : INotifyPropertyChanged
+    public interface IUiBlockable
     {
         Visibility SideMenuVisibility { get; set; }
         Visibility CardViewSectionVisibility { get; set; }

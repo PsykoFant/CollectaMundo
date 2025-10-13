@@ -1,32 +1,22 @@
-﻿using System.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace CollectaMundo.DomainLogic.Filtering.Models
 {
     // Base class for all filters with common properties.
-    public abstract class FilterBase
+    public abstract class FilterBase : ObservableObject
     {
         public required string CriteriaKey { get; set; }
     }
-    // Default values and options for a filter.
-    public class FilterDefaults : FilterBase, INotifyPropertyChanged
+    public partial class FilterDefaults : FilterBase
     {
-        public List<FilterOption> FilterOptions { get; set; } = [];  // New list of FilterOption objects
-        public List<int>? NumericCriteria { get; set; } = null; // Numeric filters (e.g., ManaValue, CardsForTrade)
-        public string ReadableLabel { get; set; } = string.Empty;
+        public List<FilterOption> FilterOptions { get; set; } = [];
+        public List<int>? NumericCriteria { get; set; }
 
-        private string _defaultText = string.Empty;
-        public string DefaultText
-        {
-            get => _defaultText;
-            set
-            {
-                _defaultText = value;
-                OnPropertyChanged(nameof(DefaultText)); // Notify UI of updates
-            }
-        }
+        [ObservableProperty]
+        private string readableLabel = string.Empty;
 
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected virtual void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        [ObservableProperty]
+        private string defaultText = string.Empty;
     }
 }
 
