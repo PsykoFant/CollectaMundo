@@ -17,6 +17,8 @@ namespace CollectaMundo.ViewModels
         private readonly Func<int> _getMyCollectionCount = getMyCollectionCount;
         private readonly IFolderPicker _folderPicker = folderPicker;
 
+        private readonly PromptConfirmationHandler _promptHandler = new();
+
         // Cancellation tokens
         private CancellationTokenSource? _backupCts;
         private CancellationTokenSource? _checkCts;
@@ -30,12 +32,13 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task BackupCollection()
         {
-            // UI state preparation
             _statusVM.ResetStatusOverlay();
             _statusVM.ShowStatusOverlay("Export csv-format backup of My Collection", false);
 
             _statusVM.StatusLabel3 = $"Export to: {_cardDbManagementService.BackupFolderPath}";
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
+            _statusVM.PrimaryButtonText = "   Change   ";
+
             _statusVM.SetPrimaryAction(_ =>
             {
                 string? selectedPath = _folderPicker.PickFolder("Select backup folder", _cardDbManagementService.BackupFolderPath);
@@ -45,28 +48,15 @@ namespace CollectaMundo.ViewModels
                     _statusVM.StatusLabel3 = $"Export to: {selectedPath}";
                 }
             });
-            _statusVM.PrimaryButtonText = "   Change   ";
 
             _statusVM.SecondaryButtonVisibility = Visibility.Visible;
             _statusVM.SecondaryButtonText = "   Start export   ";
 
-            // Wait for user confirmation before proceeding
-            Debug.WriteLine("[DEBUG] BackupCollectionCommand started.");
-            _userConfirmedBackup = false;
-            _backupTcs = new TaskCompletionSource();
-            _statusVM.SetSecondaryAction(_ =>
-            {
-                Debug.WriteLine("[DEBUG] Secondary action clicked -> completing TCS");
-                _userConfirmedBackup = true;
-                _backupTcs.SetResult();
-            });
-            await _backupTcs.Task;
-            Debug.WriteLine("[DEBUG] BackupCollectionCommand resumed after TCS completed.");
-            _backupTcs = null;
+            _statusVM.SetSecondaryAction(_ => _promptHandler.ConfirmPrompt());
 
-            if (!_userConfirmedBackup)
+            if (!await _promptHandler.WaitForUserConfirmationAsync())
             {
-                Debug.WriteLine("[DEBUG] Backup cancelled by user or superseded by another command.");
+                Debug.WriteLine("[Backup] User did not confirm. Skipping.");
                 return;
             }
 
@@ -264,35 +254,22 @@ namespace CollectaMundo.ViewModels
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
         }
 
-        private TaskCompletionSource? _backupTcs;
-        private bool _userConfirmedBackup = false;
-        private void CancelPendingBackup()
-        {
-            if (_backupTcs != null && !_backupTcs.Task.IsCompleted)
-            {
-                Debug.WriteLine("[DEBUG] Cancelling pending backup TaskCompletionSource...");
-                _backupTcs.SetResult(); // ✅ Completes the hanging task
-                _backupTcs = null;
-                BackupCollectionCommand.NotifyCanExecuteChanged();
-            }
-        }
-
         // Use case: Update prices
         [RelayCommand]
         protected virtual async Task UpdatePrices()
         {
-            // User bailed from the backup overlay
-            CancelPendingBackup();
+            _promptHandler.CancelPendingPrompt();
 
             _statusVM.ResetStatusOverlay();
             _statusVM.ShowStatusOverlay("Ready to update card prices?", false);
             _statusVM.PrimaryButtonText = "   Go for it!   ";
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
 
-            // Wait for user confirmation before proceeding
-            var tcs = new TaskCompletionSource();
-            _statusVM.SetPrimaryAction(_ => tcs.SetResult());
-            await tcs.Task;
+            if (!await ShowConfirmationPromptAsync("Ready to update card prices?", "   Go for it!   "))
+                return;
+
+            // continue with price update logic...
+
 
             // UI state preparation AFTER user clicked
             SetUiBusy(true);
@@ -354,6 +331,43 @@ namespace CollectaMundo.ViewModels
             _uiState.SideMenuVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
             _uiState.CardViewSectionVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
         }
+
+        private enum PromptButton
+        {
+            Primary,
+            Secondary
+        }
+        private async Task<bool> ShowConfirmationPromptAsync(string message, string buttonText, PromptButton confirmButton = PromptButton.Primary, Action? extraButtonAction = null)
+        {
+            _promptHandler.CancelPendingPrompt();
+
+            _statusVM.ResetStatusOverlay();
+            _statusVM.ShowStatusOverlay(message, false);
+
+            if (confirmButton == PromptButton.Primary)
+            {
+                _statusVM.PrimaryButtonVisibility = Visibility.Visible;
+                _statusVM.PrimaryButtonText = buttonText;
+                _statusVM.SetPrimaryAction(_ =>
+                {
+                    extraButtonAction?.Invoke();
+                    _promptHandler.ConfirmPrompt();
+                });
+            }
+            else
+            {
+                _statusVM.SecondaryButtonVisibility = Visibility.Visible;
+                _statusVM.SecondaryButtonText = buttonText;
+                _statusVM.SetSecondaryAction(_ =>
+                {
+                    extraButtonAction?.Invoke();
+                    _promptHandler.ConfirmPrompt();
+                });
+            }
+
+            return await _promptHandler.WaitForUserConfirmationAsync();
+        }
+
     }
 }
 
