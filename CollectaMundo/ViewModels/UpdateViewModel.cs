@@ -3,6 +3,7 @@ using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Diagnostics;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels
@@ -50,9 +51,24 @@ namespace CollectaMundo.ViewModels
             _statusVM.SecondaryButtonText = "   Start export   ";
 
             // Wait for user confirmation before proceeding
-            var tcs = new TaskCompletionSource();
-            _statusVM.SetSecondaryAction(_ => tcs.SetResult());
-            await tcs.Task;
+            Debug.WriteLine("[DEBUG] BackupCollectionCommand started.");
+            _userConfirmedBackup = false;
+            _backupTcs = new TaskCompletionSource();
+            _statusVM.SetSecondaryAction(_ =>
+            {
+                Debug.WriteLine("[DEBUG] Secondary action clicked -> completing TCS");
+                _userConfirmedBackup = true;
+                _backupTcs.SetResult();
+            });
+            await _backupTcs.Task;
+            Debug.WriteLine("[DEBUG] BackupCollectionCommand resumed after TCS completed.");
+            _backupTcs = null;
+
+            if (!_userConfirmedBackup)
+            {
+                Debug.WriteLine("[DEBUG] Backup cancelled by user or superseded by another command.");
+                return;
+            }
 
             // UI state preparation AFTER user clicked
             SetUiBusy(true);
@@ -248,10 +264,26 @@ namespace CollectaMundo.ViewModels
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
         }
 
+        private TaskCompletionSource? _backupTcs;
+        private bool _userConfirmedBackup = false;
+        private void CancelPendingBackup()
+        {
+            if (_backupTcs != null && !_backupTcs.Task.IsCompleted)
+            {
+                Debug.WriteLine("[DEBUG] Cancelling pending backup TaskCompletionSource...");
+                _backupTcs.SetResult(); // ✅ Completes the hanging task
+                _backupTcs = null;
+                BackupCollectionCommand.NotifyCanExecuteChanged();
+            }
+        }
+
         // Use case: Update prices
         [RelayCommand]
         protected virtual async Task UpdatePrices()
         {
+            // User bailed from the backup overlay
+            CancelPendingBackup();
+
             _statusVM.ResetStatusOverlay();
             _statusVM.ShowStatusOverlay("Ready to update card prices?", false);
             _statusVM.PrimaryButtonText = "   Go for it!   ";
