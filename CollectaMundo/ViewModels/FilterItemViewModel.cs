@@ -322,17 +322,26 @@ namespace CollectaMundo.ViewModels
                 return;
 
             var key = e.Key;
-
             HandleKeyLogic(key);
 
             if (key == Key.Escape)
             {
-                // Clear focus (UI-only)
+                // Run focus clear on dispatcher (as before)
                 Application.Current?.Dispatcher?.InvokeAsync(() =>
                 {
+                    // SAFETY GUARD: ensure MainWindow has a valid visual source (HWND ready)
+                    var mainWindow = Application.Current?.MainWindow;
+                    if (mainWindow == null || PresentationSource.FromVisual(mainWindow) == null)
+                    {
+                        Debug.WriteLine("⚠️ Skipped focus clear - MainWindow not ready");
+                        return; // Abort early to prevent "Hwnd of zero is not valid"
+                    }
+
+                    // Safe focus clearing logic
                     var scope = FocusManager.GetFocusScope(Keyboard.FocusedElement as DependencyObject);
                     FocusManager.SetFocusedElement(scope, null);
                     Keyboard.ClearFocus();
+
                 }, DispatcherPriority.Background);
             }
 

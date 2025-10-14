@@ -28,6 +28,8 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         private readonly string _pricesPath = Path.Combine(settings.UserDownloadsPath, "prices.json");
         private readonly string _tempDbPath = Path.Combine(settings.UserDownloadsPath, "AllPrintings.sqlite");
 
+        public string BackupFolderPath => _settings.BackupFolderPath; // Expose current backup folder path from settings to viewmodel
+
         // Use case: orchestrates the first-time database preparation steps
         public async Task<OperationResult> FirstTimeDbPrepOrchetrator(int defaultDelay = 3000)
         {
@@ -393,7 +395,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             OptimizeDatabase = 8
         }
 
-        // Use case: export collection to CSV
+        // Use case: Backup/export collection to CSV
         public async Task<OperationResult> ExportCollectionAsync(CancellationToken ct = default)
         {
             try
@@ -422,6 +424,22 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             {
                 Debug.WriteLine($"Error creating CSV backup: {ex.Message}");
                 return new OperationResult(OperationResultCode.Error, $"Error creating CSV backup: {ex.Message}");
+            }
+        }
+
+        // Use case: Change backup folder path
+        public OperationResult ChangeBackupFolderPath(string newBackupPath)
+        {
+
+            try
+            {
+                _settings.PersistBackupFolderPath(newBackupPath);
+                return new OperationResult(OperationResultCode.Success, "Folder path changed.");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error changing backup folder path: {ex.Message}");
+                return new OperationResult(OperationResultCode.Error, $"Error changing backup folder path: {ex.Message}");
             }
         }
 

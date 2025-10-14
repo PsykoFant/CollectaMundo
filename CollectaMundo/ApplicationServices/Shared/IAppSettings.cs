@@ -11,6 +11,7 @@
         string CardImageCachePath { get; }
         PriceInfo PriceInfo { get; }
         void PersistPriceInfo(string? updatedDate, string? retailer);
+        void PersistBackupFolderPath(string newBackupFolderPath);
     }
 
 }

@@ -1,23 +1,25 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.Infrastructure.Common;
 using CollectaMundo.ViewModels;
+using CollectaMundo.ViewModels.Shared;
 using Moq;
 using System.Diagnostics;
 
 namespace CollectaMundo.Tests.TestUtils
 {
-    public class TestableUpdateViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, IUiBlockable uiState, IAppRefresher appRefresher, Func<int> getMyCollectionCount) : UpdateViewModel(dbService, statusVM, uiState, appRefresher, getMyCollectionCount, "")
+    public class TestableUpdateViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFolderPicker folderPicker) : UpdateViewModel(dbService, statusVM, parentCtx, getMyCollectionCount, folderPicker)
     {
         public Task InternalUpdateTask => _internalUpdateTask!;
         private Task? _internalUpdateTask;
 
-        // Override and capture the task when it's invoked by RelayCommand
         protected override Task UpdateDBAsync()
         {
             _internalUpdateTask = base.UpdateDBAsync();
             return _internalUpdateTask;
         }
     }
+
     public static class StatusTestDriver
     {
         public static async Task WaitUntilButtonTextAsync(StatusViewModel vm, string expectedText, TimeSpan? timeout = null)
@@ -120,13 +122,9 @@ namespace CollectaMundo.Tests.TestUtils
             var statusVM = new StatusViewModel();
             var uiState = new Mock<IUiBlockable>();
             var appRefresher = new Mock<IAppRefresher>();
+            var parentCtx = new ParentViewModelContext(uiState.Object, appRefresher.Object);
 
-            var updateVM = new TestableUpdateViewModel(
-                dbService.Object,
-                statusVM,
-                uiState.Object,
-                appRefresher.Object,
-                _collectionCount ?? (() => 5));
+            var updateVM = new TestableUpdateViewModel(dbService.Object, statusVM, parentCtx, _collectionCount ?? (() => 5), new FolderPicker());
 
             return new UpdateTestContext
             {

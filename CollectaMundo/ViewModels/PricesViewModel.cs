@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardPrices;
+using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -40,13 +41,13 @@ namespace CollectaMundo.ViewModels
         }
 
         // Constructor        
-        public PricesViewModel(IAppSettings settings, IAppRefresher appRefresher)
+        public PricesViewModel(IAppSettings settings, ParentViewModelContext parentCtx)
         {
             // settings
             _appSettings = settings;
 
             // retailers
-            _appRefresher = appRefresher;
+            _appRefresher = parentCtx.AppRefresher;
 
             // build retailer list (purely static definitions)
             Retailers = new ObservableCollection<RetailerOption>(CardPriceDefinitions.RetailersByFormat["paper"].Select(kv => new RetailerOption(kv.Key, kv.Value)));

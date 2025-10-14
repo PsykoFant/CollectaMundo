@@ -1,19 +1,20 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class UpdateViewModel(ICardDatabaseManagementService cardDbManagementService, StatusViewModel statusVM, IUiBlockable uiState, IAppRefresher appRefresher, Func<int> getMyCollectionCount, string backupPath) : ObservableObject
+    public partial class UpdateViewModel(ICardDatabaseManagementService cardDbManagementService, StatusViewModel statusVM, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFolderPicker folderPicker) : ObservableObject
     {
         private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbManagementService;
         private readonly StatusViewModel _statusVM = statusVM;
-        private readonly IUiBlockable _uiState = uiState;
-        private readonly IAppRefresher _appRefresher = appRefresher;
+        private readonly IUiBlockable _uiState = parentCtx.UiState;
+        private readonly IAppRefresher _appRefresher = parentCtx.AppRefresher;
         private readonly Func<int> _getMyCollectionCount = getMyCollectionCount;
-        private readonly string _backupPath = backupPath;
+        private readonly IFolderPicker _folderPicker = folderPicker;
 
         // Cancellation tokens
         private CancellationTokenSource? _backupCts;
@@ -32,8 +33,17 @@ namespace CollectaMundo.ViewModels
             _statusVM.ResetStatusOverlay();
             _statusVM.ShowStatusOverlay("Export csv-format backup of My Collection", false);
 
-            _statusVM.StatusLabel3 = $"Export to: {_backupPath}";
+            _statusVM.StatusLabel3 = $"Export to: {_cardDbManagementService.BackupFolderPath}";
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
+            _statusVM.SetPrimaryAction(_ =>
+            {
+                string? selectedPath = _folderPicker.PickFolder("Select backup folder", _cardDbManagementService.BackupFolderPath);
+                if (!string.IsNullOrWhiteSpace(selectedPath))
+                {
+                    _cardDbManagementService.ChangeBackupFolderPath(selectedPath);
+                    _statusVM.StatusLabel3 = $"Export to: {selectedPath}";
+                }
+            });
             _statusVM.PrimaryButtonText = "   Change   ";
 
             _statusVM.SecondaryButtonVisibility = Visibility.Visible;

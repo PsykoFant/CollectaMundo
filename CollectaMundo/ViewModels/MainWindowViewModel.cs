@@ -9,7 +9,9 @@ using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
+using CollectaMundo.Infrastructure.Common;
 using CollectaMundo.Presentation;
+using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -198,11 +200,13 @@ namespace CollectaMundo.ViewModels
             // card image viewmodel
             CardImageVM = new CardImageViewModel(cardImageService);
 
+            var parentContext = new ParentViewModelContext(this, this);
+
             // update viewmodel
-            UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, this, this, () => MyCollectionVM.Cards.Count, _settings.BackupFolderPath);
+            UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, parentContext, () => MyCollectionVM.Cards.Count, new FolderPicker());
 
             // prices viewmodel
-            PricesVM = new PricesViewModel(_settings, this);
+            PricesVM = new PricesViewModel(_settings, parentContext);
 
             // event wiring
             SubscribeChildVmEvents();

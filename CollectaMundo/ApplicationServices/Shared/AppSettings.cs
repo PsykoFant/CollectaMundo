@@ -92,9 +92,35 @@ namespace CollectaMundo.ApplicationServices.Shared
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error saving appsettings.json: {ex.Message}");
-                MessageBox.Show($"Error saving appsettings.json: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        public void PersistBackupFolderPath(string newBackupFolderPath)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(newBackupFolderPath))
+                    throw new ArgumentException("Backup folder path cannot be empty.", nameof(newBackupFolderPath));
+
+                // Ensure the directory exists
+                if (!Directory.Exists(newBackupFolderPath))
+                    Directory.CreateDirectory(newBackupFolderPath);
+
+                // Update the current settings object
+                _currentSettings.BackupFolderPath = newBackupFolderPath;
+
+                // Serialize and persist to appsettings.json
+                string json = JsonConvert.SerializeObject(_currentSettings, Formatting.Indented);
+                File.WriteAllText(_settingsFilePath, json);
+
+                Debug.WriteLine($"Backup folder path successfully updated to: {newBackupFolderPath}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error saving appsettings.json: {ex.Message}");
+                throw; // rethrow to let service layer handle error reporting
+            }
+        }
+
     }
     internal class AppSettingsDto
     {
