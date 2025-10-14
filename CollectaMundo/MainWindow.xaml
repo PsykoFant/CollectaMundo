@@ -142,7 +142,7 @@
                     </Grid>
 
                         <!--Rarity-->
-                      <ComboBox DataContext="{Binding FilterVM.Filters[Rarity]}"
+                    <ComboBox DataContext="{Binding FilterVM.Filters[Rarity]}"
                                   IsDropDownOpen="{Binding IsDropDownOpen, Mode=TwoWay}"
                                   HorizontalAlignment="Left" VerticalAlignment="Top" 
                                   Margin="10,245,0,0" 
