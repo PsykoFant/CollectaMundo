@@ -166,7 +166,7 @@ namespace CollectaMundo.ViewModels
 
         // Use case: Update database
         [RelayCommand]
-        protected virtual async Task UpdateDBAsync()
+        protected virtual async Task UpdateDB()
         {
             _promptHandler.CancelPendingPrompt();
             var skipBackup = _getMyCollectionCount() == 0;
@@ -339,6 +339,20 @@ namespace CollectaMundo.ViewModels
 
 
         }
+
+        // Cancel any active command (e.g. when navigating away)
+        public void CancelActiveCommand()
+        {
+            _promptHandler.CancelPendingPrompt();
+            BackupCollectionCommand.NotifyCanExecuteChanged();
+            CheckForDbUpdatesCommand.NotifyCanExecuteChanged();
+            UpdateDBCommand.NotifyCanExecuteChanged();
+            UpdatePricesCommand.NotifyCanExecuteChanged();
+            _backupCts?.Cancel();
+            _checkCts?.Cancel();
+            _updateCts?.Cancel();
+        }
+
 
         // Private helpers
         private void SetUiBusy(bool isBusy)

@@ -13,9 +13,9 @@ namespace CollectaMundo.Tests.TestUtils
         public Task InternalUpdateTask => _internalUpdateTask!;
         private Task? _internalUpdateTask;
 
-        protected override Task UpdateDBAsync()
+        protected override Task UpdateDB()
         {
-            _internalUpdateTask = base.UpdateDBAsync();
+            _internalUpdateTask = base.UpdateDB();
             return _internalUpdateTask;
         }
     }

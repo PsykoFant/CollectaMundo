@@ -69,6 +69,7 @@ namespace CollectaMundo.ViewModels
                 return;
 
             _statusVM.HideStatusOverlay();
+            UpdateVM.CancelActiveCommand();
 
             if (newValue == Page.MyCollection)
             {
