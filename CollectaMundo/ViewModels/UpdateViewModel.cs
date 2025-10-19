@@ -1,6 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -31,7 +30,7 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task BackupCollection()
         {
-            CancelActiveCommand();
+            _statusVM.CancelPendingPrompt();
             // Prepare UI
             _statusVM.ResetStatusOverlay();
             _statusVM.ShowStatusOverlay("Export csv-format backup of My Collection", false);
@@ -53,9 +52,10 @@ namespace CollectaMundo.ViewModels
 
             // Setup secondary (confirmation)
             _statusVM.SecondaryButtonText = "   Start export   ";
+            BindPromptConfirmation(PromptButton.Secondary);
 
             // Await confirmation
-            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Secondary))
+            if (!await _statusVM.WaitForUserConfirmationAsync())
             {
                 Debug.WriteLine("[Backup] User did not confirm. Aborting.");
                 return;
@@ -113,7 +113,7 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task CheckForDbUpdates()
         {
-            CancelActiveCommand();
+            _statusVM.CancelPendingPrompt();
             _checkCts = new CancellationTokenSource();
 
             // UI state preparation
@@ -166,7 +166,7 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         protected virtual async Task UpdateDB()
         {
-            CancelActiveCommand();
+            _statusVM.CancelPendingPrompt();
             var skipBackup = _getMyCollectionCount() == 0;
             string backupResultMessage = string.Empty;
 
@@ -182,9 +182,9 @@ namespace CollectaMundo.ViewModels
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
 
             // Wire up prompt confirmation
-            await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary);
+            BindPromptConfirmation(PromptButton.Primary);
 
-            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary))
+            if (!await _statusVM.WaitForUserConfirmationAsync())
             {
                 Debug.WriteLine("[UpdateDB] User did not confirm. Skipping update.");
                 return;
@@ -269,14 +269,15 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         protected virtual async Task UpdatePrices()
         {
-            CancelActiveCommand();
+            _statusVM.CancelPendingPrompt();
             _statusVM.ResetStatusOverlay();
             _statusVM.ShowStatusOverlay("Ready to update card prices?", false);
 
             _statusVM.PrimaryButtonText = "   Go for it!   ";
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
+            BindPromptConfirmation(PromptButton.Primary);
 
-            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary))
+            if (!await _statusVM.WaitForUserConfirmationAsync())
             {
                 Debug.WriteLine("[UpdatePrices] User bailed.");
                 return;
@@ -340,7 +341,6 @@ namespace CollectaMundo.ViewModels
         // Cancel any active command (e.g. when navigating away)
         public void CancelActiveCommand()
         {
-            Debug.WriteLine("[UpdateVM] Cancelling any active command...");
             _statusVM.CancelPendingPrompt();
             BackupCollectionCommand.NotifyCanExecuteChanged();
             CheckForDbUpdatesCommand.NotifyCanExecuteChanged();
@@ -360,6 +360,24 @@ namespace CollectaMundo.ViewModels
             _uiState.CardViewSectionVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
         }
 
+        public enum PromptButton
+        {
+            Primary,
+            Secondary
+        }
+        private void BindPromptConfirmation(PromptButton button)
+        {
+            switch (button)
+            {
+                case PromptButton.Primary:
+                    _statusVM.SetPrimaryAction(_ => _statusVM.ConfirmPrompt());
+                    break;
+
+                case PromptButton.Secondary:
+                    _statusVM.SetSecondaryAction(_ => _statusVM.ConfirmPrompt());
+                    break;
+            }
+        }
     }
 }
 

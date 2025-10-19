@@ -1,5 +1,4 @@
-﻿using CollectaMundo.Presentation;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
 using System.Windows;
@@ -11,6 +10,7 @@ namespace CollectaMundo.ViewModels
         private Action<object?> _primaryAction;
         private Action<object?> _secondaryAction;
         private TaskCompletionSource<bool>? _confirmationTcs;
+        public bool IsPromptActive => _confirmationTcs is { Task.IsCompleted: false };
 
         [ObservableProperty]
         private Visibility statusOverlayVisibility;
@@ -67,46 +67,29 @@ namespace CollectaMundo.ViewModels
 
 
         // Confirmation prompt handling
-
-        // Cancels any active confirmation prompt.
         public void CancelPendingPrompt()
         {
-            if (_confirmationTcs != null && !_confirmationTcs.Task.IsCompleted)
+            if (_confirmationTcs is { Task.IsCompleted: false })
             {
-                Debug.WriteLine("[StatusVM] Cancelling pending confirmation prompt...");
-                _confirmationTcs.TrySetResult(false);
+                Debug.WriteLine("[Prompt] Cancelled pending prompt.");
+                _confirmationTcs.SetResult(false); // false = not confirmed
             }
-
-            _confirmationTcs = null;
         }
 
-        // Waits asynchronously for a user confirmation click on a given button.
-        public async Task<bool> WaitForUserConfirmationAsync(PromptButton button)
+        public void ConfirmPrompt()
+        {
+            if (_confirmationTcs is { Task.IsCompleted: false })
+            {
+                Debug.WriteLine("[Prompt] Confirmed prompt.");
+                _confirmationTcs.SetResult(true); // true = confirmed
+            }
+        }
+
+        public async Task<bool> WaitForUserConfirmationAsync()
         {
             CancelPendingPrompt(); // ensures only one active at a time
-
             _confirmationTcs = new TaskCompletionSource<bool>();
-
-            switch (button)
-            {
-                case PromptButton.Primary:
-                    _primaryAction = _ => ConfirmPrompt();
-                    break;
-                case PromptButton.Secondary:
-                    _secondaryAction = _ => ConfirmPrompt();
-                    break;
-            }
-
-            Debug.WriteLine($"[StatusVM] Awaiting confirmation via {button} button...");
-            var result = await _confirmationTcs.Task;
-            _confirmationTcs = null;
-            return result;
-        }
-
-        private void ConfirmPrompt()
-        {
-            Debug.WriteLine("[StatusVM] Confirmation button clicked.");
-            _confirmationTcs?.TrySetResult(true);
+            return await _confirmationTcs.Task;
         }
 
 
