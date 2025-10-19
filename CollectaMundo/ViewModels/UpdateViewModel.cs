@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,8 +18,6 @@ namespace CollectaMundo.ViewModels
         private readonly Func<int> _getMyCollectionCount = getMyCollectionCount;
         private readonly IFolderPicker _folderPicker = folderPicker;
 
-        private readonly PromptConfirmationHandler _promptHandler = new();
-
         // Cancellation tokens
         private CancellationTokenSource? _backupCts;
         private CancellationTokenSource? _checkCts;
@@ -32,7 +31,7 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task BackupCollection()
         {
-            _promptHandler.CancelPendingPrompt();
+            CancelActiveCommand();
             // Prepare UI
             _statusVM.ResetStatusOverlay();
             _statusVM.ShowStatusOverlay("Export csv-format backup of My Collection", false);
@@ -54,10 +53,9 @@ namespace CollectaMundo.ViewModels
 
             // Setup secondary (confirmation)
             _statusVM.SecondaryButtonText = "   Start export   ";
-            BindPromptConfirmation(PromptButton.Secondary);
 
             // Await confirmation
-            if (!await _promptHandler.WaitForUserConfirmationAsync())
+            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Secondary))
             {
                 Debug.WriteLine("[Backup] User did not confirm. Aborting.");
                 return;
@@ -115,7 +113,7 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task CheckForDbUpdates()
         {
-            _promptHandler.CancelPendingPrompt();
+            CancelActiveCommand();
             _checkCts = new CancellationTokenSource();
 
             // UI state preparation
@@ -168,7 +166,7 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         protected virtual async Task UpdateDB()
         {
-            _promptHandler.CancelPendingPrompt();
+            CancelActiveCommand();
             var skipBackup = _getMyCollectionCount() == 0;
             string backupResultMessage = string.Empty;
 
@@ -184,9 +182,9 @@ namespace CollectaMundo.ViewModels
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
 
             // Wire up prompt confirmation
-            BindPromptConfirmation(PromptButton.Primary);
+            await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary);
 
-            if (!await _promptHandler.WaitForUserConfirmationAsync())
+            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary))
             {
                 Debug.WriteLine("[UpdateDB] User did not confirm. Skipping update.");
                 return;
@@ -271,15 +269,14 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         protected virtual async Task UpdatePrices()
         {
-            _promptHandler.CancelPendingPrompt();
+            CancelActiveCommand();
             _statusVM.ResetStatusOverlay();
             _statusVM.ShowStatusOverlay("Ready to update card prices?", false);
 
             _statusVM.PrimaryButtonText = "   Go for it!   ";
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
-            BindPromptConfirmation(PromptButton.Primary);
 
-            if (!await _promptHandler.WaitForUserConfirmationAsync())
+            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary))
             {
                 Debug.WriteLine("[UpdatePrices] User bailed.");
                 return;
@@ -343,7 +340,8 @@ namespace CollectaMundo.ViewModels
         // Cancel any active command (e.g. when navigating away)
         public void CancelActiveCommand()
         {
-            _promptHandler.CancelPendingPrompt();
+            Debug.WriteLine("[UpdateVM] Cancelling any active command...");
+            _statusVM.CancelPendingPrompt();
             BackupCollectionCommand.NotifyCanExecuteChanged();
             CheckForDbUpdatesCommand.NotifyCanExecuteChanged();
             UpdateDBCommand.NotifyCanExecuteChanged();
@@ -362,24 +360,6 @@ namespace CollectaMundo.ViewModels
             _uiState.CardViewSectionVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
         }
 
-        private enum PromptButton
-        {
-            Primary,
-            Secondary
-        }
-        private void BindPromptConfirmation(PromptButton button)
-        {
-            switch (button)
-            {
-                case PromptButton.Primary:
-                    _statusVM.SetPrimaryAction(_ => _promptHandler.ConfirmPrompt());
-                    break;
-
-                case PromptButton.Secondary:
-                    _statusVM.SetSecondaryAction(_ => _promptHandler.ConfirmPrompt());
-                    break;
-            }
-        }
     }
 }
 
