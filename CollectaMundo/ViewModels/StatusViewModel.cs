@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CollectaMundo.Presentation;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Diagnostics;
 using System.Windows;
@@ -85,12 +86,24 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        public async Task<bool> WaitForUserConfirmationAsync()
+        public async Task<bool> WaitForUserConfirmationAsync(PromptButton button)
         {
             CancelPendingPrompt(); // ensures only one active at a time
             _confirmationTcs = new TaskCompletionSource<bool>();
+
+            switch (button)
+            {
+                case PromptButton.Primary:
+                    SetPrimaryAction(_ => ConfirmPrompt());
+                    break;
+                case PromptButton.Secondary:
+                    SetSecondaryAction(_ => ConfirmPrompt());
+                    break;
+            }
+
             return await _confirmationTcs.Task;
         }
+
 
 
 

@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -52,10 +53,9 @@ namespace CollectaMundo.ViewModels
 
             // Setup secondary (confirmation)
             _statusVM.SecondaryButtonText = "   Start export   ";
-            BindPromptConfirmation(PromptButton.Secondary);
 
             // Await confirmation
-            if (!await _statusVM.WaitForUserConfirmationAsync())
+            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Secondary))
             {
                 Debug.WriteLine("[Backup] User did not confirm. Aborting.");
                 return;
@@ -182,9 +182,8 @@ namespace CollectaMundo.ViewModels
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
 
             // Wire up prompt confirmation
-            BindPromptConfirmation(PromptButton.Primary);
 
-            if (!await _statusVM.WaitForUserConfirmationAsync())
+            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary))
             {
                 Debug.WriteLine("[UpdateDB] User did not confirm. Skipping update.");
                 return;
@@ -275,9 +274,8 @@ namespace CollectaMundo.ViewModels
 
             _statusVM.PrimaryButtonText = "   Go for it!   ";
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
-            BindPromptConfirmation(PromptButton.Primary);
 
-            if (!await _statusVM.WaitForUserConfirmationAsync())
+            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary))
             {
                 Debug.WriteLine("[UpdatePrices] User bailed.");
                 return;
@@ -360,24 +358,6 @@ namespace CollectaMundo.ViewModels
             _uiState.CardViewSectionVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
         }
 
-        public enum PromptButton
-        {
-            Primary,
-            Secondary
-        }
-        private void BindPromptConfirmation(PromptButton button)
-        {
-            switch (button)
-            {
-                case PromptButton.Primary:
-                    _statusVM.SetPrimaryAction(_ => _statusVM.ConfirmPrompt());
-                    break;
-
-                case PromptButton.Secondary:
-                    _statusVM.SetSecondaryAction(_ => _statusVM.ConfirmPrompt());
-                    break;
-            }
-        }
     }
 }
 
