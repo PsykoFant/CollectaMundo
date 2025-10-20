@@ -13,6 +13,7 @@ namespace CollectaMundo.ViewModels
         private TaskCompletionSource<bool>? _confirmationTcs;
         private CancellationTokenSource? _cts;
 
+        #region Observable Properties
         [ObservableProperty]
         private Visibility statusOverlayVisibility;
 
@@ -48,12 +49,17 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private string statusLabel3 = string.Empty;
+
+        #endregion
+
+        // Constructor
         public StatusViewModel()
         {
             _primaryAction = _ => HideStatusOverlay();
             _secondaryAction = _ => { };
         }
 
+        #region Commands and wiring
         [RelayCommand]
         private void PrimaryButton(object? param)
         {
@@ -65,9 +71,12 @@ namespace CollectaMundo.ViewModels
         {
             _secondaryAction(param);
         }
+        public void SetPrimaryAction(Action<object?>? action) => _primaryAction = action ?? (_ => HideStatusOverlay());
+        public void SetSecondaryAction(Action<object?>? action) => _secondaryAction = action ?? (_ => { });
 
+        #endregion
 
-        // Confirmation prompt handling
+        #region Confirmation Prompt handling
         public void CancelPendingPrompt()
         {
             if (_confirmationTcs is { Task.IsCompleted: false })
@@ -76,7 +85,6 @@ namespace CollectaMundo.ViewModels
                 _confirmationTcs.SetResult(false); // false = not confirmed
             }
         }
-
         public void ConfirmPrompt()
         {
             if (_confirmationTcs is { Task.IsCompleted: false })
@@ -85,7 +93,6 @@ namespace CollectaMundo.ViewModels
                 _confirmationTcs.SetResult(true); // true = confirmed
             }
         }
-
         public async Task<bool> WaitForUserConfirmationAsync(PromptButton button)
         {
             CancelPendingPrompt(); // ensures only one active at a time
@@ -104,11 +111,11 @@ namespace CollectaMundo.ViewModels
             return await _confirmationTcs.Task;
         }
 
+        #endregion
 
 
 
-        public void SetPrimaryAction(Action<object?>? action) => _primaryAction = action ?? (_ => HideStatusOverlay());
-        public void SetSecondaryAction(Action<object?>? action) => _secondaryAction = action ?? (_ => { });
+        #region Status Overlay control methods
         public void ShowStatusOverlay(string message, bool showProgress = false)
         {
 
@@ -142,5 +149,7 @@ namespace CollectaMundo.ViewModels
             _primaryAction = _ => HideStatusOverlay();
             _secondaryAction = _ => { };
         }
+
+        #endregion
     }
 }
