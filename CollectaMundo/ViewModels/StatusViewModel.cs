@@ -11,7 +11,7 @@ namespace CollectaMundo.ViewModels
         private Action<object?> _primaryAction;
         private Action<object?> _secondaryAction;
         private TaskCompletionSource<bool>? _confirmationTcs;
-        public bool IsPromptActive => _confirmationTcs is { Task.IsCompleted: false };
+        private CancellationTokenSource? _cts;
 
         [ObservableProperty]
         private Visibility statusOverlayVisibility;

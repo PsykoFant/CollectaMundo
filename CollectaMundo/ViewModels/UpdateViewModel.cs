@@ -191,7 +191,7 @@ namespace CollectaMundo.ViewModels
 
             // UI state preparation AFTER user clicked
             SetUiBusy(true);
-            UpdateDbVisibility = Visibility.Collapsed;
+            //UpdateDbVisibility = Visibility.Collapsed;
             _statusVM.PrimaryButtonText = "   Cancel   ";
             _updateCts = new CancellationTokenSource();
 
@@ -283,7 +283,7 @@ namespace CollectaMundo.ViewModels
 
             // UI state preparation AFTER user clicked
             SetUiBusy(true);
-            UpdateDbVisibility = Visibility.Collapsed;
+            //UpdateDbVisibility = Visibility.Collapsed;
             _statusVM.PrimaryButtonText = "   Cancel   ";
             _updateCts = new CancellationTokenSource();
             _statusVM.SetPrimaryAction(_ =>
