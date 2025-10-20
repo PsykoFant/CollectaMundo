@@ -60,10 +60,9 @@ namespace CollectaMundo.ViewModels
             SetUiBusy(true);
             _statusVM.ResetStatusOverlay();
             _statusVM.StatusLabel1 = "Please wait - backing up up your collection ... ";
-            _statusVM.PrimaryButtonVisibility = Visibility.Visible;
 
             // Prepare cancellation token before starting
-            var token = _statusVM.GetNewCancellationToken("Cancelling…");
+            var token = _statusVM.GetNewCancellationToken(PromptButton.Primary);
 
             // Run backup
             var result = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(token));
@@ -103,15 +102,13 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task CheckForDbUpdates()
         {
-            _statusVM.CancelPendingPrompt();
-            var token = _statusVM.GetNewCancellationToken("Cancelling…");
-
             // UI state preparation
+            _statusVM.CancelPendingPrompt();
             SetUiBusy(true);
             _statusVM.ResetStatusOverlay();
-            _statusVM.PrimaryButtonText = "   Cancel   ";
-            _statusVM.PrimaryButtonVisibility = Visibility.Visible;
             _statusVM.ShowStatusOverlay("One moment - checking for updates...", false);
+
+            var token = _statusVM.GetNewCancellationToken(PromptButton.Primary);
 
             // Run check
             var result = await _cardDbManagementService.CheckForDbUpdatesAsync(token);
@@ -172,9 +169,9 @@ namespace CollectaMundo.ViewModels
             }
 
             // UI state preparation AFTER user clicked
+            _statusVM.ResetStatusOverlay();
             SetUiBusy(true);
-            _statusVM.PrimaryButtonText = "   Cancel   ";
-            var token = _statusVM.GetNewCancellationToken("Cancelling…");
+            var token = _statusVM.GetNewCancellationToken(PromptButton.Primary);
 
             if (!skipBackup)
             {
@@ -198,6 +195,8 @@ namespace CollectaMundo.ViewModels
             }
             if (token.IsCancellationRequested)
             {
+                _statusVM.ResetStatusOverlay();
+                _statusVM.StatusLabel1 = "Update canceled during backup stage";
                 _statusVM.ClearCancellation();
                 return;
             }
@@ -256,18 +255,10 @@ namespace CollectaMundo.ViewModels
             }
 
             // UI state preparation AFTER user clicked
+            _statusVM.ResetStatusOverlay();
             SetUiBusy(true);
-            //UpdateDbVisibility = Visibility.Collapsed;
-            _statusVM.PrimaryButtonText = "   Cancel   ";
-            var token = _statusVM.GetNewCancellationToken("Cancelling…");
-
-            if (token.IsCancellationRequested)
-            {
-                _statusVM.ClearCancellation();
-                return;
-            }
-
             _statusVM.ShowStatusOverlay("Updating card prices, please wait...", true);
+            var token = _statusVM.GetNewCancellationToken(PromptButton.Primary);
 
             // Run the update
             var result = await _cardDbManagementService.UpdateCardPricesOrchetrator(ct: token);
@@ -301,8 +292,6 @@ namespace CollectaMundo.ViewModels
             _statusVM.ClearCancellation();
             SetUiBusy(false);
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
-
-
         }
 
         // Cancel any active command (e.g. when navigating away)
@@ -311,13 +300,7 @@ namespace CollectaMundo.ViewModels
             _statusVM.CancelPendingPrompt();
             _statusVM.CancelCurrentOperation();
             _statusVM.ClearCancellation();
-
-            BackupCollectionCommand.NotifyCanExecuteChanged();
-            CheckForDbUpdatesCommand.NotifyCanExecuteChanged();
-            UpdateDBCommand.NotifyCanExecuteChanged();
-            UpdatePricesCommand.NotifyCanExecuteChanged();
         }
-
 
         // Private helpers
         private void SetUiBusy(bool isBusy)

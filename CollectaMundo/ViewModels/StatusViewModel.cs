@@ -114,16 +114,36 @@ namespace CollectaMundo.ViewModels
         #endregion
 
         #region Cancellation Token handling
-        public CancellationToken GetNewCancellationToken(string cancelMessage)
+        public CancellationToken GetNewCancellationToken(PromptButton button)
         {
-            CancelCurrentOperation(); // cancel any existing one
             _cts = new CancellationTokenSource();
 
-            SetPrimaryAction(_ =>
+            var cancelMessage = "Cancelling…";
+            var primaryButtonText = "   Cancel   ";
+
+            switch (button)
             {
-                StatusLabel2 = cancelMessage;
-                _cts?.Cancel();
-            });
+                case PromptButton.Primary:
+                    PrimaryButtonVisibility = Visibility.Visible;
+                    PrimaryButtonText = primaryButtonText;
+
+                    SetPrimaryAction(_ =>
+                    {
+                        StatusLabel2 = cancelMessage;
+                        _cts?.Cancel();
+                    });
+                    break;
+
+                case PromptButton.Secondary:
+                    SecondaryButtonVisibility = Visibility.Visible;
+                    SecondaryButtonText = primaryButtonText;
+                    SetSecondaryAction(_ =>
+                    {
+                        StatusLabel2 = cancelMessage;
+                        _cts?.Cancel();
+                    });
+                    break;
+            }
 
             return _cts.Token;
         }
@@ -138,8 +158,11 @@ namespace CollectaMundo.ViewModels
         public void ClearCancellation()
         {
             _cts = null;
-            SetPrimaryAction(null); // restore default
+            SetPrimaryAction(null);
+            SetSecondaryAction(null);
         }
+
+
         #endregion
 
         #region Status Overlay control methods
