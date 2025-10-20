@@ -113,7 +113,34 @@ namespace CollectaMundo.ViewModels
 
         #endregion
 
+        #region Cancellation Token handling
+        public CancellationToken GetNewCancellationToken(string cancelMessage)
+        {
+            CancelCurrentOperation(); // cancel any existing one
+            _cts = new CancellationTokenSource();
 
+            SetPrimaryAction(_ =>
+            {
+                StatusLabel2 = cancelMessage;
+                _cts?.Cancel();
+            });
+
+            return _cts.Token;
+        }
+        public void CancelCurrentOperation()
+        {
+            if (_cts is { IsCancellationRequested: false })
+            {
+                _cts.Cancel();
+                Debug.WriteLine("[StatusVM] Cancellation requested.");
+            }
+        }
+        public void ClearCancellation()
+        {
+            _cts = null;
+            SetPrimaryAction(null); // restore default
+        }
+        #endregion
 
         #region Status Overlay control methods
         public void ShowStatusOverlay(string message, bool showProgress = false)
