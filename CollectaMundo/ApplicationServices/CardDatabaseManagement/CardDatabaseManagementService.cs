@@ -148,7 +148,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
                     return new OperationResult(OperationResultCode.NeedsUpdate, $"Number of sets on server: {numberOfSetsOnServer}, number of sets in database: {numberOfSetsInDb}. Update available!");
                 }
 
-                return new OperationResult(OperationResultCode.Success, "Your local database is up to date.");
+                return new OperationResult(OperationResultCode.UpToDate, "Your local database is up to date.");
             }
             catch (OperationCanceledException)
             {

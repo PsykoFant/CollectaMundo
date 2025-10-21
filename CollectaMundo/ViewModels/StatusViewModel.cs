@@ -120,6 +120,7 @@ namespace CollectaMundo.ViewModels
         #region Cancellation Token handling
         public CancellationToken GetNewCancellationToken(PromptButton button)
         {
+            CancelCurrentOperation();
             _cts = new CancellationTokenSource();
 
             var cancelMessage = "Cancelling…";
@@ -134,7 +135,7 @@ namespace CollectaMundo.ViewModels
                     SetPrimaryAction(_ =>
                     {
                         StatusLabel2 = cancelMessage;
-                        _cts?.Cancel();
+                        try { _cts?.Cancel(); } catch (ObjectDisposedException) { }
                     });
                     break;
 
@@ -144,7 +145,7 @@ namespace CollectaMundo.ViewModels
                     SetSecondaryAction(_ =>
                     {
                         StatusLabel2 = cancelMessage;
-                        _cts?.Cancel();
+                        try { _cts?.Cancel(); } catch (ObjectDisposedException) { }
                     });
                     break;
             }

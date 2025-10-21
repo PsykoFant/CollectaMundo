@@ -71,7 +71,7 @@ namespace CollectaMundo.ViewModels
                 result = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(token));
 
                 // Reset UI state
-                ResetUIAfterCommands();
+                CompleteCommandUIFlow();
             }
             // Display result
             switch (result.Code)
@@ -105,7 +105,7 @@ namespace CollectaMundo.ViewModels
             // Run check
             var result = await _cardDbManagementService.CheckForDbUpdatesAsync(token);
 
-            ResetUIAfterCommands();
+            CompleteCommandUIFlow();
 
             // Show result
             switch (result.Code)
@@ -151,10 +151,10 @@ namespace CollectaMundo.ViewModels
 
             if (includeBackup)
             {
-                _statusVM.StatusLabel3 = "(we will make a backup of your collection first)";
+                _statusVM.StatusLabel3 = $"A csv-backup of your collection will also be created at {_cardDbManagementService.BackupFolderPath}";
             }
 
-            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary, "   Go for it!   "))
+            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary, "   Start card database update!   "))
             {
                 Debug.WriteLine("[UpdateDB] User did not confirm. Skipping update.");
                 return;
@@ -199,7 +199,7 @@ namespace CollectaMundo.ViewModels
             var result = await _cardDbManagementService.UpdateDbPrepOrchetrator(ct: token);
 
             // Reset UI state before exiting
-            ResetUIAfterCommands();
+            CompleteCommandUIFlow();
 
             // Show result
             switch (result.Code)
@@ -208,9 +208,9 @@ namespace CollectaMundo.ViewModels
                     _statusVM.StatusLabel1 = "Database updated successfully!";
                     if (includeBackup) { _statusVM.StatusLabel3 = $"Your collection was backed up at {backupResultMessage}!"; }
 
-                    _statusVM.StatusLabel3 = "Reloading card lists…";
+                    _statusVM.StatusLabel2 = "Reloading card lists…";
                     await _appRefresher.ReloadAllCardListsAndFiltersAsync();
-                    _statusVM.StatusLabel3 = string.Empty;
+                    _statusVM.StatusLabel2 = string.Empty;
                     break;
 
                 case OperationResultCode.CancelledByUser:
@@ -246,7 +246,7 @@ namespace CollectaMundo.ViewModels
             // Run the update
             var result = await _cardDbManagementService.UpdateCardPricesOrchetrator(ct: token);
 
-            ResetUIAfterCommands();
+            CompleteCommandUIFlow();
 
             // Show result
             switch (result.Code)
@@ -276,7 +276,7 @@ namespace CollectaMundo.ViewModels
             _statusVM.ResetStatusOverlay();
             _statusVM.ShowStatusOverlay(message, false);
         }
-        private void ResetUIAfterCommands()
+        private void CompleteCommandUIFlow()
         {
             _statusVM.ClearCancellation();
             _statusVM.ResetStatusOverlay();

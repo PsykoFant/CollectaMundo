@@ -55,18 +55,41 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 
                         if (!firstResult.success)
                         {
-                            innerCts.Cancel(); // Cancel the other task
+                            // Cancel the other task
+                            innerCts.Cancel();
+
                             return firstResult.cancelled
                                 ? new OperationResult(OperationResultCode.CancelledByUser, "User cancelled download")
                                 : new OperationResult(OperationResultCode.DownloadFailed, firstResult.errorMessage ?? "Unknown error");
                         }
 
-                        var result1 = task1 == firstCompleted ? firstResult : await task1;
-                        var result2 = task2 == firstCompleted ? firstResult : await task2;
+                        (bool success2, string? error2, bool cancelled2) = (false, null, false);
 
-                        if (!result1.success || !result2.success)
+                        try
                         {
-                            var error = result1.errorMessage ?? result2.errorMessage ?? "Unknown error during parallel download.";
+                            if (task1 != firstCompleted)
+                                (success2, error2, cancelled2) = await task1;
+                            else
+                                (success2, error2, cancelled2) = await task2;
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled second task during parallel download.");
+                        }
+                        catch (ObjectDisposedException ex) when (linkedToken.IsCancellationRequested)
+                        {
+                            Debug.WriteLine($"[ParallelDownload] Safe ObjectDisposedException on second task: {ex.Message}");
+                            return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled during parallel download (stream disposed).");
+                        }
+                        catch (IOException ex) when (linkedToken.IsCancellationRequested)
+                        {
+                            Debug.WriteLine($"[ParallelDownload] Safe IOException on second task: {ex.Message}");
+                            return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled during parallel download (stream IO).");
+                        }
+
+                        if (!success2)
+                        {
+                            var error = error2 ?? "Unknown error during second download.";
                             return new OperationResult(OperationResultCode.DownloadFailed, error);
                         }
 
@@ -76,14 +99,9 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                     {
                         return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled during parallel download.");
                     }
-                },
-                retryDelayInMs,
-                stepName,
-                stepNameAndNumberProgress,
-                stepDetailAndErrorProgress,
-                cancelToken: cancelToken
-            );
+                }, retryDelayInMs, stepName, stepNameAndNumberProgress, stepDetailAndErrorProgress, cancelToken: cancelToken);
         }
+
         private static async Task<(bool success, string? errorMessage, bool cancelled)> DownloadFileAsync(string url, string targetPath, string label, IProgress<string>? stepDetailAndErrorProgress, IProgress<int>? percentProgress, HttpClient httpClient, CancellationToken cancelToken)
         {
             Debug.WriteLine($"[Download] Starting download: {label} from {url} to {targetPath}");
@@ -93,26 +111,21 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
             try
             {
                 Debug.WriteLine($"[Download] Sending GET request for: {url}");
-                var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancelToken).ConfigureAwait(false);
+                var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancelToken)
+                                               .ConfigureAwait(false);
 
-                Debug.WriteLine($"[Download] Response received: {(int)response.StatusCode} {response.ReasonPhrase}");
-
-                // Explicit check instead of EnsureSuccessStatusCode, to log properly
                 if (!response.IsSuccessStatusCode)
                 {
                     var msg = $"HTTP error: {(int)response.StatusCode} {response.ReasonPhrase}";
                     Debug.WriteLine($"[Download] {msg}");
-                    return (false, msg, false); // <-- bubble to user after retries
+                    return (false, msg, false);
                 }
 
                 var totalBytes = response.Content.Headers.ContentLength ?? -1L;
                 var buffer = new byte[8192];
 
-                Debug.WriteLine("[Download] Opening response stream");
                 using var contentStream = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
-
-                Debug.WriteLine($"[Download] Creating file stream at: {targetPath}");
-                using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 8192, useAsync: true);
+                using var fileStream = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true);
 
                 stepDetailAndErrorProgress?.Report($"{label} size: {totalBytes / 1_000_000.0:0.0} MB");
 
@@ -121,11 +134,10 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
 
                 while (true)
                 {
-                    var bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancelToken).ConfigureAwait(false);
+                    var bytesRead = await contentStream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancelToken)
+                                                       .ConfigureAwait(false);
                     if (bytesRead == 0)
-                    {
                         break;
-                    }
 
                     await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead)).ConfigureAwait(false);
                     totalBytesRead += bytesRead;
@@ -151,6 +163,24 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                 Debug.WriteLine($"[Download] Completed successfully: {label}");
                 return (true, null, false);
             }
+            catch (OperationCanceledException)
+            {
+                Debug.WriteLine($"[Download] Cancelled during download: {label}");
+                shouldDeletePartialFile = true;
+                return (false, null, true);
+            }
+            catch (ObjectDisposedException ex) when (cancelToken.IsCancellationRequested)
+            {
+                Debug.WriteLine($"[Download] Safe ObjectDisposedException after cancel: {ex.Message}");
+                shouldDeletePartialFile = true;
+                return (false, null, true);
+            }
+            catch (IOException ex) when (cancelToken.IsCancellationRequested)
+            {
+                Debug.WriteLine($"[Download] Safe IOException after cancel: {ex.Message}");
+                shouldDeletePartialFile = true;
+                return (false, null, true);
+            }
             catch (Exception ex)
             {
                 shouldDeletePartialFile = true;
@@ -161,10 +191,18 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
             {
                 if (shouldDeletePartialFile)
                 {
-                    CleanupPartialDownload(targetPath);
+                    try
+                    {
+                        CleanupPartialDownload(targetPath);
+                    }
+                    catch (Exception cleanupEx)
+                    {
+                        Debug.WriteLine($"[Cleanup] Failed to delete {targetPath}: {cleanupEx.Message}");
+                    }
                 }
             }
         }
+
         private static void CleanupPartialDownload(string filePath)
         {
             try

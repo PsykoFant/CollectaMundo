@@ -63,7 +63,8 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var integrityService = new DatabaseIntegrityService(dbFactory, settings);
 
                 // Status overlay
-                statusVM.ShowStatusOverlay("Checking database integrity…");
+                statusVM.ShowStatusOverlay(string.Empty);
+                statusVM.StatusLabel3 = "Checking database integrity…";
                 await UIHelper.ForceRenderAsync();
 
                 // First-time setup / repair if needed
