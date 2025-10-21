@@ -24,7 +24,7 @@ namespace CollectaMundo.ViewModels
 
         // Use case: Backup collection
         [RelayCommand]
-        private async Task BackupCollection()
+        protected virtual async Task BackupCollection()
         {
             PrepareUIForCommands("Export csv-format backup of My Collection");
 
@@ -90,6 +90,49 @@ namespace CollectaMundo.ViewModels
                 default:
                     _statusVM.StatusLabel3 = $"Error: {result.Message}";
                     _statusVM.PrimaryButtonText = "   Ok :-/   ";
+                    break;
+            }
+        }
+
+        // Use case: Update prices
+        [RelayCommand]
+        protected virtual async Task UpdatePrices()
+        {
+            PrepareUIForCommands("Download and update card prices?");
+
+            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary, "   Go for it!   "))
+            {
+                Debug.WriteLine("[UpdatePrices] User bailed.");
+                return;
+            }
+
+            // UI state preparation AFTER user clicked
+            _statusVM.ResetStatusOverlay();
+            SetUiBusy(true);
+            _statusVM.ShowStatusOverlay("Updating card prices, please wait...", true);
+            var token = _statusVM.GetNewCancellationToken(PromptButton.Primary);
+
+            // Run the update
+            var result = await _cardDbManagementService.UpdateCardPricesOrchetrator(ct: token);
+
+            CompleteCommandUIFlow();
+
+            // Show result
+            switch (result.Code)
+            {
+                case OperationResultCode.Success:
+                    _statusVM.StatusLabel1 = "Prices updated successfully!";
+                    _appRefresher.RefreshAllPrices();
+                    break;
+
+                case OperationResultCode.CancelledByUser:
+                    _statusVM.StatusLabel1 = "Update canceled";
+                    _statusVM.StatusLabel3 = "Download aborted. No prices were updated.";
+                    break;
+
+                default:
+                    _statusVM.StatusLabel1 = "Prices update failed!";
+                    _statusVM.StatusLabel3 = result.Message;
                     break;
             }
         }
@@ -194,6 +237,7 @@ namespace CollectaMundo.ViewModels
             }
 
             _statusVM.ShowStatusOverlay("Updating database, please wait...", true);
+            token = _statusVM.GetNewCancellationToken(PromptButton.Primary); // draw new token after backup
 
             // Run the update
             var result = await _cardDbManagementService.UpdateDbPrepOrchetrator(ct: token);
@@ -206,7 +250,8 @@ namespace CollectaMundo.ViewModels
             {
                 case OperationResultCode.Success:
                     _statusVM.StatusLabel1 = "Database updated successfully!";
-                    if (includeBackup) { _statusVM.StatusLabel3 = $"Your collection was backed up at {backupResultMessage}!"; }
+                    if (includeBackup) { _statusVM.StatusLabel3 = $"Your collection was backed up at {backupResultMessage}"; }
+                    UpdateDbVisibility = Visibility.Collapsed;
 
                     _statusVM.StatusLabel2 = "Reloading card lists…";
                     await _appRefresher.ReloadAllCardListsAndFiltersAsync();
@@ -225,49 +270,6 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        // Use case: Update prices
-        [RelayCommand]
-        protected virtual async Task UpdatePrices()
-        {
-            PrepareUIForCommands("Download and update card prices?");
-
-            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary, "   Go for it!   "))
-            {
-                Debug.WriteLine("[UpdatePrices] User bailed.");
-                return;
-            }
-
-            // UI state preparation AFTER user clicked
-            _statusVM.ResetStatusOverlay();
-            SetUiBusy(true);
-            _statusVM.ShowStatusOverlay("Updating card prices, please wait...", true);
-            var token = _statusVM.GetNewCancellationToken(PromptButton.Primary);
-
-            // Run the update
-            var result = await _cardDbManagementService.UpdateCardPricesOrchetrator(ct: token);
-
-            CompleteCommandUIFlow();
-
-            // Show result
-            switch (result.Code)
-            {
-                case OperationResultCode.Success:
-                    _statusVM.StatusLabel1 = "Prices updated successfully!";
-                    _appRefresher.RefreshAllPrices();
-                    break;
-
-                case OperationResultCode.CancelledByUser:
-                    _statusVM.StatusLabel1 = "Update canceled";
-                    _statusVM.StatusLabel3 = "Download aborted. No prices were updated.";
-                    break;
-
-                default:
-                    _statusVM.StatusLabel1 = "Prices update failed!";
-                    _statusVM.StatusLabel3 = result.Message;
-                    break;
-            }
-        }
-
         // Private helpers
         private void PrepareUIForCommands(string message)
         {
@@ -278,7 +280,6 @@ namespace CollectaMundo.ViewModels
         }
         private void CompleteCommandUIFlow()
         {
-            _statusVM.ClearCancellation();
             _statusVM.ResetStatusOverlay();
             SetUiBusy(false);
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;

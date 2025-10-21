@@ -18,8 +18,12 @@ namespace CollectaMundo.Tests.TestUtils
             _internalUpdateTask = base.UpdateDB();
             return _internalUpdateTask;
         }
+        protected override Task BackupCollection()
+        {
+            _internalUpdateTask = base.BackupCollection();
+            return _internalUpdateTask;
+        }
     }
-
     public static class StatusTestDriver
     {
         public static async Task WaitUntilButtonTextAsync(StatusViewModel vm, string expectedText, TimeSpan? timeout = null)
@@ -34,6 +38,19 @@ namespace CollectaMundo.Tests.TestUtils
                 await Task.Delay(10);
             }
         }
+        public static async Task WaitUntilSecondaryButtonTextAsync(StatusViewModel vm, string expectedText, TimeSpan? timeout = null)
+        {
+            timeout ??= TimeSpan.FromSeconds(5);
+            var sw = Stopwatch.StartNew();
+            while (vm.SecondaryButtonText != expectedText)
+            {
+                if (sw.Elapsed > timeout)
+                    throw new TimeoutException($"Timed out waiting for SecondaryButtonText == \"{expectedText}\"");
+
+                await Task.Delay(10);
+            }
+        }
+
 
         public static void ClickPrimaryButton(StatusViewModel vm)
         {
@@ -42,6 +59,14 @@ namespace CollectaMundo.Tests.TestUtils
             else
                 throw new InvalidOperationException("PrimaryButtonCommand is not executable.");
         }
+        public static void ClickSecondaryButton(StatusViewModel vm)
+        {
+            if (vm.SecondaryButtonCommand.CanExecute(null))
+                vm.SecondaryButtonCommand.Execute(null);
+            else
+                throw new InvalidOperationException("SecondaryButtonCommand is not executable.");
+        }
+
     }
     public class UpdateTestContext
     {

@@ -173,7 +173,7 @@ namespace CollectaMundo.ViewModels
         #region Status Overlay control methods
         public void ShowStatusOverlay(string message, bool showProgress = false)
         {
-
+            ResetStatusOverlay();
             StatusOverlayVisibility = Visibility.Visible;
             StatusLabel1 = message;
             ProgressVisibility = showProgress ? Visibility.Visible : Visibility.Collapsed;

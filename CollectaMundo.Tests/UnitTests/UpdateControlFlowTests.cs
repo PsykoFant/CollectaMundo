@@ -34,7 +34,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             // Assert final state
             Assert.Equal("Database updated successfully!", statusVM.StatusLabel1);
-            Assert.Equal("Your collection was backed up at mock-backup-path!", statusVM.StatusLabel3);
+            Assert.Equal("Your collection was backed up at mock-backup-path", statusVM.StatusLabel3);
             Assert.Equal("  OK  ", statusVM.PrimaryButtonText);
             Assert.Equal(Visibility.Visible, statusVM.PrimaryButtonVisibility);
 
@@ -65,12 +65,10 @@ namespace CollectaMundo.Tests.UnitTests
             // Wait until ViewModel finishes processing cancellation
             var timeout = TimeSpan.FromSeconds(5);
             var sw = Stopwatch.StartNew();
-            while (statusVM.PrimaryButtonText != "  OK  ")
+            while (!updateVM.InternalUpdateTask!.IsCompleted)
             {
                 if (sw.Elapsed > timeout)
-                {
                     throw new TimeoutException("Timed out waiting for ViewModel to complete backup cancellation flow.");
-                }
 
                 await Task.Delay(10);
             }
@@ -103,8 +101,8 @@ namespace CollectaMundo.Tests.UnitTests
             await StatusTestDriver.WaitUntilButtonTextAsync(statusVM, "   Start card database update!   ");
             StatusTestDriver.ClickPrimaryButton(statusVM);
 
-            // Wait until the backup flow completes (shows "OK" button)
-            await StatusTestDriver.WaitUntilButtonTextAsync(statusVM, "  OK  ", timeout: TimeSpan.FromSeconds(5));
+            // Wait until the backup flow completes
+            await updateVM.InternalUpdateTask!;
 
             // Task completed successfully, but no update was triggered
             Assert.True(updateVM.InternalUpdateTask!.IsCompletedSuccessfully);
@@ -259,6 +257,90 @@ namespace CollectaMundo.Tests.UnitTests
 
             context.DbServiceMock.Verify(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()), Times.Never);
             context.DbServiceMock.Verify(s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+        [Fact]
+        public async Task BackupCollection_EmptyCollection_ShowsEmptyMessage()
+        {
+            var context = UpdateTestContextBuilder.Builder
+                .WithCollectionCount(0)
+                .Build();
+
+            var updateVM = context.UpdateVM;
+            var statusVM = context.StatusVM;
+
+            updateVM.BackupCollectionCommand.Execute(null);
+
+            await context.UpdateVM.InternalUpdateTask!;
+
+            Assert.Equal("Your collection is empty - nothing to back up", statusVM.StatusLabel3);
+            Assert.Equal("   Oh ... I guess that makes sense...   ", statusVM.PrimaryButtonText);
+        }
+        [Fact]
+        public async Task BackupCollection_UserCancels_AbortsOperation()
+        {
+            var context = UpdateTestContextBuilder.Builder
+                .WithBackupResult(new OperationResult(OperationResultCode.Success, "path"))
+                .WithCollectionCount(5)
+                .Build();
+
+            var updateVM = context.UpdateVM;
+            var statusVM = context.StatusVM;
+
+            updateVM.BackupCollectionCommand.Execute(null);
+
+            await StatusTestDriver.WaitUntilSecondaryButtonTextAsync(statusVM, "   Start backup   ");
+
+            // Simulate user not confirming
+            statusVM.CancelPendingPrompt(); // simulate close or navigation away
+
+            await context.UpdateVM.InternalUpdateTask!;
+
+            // No result should be shown
+            Assert.DoesNotContain("Backup complete", statusVM.StatusLabel1);
+            context.DbServiceMock.Verify(s => s.ExportCollectionAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+        [Fact]
+        public async Task BackupCollection_BackupSucceeds_ShowsSuccessMessage()
+        {
+            var context = UpdateTestContextBuilder.Builder
+                .WithBackupResult(new OperationResult(OperationResultCode.Success, "mock-backup-path"))
+                .WithCollectionCount(5)
+                .Build();
+
+            var updateVM = context.UpdateVM;
+            var statusVM = context.StatusVM;
+
+            updateVM.BackupCollectionCommand.Execute(null);
+
+            await StatusTestDriver.WaitUntilSecondaryButtonTextAsync(statusVM, "   Start backup   ");
+            StatusTestDriver.ClickSecondaryButton(statusVM); // Confirm
+
+            await context.UpdateVM.InternalUpdateTask!;
+
+            Assert.Equal("Backup complete!", statusVM.StatusLabel1);
+            Assert.Equal("Backup created successfully at mock-backup-path", statusVM.StatusLabel3);
+            Assert.Equal("   Awesome!   ", statusVM.PrimaryButtonText);
+        }
+        [Fact]
+        public async Task BackupCollection_BackupFails_ShowsErrorMessage()
+        {
+            var context = UpdateTestContextBuilder.Builder
+                .WithBackupResult(new OperationResult(OperationResultCode.Error, "Write access denied"))
+                .WithCollectionCount(5)
+                .Build();
+
+            var updateVM = context.UpdateVM;
+            var statusVM = context.StatusVM;
+
+            updateVM.BackupCollectionCommand.Execute(null);
+
+            await StatusTestDriver.WaitUntilSecondaryButtonTextAsync(statusVM, "   Start backup   ");
+            StatusTestDriver.ClickSecondaryButton(statusVM); // Confirm
+
+            await context.UpdateVM.InternalUpdateTask!;
+
+            Assert.Equal("Error: Write access denied", statusVM.StatusLabel3);
+            Assert.Equal("   Ok :-/   ", statusVM.PrimaryButtonText);
         }
     }
 }

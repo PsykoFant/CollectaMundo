@@ -1,10 +1,5 @@
 TO DO 
 - MVVM refactor
-
-Gå videre med sæt backup sti
-    
- - Undersøg await for confirmation crap
-
  - Import brug MVVM (unit test)
  - Deck manager brug MVVM (unit test)
 
