@@ -26,7 +26,7 @@ namespace CollectaMundo.Tests.UnitTests
             updateVM.UpdateDBCommand.Execute(null);
 
             // Wait for prompt and simulate user confirming update
-            await StatusTestDriver.WaitUntilButtonTextAsync(statusVM, "   Go for it!   ");
+            await StatusTestDriver.WaitUntilButtonTextAsync(statusVM, "   Start card database update!   ");
             StatusTestDriver.ClickPrimaryButton(statusVM);
 
             // Await the internal task
@@ -59,7 +59,7 @@ namespace CollectaMundo.Tests.UnitTests
             updateVM.UpdateDBCommand.Execute(null);
 
             // Simulate user confirmation
-            await StatusTestDriver.WaitUntilButtonTextAsync(statusVM, "   Go for it!   ");
+            await StatusTestDriver.WaitUntilButtonTextAsync(statusVM, "   Start card database update!   ");
             StatusTestDriver.ClickPrimaryButton(statusVM);
 
             // Wait until ViewModel finishes processing cancellation
@@ -74,6 +74,8 @@ namespace CollectaMundo.Tests.UnitTests
 
                 await Task.Delay(10);
             }
+
+            Debug.WriteLine($"[Test] Backup cancellation flow completed.");
 
             // Assert
             Assert.True(updateVM.InternalUpdateTask!.IsCompletedSuccessfully);
@@ -98,20 +100,20 @@ namespace CollectaMundo.Tests.UnitTests
             updateVM.UpdateDBCommand.Execute(null);
 
             // Wait for prompt and simulate user confirming update
-            await StatusTestDriver.WaitUntilButtonTextAsync(statusVM, "   Go for it!   ");
+            await StatusTestDriver.WaitUntilButtonTextAsync(statusVM, "   Start card database update!   ");
             StatusTestDriver.ClickPrimaryButton(statusVM);
 
             // Wait until the backup flow completes (shows "OK" button)
             await StatusTestDriver.WaitUntilButtonTextAsync(statusVM, "  OK  ", timeout: TimeSpan.FromSeconds(5));
 
-            // ✅ Task completed successfully, but no update was triggered
+            // Task completed successfully, but no update was triggered
             Assert.True(updateVM.InternalUpdateTask!.IsCompletedSuccessfully);
             Assert.Equal("Backup failed - aborting update...", statusVM.StatusLabel1);
             Assert.Equal("Backup Boom!", statusVM.StatusLabel3);
             Assert.Equal("  OK  ", statusVM.PrimaryButtonText);
             Assert.Equal(Visibility.Visible, statusVM.PrimaryButtonVisibility);
 
-            // ✅ Ensure update orchestration was never invoked
+            // Ensure update orchestration was never invoked
             context.DbServiceMock.Verify(s => s.UpdateDbPrepOrchetrator(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
         }
         [Fact]
@@ -130,7 +132,7 @@ namespace CollectaMundo.Tests.UnitTests
             updateVM.UpdateDBCommand.Execute(null);
 
             // Wait for prompt and simulate user confirming update
-            await StatusTestDriver.WaitUntilButtonTextAsync(statusVM, "   Go for it!   ");
+            await StatusTestDriver.WaitUntilButtonTextAsync(statusVM, "   Start card database update!   ");
             StatusTestDriver.ClickPrimaryButton(statusVM);
 
             // Await task completion
@@ -173,7 +175,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             updateVM.UpdateDBCommand.Execute(null);
 
-            await StatusTestDriver.WaitUntilButtonTextAsync(statusVM, "   Go for it!   ");
+            await StatusTestDriver.WaitUntilButtonTextAsync(statusVM, "   Start card database update!   ");
             StatusTestDriver.ClickPrimaryButton(statusVM);
 
             while (updateVM.InternalUpdateTask is null)
@@ -205,7 +207,7 @@ namespace CollectaMundo.Tests.UnitTests
             // Act
             context.UpdateVM.UpdateDBCommand.Execute(null);
 
-            await StatusTestDriver.WaitUntilButtonTextAsync(context.StatusVM, "   Go for it!   ");
+            await StatusTestDriver.WaitUntilButtonTextAsync(context.StatusVM, "   Start card database update!   ");
             StatusTestDriver.ClickPrimaryButton(context.StatusVM);
 
             await context.UpdateVM.InternalUpdateTask!;
@@ -240,7 +242,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             context.UpdateVM.UpdateDBCommand.Execute(null);
 
-            await StatusTestDriver.WaitUntilButtonTextAsync(context.StatusVM, "   Go for it!   ");
+            await StatusTestDriver.WaitUntilButtonTextAsync(context.StatusVM, "   Start card database update!   ");
             StatusTestDriver.ClickPrimaryButton(context.StatusVM);
 
             await StatusTestDriver.WaitUntilButtonTextAsync(context.StatusVM, "   Cancel   ");
