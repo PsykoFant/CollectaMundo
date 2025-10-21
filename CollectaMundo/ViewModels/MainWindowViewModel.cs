@@ -68,8 +68,10 @@ namespace CollectaMundo.ViewModels
             if (oldValue == newValue)
                 return;
 
+            _statusVM.CancelPendingPrompt();
+            _statusVM.CancelCurrentOperation();
+            _statusVM.ClearCancellation();
             _statusVM.HideStatusOverlay();
-            UpdateVM.CancelActiveCommand();
 
             if (newValue == Page.MyCollection)
             {

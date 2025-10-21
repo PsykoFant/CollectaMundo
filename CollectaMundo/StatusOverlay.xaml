@@ -47,7 +47,7 @@
             <Label Content="{Binding StatusLabel1}"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Top"
-                   Margin="0,380,0,0"/>
+                   Margin="0,380,0,0" FontSize="14" FontWeight="Bold"/>
 
             <Label Content="{Binding StatusLabel2}"
                    HorizontalAlignment="Center"

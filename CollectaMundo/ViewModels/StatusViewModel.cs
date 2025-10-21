@@ -93,7 +93,7 @@ namespace CollectaMundo.ViewModels
                 _confirmationTcs.SetResult(true); // true = confirmed
             }
         }
-        public async Task<bool> WaitForUserConfirmationAsync(PromptButton button)
+        public async Task<bool> WaitForUserConfirmationAsync(PromptButton button, string buttonText)
         {
             CancelPendingPrompt(); // ensures only one active at a time
             _confirmationTcs = new TaskCompletionSource<bool>();
@@ -101,9 +101,13 @@ namespace CollectaMundo.ViewModels
             switch (button)
             {
                 case PromptButton.Primary:
+                    PrimaryButtonVisibility = Visibility.Visible;
+                    PrimaryButtonText = buttonText;
                     SetPrimaryAction(_ => ConfirmPrompt());
                     break;
                 case PromptButton.Secondary:
+                    SecondaryButtonVisibility = Visibility.Visible;
+                    SecondaryButtonText = buttonText;
                     SetSecondaryAction(_ => ConfirmPrompt());
                     break;
             }

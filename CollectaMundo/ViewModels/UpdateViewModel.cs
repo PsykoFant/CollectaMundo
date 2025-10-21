@@ -26,103 +26,107 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task BackupCollection()
         {
-            _statusVM.CancelPendingPrompt();
-            // Prepare UI
-            _statusVM.ResetStatusOverlay();
-            _statusVM.ShowStatusOverlay("Export csv-format backup of My Collection", false);
-            _statusVM.StatusLabel3 = $"Export to: {_cardDbManagementService.BackupFolderPath}";
+            PrepareUIForCommands("Export csv-format backup of My Collection");
+
+            var result = new OperationResult(OperationResultCode.Error, string.Empty);
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
-            _statusVM.SecondaryButtonVisibility = Visibility.Visible;
 
-            // Setup primary
-            _statusVM.PrimaryButtonText = "   Change   ";
-            _statusVM.SetPrimaryAction(_ =>
+            if (_getMyCollectionCount() == 0)
             {
-                string? selectedPath = _folderPicker.PickFolder("Select backup folder", _cardDbManagementService.BackupFolderPath);
-                if (!string.IsNullOrWhiteSpace(selectedPath))
-                {
-                    _cardDbManagementService.ChangeBackupFolderPath(selectedPath);
-                    _statusVM.StatusLabel3 = $"Export to: {selectedPath}";
-                }
-            });
-
-            // Setup secondary (confirmation)
-            _statusVM.SecondaryButtonText = "   Start export   ";
-
-            // Await confirmation
-            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Secondary))
-            {
-                Debug.WriteLine("[Backup] User did not confirm. Aborting.");
-                return;
+                result = new OperationResult(OperationResultCode.Empty, "Your collection is empty - nothing to back up");
             }
-
-            // UI state preparation AFTER user clicked
-            SetUiBusy(true);
-            _statusVM.ResetStatusOverlay();
-            _statusVM.StatusLabel1 = "Please wait - backing up up your collection ... ";
-
-            // Prepare cancellation token before starting
-            var token = _statusVM.GetNewCancellationToken(PromptButton.Primary);
-
-            // Run backup
-            var result = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(token));
-
-            // Revert primary button to default
-            _statusVM.SetPrimaryAction(_ =>
+            else
             {
-                _statusVM.ResetStatusOverlay();
-                _statusVM.HideStatusOverlay();
-            });
+                _statusVM.StatusLabel3 = $"Export to: {_cardDbManagementService.BackupFolderPath}";
+                _statusVM.SecondaryButtonVisibility = Visibility.Visible;
 
+                // Setup primary
+                _statusVM.PrimaryButtonText = "   Change backup location   ";
+                _statusVM.SetPrimaryAction(_ =>
+                {
+                    string? selectedPath = _folderPicker.PickFolder("Select backup folder location", _cardDbManagementService.BackupFolderPath);
+                    if (!string.IsNullOrWhiteSpace(selectedPath))
+                    {
+                        _cardDbManagementService.ChangeBackupFolderPath(selectedPath);
+                        _statusVM.StatusLabel3 = $"Backup location: {selectedPath}";
+                    }
+                });
+
+                // Await confirmation
+                if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Secondary, "   Start backup   "))
+                {
+                    Debug.WriteLine("[Backup] User did not confirm. Aborting.");
+                    return;
+                }
+
+                // UI state preparation AFTER user clicked
+                SetUiBusy(true);
+                _statusVM.ResetStatusOverlay();
+                _statusVM.StatusLabel1 = "Please wait - backing up up your collection ... ";
+
+                // Prepare cancellation token before starting
+                var token = _statusVM.GetNewCancellationToken(PromptButton.Primary);
+
+                // Run backup
+                result = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(token));
+
+                // Reset UI state
+                ResetUIAfterCommands();
+            }
             // Display result
             switch (result.Code)
             {
                 case OperationResultCode.Success:
+                    _statusVM.StatusLabel1 = "Backup complete!";
                     _statusVM.StatusLabel3 = $"Backup created successfully at {result.Message}";
                     _statusVM.PrimaryButtonText = "   Awesome!   ";
                     break;
 
                 case OperationResultCode.Empty:
-                    _statusVM.StatusLabel3 = "Your collection is empty - nothing to back up";
+                    _statusVM.StatusLabel3 = result.Message;
                     _statusVM.PrimaryButtonText = "   Oh ... I guess that makes sense...   ";
                     break;
 
-                case OperationResultCode.Error:
+                default:
                     _statusVM.StatusLabel3 = $"Error: {result.Message}";
                     _statusVM.PrimaryButtonText = "   Ok :-/   ";
                     break;
             }
-
-            // Reset UI state
-            _statusVM.ClearCancellation();
-            SetUiBusy(false);
         }
 
         // Use case: Check for database updates
         [RelayCommand]
         private async Task CheckForDbUpdates()
         {
-            // UI state preparation
-            _statusVM.CancelPendingPrompt();
+            PrepareUIForCommands("One moment - checking for updates...");
             SetUiBusy(true);
-            _statusVM.ResetStatusOverlay();
-            _statusVM.ShowStatusOverlay("One moment - checking for updates...", false);
-
             var token = _statusVM.GetNewCancellationToken(PromptButton.Primary);
 
             // Run check
             var result = await _cardDbManagementService.CheckForDbUpdatesAsync(token);
 
+            ResetUIAfterCommands();
+
             // Show result
             switch (result.Code)
             {
                 case OperationResultCode.UpToDate:
+                    _statusVM.StatusLabel1 = "Check complete - card database is up to date.";
                     _statusVM.StatusLabel3 = result.Message;
                     break;
 
                 case OperationResultCode.NeedsUpdate:
+                    _statusVM.StatusLabel1 = "Check complete - update available.";
+
                     UpdateDbVisibility = Visibility.Visible;
                     _statusVM.StatusLabel3 = result.Message;
+
+                    _statusVM.SecondaryButtonVisibility = Visibility.Visible;
+                    _statusVM.SecondaryButtonText = "   Update database now   ";
+                    _statusVM.SetSecondaryAction(async _ =>
+                    {
+                        await UpdateDB();
+                    });
                     break;
 
                 case OperationResultCode.CancelledByUser:
@@ -131,38 +135,26 @@ namespace CollectaMundo.ViewModels
                     break;
 
                 default:
+                    _statusVM.StatusLabel1 = "Error in update check.";
                     _statusVM.StatusLabel3 = result.Message;
                     break;
             }
-
-            // Reset UI state
-            _statusVM.PrimaryButtonText = "   OK   ";
-            _statusVM.ClearCancellation();
-            SetUiBusy(false);
         }
 
         // Use case: Update database
         [RelayCommand]
         protected virtual async Task UpdateDB()
         {
-            _statusVM.CancelPendingPrompt();
-            var skipBackup = _getMyCollectionCount() == 0;
+            PrepareUIForCommands("Ready to update card database?");
+            bool includeBackup = _getMyCollectionCount() > 0;
             string backupResultMessage = string.Empty;
 
-            _statusVM.ResetStatusOverlay();
-            _statusVM.ShowStatusOverlay("Ready to update card database?", false);
-
-            if (!skipBackup)
+            if (includeBackup)
             {
                 _statusVM.StatusLabel3 = "(we will make a backup of your collection first)";
             }
 
-            _statusVM.PrimaryButtonText = "   Go for it!   ";
-            _statusVM.PrimaryButtonVisibility = Visibility.Visible;
-
-            // Wire up prompt confirmation
-
-            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary))
+            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary, "   Go for it!   "))
             {
                 Debug.WriteLine("[UpdateDB] User did not confirm. Skipping update.");
                 return;
@@ -173,7 +165,7 @@ namespace CollectaMundo.ViewModels
             SetUiBusy(true);
             var token = _statusVM.GetNewCancellationToken(PromptButton.Primary);
 
-            if (!skipBackup)
+            if (includeBackup)
             {
                 _statusVM.ShowStatusOverlay("Please wait - backing up up your collection ... ", false);
                 var backupResult = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(token));
@@ -206,49 +198,40 @@ namespace CollectaMundo.ViewModels
             // Run the update
             var result = await _cardDbManagementService.UpdateDbPrepOrchetrator(ct: token);
 
+            // Reset UI state before exiting
+            ResetUIAfterCommands();
+
             // Show result
             switch (result.Code)
             {
                 case OperationResultCode.Success:
-                    _statusVM.ResetStatusOverlay();
+                    _statusVM.StatusLabel1 = "Database updated successfully!";
+                    if (includeBackup) { _statusVM.StatusLabel3 = $"Your collection was backed up at {backupResultMessage}!"; }
+
                     _statusVM.StatusLabel3 = "Reloading card lists…";
                     await _appRefresher.ReloadAllCardListsAndFiltersAsync();
-                    _statusVM.StatusLabel1 = "Database updated successfully!";
-                    if (!skipBackup) { _statusVM.StatusLabel3 = $"Your collection was backed up at {backupResultMessage}!"; }
+                    _statusVM.StatusLabel3 = string.Empty;
                     break;
 
                 case OperationResultCode.CancelledByUser:
-                    _statusVM.ResetStatusOverlay();
                     _statusVM.StatusLabel1 = "Update canceled";
                     _statusVM.StatusLabel3 = "Download aborted. No files were imported.";
                     break;
 
                 default:
-                    _statusVM.ProgressVisibility = Visibility.Collapsed;
-                    _statusVM.PrimaryButtonText = "  OK  ";
                     _statusVM.StatusLabel1 = "Card database update failed!";
                     _statusVM.StatusLabel3 = result.Message;
                     break;
             }
-
-            // Reset UI state before exiting
-            SetUiBusy(false);
-            _statusVM.ClearCancellation();
-            _statusVM.PrimaryButtonVisibility = Visibility.Visible;
         }
 
         // Use case: Update prices
         [RelayCommand]
         protected virtual async Task UpdatePrices()
         {
-            _statusVM.CancelPendingPrompt();
-            _statusVM.ResetStatusOverlay();
-            _statusVM.ShowStatusOverlay("Ready to update card prices?", false);
+            PrepareUIForCommands("Download and update card prices?");
 
-            _statusVM.PrimaryButtonText = "   Go for it!   ";
-            _statusVM.PrimaryButtonVisibility = Visibility.Visible;
-
-            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary))
+            if (!await _statusVM.WaitForUserConfirmationAsync(PromptButton.Primary, "   Go for it!   "))
             {
                 Debug.WriteLine("[UpdatePrices] User bailed.");
                 return;
@@ -263,46 +246,43 @@ namespace CollectaMundo.ViewModels
             // Run the update
             var result = await _cardDbManagementService.UpdateCardPricesOrchetrator(ct: token);
 
-            // Reset UI state before showing result            
+            ResetUIAfterCommands();
 
             // Show result
             switch (result.Code)
             {
                 case OperationResultCode.Success:
-                    _statusVM.ResetStatusOverlay();
-                    _appRefresher.RefreshAllPrices();
                     _statusVM.StatusLabel1 = "Prices updated successfully!";
+                    _appRefresher.RefreshAllPrices();
                     break;
 
                 case OperationResultCode.CancelledByUser:
-                    _statusVM.ResetStatusOverlay();
                     _statusVM.StatusLabel1 = "Update canceled";
                     _statusVM.StatusLabel3 = "Download aborted. No prices were updated.";
                     break;
 
                 default:
-                    _statusVM.ProgressVisibility = Visibility.Collapsed;
-                    _statusVM.PrimaryButtonText = "   OK   ";
                     _statusVM.StatusLabel1 = "Prices update failed!";
                     _statusVM.StatusLabel3 = result.Message;
                     break;
             }
-
-            // Reset UI state before exiting
-            _statusVM.ClearCancellation();
-            SetUiBusy(false);
-            _statusVM.PrimaryButtonVisibility = Visibility.Visible;
-        }
-
-        // Cancel any active command (e.g. when navigating away)
-        public void CancelActiveCommand()
-        {
-            _statusVM.CancelPendingPrompt();
-            _statusVM.CancelCurrentOperation();
-            _statusVM.ClearCancellation();
         }
 
         // Private helpers
+        private void PrepareUIForCommands(string message)
+        {
+            _statusVM.CancelPendingPrompt();
+            _statusVM.ClearCancellation();
+            _statusVM.ResetStatusOverlay();
+            _statusVM.ShowStatusOverlay(message, false);
+        }
+        private void ResetUIAfterCommands()
+        {
+            _statusVM.ClearCancellation();
+            _statusVM.ResetStatusOverlay();
+            SetUiBusy(false);
+            _statusVM.PrimaryButtonVisibility = Visibility.Visible;
+        }
         private void SetUiBusy(bool isBusy)
         {
             _uiState.IsTopMenuEnabled = !isBusy;
