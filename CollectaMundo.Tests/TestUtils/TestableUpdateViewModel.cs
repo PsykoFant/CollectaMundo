@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace CollectaMundo.Tests.TestUtils
 {
-    public class TestableUpdateViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFolderPicker folderPicker) : UpdateViewModel(dbService, statusVM, parentCtx, getMyCollectionCount, folderPicker)
+    public class TestableUpdateViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFolderPicker folderPicker) : UtilitiesViewModel(dbService, statusVM, parentCtx, getMyCollectionCount, folderPicker)
     {
         public Task InternalUpdateTask => _internalUpdateTask!;
         private Task? _internalUpdateTask;

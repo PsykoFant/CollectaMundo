@@ -9,7 +9,7 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class UpdateViewModel(ICardDatabaseManagementService cardDbManagementService, StatusViewModel statusVM, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFolderPicker folderPicker) : ObservableObject
+    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbManagementService, StatusViewModel statusVM, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFolderPicker folderPicker) : ObservableObject
     {
         private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbManagementService;
         private readonly StatusViewModel _statusVM = statusVM;
@@ -92,6 +92,13 @@ namespace CollectaMundo.ViewModels
                     _statusVM.PrimaryButtonText = "   Ok :-/   ";
                     break;
             }
+        }
+
+        // Use case: Import cards from csv-file
+        [RelayCommand]
+        protected virtual async Task ImportFromCsv()
+        {
+            Debug.WriteLine("[ImportFromCsv] Not implemented yet.");
         }
 
         // Use case: Update prices

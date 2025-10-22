@@ -53,7 +53,7 @@ namespace CollectaMundo.ViewModels
         public EditCollectionViewModel EditCardsVM { get; }
         public FilterViewModel FilterVM { get; }
         public CardImageViewModel CardImageVM { get; }
-        public UpdateViewModel UpdateVM { get; }
+        public UtilitiesViewModel UtilitiesVM { get; }
         public PricesViewModel PricesVM { get; }
         #endregion
 
@@ -206,7 +206,7 @@ namespace CollectaMundo.ViewModels
             var parentContext = new ParentViewModelContext(this, this);
 
             // update viewmodel
-            UpdateVM = new UpdateViewModel(cardDbManagementService, statusVM, parentContext, () => MyCollectionVM.Cards.Count, new FolderPicker());
+            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, statusVM, parentContext, () => MyCollectionVM.Cards.Count, new FolderPicker());
 
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, parentContext);
