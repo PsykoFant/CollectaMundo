@@ -22,6 +22,10 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private Visibility updateDbVisibility = Visibility.Collapsed;
 
+        // Import VM
+        [ObservableProperty]
+        private ImportViewModel importVM = new();
+
         // Use case: Backup collection
         [RelayCommand]
         protected virtual async Task BackupCollection()
@@ -99,6 +103,8 @@ namespace CollectaMundo.ViewModels
         protected virtual async Task ImportFromCsv()
         {
             Debug.WriteLine("[ImportFromCsv] Not implemented yet.");
+            ImportVM.ImportOverlayVisibility = Visibility.Visible;
+
         }
 
         // Use case: Update prices

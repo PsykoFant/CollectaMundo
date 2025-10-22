@@ -1931,24 +1931,7 @@
                         <Label x:Name="ImportStartLabel" Content="The Import Wizard" HorizontalAlignment="Center" Margin="0,45,0,0" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
                         <Button x:Name="ButtonCancelImport" Content="Cancel Import" HorizontalAlignment="Center" Margin="0,350,410,0" VerticalAlignment="Top" Width="90" Height="20" Visibility="Collapsed" Click="CancelImport_Click"/>
                         <Label x:Name="CrunchingDataLabel" Content="Please wait - crunching data..." HorizontalAlignment="Center" Margin="0,350,0,0" VerticalAlignment="Top" Height="25" Width="170" Visibility="Collapsed"/>
-                        <Grid x:Name="GridImportStartScreen" HorizontalAlignment="Center" Visibility="Collapsed">
-                            <TextBlock HorizontalAlignment="Center" Margin="0,146,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="280" FontSize="16">
-                                <Run Text="You have chosen to consult the Import Wizard. This will allow you to import card lists to your collection. "/>
-                                <LineBreak/><LineBreak/>
-                                <Run Text="Some important notes:"/><LineBreak/>
-                                <Run Text=" &#x2022; Card list has to be in a .csv format"/><LineBreak/>
-                                <Run Text=" &#x2022; Cards imported with the wizard will be ADDED to existing cards in your collection"/><LineBreak/>
-                                <Run Text=" &#x2022; Imported cards will be mapped to a specific version of the card"/>
-                                <LineBreak/><LineBreak/>
-                                <Run Text="Elborating on the last point: As an example, there are 4 different versions of the card &quot;Flooded Strand&quot; in the Modern Horizons 3. If your card list contains:"/>
-                                <LineBreak/><LineBreak/>
-                                <Run Text=" &#x2022; | Flooded Strand | Modern Horizons 3 |"/>
-                                <LineBreak/><LineBreak/>
-                                <Run Text="...we need to figure out which specific version of &quot;Flooded Strand&quot; should be added to your collection."/><LineBreak/>
-                            </TextBlock>
-                            <Image Margin="0,420,0,0" Source="/Resources/Images/rush_of_knowledge.jpg" HorizontalAlignment="Center" VerticalAlignment="Top" Height="274" Width="344" Opacity="0.7"/>
-                            <Button x:Name="BeginImportButton" Content="Let's go!" HorizontalAlignment="Center" Margin="0,720,0,0" VerticalAlignment="Top" Height="20" Click="BeginImportButton_Click" Width="74"/>
-                        </Grid>
+
                         <Grid x:Name="GridImportIdColumnMapping" Visibility="Collapsed">
                             <Label Content="Does you import file have an ID column?" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,140,0,0" FontSize="24" Style="{StaticResource BelerenBold}"/>
                             <TextBlock Margin="0,184,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="140" FontSize="16" HorizontalAlignment="Center">
@@ -2261,6 +2244,7 @@
                 </Grid>
                 <!-- Status window -->
                 <local:StatusOverlay DataContext="{Binding DataContext.StatusOverlay, RelativeSource={RelativeSource AncestorType=Window}}" d:IsHidden="True"/>
+                <local:ImportOverlay DataContext="{Binding DataContext.ImportOverlay, RelativeSource={RelativeSource AncestorType=Window}}" d:IsHidden="True"/>
             </Grid>
             <Grid x:Name="GridCardImages" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Right" Width="250" Margin="0,0,0,0" Visibility="{Binding CardViewSectionVisibility}">
                 <Label x:Name="ImagePromoLabel" Content="{Binding CardImageVM.ImagePromoType}" HorizontalAlignment="Left" VerticalAlignment="Top" Height="30" Width="250" Style="{StaticResource BelerenBold}"/>

@@ -454,7 +454,7 @@ namespace CollectaMundo
             Inspiredtinkering.Visibility = Visibility.Collapsed;
             UtilsInfoLabel.Content = string.Empty;
             GridImportWizard.Visibility = Visibility.Visible;
-            GridImportStartScreen.Visibility = Visibility.Visible;
+            //GridImportStartScreen.Visibility = Visibility.Visible;
         }
 
         #region Import wizard

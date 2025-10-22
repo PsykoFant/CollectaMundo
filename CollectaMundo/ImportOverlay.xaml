@@ -1,0 +1,27 @@
+﻿<UserControl x:Class="CollectaMundo.ImportOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="800"
+             Visibility="{Binding ImportOverlayVisibility}"
+             Style="{StaticResource {x:Type UserControl}}">
+    <Grid x:Name="GridImportStartScreen" HorizontalAlignment="Center">
+        <TextBlock HorizontalAlignment="Center" Margin="0,90,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="280" FontSize="16">
+            <Run Text="You have chosen to consult the Import Wizard. This will allow you to import card lists to your collection. "/>
+            <LineBreak/><LineBreak/>
+            <Run Text="Some important notes:"/><LineBreak/>
+            <Run Text=" • Card list has to be in a .csv format"/><LineBreak/>
+            <Run Text=" • Cards imported with the wizard will be ADDED to existing cards in your collection"/><LineBreak/>
+            <Run Text=" • Imported cards will be mapped to a specific version of the card"/>
+            <LineBreak/><LineBreak/>
+            <Run Text="Elborating on the last point: As an example, there are 4 different versions of the card &quot;Flooded Strand&quot; in the Modern Horizons 3. If your card list contains:"/>
+            <LineBreak/><LineBreak/>
+            <Run Text=" • | Flooded Strand | Modern Horizons 3 |"/>
+            <LineBreak/><LineBreak/>
+            <Run Text="...we need to figure out which specific version of &quot;Flooded Strand&quot; should be added to your collection."/><LineBreak/>
+        </TextBlock>
+        <Image Margin="0,350,0,0" Source="/Resources/Images/rush_of_knowledge.jpg" HorizontalAlignment="Center" VerticalAlignment="Top" Height="220" Width="277" Opacity="0.7"/>
+    </Grid>
+</UserControl>
