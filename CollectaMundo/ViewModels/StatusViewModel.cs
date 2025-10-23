@@ -1,17 +1,16 @@
-﻿using CollectaMundo.Presentation;
+﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.Presentation;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System.Diagnostics;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
     public partial class StatusViewModel : ObservableObject
     {
+        private readonly IUserPromptService _userPromptService;
         private Action<object?> _primaryAction;
         private Action<object?> _secondaryAction;
-        private TaskCompletionSource<bool>? _confirmationTcs;
-        private CancellationTokenSource? _cts;
 
         #region Observable Properties
         [ObservableProperty]
@@ -53,8 +52,9 @@ namespace CollectaMundo.ViewModels
         #endregion
 
         // Constructor
-        public StatusViewModel()
+        public StatusViewModel(IUserPromptService userPromptService)
         {
+            _userPromptService = userPromptService;
             _primaryAction = _ => HideStatusOverlay();
             _secondaryAction = _ => { };
         }
@@ -77,54 +77,38 @@ namespace CollectaMundo.ViewModels
         #endregion
 
         #region Confirmation Prompt handling
-        public void CancelPendingPrompt()
-        {
-            if (_confirmationTcs is { Task.IsCompleted: false })
-            {
-                Debug.WriteLine("[Prompt] Cancelled pending prompt.");
-                _confirmationTcs.SetResult(false); // false = not confirmed
-            }
-        }
-        public void ConfirmPrompt()
-        {
-            if (_confirmationTcs is { Task.IsCompleted: false })
-            {
-                Debug.WriteLine("[Prompt] Confirmed prompt.");
-                _confirmationTcs.SetResult(true); // true = confirmed
-            }
-        }
+
         public async Task<bool> WaitForUserConfirmationAsync(PromptButton button, string buttonText)
         {
-            CancelPendingPrompt(); // ensures only one active at a time
-            _confirmationTcs = new TaskCompletionSource<bool>();
+            _userPromptService.CancelPendingPrompt(); // ensures only one active at a time
+            var tcs = _userPromptService.CreatePrompt();
 
             switch (button)
             {
                 case PromptButton.Primary:
                     PrimaryButtonVisibility = Visibility.Visible;
                     PrimaryButtonText = buttonText;
-                    SetPrimaryAction(_ => ConfirmPrompt());
+                    SetPrimaryAction(_ => _userPromptService.ConfirmPrompt());
                     break;
                 case PromptButton.Secondary:
                     SecondaryButtonVisibility = Visibility.Visible;
                     SecondaryButtonText = buttonText;
-                    SetSecondaryAction(_ => ConfirmPrompt());
+                    SetSecondaryAction(_ => _userPromptService.ConfirmPrompt());
                     break;
             }
 
-            return await _confirmationTcs.Task;
+            return await tcs.Task;
         }
 
         #endregion
 
         #region Cancellation Token handling
-        public CancellationToken GetNewCancellationToken(PromptButton button)
+        public CancellationToken PrepareCancelButton(PromptButton button)
         {
-            CancelCurrentOperation();
-            _cts = new CancellationTokenSource();
-
             var cancelMessage = "Cancelling…";
             var primaryButtonText = "   Cancel   ";
+
+            var token = _userPromptService.GetNewCancellationToken();
 
             switch (button)
             {
@@ -135,38 +119,24 @@ namespace CollectaMundo.ViewModels
                     SetPrimaryAction(_ =>
                     {
                         StatusLabel2 = cancelMessage;
-                        try { _cts?.Cancel(); } catch (ObjectDisposedException) { }
+                        _userPromptService.CancelCurrentOperation();
                     });
                     break;
 
                 case PromptButton.Secondary:
                     SecondaryButtonVisibility = Visibility.Visible;
                     SecondaryButtonText = primaryButtonText;
+
                     SetSecondaryAction(_ =>
                     {
                         StatusLabel2 = cancelMessage;
-                        try { _cts?.Cancel(); } catch (ObjectDisposedException) { }
+                        _userPromptService.CancelCurrentOperation();
                     });
                     break;
             }
 
-            return _cts.Token;
+            return token;
         }
-        public void CancelCurrentOperation()
-        {
-            if (_cts is { IsCancellationRequested: false })
-            {
-                _cts.Cancel();
-                Debug.WriteLine("[StatusVM] Cancellation requested.");
-            }
-        }
-        public void ClearCancellation()
-        {
-            _cts = null;
-            SetPrimaryAction(null);
-            SetSecondaryAction(null);
-        }
-
 
         #endregion
 

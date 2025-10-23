@@ -9,10 +9,11 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbManagementService, StatusViewModel statusVM, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFolderPicker folderPicker) : ObservableObject
+    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbManagementService, StatusViewModel statusVM, IUserPromptService userPromptService, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFolderPicker folderPicker) : ObservableObject
     {
         private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbManagementService;
         private readonly StatusViewModel _statusVM = statusVM;
+        private readonly IUserPromptService _userPromptService = userPromptService;
         private readonly IUiBlockable _uiState = parentCtx.UiState;
         private readonly IAppRefresher _appRefresher = parentCtx.AppRefresher;
         private readonly Func<int> _getMyCollectionCount = getMyCollectionCount;
@@ -69,7 +70,7 @@ namespace CollectaMundo.ViewModels
                 _statusVM.StatusLabel1 = "Please wait - backing up up your collection ... ";
 
                 // Prepare cancellation token before starting
-                var token = _statusVM.GetNewCancellationToken(PromptButton.Primary);
+                var token = _statusVM.PrepareCancelButton(PromptButton.Primary);
 
                 // Run backup
                 result = await Task.Run(() => _cardDbManagementService.ExportCollectionAsync(token));
@@ -103,6 +104,9 @@ namespace CollectaMundo.ViewModels
         protected virtual async Task ImportFromCsv()
         {
             Debug.WriteLine("[ImportFromCsv] Not implemented yet.");
+            _userPromptService.CancelPendingPrompt();
+            _userPromptService.ClearCancellation();
+            _statusVM.HideStatusOverlay();
             ImportVM.ImportOverlayVisibility = Visibility.Visible;
 
         }
@@ -123,7 +127,7 @@ namespace CollectaMundo.ViewModels
             _statusVM.ResetStatusOverlay();
             SetUiBusy(true);
             _statusVM.ShowStatusOverlay("Updating card prices, please wait...", true);
-            var token = _statusVM.GetNewCancellationToken(PromptButton.Primary);
+            var token = _statusVM.PrepareCancelButton(PromptButton.Primary);
 
             // Run the update
             var result = await _cardDbManagementService.UpdateCardPricesOrchetrator(ct: token);
@@ -156,7 +160,7 @@ namespace CollectaMundo.ViewModels
         {
             PrepareUIForCommands("One moment - checking for updates...");
             SetUiBusy(true);
-            var token = _statusVM.GetNewCancellationToken(PromptButton.Primary);
+            var token = _statusVM.PrepareCancelButton(PromptButton.Primary);
 
             // Run check
             var result = await _cardDbManagementService.CheckForDbUpdatesAsync(token);
@@ -219,7 +223,7 @@ namespace CollectaMundo.ViewModels
             // UI state preparation AFTER user clicked
             _statusVM.ResetStatusOverlay();
             SetUiBusy(true);
-            var token = _statusVM.GetNewCancellationToken(PromptButton.Primary);
+            var token = _statusVM.PrepareCancelButton(PromptButton.Primary);
 
             if (includeBackup)
             {
@@ -235,7 +239,7 @@ namespace CollectaMundo.ViewModels
                     _statusVM.StatusLabel3 = backupResult.Message;
                     _statusVM.PrimaryButtonVisibility = Visibility.Visible;
                     _statusVM.PrimaryButtonText = "  OK  ";
-                    _statusVM.ClearCancellation();
+                    _userPromptService.ClearCancellation();
                     return;
                 }
 
@@ -245,12 +249,12 @@ namespace CollectaMundo.ViewModels
             {
                 _statusVM.ResetStatusOverlay();
                 _statusVM.StatusLabel1 = "Update canceled during backup stage";
-                _statusVM.ClearCancellation();
+                _userPromptService.ClearCancellation();
                 return;
             }
 
             _statusVM.ShowStatusOverlay("Updating database, please wait...", true);
-            token = _statusVM.GetNewCancellationToken(PromptButton.Primary); // draw new token after backup
+            token = _statusVM.PrepareCancelButton(PromptButton.Primary); // draw new token after backup
 
             // Run the update
             var result = await _cardDbManagementService.UpdateDbPrepOrchetrator(ct: token);
@@ -286,9 +290,8 @@ namespace CollectaMundo.ViewModels
         // Private helpers
         private void PrepareUIForCommands(string message)
         {
-            _statusVM.CancelPendingPrompt();
-            _statusVM.ClearCancellation();
-            _statusVM.ResetStatusOverlay();
+            _userPromptService.CancelPendingPrompt();
+            _userPromptService.ClearCancellation();
             _statusVM.ShowStatusOverlay(message, false);
         }
         private void CompleteCommandUIFlow()

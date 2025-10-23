@@ -33,13 +33,12 @@ namespace CollectaMundo.ApplicationServices.Startup
 {
     public static class StartupComposition
     {
-        public static async Task<RootViewModel> BuildAndStartAsync(StatusViewModel statusVM)
+        public static async Task<RootViewModel> BuildAndStartAsync(StatusViewModel statusVM, IUserPromptService userPromptService)
         {
             try
             {
                 // Infrastructure
                 var settings = new AppSettings();
-
 
                 // Delegate for retailer access from view models                
                 string getRetailer() => settings.PriceInfo.Retailer;
@@ -104,7 +103,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardListService = new CardListService(dbFactory, cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
 
                 // Build view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, cardImageService, importService, cardDbManagementService, statusVM, cardListService, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, cardImageService, importService, cardDbManagementService, statusVM, userPromptService, cardListService, settings));
 
                 mainVM.FilterVM.NotifyFilterChanged();
                 statusVM.HideStatusOverlay();

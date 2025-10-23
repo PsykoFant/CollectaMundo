@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.Startup;
+﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Startup;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
 using System.Windows;
@@ -16,13 +17,14 @@ namespace CollectaMundo
 
             base.OnStartup(e);
 
-            var statusVM = new StatusViewModel();
+            var userPromptService = new UserPromptService();
+            var statusVM = new StatusViewModel(userPromptService);
             _statusWindow = new StatusWindow { DataContext = statusVM };
             _statusWindow.Show();
 
             try
             {
-                var rootVM = await StartupComposition.BuildAndStartAsync(statusVM);
+                var rootVM = await StartupComposition.BuildAndStartAsync(statusVM, userPromptService);
 
                 var mainWindow = new MainWindow
                 {

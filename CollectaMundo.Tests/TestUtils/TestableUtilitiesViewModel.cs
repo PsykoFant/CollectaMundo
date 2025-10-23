@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace CollectaMundo.Tests.TestUtils
 {
-    public class TestableUpdateViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFolderPicker folderPicker) : UtilitiesViewModel(dbService, statusVM, parentCtx, getMyCollectionCount, folderPicker)
+    public class TestableUtilitiesViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, IUserPromptService userPromptService, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFolderPicker folderPicker) : UtilitiesViewModel(dbService, statusVM, userPromptService, parentCtx, getMyCollectionCount, folderPicker)
     {
         public Task InternalUpdateTask => _internalUpdateTask!;
         private Task? _internalUpdateTask;
@@ -70,8 +70,9 @@ namespace CollectaMundo.Tests.TestUtils
     }
     public class UpdateTestContext
     {
-        public TestableUpdateViewModel UpdateVM { get; set; } = null!;
+        public TestableUtilitiesViewModel UtilitiesVM { get; set; } = null!;
         public StatusViewModel StatusVM { get; set; } = null!;
+        public IUserPromptService UserPromptService { get; set; } = null!;
         public Mock<ICardDatabaseManagementService> DbServiceMock { get; set; } = null!;
     }
     public class UpdateTestContextBuilder
@@ -144,17 +145,19 @@ namespace CollectaMundo.Tests.TestUtils
                          .ReturnsAsync(_updateResult);
             }
 
-            var statusVM = new StatusViewModel();
+            var userPromptService = new UserPromptService();
+            var statusVM = new StatusViewModel(userPromptService);
             var uiState = new Mock<IUiBlockable>();
             var appRefresher = new Mock<IAppRefresher>();
             var parentCtx = new ParentViewModelContext(uiState.Object, appRefresher.Object);
 
-            var updateVM = new TestableUpdateViewModel(dbService.Object, statusVM, parentCtx, _collectionCount ?? (() => 5), new FolderPicker());
+            var utilitiesVM = new TestableUtilitiesViewModel(dbService.Object, statusVM, userPromptService, parentCtx, _collectionCount ?? (() => 5), new FolderPicker());
 
             return new UpdateTestContext
             {
-                UpdateVM = updateVM,
+                UtilitiesVM = utilitiesVM,
                 StatusVM = statusVM,
+                UserPromptService = userPromptService,
                 DbServiceMock = dbService
             };
         }

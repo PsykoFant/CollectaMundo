@@ -19,7 +19,7 @@ namespace CollectaMundo.Tests.UnitTests
                 .WithCollectionCount(5) // Simulate non-empty collection
                 .Build();
 
-            var updateVM = context.UpdateVM;
+            var updateVM = context.UtilitiesVM;
             var statusVM = context.StatusVM;
 
             // Act: start the update command
@@ -52,7 +52,7 @@ namespace CollectaMundo.Tests.UnitTests
                 .WithCollectionCount(5) // Simulate non-empty collection
                 .Build();
 
-            var updateVM = context.UpdateVM;
+            var updateVM = context.UtilitiesVM;
             var statusVM = context.StatusVM;
 
             // Act
@@ -91,7 +91,7 @@ namespace CollectaMundo.Tests.UnitTests
                 .WithCollectionCount(5)
                 .Build();
 
-            var updateVM = context.UpdateVM;
+            var updateVM = context.UtilitiesVM;
             var statusVM = context.StatusVM;
 
             // Act
@@ -123,7 +123,7 @@ namespace CollectaMundo.Tests.UnitTests
                 .WithUpdateResult(new OperationResult(OperationResultCode.Error, "Boom!"))
                 .Build();
 
-            var updateVM = context.UpdateVM;
+            var updateVM = context.UtilitiesVM;
             var statusVM = context.StatusVM;
 
             // Act
@@ -168,7 +168,7 @@ namespace CollectaMundo.Tests.UnitTests
                 })
                 .Build();
 
-            var updateVM = context.UpdateVM;
+            var updateVM = context.UtilitiesVM;
             var statusVM = context.StatusVM;
 
             updateVM.UpdateDBCommand.Execute(null);
@@ -203,12 +203,12 @@ namespace CollectaMundo.Tests.UnitTests
                 .Build();
 
             // Act
-            context.UpdateVM.UpdateDBCommand.Execute(null);
+            context.UtilitiesVM.UpdateDBCommand.Execute(null);
 
             await StatusTestDriver.WaitUntilButtonTextAsync(context.StatusVM, "   Start card database update!   ");
             StatusTestDriver.ClickPrimaryButton(context.StatusVM);
 
-            await context.UpdateVM.InternalUpdateTask!;
+            await context.UtilitiesVM.InternalUpdateTask!;
 
             // Assert
             Assert.Equal("Database updated successfully!", context.StatusVM.StatusLabel1);
@@ -238,7 +238,7 @@ namespace CollectaMundo.Tests.UnitTests
                 })
                 .Build();
 
-            context.UpdateVM.UpdateDBCommand.Execute(null);
+            context.UtilitiesVM.UpdateDBCommand.Execute(null);
 
             await StatusTestDriver.WaitUntilButtonTextAsync(context.StatusVM, "   Start card database update!   ");
             StatusTestDriver.ClickPrimaryButton(context.StatusVM);
@@ -247,7 +247,7 @@ namespace CollectaMundo.Tests.UnitTests
             orchestratorStarted.Wait(); // ⏳ ensure task is running
 
             StatusTestDriver.ClickPrimaryButton(context.StatusVM); // Cancel
-            await context.UpdateVM.InternalUpdateTask;
+            await context.UtilitiesVM.InternalUpdateTask;
 
             // Assert
             Assert.Equal("Update canceled", context.StatusVM.StatusLabel1);
@@ -265,12 +265,12 @@ namespace CollectaMundo.Tests.UnitTests
                 .WithCollectionCount(0)
                 .Build();
 
-            var updateVM = context.UpdateVM;
+            var updateVM = context.UtilitiesVM;
             var statusVM = context.StatusVM;
 
             updateVM.BackupCollectionCommand.Execute(null);
 
-            await context.UpdateVM.InternalUpdateTask!;
+            await context.UtilitiesVM.InternalUpdateTask!;
 
             Assert.Equal("Your collection is empty - nothing to back up", statusVM.StatusLabel3);
             Assert.Equal("   Oh ... I guess that makes sense...   ", statusVM.PrimaryButtonText);
@@ -283,17 +283,18 @@ namespace CollectaMundo.Tests.UnitTests
                 .WithCollectionCount(5)
                 .Build();
 
-            var updateVM = context.UpdateVM;
+            var updateVM = context.UtilitiesVM;
             var statusVM = context.StatusVM;
+            var userPromptService = context.UserPromptService;
 
             updateVM.BackupCollectionCommand.Execute(null);
 
             await StatusTestDriver.WaitUntilSecondaryButtonTextAsync(statusVM, "   Start backup   ");
 
             // Simulate user not confirming
-            statusVM.CancelPendingPrompt(); // simulate close or navigation away
+            userPromptService.CancelPendingPrompt(); // simulate close or navigation away
 
-            await context.UpdateVM.InternalUpdateTask!;
+            await context.UtilitiesVM.InternalUpdateTask!;
 
             // No result should be shown
             Assert.DoesNotContain("Backup complete", statusVM.StatusLabel1);
@@ -307,7 +308,7 @@ namespace CollectaMundo.Tests.UnitTests
                 .WithCollectionCount(5)
                 .Build();
 
-            var updateVM = context.UpdateVM;
+            var updateVM = context.UtilitiesVM;
             var statusVM = context.StatusVM;
 
             updateVM.BackupCollectionCommand.Execute(null);
@@ -315,7 +316,7 @@ namespace CollectaMundo.Tests.UnitTests
             await StatusTestDriver.WaitUntilSecondaryButtonTextAsync(statusVM, "   Start backup   ");
             StatusTestDriver.ClickSecondaryButton(statusVM); // Confirm
 
-            await context.UpdateVM.InternalUpdateTask!;
+            await context.UtilitiesVM.InternalUpdateTask!;
 
             Assert.Equal("Backup complete!", statusVM.StatusLabel1);
             Assert.Equal("Backup created successfully at mock-backup-path", statusVM.StatusLabel3);
@@ -329,7 +330,7 @@ namespace CollectaMundo.Tests.UnitTests
                 .WithCollectionCount(5)
                 .Build();
 
-            var updateVM = context.UpdateVM;
+            var updateVM = context.UtilitiesVM;
             var statusVM = context.StatusVM;
 
             updateVM.BackupCollectionCommand.Execute(null);
@@ -337,7 +338,7 @@ namespace CollectaMundo.Tests.UnitTests
             await StatusTestDriver.WaitUntilSecondaryButtonTextAsync(statusVM, "   Start backup   ");
             StatusTestDriver.ClickSecondaryButton(statusVM); // Confirm
 
-            await context.UpdateVM.InternalUpdateTask!;
+            await context.UtilitiesVM.InternalUpdateTask!;
 
             Assert.Equal("Error: Write access denied", statusVM.StatusLabel3);
             Assert.Equal("   Ok :-/   ", statusVM.PrimaryButtonText);

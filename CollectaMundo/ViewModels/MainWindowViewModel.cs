@@ -38,6 +38,9 @@ namespace CollectaMundo.ViewModels
         private readonly IFacetUpdateScheduler _facetScheduler;
         private readonly IFacetUpdater _facetUpdater;
 
+        // User prompt service
+        private readonly IUserPromptService _userPromptService;
+
         // Mana keys for ColorIcons
         private readonly string[] ManaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
 
@@ -68,9 +71,9 @@ namespace CollectaMundo.ViewModels
             if (oldValue == newValue)
                 return;
 
-            _statusVM.CancelPendingPrompt();
-            _statusVM.CancelCurrentOperation();
-            _statusVM.ClearCancellation();
+            _userPromptService.CancelPendingPrompt();
+            _userPromptService.CancelCurrentOperation();
+            _userPromptService.ClearCancellation();
             _statusVM.HideStatusOverlay();
 
             if (newValue == Page.MyCollection)
@@ -169,6 +172,7 @@ namespace CollectaMundo.ViewModels
             IImportService importExportService,
             ICardDatabaseManagementService cardDbManagementService,
             StatusViewModel statusVM,
+            IUserPromptService userPromptService,
             ICardListService cardListService,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
@@ -183,6 +187,8 @@ namespace CollectaMundo.ViewModels
 
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
             _facetUpdater = facetUpdater ?? new FacetUpdater();
+
+            _userPromptService = userPromptService;
 
             CurrentPage = Page.SearchAndFilter;
 
@@ -205,8 +211,8 @@ namespace CollectaMundo.ViewModels
 
             var parentContext = new ParentViewModelContext(this, this);
 
-            // update viewmodel
-            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, statusVM, parentContext, () => MyCollectionVM.Cards.Count, new FolderPicker());
+            // Utility section viewmodel
+            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, statusVM, _userPromptService, parentContext, () => MyCollectionVM.Cards.Count, new FolderPicker());
 
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, parentContext);
@@ -222,13 +228,14 @@ namespace CollectaMundo.ViewModels
             IImportService importExportService,
             ICardDatabaseManagementService prepService,
             StatusViewModel statusVM,
+            IUserPromptService userPromptService,
             ICardListService cardListService,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(filteringService, editService, cardImageService, importExportService, prepService, statusVM, cardListService, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(filteringService, editService, cardImageService, importExportService, prepService, statusVM, userPromptService, cardListService, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };
