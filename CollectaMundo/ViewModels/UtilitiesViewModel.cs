@@ -104,11 +104,15 @@ namespace CollectaMundo.ViewModels
         protected virtual async Task ImportFromCsv()
         {
             Debug.WriteLine("[ImportFromCsv] Not implemented yet.");
-            _userPromptService.CancelPendingPrompt();
-            _userPromptService.ClearCancellation();
+
             _statusVM.HideStatusOverlay();
             ImportVM.ImportOverlayVisibility = Visibility.Visible;
 
+            _userPromptService.CancelPendingPrompt();
+            _userPromptService.ClearCancellation();
+            var tcs = _userPromptService.CreatePrompt();
+
+            await tcs.Task;
         }
 
         // Use case: Update prices
@@ -290,6 +294,8 @@ namespace CollectaMundo.ViewModels
         // Private helpers
         private void PrepareUIForCommands(string message)
         {
+            ImportVM.ImportOverlayVisibility = Visibility.Collapsed;
+
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();
             _statusVM.ShowStatusOverlay(message, false);

@@ -78,6 +78,13 @@
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
+        <Style TargetType="{x:Type FlowDocumentScrollViewer}">
+            <Setter Property="Background" Value="#FFDDDDDD"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="BorderBrush" Value="#FF707070"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
         <!-- Define the Style for the ProgressBar -->
         <Style TargetType="{x:Type ProgressBar}">
             <Setter Property="Template">
