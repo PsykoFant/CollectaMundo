@@ -943,7 +943,7 @@
                 <Grid Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window}, 
                     Converter={StaticResource PageToVisibilityConverter},
                     ConverterParameter={x:Static presentation:Page.SearchAndFilter}}" d:IsHidden="True">
-                    <Label Content="Search and Filter Cards" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
+                    <Label Content="Search and Filter Cards" Style="{StaticResource MediumHeaderLabelStyle}"/>
                     <Label Visibility="{Binding AddCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}"
                        HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" >
                         <Label.Content>
@@ -1339,7 +1339,7 @@
                 </Grid>
                 <!-- My Collection -->
                 <Grid Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},Converter={StaticResource PageToVisibilityConverter},ConverterParameter={x:Static presentation:Page.MyCollection}}">
-                    <Label Content="My Collection" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
+                    <Label Content="My Collection" Style="{StaticResource MediumHeaderLabelStyle}" />                    
                     <Label HorizontalAlignment="Left" Margin="0,25,0,0" VerticalAlignment="Top" Height="30" Visibility="{Binding EditCardsVM.StatusVisibility,Converter={StaticResource InverseVisibility}}">
                         <Label.Content>
                             <MultiBinding Converter="{StaticResource CountToSummaryConverter}">
@@ -1924,11 +1924,11 @@
                       Visibility="{Binding DataContext.Main.CurrentPage,RelativeSource={RelativeSource AncestorType=Window},
                     Converter={StaticResource PageToVisibilityConverter},
                     ConverterParameter={x:Static presentation:Page.Utilities}}">
-                    <Label x:Name="HeadlineUtilities" Content="Utilities" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="24" Height="40" Style="{StaticResource BelerenBold}"/>
+                    <Label Content="Utilities" Style="{StaticResource MediumHeaderLabelStyle}" />
                     <Label x:Name="UtilsInfoLabel" Content="" HorizontalAlignment="Center" Margin="8,150,0,0" VerticalAlignment="Top" FontSize="16"/>
                     <Image x:Name="Inspiredtinkering" Margin="0,200,0,0" Source="/Resources/Images/inspired-tinkering-183.png" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" Opacity="0.698"/>
                     <Grid x:Name="GridImportWizard" Visibility="Collapsed" d:IsHidden="True">
-                        <Label x:Name="ImportStartLabel" Content="The Import Wizard" HorizontalAlignment="Center" Margin="0,45,0,0" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>
+                        <!--<Label x:Name="ImportStartLabel" Content="The Import Wizard" HorizontalAlignment="Center" Margin="0,45,0,0" VerticalAlignment="Top" FontSize="48" Style="{StaticResource BelerenBold}"/>-->
                         <Button x:Name="ButtonCancelImport" Content="Cancel Import" HorizontalAlignment="Center" Margin="0,350,410,0" VerticalAlignment="Top" Width="90" Height="20" Visibility="Collapsed" Click="CancelImport_Click"/>
                         <Label x:Name="CrunchingDataLabel" Content="Please wait - crunching data..." HorizontalAlignment="Center" Margin="0,350,0,0" VerticalAlignment="Top" Height="25" Width="170" Visibility="Collapsed"/>
 

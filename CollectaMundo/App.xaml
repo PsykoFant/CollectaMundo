@@ -19,7 +19,9 @@
             <GradientStop Color="#FFFBF7B4"/>
             <GradientStop Color="White" Offset="1"/>
         </LinearGradientBrush>
-        <FontFamily x:Key="CollectaMundoFont">/Resources/Fonts/#Mplantin</FontFamily>
+        <FontFamily x:Key="CollectaMundoFont">pack://application:,,,/Resources/Fonts/#Mplantin</FontFamily>
+        <FontFamily x:Key="CollectaMundoHeaderFont">pack://application:,,,/Resources/Fonts/#Beleren Bold</FontFamily>
+
         <Style x:Key="CollectaMundoControlBaseStyle" TargetType="Control">
             <Setter Property="FontFamily" Value="{StaticResource CollectaMundoFont}" />
             <Setter Property="Background" Value="{StaticResource CollectaMundoBackground}" />
@@ -67,22 +69,27 @@
         <Style TargetType="{x:Type ToggleButton}" BasedOn="{StaticResource BaseButtonStyle}"/>
 
         <Style x:Key="TopMenuButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}">
-            <Setter Property="FontFamily" Value="/Resources/Fonts/#Beleren Bold"/>
+            <Setter Property="FontFamily" Value="{StaticResource CollectaMundoHeaderFont}"/>
             <Setter Property="FontSize" Value="16"/>
         </Style>
 
         <Style TargetType="{x:Type TextBox}">
             <Setter Property="Background" Value="#FFDDDDDD"/>
             <Setter Property="Foreground" Value="Black"/>
-            <Setter Property="BorderBrush" Value="#FF707070"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
-        <Style TargetType="{x:Type FlowDocumentScrollViewer}">
-            <Setter Property="Background" Value="#FFDDDDDD"/>
+        <Style TargetType="{x:Type FlowDocument}">
+            <Setter Property="FontFamily" Value="{StaticResource CollectaMundoFont}"/>
             <Setter Property="Foreground" Value="Black"/>
-            <Setter Property="BorderBrush" Value="#FF707070"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+
+        <Style TargetType="{x:Type FlowDocumentScrollViewer}">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Hidden"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Hidden"/>
+            <Setter Property="IsToolBarVisible" Value='False'/>
         </Style>
 
         <!-- Define the Style for the ProgressBar -->
@@ -111,10 +118,26 @@
 
         <!-- Header font style -->
         <Style x:Key="BelerenBold">
-            <Setter Property="TextElement.FontFamily"
-                    Value="/Resources/Fonts/#Beleren Bold">
+            <Setter Property="TextElement.FontFamily" Value="/Resources/Fonts/#Beleren Bold">
             </Setter>
         </Style>
-        
+
+        <!-- Header label style -->
+        <Style x:Key="BigHeaderLabelStyle" TargetType="Label">
+            <Setter Property="FontFamily" Value="{StaticResource CollectaMundoHeaderFont}" />
+            <!--<Setter Property="FontFamily" Value="/Resources/Fonts/#Beleren Bold" />-->
+            <Setter Property="FontSize" Value="48" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Margin" Value="0" />
+        </Style>
+
+        <Style x:Key="MediumHeaderLabelStyle" TargetType="Label">
+            <Setter Property="FontFamily" Value="{StaticResource CollectaMundoHeaderFont}" />
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="Margin" Value="0" />
+        </Style>
     </Application.Resources>
 </Application>

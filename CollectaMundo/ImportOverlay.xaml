@@ -7,9 +7,9 @@
              d:DesignHeight="600" d:DesignWidth="800"
              Visibility="{Binding ImportOverlayVisibility}"
              Style="{StaticResource {x:Type UserControl}}">
-    <Grid x:Name="GridImportStartScreen" HorizontalAlignment="Center">
-        <FlowDocumentScrollViewer Margin="0,90,0,0" FontSize="16" HorizontalAlignment="Center" VerticalScrollBarVisibility="Hidden"  
-    IsToolBarVisible="False" BorderThickness="0" Padding="0">
+    <Grid x:Name="GridImportStartScreen" HorizontalAlignment="Center" VerticalAlignment="Top">
+        <Label Content="The Import Wizard" Style="{StaticResource BigHeaderLabelStyle}" />
+        <FlowDocumentScrollViewer Margin="0,90,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" >
             <FlowDocument>
                 <Paragraph>
                     You have chosen to consult the Import Wizard. This will allow you to import card lists to your collection.
@@ -24,7 +24,7 @@
                         <Paragraph>Card list has to be in a .csv format</Paragraph>
                     </ListItem>
                     <ListItem>
-                        <Paragraph>Cards imported with the wizard will be ADDED to existing cards in your collection</Paragraph>
+                        <Paragraph>Imported cards will be ADDED to existing cards in your collection</Paragraph>
                     </ListItem>
                     <ListItem>
                         <Paragraph>Imported cards will be mapped to a specific version of the card</Paragraph>
@@ -32,17 +32,23 @@
                 </List>
 
                 <Paragraph>
-                    Elaborating on the last point: As an example, there are 4 different versions of the card "Flooded Strand" in Modern Horizons 3.
+                    Example: There are 4 different versions of the card "Flooded Strand" in Modern Horizons 3.
                 </Paragraph>
 
                 <List MarkerStyle="Disc">
                     <ListItem>
-                        <Paragraph>| Flooded Strand | Modern Horizons 3 |</Paragraph>
+                        <Paragraph>Your csv-file has: | Flooded Strand | Modern Horizons 3 |</Paragraph>
+                    </ListItem>
+                    <ListItem>
+                        <Paragraph>... but corporate greed dictates that a Magic set must have at least for verions of a card!</Paragraph>
+                    </ListItem>
+                    <ListItem>
+                        <Paragraph>... so we need to figure out which version to add to your collection!</Paragraph>
                     </ListItem>
                 </List>
 
                 <Paragraph>
-                    We need to figure out which specific version of "Flooded Strand" should be added to your collection.
+                    But fear not, The Import Wizard will guide you!
                 </Paragraph>
             </FlowDocument>
         </FlowDocumentScrollViewer>

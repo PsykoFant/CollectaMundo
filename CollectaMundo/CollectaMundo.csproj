@@ -14,7 +14,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Resources\Fonts\Beleren-Bold.ttf" />
     <None Remove="Resources\Fonts\mplantin.ttf" />
     <None Remove="Resources\Images\counterspell_fail.png" />
     <None Remove="Resources\Images\Icon.ico" />
@@ -49,7 +48,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Resources\Fonts\Beleren-Bold.ttf">
+    <Resource Include="Resources\Fonts\belerenbold.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\Fonts\mplantin.ttf">
