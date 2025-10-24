@@ -9,7 +9,7 @@
              Style="{StaticResource {x:Type UserControl}}">
     <Grid x:Name="GridImportStartScreen" HorizontalAlignment="Center" VerticalAlignment="Top">
         <Label Content="The Import Wizard" Style="{StaticResource BigHeaderLabelStyle}" />
-        <FlowDocumentScrollViewer Margin="0,90,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" >
+        <FlowDocumentScrollViewer Margin="0,60,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600" >
             <FlowDocument>
                 <Paragraph>
                     You have chosen to consult the Import Wizard. This will allow you to import card lists to your collection.
@@ -32,7 +32,7 @@
                 </List>
 
                 <Paragraph>
-                    Example: There are 4 different versions of the card "Flooded Strand" in Modern Horizons 3.
+                    Example:
                 </Paragraph>
 
                 <List MarkerStyle="Disc">
@@ -40,7 +40,7 @@
                         <Paragraph>Your csv-file has: | Flooded Strand | Modern Horizons 3 |</Paragraph>
                     </ListItem>
                     <ListItem>
-                        <Paragraph>... but corporate greed dictates that a Magic set must have at least for verions of a card!</Paragraph>
+                        <Paragraph>... but corporate greed dictates that at least four verions of a card must exist!</Paragraph>
                     </ListItem>
                     <ListItem>
                         <Paragraph>... so we need to figure out which version to add to your collection!</Paragraph>

@@ -28,16 +28,8 @@
                    Margin="0,76,0,0"/>
 
             <Label Content="CollectaMundo" Style="{StaticResource BigHeaderLabelStyle}" />
-            
-            <ProgressBar Value="{Binding ProgressValue}"
-                         Height="15"
-                         Width="500"
-                         HorizontalAlignment="Center"
-                         VerticalAlignment="Top"
-                         Margin="0,410,0,0"
-                         BorderBrush="Black"
-                         Visibility="{Binding ProgressVisibility}"
-                         Maximum="100"/>
+
+            <ProgressBar Value="{Binding ProgressValue}" Visibility="{Binding ProgressVisibility}" Margin="0,410,0,0" />
 
             <Label Content="{Binding StatusLabel1}"
                    HorizontalAlignment="Center"

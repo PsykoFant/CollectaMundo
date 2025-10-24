@@ -19,8 +19,8 @@
             <GradientStop Color="#FFFBF7B4"/>
             <GradientStop Color="White" Offset="1"/>
         </LinearGradientBrush>
-        <FontFamily x:Key="CollectaMundoFont">pack://application:,,,/Resources/Fonts/#Mplantin</FontFamily>
-        <FontFamily x:Key="CollectaMundoHeaderFont">pack://application:,,,/Resources/Fonts/#Beleren Bold</FontFamily>
+        <FontFamily x:Key="CollectaMundoFont">pack://application:,,,/Resources/Fonts/#MPlantin</FontFamily>
+        <FontFamily x:Key="CollectaMundoHeaderFont">pack://application:,,,/Resources/Fonts/#Beleren2016</FontFamily>
 
         <Style x:Key="CollectaMundoControlBaseStyle" TargetType="Control">
             <Setter Property="FontFamily" Value="{StaticResource CollectaMundoFont}" />
@@ -93,20 +93,29 @@
         </Style>
 
         <!-- Define the Style for the ProgressBar -->
-        <Style TargetType="{x:Type ProgressBar}">
+        <Style x:Key="CollectaMundoProgressBarStyle" TargetType="{x:Type ProgressBar}">
+            <!-- Common visual properties -->
+            <Setter Property="Height" Value="15" />
+            <Setter Property="Width" Value="500" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Top" />            
+            <Setter Property="BorderBrush" Value="Black" />
+            <Setter Property="Maximum" Value="100" />
+
+            <!-- Custom control template -->
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ProgressBar}">
-                        <Border x:Name="PART_Track" CornerRadius="2" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" 
-                                Background="{TemplateBinding Background}">
+                        <Border x:Name="PART_Track"
+                        CornerRadius="2"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        Background="{TemplateBinding Background}">
                             <Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="2">
-                                <!-- Set the LinearGradientBrush for the Background of PART_Indicator -->
                                 <Border.Background>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Color="#fcffd3" Offset="0"/>
-                                        <GradientStop Color="#213c4c" Offset="1"/>
+                                        <GradientStop Color="#fcffd3" Offset="0" />
+                                        <GradientStop Color="#213c4c" Offset="1" />
                                     </LinearGradientBrush>
                                 </Border.Background>
                             </Border>
@@ -116,28 +125,29 @@
             </Setter>
         </Style>
 
+
         <!-- Header font style -->
         <Style x:Key="BelerenBold">
-            <Setter Property="TextElement.FontFamily" Value="/Resources/Fonts/#Beleren Bold">
+            <Setter Property="TextElement.FontFamily" Value="{StaticResource CollectaMundoHeaderFont}">
             </Setter>
         </Style>
 
         <!-- Header label style -->
-        <Style x:Key="BigHeaderLabelStyle" TargetType="Label">
+        <Style x:Key="BaseHeaderLabelStyle" TargetType="Label">
             <Setter Property="FontFamily" Value="{StaticResource CollectaMundoHeaderFont}" />
-            <!--<Setter Property="FontFamily" Value="/Resources/Fonts/#Beleren Bold" />-->
-            <Setter Property="FontSize" Value="48" />
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="VerticalAlignment" Value="Top" />
             <Setter Property="Margin" Value="0" />
         </Style>
 
-        <Style x:Key="MediumHeaderLabelStyle" TargetType="Label">
-            <Setter Property="FontFamily" Value="{StaticResource CollectaMundoHeaderFont}" />
-            <Setter Property="FontSize" Value="24" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="VerticalAlignment" Value="Top" />
-            <Setter Property="Margin" Value="0" />
+        <Style x:Key="BigHeaderLabelStyle" TargetType="Label" BasedOn="{StaticResource BaseHeaderLabelStyle}">
+            <Setter Property="FontSize" Value="48" />
         </Style>
+
+        <Style x:Key="MediumHeaderLabelStyle" TargetType="Label" BasedOn="{StaticResource BaseHeaderLabelStyle}">
+            <Setter Property="FontSize" Value="24" />
+        </Style>
+
+
     </Application.Resources>
 </Application>

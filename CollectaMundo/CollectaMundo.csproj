@@ -52,9 +52,6 @@
     <Resource Include="Resources\Fonts\Beleren2016-Bold.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Resources\Fonts\belerenbold.ttf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Resource>
     <Resource Include="Resources\Fonts\mplantin.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
