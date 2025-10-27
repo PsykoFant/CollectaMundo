@@ -9,14 +9,14 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbManagementService, StatusViewModel statusVM, IUserPromptService userPromptService, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFolderPicker folderPicker) : ObservableObject
+    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, IUserPromptService userPromptService, ParentViewModelContext context, Func<int> collectionCountProvider, IFolderPicker folderPicker) : ObservableObject
     {
-        private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbManagementService;
+        private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbService;
         private readonly StatusViewModel _statusVM = statusVM;
         private readonly IUserPromptService _userPromptService = userPromptService;
-        private readonly IUiBlockable _uiState = parentCtx.UiState;
-        private readonly IAppRefresher _appRefresher = parentCtx.AppRefresher;
-        private readonly Func<int> _getMyCollectionCount = getMyCollectionCount;
+        private readonly IUiBlockable _uiState = context.UiState;
+        private readonly IAppRefresher _appRefresher = context.AppRefresher;
+        private readonly Func<int> _getMyCollectionCount = collectionCountProvider;
         private readonly IFolderPicker _folderPicker = folderPicker;
 
         // Visibility property
@@ -24,8 +24,7 @@ namespace CollectaMundo.ViewModels
         private Visibility updateDbVisibility = Visibility.Collapsed;
 
         // Import VM
-        [ObservableProperty]
-        private ImportViewModel importVM = new();
+        public ImportViewModel ImportVM { get; } = new ImportViewModel(userPromptService);
 
         // Use case: Backup collection
         [RelayCommand]
@@ -102,15 +101,13 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         protected virtual async Task ImportFromCsv()
         {
-            _statusVM.HideStatusOverlay();
-            ImportVM.ImportOverlayVisibility = Visibility.Visible;
-            ImportVM.Begin(); // <-- activate first step
-
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();
             var tcs = _userPromptService.CreatePrompt();
 
-            await tcs.Task;
+            _statusVM.HideStatusOverlay();
+            ImportVM.ImportOverlayVisibility = Visibility.Visible;
+            await ImportVM.Begin(); // <-- activate first step
         }
 
         // Use case: Update prices

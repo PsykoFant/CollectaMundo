@@ -8,11 +8,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="800"
+             Style="{StaticResource {x:Type UserControl}}"
              Visibility="{Binding ImportOverlayVisibility}">
 
     <Grid HorizontalAlignment="Center" VerticalAlignment="Top">
-        <ContentControl Content="{Binding CurrentStepViewModel}">
-            <ContentControl.Resources>
+        <ContentControl Content="{Binding CurrentStepViewModel}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <ContentControl.Resources>
                 <DataTemplate DataType="{x:Type vm:ImportStartViewModel}">
                     <views:ImportStartView />
                 </DataTemplate>
