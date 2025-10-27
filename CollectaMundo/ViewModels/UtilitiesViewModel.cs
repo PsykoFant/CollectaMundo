@@ -103,8 +103,6 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         protected virtual async Task ImportFromCsv()
         {
-            Debug.WriteLine("[ImportFromCsv] Not implemented yet.");
-
             _statusVM.HideStatusOverlay();
             ImportVM.ImportOverlayVisibility = Visibility.Visible;
 
