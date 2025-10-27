@@ -99,12 +99,12 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        // Use case: Import cards from csv-file
         [RelayCommand]
         protected virtual async Task ImportFromCsv()
         {
             _statusVM.HideStatusOverlay();
             ImportVM.ImportOverlayVisibility = Visibility.Visible;
+            ImportVM.Begin(); // <-- activate first step
 
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();

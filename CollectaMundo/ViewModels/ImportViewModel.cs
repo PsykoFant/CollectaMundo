@@ -12,21 +12,9 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private object? currentStepViewModel;
 
-        public void StartImportWizard()
+        public void Begin()
         {
             CurrentStepViewModel = new ImportStartViewModel(this);
-        }
-
-        public void GoToNextStep()
-        {
-            // Example: advance through enum or step logic
-            //CurrentStepViewModel = new ImportIdMappingViewModel(this);
-        }
-
-        public void CancelImport()
-        {
-            ImportOverlayVisibility = Visibility.Collapsed;
-            CurrentStepViewModel = null;
         }
     }
 }

@@ -17,7 +17,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
 
         private void GoNext()
         {
-            _parent.GoToNextStep(); // next step like ID mapping
+            //_parent.GoToNextStep(); // next step like ID mapping
         }
     }
 
