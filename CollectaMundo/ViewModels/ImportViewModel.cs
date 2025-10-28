@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.ViewModels.ImportSteps;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows;
@@ -13,12 +14,34 @@ namespace CollectaMundo.ViewModels
         private Visibility importOverlayVisibility = Visibility.Collapsed;
 
         [ObservableProperty]
-        private object? currentStepViewModel;
+        private IImportStepViewModel? currentStepViewModel;
+
+        private ImportStep _currentStep = ImportStep.Start;
+
+        public void GoToNextStep()
+        {
+            _currentStep = _currentStep switch
+            {
+                ImportStep.Start => ImportStep.IdColumnMapping,
+                ImportStep.IdColumnMapping => ImportStep.NameAndSetMapping,
+                ImportStep.NameAndSetMapping => ImportStep.AdditionalFieldsMapping,
+                _ => ImportStep.Success
+            };
+
+            CurrentStepViewModel = _currentStep switch
+            {
+                ImportStep.Start => new ImportStep1_StartViewModel(this),
+                ImportStep.IdColumnMapping => new ImportStep2_IdMappingViewModel(this),
+                _ => throw new NotSupportedException("Unknown step")
+            };
+        }
+
+
 
         public async Task Begin()
         {
             // Can use _userPromptService here if needed later
-            CurrentStepViewModel = new ImportStartViewModel(this);
+            CurrentStepViewModel = new ImportStep1_StartViewModel(this);
 
             var tcs = _userPromptService.CreatePrompt();
             var confirmed = await tcs.Task;

@@ -1,0 +1,50 @@
+﻿<UserControl x:Class="CollectaMundo.Views.Import.ImportStep2_IdMappingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vmsteps="clr-namespace:CollectaMundo.ViewModels.ImportSteps"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vmsteps:ImportStep2_IdMappingViewModel}"
+             d:Style="{StaticResource {x:Type UserControl}}"
+             d:DesignHeight="600" d:DesignWidth="800">
+    <Grid HorizontalAlignment="Center">
+        <Label Content="ID column mapping" Style="{StaticResource MediumHeaderLabelStyle}" />
+        <FlowDocumentScrollViewer Margin="0,60,0,0"
+                          VerticalAlignment="Top"
+                          HorizontalAlignment="Center"
+                          Padding="10">
+            <FlowDocument>
+                <Paragraph>
+                    If your csv-file has any column with card Id, The Import Wizard will have the greatest chance of successfully mapping your cards to be imported with cards in the main card database.
+                </Paragraph>
+
+                <Paragraph>
+                    It will recognize a variety of card ID formats, e.g. Scryfall Id, Card Market Id, TCG Player Id etc.
+                </Paragraph>
+
+                <List MarkerStyle="Disc" Margin="0,10,0,0">
+                    <ListItem>
+                        <Paragraph>
+                            In the
+                            <Bold>left</Bold> column, choose the card Id header in your import file.
+                        </Paragraph>
+                    </ListItem>
+                    <ListItem>
+                        <Paragraph>
+                            In the
+                            <Bold>right</Bold> column, choose the matching format available in the card database.
+                        </Paragraph>
+                    </ListItem>
+                    <ListItem>
+                        <Paragraph>
+                            If your import file does not contain a card id column, simply click “Skip”.
+                        </Paragraph>
+                    </ListItem>
+                </List>
+            </FlowDocument>
+        </FlowDocumentScrollViewer>
+
+
+    </Grid>
+</UserControl>

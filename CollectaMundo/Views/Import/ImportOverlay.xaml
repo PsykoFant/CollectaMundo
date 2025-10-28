@@ -3,19 +3,24 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:CollectaMundo"
              xmlns:views="clr-namespace:CollectaMundo.Views.Import"
-             xmlns:vm="clr-namespace:CollectaMundo.ViewModels.ImportSteps"
+             xmlns:vm="clr-namespace:CollectaMundo.ViewModels"
+             xmlns:vmsteps="clr-namespace:CollectaMundo.ViewModels.ImportSteps"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="800"
+             d:DesignHeight="700" d:DesignWidth="800"
+             d:DataContext="{d:DesignInstance vm:ImportViewModel}"
              Style="{StaticResource {x:Type UserControl}}"
              Visibility="{Binding ImportOverlayVisibility}">
 
     <Grid HorizontalAlignment="Center" VerticalAlignment="Top">
         <ContentControl Content="{Binding CurrentStepViewModel}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
         <ContentControl.Resources>
-                <DataTemplate DataType="{x:Type vm:ImportStartViewModel}">
-                    <views:ImportStartView />
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep1_StartViewModel}">
+                    <views:ImportStep1_StartView />
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep2_IdMappingViewModel}">
+                    <views:ImportStep2_IdMappingView />
                 </DataTemplate>
                 <!-- Future steps go here:
                 <DataTemplate DataType="{x:Type vm:IdMappingViewModel}">
@@ -24,5 +29,19 @@
                 -->
             </ContentControl.Resources>
         </ContentControl>
+
+        <Button Content="{Binding CurrentStepViewModel.ActionButtonText}"
+                Command="{Binding CurrentStepViewModel.ActionCommand}"
+                HorizontalAlignment="Center"
+                Margin="0,590,0,0"
+                VerticalAlignment="Top"/>
+
+        <Button Content="  Cancel import  "
+                Command="{Binding CurrentStepViewModel.CancelCommand}"
+                IsEnabled="{Binding CurrentStepViewModel.IsCancelEnabled}"                
+                HorizontalAlignment="Left"
+                Margin="10,590,0,0"
+                VerticalAlignment="Top"/>
+
     </Grid>
 </UserControl>

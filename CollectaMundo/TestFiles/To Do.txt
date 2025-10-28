@@ -1,6 +1,14 @@
 TO DO 
 - MVVM refactor
- - Import brug MVVM (unit test)
+ - Import brug MVVM
+    - Primary/secondary action
+    - Enabled converter
+    - Slutskærm
+    - Cancel
+
+
+
+
  - Deck manager brug MVVM (unit test)
 
  - Hvorfor er der ingen kort fra Mystery Booster
