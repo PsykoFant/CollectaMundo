@@ -2,6 +2,7 @@
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.ViewModels.ImportSteps;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels
@@ -9,6 +10,13 @@ namespace CollectaMundo.ViewModels
     public partial class ImportViewModel(IUserPromptService userPromptService) : ObservableObject
     {
         private readonly IUserPromptService _userPromptService = userPromptService;
+        public event Action<bool>? UiBusyChanged;
+
+        public void SetUiBusy(bool isBusy)
+        {
+            UiBusyChanged?.Invoke(isBusy);
+        }
+
 
         [ObservableProperty]
         private Visibility importOverlayVisibility = Visibility.Collapsed;
@@ -25,7 +33,7 @@ namespace CollectaMundo.ViewModels
                 ImportStep.Start => ImportStep.IdColumnMapping,
                 ImportStep.IdColumnMapping => ImportStep.NameAndSetMapping,
                 ImportStep.NameAndSetMapping => ImportStep.AdditionalFieldsMapping,
-                _ => ImportStep.Success
+                _ => ImportStep.Finish
             };
 
             CurrentStepViewModel = _currentStep switch
@@ -35,8 +43,6 @@ namespace CollectaMundo.ViewModels
                 _ => throw new NotSupportedException("Unknown step")
             };
         }
-
-
 
         public async Task Begin()
         {
@@ -52,9 +58,20 @@ namespace CollectaMundo.ViewModels
             }
             else
             {
-                // Wizard was cancelled
+                CancelImport();
             }
-
         }
+
+        [RelayCommand]
+        private void Cancel() => CancelImport();
+        private void CancelImport()
+        {
+            _userPromptService.CancelPendingPrompt();
+            ImportOverlayVisibility = Visibility.Collapsed;
+            SetUiBusy(false);
+            CurrentStepViewModel = null;
+            _currentStep = ImportStep.Start;
+        }
+
     }
 }

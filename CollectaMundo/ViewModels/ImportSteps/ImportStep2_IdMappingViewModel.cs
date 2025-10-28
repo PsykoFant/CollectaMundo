@@ -6,11 +6,19 @@ namespace CollectaMundo.ViewModels.ImportSteps
     public partial class ImportStep2_IdMappingViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent = parent;
-        public string ActionButtonText => "  Proceed  ";
+        public string PrimaryActionButtonText => "  Proceed  \u27A1";
+        public string SecondaryActionButtonText => "  Skip  \u23ED";
         public bool IsCancelEnabled => true;
+        public bool IsSecondaryActionEnabled => true;
 
         [RelayCommand]
-        private void Action()
+        private void PrimaryAction()
+        {
+            _parent.GoToNextStep();
+        }
+
+        [RelayCommand]
+        private void SecondaryAction()
         {
             _parent.GoToNextStep();
         }
@@ -18,7 +26,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         [RelayCommand]
         private void Cancel()
         {
-            // Logic to cancel the import process can be added here if needed
+            // Logic to handle cancellation of the import process
         }
 
     }

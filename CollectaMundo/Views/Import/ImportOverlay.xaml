@@ -30,15 +30,22 @@
             </ContentControl.Resources>
         </ContentControl>
 
-        <Button Content="{Binding CurrentStepViewModel.ActionButtonText}"
-                Command="{Binding CurrentStepViewModel.ActionCommand}"
+        <Button Content="{Binding CurrentStepViewModel.PrimaryActionButtonText}"
+                Command="{Binding CurrentStepViewModel.PrimaryActionCommand}"
                 HorizontalAlignment="Center"
                 Margin="0,590,0,0"
                 VerticalAlignment="Top"/>
 
-        <Button Content="  Cancel import  "
-                Command="{Binding CurrentStepViewModel.CancelCommand}"
-                IsEnabled="{Binding CurrentStepViewModel.IsCancelEnabled}"                
+        <Button Content="{Binding CurrentStepViewModel.SecondaryActionButtonText}"
+                Command="{Binding CurrentStepViewModel.SecondaryActionCommand}"
+                Visibility="{Binding CurrentStepViewModel.IsSecondaryActionEnabled, Converter={StaticResource BoolToVisibilityCollapsedConverter}}"
+                HorizontalAlignment="Right"
+                Margin="0,590,10,0"
+                VerticalAlignment="Top"/>
+
+        <Button Content="  Cancel import &#x274C;  "
+                Command="{Binding CancelCommand}"
+                Visibility="{Binding CurrentStepViewModel.IsCancelEnabled, Converter={StaticResource BoolToVisibilityCollapsedConverter}}"
                 HorizontalAlignment="Left"
                 Margin="10,590,0,0"
                 VerticalAlignment="Top"/>

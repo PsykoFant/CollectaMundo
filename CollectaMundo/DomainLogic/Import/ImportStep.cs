@@ -11,7 +11,7 @@
         FinishMapping,
         LanguageMapping,
         Summary,
-        Success
+        Finish
     }
 
 }

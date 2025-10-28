@@ -9,22 +9,35 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, IUserPromptService userPromptService, ParentViewModelContext context, Func<int> collectionCountProvider, IFolderPicker folderPicker) : ObservableObject
+    public partial class UtilitiesViewModel : ObservableObject
     {
-        private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbService;
-        private readonly StatusViewModel _statusVM = statusVM;
-        private readonly IUserPromptService _userPromptService = userPromptService;
-        private readonly IUiBlockable _uiState = context.UiState;
-        private readonly IAppRefresher _appRefresher = context.AppRefresher;
-        private readonly Func<int> _getMyCollectionCount = collectionCountProvider;
-        private readonly IFolderPicker _folderPicker = folderPicker;
+        private readonly ICardDatabaseManagementService _cardDbManagementService;
+        private readonly StatusViewModel _statusVM;
+        private readonly IUserPromptService _userPromptService;
+        private readonly IUiBlockable _uiState;
+        private readonly IAppRefresher _appRefresher;
+        private readonly Func<int> _getMyCollectionCount;
+        private readonly IFolderPicker _folderPicker;
 
         // Visibility property
         [ObservableProperty]
         private Visibility updateDbVisibility = Visibility.Collapsed;
 
         // Import VM
-        public ImportViewModel ImportVM { get; } = new ImportViewModel(userPromptService);
+        public ImportViewModel ImportVM { get; }
+
+        public UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, IUserPromptService userPromptService, ParentViewModelContext context, Func<int> collectionCountProvider, IFolderPicker folderPicker)
+        {
+            _cardDbManagementService = cardDbService;
+            _statusVM = statusVM;
+            _userPromptService = userPromptService;
+            _uiState = context.UiState;
+            _appRefresher = context.AppRefresher;
+            _getMyCollectionCount = collectionCountProvider;
+            _folderPicker = folderPicker;
+            ImportVM = new ImportViewModel(_userPromptService);
+            ImportVM.UiBusyChanged += SetUiBusy;
+        }
 
         // Use case: Backup collection
         [RelayCommand]
@@ -103,7 +116,6 @@ namespace CollectaMundo.ViewModels
         {
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();
-            var tcs = _userPromptService.CreatePrompt();
 
             _statusVM.HideStatusOverlay();
             ImportVM.ImportOverlayVisibility = Visibility.Visible;
@@ -301,7 +313,7 @@ namespace CollectaMundo.ViewModels
             SetUiBusy(false);
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
         }
-        private void SetUiBusy(bool isBusy)
+        public void SetUiBusy(bool isBusy)
         {
             _uiState.IsTopMenuEnabled = !isBusy;
             _uiState.SideMenuVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
