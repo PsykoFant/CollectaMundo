@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Infrastructure.Common;
+﻿using CollectaMundo.Infrastructure.Shared;
 using System.Data.SQLite;
 using System.Diagnostics;
 

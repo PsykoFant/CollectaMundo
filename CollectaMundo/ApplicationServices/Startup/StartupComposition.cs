@@ -19,11 +19,11 @@ using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.CardPrices;
-using CollectaMundo.Infrastructure.Common;
 using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.RemoteLookups;
+using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
@@ -89,7 +89,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var editCollectionRepo = new EditCollectionRepo();
                 var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(editCollectionRepo));
 
-                var importService = new ImportService(new ImportRepo(), settings);
+                var importService = new ImportService(new ImportRepo(), settings, new FileSystemPicker());
 
                 var cardLookupsRepo = new CardLookupsRepo();
                 var cardLookupsService = new CardLookupsService(dbFactory, cardLookupsRepo, getRetailer);

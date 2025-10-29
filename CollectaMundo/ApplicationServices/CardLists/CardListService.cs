@@ -4,7 +4,7 @@ using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.Infrastructure.CardLists;
-using CollectaMundo.Infrastructure.Common;
+using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.ViewModels;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;

@@ -3,8 +3,8 @@ using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardImages.Models.CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.Infrastructure.CardImages;
-using CollectaMundo.Infrastructure.Common;
 using CollectaMundo.Infrastructure.RemoteLookups;
+using CollectaMundo.Infrastructure.Shared;
 using System.Data.SQLite;
 using System.Diagnostics;
 

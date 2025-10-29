@@ -21,11 +21,11 @@ using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardLists;
 using CollectaMundo.Infrastructure.CardPrices;
-using CollectaMundo.Infrastructure.Common;
 using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.RemoteLookups;
+using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.ViewModels;
 using System.Windows;
 
@@ -80,7 +80,7 @@ public static class TestAppBuilder
             dbFactory, remoteLookups, new CardImageLogic(),
             new CardImageRepo(), new CardImageDownloader(settings));
 
-        var importService = new ImportService(new ImportRepo(), settings);
+        var importService = new ImportService(new ImportRepo(), settings, new FileSystemPicker());
         var filteringService = new FilteringService();
         var scheduler = new ImmediateScheduler();
 

@@ -1,4 +1,4 @@
-﻿using CollectaMundo.Infrastructure.Common;
+﻿using CollectaMundo.Infrastructure.Shared;
 using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.GenerateMissingPng

@@ -1,6 +1,6 @@
 ﻿using System.Data.SQLite;
 
-namespace CollectaMundo.Infrastructure.Common
+namespace CollectaMundo.Infrastructure.Shared
 {
     public static class DbHelpers
     {

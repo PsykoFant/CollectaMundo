@@ -1,11 +1,18 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.Infrastructure.Import;
+﻿using CollectaMundo.Infrastructure.Import;
+using CollectaMundo.Infrastructure.Shared;
 
 namespace CollectaMundo.ApplicationServices.Import
 {
-    public class ImportService(IImportRepo importExportRepo, IAppSettings settings) : IImportService
+    public class ImportService(IImportRepo importRepo, IFileSystemPicker fileSystemPicker) : IImportService
     {
-        private readonly IImportRepo _importExportRepo = importExportRepo;
-        private readonly IAppSettings _settings = settings;
+        private readonly IImportRepo _importRepo = importRepo;
+        private readonly IFileSystemPicker _fileSystemPicker = fileSystemPicker;
+
+        public Task<string?> PromptForCsvFile()
+        {
+            var file = _fileSystemPicker.PickFile("Select your CSV file to import");
+            return Task.FromResult(file);
+        }
     }
+
 }

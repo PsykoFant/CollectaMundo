@@ -5,11 +5,10 @@ using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
-using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
-using CollectaMundo.Infrastructure.Common;
+using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -169,7 +168,6 @@ namespace CollectaMundo.ViewModels
             IFilteringService filteringService,
             IEditCollectionService editService,
             ICardImageService cardImageService,
-            IImportService importExportService,
             ICardDatabaseManagementService cardDbManagementService,
             StatusViewModel statusVM,
             IUserPromptService userPromptService,
@@ -212,7 +210,7 @@ namespace CollectaMundo.ViewModels
             var parentContext = new ParentViewModelContext(this, this);
 
             // Utility section viewmodel
-            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, statusVM, _userPromptService, parentContext, () => MyCollectionVM.Cards.Count, new FolderPicker());
+            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, statusVM, _userPromptService, parentContext, () => MyCollectionVM.Cards.Count, new FileSystemPicker());
 
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, parentContext);
@@ -225,7 +223,6 @@ namespace CollectaMundo.ViewModels
             IFilteringService filteringService,
             IEditCollectionService editService,
             ICardImageService cardImageService,
-            IImportService importExportService,
             ICardDatabaseManagementService prepService,
             StatusViewModel statusVM,
             IUserPromptService userPromptService,
@@ -235,7 +232,7 @@ namespace CollectaMundo.ViewModels
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(filteringService, editService, cardImageService, importExportService, prepService, statusVM, userPromptService, cardListService, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(filteringService, editService, cardImageService, prepService, statusVM, userPromptService, cardListService, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };

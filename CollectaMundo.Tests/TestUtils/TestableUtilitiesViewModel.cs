@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
 using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.Infrastructure.Common;
+using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.ViewModels;
 using CollectaMundo.ViewModels.Shared;
 using Moq;
@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace CollectaMundo.Tests.TestUtils
 {
-    public class TestableUtilitiesViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, IUserPromptService userPromptService, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFolderPicker folderPicker) : UtilitiesViewModel(dbService, statusVM, userPromptService, parentCtx, getMyCollectionCount, folderPicker)
+    public class TestableUtilitiesViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, IUserPromptService userPromptService, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFileSystemPicker fileSystemPicker) : UtilitiesViewModel(dbService, statusVM, userPromptService, parentCtx, getMyCollectionCount, fileSystemPicker)
     {
         public Task InternalUpdateTask => _internalUpdateTask!;
         private Task? _internalUpdateTask;
@@ -151,7 +151,7 @@ namespace CollectaMundo.Tests.TestUtils
             var appRefresher = new Mock<IAppRefresher>();
             var parentCtx = new ParentViewModelContext(uiState.Object, appRefresher.Object);
 
-            var utilitiesVM = new TestableUtilitiesViewModel(dbService.Object, statusVM, userPromptService, parentCtx, _collectionCount ?? (() => 5), new FolderPicker());
+            var utilitiesVM = new TestableUtilitiesViewModel(dbService.Object, statusVM, userPromptService, parentCtx, _collectionCount ?? (() => 5), new FileSystemPicker());
 
             return new UpdateTestContext
             {

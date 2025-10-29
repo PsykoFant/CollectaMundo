@@ -1,5 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
+using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.Infrastructure.Import;
+using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -17,7 +20,7 @@ namespace CollectaMundo.ViewModels
         private readonly IUiBlockable _uiState;
         private readonly IAppRefresher _appRefresher;
         private readonly Func<int> _getMyCollectionCount;
-        private readonly IFolderPicker _folderPicker;
+        private readonly IFileSystemPicker _fileSystemPicker;
 
         // Visibility property
         [ObservableProperty]
@@ -26,7 +29,7 @@ namespace CollectaMundo.ViewModels
         // Import VM
         public ImportViewModel ImportVM { get; }
 
-        public UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, IUserPromptService userPromptService, ParentViewModelContext context, Func<int> collectionCountProvider, IFolderPicker folderPicker)
+        public UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, IUserPromptService userPromptService, ParentViewModelContext context, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker)
         {
             _cardDbManagementService = cardDbService;
             _statusVM = statusVM;
@@ -34,8 +37,8 @@ namespace CollectaMundo.ViewModels
             _uiState = context.UiState;
             _appRefresher = context.AppRefresher;
             _getMyCollectionCount = collectionCountProvider;
-            _folderPicker = folderPicker;
-            ImportVM = new ImportViewModel(_userPromptService);
+            _fileSystemPicker = fileSystemPicker;
+            ImportVM = new ImportViewModel(new ImportService(new ImportRepo(), _fileSystemPicker), _userPromptService);
             ImportVM.UiBusyChanged += SetUiBusy;
         }
 
@@ -61,7 +64,7 @@ namespace CollectaMundo.ViewModels
                 _statusVM.PrimaryButtonText = "   Change backup location   ";
                 _statusVM.SetPrimaryAction(_ =>
                 {
-                    string? selectedPath = _folderPicker.PickFolder("Select backup folder location", _cardDbManagementService.BackupFolderPath);
+                    string? selectedPath = _fileSystemPicker.PickFolder("Select backup folder location", _cardDbManagementService.BackupFolderPath);
                     if (!string.IsNullOrWhiteSpace(selectedPath))
                     {
                         _cardDbManagementService.ChangeBackupFolderPath(selectedPath);

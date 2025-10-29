@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
+﻿using CollectaMundo.ApplicationServices.Import;
+using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.ViewModels.ImportSteps;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -7,8 +8,9 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class ImportViewModel(IUserPromptService userPromptService) : ObservableObject
+    public partial class ImportViewModel(IImportService importService, IUserPromptService userPromptService) : ObservableObject
     {
+        private readonly IImportService _importService = importService;
         private readonly IUserPromptService _userPromptService = userPromptService;
         public event Action<bool>? UiBusyChanged;
 
@@ -43,7 +45,6 @@ namespace CollectaMundo.ViewModels
                 _ => throw new NotSupportedException("Unknown step")
             };
         }
-
         public async Task Begin()
         {
             // Can use _userPromptService here if needed later
@@ -61,6 +62,22 @@ namespace CollectaMundo.ViewModels
                 CancelImport();
             }
         }
+
+        public async Task RunStartStepAsync()
+        {
+            var filePath = await _importService.PromptForCsvFile();
+
+            if (!string.IsNullOrEmpty(filePath))
+            {
+                GoToNextStep(); // This will create ImportStep2_IdMappingViewModel
+            }
+            else
+            {
+                // User cancelled the file dialog – do nothing
+            }
+        }
+
+
 
         [RelayCommand]
         private void Cancel() => CancelImport();
