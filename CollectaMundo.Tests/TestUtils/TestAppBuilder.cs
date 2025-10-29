@@ -80,7 +80,7 @@ public static class TestAppBuilder
             dbFactory, remoteLookups, new CardImageLogic(),
             new CardImageRepo(), new CardImageDownloader(settings));
 
-        var importService = new ImportService(new ImportRepo(), settings, new FileSystemPicker());
+        var importService = new ImportService(new ImportRepo(), new FileSystemPicker());
         var filteringService = new FilteringService();
         var scheduler = new ImmediateScheduler();
 
@@ -88,10 +88,11 @@ public static class TestAppBuilder
             filteringService,
             editService,
             cardImageService,
-            importService,
             prepService,
+            importService,
             statusVM,
             new UserPromptService(),
+            new FileSystemPicker(),
             cardListService,
             settings,
             scheduler);

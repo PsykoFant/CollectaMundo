@@ -5,6 +5,7 @@ using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
+using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
@@ -40,6 +41,9 @@ namespace CollectaMundo.ViewModels
         // User prompt service
         private readonly IUserPromptService _userPromptService;
 
+        // File system picker
+        private readonly FileSystemPicker _filesystemPicker;
+
         // Mana keys for ColorIcons
         private readonly string[] ManaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
 
@@ -56,6 +60,7 @@ namespace CollectaMundo.ViewModels
         public FilterViewModel FilterVM { get; }
         public CardImageViewModel CardImageVM { get; }
         public UtilitiesViewModel UtilitiesVM { get; }
+        public ImportViewModel ImportVM { get; }
         public PricesViewModel PricesVM { get; }
         #endregion
 
@@ -169,8 +174,10 @@ namespace CollectaMundo.ViewModels
             IEditCollectionService editService,
             ICardImageService cardImageService,
             ICardDatabaseManagementService cardDbManagementService,
+            IImportService importService,
             StatusViewModel statusVM,
             IUserPromptService userPromptService,
+            FileSystemPicker fileSystemPicker,
             ICardListService cardListService,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
@@ -187,6 +194,8 @@ namespace CollectaMundo.ViewModels
             _facetUpdater = facetUpdater ?? new FacetUpdater();
 
             _userPromptService = userPromptService;
+
+            _filesystemPicker = fileSystemPicker;
 
             CurrentPage = Page.SearchAndFilter;
 
@@ -209,8 +218,11 @@ namespace CollectaMundo.ViewModels
 
             var parentContext = new ParentViewModelContext(this, this);
 
+            // import viewmodel
+            ImportVM = new ImportViewModel(importService, _userPromptService);
+
             // Utility section viewmodel
-            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, statusVM, _userPromptService, parentContext, () => MyCollectionVM.Cards.Count, new FileSystemPicker());
+            UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, statusVM, ImportVM, _userPromptService, parentContext, () => MyCollectionVM.Cards.Count, _filesystemPicker);
 
             // prices viewmodel
             PricesVM = new PricesViewModel(_settings, parentContext);
@@ -224,15 +236,17 @@ namespace CollectaMundo.ViewModels
             IEditCollectionService editService,
             ICardImageService cardImageService,
             ICardDatabaseManagementService prepService,
+            IImportService importService,
             StatusViewModel statusVM,
             IUserPromptService userPromptService,
+            FileSystemPicker fileSystemPicker,
             ICardListService cardListService,
             IAppSettings settings,
             IFacetUpdateScheduler? facetScheduler = null,
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(filteringService, editService, cardImageService, prepService, statusVM, userPromptService, cardListService, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(filteringService, editService, cardImageService, prepService, importService, statusVM, userPromptService, fileSystemPicker, cardListService, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };

@@ -1,7 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.CardDatabaseManagement;
-using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Shared;
@@ -16,6 +14,7 @@ namespace CollectaMundo.ViewModels
     {
         private readonly ICardDatabaseManagementService _cardDbManagementService;
         private readonly StatusViewModel _statusVM;
+        private readonly ImportViewModel _importVM;
         private readonly IUserPromptService _userPromptService;
         private readonly IUiBlockable _uiState;
         private readonly IAppRefresher _appRefresher;
@@ -26,20 +25,17 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private Visibility updateDbVisibility = Visibility.Collapsed;
 
-        // Import VM
-        public ImportViewModel ImportVM { get; }
-
-        public UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, IUserPromptService userPromptService, ParentViewModelContext context, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker)
+        public UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, ImportViewModel importVM, IUserPromptService userPromptService, ParentViewModelContext context, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker)
         {
             _cardDbManagementService = cardDbService;
             _statusVM = statusVM;
+            _importVM = importVM;
             _userPromptService = userPromptService;
             _uiState = context.UiState;
             _appRefresher = context.AppRefresher;
             _getMyCollectionCount = collectionCountProvider;
             _fileSystemPicker = fileSystemPicker;
-            ImportVM = new ImportViewModel(new ImportService(new ImportRepo(), _fileSystemPicker), _userPromptService);
-            ImportVM.UiBusyChanged += SetUiBusy;
+            //ImportVM.UiBusyChanged += SetUiBusy;
         }
 
         // Use case: Backup collection
@@ -121,8 +117,8 @@ namespace CollectaMundo.ViewModels
             _userPromptService.ClearCancellation();
 
             _statusVM.HideStatusOverlay();
-            ImportVM.ImportOverlayVisibility = Visibility.Visible;
-            await ImportVM.Begin(); // <-- activate first step
+            _importVM.ImportOverlayVisibility = Visibility.Visible;
+            await _importVM.Begin(); // <-- activate first step
         }
 
         // Use case: Update prices
@@ -304,7 +300,7 @@ namespace CollectaMundo.ViewModels
         // Private helpers
         private void PrepareUIForCommands(string message)
         {
-            ImportVM.ImportOverlayVisibility = Visibility.Collapsed;
+            _importVM.ImportOverlayVisibility = Visibility.Collapsed;
 
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();

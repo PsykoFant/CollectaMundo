@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace CollectaMundo.Tests.TestUtils
 {
-    public class TestableUtilitiesViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, IUserPromptService userPromptService, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFileSystemPicker fileSystemPicker) : UtilitiesViewModel(dbService, statusVM, userPromptService, parentCtx, getMyCollectionCount, fileSystemPicker)
+    public class TestableUtilitiesViewModel(ICardDatabaseManagementService dbService, StatusViewModel statusVM, ImportViewModel importViewModel, IUserPromptService userPromptService, ParentViewModelContext parentCtx, Func<int> getMyCollectionCount, IFileSystemPicker fileSystemPicker) : UtilitiesViewModel(dbService, statusVM, importViewModel, userPromptService, parentCtx, getMyCollectionCount, fileSystemPicker)
     {
         public Task InternalUpdateTask => _internalUpdateTask!;
         private Task? _internalUpdateTask;
@@ -147,11 +147,12 @@ namespace CollectaMundo.Tests.TestUtils
 
             var userPromptService = new UserPromptService();
             var statusVM = new StatusViewModel(userPromptService);
+            var importVM = new ImportViewModel(null!, userPromptService);
             var uiState = new Mock<IUiBlockable>();
             var appRefresher = new Mock<IAppRefresher>();
             var parentCtx = new ParentViewModelContext(uiState.Object, appRefresher.Object);
 
-            var utilitiesVM = new TestableUtilitiesViewModel(dbService.Object, statusVM, userPromptService, parentCtx, _collectionCount ?? (() => 5), new FileSystemPicker());
+            var utilitiesVM = new TestableUtilitiesViewModel(dbService.Object, statusVM, importVM, userPromptService, parentCtx, _collectionCount ?? (() => 5), new FileSystemPicker());
 
             return new UpdateTestContext
             {

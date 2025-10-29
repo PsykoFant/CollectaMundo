@@ -89,7 +89,8 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var editCollectionRepo = new EditCollectionRepo();
                 var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(editCollectionRepo));
 
-                var importService = new ImportService(new ImportRepo(), settings, new FileSystemPicker());
+                var fileSystemPicker = new FileSystemPicker();
+                var importService = new ImportService(new ImportRepo(), fileSystemPicker);
 
                 var cardLookupsRepo = new CardLookupsRepo();
                 var cardLookupsService = new CardLookupsService(dbFactory, cardLookupsRepo, getRetailer);
@@ -103,7 +104,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var cardListService = new CardListService(dbFactory, cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
 
                 // Build view model off UI thread
-                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, cardImageService, importService, cardDbManagementService, statusVM, userPromptService, cardListService, settings));
+                var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, cardImageService, cardDbManagementService, importService, statusVM, userPromptService, fileSystemPicker, cardListService, settings));
 
                 mainVM.FilterVM.NotifyFilterChanged();
                 statusVM.HideStatusOverlay();
