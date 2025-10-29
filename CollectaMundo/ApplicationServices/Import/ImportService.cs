@@ -8,10 +8,10 @@ namespace CollectaMundo.ApplicationServices.Import
         private readonly IImportRepo _importRepo = importRepo;
         private readonly IFileSystemPicker _fileSystemPicker = fileSystemPicker;
 
-        public Task<string?> PromptForCsvFile()
+        public string? PromptForCsvFile()
         {
             var file = _fileSystemPicker.PickFile("Select your CSV file to import");
-            return Task.FromResult(file);
+            return file;
         }
     }
 

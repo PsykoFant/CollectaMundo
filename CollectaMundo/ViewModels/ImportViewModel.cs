@@ -59,21 +59,15 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        public async Task RunStartStepAsync()
+        public void Step1ToStep2()
         {
-            var filePath = await _importService.PromptForCsvFile();
+            var filePath = _importService.PromptForCsvFile();
 
             if (!string.IsNullOrEmpty(filePath))
             {
                 GoToNextStep(); // This will create ImportStep2_IdMappingViewModel
             }
-            else
-            {
-                // User cancelled the file dialog – do nothing
-            }
         }
-
-
 
         [RelayCommand]
         private void Cancel() => CancelImport();

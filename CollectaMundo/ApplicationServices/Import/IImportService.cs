@@ -2,6 +2,6 @@
 {
     public interface IImportService
     {
-        Task<string?> PromptForCsvFile();
+        string? PromptForCsvFile();
     }
 }
