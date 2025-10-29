@@ -11,11 +11,23 @@ namespace CollectaMundo.ApplicationServices.Shared
 
         public void CancelPendingPrompt()
         {
-            if (_confirmationTcs is { Task.IsCompleted: false })
+            if (_confirmationTcs == null)
+                return;
+
+            if (!_confirmationTcs.Task.IsCompleted)
             {
-                Debug.WriteLine("[PromptService] Cancelled pending prompt.");
-                _confirmationTcs.SetResult(false);
+                try
+                {
+                    _confirmationTcs.SetResult(false); // Mark task as completed
+                    Debug.WriteLine($"[PromptService] Prompt cancelled. Completed: {_confirmationTcs?.Task.IsCompleted}");
+                }
+                catch (InvalidOperationException)
+                {
+                    // Fail-safe: likely already completed
+                }
             }
+
+            _confirmationTcs = null; // 🧼 Always reset to ensure clean state
         }
 
         public TaskCompletionSource<bool> CreatePrompt()

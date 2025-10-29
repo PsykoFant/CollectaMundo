@@ -57,10 +57,6 @@ namespace CollectaMundo.ViewModels
             {
                 // User finished import successfully
             }
-            else
-            {
-                CancelImport();
-            }
         }
 
         public async Task RunStartStepAsync()

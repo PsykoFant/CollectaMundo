@@ -301,7 +301,6 @@ namespace CollectaMundo.ViewModels
         private void PrepareUIForCommands(string message)
         {
             _importVM.ImportOverlayVisibility = Visibility.Collapsed;
-
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();
             _statusVM.ShowStatusOverlay(message, false);
