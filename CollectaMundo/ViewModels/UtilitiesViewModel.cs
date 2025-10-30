@@ -16,8 +16,7 @@ namespace CollectaMundo.ViewModels
         private readonly StatusViewModel _statusVM;
         private readonly ImportViewModel _importVM;
         private readonly IUserPromptService _userPromptService;
-        private readonly IUiBlockable _uiState;
-        private readonly IAppRefresher _appRefresher;
+        private readonly IParentViewModelContext _parentViewModelContext;
         private readonly Func<int> _getMyCollectionCount;
         private readonly IFileSystemPicker _fileSystemPicker;
 
@@ -25,17 +24,15 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private Visibility updateDbVisibility = Visibility.Collapsed;
 
-        public UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, ImportViewModel importVM, IUserPromptService userPromptService, ParentViewModelContext context, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker)
+        public UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, ImportViewModel importVM, IUserPromptService userPromptService, IParentViewModelContext parentViewModelcontext, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker)
         {
             _cardDbManagementService = cardDbService;
             _statusVM = statusVM;
             _importVM = importVM;
             _userPromptService = userPromptService;
-            _uiState = context.UiState;
-            _appRefresher = context.AppRefresher;
+            _parentViewModelContext = parentViewModelcontext;
             _getMyCollectionCount = collectionCountProvider;
             _fileSystemPicker = fileSystemPicker;
-            //ImportVM.UiBusyChanged += SetUiBusy;
         }
 
         // Use case: Backup collection
@@ -76,7 +73,7 @@ namespace CollectaMundo.ViewModels
                 }
 
                 // UI state preparation AFTER user clicked
-                SetUiBusy(true);
+                _parentViewModelContext.SetUiBusy(true);
                 _statusVM.ResetStatusOverlay();
                 _statusVM.StatusLabel1 = "Please wait - backing up up your collection ... ";
 
@@ -135,7 +132,7 @@ namespace CollectaMundo.ViewModels
 
             // UI state preparation AFTER user clicked
             _statusVM.ResetStatusOverlay();
-            SetUiBusy(true);
+            _parentViewModelContext.SetUiBusy(true);
             _statusVM.ShowStatusOverlay("Updating card prices, please wait...", true);
             var token = _statusVM.PrepareCancelButton(PromptButton.Primary);
 
@@ -149,7 +146,7 @@ namespace CollectaMundo.ViewModels
             {
                 case OperationResultCode.Success:
                     _statusVM.StatusLabel1 = "Prices updated successfully!";
-                    _appRefresher.RefreshAllPrices();
+                    _parentViewModelContext.RefreshAllPrices();
                     break;
 
                 case OperationResultCode.CancelledByUser:
@@ -169,7 +166,7 @@ namespace CollectaMundo.ViewModels
         private async Task CheckForDbUpdates()
         {
             PrepareUIForCommands("One moment - checking for updates...");
-            SetUiBusy(true);
+            _parentViewModelContext.SetUiBusy(true);
             var token = _statusVM.PrepareCancelButton(PromptButton.Primary);
 
             // Run check
@@ -232,7 +229,7 @@ namespace CollectaMundo.ViewModels
 
             // UI state preparation AFTER user clicked
             _statusVM.ResetStatusOverlay();
-            SetUiBusy(true);
+            _parentViewModelContext.SetUiBusy(true);
             var token = _statusVM.PrepareCancelButton(PromptButton.Primary);
 
             if (includeBackup)
@@ -281,7 +278,7 @@ namespace CollectaMundo.ViewModels
                     UpdateDbVisibility = Visibility.Collapsed;
 
                     _statusVM.StatusLabel2 = "Reloading card lists…";
-                    await _appRefresher.ReloadAllCardListsAndFiltersAsync();
+                    await _parentViewModelContext.ReloadAllCardListsAndFiltersAsync();
                     _statusVM.StatusLabel2 = string.Empty;
                     break;
 
@@ -308,16 +305,9 @@ namespace CollectaMundo.ViewModels
         private void CompleteCommandUIFlow()
         {
             _statusVM.ResetStatusOverlay();
-            SetUiBusy(false);
+            _parentViewModelContext.SetUiBusy(false);
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
         }
-        public void SetUiBusy(bool isBusy)
-        {
-            _uiState.IsTopMenuEnabled = !isBusy;
-            _uiState.SideMenuVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
-            _uiState.CardViewSectionVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
-        }
-
     }
 }
 

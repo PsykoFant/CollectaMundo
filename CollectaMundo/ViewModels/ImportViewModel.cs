@@ -2,23 +2,19 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.ViewModels.ImportSteps;
+using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class ImportViewModel(IImportService importService, IUserPromptService userPromptService) : ObservableObject
+    public partial class ImportViewModel(IImportService importService, IParentViewModelContext parentContext, IUserPromptService userPromptService) : ObservableObject
     {
         private readonly IImportService _importService = importService;
+        private readonly IParentViewModelContext _parentViewModelContext = parentContext;
         private readonly IUserPromptService _userPromptService = userPromptService;
         public event Action<bool>? UiBusyChanged;
-
-        public void SetUiBusy(bool isBusy)
-        {
-            UiBusyChanged?.Invoke(isBusy);
-        }
-
 
         [ObservableProperty]
         private Visibility importOverlayVisibility = Visibility.Collapsed;
@@ -65,6 +61,7 @@ namespace CollectaMundo.ViewModels
 
             if (!string.IsNullOrEmpty(filePath))
             {
+                _parentViewModelContext.SetUiBusy(true);
                 GoToNextStep(); // This will create ImportStep2_IdMappingViewModel
             }
         }
@@ -75,9 +72,9 @@ namespace CollectaMundo.ViewModels
         {
             _userPromptService.CancelPendingPrompt();
             ImportOverlayVisibility = Visibility.Collapsed;
-            SetUiBusy(false);
             CurrentStepViewModel = null;
             _currentStep = ImportStep.Start;
+            _parentViewModelContext.SetUiBusy(false);
         }
 
     }

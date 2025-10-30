@@ -208,7 +208,6 @@ namespace CollectaMundo
 
             return cardItems;
         }
-
         private static List<string> ParseCsvLine(string line, char delimiter)
         {
             List<string> values = [];

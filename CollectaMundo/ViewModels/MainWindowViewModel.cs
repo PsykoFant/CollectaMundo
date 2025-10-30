@@ -22,7 +22,7 @@ using static CollectaMundo.DomainLogic.EditCollection.Models.CardChangeEventArgs
 namespace CollectaMundo.ViewModels
 {
     #endregion
-    public partial class MainWindowViewModel : ObservableObject, IUiBlockable, IAppRefresher
+    public partial class MainWindowViewModel : ObservableObject, IParentViewModelContext
     {
         #region class: MainWindowViewModel (fields, ctor, factory)
 
@@ -109,6 +109,13 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private int myCollectionResizeToken;
         public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; } = new([[50, 50], [50, 50], [50]]);
+
+        public void SetUiBusy(bool isBusy)
+        {
+            IsTopMenuEnabled = !isBusy;
+            SideMenuVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
+            CardViewSectionVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
+        }
 
         // Enable/disable top menu 
         [ObservableProperty]
@@ -216,10 +223,10 @@ namespace CollectaMundo.ViewModels
             // card image viewmodel
             CardImageVM = new CardImageViewModel(cardImageService);
 
-            var parentContext = new ParentViewModelContext(this, this);
+            var parentContext = this;
 
             // import viewmodel
-            ImportVM = new ImportViewModel(importService, _userPromptService);
+            ImportVM = new ImportViewModel(importService, parentContext, _userPromptService);
 
             // Utility section viewmodel
             UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, statusVM, ImportVM, _userPromptService, parentContext, () => MyCollectionVM.Cards.Count, _filesystemPicker);

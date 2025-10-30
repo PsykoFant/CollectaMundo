@@ -13,7 +13,7 @@ namespace CollectaMundo.ViewModels
         private readonly IAppSettings _appSettings;
 
         // Retailer selection
-        private readonly IAppRefresher _appRefresher;
+        private readonly IParentViewModelContext _parentViewModelContext;
 
         // Retailer options 
         public sealed record RetailerOption(string Key, string Display);
@@ -41,13 +41,13 @@ namespace CollectaMundo.ViewModels
         }
 
         // Constructor        
-        public PricesViewModel(IAppSettings settings, ParentViewModelContext parentCtx)
+        public PricesViewModel(IAppSettings settings, IParentViewModelContext parentViewModelContext)
         {
             // settings
             _appSettings = settings;
 
             // retailers
-            _appRefresher = parentCtx.AppRefresher;
+            _parentViewModelContext = parentViewModelContext;
 
             // build retailer list (purely static definitions)
             Retailers = new ObservableCollection<RetailerOption>(CardPriceDefinitions.RetailersByFormat["paper"].Select(kv => new RetailerOption(kv.Key, kv.Value)));
@@ -70,7 +70,7 @@ namespace CollectaMundo.ViewModels
                 return;
 
             _appSettings.PersistPriceInfo(updatedDate: null, retailer: SelectedRetailer.Key);
-            _appRefresher.RefreshAllPrices();
+            _parentViewModelContext.RefreshAllPrices();
             UpdatePriceHeaders();
         }
         private void UpdatePriceHeaders()
