@@ -16,12 +16,6 @@ namespace CollectaMundo.ViewModels
         private readonly IUserPromptService _userPromptService = userPromptService;
         public event Action<bool>? UiBusyChanged;
 
-        public void SetUiBusy(bool isBusy)
-        {
-            UiBusyChanged?.Invoke(isBusy);
-        }
-
-
         [ObservableProperty]
         private Visibility importOverlayVisibility = Visibility.Collapsed;
 
@@ -78,7 +72,6 @@ namespace CollectaMundo.ViewModels
         {
             _userPromptService.CancelPendingPrompt();
             ImportOverlayVisibility = Visibility.Collapsed;
-            SetUiBusy(false);
             CurrentStepViewModel = null;
             _currentStep = ImportStep.Start;
             _parentViewModelContext.SetUiBusy(false);

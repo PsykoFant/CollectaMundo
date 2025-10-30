@@ -15,7 +15,6 @@ namespace CollectaMundo.ViewModels.ImportSteps
         private void PrimaryAction()
         {
             _parent.Step1ToStep2();
-            _parent.SetUiBusy(true);
         }
 
         [RelayCommand]
