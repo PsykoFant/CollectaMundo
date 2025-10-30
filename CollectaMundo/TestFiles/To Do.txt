@@ -6,7 +6,40 @@ TO DO
     - Slutskærm
     - Cancel
 
-
+Fix progress bar:
+        <!-- Define the Style for the ProgressBar -->
+        <Style TargetType="{x:Type ProgressBar}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ProgressBar}">
+                        <Border x:Name="PART_Track" CornerRadius="2" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                Background="{TemplateBinding Background}">
+                            <Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="2">
+                                <!-- Set the LinearGradientBrush for the Background of PART_Indicator -->
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#fcffd3" Offset="0"/>
+                                        <GradientStop Color="#213c4c" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+		
+            <ProgressBar Value="{Binding ProgressValue}"
+                         Height="15"
+                         Width="500"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Top"
+                         Margin="0,410,0,0"
+                         BorderBrush="Black"
+                         Visibility="{Binding ProgressVisibility}"
+                         Maximum="100"/>		
 
 
  - Deck manager brug MVVM (unit test)
