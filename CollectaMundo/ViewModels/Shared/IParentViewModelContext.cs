@@ -12,5 +12,6 @@ namespace CollectaMundo.ViewModels.Shared
         // Cardlist and filter refresh
         Task ReloadAllCardListsAndFiltersAsync();
         public void RefreshAllPrices();
+        public void SetUiBusy(bool isBusy);
     }
 }

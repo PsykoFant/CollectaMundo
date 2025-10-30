@@ -12,6 +12,7 @@ namespace CollectaMundo.ViewModels
     public partial class ImportViewModel(IImportService importService, IParentViewModelContext parentContext, IUserPromptService userPromptService) : ObservableObject
     {
         private readonly IImportService _importService = importService;
+        private readonly IParentViewModelContext _parentViewModelContext = parentContext;
         private readonly IUserPromptService _userPromptService = userPromptService;
         public event Action<bool>? UiBusyChanged;
 
@@ -66,6 +67,7 @@ namespace CollectaMundo.ViewModels
 
             if (!string.IsNullOrEmpty(filePath))
             {
+                _parentViewModelContext.SetUiBusy(true);
                 GoToNextStep(); // This will create ImportStep2_IdMappingViewModel
             }
         }
@@ -79,6 +81,7 @@ namespace CollectaMundo.ViewModels
             SetUiBusy(false);
             CurrentStepViewModel = null;
             _currentStep = ImportStep.Start;
+            _parentViewModelContext.SetUiBusy(false);
         }
 
     }

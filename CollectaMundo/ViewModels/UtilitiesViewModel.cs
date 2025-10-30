@@ -16,7 +16,7 @@ namespace CollectaMundo.ViewModels
         private readonly StatusViewModel _statusVM;
         private readonly ImportViewModel _importVM;
         private readonly IUserPromptService _userPromptService;
-        private readonly IParentViewModelContext _parentViewModelcontext;
+        private readonly IParentViewModelContext _parentViewModelContext;
         private readonly Func<int> _getMyCollectionCount;
         private readonly IFileSystemPicker _fileSystemPicker;
 
@@ -30,7 +30,7 @@ namespace CollectaMundo.ViewModels
             _statusVM = statusVM;
             _importVM = importVM;
             _userPromptService = userPromptService;
-            _parentViewModelcontext = parentViewModelcontext;
+            _parentViewModelContext = parentViewModelcontext;
             _getMyCollectionCount = collectionCountProvider;
             _fileSystemPicker = fileSystemPicker;
         }
@@ -73,7 +73,7 @@ namespace CollectaMundo.ViewModels
                 }
 
                 // UI state preparation AFTER user clicked
-                SetUiBusy(true);
+                _parentViewModelContext.SetUiBusy(true);
                 _statusVM.ResetStatusOverlay();
                 _statusVM.StatusLabel1 = "Please wait - backing up up your collection ... ";
 
@@ -132,7 +132,7 @@ namespace CollectaMundo.ViewModels
 
             // UI state preparation AFTER user clicked
             _statusVM.ResetStatusOverlay();
-            SetUiBusy(true);
+            _parentViewModelContext.SetUiBusy(true);
             _statusVM.ShowStatusOverlay("Updating card prices, please wait...", true);
             var token = _statusVM.PrepareCancelButton(PromptButton.Primary);
 
@@ -146,7 +146,7 @@ namespace CollectaMundo.ViewModels
             {
                 case OperationResultCode.Success:
                     _statusVM.StatusLabel1 = "Prices updated successfully!";
-                    _parentViewModelcontext.RefreshAllPrices();
+                    _parentViewModelContext.RefreshAllPrices();
                     break;
 
                 case OperationResultCode.CancelledByUser:
@@ -166,7 +166,7 @@ namespace CollectaMundo.ViewModels
         private async Task CheckForDbUpdates()
         {
             PrepareUIForCommands("One moment - checking for updates...");
-            SetUiBusy(true);
+            _parentViewModelContext.SetUiBusy(true);
             var token = _statusVM.PrepareCancelButton(PromptButton.Primary);
 
             // Run check
@@ -229,7 +229,7 @@ namespace CollectaMundo.ViewModels
 
             // UI state preparation AFTER user clicked
             _statusVM.ResetStatusOverlay();
-            SetUiBusy(true);
+            _parentViewModelContext.SetUiBusy(true);
             var token = _statusVM.PrepareCancelButton(PromptButton.Primary);
 
             if (includeBackup)
@@ -278,7 +278,7 @@ namespace CollectaMundo.ViewModels
                     UpdateDbVisibility = Visibility.Collapsed;
 
                     _statusVM.StatusLabel2 = "Reloading card lists…";
-                    await _parentViewModelcontext.ReloadAllCardListsAndFiltersAsync();
+                    await _parentViewModelContext.ReloadAllCardListsAndFiltersAsync();
                     _statusVM.StatusLabel2 = string.Empty;
                     break;
 
@@ -305,16 +305,9 @@ namespace CollectaMundo.ViewModels
         private void CompleteCommandUIFlow()
         {
             _statusVM.ResetStatusOverlay();
-            SetUiBusy(false);
+            _parentViewModelContext.SetUiBusy(false);
             _statusVM.PrimaryButtonVisibility = Visibility.Visible;
         }
-        public void SetUiBusy(bool isBusy)
-        {
-            _parentViewModelcontext.IsTopMenuEnabled = !isBusy;
-            _parentViewModelcontext.SideMenuVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
-            _parentViewModelcontext.CardViewSectionVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
-        }
-
     }
 }
 

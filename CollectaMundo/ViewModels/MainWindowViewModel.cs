@@ -110,6 +110,13 @@ namespace CollectaMundo.ViewModels
         private int myCollectionResizeToken;
         public ObservableCollection<ObservableCollection<double>> ColumnWidths { get; } = new([[50, 50], [50, 50], [50]]);
 
+        public void SetUiBusy(bool isBusy)
+        {
+            IsTopMenuEnabled = !isBusy;
+            SideMenuVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
+            CardViewSectionVisibility = isBusy ? Visibility.Collapsed : Visibility.Visible;
+        }
+
         // Enable/disable top menu 
         [ObservableProperty]
         private bool isTopMenuEnabled = true;
