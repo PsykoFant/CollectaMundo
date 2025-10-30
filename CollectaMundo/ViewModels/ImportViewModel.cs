@@ -2,13 +2,14 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.ViewModels.ImportSteps;
+using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class ImportViewModel(IImportService importService, IUserPromptService userPromptService) : ObservableObject
+    public partial class ImportViewModel(IImportService importService, IParentViewModelContext parentContext, IUserPromptService userPromptService) : ObservableObject
     {
         private readonly IImportService _importService = importService;
         private readonly IUserPromptService _userPromptService = userPromptService;
