@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.Import.Models;
 using Microsoft.Win32;
 using ServiceStack;
 using System.Collections.ObjectModel;
@@ -22,10 +23,7 @@ namespace CollectaMundo
         private static bool isCardsForTradedMapped;
         private static bool isLanguageMapped;
         private static List<string>? _mappings;
-        public class TempCardItem
-        {
-            public Dictionary<string, string> Fields { get; set; } = [];
-        }
+
         public class UuidVersion
         {
             public string? DisplayText { get; set; }

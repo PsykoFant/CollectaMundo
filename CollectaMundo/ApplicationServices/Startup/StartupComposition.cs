@@ -15,6 +15,7 @@ using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLists;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
+using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardLists;
@@ -90,7 +91,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(editCollectionRepo));
 
                 var fileSystemPicker = new FileSystemPicker();
-                var importService = new ImportService(new ImportRepo(), fileSystemPicker);
+                var importService = new ImportService(new ImportRepo(), fileSystemPicker, new CsvParser());
 
                 var cardLookupsRepo = new CardLookupsRepo();
                 var cardLookupsService = new CardLookupsService(dbFactory, cardLookupsRepo, getRetailer);
