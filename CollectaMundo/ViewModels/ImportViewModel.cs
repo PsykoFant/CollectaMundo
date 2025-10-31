@@ -5,6 +5,7 @@ using CollectaMundo.ViewModels.ImportSteps;
 using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels
@@ -15,6 +16,8 @@ namespace CollectaMundo.ViewModels
         private readonly IParentViewModelContext _parentViewModelContext = parentContext;
         private readonly IUserPromptService _userPromptService = userPromptService;
         public event Action<bool>? UiBusyChanged;
+
+        public ObservableCollection<ColumnMapping> Mappings { get; } = [];
 
         [ObservableProperty]
         private Visibility importOverlayVisibility = Visibility.Collapsed;
