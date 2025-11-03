@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CollectaMundo.DomainLogic.Import.Models;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
 namespace CollectaMundo.ViewModels.ImportSteps
@@ -12,15 +13,21 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public bool IsSecondaryActionEnabled => false;
 
         [RelayCommand]
-        private void PrimaryAction()
+        private async Task PrimaryAction()
         {
-            _parent.Step1ToStep2();
+            await _parent.Step1ToStep2();
         }
 
         [RelayCommand]
         private void SecondaryAction()
         {
             // no-op, secondary action is disabled
+        }
+
+        [RelayCommand]
+        private void ClearSelectedMapping(ColumnMapping mapping)
+        {
+            // no-op, no mappings to clear on first step
         }
 
         [RelayCommand]

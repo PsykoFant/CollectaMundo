@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CollectaMundo.DomainLogic.Import
 {
-    public class CsvParser : ICsvParser
+    public class ImportLogic : IImportLogic
     {
         public async Task<List<TempCardItem>> ParseCsvFileAsync(string filePath)
         {

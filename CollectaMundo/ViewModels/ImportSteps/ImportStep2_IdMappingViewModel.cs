@@ -1,18 +1,21 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CollectaMundo.DomainLogic.Import.Models;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
     public partial class ImportStep2_IdMappingViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent = parent;
+        public ObservableCollection<ColumnMapping> Mappings => _parent.Mappings; // proxy to parent's mappings
         public string PrimaryActionButtonText => "  Proceed  \u27A1";
         public string SecondaryActionButtonText => "  Skip  \u23ED";
         public bool IsCancelEnabled => true;
         public bool IsSecondaryActionEnabled => true;
 
         [RelayCommand]
-        private void PrimaryAction()
+        private async Task PrimaryAction()
         {
             _parent.GoToNextStep();
         }
@@ -22,6 +25,14 @@ namespace CollectaMundo.ViewModels.ImportSteps
         {
             _parent.GoToNextStep();
         }
+
+        [RelayCommand]
+        private void ClearSelectedMapping(ColumnMapping mapping)
+        {
+            mapping.SelectedCsvHeader = null;
+            mapping.SelectedDatabaseField = null;
+        }
+
 
         [RelayCommand]
         private void Cancel()

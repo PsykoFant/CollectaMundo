@@ -44,6 +44,38 @@
                 </List>
             </FlowDocument>
         </FlowDocumentScrollViewer>
+        <ListView ItemsSource="{Binding Mappings}" Margin="0,250,0,0" Height="77" HorizontalAlignment="Center" VerticalAlignment="Top">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Import file card Id header">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding CsvHeaders}"
+                                  SelectedItem="{Binding SelectedCsvHeader, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Matching database card Id format">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding DatabaseFields}"
+                                  SelectedItem="{Binding SelectedDatabaseField, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="Reset mapping">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Clear Mapping"
+                                Command="{Binding DataContext.ClearSelectedMappingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" Width="85"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+
 
 
     </Grid>

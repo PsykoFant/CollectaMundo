@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.Input;
+﻿using CollectaMundo.DomainLogic.Import.Models;
+using CommunityToolkit.Mvvm.Input;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
@@ -6,8 +7,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
     {
         string PrimaryActionButtonText { get; }
         string SecondaryActionButtonText { get; }
-        IRelayCommand PrimaryActionCommand { get; }
+        IAsyncRelayCommand PrimaryActionCommand { get; }
         IRelayCommand SecondaryActionCommand { get; }
+        IRelayCommand<ColumnMapping> ClearSelectedMappingCommand { get; }
         bool IsSecondaryActionEnabled { get; }
         bool IsCancelEnabled { get; }
     }

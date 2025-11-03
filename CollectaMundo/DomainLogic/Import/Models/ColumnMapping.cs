@@ -2,7 +2,6 @@
 
 namespace CollectaMundo.DomainLogic.Import.Models
 {
-
     public partial class ColumnMapping : ObservableObject
     {
         [ObservableProperty]

@@ -15,7 +15,6 @@ namespace CollectaMundo.ViewModels
         private readonly IImportService _importService = importService;
         private readonly IParentViewModelContext _parentViewModelContext = parentContext;
         private readonly IUserPromptService _userPromptService = userPromptService;
-        public event Action<bool>? UiBusyChanged;
 
         public ObservableCollection<ColumnMapping> Mappings { get; } = [];
 
@@ -58,14 +57,17 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        public void Step1ToStep2()
+        public async Task Step1ToStep2()
         {
             var filePath = _importService.PromptForCsvFile();
 
             if (!string.IsNullOrEmpty(filePath))
             {
                 _parentViewModelContext.SetUiBusy(true);
-                GoToNextStep(); // This will create ImportStep2_IdMappingViewModel
+                Mappings.Clear();
+                var mapping = await _importService.LoadCsvFileAsync(filePath);
+                Mappings.Add(mapping);
+                GoToNextStep();
             }
         }
 
@@ -73,6 +75,7 @@ namespace CollectaMundo.ViewModels
         private void Cancel() => CancelImport();
         private void CancelImport()
         {
+            Mappings.Clear();
             _userPromptService.CancelPendingPrompt();
             ImportOverlayVisibility = Visibility.Collapsed;
             CurrentStepViewModel = null;

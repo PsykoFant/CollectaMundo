@@ -449,13 +449,6 @@ namespace CollectaMundo
         #endregion
 
         #region UI elements for utilities
-        private void ImportCollectionButton_Click(object sender, RoutedEventArgs e)
-        {
-            Inspiredtinkering.Visibility = Visibility.Collapsed;
-            UtilsInfoLabel.Content = string.Empty;
-            GridImportWizard.Visibility = Visibility.Visible;
-            //GridImportStartScreen.Visibility = Visibility.Visible;
-        }
 
         #region Import wizard
 

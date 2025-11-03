@@ -91,7 +91,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(editCollectionRepo));
 
                 var fileSystemPicker = new FileSystemPicker();
-                var importService = new ImportService(new ImportRepo(), fileSystemPicker, new CsvParser());
+                var importService = new ImportService(dbFactory, new ImportRepo(), fileSystemPicker, new ImportLogic());
 
                 var cardLookupsRepo = new CardLookupsRepo();
                 var cardLookupsService = new CardLookupsService(dbFactory, cardLookupsRepo, getRetailer);
