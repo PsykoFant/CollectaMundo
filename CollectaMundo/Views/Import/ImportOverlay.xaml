@@ -22,11 +22,15 @@
                 <DataTemplate DataType="{x:Type vmsteps:ImportStep2_IdMappingViewModel}">
                     <views:ImportStep2_IdMappingView />
                 </DataTemplate>
-                <!-- Future steps go here:
-                <DataTemplate DataType="{x:Type vm:IdMappingViewModel}">
-                    <views:IdMappingView />
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep3_NameSetMappingViewModel}">
+                    <views:ImportStep3_NameSetMappingView />
                 </DataTemplate>
-                -->
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep4_MultipleUuidsViewModel}">
+                    <views:ImportStep4_MultipleUuuidsView />
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep5_AdditionalFieldsMappingViewModel}">
+                    <views:ImportStep5_AdditionalFieldsMappingView />
+                </DataTemplate>
             </ContentControl.Resources>
         </ContentControl>
 

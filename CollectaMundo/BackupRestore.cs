@@ -129,10 +129,10 @@ namespace CollectaMundo
 
             // Select the csv-file and create a TempImport object with the content
             await ImportCsvAsync();
-            PopulateIdColumnMappingListView(MainWindow.CurrentInstance.IdColumnMappingListView);
+            //PopulateIdColumnMappingListView(MainWindow.CurrentInstance.IdColumnMappingListView);
             MainWindow.CurrentInstance.ButtonCancelImport.Visibility = Visibility.Visible;
             //MainWindow.CurrentInstance.GridImportStartScreen.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Visible;
+            //MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Visible;
         }
         private static async Task ImportCsvAsync()
         {
@@ -395,9 +395,10 @@ namespace CollectaMundo
             List<string> cardSetFields = ["Card Name", "Set Name", "Set Code"];
             PopulateColumnMappingListView(MainWindow.CurrentInstance.NameAndSetMappingListView, cardSetFields);
 
-            MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
+            //MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Visible;
         }
+
         private static async Task ProcessIdColumnMappingsAsync()
         {
             try
@@ -532,6 +533,7 @@ namespace CollectaMundo
                 DBAccess.CloseConnection();
             }
         }
+
 
         #endregion
 
@@ -1766,7 +1768,7 @@ namespace CollectaMundo
             // Make sure all the import wizard screens are collapsed (we don't know when the import is cancelled)
             MainWindow.CurrentInstance.GridImportWizard.Visibility = Visibility.Collapsed;
             //MainWindow.CurrentInstance.GridImportStartScreen.Visibility = Visibility.Collapsed;
-            MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
+            //MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.GridImportMultipleUuidsSelection.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.GridImportAdditionalFieldsMapping.Visibility = Visibility.Collapsed;

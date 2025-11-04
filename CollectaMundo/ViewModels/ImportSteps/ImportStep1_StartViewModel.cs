@@ -15,7 +15,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         [RelayCommand]
         private async Task PrimaryAction()
         {
-            await _parent.Step1ToStep2();
+            await _parent.AfterStep1Action();
         }
 
         [RelayCommand]

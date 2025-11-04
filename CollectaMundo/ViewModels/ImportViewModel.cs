@@ -32,7 +32,8 @@ namespace CollectaMundo.ViewModels
             {
                 ImportStep.Start => ImportStep.IdColumnMapping,
                 ImportStep.IdColumnMapping => ImportStep.NameAndSetMapping,
-                ImportStep.NameAndSetMapping => ImportStep.AdditionalFieldsMapping,
+                ImportStep.NameAndSetMapping => ImportStep.MultipleUuidsSelection,
+                ImportStep.MultipleUuidsSelection => ImportStep.AdditionalFieldsMapping,
                 _ => ImportStep.Finish
             };
 
@@ -40,12 +41,14 @@ namespace CollectaMundo.ViewModels
             {
                 ImportStep.Start => new ImportStep1_StartViewModel(this),
                 ImportStep.IdColumnMapping => new ImportStep2_IdMappingViewModel(this),
+                ImportStep.NameAndSetMapping => new ImportStep3_NameSetMappingViewModel(this),
+                ImportStep.MultipleUuidsSelection => new ImportStep4_MultipleUuidsViewModel(this),
+                ImportStep.AdditionalFieldsMapping => new ImportStep5_AdditionalFieldsMappingViewModel(this),
                 _ => throw new NotSupportedException("Unknown step")
             };
         }
         public async Task Begin()
         {
-            // Can use _userPromptService here if needed later
             CurrentStepViewModel = new ImportStep1_StartViewModel(this);
 
             var tcs = _userPromptService.CreatePrompt();
@@ -57,7 +60,7 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-        public async Task Step1ToStep2()
+        public async Task AfterStep1Action()
         {
             var filePath = _importService.PromptForCsvFile();
 
@@ -70,6 +73,11 @@ namespace CollectaMundo.ViewModels
                 GoToNextStep();
             }
         }
+        public async Task AfterStep2Action()
+        {
+            // Placeholder for any actions needed after step 2
+        }
+
 
         [RelayCommand]
         private void Cancel() => CancelImport();

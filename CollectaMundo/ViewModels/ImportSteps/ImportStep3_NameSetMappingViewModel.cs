@@ -5,7 +5,7 @@ using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
-    public partial class ImportStep2_IdMappingViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
+    public partial class ImportStep3_NameSetMappingViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent = parent;
         public ObservableCollection<ColumnMapping> Mappings => _parent.Mappings; // proxy to parent's mappings
@@ -17,7 +17,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         [RelayCommand]
         private async Task PrimaryAction()
         {
-            await _parent.AfterStep2Action();
+            _parent.GoToNextStep();
         }
 
         [RelayCommand]
@@ -29,8 +29,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         [RelayCommand]
         private static void ClearSelectedMapping(ColumnMapping mapping)
         {
-            mapping.SelectedCsvHeader = null;
-            mapping.SelectedDatabaseField = null;
+            // Clear the selected mappings
         }
     }
 }

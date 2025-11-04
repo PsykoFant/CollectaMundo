@@ -1,10 +1,9 @@
 TO DO 
 - MVVM refactor
  - Import brug MVVM
-    - Primary/secondary action
-    - Enabled converter
-    - Slutskærm
-    - Cancel
+    - tempimport object i step 1!
+    - Metode-oversigt
+    
 
 Fix progress bar:
         <!-- Define the Style for the ProgressBar -->

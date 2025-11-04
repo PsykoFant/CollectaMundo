@@ -453,10 +453,6 @@ namespace CollectaMundo
         #region Import wizard
 
         // Import wizard different steps button methods
-        private async void BeginImportButton_Click(object sender, RoutedEventArgs e)
-        {
-            await BeginImportButton();
-        }
         private async void ButtonIdColumnMappingNext_Click(object sender, RoutedEventArgs e)
         {
             await ButtonIdColumnMappingNext();
