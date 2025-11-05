@@ -17,13 +17,13 @@ namespace CollectaMundo.ViewModels.ImportSteps
         [RelayCommand]
         private async Task PrimaryAction()
         {
-            _parent.GoToNextStep();
+            _parent.GoToStep(ImportStep.AdditionalFieldsMapping);
         }
 
         [RelayCommand]
         private void SecondaryAction()
         {
-            _parent.GoToNextStep();
+            _parent.GoToStep(ImportStep.AdditionalFieldsMapping);
         }
 
         [RelayCommand]

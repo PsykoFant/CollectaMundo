@@ -40,7 +40,6 @@ namespace CollectaMundo.DomainLogic.Import
                     string cleaned = RemoveUnwantedPrefixes(values.Count > i ? values[i] : string.Empty);
                     item.Fields[headers[i]] = cleaned;
                 }
-                item.Fields["CMImportKey"] = Guid.NewGuid().ToString();
                 cardItems.Add(item);
             }
 

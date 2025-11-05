@@ -23,7 +23,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         [RelayCommand]
         private void SecondaryAction()
         {
-            _parent.GoToNextStep();
+            _parent.GoToStep(ImportStep.NameAndSetMapping);
         }
 
         [RelayCommand]
