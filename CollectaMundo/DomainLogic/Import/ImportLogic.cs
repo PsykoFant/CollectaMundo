@@ -6,6 +6,7 @@ namespace CollectaMundo.DomainLogic.Import
 {
     public class ImportLogic : IImportLogic
     {
+        // Step 1
         public async Task<List<TempCardItem>> ParseCsvFileAsync(string filePath)
         {
             var cardItems = new List<TempCardItem>();
@@ -100,5 +101,48 @@ namespace CollectaMundo.DomainLogic.Import
 
             return input;
         }
+
+        // Step 2
+        public ImportMatchSummaryDto AssignUuidsToImportItems(List<TempCardItem> importCandidates, Dictionary<string, List<string>> idToUuids, string selectedCsvHeader)
+        {
+            int total = 0;
+            int matchedUuid = 0;
+            int matchedMultipleUuids = 0;
+
+            foreach (var item in importCandidates)
+            {
+                total++;
+
+                if (!item.Fields.TryGetValue(selectedCsvHeader, out var csvValue) || string.IsNullOrWhiteSpace(csvValue))
+                {
+                    continue;
+                }
+
+                if (!idToUuids.TryGetValue(csvValue, out var uuids) || uuids == null || uuids.Count == 0)
+                {
+                    continue;
+                }
+
+                if (uuids.Count == 1)
+                {
+                    item.Fields["uuid"] = uuids[0];
+                    matchedUuid++;
+                }
+                else // multiple matches
+                {
+                    item.Fields["uuids"] = string.Join(",", uuids);
+                    matchedUuid++;
+                    matchedMultipleUuids++;
+                }
+            }
+
+            return new ImportMatchSummaryDto
+            {
+                TotalItems = total,
+                ItemsWithUuid = matchedUuid,
+                ItemsWithMultipleUuids = matchedMultipleUuids
+            };
+        }
+
     }
 }

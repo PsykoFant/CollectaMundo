@@ -24,8 +24,10 @@ namespace CollectaMundo.Infrastructure.Import
 
             return columns;
         }
-        public async Task<Dictionary<string, List<string>>> GetCardUuidsByIdFieldAsync(SQLiteConnection conn, string identifierFieldName, List<string> values)
+        public async Task<Dictionary<string, List<string>>> GetCardUuidsByIdFieldAsync(SQLiteConnection conn, string identifierFieldName, IEnumerable<string> valuesEnumerable)
         {
+            var values = valuesEnumerable.ToList();
+
             // Return empty map early if no lookup values
             if (values.Count == 0)
             {

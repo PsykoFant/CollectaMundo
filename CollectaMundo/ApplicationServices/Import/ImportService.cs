@@ -61,23 +61,18 @@ namespace CollectaMundo.ApplicationServices.Import
         // Step 2
         public async Task<ImportMatchSummaryDto> TryResolveUuidsFromMappedIdAsync(List<TempCardItem> importCandidates, ColumnMapping mapping)
         {
-            var lookupValues = importCandidates.Select(item => item.Fields.TryGetValue(mapping.SelectedCsvHeader!, out var val))
-                .Where(v => !string.IsNullOrEmpty(v))
-                .Distinct()
-                .ToList();
+            var lookupValues = importCandidates.Select(item => item.Fields.TryGetValue(mapping.SelectedCsvHeader!, out var val) ? val : null)
+                .Where(val => !string.IsNullOrWhiteSpace(val))
+                .Select(val => val!) // safely assert non-null
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             var idToUuids = await GetCardUuidsByIdFieldAsync(mapping.SelectedDatabaseField!, lookupValues);
 
-            // Placeholder: replace with actual matching logic later
-            return Task.FromResult(new ImportMatchSummaryDto
-            {
-                TotalItems = importCandidates.Count,
-                ItemsWithUuid = 3,  // stub
-                ItemsWithMultipleUuids = 1 // stub
-            });
-        }
+            var summary = _importLogic.AssignUuidsToImportItems(importCandidates, idToUuids, mapping.SelectedCsvHeader!);
 
-        private async Task<List<string>> GetCardUuidsByIdFieldAsync(string identifierFieldName, List<string> values)
+            return summary;
+        }
+        private async Task<Dictionary<string, List<string>>> GetCardUuidsByIdFieldAsync(string identifierFieldName, IEnumerable<string> values)
         {
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginReadOnlyAsync();

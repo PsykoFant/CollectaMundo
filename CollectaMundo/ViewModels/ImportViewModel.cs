@@ -54,7 +54,6 @@ namespace CollectaMundo.ViewModels
                 // User finished import successfully
             }
         }
-
         public async Task AfterStep1Action()
         {
             var filePath = _importService.PromptForCsvFile();
@@ -65,15 +64,20 @@ namespace CollectaMundo.ViewModels
                 var (parsedItems, mapping) = await _importService.LoadCsvFileAsync(filePath);
 
                 foreach (var item in parsedItems)
+                {
                     ImportCardList.Add(item);
+                }
+
                 Mappings.Add(mapping);
                 GoToStep(ImportStep.IdColumnMapping);
-                DebugAllItems();
+                //DebugAllItems();
             }
         }
         public async Task AfterStep2Action()
         {
             var result = await _importService.TryResolveUuidsFromMappedIdAsync([.. ImportCardList], Mappings.FirstOrDefault());
+
+            DebugImportProcess();
 
             Debug.WriteLine($"Import UUID Resolution Summary: TotalItems={result.TotalItems}, ItemsWithUuid={result.ItemsWithUuid}, ItemsWithMultipleUuids={result.ItemsWithMultipleUuids}");
             if (result.TotalItems == result.ItemsWithUuid)
