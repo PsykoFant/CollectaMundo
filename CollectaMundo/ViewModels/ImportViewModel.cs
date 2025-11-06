@@ -30,6 +30,7 @@ namespace CollectaMundo.ViewModels
         public void GoToStep(ImportStep step)
         {
             _currentStep = step;
+            Debug.WriteLine($"ImportViewModel: Navigating from {_currentStep}.");
 
             CurrentStepViewModel = step switch
             {
@@ -68,14 +69,19 @@ namespace CollectaMundo.ViewModels
                     ImportCardList.Add(item);
                 Mappings.Add(mapping);
                 GoToStep(ImportStep.IdColumnMapping);
-                DebugAllItems();
+                //DebugAllItems();
             }
         }
         public async Task AfterStep2Action()
         {
+            Debug.WriteLine("AfterStep2Action: Trying to resolve UUIDs from mapped ID column...");
+            Debug.WriteLine($"AfterStep2Action: Before TryResolveUuidsFromMappedIdAsync - we are on {_currentStep.ToString()}");
             var result = await _importService.TryResolveUuidsFromMappedIdAsync([.. ImportCardList], Mappings.FirstOrDefault());
+            Debug.WriteLine($"AfterStep2Action: UUID resolution result - TotalItems: {result.TotalItems}, ItemsWithUuid: {result.ItemsWithUuid}, ItemsWithMultipleUuids: {result.ItemsWithMultipleUuids}");
+            Debug.WriteLine($"AfterStep2Action: After TryResolveUuidsFromMappedIdAsync - we are on {_currentStep.ToString()}");
 
-            Debug.WriteLine($"Import UUID Resolution Summary: TotalItems={result.TotalItems}, ItemsWithUuid={result.ItemsWithUuid}, ItemsWithMultipleUuids={result.ItemsWithMultipleUuids}");
+            //DebugImportProcess();
+
             if (result.TotalItems == result.ItemsWithUuid)
             {
                 if (result.ItemsWithMultipleUuids > 0)
@@ -90,6 +96,19 @@ namespace CollectaMundo.ViewModels
             else
             {
                 GoToStep(ImportStep.NameAndSetMapping);
+            }
+        }
+
+        [RelayCommand]
+        private void SecondaryAction()
+        {
+            if (CurrentStepViewModel?.IsSecondaryActionEnabled == true)
+            {
+                // Guard against race conditions across step transitions
+                CurrentStepViewModel.IsSecondaryActionEnabled = false;
+
+                // Delegate to actual action logic in the step
+                CurrentStepViewModel.OnSecondaryAction();
             }
         }
 

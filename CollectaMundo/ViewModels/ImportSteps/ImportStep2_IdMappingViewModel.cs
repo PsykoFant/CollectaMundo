@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
@@ -12,17 +13,30 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public string PrimaryActionButtonText => "  Proceed  \u27A1";
         public string SecondaryActionButtonText => "  Skip  \u23ED";
         public bool IsCancelEnabled => true;
-        public bool IsSecondaryActionEnabled => true;
+
+        [ObservableProperty]
+        private bool isSecondaryActionEnabled = true;
+
+        [ObservableProperty] // Controls whether SecondaryActionCommand can execute
+        private bool isProcessing = false;
+        private bool CanExecuteSecondaryAction => !IsProcessing; // Guard: only allow skip if not processing
 
         [RelayCommand]
         private async Task PrimaryAction()
         {
-            await _parent.AfterStep2Action();
+            try
+            {
+                IsSecondaryActionEnabled = false;
+                await _parent.AfterStep2Action();
+            }
+            finally
+            {
+                IsSecondaryActionEnabled = true;
+            }
         }
-
-        [RelayCommand]
-        private void SecondaryAction()
+        public void OnSecondaryAction()
         {
+            Debug.WriteLine("ImportStep2_IdMappingViewModel: SecondaryAction invoked - skipping");
             _parent.GoToStep(ImportStep.NameAndSetMapping);
         }
 

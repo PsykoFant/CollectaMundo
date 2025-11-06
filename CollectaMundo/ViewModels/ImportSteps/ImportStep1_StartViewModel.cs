@@ -10,18 +10,19 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public string PrimaryActionButtonText => "  Let's go!  \u27A1";
         public string SecondaryActionButtonText => string.Empty; // No secondary action on first screen
         public bool IsCancelEnabled => false;
-        public bool IsSecondaryActionEnabled => false;
+
+        [ObservableProperty]
+        private bool isSecondaryActionEnabled = false;
 
         [RelayCommand]
         private async Task PrimaryAction()
         {
             await _parent.AfterStep1Action();
         }
-
-        [RelayCommand]
-        private void SecondaryAction()
+        public void OnSecondaryAction()
         {
-            // no-op, secondary action is disabled
+            // no-op, no secondary action on first step
+
         }
 
         [RelayCommand]

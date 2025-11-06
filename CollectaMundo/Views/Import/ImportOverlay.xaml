@@ -41,13 +41,15 @@
                 VerticalAlignment="Top"/>
 
         <Button Content="{Binding CurrentStepViewModel.SecondaryActionButtonText}"
-                Command="{Binding CurrentStepViewModel.SecondaryActionCommand}"
+                Command="{Binding SecondaryActionCommand}"
+                IsEnabled="{Binding CurrentStepViewModel.IsSecondaryActionEnabled}"
                 Visibility="{Binding CurrentStepViewModel.IsSecondaryActionEnabled, Converter={StaticResource BoolToVisibilityCollapsedConverter}}"
                 HorizontalAlignment="Right"
                 Margin="0,590,10,0"
                 VerticalAlignment="Top"/>
 
-        <Button Content="  Cancel import &#x274C;  "
+
+            <Button Content="  Cancel import &#x274C;  "
                 Command="{Binding CancelCommand}"
                 Visibility="{Binding CurrentStepViewModel.IsCancelEnabled, Converter={StaticResource BoolToVisibilityCollapsedConverter}}"
                 HorizontalAlignment="Left"

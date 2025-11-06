@@ -12,16 +12,16 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public string PrimaryActionButtonText => "  Proceed  \u27A1";
         public string SecondaryActionButtonText => "  Skip  \u23ED";
         public bool IsCancelEnabled => true;
-        public bool IsSecondaryActionEnabled => true;
+
+        [ObservableProperty]
+        private bool isSecondaryActionEnabled = true;
 
         [RelayCommand]
         private async Task PrimaryAction()
         {
             _parent.GoToStep(ImportStep.AdditionalFieldsMapping);
         }
-
-        [RelayCommand]
-        private void SecondaryAction()
+        public void OnSecondaryAction()
         {
             _parent.GoToStep(ImportStep.AdditionalFieldsMapping);
         }
