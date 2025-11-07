@@ -35,26 +35,29 @@
         </ContentControl>
 
         <Button Content="{Binding CurrentStepViewModel.PrimaryActionButtonText}"
-                Command="{Binding CurrentStepViewModel.PrimaryActionCommand}"
+                Command="{Binding PrimaryActionCommand}"
+                IsEnabled="{Binding IsActionButtonEnabled}"
                 HorizontalAlignment="Center"
                 Margin="0,590,0,0"
                 VerticalAlignment="Top"/>
 
+        <Label Content="{Binding CrunchingDataMessage}" HorizontalAlignment="Center" Margin="0,620,0,0" VerticalAlignment="Top"/>
+
         <Button Content="{Binding CurrentStepViewModel.SecondaryActionButtonText}"
                 Command="{Binding SecondaryActionCommand}"
-                IsEnabled="{Binding CurrentStepViewModel.IsSecondaryActionEnabled}"
-                Visibility="{Binding CurrentStepViewModel.IsSecondaryActionEnabled, Converter={StaticResource BoolToVisibilityCollapsedConverter}}"
+                IsEnabled="{Binding IsActionButtonEnabled}"
+                Visibility="{Binding CurrentStepViewModel.SecondaryActionVisibility}"
                 HorizontalAlignment="Right"
                 Margin="0,590,10,0"
                 VerticalAlignment="Top"/>
-
-
-            <Button Content="  Cancel import &#x274C;  "
+        
+        <Button Content="  Cancel import &#x274C;  "
                 Command="{Binding CancelCommand}"
-                Visibility="{Binding CurrentStepViewModel.IsCancelEnabled, Converter={StaticResource BoolToVisibilityCollapsedConverter}}"
+                Visibility="{Binding CurrentStepViewModel.CancelVisibility}"
                 HorizontalAlignment="Left"
                 Margin="10,590,0,0"
                 VerticalAlignment="Top"/>
+        
 
     </Grid>
 </UserControl>

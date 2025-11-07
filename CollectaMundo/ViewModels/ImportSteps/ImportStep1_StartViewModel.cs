@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.DomainLogic.Import.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
@@ -9,13 +10,10 @@ namespace CollectaMundo.ViewModels.ImportSteps
         private readonly ImportViewModel _parent = parent;
         public string PrimaryActionButtonText => "  Let's go!  \u27A1";
         public string SecondaryActionButtonText => string.Empty; // No secondary action on first screen
-        public bool IsCancelEnabled => false;
+        public Visibility CancelVisibility => Visibility.Collapsed;
+        public Visibility SecondaryActionVisibility => Visibility.Collapsed;
 
-        [ObservableProperty]
-        private bool isSecondaryActionEnabled = false;
-
-        [RelayCommand]
-        private async Task PrimaryAction()
+        public async Task OnPrimaryAction()
         {
             await _parent.AfterStep1Action();
         }
@@ -26,13 +24,13 @@ namespace CollectaMundo.ViewModels.ImportSteps
         }
 
         [RelayCommand]
-        private void ClearSelectedMapping(ColumnMapping mapping)
+        private static void ClearSelectedMapping(ColumnMapping mapping)
         {
             // no-op, no mappings to clear on first step
         }
 
         [RelayCommand]
-        private void Cancel()
+        private static void Cancel()
         {
             // no-op, cancel is disabled }
         }

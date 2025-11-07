@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels
 {
@@ -16,6 +17,20 @@ namespace CollectaMundo.ViewModels
         private readonly IImportService _importService = importService;
         private readonly IParentViewModelContext _parentViewModelContext = parentContext;
         private readonly IUserPromptService _userPromptService = userPromptService;
+
+        [ObservableProperty]
+        private bool isProcessing = false;
+        public bool IsActionButtonEnabled => !IsProcessing;
+
+        [ObservableProperty]
+        private string? crunchingDataMessage = string.Empty;
+
+        partial void OnIsProcessingChanged(bool oldValue, bool newValue)
+        {
+            // When isProcessing changes, tell WPF that IsActionButtonEnabled changed too
+            OnPropertyChanged(nameof(IsActionButtonEnabled));
+        }
+
 
         public static ObservableCollection<TempCardItem> ImportCardList { get; } = [];
         public ObservableCollection<ColumnMapping> Mappings { get; } = [];
@@ -63,7 +78,8 @@ namespace CollectaMundo.ViewModels
             if (!string.IsNullOrEmpty(filePath))
             {
                 _parentViewModelContext.SetUiBusy(true);
-                var (parsedItems, mapping) = await _importService.LoadCsvFileAsync(filePath);
+                CrunchingDataMessage = "Please wait - gobbling up and parsing CSV file...";
+                var (parsedItems, mapping) = await Task.Run(() => _importService.LoadCsvFileAsync(filePath));
 
                 foreach (var item in parsedItems)
                     ImportCardList.Add(item);
@@ -74,11 +90,9 @@ namespace CollectaMundo.ViewModels
         }
         public async Task AfterStep2Action()
         {
-            Debug.WriteLine("AfterStep2Action: Trying to resolve UUIDs from mapped ID column...");
-            Debug.WriteLine($"AfterStep2Action: Before TryResolveUuidsFromMappedIdAsync - we are on {_currentStep.ToString()}");
-            var result = await _importService.TryResolveUuidsFromMappedIdAsync([.. ImportCardList], Mappings.FirstOrDefault());
-            Debug.WriteLine($"AfterStep2Action: UUID resolution result - TotalItems: {result.TotalItems}, ItemsWithUuid: {result.ItemsWithUuid}, ItemsWithMultipleUuids: {result.ItemsWithMultipleUuids}");
-            Debug.WriteLine($"AfterStep2Action: After TryResolveUuidsFromMappedIdAsync - we are on {_currentStep.ToString()}");
+            var mapping = Mappings.FirstOrDefault() ?? throw new InvalidOperationException("No mapping found after Step 2");
+            CrunchingDataMessage = "Please wait - attempting to match ids...";
+            var result = await Task.Run(() => _importService.TryResolveUuidsFromMappedIdAsync([.. ImportCardList], mapping));
 
             //DebugImportProcess();
 
@@ -100,16 +114,26 @@ namespace CollectaMundo.ViewModels
         }
 
         [RelayCommand]
+        private async Task PrimaryActionAsync()
+        {
+            try
+            {
+                Mouse.OverrideCursor = Cursors.Wait; // set spinner
+                IsProcessing = true;
+                await CurrentStepViewModel!.OnPrimaryAction();
+            }
+            finally
+            {
+                CrunchingDataMessage = string.Empty;
+                IsProcessing = false;
+                Mouse.OverrideCursor = null; // reset to default
+            }
+        }
+
+        [RelayCommand]
         private void SecondaryAction()
         {
-            if (CurrentStepViewModel?.IsSecondaryActionEnabled == true)
-            {
-                // Guard against race conditions across step transitions
-                CurrentStepViewModel.IsSecondaryActionEnabled = false;
-
-                // Delegate to actual action logic in the step
-                CurrentStepViewModel.OnSecondaryAction();
-            }
+            CurrentStepViewModel!.OnSecondaryAction();
         }
 
 
@@ -119,6 +143,7 @@ namespace CollectaMundo.ViewModels
         {
             ImportCardList.Clear();
             Mappings.Clear();
+            CrunchingDataMessage = string.Empty;
             _userPromptService.CancelPendingPrompt();
             ImportOverlayVisibility = Visibility.Collapsed;
             CurrentStepViewModel = null;

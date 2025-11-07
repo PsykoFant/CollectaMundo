@@ -12,7 +12,6 @@
         <converters:PageToBrushConverter x:Key="PageToBrushConverter" SelectedBrush="#5cb9ca" DefaultBrush="#FFDDDDDD"/>
         <converters:PageToVisibilityConverter x:Key="PageToVisibilityConverter" VisibleVisibility="Visible" HiddenVisibility="Collapsed" />
         <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
-        <converters:BoolToVisibilityCollapsedConverter x:Key="BoolToVisibilityCollapsedConverter" />
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
         <!-- Shared base style for font and background -->

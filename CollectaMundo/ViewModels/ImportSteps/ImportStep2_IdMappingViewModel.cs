@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
@@ -12,27 +13,11 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public ObservableCollection<ColumnMapping> Mappings => _parent.Mappings; // proxy to parent's mappings
         public string PrimaryActionButtonText => "  Proceed  \u27A1";
         public string SecondaryActionButtonText => "  Skip  \u23ED";
-        public bool IsCancelEnabled => true;
-
-        [ObservableProperty]
-        private bool isSecondaryActionEnabled = true;
-
-        [ObservableProperty] // Controls whether SecondaryActionCommand can execute
-        private bool isProcessing = false;
-        private bool CanExecuteSecondaryAction => !IsProcessing; // Guard: only allow skip if not processing
-
-        [RelayCommand]
-        private async Task PrimaryAction()
+        public Visibility CancelVisibility => Visibility.Visible;
+        public Visibility SecondaryActionVisibility => Visibility.Visible;
+        public async Task OnPrimaryAction()
         {
-            try
-            {
-                IsSecondaryActionEnabled = false;
-                await _parent.AfterStep2Action();
-            }
-            finally
-            {
-                IsSecondaryActionEnabled = true;
-            }
+            await _parent.AfterStep2Action();
         }
         public void OnSecondaryAction()
         {
