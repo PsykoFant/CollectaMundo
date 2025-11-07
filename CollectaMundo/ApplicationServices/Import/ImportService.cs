@@ -72,6 +72,7 @@ namespace CollectaMundo.ApplicationServices.Import
 
             return summary;
         }
+
         private async Task<Dictionary<string, List<string>>> GetCardUuidsByIdFieldAsync(string identifierFieldName, IEnumerable<string> values)
         {
             await using var uow = new UnitOfWork(_dbFactory);
@@ -93,5 +94,4 @@ namespace CollectaMundo.ApplicationServices.Import
             }
         }
     }
-
 }

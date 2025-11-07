@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
@@ -12,17 +13,18 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public string PrimaryActionButtonText => "  Proceed  \u27A1";
         public string SecondaryActionButtonText => "  Skip  \u23ED";
         public bool IsCancelEnabled => true;
-        public bool IsSecondaryActionEnabled => true;
+
+        [ObservableProperty]
+        private bool isSecondaryActionEnabled = true;
 
         [RelayCommand]
         private async Task PrimaryAction()
         {
             _parent.GoToStep(ImportStep.AdditionalFieldsMapping);
         }
-
-        [RelayCommand]
-        private void SecondaryAction()
+        public void OnSecondaryAction()
         {
+            Debug.WriteLine("ImportStep4_MultipleUuidsViewModel: SecondaryAction invoked - skipping Multiple UUIDs selection step.");
             _parent.GoToStep(ImportStep.AdditionalFieldsMapping);
         }
 

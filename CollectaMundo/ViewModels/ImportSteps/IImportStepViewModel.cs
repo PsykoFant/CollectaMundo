@@ -8,9 +8,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
         string PrimaryActionButtonText { get; }
         string SecondaryActionButtonText { get; }
         IAsyncRelayCommand PrimaryActionCommand { get; }
-        IRelayCommand SecondaryActionCommand { get; }
         IRelayCommand<ColumnMapping> ClearSelectedMappingCommand { get; }
-        bool IsSecondaryActionEnabled { get; }
+        bool IsSecondaryActionEnabled { get; set; }
         bool IsCancelEnabled { get; }
+        void OnSecondaryAction();
     }
 }
