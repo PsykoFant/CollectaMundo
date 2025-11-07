@@ -30,8 +30,6 @@ namespace CollectaMundo.ViewModels
             // When isProcessing changes, tell WPF that IsActionButtonEnabled changed too
             OnPropertyChanged(nameof(IsActionButtonEnabled));
         }
-
-
         public static ObservableCollection<TempCardItem> ImportCardList { get; } = [];
         public ObservableCollection<ColumnMapping> Mappings { get; } = [];
 
@@ -70,7 +68,6 @@ namespace CollectaMundo.ViewModels
                 // User finished import successfully
             }
         }
-
         public async Task AfterStep1Action()
         {
             var filePath = _importService.PromptForCsvFile();

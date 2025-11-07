@@ -1,9 +1,10 @@
 TO DO 
 - MVVM refactor
  - Import brug MVVM
-    - tempimport object i step 1!
-    - Metode-oversigt
-    
+    OperationResult i Import?
+    Utilities mappe i Application Services --> Shared
+    ParallelWorkCoordinator til import?
+    Fucking statusbar, fix it    
 
 Fix progress bar:
         <!-- Define the Style for the ProgressBar -->
