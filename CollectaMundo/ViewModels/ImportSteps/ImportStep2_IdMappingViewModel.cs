@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Import.Models;
+﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.Import.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -15,9 +16,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public string SecondaryActionButtonText => "  Skip  \u23ED";
         public Visibility CancelVisibility => Visibility.Visible;
         public Visibility SecondaryActionVisibility => Visibility.Visible;
-        public async Task OnPrimaryAction()
+        public async Task<OperationResult> OnPrimaryAction()
         {
-            await _parent.AfterStep2Action();
+            return await _parent.AfterStep2Action();
         }
         public void OnSecondaryAction()
         {

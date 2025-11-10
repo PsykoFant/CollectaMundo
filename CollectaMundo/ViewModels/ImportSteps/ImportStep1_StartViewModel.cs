@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Import.Models;
+﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.Import.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Windows;
@@ -13,9 +14,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public Visibility CancelVisibility => Visibility.Collapsed;
         public Visibility SecondaryActionVisibility => Visibility.Collapsed;
 
-        public async Task OnPrimaryAction()
+        public async Task<OperationResult> OnPrimaryAction()
         {
-            await _parent.AfterStep1Action();
+            return await _parent.AfterStep1Action();
         }
         public void OnSecondaryAction()
         {

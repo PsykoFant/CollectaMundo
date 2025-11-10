@@ -68,70 +68,167 @@ namespace CollectaMundo.ViewModels
                 // User finished import successfully
             }
         }
-        public async Task AfterStep1Action()
+        public async Task<OperationResult> AfterStep1Action()
         {
-            var filePath = _importService.PromptForCsvFile();
-
-            if (!string.IsNullOrEmpty(filePath))
+            try
             {
-                _parentViewModelContext.SetUiBusy(true);
-                CrunchingDataMessage = "Please wait - gobbling up and parsing CSV file...";
-                var (parsedItems, mapping) = await Task.Run(() => _importService.LoadCsvFileAsync(filePath));
+                var filePath = _importService.PromptForCsvFile();
+                if (string.IsNullOrEmpty(filePath))
+                    return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled file selection.");
 
+                _parentViewModelContext.SetUiBusy(true);
+                CrunchingDataMessage = "Please wait - parsing CSV file...";
+
+                var (parsedItems, mapping) = await _importService.LoadCsvFileAsync(filePath);
+
+                if (parsedItems.Count == 0)
+                    return new OperationResult(OperationResultCode.Empty, "The selected CSV file is empty.");
+
+                ImportCardList.Clear();
                 foreach (var item in parsedItems)
                     ImportCardList.Add(item);
+
+                Mappings.Clear();
                 Mappings.Add(mapping);
+
                 GoToStep(ImportStep.IdColumnMapping);
-                //DebugAllItems();
+                return new OperationResult(OperationResultCode.Success, "CSV loaded and parsed successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new OperationResult(OperationResultCode.Error, $"Failed to load CSV: {ex.Message}");
             }
         }
-        public async Task AfterStep2Action()
+        public async Task<OperationResult> AfterStep2Action()
         {
-            var mapping = Mappings.FirstOrDefault() ?? throw new InvalidOperationException("No mapping found after Step 2");
-            CrunchingDataMessage = "Please wait - attempting to match ids...";
-            var result = await Task.Run(() => _importService.TryResolveUuidsFromMappedIdAsync([.. ImportCardList], mapping));
-
-            //DebugImportProcess();
-
-            if (result.TotalItems == result.ItemsWithUuid)
+            try
             {
-                if (result.ItemsWithMultipleUuids > 0)
+                var mapping = Mappings.FirstOrDefault() ?? throw new InvalidOperationException("No mapping found after Step 2");
+                CrunchingDataMessage = "Please wait - attempting to match ids...";
+                var result = await Task.Run(() => _importService.TryResolveUuidsFromMappedIdAsync([.. ImportCardList], mapping));
+
+                //DebugImportProcess();
+
+                if (result.TotalItems == result.ItemsWithUuid)
                 {
-                    GoToStep(ImportStep.MultipleUuidsSelection);
+                    if (result.ItemsWithMultipleUuids > 0)
+                    {
+                        GoToStep(ImportStep.MultipleUuidsSelection);
+                    }
+                    else
+                    {
+                        GoToStep(ImportStep.AdditionalFieldsMapping);
+                    }
                 }
                 else
                 {
-                    GoToStep(ImportStep.AdditionalFieldsMapping);
+                    GoToStep(ImportStep.NameAndSetMapping);
                 }
+                return new OperationResult(OperationResultCode.Success, "ID mapping ended successfully.");
             }
-            else
+            catch (Exception ex)
             {
-                GoToStep(ImportStep.NameAndSetMapping);
+                return new OperationResult(OperationResultCode.Error, $"Failed during ID mapping: {ex.Message}");
             }
         }
+        public async Task<OperationResult> AfterStep3Action()
+        {
+            try
+            {
+                GoToStep(ImportStep.AdditionalFieldsMapping);
+
+                return new OperationResult(OperationResultCode.Success, "Name and set mapping ended successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new OperationResult(OperationResultCode.Error, $"Failed during name and set mapping: {ex.Message}");
+            }
+        }
+        public async Task<OperationResult> AfterStep4Action()
+        {
+            try
+            {
+                GoToStep(ImportStep.AdditionalFieldsMapping);
+
+                return new OperationResult(OperationResultCode.Success, "Multiple uuids mapping ended successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new OperationResult(OperationResultCode.Error, $"Failed during Multiple uuids mapping: {ex.Message}");
+            }
+        }
+        public async Task<OperationResult> AfterStep5Action()
+        {
+            try
+            {
+                GoToStep(ImportStep.AdditionalFieldsMapping);
+
+                return new OperationResult(OperationResultCode.Success, "Additional fields mapping ended successfully.");
+            }
+            catch (Exception ex)
+            {
+                return new OperationResult(OperationResultCode.Error, $"Failed during additional fields mapping: {ex.Message}");
+            }
+        }
+
 
         [RelayCommand]
         private async Task PrimaryActionAsync()
         {
-            try
-            {
-                Mouse.OverrideCursor = Cursors.Wait; // set spinner
-                IsProcessing = true;
-                await CurrentStepViewModel!.OnPrimaryAction();
-            }
-            finally
-            {
-                CrunchingDataMessage = string.Empty;
-                IsProcessing = false;
-                Mouse.OverrideCursor = null; // reset to default
-            }
+            await ExecuteStepAsync(() => CurrentStepViewModel!.OnPrimaryAction(), _currentStep.ToString());
         }
+
 
         [RelayCommand]
         private void SecondaryAction()
         {
             CurrentStepViewModel!.OnSecondaryAction();
         }
+
+        private async Task ExecuteStepAsync(Func<Task<OperationResult>> stepFunc, string stepName)
+        {
+            try
+            {
+                Mouse.OverrideCursor = Cursors.Wait;
+                IsProcessing = true;
+                CrunchingDataMessage = $"Processing step '{stepName}'...";
+
+                var result = await stepFunc();
+
+                switch (result.Code)
+                {
+                    case OperationResultCode.Success:
+                        Debug.WriteLine($"{stepName} completed successfully: {result.Message}");
+                        break;
+
+                    case OperationResultCode.Empty:
+                    case OperationResultCode.Error:
+                        MessageBox.Show(result.Message, "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        Debug.WriteLine($"{stepName} failed: {result.Message}");
+                        break;
+
+                    case OperationResultCode.CancelledByUser:
+                        Debug.WriteLine($"{stepName} cancelled by user.");
+                        break;
+
+                    default:
+                        Debug.WriteLine($"{stepName} ended with status {result.Code}: {result.Message}");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Unhandled exception in {stepName}: {ex}");
+                MessageBox.Show($"Unexpected error during {stepName}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+                IsProcessing = false;
+                CrunchingDataMessage = string.Empty;
+            }
+        }
+
 
 
         [RelayCommand]
