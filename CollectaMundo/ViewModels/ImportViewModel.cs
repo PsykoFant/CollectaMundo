@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.ViewModels.ImportSteps;
 using CollectaMundo.ViewModels.Shared;
@@ -21,6 +22,20 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private bool isProcessing = false;
         public bool IsActionButtonEnabled => !IsProcessing;
+
+        [ObservableProperty]
+        private int progressValue;
+
+        [ObservableProperty]
+        private Visibility progressVisibility = Visibility.Collapsed;
+        private ProgressSinks CreateProgressSinks() => new()
+        {
+            Percent = new Progress<int>(v => ProgressValue = v),
+            ProgressBarVisible = new Progress<bool>(v => ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed),
+            Headline = new Progress<string>(_ => { }), // optionally bind these too
+            Detail = new Progress<string>(_ => { }),
+            Step = new Progress<string>(_ => { }),
+        };
 
         [ObservableProperty]
         private string? crunchingDataMessage = string.Empty;

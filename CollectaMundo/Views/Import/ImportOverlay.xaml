@@ -34,6 +34,16 @@
             </ContentControl.Resources>
         </ContentControl>
 
+        <ProgressBar Value="{Binding ProgressValue}"
+                         Height="15"
+                         Width="500"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Top"
+                         Margin="0,560,0,0"
+                         BorderBrush="Black"
+                         Visibility="{Binding ProgressVisibility}"
+                         Maximum="100"/>
+
         <Button Content="{Binding CurrentStepViewModel.PrimaryActionButtonText}"
                 Command="{Binding PrimaryActionCommand}"
                 IsEnabled="{Binding IsActionButtonEnabled}"
