@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared.Progress;
 using System.Collections.Concurrent;
 
-namespace CollectaMundo.ApplicationServices.Utilities
+namespace CollectaMundo.ApplicationServices.Shared
 {
     public sealed class ParallelWorkCoordinator<T>(IProgress<int> percentProgress, int total, int maxDegreeOfParallelism) : IDisposable
     {

@@ -2,7 +2,6 @@
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
-using CollectaMundo.ApplicationServices.Utilities;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;

@@ -1,5 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.Shared.Progress;
-using CollectaMundo.ApplicationServices.Utilities;
+﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
 using CollectaMundo.Infrastructure.GenerateMissingPng;
 using CollectaMundo.Infrastructure.RemoteLookups;

@@ -17,6 +17,7 @@ using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Enums;
 using CollectaMundo.DomainLogic.GenerateMissingPng;
+using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.Infrastructure.CardDatabaseManagement;
 using CollectaMundo.Infrastructure.CardImages;
 using CollectaMundo.Infrastructure.CardLists;
@@ -80,7 +81,7 @@ public static class TestAppBuilder
             dbFactory, remoteLookups, new CardImageLogic(),
             new CardImageRepo(), new CardImageDownloader(settings));
 
-        var importService = new ImportService(new ImportRepo(), new FileSystemPicker());
+        var importService = new ImportService(dbFactory, new ImportRepo(), new FileSystemPicker(), new ImportLogic());
         var filteringService = new FilteringService();
         var scheduler = new ImmediateScheduler();
 

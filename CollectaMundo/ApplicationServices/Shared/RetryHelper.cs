@@ -1,7 +1,6 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
-namespace CollectaMundo.ApplicationServices.Utilities
+namespace CollectaMundo.ApplicationServices.Shared
 {
     public static class RetryHelper
     {
