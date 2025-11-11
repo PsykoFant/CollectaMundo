@@ -46,7 +46,7 @@
                 Margin="0,610,0,0"
                 VerticalAlignment="Top"/>
 
-        <Label Content="{Binding CrunchingDataMessage}" HorizontalAlignment="Center" Margin="0,640,0,0" VerticalAlignment="Top"/>
+        <Label Content="{Binding ProgressDetailMessage}" HorizontalAlignment="Center" Margin="0,640,0,0" VerticalAlignment="Top"/>
 
         <Button Content="{Binding CurrentStepViewModel.SecondaryActionButtonText}"
                 Command="{Binding SecondaryActionCommand}"

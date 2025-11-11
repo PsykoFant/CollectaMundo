@@ -9,7 +9,6 @@ using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows;
-using System.Windows.Input;
 
 namespace CollectaMundo.ViewModels
 {
@@ -18,18 +17,19 @@ namespace CollectaMundo.ViewModels
         private readonly IImportService _importService = importService;
         private readonly IParentViewModelContext _parentViewModelContext = parentContext;
         private readonly IUserPromptService _userPromptService = userPromptService;
-
-        private ProgressSinks? _progressSinks;
-        private ProgressSinks Progress => _progressSinks ??= CreateProgressSinks();
+        private ProgressSinks Progress => CreateProgressSinks();
         private ProgressSinks CreateProgressSinks() => new()
         {
             Percent = new Progress<int>(v => ProgressValue = v),
             ProgressBarVisible = new Progress<bool>(v => ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed),
             Headline = new Progress<string>(_ => { }),
-            Detail = new Progress<string>(_ => { }),
             Step = new Progress<string>(_ => { }),
-            CancelEnabled = new Progress<bool>(v => { true})
+            Detail = new Progress<string>(v => ProgressDetailMessage = v),
+            CancelEnabled = new Progress<bool>(_ => { })
         };
+
+        [ObservableProperty]
+        private string? progressDetailMessage;
 
         [ObservableProperty]
         private bool isProcessing = false;
@@ -40,10 +40,6 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private Visibility progressVisibility = Visibility.Collapsed;
-
-        [ObservableProperty]
-        private string? crunchingDataMessage = string.Empty;
-
         partial void OnIsProcessingChanged(bool oldValue, bool newValue)
         {
             // When isProcessing changes, tell WPF that IsActionButtonEnabled changed too
@@ -99,10 +95,10 @@ namespace CollectaMundo.ViewModels
                 // Show the progress bar
                 Progress.ProgressBarVisible.Report(true);
                 Progress.Percent.Report(0);
-                Progress.Step.Report("Parsing CSV file...");
+                Progress.Detail.Report("Parsing CSV file...");
 
                 // Perform parsing (ParseCsvFileAsync now reports progress internally)
-                var (parsedItems, mapping) = await _importService.LoadCsvFileAsync(filePath, _progressSinks);
+                var (parsedItems, mapping) = await _importService.LoadCsvFileAsync(filePath, Progress);
 
                 // Hide progress bar when done
                 Progress.ProgressBarVisible.Report(false);
@@ -135,7 +131,7 @@ namespace CollectaMundo.ViewModels
             try
             {
                 var mapping = Mappings.FirstOrDefault() ?? throw new InvalidOperationException("No mapping found after Step 2");
-                CrunchingDataMessage = "Please wait - attempting to match ids...";
+                Progress.Detail.Report("Please wait - attempting to match ids...");
                 var result = await Task.Run(() => _importService.TryResolveUuidsFromMappedIdAsync([.. ImportCardList], mapping));
 
                 //DebugImportProcess();
@@ -218,9 +214,7 @@ namespace CollectaMundo.ViewModels
         {
             try
             {
-                Mouse.OverrideCursor = Cursors.Wait;
                 IsProcessing = true;
-                CrunchingDataMessage = $"Processing step '{stepName}'...";
 
                 var result = await stepFunc();
 
@@ -252,9 +246,8 @@ namespace CollectaMundo.ViewModels
             }
             finally
             {
-                Mouse.OverrideCursor = null;
                 IsProcessing = false;
-                CrunchingDataMessage = string.Empty;
+                Progress.Detail.Report(string.Empty);
             }
         }
 
@@ -264,12 +257,18 @@ namespace CollectaMundo.ViewModels
         {
             ImportCardList.Clear();
             Mappings.Clear();
-            CrunchingDataMessage = string.Empty;
             _userPromptService.CancelPendingPrompt();
             ImportOverlayVisibility = Visibility.Collapsed;
             CurrentStepViewModel = null;
             _currentStep = ImportStep.Start;
             _parentViewModelContext.SetUiBusy(false);
+
+            Progress.ProgressBarVisible.Report(false);
+            Progress.Percent.Report(0);
+            ProgressDetailMessage = string.Empty;
+            Progress.Step.Report(string.Empty);
+            Progress.Headline.Report(string.Empty);
+            Progress.Detail.Report(string.Empty);
         }
 
         private static void DebugAllItems()
