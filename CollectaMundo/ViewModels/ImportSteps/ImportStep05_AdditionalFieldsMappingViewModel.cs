@@ -2,38 +2,31 @@
 using CollectaMundo.DomainLogic.Import.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
-    public partial class ImportStep1_StartViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
+    public partial class ImportStep05_AdditionalFieldsMappingViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent = parent;
-        public string PrimaryActionButtonText => "  Let's go!  \u27A1";
-        public string SecondaryActionButtonText => string.Empty; // No secondary action on first screen
-        public Visibility CancelVisibility => Visibility.Collapsed;
+        public ObservableCollection<ColumnMapping> Mappings => _parent.Mappings; // proxy to parent's mappings
+        public string PrimaryActionButtonText => "  Proceed  \u27A1";
+        public string SecondaryActionButtonText => "  Skip  \u23ED";
         public Visibility SecondaryActionVisibility => Visibility.Collapsed;
-
         public async Task<OperationResult> OnPrimaryAction()
         {
-            return await _parent.AfterStep1Action();
+            return await _parent.AfterStep5Action();
         }
         public void OnSecondaryAction()
         {
-            // no-op, no secondary action on first step
-
+            _parent.GoToStep(ImportStep.AdditionalFieldsMapping);
         }
 
         [RelayCommand]
         private static void ClearSelectedMapping(ColumnMapping mapping)
         {
-            // no-op, no mappings to clear on first step
-        }
-
-        [RelayCommand]
-        private static void Cancel()
-        {
-            // no-op, cancel is disabled }
+            // Clear the selected mappings
         }
     }
 }

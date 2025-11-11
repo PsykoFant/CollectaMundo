@@ -3,11 +3,11 @@
 namespace CollectaMundo.Views.Import
 {
     /// <summary>
-    /// Interaction logic for ImportStep2_IdMappingView.xaml
+    /// Interaction logic for ImportStartView.xaml
     /// </summary>
-    public partial class ImportStep2_IdMappingView : UserControl
+    public partial class ImportStep01_StartView : UserControl
     {
-        public ImportStep2_IdMappingView()
+        public ImportStep01_StartView()
         {
             InitializeComponent();
         }

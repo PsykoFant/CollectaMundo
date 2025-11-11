@@ -13,6 +13,5 @@ namespace CollectaMundo.ViewModels.ImportSteps
         string SecondaryActionButtonText { get; }
         IRelayCommand<ColumnMapping> ClearSelectedMappingCommand { get; }
         Visibility SecondaryActionVisibility { get; }
-        Visibility CancelVisibility { get; }
     }
 }

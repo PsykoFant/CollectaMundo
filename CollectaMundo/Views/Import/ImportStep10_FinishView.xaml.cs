@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace CollectaMundo.Views.Import
 {
     /// <summary>
-    /// Interaction logic for ImportStep3_NameSetMappingView.xaml
+    /// Interaction logic for ImportStep10_FinishView.xaml
     /// </summary>
-    public partial class ImportStep3_NameSetMappingView : UserControl
+    public partial class ImportStep10_FinishView : UserControl
     {
-        public ImportStep3_NameSetMappingView()
+        public ImportStep10_FinishView()
         {
             InitializeComponent();
         }

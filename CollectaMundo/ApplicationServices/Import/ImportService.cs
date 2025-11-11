@@ -25,7 +25,6 @@ namespace CollectaMundo.ApplicationServices.Import
         {
             progress?.ProgressBarVisible.Report(true);
             progress?.Percent.Report(0);
-            progress?.Step.Report("Reading CSV file...");
 
             // This now calls ParseCsvFileAsync with the progress reporter
             var parsedItems = await _importLogic.ParseCsvFileAsync(filePath, progress?.Percent);

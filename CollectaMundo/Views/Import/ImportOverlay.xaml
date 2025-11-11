@@ -14,22 +14,25 @@
              Visibility="{Binding ImportOverlayVisibility}">
 
     <Grid HorizontalAlignment="Center" VerticalAlignment="Top">
+        <Label Content="{Binding ProgressStep}" Style="{StaticResource MediumHeaderLabelStyle}" />
+        <Label Content="{Binding ProgressHeadline}" Style="{StaticResource BigHeaderLabelStyle}" />
+
         <ContentControl Content="{Binding CurrentStepViewModel}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
         <ContentControl.Resources>
-                <DataTemplate DataType="{x:Type vmsteps:ImportStep1_StartViewModel}">
-                    <views:ImportStep1_StartView />
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep01_StartViewModel}">
+                    <views:ImportStep01_StartView />
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type vmsteps:ImportStep2_IdMappingViewModel}">
-                    <views:ImportStep2_IdMappingView />
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep02_IdMappingViewModel}">
+                    <views:ImportStep02_IdMappingView />
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type vmsteps:ImportStep3_NameSetMappingViewModel}">
-                    <views:ImportStep3_NameSetMappingView />
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep03_NameSetMappingViewModel}">
+                    <views:ImportStep03_NameSetMappingView />
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type vmsteps:ImportStep4_MultipleUuidsViewModel}">
-                    <views:ImportStep4_MultipleUuuidsView />
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep04_MultipleUuidsViewModel}">
+                    <views:ImportStep04_MultipleUuuidsView />
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type vmsteps:ImportStep5_AdditionalFieldsMappingViewModel}">
-                    <views:ImportStep5_AdditionalFieldsMappingView />
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep05_AdditionalFieldsMappingViewModel}">
+                    <views:ImportStep05_AdditionalFieldsMappingView />
                 </DataTemplate>
             </ContentControl.Resources>
         </ContentControl>
@@ -58,7 +61,7 @@
         
         <Button Content="  Cancel import &#x274C;  "
                 Command="{Binding CancelCommand}"
-                Visibility="{Binding CurrentStepViewModel.CancelVisibility}"
+                Visibility="{Binding CancelVisibility}"
                 HorizontalAlignment="Left"
                 Margin="10,610,0,0"
                 VerticalAlignment="Top"/>
