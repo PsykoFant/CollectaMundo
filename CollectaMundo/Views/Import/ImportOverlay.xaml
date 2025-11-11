@@ -35,37 +35,32 @@
         </ContentControl>
 
         <ProgressBar Value="{Binding ProgressValue}"
-                         Height="15"
-                         Width="500"
-                         HorizontalAlignment="Center"
-                         VerticalAlignment="Top"
-                         Margin="0,560,0,0"
-                         BorderBrush="Black"
-                         Visibility="{Binding ProgressVisibility}"
-                         Maximum="100"/>
+                     Style="{StaticResource CollectaMundoProgressBarStyle}" 
+                     Margin="0,580,0,0"
+                     Visibility="{Binding ProgressVisibility}"/>
 
         <Button Content="{Binding CurrentStepViewModel.PrimaryActionButtonText}"
                 Command="{Binding PrimaryActionCommand}"
                 IsEnabled="{Binding IsActionButtonEnabled}"
                 HorizontalAlignment="Center"
-                Margin="0,590,0,0"
+                Margin="0,610,0,0"
                 VerticalAlignment="Top"/>
 
-        <Label Content="{Binding CrunchingDataMessage}" HorizontalAlignment="Center" Margin="0,620,0,0" VerticalAlignment="Top"/>
+        <Label Content="{Binding CrunchingDataMessage}" HorizontalAlignment="Center" Margin="0,640,0,0" VerticalAlignment="Top"/>
 
         <Button Content="{Binding CurrentStepViewModel.SecondaryActionButtonText}"
                 Command="{Binding SecondaryActionCommand}"
                 IsEnabled="{Binding IsActionButtonEnabled}"
                 Visibility="{Binding CurrentStepViewModel.SecondaryActionVisibility}"
                 HorizontalAlignment="Right"
-                Margin="0,590,10,0"
+                Margin="0,610,10,0"
                 VerticalAlignment="Top"/>
         
         <Button Content="  Cancel import &#x274C;  "
                 Command="{Binding CancelCommand}"
                 Visibility="{Binding CurrentStepViewModel.CancelVisibility}"
                 HorizontalAlignment="Left"
-                Margin="10,590,0,0"
+                Margin="10,610,0,0"
                 VerticalAlignment="Top"/>
         
 

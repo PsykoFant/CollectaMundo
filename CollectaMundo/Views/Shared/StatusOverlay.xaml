@@ -31,7 +31,8 @@
 
             <Label Content="CollectaMundo" Style="{StaticResource BigHeaderLabelStyle}" />
 
-            <ProgressBar Value="{Binding ProgressValue}" Visibility="{Binding ProgressVisibility}" Margin="0,410,0,0" />
+            <ProgressBar Value="{Binding ProgressValue}" Visibility="{Binding ProgressVisibility}" Margin="0,410,0,0" 
+                         Style="{StaticResource CollectaMundoProgressBarStyle}"/>
 
             <Label Content="{Binding StatusLabel1}"
                    HorizontalAlignment="Center"

@@ -19,6 +19,18 @@ namespace CollectaMundo.ViewModels
         private readonly IParentViewModelContext _parentViewModelContext = parentContext;
         private readonly IUserPromptService _userPromptService = userPromptService;
 
+        private ProgressSinks? _progressSinks;
+        private ProgressSinks Progress => _progressSinks ??= CreateProgressSinks();
+        private ProgressSinks CreateProgressSinks() => new()
+        {
+            Percent = new Progress<int>(v => ProgressValue = v),
+            ProgressBarVisible = new Progress<bool>(v => ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed),
+            Headline = new Progress<string>(_ => { }),
+            Detail = new Progress<string>(_ => { }),
+            Step = new Progress<string>(_ => { }),
+            CancelEnabled = new Progress<bool>(v => { true})
+        };
+
         [ObservableProperty]
         private bool isProcessing = false;
         public bool IsActionButtonEnabled => !IsProcessing;
@@ -28,14 +40,6 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private Visibility progressVisibility = Visibility.Collapsed;
-        private ProgressSinks CreateProgressSinks() => new()
-        {
-            Percent = new Progress<int>(v => ProgressValue = v),
-            ProgressBarVisible = new Progress<bool>(v => ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed),
-            Headline = new Progress<string>(_ => { }), // optionally bind these too
-            Detail = new Progress<string>(_ => { }),
-            Step = new Progress<string>(_ => { }),
-        };
 
         [ObservableProperty]
         private string? crunchingDataMessage = string.Empty;
@@ -87,17 +91,25 @@ namespace CollectaMundo.ViewModels
         {
             try
             {
+                // Let the user pick the CSV file
                 var filePath = _importService.PromptForCsvFile();
                 if (string.IsNullOrEmpty(filePath))
-                    return new OperationResult(OperationResultCode.CancelledByUser, "User cancelled file selection.");
+                    return new(OperationResultCode.CancelledByUser, "User cancelled file selection.");
 
-                _parentViewModelContext.SetUiBusy(true);
-                CrunchingDataMessage = "Please wait - parsing CSV file...";
+                // Show the progress bar
+                Progress.ProgressBarVisible.Report(true);
+                Progress.Percent.Report(0);
+                Progress.Step.Report("Parsing CSV file...");
 
-                var (parsedItems, mapping) = await _importService.LoadCsvFileAsync(filePath);
+                // Perform parsing (ParseCsvFileAsync now reports progress internally)
+                var (parsedItems, mapping) = await _importService.LoadCsvFileAsync(filePath, _progressSinks);
 
+                // Hide progress bar when done
+                Progress.ProgressBarVisible.Report(false);
+
+                // Handle results
                 if (parsedItems.Count == 0)
-                    return new OperationResult(OperationResultCode.Empty, "The selected CSV file is empty.");
+                    return new(OperationResultCode.Empty, "The selected CSV file is empty.");
 
                 ImportCardList.Clear();
                 foreach (var item in parsedItems)
@@ -107,13 +119,17 @@ namespace CollectaMundo.ViewModels
                 Mappings.Add(mapping);
 
                 GoToStep(ImportStep.IdColumnMapping);
-                return new OperationResult(OperationResultCode.Success, "CSV loaded and parsed successfully.");
+                return new(OperationResultCode.Success, "CSV parsed successfully.");
             }
             catch (Exception ex)
             {
-                return new OperationResult(OperationResultCode.Error, $"Failed to load CSV: {ex.Message}");
+                // Ensure bar hides even on error
+                ProgressVisibility = Visibility.Collapsed;
+                return new(OperationResultCode.Error, $"Failed to parse CSV: {ex.Message}");
             }
         }
+
+
         public async Task<OperationResult> AfterStep2Action()
         {
             try
@@ -186,13 +202,11 @@ namespace CollectaMundo.ViewModels
             }
         }
 
-
         [RelayCommand]
         private async Task PrimaryActionAsync()
         {
             await ExecuteStepAsync(() => CurrentStepViewModel!.OnPrimaryAction(), _currentStep.ToString());
         }
-
 
         [RelayCommand]
         private void SecondaryAction()
@@ -243,8 +257,6 @@ namespace CollectaMundo.ViewModels
                 CrunchingDataMessage = string.Empty;
             }
         }
-
-
 
         [RelayCommand]
         private void Cancel() => CancelImport();

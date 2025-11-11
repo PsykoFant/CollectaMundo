@@ -7,45 +7,59 @@ namespace CollectaMundo.DomainLogic.Import
     public class ImportLogic : IImportLogic
     {
         // Step 1
-        public async Task<List<TempCardItem>> ParseCsvFileAsync(string filePath)
+        public async Task<List<TempCardItem>> ParseCsvFileAsync(string filePath, IProgress<int>? progress = null)
         {
             var cardItems = new List<TempCardItem>();
             var delimiter = ',';
 
+            // Step 1: Estimate total lines
+            int totalLines = 0;
+            using (var counter = new StreamReader(filePath, Encoding.UTF8))
+                while (await counter.ReadLineAsync() is not null)
+                    totalLines++;
+
+            // Step 2: Parse actual content
             using var reader = new StreamReader(filePath, Encoding.UTF8);
             string? header = await reader.ReadLineAsync();
             if (header == null)
-            {
                 return cardItems;
-            }
 
-            if (header.Contains(';'))
-            {
-                delimiter = ';';
-            }
-
+            if (header.Contains(';')) delimiter = ';';
             var headers = ParseCsvLine(header, delimiter);
 
+            int currentLine = 0;
             while (!reader.EndOfStream)
             {
-                var line = await reader.ReadLineAsync();
+                string? line = await reader.ReadLineAsync();
+                currentLine++;
+
                 if (line == null)
-                {
                     continue;
-                }
 
                 var values = ParseCsvLine(line, delimiter);
                 var item = new TempCardItem();
+
                 for (int i = 0; i < headers.Count; i++)
                 {
                     string cleaned = RemoveUnwantedPrefixes(values.Count > i ? values[i] : string.Empty);
                     item.Fields[headers[i]] = cleaned;
                 }
+
                 cardItems.Add(item);
+
+                // Report progress every 100 lines (or adjust)
+                if (currentLine % 100 == 0 && totalLines > 0)
+                {
+                    int percent = (int)((double)currentLine / totalLines * 100);
+                    progress?.Report(percent);
+                }
             }
 
+            // Ensure 100% reported at end
+            progress?.Report(100);
             return cardItems;
         }
+
         private static List<string> ParseCsvLine(string line, char delimiter)
         {
             var result = new List<string>();

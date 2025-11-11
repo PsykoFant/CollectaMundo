@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.Infrastructure.Import;
@@ -20,11 +21,16 @@ namespace CollectaMundo.ApplicationServices.Import
         }
 
         // Step 1
-        public async Task<(List<TempCardItem> parsedItems, ColumnMapping mapping)> LoadCsvFileAsync(string filePath)
+        public async Task<(List<TempCardItem>, ColumnMapping)> LoadCsvFileAsync(string filePath, ProgressSinks? progress = null)
         {
-            var parsedItems = await _importLogic.ParseCsvFileAsync(filePath);
-            var csvHeaders = parsedItems.FirstOrDefault()?.Fields.Keys.ToList() ?? [];
+            progress?.ProgressBarVisible.Report(true);
+            progress?.Percent.Report(0);
+            progress?.Step.Report("Reading CSV file...");
 
+            // This now calls ParseCsvFileAsync with the progress reporter
+            var parsedItems = await _importLogic.ParseCsvFileAsync(filePath, progress?.Percent);
+
+            var csvHeaders = parsedItems.FirstOrDefault()?.Fields.Keys.ToList() ?? [];
             var dbFields = await CardIdentifiersColumns();
 
             var mapping = new ColumnMapping
@@ -35,8 +41,13 @@ namespace CollectaMundo.ApplicationServices.Import
                 SelectedDatabaseField = dbFields.FirstOrDefault()
             };
 
+            progress?.Percent.Report(100);
+            progress?.ProgressBarVisible.Report(false);
+
             return (parsedItems, mapping);
         }
+
+
         private async Task<List<string>> CardIdentifiersColumns()
         {
             await using var uow = new UnitOfWork(_dbFactory);
