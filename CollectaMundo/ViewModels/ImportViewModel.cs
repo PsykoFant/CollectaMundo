@@ -118,61 +118,53 @@ namespace CollectaMundo.ViewModels
                 // Perform parsing (ParseCsvFileAsync now reports progress internally)
                 var (parsedItems, mapping) = await _importService.LoadCsvFileAsync(filePath, Progress, cancelToken);
 
-                // Hide progress bar when done
-                Progress.ProgressBarVisible.Report(false);
-
                 // Handle results
                 if (parsedItems.Count == 0)
                     return new(OperationResultCode.Empty, "The selected CSV file is malformed or empty.");
 
-                ImportCardList.Clear();
                 foreach (var item in parsedItems)
                 {
                     cancelToken.ThrowIfCancellationRequested();
                     ImportCardList.Add(item);
                 }
 
-
-                Mappings.Clear();
                 Mappings.Add(mapping);
 
                 GoToStep(ImportStep.IdColumnMapping);
-                DebugAllItems();
                 return new(OperationResultCode.Success, "CSV parsed successfully.");
 
             }
         }
         public async Task<OperationResult> AfterStep2Action()
         {
-            try
+            var mapping = Mappings.FirstOrDefault() ?? throw new InvalidOperationException("No mapping found after Step 2");
+
+            Progress.ProgressBarVisible.Report(true);
+            Progress.Step.Report("ID Matching");
+            Progress.Detail.Report("Please wait - attempting to match ids...");
+
+            // Prepare cancel
+            var cancelToken = _userPromptService.GetNewCancellationToken();
+
+            var result = await Task.Run(() => _importService.TryResolveUuidsFromMappedIdAsync([.. ImportCardList], mapping, Progress, cancelToken));
+
+            if (result.TotalItems == result.ItemsWithUuid)
             {
-                var mapping = Mappings.FirstOrDefault() ?? throw new InvalidOperationException("No mapping found after Step 2");
-                Progress.Detail.Report("Please wait - attempting to match ids...");
-                var result = await Task.Run(() => _importService.TryResolveUuidsFromMappedIdAsync([.. ImportCardList], mapping));
-
-                //DebugImportProcess();
-
-                if (result.TotalItems == result.ItemsWithUuid)
+                if (result.ItemsWithMultipleUuids > 0)
                 {
-                    if (result.ItemsWithMultipleUuids > 0)
-                    {
-                        GoToStep(ImportStep.MultipleUuidsSelection);
-                    }
-                    else
-                    {
-                        GoToStep(ImportStep.AdditionalFieldsMapping);
-                    }
+                    GoToStep(ImportStep.MultipleUuidsSelection);
                 }
                 else
                 {
-                    GoToStep(ImportStep.NameAndSetMapping);
+                    GoToStep(ImportStep.AdditionalFieldsMapping);
                 }
-                return new OperationResult(OperationResultCode.Success, "ID mapping ended successfully.");
             }
-            catch (Exception ex)
+            else
             {
-                return new OperationResult(OperationResultCode.Error, $"Failed during ID mapping: {ex.Message}");
+                GoToStep(ImportStep.NameAndSetMapping);
             }
+            return new OperationResult(OperationResultCode.Success, "ID mapping ended successfully.");
+
         }
         public async Task<OperationResult> AfterStep3Action()
         {
@@ -311,6 +303,7 @@ namespace CollectaMundo.ViewModels
             }
             finally
             {
+                Progress.ProgressBarVisible.Report(false);
                 _userPromptService.ClearCancellation();
                 IsProcessing = false;
             }

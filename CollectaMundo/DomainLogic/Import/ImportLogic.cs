@@ -36,7 +36,8 @@ namespace CollectaMundo.DomainLogic.Import
             int currentLine = 0;
             while (!reader.EndOfStream)
             {
-                cancelToken.ThrowIfCancellationRequested();
+                if (totalLines % 100 == 0)
+                    cancelToken.ThrowIfCancellationRequested();
 
                 string? line = await reader.ReadLineAsync(cancelToken);
                 currentLine++;
@@ -131,38 +132,47 @@ namespace CollectaMundo.DomainLogic.Import
         }
 
         // Step 2
-        public ImportMatchSummaryDto AssignUuidsToImportItems(List<TempCardItem> importCandidates, Dictionary<string, List<string>> idToUuids, string selectedCsvHeader)
+        public ImportMatchSummaryDto AssignUuidsToImportItems(List<TempCardItem> importCandidates, Dictionary<string, List<string>> idToUuids, string selectedCsvHeader, IProgress<int>? percentProgress, CancellationToken cancelToken)
         {
-            int total = 0;
+            int processed = 0;
             int matchedUuid = 0;
             int matchedMultipleUuids = 0;
+            int total = importCandidates.Count;
 
             foreach (var item in importCandidates)
             {
-                total++;
+                processed++;
+
+                if (processed % 100 == 0)
+                {
+                    cancelToken.ThrowIfCancellationRequested();
+                    if (total > 0)
+                    {
+                        int percent = (int)((double)processed / total * 100);
+                        percentProgress?.Report(percent);
+                    }
+                }
 
                 if (!item.Fields.TryGetValue(selectedCsvHeader, out var csvValue) || string.IsNullOrWhiteSpace(csvValue))
-                {
                     continue;
-                }
 
                 if (!idToUuids.TryGetValue(csvValue, out var uuids) || uuids == null || uuids.Count == 0)
-                {
                     continue;
-                }
 
                 if (uuids.Count == 1)
                 {
                     item.Fields["uuid"] = uuids[0];
                     matchedUuid++;
                 }
-                else // multiple matches
+                else
                 {
                     item.Fields["uuids"] = string.Join(",", uuids);
                     matchedUuid++;
                     matchedMultipleUuids++;
                 }
             }
+
+            percentProgress?.Report(100);
 
             return new ImportMatchSummaryDto
             {
@@ -171,5 +181,6 @@ namespace CollectaMundo.DomainLogic.Import
                 ItemsWithMultipleUuids = matchedMultipleUuids
             };
         }
+
     }
 }

@@ -30,7 +30,7 @@ namespace CollectaMundo.ApplicationServices.Import
                 progress.ProgressBarVisible.Report(true);
                 progress.Percent.Report(0);
 
-                // This now calls ParseCsvFileAsync with the progress reporter
+                // Calls ParseCsvFileAsync with progress reporter
                 var parsedItems = await _importLogic.ParseCsvFileAsync(filePath, progress.Percent, cancelToken);
 
                 var csvHeaders = parsedItems.FirstOrDefault()?.Fields.Keys.ToList() ?? [];
@@ -44,8 +44,8 @@ namespace CollectaMundo.ApplicationServices.Import
                     SelectedDatabaseField = dbFields.FirstOrDefault()
                 };
 
-                progress?.Percent.Report(100);
-                progress?.ProgressBarVisible.Report(false);
+                progress.Percent.Report(100);
+                progress.ProgressBarVisible.Report(false);
 
                 return (parsedItems, mapping);
             }
@@ -82,7 +82,7 @@ namespace CollectaMundo.ApplicationServices.Import
         }
 
         // Step 2
-        public async Task<ImportMatchSummaryDto> TryResolveUuidsFromMappedIdAsync(List<TempCardItem> importCandidates, ColumnMapping mapping)
+        public async Task<ImportMatchSummaryDto> TryResolveUuidsFromMappedIdAsync(List<TempCardItem> importCandidates, ColumnMapping mapping, ProgressSinks progress, CancellationToken cancelToken)
         {
             var lookupValues = importCandidates.Select(item => item.Fields.TryGetValue(mapping.SelectedCsvHeader!, out var val) ? val : null)
                 .Where(val => !string.IsNullOrWhiteSpace(val))
@@ -91,11 +91,10 @@ namespace CollectaMundo.ApplicationServices.Import
 
             var idToUuids = await GetCardUuidsByIdFieldAsync(mapping.SelectedDatabaseField!, lookupValues);
 
-            var summary = _importLogic.AssignUuidsToImportItems(importCandidates, idToUuids, mapping.SelectedCsvHeader!);
+            var summary = _importLogic.AssignUuidsToImportItems(importCandidates, idToUuids, mapping.SelectedCsvHeader!, progress.Percent, cancelToken);
 
             return summary;
         }
-
         private async Task<Dictionary<string, List<string>>> GetCardUuidsByIdFieldAsync(string identifierFieldName, IEnumerable<string> values)
         {
             await using var uow = new UnitOfWork(_dbFactory);
