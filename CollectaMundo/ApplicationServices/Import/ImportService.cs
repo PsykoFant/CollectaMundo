@@ -25,7 +25,7 @@ namespace CollectaMundo.ApplicationServices.Import
         {
             try
             {
-                cancelToken.ThrowIfCancellationRequested(); // Fast exit if cancelled before start
+                cancelToken.ThrowIfCancellationRequested(); // Fast exit if cancelled before start               
 
                 progress.ProgressBarVisible.Report(true);
                 progress.Percent.Report(0);
@@ -60,7 +60,6 @@ namespace CollectaMundo.ApplicationServices.Import
             }
 
         }
-
         private async Task<List<string>> CardIdentifiersColumns()
         {
             await using var uow = new UnitOfWork(_dbFactory);

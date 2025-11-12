@@ -105,40 +105,47 @@ namespace CollectaMundo.ViewModels
             // Let the user pick the CSV file
             var filePath = _importService.PromptForCsvFile();
             if (string.IsNullOrEmpty(filePath))
+            {
                 return new(OperationResultCode.CancelledByUser, "User cancelled file selection.");
+            }
+            else
+            {
+                if (CurrentStepViewModel is ImportStep01_StartViewModel step1) { step1.FlowDocumentVisibility = Visibility.Collapsed; } // Hide instructions during processing
+
+                Progress.ProgressBarVisible.Report(true);
+                Progress.Headline.Report(string.Empty);
+                Progress.Step.Report("CSV PARSING");
+                Progress.Detail.Report("Parsing CSV file...");
+
+                // Prepare cancel
+                CancelVisibility = Visibility.Visible;
+                var cancelToken = _userPromptService.GetNewCancellationToken();
+
+                // Perform parsing (ParseCsvFileAsync now reports progress internally)
+                var (parsedItems, mapping) = await _importService.LoadCsvFileAsync(filePath, Progress, cancelToken);
+
+                // Hide progress bar when done
+                Progress.ProgressBarVisible.Report(false);
+
+                // Handle results
+                if (parsedItems.Count == 0)
+                    return new(OperationResultCode.Empty, "The selected CSV file is empty.");
+
+                ImportCardList.Clear();
+                foreach (var item in parsedItems)
+                {
+                    cancelToken.ThrowIfCancellationRequested();
+                    ImportCardList.Add(item);
+                }
 
 
-            if (CurrentStepViewModel is ImportStep01_StartViewModel step1) { step1.FlowDocumentVisibility = Visibility.Collapsed; } // Hide instructions during processing
+                Mappings.Clear();
+                Mappings.Add(mapping);
 
-            Progress.ProgressBarVisible.Report(true);
-            Progress.Headline.Report(string.Empty);
-            Progress.Step.Report("CSV PARSING");
-            Progress.Detail.Report("Parsing CSV file...");
+                GoToStep(ImportStep.IdColumnMapping);
+                return new(OperationResultCode.Success, "CSV parsed successfully.");
 
-            // Prepare cancel
-            CancelVisibility = Visibility.Visible;
-            var cancelToken = _userPromptService.GetNewCancellationToken();
-
-            // Perform parsing (ParseCsvFileAsync now reports progress internally)
-            var (parsedItems, mapping) = await _importService.LoadCsvFileAsync(filePath, Progress, cancelToken);
-
-            // Hide progress bar when done
-            Progress.ProgressBarVisible.Report(false);
-
-            // Handle results
-            if (parsedItems.Count == 0)
-                return new(OperationResultCode.Empty, "The selected CSV file is empty.");
-
-            ImportCardList.Clear();
-            foreach (var item in parsedItems)
-                ImportCardList.Add(item);
-
-            Mappings.Clear();
-            Mappings.Add(mapping);
-
-            GoToStep(ImportStep.IdColumnMapping);
-            return new(OperationResultCode.Success, "CSV parsed successfully.");
-
+            }
         }
         public async Task<OperationResult> AfterStep2Action()
         {
@@ -242,7 +249,6 @@ namespace CollectaMundo.ViewModels
         {
             CurrentStepViewModel!.OnSecondaryAction();
         }
-
         private async Task ExecuteStepAsync(Func<Task<OperationResult>> stepFunc, string stepName)
         {
             try
@@ -294,6 +300,7 @@ namespace CollectaMundo.ViewModels
                 if (result.Code != OperationResultCode.Success)
                 {
                     ImportFailVisibility = Visibility.Visible;
+                    CancelVisibility = Visibility.Collapsed;
                 }
             }
             catch (Exception ex)
@@ -316,7 +323,6 @@ namespace CollectaMundo.ViewModels
             ClearProgress();
 
             _userPromptService.CancelCurrentOperation();
-            CancelVisibility = Visibility.Collapsed;
 
             ImportFailVisibility = Visibility.Visible;
 
