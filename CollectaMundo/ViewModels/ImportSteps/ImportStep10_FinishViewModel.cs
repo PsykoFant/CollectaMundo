@@ -9,7 +9,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
     public partial class ImportStep10_FinishViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent = parent;
-        public string PrimaryActionButtonText => "  OK   ";
+        public string PrimaryActionButtonText => "  OK  ";
         public string SecondaryActionButtonText => string.Empty;
         public Visibility SecondaryActionVisibility => Visibility.Collapsed;
         public async Task<OperationResult> OnPrimaryAction()

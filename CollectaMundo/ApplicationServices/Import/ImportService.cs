@@ -21,31 +21,45 @@ namespace CollectaMundo.ApplicationServices.Import
         }
 
         // Step 1
-        public async Task<(List<TempCardItem>, ColumnMapping)> LoadCsvFileAsync(string filePath, ProgressSinks? progress = null)
+        public async Task<(List<TempCardItem>, ColumnMapping)> LoadCsvFileAsync(string filePath, ProgressSinks progress, CancellationToken cancelToken)
         {
-            progress?.ProgressBarVisible.Report(true);
-            progress?.Percent.Report(0);
-
-            // This now calls ParseCsvFileAsync with the progress reporter
-            var parsedItems = await _importLogic.ParseCsvFileAsync(filePath, progress?.Percent);
-
-            var csvHeaders = parsedItems.FirstOrDefault()?.Fields.Keys.ToList() ?? [];
-            var dbFields = await CardIdentifiersColumns();
-
-            var mapping = new ColumnMapping
+            try
             {
-                CsvHeaders = csvHeaders,
-                DatabaseFields = dbFields,
-                SelectedCsvHeader = csvHeaders.FirstOrDefault(),
-                SelectedDatabaseField = dbFields.FirstOrDefault()
-            };
+                cancelToken.ThrowIfCancellationRequested(); // Fast exit if cancelled before start
 
-            progress?.Percent.Report(100);
-            progress?.ProgressBarVisible.Report(false);
+                progress.ProgressBarVisible.Report(true);
+                progress.Percent.Report(0);
 
-            return (parsedItems, mapping);
+                // This now calls ParseCsvFileAsync with the progress reporter
+                var parsedItems = await _importLogic.ParseCsvFileAsync(filePath, progress.Percent, cancelToken);
+
+                var csvHeaders = parsedItems.FirstOrDefault()?.Fields.Keys.ToList() ?? [];
+                var dbFields = await CardIdentifiersColumns();
+
+                var mapping = new ColumnMapping
+                {
+                    CsvHeaders = csvHeaders,
+                    DatabaseFields = dbFields,
+                    SelectedCsvHeader = csvHeaders.FirstOrDefault(),
+                    SelectedDatabaseField = dbFields.FirstOrDefault()
+                };
+
+                progress?.Percent.Report(100);
+                progress?.ProgressBarVisible.Report(false);
+
+                return (parsedItems, mapping);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Log or handle other exceptions as needed
+                throw new ApplicationException("An error occurred while parsin the CSV file.", ex);
+            }
+
         }
-
 
         private async Task<List<string>> CardIdentifiersColumns()
         {

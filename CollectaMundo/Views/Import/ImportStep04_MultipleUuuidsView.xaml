@@ -9,7 +9,7 @@
              d:Style="{StaticResource {x:Type UserControl}}"
              d:DesignHeight="600" d:DesignWidth="800">
     <Grid HorizontalAlignment="Center">
-        <Label Content="Multiple versions of a card found!" Style="{StaticResource MediumHeaderLabelStyle}" />        
+        <!--<Label Content="Multiple versions of a card found!" Style="{StaticResource MediumHeaderLabelStyle}" />-->        
         <FlowDocumentScrollViewer Margin="0,30,0,0"
                           VerticalAlignment="Top"
                           HorizontalAlignment="Center"

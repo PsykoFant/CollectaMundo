@@ -6,7 +6,7 @@ namespace CollectaMundo.ApplicationServices.Import
     public interface IImportService
     {
         string? PromptForCsvFile();
-        Task<(List<TempCardItem>, ColumnMapping)> LoadCsvFileAsync(string filePath, ProgressSinks? progress = null);
+        Task<(List<TempCardItem>, ColumnMapping)> LoadCsvFileAsync(string filePath, ProgressSinks progress, CancellationToken cancelToken);
         Task<ImportMatchSummaryDto> TryResolveUuidsFromMappedIdAsync(List<TempCardItem> importCandidates, ColumnMapping mapping);
     }
 }

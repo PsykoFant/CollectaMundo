@@ -7,7 +7,7 @@ namespace CollectaMundo.DomainLogic.Import
     public class ImportLogic : IImportLogic
     {
         // Step 1
-        public async Task<List<TempCardItem>> ParseCsvFileAsync(string filePath, IProgress<int>? progress = null)
+        public async Task<List<TempCardItem>> ParseCsvFileAsync(string filePath, IProgress<int> progress, CancellationToken cancelToken)
         {
             var cardItems = new List<TempCardItem>();
             var delimiter = ',';
@@ -15,12 +15,12 @@ namespace CollectaMundo.DomainLogic.Import
             // Step 1: Estimate total lines
             int totalLines = 0;
             using (var counter = new StreamReader(filePath, Encoding.UTF8))
-                while (await counter.ReadLineAsync() is not null)
+                while (await counter.ReadLineAsync(cancelToken) is not null)
                     totalLines++;
 
             // Step 2: Parse actual content
             using var reader = new StreamReader(filePath, Encoding.UTF8);
-            string? header = await reader.ReadLineAsync();
+            string? header = await reader.ReadLineAsync(cancelToken);
             if (header == null)
                 return cardItems;
 
@@ -30,7 +30,9 @@ namespace CollectaMundo.DomainLogic.Import
             int currentLine = 0;
             while (!reader.EndOfStream)
             {
-                string? line = await reader.ReadLineAsync();
+                cancelToken.ThrowIfCancellationRequested();
+
+                string? line = await reader.ReadLineAsync(cancelToken);
                 currentLine++;
 
                 if (line == null)

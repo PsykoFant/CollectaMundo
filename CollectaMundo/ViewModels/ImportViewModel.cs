@@ -49,6 +49,9 @@ namespace CollectaMundo.ViewModels
         private Visibility progressVisibility = Visibility.Collapsed;
 
         [ObservableProperty]
+        private Visibility importFailVisibility = Visibility.Collapsed;
+
+        [ObservableProperty]
         private Visibility cancelVisibility = Visibility.Collapsed;
         partial void OnIsProcessingChanged(bool oldValue, bool newValue)
         {
@@ -97,51 +100,45 @@ namespace CollectaMundo.ViewModels
         }
         public async Task<OperationResult> AfterStep1Action()
         {
-            try
-            {
-                // Let the user pick the CSV file
-                var filePath = _importService.PromptForCsvFile();
-                if (string.IsNullOrEmpty(filePath))
-                    return new(OperationResultCode.CancelledByUser, "User cancelled file selection.");
+            _parentViewModelContext.SetUiBusy(true);
+
+            // Let the user pick the CSV file
+            var filePath = _importService.PromptForCsvFile();
+            if (string.IsNullOrEmpty(filePath))
+                return new(OperationResultCode.CancelledByUser, "User cancelled file selection.");
 
 
-                _parentViewModelContext.SetUiBusy(true);
-                if (CurrentStepViewModel is ImportStep01_StartViewModel step1) { step1.FlowDocumentVisibility = Visibility.Collapsed; } // Hide instructions during processing
+            if (CurrentStepViewModel is ImportStep01_StartViewModel step1) { step1.FlowDocumentVisibility = Visibility.Collapsed; } // Hide instructions during processing
 
-                Progress.ProgressBarVisible.Report(true);
-                Progress.Percent.Report(0);
-                Progress.Headline.Report(string.Empty);
-                Progress.Step.Report("CSV PARSING");
-                Progress.Detail.Report("Parsing CSV file...");
+            Progress.ProgressBarVisible.Report(true);
+            Progress.Headline.Report(string.Empty);
+            Progress.Step.Report("CSV PARSING");
+            Progress.Detail.Report("Parsing CSV file...");
 
-                CancelVisibility = Visibility.Visible;
+            // Prepare cancel
+            CancelVisibility = Visibility.Visible;
+            var cancelToken = _userPromptService.GetNewCancellationToken();
 
-                // Perform parsing (ParseCsvFileAsync now reports progress internally)
-                var (parsedItems, mapping) = await _importService.LoadCsvFileAsync(filePath, Progress);
+            // Perform parsing (ParseCsvFileAsync now reports progress internally)
+            var (parsedItems, mapping) = await _importService.LoadCsvFileAsync(filePath, Progress, cancelToken);
 
-                // Hide progress bar when done
-                Progress.ProgressBarVisible.Report(false);
+            // Hide progress bar when done
+            Progress.ProgressBarVisible.Report(false);
 
-                // Handle results
-                if (parsedItems.Count == 0)
-                    return new(OperationResultCode.Empty, "The selected CSV file is empty.");
+            // Handle results
+            if (parsedItems.Count == 0)
+                return new(OperationResultCode.Empty, "The selected CSV file is empty.");
 
-                ImportCardList.Clear();
-                foreach (var item in parsedItems)
-                    ImportCardList.Add(item);
+            ImportCardList.Clear();
+            foreach (var item in parsedItems)
+                ImportCardList.Add(item);
 
-                Mappings.Clear();
-                Mappings.Add(mapping);
+            Mappings.Clear();
+            Mappings.Add(mapping);
 
-                GoToStep(ImportStep.IdColumnMapping);
-                return new(OperationResultCode.Success, "CSV parsed successfully.");
-            }
-            catch (Exception ex)
-            {
-                // Ensure bar hides even on error
-                ProgressVisibility = Visibility.Collapsed;
-                return new(OperationResultCode.Error, $"Failed to parse CSV: {ex.Message}");
-            }
+            GoToStep(ImportStep.IdColumnMapping);
+            return new(OperationResultCode.Success, "CSV parsed successfully.");
+
         }
         public async Task<OperationResult> AfterStep2Action()
         {
@@ -219,21 +216,16 @@ namespace CollectaMundo.ViewModels
         {
             ImportCardList.Clear();
             Mappings.Clear();
+
             _userPromptService.CancelPendingPrompt();
-            ImportOverlayVisibility = Visibility.Collapsed;
+            _userPromptService.ClearCancellation();
+
             CurrentStepViewModel = null;
             _currentStep = ImportStep.Start;
+
             _parentViewModelContext.SetUiBusy(false);
-
-            Progress.ProgressBarVisible.Report(false);
-            Progress.Percent.Report(0);
-            ProgressDetailMessage = string.Empty;
-            Progress.Step.Report(string.Empty);
-            Progress.Headline.Report(string.Empty);
-            Progress.Detail.Report(string.Empty);
-
-            // Resume pending prompt to unlock utilities
-            _userPromptService.CancelPendingPrompt();
+            ImportOverlayVisibility = Visibility.Collapsed;
+            ImportFailVisibility = Visibility.Collapsed;
 
             return new(OperationResultCode.Success, "Cleanup completed");
 
@@ -257,27 +249,51 @@ namespace CollectaMundo.ViewModels
             {
                 IsProcessing = true;
 
-                var result = await stepFunc();
+                OperationResult result;
+                try
+                {
+                    result = await stepFunc();
+                }
+                catch (OperationCanceledException)
+                {
+                    result = new OperationResult(OperationResultCode.CancelledByUser, $"{stepName} cancelled by user.");
+                }
+                catch (Exception ex)
+                {
+                    result = new OperationResult(OperationResultCode.Error, $"Unexpected error in {stepName}: {ex.Message}");
+                }
 
                 switch (result.Code)
                 {
                     case OperationResultCode.Success:
                         Debug.WriteLine($"{stepName} completed successfully: {result.Message}");
+                        ClearProgress();
                         break;
 
                     case OperationResultCode.Empty:
+
                     case OperationResultCode.Error:
-                        MessageBox.Show(result.Message, "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        ClearProgress();
+                        Progress.Headline.Report("Import Failed!");
+                        Progress.Detail.Report(result.Message);
+                        GoToStep(ImportStep.Finish);
+
                         Debug.WriteLine($"{stepName} failed: {result.Message}");
                         break;
 
                     case OperationResultCode.CancelledByUser:
                         Debug.WriteLine($"{stepName} cancelled by user.");
+                        CancelImport();
                         break;
 
                     default:
                         Debug.WriteLine($"{stepName} ended with status {result.Code}: {result.Message}");
                         break;
+                }
+
+                if (result.Code != OperationResultCode.Success)
+                {
+                    ImportFailVisibility = Visibility.Visible;
                 }
             }
             catch (Exception ex)
@@ -287,10 +303,8 @@ namespace CollectaMundo.ViewModels
             }
             finally
             {
+                _userPromptService.ClearCancellation();
                 IsProcessing = false;
-                Progress.Headline.Report(string.Empty);
-                Progress.Step.Report(string.Empty);
-                Progress.Detail.Report(string.Empty);
             }
         }
 
@@ -298,9 +312,26 @@ namespace CollectaMundo.ViewModels
         private void Cancel() => CancelImport();
         private void CancelImport()
         {
-            Progress.Step.Report("Import cancelled");
+            Debug.WriteLine("ImportViewModel: Cancelling import operation as per user request.");
+            ClearProgress();
+
+            _userPromptService.CancelCurrentOperation();
+            CancelVisibility = Visibility.Collapsed;
+
+            ImportFailVisibility = Visibility.Visible;
+
+            Progress.Headline.Report("Import cancelled");
             Progress.Detail.Report("User cancellation - no cards imported to collection.");
-            _currentStep = ImportStep.Finish;
+            GoToStep(ImportStep.Finish);
+        }
+
+        private void ClearProgress()
+        {
+            Progress.Headline.Report(string.Empty);
+            Progress.Step.Report(string.Empty);
+            Progress.Detail.Report(string.Empty);
+            Progress.Percent.Report(0);
+            Progress.ProgressBarVisible.Report(false);
         }
 
         private static void DebugAllItems()

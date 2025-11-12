@@ -17,6 +17,14 @@
         <Label Content="{Binding ProgressStep}" Style="{StaticResource MediumHeaderLabelStyle}" />
         <Label Content="{Binding ProgressHeadline}" Style="{StaticResource BigHeaderLabelStyle}" />
 
+        <Image Source="/Resources/Images/counterspell_fail.png"
+                   Visibility="{Binding ImportFailVisibility}"
+                   Stretch="None"
+                   VerticalAlignment="Top"
+                   HorizontalAlignment="Center"
+
+                   Margin="0,150,0,0"/>
+
         <ContentControl Content="{Binding CurrentStepViewModel}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
         <ContentControl.Resources>
                 <DataTemplate DataType="{x:Type vmsteps:ImportStep01_StartViewModel}">
@@ -34,6 +42,9 @@
                 <DataTemplate DataType="{x:Type vmsteps:ImportStep05_AdditionalFieldsMappingViewModel}">
                     <views:ImportStep05_AdditionalFieldsMappingView />
                 </DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep10_FinishViewModel}">
+                    <views:ImportStep10_FinishView />
+                </DataTemplate>            
             </ContentControl.Resources>
         </ContentControl>
 
