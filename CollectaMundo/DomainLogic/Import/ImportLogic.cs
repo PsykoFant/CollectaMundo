@@ -27,6 +27,12 @@ namespace CollectaMundo.DomainLogic.Import
             if (header.Contains(';')) delimiter = ';';
             var headers = ParseCsvLine(header, delimiter);
 
+            if (headers.Count < 2)
+            {
+                // Probably not a valid CSV — possibly a text file or malformed export
+                return [];
+            }
+
             int currentLine = 0;
             while (!reader.EndOfStream)
             {
@@ -59,9 +65,15 @@ namespace CollectaMundo.DomainLogic.Import
 
             // Ensure 100% reported at end
             progress?.Report(100);
+
+            if (cardItems.Count == 0)
+            {
+                // File had header but no usable rows
+                return [];
+            }
+
             return cardItems;
         }
-
         private static List<string> ParseCsvLine(string line, char delimiter)
         {
             var result = new List<string>();

@@ -87,17 +87,11 @@ namespace CollectaMundo.ViewModels
         public async Task Begin()
         {
             CurrentStepViewModel = new ImportStep01_StartViewModel(this);
-
             Progress.Headline.Report("The Import Wizard");
 
-            var tcs = _userPromptService.CreatePrompt();
-            var confirmed = await tcs.Task;
-
-            if (confirmed)
-            {
-                // User finished import successfully
-            }
+            _ = await _userPromptService.CreatePrompt().Task;
         }
+
         public async Task<OperationResult> AfterStep1Action()
         {
             _parentViewModelContext.SetUiBusy(true);
@@ -129,7 +123,7 @@ namespace CollectaMundo.ViewModels
 
                 // Handle results
                 if (parsedItems.Count == 0)
-                    return new(OperationResultCode.Empty, "The selected CSV file is empty.");
+                    return new(OperationResultCode.Empty, "The selected CSV file is malformed or empty.");
 
                 ImportCardList.Clear();
                 foreach (var item in parsedItems)
@@ -143,6 +137,7 @@ namespace CollectaMundo.ViewModels
                 Mappings.Add(mapping);
 
                 GoToStep(ImportStep.IdColumnMapping);
+                DebugAllItems();
                 return new(OperationResultCode.Success, "CSV parsed successfully.");
 
             }
@@ -269,6 +264,11 @@ namespace CollectaMundo.ViewModels
                     result = new OperationResult(OperationResultCode.Error, $"Unexpected error in {stepName}: {ex.Message}");
                 }
 
+                if (result.Code != OperationResultCode.Success)
+                {
+                    ImportFailVisibility = Visibility.Visible;
+                }
+
                 switch (result.Code)
                 {
                     case OperationResultCode.Success:
@@ -277,13 +277,20 @@ namespace CollectaMundo.ViewModels
                         break;
 
                     case OperationResultCode.Empty:
-
-                    case OperationResultCode.Error:
                         ClearProgress();
+                        CancelVisibility = Visibility.Collapsed;
                         Progress.Headline.Report("Import Failed!");
                         Progress.Detail.Report(result.Message);
                         GoToStep(ImportStep.Finish);
+                        Debug.WriteLine($"{stepName} resulted in empty data: {result.Message}");
+                        break;
 
+                    case OperationResultCode.Error:
+                        ClearProgress();
+                        CancelVisibility = Visibility.Collapsed;
+                        Progress.Headline.Report("Import Failed!");
+                        Progress.Detail.Report(result.Message);
+                        GoToStep(ImportStep.Finish);
                         Debug.WriteLine($"{stepName} failed: {result.Message}");
                         break;
 
@@ -295,12 +302,6 @@ namespace CollectaMundo.ViewModels
                     default:
                         Debug.WriteLine($"{stepName} ended with status {result.Code}: {result.Message}");
                         break;
-                }
-
-                if (result.Code != OperationResultCode.Success)
-                {
-                    ImportFailVisibility = Visibility.Visible;
-                    CancelVisibility = Visibility.Collapsed;
                 }
             }
             catch (Exception ex)
@@ -321,6 +322,7 @@ namespace CollectaMundo.ViewModels
         {
             Debug.WriteLine("ImportViewModel: Cancelling import operation as per user request.");
             ClearProgress();
+            CancelVisibility = Visibility.Collapsed;
 
             _userPromptService.CancelCurrentOperation();
 

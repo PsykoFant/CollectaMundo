@@ -10,15 +10,16 @@ namespace CollectaMundo.ViewModels.ImportSteps
     {
         private readonly ImportViewModel _parent = parent;
 
+        // Visibilities and button texts
         [ObservableProperty]
         private Visibility flowDocumentVisibility = Visibility.Visible;
-        public string PrimaryActionButtonText => "  Let's go!  \u27A1";
-        public string SecondaryActionButtonText => string.Empty; // No secondary action on first screen
         public Visibility SecondaryActionVisibility => Visibility.Collapsed;
+        public string PrimaryActionButtonText => "  Let's go!  \u27A1";
+        public string SecondaryActionButtonText => string.Empty; // No secondary action on first screen        
 
+        // Invoked when buttons are clicked
         public async Task<OperationResult> OnPrimaryAction()
         {
-
             return await _parent.AfterStep1Action();
         }
         public void OnSecondaryAction()
@@ -27,6 +28,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
 
         }
 
+        // Command to clear selected mapping
         [RelayCommand]
         private static void ClearSelectedMapping(ColumnMapping mapping)
         {
