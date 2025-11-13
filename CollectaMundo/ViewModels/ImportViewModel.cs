@@ -7,6 +7,7 @@ using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 
@@ -38,9 +39,45 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private string? progressDetailMessage;
 
+        //  Button Enablement
+        // When either of these two change, the computed button properties must refresh
         [ObservableProperty]
-        private bool isProcessing = false;
-        public bool IsActionButtonEnabled => !IsProcessing;
+        [NotifyPropertyChangedFor(nameof(IsPrimaryActionButtonEnabled))]
+        [NotifyPropertyChangedFor(nameof(IsSecondaryActionButtonEnabled))]
+        private bool isProcessing;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsPrimaryActionButtonEnabled))]
+        [NotifyPropertyChangedFor(nameof(IsSecondaryActionButtonEnabled))]
+        private IImportStepViewModel? currentStepViewModel;
+
+        // Computed button states (unchanged logic)
+        public bool IsPrimaryActionButtonEnabled =>
+            !IsProcessing && (CurrentStepViewModel?.CanExecutePrimaryAction ?? false);
+
+        public bool IsSecondaryActionButtonEnabled =>
+            !IsProcessing && (CurrentStepViewModel?.CanExecuteSecondaryAction ?? false);
+
+        // Handle subscriptions for child VM PropertyChanged events
+        partial void OnCurrentStepViewModelChanged(IImportStepViewModel? oldValue, IImportStepViewModel? newValue)
+        {
+            if (oldValue is INotifyPropertyChanged oldNotify)
+                oldNotify.PropertyChanged -= CurrentStep_PropertyChanged;
+
+            if (newValue is INotifyPropertyChanged newNotify)
+                newNotify.PropertyChanged += CurrentStep_PropertyChanged;
+        }
+
+        // Forward relevant child property changes to parent computed properties
+        private void CurrentStep_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(IImportStepViewModel.CanExecutePrimaryAction))
+                OnPropertyChanged(nameof(IsPrimaryActionButtonEnabled));
+
+            if (e.PropertyName == nameof(IImportStepViewModel.CanExecuteSecondaryAction))
+                OnPropertyChanged(nameof(IsSecondaryActionButtonEnabled));
+        }
+
 
         [ObservableProperty]
         private int progressValue;
@@ -53,19 +90,13 @@ namespace CollectaMundo.ViewModels
 
         [ObservableProperty]
         private Visibility cancelVisibility = Visibility.Collapsed;
-        partial void OnIsProcessingChanged(bool oldValue, bool newValue)
-        {
-            // When isProcessing changes, tell WPF that IsActionButtonEnabled changed too
-            OnPropertyChanged(nameof(IsActionButtonEnabled));
-        }
+
+
         public static ObservableCollection<TempCardItem> ImportCardList { get; } = [];
         public ObservableCollection<ColumnMapping> Mappings { get; } = [];
 
         [ObservableProperty]
         private Visibility importOverlayVisibility = Visibility.Collapsed;
-
-        [ObservableProperty]
-        private IImportStepViewModel? currentStepViewModel;
 
         private ImportStep _currentStep = ImportStep.Start;
         public void GoToStep(ImportStep step)
@@ -147,6 +178,8 @@ namespace CollectaMundo.ViewModels
             var cancelToken = _userPromptService.GetNewCancellationToken();
 
             var result = await Task.Run(() => _importService.TryResolveUuidsFromMappedIdAsync([.. ImportCardList], mapping, Progress, cancelToken));
+
+            Debug.WriteLine("ImportViewModel: ID Matching done");
 
             if (result.TotalItems == result.ItemsWithUuid)
             {

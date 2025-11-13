@@ -55,7 +55,7 @@
 
         <Button Content="{Binding CurrentStepViewModel.PrimaryActionButtonText}"
                 Command="{Binding PrimaryActionCommand}"
-                IsEnabled="{Binding IsActionButtonEnabled}"
+                IsEnabled="{Binding IsPrimaryActionButtonEnabled}"
                 HorizontalAlignment="Center"
                 Margin="0,610,0,0"
                 VerticalAlignment="Top"/>
@@ -64,7 +64,7 @@
 
         <Button Content="{Binding CurrentStepViewModel.SecondaryActionButtonText}"
                 Command="{Binding SecondaryActionCommand}"
-                IsEnabled="{Binding IsActionButtonEnabled}"
+                IsEnabled="{Binding IsSecondaryActionButtonEnabled}"
                 Visibility="{Binding CurrentStepViewModel.SecondaryActionVisibility}"
                 HorizontalAlignment="Right"
                 Margin="0,610,10,0"

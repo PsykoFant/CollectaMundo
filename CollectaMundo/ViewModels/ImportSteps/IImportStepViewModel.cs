@@ -7,11 +7,23 @@ namespace CollectaMundo.ViewModels.ImportSteps
 {
     public interface IImportStepViewModel
     {
+        // Actions to be performed when the primary and secondary buttons are clicked
         Task<OperationResult> OnPrimaryAction();
-        void OnSecondaryAction();
+        void OnSecondaryAction() { } // <-- default no-op
+
+        // Properties for button texts
         string PrimaryActionButtonText { get; }
         string SecondaryActionButtonText { get; }
-        IRelayCommand<ColumnMapping> ClearSelectedMappingCommand { get; }
+
+        // Properties to determine if actions can be executed
+        bool CanExecutePrimaryAction { get; }
+        bool CanExecuteSecondaryAction { get; }
+
+        // Property for secondary action visibility
         Visibility SecondaryActionVisibility { get; }
+
+        // Command to clear selected mapping
+        IRelayCommand<ColumnMapping> ClearSelectedMappingCommand { get; }
+
     }
 }

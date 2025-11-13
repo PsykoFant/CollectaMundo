@@ -15,6 +15,8 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public string PrimaryActionButtonText => "  Proceed  \u27A1";
         public string SecondaryActionButtonText => "  Skip  \u23ED";
         public Visibility SecondaryActionVisibility => Visibility.Collapsed;
+        public bool CanExecutePrimaryAction => true;
+        public bool CanExecuteSecondaryAction => false;
         public async Task<OperationResult> OnPrimaryAction()
         {
             return await _parent.AfterStep3Action();

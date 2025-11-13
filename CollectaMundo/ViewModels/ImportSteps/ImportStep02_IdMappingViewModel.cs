@@ -3,30 +3,50 @@ using CollectaMundo.DomainLogic.Import.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
-    public partial class ImportStep02_IdMappingViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
+    public partial class ImportStep02_IdMappingViewModel : ObservableObject, IImportStepViewModel
     {
-        private readonly ImportViewModel _parent = parent;
+        private readonly ImportViewModel _parent;
 
-        // Visibilities and button texts
+        //  Constructor
+        public ImportStep02_IdMappingViewModel(ImportViewModel parent)
+        {
+            _parent = parent;
+
+            // Subscribe to existing mapping items
+            foreach (var m in Mappings)
+                m.PropertyChanged += Mapping_PropertyChanged;
+
+            // Subscribe to mapping collection changes
+            Mappings.CollectionChanged += Mappings_CollectionChanged;
+        }
+
+        //  Step UI Info
         public string PrimaryActionButtonText => "  Proceed  \u27A1";
         public string SecondaryActionButtonText => "  Skip  \u23ED";
         public Visibility SecondaryActionVisibility => Visibility.Visible;
 
-        // Invoked when buttons are clicked
-        public async Task<OperationResult> OnPrimaryAction()
-        {
-            return await _parent.AfterStep2Action();
-        }
-        public void OnSecondaryAction()
-        {
-            _parent.GoToStep(ImportStep.NameAndSetMapping);
-        }
+        //  Step-level button enablement
+        public bool CanExecutePrimaryAction => Mappings.All(m => !string.IsNullOrEmpty(m.SelectedCsvHeader) && !string.IsNullOrEmpty(m.SelectedDatabaseField));
+        public bool CanExecuteSecondaryAction => true;
 
-        // Command to clear selected mapping
+        //  Actions
+        public async Task<OperationResult> OnPrimaryAction() => await _parent.AfterStep2Action();
+
+        //public async Task<OperationResult> OnPrimaryAction()
+        //{
+        //    return await _parent.AfterStep2Action();
+        //}
+
+        public void OnSecondaryAction() => _parent.GoToStep(ImportStep.NameAndSetMapping);
+
+        //  Clear Mapping Command
         [RelayCommand]
         private static void ClearSelectedMapping(ColumnMapping mapping)
         {
@@ -34,7 +54,35 @@ namespace CollectaMundo.ViewModels.ImportSteps
             mapping.SelectedDatabaseField = null;
         }
 
-        // proxy to parent's mappings (for easier binding)
+        //  Mapping Collection
         public ObservableCollection<ColumnMapping> Mappings => _parent.Mappings;
+        private void Mappings_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.NewItems != null)
+            {
+                foreach (ColumnMapping m in e.NewItems)
+                    m.PropertyChanged += Mapping_PropertyChanged;
+            }
+
+            if (e.OldItems != null)
+            {
+                foreach (ColumnMapping m in e.OldItems)
+                    m.PropertyChanged -= Mapping_PropertyChanged;
+            }
+
+            // Re-evaluate step-level CanExecute flag
+            OnPropertyChanged(nameof(CanExecutePrimaryAction));
+        }
+        private void Mapping_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            Debug.WriteLine($"Mapping property changed: {e.PropertyName}");
+
+            if (e.PropertyName is nameof(ColumnMapping.SelectedCsvHeader)
+                or nameof(ColumnMapping.SelectedDatabaseField))
+            {
+                // Re-evaluate parent button enablement
+                OnPropertyChanged(nameof(CanExecutePrimaryAction));
+            }
+        }
     }
 }

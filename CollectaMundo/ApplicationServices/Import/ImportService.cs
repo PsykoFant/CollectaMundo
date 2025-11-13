@@ -4,6 +4,7 @@ using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.Shared;
+using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.Import
 {
@@ -93,6 +94,7 @@ namespace CollectaMundo.ApplicationServices.Import
 
             var summary = _importLogic.AssignUuidsToImportItems(importCandidates, idToUuids, mapping.SelectedCsvHeader!, progress.Percent, cancelToken);
 
+            Debug.WriteLine("[TryResolveUuidsFromMappedIdAsync] Import id match done - returning ... ");
             return summary;
         }
         private async Task<Dictionary<string, List<string>>> GetCardUuidsByIdFieldAsync(string identifierFieldName, IEnumerable<string> values)
