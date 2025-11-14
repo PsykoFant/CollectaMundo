@@ -35,7 +35,6 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private string? progressStep;
 
-
         [ObservableProperty]
         private string? progressDetailMessage;
 
@@ -52,11 +51,8 @@ namespace CollectaMundo.ViewModels
         private IImportStepViewModel? currentStepViewModel;
 
         // Computed button states (unchanged logic)
-        public bool IsPrimaryActionButtonEnabled =>
-            !IsProcessing && (CurrentStepViewModel?.CanExecutePrimaryAction ?? false);
-
-        public bool IsSecondaryActionButtonEnabled =>
-            !IsProcessing && (CurrentStepViewModel?.CanExecuteSecondaryAction ?? false);
+        public bool IsPrimaryActionButtonEnabled => !IsProcessing && (CurrentStepViewModel?.CanExecutePrimaryAction ?? false);
+        public bool IsSecondaryActionButtonEnabled => !IsProcessing && (CurrentStepViewModel?.CanExecuteSecondaryAction ?? false);
 
         // Handle subscriptions for child VM PropertyChanged events
         partial void OnCurrentStepViewModelChanged(IImportStepViewModel? oldValue, IImportStepViewModel? newValue)
@@ -102,27 +98,33 @@ namespace CollectaMundo.ViewModels
         public void GoToStep(ImportStep step)
         {
             _currentStep = step;
-            Debug.WriteLine($"ImportViewModel: Navigating from {_currentStep}.");
+            Debug.WriteLine($"ImportViewModel: Navigating to {_currentStep}.");
 
             CurrentStepViewModel = step switch
             {
-                ImportStep.Start => new ImportStep01_StartViewModel(this),
-                ImportStep.IdColumnMapping => new ImportStep02_IdMappingViewModel(this),
-                ImportStep.NameAndSetMapping => new ImportStep03_NameSetMappingViewModel(this),
-                ImportStep.MultipleUuidsSelection => new ImportStep04_MultipleUuidsViewModel(this),
-                ImportStep.AdditionalFieldsMapping => new ImportStep05_AdditionalFieldsMappingViewModel(this),
-                ImportStep.Finish => new ImportStep10_FinishViewModel(this),
+                ImportStep.Start => CreateStep(new ImportStep01_StartViewModel(this), string.Empty),
+                ImportStep.IdColumnMapping => CreateStep(new ImportStep02_IdMappingViewModel(this), "ID column mapping"),
+                ImportStep.NameAndSetMapping => CreateStep(new ImportStep03_NameSetMappingViewModel(this), "Name and set mapping"),
+                ImportStep.MultipleUuidsSelection => CreateStep(new ImportStep04_MultipleUuidsViewModel(this), "Resolve multiple UUID matches"),
+                ImportStep.AdditionalFieldsMapping => CreateStep(new ImportStep05_AdditionalFieldsMappingViewModel(this), "Additional fields mapping"),
+                ImportStep.Finish => CreateStep(new ImportStep10_FinishViewModel(this), string.Empty),
                 _ => throw new NotSupportedException($"Unknown import step: {step}")
             };
         }
-        public async Task Begin()
-        {
-            CurrentStepViewModel = new ImportStep01_StartViewModel(this);
-            Progress.Headline.Report("The Import Wizard");
 
-            _ = await _userPromptService.CreatePrompt().Task;
+        // GoToStep helper that also sets progress step text
+        private IImportStepViewModel CreateStep(IImportStepViewModel vm, string progressStepText)
+        {
+            Progress.Step.Report(progressStepText);
+            return vm;
         }
 
+        public async Task Begin()
+        {
+            GoToStep(ImportStep.Start);
+            Progress.Headline.Report("The Import Wizard");
+            _ = await _userPromptService.CreatePrompt().Task;
+        }
         public async Task<OperationResult> AfterStep1Action()
         {
             _parentViewModelContext.SetUiBusy(true);
@@ -138,8 +140,6 @@ namespace CollectaMundo.ViewModels
                 if (CurrentStepViewModel is ImportStep01_StartViewModel step1) { step1.FlowDocumentVisibility = Visibility.Collapsed; } // Hide instructions during processing
 
                 Progress.ProgressBarVisible.Report(true);
-                Progress.Headline.Report(string.Empty);
-                Progress.Step.Report("CSV PARSING");
                 Progress.Detail.Report("Parsing CSV file...");
 
                 // Prepare cancel
@@ -163,7 +163,6 @@ namespace CollectaMundo.ViewModels
 
                 GoToStep(ImportStep.IdColumnMapping);
                 return new(OperationResultCode.Success, "CSV parsed successfully.");
-
             }
         }
         public async Task<OperationResult> AfterStep2Action()
@@ -171,7 +170,6 @@ namespace CollectaMundo.ViewModels
             var mapping = Mappings.FirstOrDefault() ?? throw new InvalidOperationException("No mapping found after Step 2");
 
             Progress.ProgressBarVisible.Report(true);
-            Progress.Step.Report("ID Matching");
             Progress.Detail.Report("Please wait - attempting to match ids...");
 
             // Prepare cancel
@@ -292,18 +290,17 @@ namespace CollectaMundo.ViewModels
                 if (result.Code != OperationResultCode.Success)
                 {
                     ImportFailVisibility = Visibility.Visible;
+                    CancelVisibility = Visibility.Collapsed;
                 }
 
+                ClearProgress();
                 switch (result.Code)
                 {
                     case OperationResultCode.Success:
                         Debug.WriteLine($"{stepName} completed successfully: {result.Message}");
-                        ClearProgress();
                         break;
 
                     case OperationResultCode.Empty:
-                        ClearProgress();
-                        CancelVisibility = Visibility.Collapsed;
                         Progress.Headline.Report("Import Failed!");
                         Progress.Detail.Report(result.Message);
                         GoToStep(ImportStep.Finish);
@@ -311,8 +308,6 @@ namespace CollectaMundo.ViewModels
                         break;
 
                     case OperationResultCode.Error:
-                        ClearProgress();
-                        CancelVisibility = Visibility.Collapsed;
                         Progress.Headline.Report("Import Failed!");
                         Progress.Detail.Report(result.Message);
                         GoToStep(ImportStep.Finish);
@@ -347,18 +342,13 @@ namespace CollectaMundo.ViewModels
         private void CancelImport()
         {
             Debug.WriteLine("ImportViewModel: Cancelling import operation as per user request.");
-            ClearProgress();
             CancelVisibility = Visibility.Collapsed;
-
             _userPromptService.CancelCurrentOperation();
-
             ImportFailVisibility = Visibility.Visible;
-
             Progress.Headline.Report("Import cancelled");
             Progress.Detail.Report("User cancellation - no cards imported to collection.");
             GoToStep(ImportStep.Finish);
         }
-
         private void ClearProgress()
         {
             Progress.Headline.Report(string.Empty);
