@@ -1,7 +1,8 @@
 TO DO 
 - MVVM refactor
  - Import brug MVVM
-    UI skift bug mellem step 2 og 3
+
+
 
 
 

@@ -15,16 +15,26 @@ namespace CollectaMundo.DomainLogic.Import
             // Step 1: Estimate total lines
             int totalLines = 0;
             using (var counter = new StreamReader(filePath, Encoding.UTF8))
+            {
                 while (await counter.ReadLineAsync(cancelToken) is not null)
+                {
                     totalLines++;
+                }
+            }
 
             // Step 2: Parse actual content
             using var reader = new StreamReader(filePath, Encoding.UTF8);
             string? header = await reader.ReadLineAsync(cancelToken);
             if (header == null)
+            {
                 return cardItems;
+            }
 
-            if (header.Contains(';')) delimiter = ';';
+            if (header.Contains(';'))
+            {
+                delimiter = ';';
+            }
+
             var headers = ParseCsvLine(header, delimiter);
 
             if (headers.Count < 2)
@@ -37,13 +47,17 @@ namespace CollectaMundo.DomainLogic.Import
             while (!reader.EndOfStream)
             {
                 if (totalLines % 100 == 0)
+                {
                     cancelToken.ThrowIfCancellationRequested();
+                }
 
                 string? line = await reader.ReadLineAsync(cancelToken);
                 currentLine++;
 
                 if (line == null)
+                {
                     continue;
+                }
 
                 var values = ParseCsvLine(line, delimiter);
                 var item = new TempCardItem();
@@ -154,10 +168,14 @@ namespace CollectaMundo.DomainLogic.Import
                 }
 
                 if (!item.Fields.TryGetValue(selectedCsvHeader, out var csvValue) || string.IsNullOrWhiteSpace(csvValue))
+                {
                     continue;
+                }
 
                 if (!idToUuids.TryGetValue(csvValue, out var uuids) || uuids == null || uuids.Count == 0)
+                {
                     continue;
+                }
 
                 if (uuids.Count == 1)
                 {
