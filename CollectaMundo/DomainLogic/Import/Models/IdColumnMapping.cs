@@ -2,7 +2,7 @@
 
 namespace CollectaMundo.DomainLogic.Import.Models
 {
-    public partial class ColumnMapping : ObservableObject
+    public partial class IdColumnMapping : ObservableObject
     {
         [ObservableProperty]
         private List<string> csvHeaders = [];

@@ -22,7 +22,7 @@ namespace CollectaMundo.ApplicationServices.Import
         }
 
         // Step 1
-        public async Task<(List<TempCardItem>, ColumnMapping)> LoadCsvFileAsync(string filePath, ProgressSinks progress, CancellationToken cancelToken)
+        public async Task<(List<TempCardItem>, IdColumnMapping)> LoadCsvFileAsync(string filePath, ProgressSinks progress, CancellationToken cancelToken)
         {
             try
             {
@@ -37,7 +37,7 @@ namespace CollectaMundo.ApplicationServices.Import
                 var csvHeaders = parsedItems.FirstOrDefault()?.Fields.Keys.ToList() ?? [];
                 var dbFields = await CardIdentifiersColumns();
 
-                var mapping = new ColumnMapping
+                var mapping = new IdColumnMapping
                 {
                     CsvHeaders = csvHeaders,
                     DatabaseFields = dbFields,
@@ -83,7 +83,7 @@ namespace CollectaMundo.ApplicationServices.Import
         }
 
         // Step 2
-        public async Task<ImportMatchSummaryDto> TryResolveUuidsFromMappedIdAsync(List<TempCardItem> importCandidates, ColumnMapping mapping, ProgressSinks progress, CancellationToken cancelToken)
+        public async Task<ImportMatchSummaryDto> TryResolveUuidsFromMappedIdAsync(List<TempCardItem> importCandidates, IdColumnMapping mapping, ProgressSinks progress, CancellationToken cancelToken)
         {
             var lookupValues = importCandidates.Select(item => item.Fields.TryGetValue(mapping.SelectedCsvHeader!, out var val) ? val : null)
                 .Where(val => !string.IsNullOrWhiteSpace(val))
@@ -117,5 +117,20 @@ namespace CollectaMundo.ApplicationServices.Import
                 await uow.DisposeAsync();
             }
         }
+
+        // Step 3
+        public Task<ImportMatchSummaryDto> TryResolveUuidsFromNameAndSetAsync(IReadOnlyList<TempCardItem> importCandidates, IReadOnlyList<NameSetColumnMapping> mappings, ProgressSinks progress, CancellationToken token)
+        {
+            // Temporary no-op implementation
+            var summary = new ImportMatchSummaryDto
+            {
+                TotalItems = 0,
+                ItemsWithUuid = 0,
+                ItemsWithMultipleUuids = 0
+            };
+
+            return Task.FromResult(summary);
+        }
+
     }
 }

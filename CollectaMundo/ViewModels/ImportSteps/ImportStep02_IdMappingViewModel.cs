@@ -21,7 +21,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
 
             // Subscribe to existing mapping items
             foreach (var m in Mappings)
+            {
                 m.PropertyChanged += Mapping_PropertyChanged;
+            }
 
             // Subscribe to mapping collection changes
             Mappings.CollectionChanged += Mappings_CollectionChanged;
@@ -39,35 +41,34 @@ namespace CollectaMundo.ViewModels.ImportSteps
         //  Actions
         public async Task<OperationResult> OnPrimaryAction() => await _parent.AfterStep2Action();
 
-        //public async Task<OperationResult> OnPrimaryAction()
-        //{
-        //    return await _parent.AfterStep2Action();
-        //}
-
         public void OnSecondaryAction() => _parent.GoToStep(ImportStep.NameAndSetMapping);
 
         //  Clear Mapping Command
         [RelayCommand]
-        private static void ClearSelectedMapping(ColumnMapping mapping)
+        private static void ClearSelectedMapping(IdColumnMapping mapping)
         {
             mapping.SelectedCsvHeader = null;
             mapping.SelectedDatabaseField = null;
         }
 
         //  Mapping Collection
-        public ObservableCollection<ColumnMapping> Mappings => _parent.Mappings;
+        public ObservableCollection<IdColumnMapping> Mappings => _parent.IdMappings;
         private void Mappings_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.NewItems != null)
             {
-                foreach (ColumnMapping m in e.NewItems)
+                foreach (IdColumnMapping m in e.NewItems)
+                {
                     m.PropertyChanged += Mapping_PropertyChanged;
+                }
             }
 
             if (e.OldItems != null)
             {
-                foreach (ColumnMapping m in e.OldItems)
+                foreach (IdColumnMapping m in e.OldItems)
+                {
                     m.PropertyChanged -= Mapping_PropertyChanged;
+                }
             }
 
             // Re-evaluate step-level CanExecute flag
@@ -77,8 +78,8 @@ namespace CollectaMundo.ViewModels.ImportSteps
         {
             Debug.WriteLine($"Mapping property changed: {e.PropertyName}");
 
-            if (e.PropertyName is nameof(ColumnMapping.SelectedCsvHeader)
-                or nameof(ColumnMapping.SelectedDatabaseField))
+            if (e.PropertyName is nameof(IdColumnMapping.SelectedCsvHeader)
+                or nameof(IdColumnMapping.SelectedDatabaseField))
             {
                 // Re-evaluate parent button enablement
                 OnPropertyChanged(nameof(CanExecutePrimaryAction));

@@ -1,7 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.DomainLogic.Import.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
@@ -24,10 +22,6 @@ namespace CollectaMundo.ViewModels.ImportSteps
 
         //  Actions
         public async Task<OperationResult> OnPrimaryAction() => await _parent.AfterStep1Action();
-
-        //  Clear Mapping Command
-        [RelayCommand]
-        private static void ClearSelectedMapping(ColumnMapping mapping) { } // no-op, no mappings to clear on first step
 
     }
 }

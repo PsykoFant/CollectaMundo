@@ -1922,7 +1922,7 @@ namespace CollectaMundo
         {
             try
             {
-                Debug.WriteLine("==== Field Mappings ====");
+                Debug.WriteLine("==== Field IdMappings ====");
 
                 foreach (KeyValuePair<string, Dictionary<string, string>> fieldMapping in FieldMappings)
                 {

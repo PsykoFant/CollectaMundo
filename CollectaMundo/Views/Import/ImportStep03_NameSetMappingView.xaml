@@ -9,11 +9,7 @@
                  d:Style="{StaticResource {x:Type UserControl}}"
                  d:DesignHeight="600" d:DesignWidth="800">
     <Grid HorizontalAlignment="Center">
-        <!--<Label Content="Card Name, Set Name and Set Code Mapping" Style="{StaticResource MediumHeaderLabelStyle}" />-->
-        <FlowDocumentScrollViewer Margin="0,30,0,0"
-                          VerticalAlignment="Top"
-                          HorizontalAlignment="Center"
-                          Padding="10">
+        <FlowDocumentScrollViewer Margin="0,30,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" Padding="10">
             <FlowDocument>
                 <Paragraph>
                     If you are, it means that The Import Wizard was not able to map all cards in import file uniquely to a card in the card database.
@@ -26,6 +22,39 @@
                 </Paragraph>
             </FlowDocument>
         </FlowDocumentScrollViewer>
+        <ListView Margin="0,220,0,0" Width="500" Height="140" HorizontalAlignment="Center" VerticalAlignment="Top" ItemsSource="{Binding NameSetMappings}">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Fields to map" Width="150">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding LogicalField}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="Import file header" Width="220">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding CsvHeaders}"
+                                  SelectedItem="{Binding SelectedCsvHeader, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="Reset" Width="110">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Clear"
+                                Command="{Binding DataContext.ClearSelectedMappingCommand,
+                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
 
     </Grid>
 </UserControl>

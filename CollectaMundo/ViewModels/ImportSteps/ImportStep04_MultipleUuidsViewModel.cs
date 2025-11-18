@@ -11,7 +11,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
     public partial class ImportStep04_MultipleUuidsViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent = parent;
-        public ObservableCollection<ColumnMapping> Mappings => _parent.Mappings; // proxy to parent's mappings
+        public ObservableCollection<IdColumnMapping> Mappings => _parent.IdMappings; // proxy to parent's mappings
         public string PrimaryActionButtonText => "  Proceed  \u27A1";
         public string SecondaryActionButtonText => "  Skip  \u23ED";
         public Visibility SecondaryActionVisibility => Visibility.Collapsed;
@@ -28,7 +28,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         }
 
         [RelayCommand]
-        private static void ClearSelectedMapping(ColumnMapping mapping)
+        private static void ClearSelectedMapping(IdColumnMapping mapping)
         {
             // Clear the selected mappings
         }

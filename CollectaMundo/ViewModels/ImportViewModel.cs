@@ -68,10 +68,14 @@ namespace CollectaMundo.ViewModels
         private void CurrentStep_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(IImportStepViewModel.CanExecutePrimaryAction))
+            {
                 OnPropertyChanged(nameof(IsPrimaryActionButtonEnabled));
+            }
 
             if (e.PropertyName == nameof(IImportStepViewModel.CanExecuteSecondaryAction))
+            {
                 OnPropertyChanged(nameof(IsSecondaryActionButtonEnabled));
+            }
         }
 
 
@@ -89,7 +93,8 @@ namespace CollectaMundo.ViewModels
 
 
         public static ObservableCollection<TempCardItem> ImportCardList { get; } = [];
-        public ObservableCollection<ColumnMapping> Mappings { get; } = [];
+        public ObservableCollection<IdColumnMapping> IdMappings { get; } = [];
+        public ObservableCollection<NameSetColumnMapping> NameSetMappings { get; } = [];
 
         [ObservableProperty]
         private Visibility importOverlayVisibility = Visibility.Collapsed;
@@ -151,7 +156,9 @@ namespace CollectaMundo.ViewModels
 
                 // Handle results
                 if (parsedItems.Count == 0)
+                {
                     return new(OperationResultCode.Empty, "The selected CSV file is malformed or empty.");
+                }
 
                 foreach (var item in parsedItems)
                 {
@@ -159,7 +166,7 @@ namespace CollectaMundo.ViewModels
                     ImportCardList.Add(item);
                 }
 
-                Mappings.Add(mapping);
+                IdMappings.Add(mapping);
 
                 GoToStep(ImportStep.IdColumnMapping);
                 return new(OperationResultCode.Success, "CSV parsed successfully.");
@@ -167,7 +174,7 @@ namespace CollectaMundo.ViewModels
         }
         public async Task<OperationResult> AfterStep2Action()
         {
-            var mapping = Mappings.FirstOrDefault() ?? throw new InvalidOperationException("No mapping found after Step 2");
+            var mapping = IdMappings.FirstOrDefault() ?? throw new InvalidOperationException("No mapping found after Step 2");
 
             Progress.ProgressBarVisible.Report(true);
             Progress.Detail.Report("Please wait - attempting to match ids...");
@@ -199,16 +206,24 @@ namespace CollectaMundo.ViewModels
         }
         public async Task<OperationResult> AfterStep3Action()
         {
-            try
+            Progress.ProgressBarVisible.Report(true);
+            Progress.Detail.Report("Please wait - attempting to match by name and set...");
+
+            // Prepare cancel
+            var cancelToken = _userPromptService.GetNewCancellationToken();
+
+            var result = await _importService.TryResolveUuidsFromNameAndSetAsync(ImportCardList, NameSetMappings, Progress, cancelToken);
+
+            if (result.ItemsWithMultipleUuids > 0)
+            {
+                GoToStep(ImportStep.MultipleUuidsSelection);
+            }
+            else
             {
                 GoToStep(ImportStep.AdditionalFieldsMapping);
+            }
 
-                return new OperationResult(OperationResultCode.Success, "Name and set mapping ended successfully.");
-            }
-            catch (Exception ex)
-            {
-                return new OperationResult(OperationResultCode.Error, $"Failed during name and set mapping: {ex.Message}");
-            }
+            return new OperationResult(OperationResultCode.Success, "Name and set mapping ended successfully.");
         }
         public async Task<OperationResult> AfterStep4Action()
         {
@@ -240,7 +255,7 @@ namespace CollectaMundo.ViewModels
         public async Task<OperationResult> AfterStep10Action()
         {
             ImportCardList.Clear();
-            Mappings.Clear();
+            IdMappings.Clear();
 
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();

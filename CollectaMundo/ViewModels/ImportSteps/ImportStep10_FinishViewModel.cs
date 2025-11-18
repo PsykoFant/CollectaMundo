@@ -24,7 +24,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         }
 
         [RelayCommand]
-        private static void ClearSelectedMapping(ColumnMapping mapping)
+        private static void ClearSelectedMapping(IdColumnMapping mapping)
         {
             // No mapping to clear in the finish step
         }

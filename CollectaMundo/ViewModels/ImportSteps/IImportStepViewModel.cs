@@ -1,6 +1,4 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.DomainLogic.Import.Models;
-using CommunityToolkit.Mvvm.Input;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
@@ -22,8 +20,8 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // Property for secondary action visibility
         Visibility SecondaryActionVisibility { get; }
 
-        // Command to clear selected mapping
-        IRelayCommand<ColumnMapping> ClearSelectedMappingCommand { get; }
+        //// Command to clear selected mapping
+        //IRelayCommand<IdColumnMapping> ClearSelectedMappingCommand { get; }
 
     }
 }
