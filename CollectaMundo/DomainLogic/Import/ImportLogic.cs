@@ -200,5 +200,134 @@ namespace CollectaMundo.DomainLogic.Import
             };
         }
 
+        // Step 3
+        public (bool HasName, bool HasSetName, bool HasSetCode, string? NameHeader, string? SetNameHeader, string? SetCodeHeader) ExtractMappedFields(IReadOnlyList<NameSetColumnMapping> mappings)
+        {
+            string? name = mappings.FirstOrDefault(m => m.FieldToMap == "Card Name")?.SelectedCsvHeader;
+            string? setName = mappings.FirstOrDefault(m => m.FieldToMap == "Set Name")?.SelectedCsvHeader;
+            string? setCode = mappings.FirstOrDefault(m => m.FieldToMap == "Set Code")?.SelectedCsvHeader;
+
+            return (
+                HasName: !string.IsNullOrWhiteSpace(name),
+                HasSetName: !string.IsNullOrWhiteSpace(setName),
+                HasSetCode: !string.IsNullOrWhiteSpace(setCode),
+                NameHeader: name,
+                SetNameHeader: setName,
+                SetCodeHeader: setCode
+            );
+        }
+        public bool IsItemResolved(TempCardItem item)
+        {
+            return item.Fields.ContainsKey("uuid") || item.Fields.ContainsKey("uuids");
+        }
+
+        //  Apply Matching Results (Name + Set Code)
+        public void ApplySetCodeMatches(IReadOnlyList<TempCardItem> items, IReadOnlyList<(string Name, string SetCode)> pairs, Dictionary<string, List<string>> results)
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                var item = items[i];
+                var (name, setCode) = pairs[i];
+
+                string key = $"{name}_{setCode}";
+
+                if (!results.TryGetValue(key, out var uuidList))
+                {
+                    continue;
+                }
+
+                AssignUuids(item, uuidList);
+            }
+        }
+
+        //  Apply Matching Results (Name + Set Name)
+        public void ApplySetNameMatches(IReadOnlyList<TempCardItem> items, IReadOnlyList<(string Name, string SetName)> pairs, Dictionary<string, List<string>> results)
+        {
+            for (int i = 0; i < items.Count; i++)
+            {
+                var item = items[i];
+                var (name, setName) = pairs[i];
+
+                string key = $"{name}_{setName}";
+
+                if (!results.TryGetValue(key, out var uuidList))
+                {
+                    continue;
+                }
+
+                AssignUuids(item, uuidList);
+            }
+        }
+
+        //  Assign uuid / uuids to TempCardItem, enforcing invariants
+        private static void AssignUuids(TempCardItem item, List<string> uuidList)
+        {
+            if (uuidList == null || uuidList.Count == 0)
+            {
+                return;
+            }
+
+            if (uuidList.Count == 1)
+            {
+                // enforce invariant: uuid + no uuids
+                item.Fields.Remove("uuids");
+                item.Fields["uuid"] = uuidList[0];
+            }
+            else
+            {
+                // enforce invariant: uuids + no uuid
+                item.Fields.Remove("uuid");
+                item.Fields["uuids"] = string.Join(",", uuidList);
+            }
+        }
+        public ImportMatchSummaryDto FinalizeMatchResults(IReadOnlyList<TempCardItem> items)
+        {
+            bool anyBoth = false;
+            bool anySingle = false;
+            bool anyMulti = false;
+
+            foreach (var item in items)
+            {
+                bool hasUuid = item.Fields.ContainsKey("uuid");
+                bool hasUuids = item.Fields.ContainsKey("uuids");
+
+                if (hasUuid && hasUuids)
+                {
+                    anyBoth = true;
+                }
+                else if (hasUuid)
+                {
+                    anySingle = true;
+                }
+                else if (hasUuids)
+                {
+                    anyMulti = true;
+                }
+                // else → no match, but we don’t need a flag
+            }
+
+            if (anyBoth)
+            {
+                throw new InvalidOperationException("Internal error: item has both uuid and uuids.");
+            }
+
+            if (!anySingle && !anyMulti)
+            {
+                throw new InvalidOperationException("No matches were found using name + set mapping.");
+            }
+
+            if (anyMulti)
+            {
+                return new ImportMatchSummaryDto
+                {
+                    ItemsWithMultipleUuids = items.Count(i => i.Fields.ContainsKey("uuids"))
+                };
+            }
+
+            return new ImportMatchSummaryDto
+            {
+                ItemsWithMultipleUuids = 0
+            };
+        }
     }
 }

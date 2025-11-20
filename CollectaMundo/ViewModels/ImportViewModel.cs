@@ -142,8 +142,6 @@ namespace CollectaMundo.ViewModels
             }
             else
             {
-                if (CurrentStepViewModel is ImportStep01_StartViewModel step1) { step1.FlowDocumentVisibility = Visibility.Collapsed; } // Hide instructions during processing
-
                 Progress.ProgressBarVisible.Report(true);
                 Progress.Detail.Report("Parsing CSV file...");
 
@@ -212,7 +210,7 @@ namespace CollectaMundo.ViewModels
             // Prepare cancel
             var cancelToken = _userPromptService.GetNewCancellationToken();
 
-            var result = await _importService.TryResolveUuidsFromNameAndSetAsync(ImportCardList, NameSetMappings, Progress, cancelToken);
+            var result = await Task.Run(() => _importService.TryResolveUuidsFromNameAndSetAsync(ImportCardList, NameSetMappings, Progress, cancelToken));
 
             if (result.ItemsWithMultipleUuids > 0)
             {
@@ -222,6 +220,8 @@ namespace CollectaMundo.ViewModels
             {
                 GoToStep(ImportStep.AdditionalFieldsMapping);
             }
+
+            DebugImportProcess();
 
             return new OperationResult(OperationResultCode.Success, "Name and set mapping ended successfully.");
         }

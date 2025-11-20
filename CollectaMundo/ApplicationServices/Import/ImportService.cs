@@ -119,18 +119,102 @@ namespace CollectaMundo.ApplicationServices.Import
         }
 
         // Step 3
-        public Task<ImportMatchSummaryDto> TryResolveUuidsFromNameAndSetAsync(IReadOnlyList<TempCardItem> importCandidates, IReadOnlyList<NameSetColumnMapping> mappings, ProgressSinks progress, CancellationToken token)
+        public async Task<ImportMatchSummaryDto> TryResolveUuidsFromNameAndSetAsync(IReadOnlyList<TempCardItem> importCandidates, IReadOnlyList<NameSetColumnMapping> mappings, ProgressSinks progress, CancellationToken token)
         {
-            // Temporary no-op implementation
-            var summary = new ImportMatchSummaryDto
+
+            int total = importCandidates.Count;
+            int processed = 0;
+
+            progress.Percent.Report(0); // start
+
+
+            // Extract chosen mapping fields (domain logic)
+            var (HasName, HasSetName, HasSetCode, NameHeader, SetNameHeader, SetCodeHeader) = _importLogic.ExtractMappedFields(mappings);
+
+            if (!HasName || (!HasSetName && !HasSetCode))
             {
-                TotalItems = 0,
-                ItemsWithUuid = 0,
-                ItemsWithMultipleUuids = 0
-            };
+                throw new InvalidOperationException("Name and either Set Name or Set Code must be mapped.");
+            }
 
-            return Task.FromResult(summary);
+            const int BatchSize = 800;
+
+            // Start read-only UoW (because Step 3 is SELECT-only)
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginReadOnlyAsync();
+
+            try
+            {
+                for (int start = 0; start < importCandidates.Count; start += BatchSize)
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    // Extract batch of unresolved items
+                    var batch = importCandidates
+                        .Skip(start)
+                        .Take(BatchSize)
+                        .Where(i => !_importLogic.IsItemResolved(i))
+                        .ToList();
+
+                    if (batch.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    processed += batch.Count;
+
+                    int percent = (int)((double)processed / total * 100);
+                    progress.Percent.Report(percent);
+
+                    progress.Detail.Report($"Processing batch {start / BatchSize + 1}...");
+
+                    //  Match by SET CODE
+                    if (HasSetCode)
+                    {
+                        var pairs = ExtractPairs(batch, NameHeader!, SetCodeHeader!);
+
+                        var results = await _importRepo.QueryByNameAndSetCodeAsync(
+                            uow.CurrentConnection,
+                            pairs,
+                            token);
+
+                        _importLogic.ApplySetCodeMatches(batch, pairs, results);
+                    }
+
+                    //  Match by SET NAME
+                    if (HasSetName)
+                    {
+                        var pairs = ExtractPairs(batch, NameHeader!, SetNameHeader!);
+
+                        var results = await _importRepo.QueryByNameAndSetNameAsync(
+                            uow.CurrentConnection,
+                            pairs,
+                            token);
+
+                        _importLogic.ApplySetNameMatches(batch, pairs, results);
+                    }
+                }
+
+                await uow.CommitAsync();
+
+                // Final domain-level integrity & outcome evaluation
+                return _importLogic.FinalizeMatchResults(importCandidates);
+            }
+            catch
+            {
+                await uow.RollbackAsync();
+                throw;
+            }
+            finally
+            {
+                await uow.DisposeAsync();
+            }
         }
-
+        private static List<(string Name, string Value)> ExtractPairs(List<TempCardItem> items, string nameHeader, string otherHeader)
+        {
+            return [.. items.Select(i => (
+                    i.Fields.TryGetValue(nameHeader, out var name) ? name : "",
+                    i.Fields.TryGetValue(otherHeader, out var val) ? val : ""
+                ))];
+        }
     }
 }

@@ -16,7 +16,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public Visibility SecondaryActionVisibility => Visibility.Collapsed;
 
         [ObservableProperty]
-        private Visibility flowDocumentVisibility = Visibility.Visible;
+        private Visibility stepContentVisibility = Visibility.Visible;
 
         // --------------------------------------------
         // Step-level button enablement
@@ -27,6 +27,11 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // Actions
         // --------------------------------------------
-        public async Task<OperationResult> OnPrimaryAction() => await _parent.AfterStep1Action();
+        public async Task<OperationResult> OnPrimaryAction()
+        {
+            StepContentVisibility = Visibility.Collapsed;
+            return await _parent.AfterStep1Action();
+        }
+
     }
 }

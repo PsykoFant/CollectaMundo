@@ -5,19 +5,23 @@ namespace CollectaMundo.ViewModels.ImportSteps
 {
     public interface IImportStepViewModel
     {
-        // Actions to be performed when the primary and secondary buttons are clicked
+        // Actions
         Task<OperationResult> OnPrimaryAction();
-        void OnSecondaryAction() { } // <-- default no-op
+        void OnSecondaryAction() { }
 
-        // Properties for button texts
+        // Button texts
         string PrimaryActionButtonText { get; }
         string SecondaryActionButtonText { get; }
 
-        // Properties to determine if actions can be executed
+        // Button enabled state
         bool CanExecutePrimaryAction { get; }
         bool CanExecuteSecondaryAction { get; }
 
-        // Property for secondary action visibility
+        // Visibility of secondary button
         Visibility SecondaryActionVisibility { get; }
+
+        // NEW: Visibility of main interactive UI for the step
+        Visibility StepContentVisibility { get; set; }
     }
+
 }

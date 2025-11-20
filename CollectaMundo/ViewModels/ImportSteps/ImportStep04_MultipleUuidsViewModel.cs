@@ -1,9 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.DomainLogic.Import.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
@@ -45,7 +41,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public Visibility SecondaryActionVisibility => Visibility.Collapsed;
 
         [ObservableProperty]
-        private Visibility flowDocumentVisibility = Visibility.Visible;
+        private Visibility stepContentVisibility = Visibility.Visible;
 
         // --------------------------------------------
         // Step-level button enablement

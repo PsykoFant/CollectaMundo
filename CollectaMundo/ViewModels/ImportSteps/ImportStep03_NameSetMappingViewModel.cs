@@ -6,8 +6,6 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
@@ -33,20 +31,27 @@ namespace CollectaMundo.ViewModels.ImportSteps
         private void Initialize()
         {
             if (NameSetMappings.Any())
+            {
                 return;
+            }
 
             var firstItem = ImportViewModel.ImportCardList.FirstOrDefault();
             var csvHeaders = firstItem?.Fields.Keys.ToList() ?? [];
 
-            var logicalFields = new[] { "Card Name", "Set Name", "Set Code" };
+            var fieldsToMap = new[]
+            {
+                new { Field = "Card Name", Guesses = new[] { "name", "card name", "card_name" } },
+                new { Field = "Set Name",  Guesses = new[] { "set name", "setname", "set", "edition" } },
+                new { Field = "Set Code",  Guesses = new[] { "set code", "setcode", "code", "edition code" } }
+            };
 
-            foreach (var field in logicalFields)
+            foreach (var field in fieldsToMap)
             {
                 NameSetMappings.Add(new NameSetColumnMapping
                 {
-                    LogicalField = field,
-                    CsvHeaders = csvHeaders,
-                    SelectedCsvHeader = GuessCsvHeader(field, csvHeaders)
+                    FieldToMap = field.Field,
+                    CsvHeaders = [.. csvHeaders],
+                    SelectedCsvHeader = GuessCsvHeader(field.Field, field.Guesses, csvHeaders)
                 });
             }
         }
@@ -57,7 +62,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
         private void HookEvents()
         {
             foreach (var m in NameSetMappings)
+            {
                 m.PropertyChanged += Mapping_PropertyChanged;
+            }
 
             NameSetMappings.CollectionChanged += NameSetMappings_CollectionChanged;
         }
@@ -69,6 +76,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public string SecondaryActionButtonText => string.Empty;
         public Visibility SecondaryActionVisibility => Visibility.Collapsed;
 
+        [ObservableProperty]
+        private Visibility stepContentVisibility = Visibility.Visible;
+
         // --------------------------------------------
         // Step-level button enablement
         // --------------------------------------------
@@ -76,9 +86,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
         {
             get
             {
-                var name = NameSetMappings.FirstOrDefault(m => m.LogicalField == "Card Name");
-                var setNm = NameSetMappings.FirstOrDefault(m => m.LogicalField == "Set Name");
-                var setCd = NameSetMappings.FirstOrDefault(m => m.LogicalField == "Set Code");
+                var name = NameSetMappings.FirstOrDefault(m => m.FieldToMap == "Card Name");
+                var setNm = NameSetMappings.FirstOrDefault(m => m.FieldToMap == "Set Name");
+                var setCd = NameSetMappings.FirstOrDefault(m => m.FieldToMap == "Set Code");
 
                 bool hasName = !string.IsNullOrWhiteSpace(name?.SelectedCsvHeader);
                 bool hasSetName = !string.IsNullOrWhiteSpace(setNm?.SelectedCsvHeader);
@@ -93,7 +103,10 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // Actions
         // --------------------------------------------
         public async Task<OperationResult> OnPrimaryAction()
-            => await _parent.AfterStep3Action();
+        {
+            StepContentVisibility = Visibility.Collapsed;
+            return await _parent.AfterStep3Action();
+        }
 
         // --------------------------------------------
         // Commands
@@ -113,13 +126,17 @@ namespace CollectaMundo.ViewModels.ImportSteps
             if (e.NewItems != null)
             {
                 foreach (NameSetColumnMapping m in e.NewItems)
+                {
                     m.PropertyChanged += Mapping_PropertyChanged;
+                }
             }
 
             if (e.OldItems != null)
             {
                 foreach (NameSetColumnMapping m in e.OldItems)
+                {
                     m.PropertyChanged -= Mapping_PropertyChanged;
+                }
             }
 
             OnPropertyChanged(nameof(CanExecutePrimaryAction));
@@ -129,28 +146,69 @@ namespace CollectaMundo.ViewModels.ImportSteps
             Debug.WriteLine($"[Step3] Mapping property changed: {e.PropertyName}");
 
             if (e.PropertyName == nameof(NameSetColumnMapping.SelectedCsvHeader))
+            {
                 OnPropertyChanged(nameof(CanExecutePrimaryAction));
+            }
         }
 
         // --------------------------------------------
         // Helpers
         // --------------------------------------------
-        private static string? GuessCsvHeader(string logicalField, List<string> csvHeaders)
+        private static string? GuessCsvHeader(string fieldToMap, IReadOnlyList<string> guesses, IReadOnlyList<string> csvHeaders)
         {
-            if (csvHeaders.Count == 0)
+            if (csvHeaders == null || csvHeaders.Count == 0)
+            {
                 return null;
+            }
 
-            string lowerField = logicalField.ToLowerInvariant();
+            // Normalize: field + guesses → candidate patterns
+            var candidates = new List<string> { fieldToMap };
+            if (guesses != null)
+            {
+                candidates.AddRange(guesses);
+            }
 
-            var exact = csvHeaders.FirstOrDefault(h =>
-                string.Equals(h, logicalField, StringComparison.OrdinalIgnoreCase));
+            candidates = [.. candidates
+                .Where(g => !string.IsNullOrWhiteSpace(g))
+                .Select(g => g.Trim())];
 
-            if (exact != null)
-                return exact;
+            if (candidates.Count == 0)
+            {
+                return null;
+            }
 
-            return csvHeaders.FirstOrDefault(h =>
-                h.Contains("name", StringComparison.InvariantCultureIgnoreCase) && lowerField.Contains("name") ||
-                h.Contains("set", StringComparison.InvariantCultureIgnoreCase) && lowerField.Contains("set"));
+            // 1) Exact match on any candidate (case-insensitive)
+            foreach (var header in csvHeaders)
+            {
+                foreach (var candidate in candidates)
+                {
+                    if (string.Equals(header, candidate, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return header;
+                    }
+                }
+            }
+
+            // 2) "Contains" match on any candidate (case-insensitive)
+            foreach (var header in csvHeaders)
+            {
+                string headerLower = header.ToLowerInvariant();
+
+                foreach (var candidate in candidates)
+                {
+                    string candidateLower = candidate.ToLowerInvariant();
+
+                    // Symmetric-ish contains: header contains candidate or candidate contains header
+                    if (headerLower.Contains(candidateLower) || candidateLower.Contains(headerLower))
+                    {
+                        return header;
+                    }
+                }
+            }
+
+            // No match
+            return null;
         }
+
     }
 }

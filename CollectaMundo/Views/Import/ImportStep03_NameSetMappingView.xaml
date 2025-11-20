@@ -22,13 +22,13 @@
                 </Paragraph>
             </FlowDocument>
         </FlowDocumentScrollViewer>
-        <ListView Margin="0,220,0,0" Width="500" Height="140" HorizontalAlignment="Center" VerticalAlignment="Top" ItemsSource="{Binding NameSetMappings}">
+        <ListView ItemsSource="{Binding NameSetMappings}" Margin="0,220,0,0" Width="500" Height="140" HorizontalAlignment="Center" VerticalAlignment="Top">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Fields to map" Width="150">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding LogicalField}" />
+                                <TextBlock Text="{Binding FieldToMap}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -45,7 +45,7 @@
                     <GridViewColumn Header="Reset" Width="110">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="Clear"
+                                <Button Content="   Clear   "
                                 Command="{Binding DataContext.ClearSelectedMappingCommand,
                                                   RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}" />

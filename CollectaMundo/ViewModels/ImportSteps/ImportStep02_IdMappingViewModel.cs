@@ -10,7 +10,7 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
-    public partial class ImportStep02_IdMappingViewModel: ObservableObject, IImportStepViewModel
+    public partial class ImportStep02_IdMappingViewModel : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent;
 
@@ -30,7 +30,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
         {
             // Subscribe to existing items
             foreach (var m in Mappings)
+            {
                 m.PropertyChanged += Mapping_PropertyChanged;
+            }
 
             // And subscribe to collection change for future additions/removals
             Mappings.CollectionChanged += Mappings_CollectionChanged;
@@ -42,6 +44,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public string PrimaryActionButtonText => "  Proceed  \u27A1";
         public string SecondaryActionButtonText => "  Skip  \u23ED";
         public Visibility SecondaryActionVisibility => Visibility.Visible;
+
+        [ObservableProperty]
+        private Visibility stepContentVisibility = Visibility.Visible;
 
         // --------------------------------------------
         // Step-level button enablement
@@ -56,8 +61,11 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // Actions
         // --------------------------------------------
-        public async Task<OperationResult> OnPrimaryAction() => await _parent.AfterStep2Action();
-
+        public async Task<OperationResult> OnPrimaryAction()
+        {
+            StepContentVisibility = Visibility.Collapsed;
+            return await _parent.AfterStep2Action();
+        }
         public void OnSecondaryAction() => _parent.GoToStep(ImportStep.NameAndSetMapping);
 
         // --------------------------------------------
@@ -79,13 +87,17 @@ namespace CollectaMundo.ViewModels.ImportSteps
             if (e.NewItems != null)
             {
                 foreach (IdColumnMapping m in e.NewItems)
+                {
                     m.PropertyChanged += Mapping_PropertyChanged;
+                }
             }
 
             if (e.OldItems != null)
             {
                 foreach (IdColumnMapping m in e.OldItems)
+                {
                     m.PropertyChanged -= Mapping_PropertyChanged;
+                }
             }
 
             OnPropertyChanged(nameof(CanExecutePrimaryAction));

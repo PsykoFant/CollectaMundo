@@ -8,7 +8,7 @@
              d:DataContext="{d:DesignInstance vmsteps:ImportStep02_IdMappingViewModel}"
              d:Style="{StaticResource {x:Type UserControl}}"
              d:DesignHeight="600" d:DesignWidth="800">
-    <Grid HorizontalAlignment="Center">
+    <Grid Visibility="{Binding StepContentVisibility}" HorizontalAlignment="Center">
         <FlowDocumentScrollViewer Margin="0,30,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" Padding="10">
             <FlowDocument>
                 <Paragraph>
@@ -60,7 +60,7 @@
                     <GridViewColumn Header="Reset mapping">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="Clear Mapping"
+                                <Button Content="   Clear   "
                                 Command="{Binding DataContext.ClearSelectedMappingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}" Width="85"/>
                             </DataTemplate>

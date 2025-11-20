@@ -10,7 +10,7 @@
              d:DesignHeight="600" d:DesignWidth="800">
 
     <Grid HorizontalAlignment="Center">
-        <FlowDocumentScrollViewer Visibility="{Binding FlowDocumentVisibility}"
+        <FlowDocumentScrollViewer Visibility="{Binding StepContentVisibility}"
         Margin="0,60,0,0" HorizontalAlignment="Center" VerticalAlignment="Top" Width="600">
             <FlowDocument>
                 <Paragraph>

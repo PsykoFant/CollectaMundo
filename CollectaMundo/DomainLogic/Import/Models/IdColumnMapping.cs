@@ -8,12 +8,13 @@ namespace CollectaMundo.DomainLogic.Import.Models
         private List<string> csvHeaders = [];
 
         [ObservableProperty]
-        private List<string> databaseFields = [];
-
-        [ObservableProperty]
         private string? selectedCsvHeader;
 
         [ObservableProperty]
+        private List<string> databaseFields = [];
+
+        [ObservableProperty]
         private string? selectedDatabaseField;
+
     }
 }
