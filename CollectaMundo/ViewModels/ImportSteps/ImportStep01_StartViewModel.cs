@@ -8,20 +8,25 @@ namespace CollectaMundo.ViewModels.ImportSteps
     {
         private readonly ImportViewModel _parent = parent;
 
-        //  Step UI Info
+        // --------------------------------------------
+        // UI Text & Visibility
+        // --------------------------------------------
         public string PrimaryActionButtonText => "  Let's go!  \u27A1";
-        public string SecondaryActionButtonText => string.Empty; // No secondary action on first screen
+        public string SecondaryActionButtonText => string.Empty;
         public Visibility SecondaryActionVisibility => Visibility.Collapsed;
 
         [ObservableProperty]
         private Visibility flowDocumentVisibility = Visibility.Visible;
 
-        //  Step-level button enablement
+        // --------------------------------------------
+        // Step-level button enablement
+        // --------------------------------------------
         public bool CanExecutePrimaryAction => true;
         public bool CanExecuteSecondaryAction => false;
 
-        //  Actions
+        // --------------------------------------------
+        // Actions
+        // --------------------------------------------
         public async Task<OperationResult> OnPrimaryAction() => await _parent.AfterStep1Action();
-
     }
 }

@@ -6,27 +6,67 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
-    public partial class ImportStep10_FinishViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
+    public partial class ImportStep10_FinishViewModel : ObservableObject, IImportStepViewModel
     {
-        private readonly ImportViewModel _parent = parent;
-        public string PrimaryActionButtonText => "  OK  ";
-        public string SecondaryActionButtonText => string.Empty;
-        public Visibility SecondaryActionVisibility => Visibility.Collapsed;
-        public bool CanExecutePrimaryAction => true;
-        public bool CanExecuteSecondaryAction => false;
-        public async Task<OperationResult> OnPrimaryAction()
+        private readonly ImportViewModel _parent;
+
+        // --------------------------------------------
+        // Constructor
+        // --------------------------------------------
+        public ImportStep10_FinishViewModel(ImportViewModel parent)
         {
-            return await _parent.AfterStep10Action();
-        }
-        public void OnSecondaryAction()
-        {
-            // No secondary action
+            _parent = parent;
+
+            Initialize();
+            HookEvents();
         }
 
-        [RelayCommand]
-        private static void ClearSelectedMapping(IdColumnMapping mapping)
+        // --------------------------------------------
+        // Initialization (empty for this step)
+        // --------------------------------------------
+        private void Initialize()
         {
-            // No mapping to clear in the finish step
+            // Step 1 has no per-item mappings or dynamic data to initialize.
+            // FlowDocumentVisibility is already defaulted via ObservableProperty.
         }
+
+        private void HookEvents()
+        {
+            // Step 1 has no dynamic collections or item-level events.
+        }
+
+        // --------------------------------------------
+        // UI Text & Visibility
+        // --------------------------------------------
+        public string PrimaryActionButtonText => "   OK   ";
+        public string SecondaryActionButtonText => string.Empty;
+        public Visibility SecondaryActionVisibility => Visibility.Collapsed;
+
+        [ObservableProperty]
+        private Visibility flowDocumentVisibility = Visibility.Visible;
+
+        // --------------------------------------------
+        // Step-level button enablement
+        // --------------------------------------------
+        public bool CanExecutePrimaryAction => true;
+        public bool CanExecuteSecondaryAction => false;
+
+        // --------------------------------------------
+        // Actions
+        // --------------------------------------------
+        public async Task<OperationResult> OnPrimaryAction() => await _parent.AfterStep10Action();
+
+        public void OnSecondaryAction()
+        {
+            // Not used in this step (and SecondaryActionVisibility is Collapsed).
+        }
+
+        // --------------------------------------------
+        // Commands (none for this step)
+        // --------------------------------------------
+
+        // --------------------------------------------
+        // Private helper methods (none needed)
+        // --------------------------------------------
     }
 }

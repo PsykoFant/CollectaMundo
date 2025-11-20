@@ -19,9 +19,5 @@ namespace CollectaMundo.ViewModels.ImportSteps
 
         // Property for secondary action visibility
         Visibility SecondaryActionVisibility { get; }
-
-        //// Command to clear selected mapping
-        //IRelayCommand<IdColumnMapping> ClearSelectedMappingCommand { get; }
-
     }
 }
