@@ -54,86 +54,89 @@ namespace CollectaMundo.Tests.TestUtils
             using var command = new SQLiteCommand(_masterConnection);
             // CREATE TABLE IF NOT EXISTS: cards
             command.CommandText = @"
-                CREATE TABLE IF NOT EXISTS cards (
-                    artist TEXT,
-                    artistIds TEXT,
-                    asciiName TEXT,
-                    attractionLights TEXT,
-                    availability TEXT,
-                    boosterTypes TEXT,
-                    borderColor TEXT,
-                    cardParts TEXT,
-                    colorIdentity TEXT,
-                    colorIndicator TEXT,
-                    colors TEXT,
-                    defense TEXT,
-                    duelDeck TEXT,
-                    edhrecRank INTEGER,
-                    edhrecSaltiness FLOAT,
-                    faceConvertedManaCost FLOAT,
-                    faceFlavorName TEXT,
-                    faceManaValue FLOAT,
-                    faceName TEXT,
-                    finishes TEXT,
-                    flavorName TEXT,
-                    flavorText TEXT,
-                    frameEffects TEXT,
-                    frameVersion TEXT,
-                    hand TEXT,
-                    hasAlternativeDeckLimit BOOLEAN,
-                    hasContentWarning BOOLEAN,
-                    hasFoil BOOLEAN,
-                    hasNonFoil BOOLEAN,
-                    isAlternative BOOLEAN,
-                    isFullArt BOOLEAN,
-                    isFunny BOOLEAN,
-                    isOnlineOnly BOOLEAN,
-                    isOversized BOOLEAN,
-                    isPromo BOOLEAN,
-                    isRebalanced BOOLEAN,
-                    isReprint BOOLEAN,
-                    isReserved BOOLEAN,
-                    isStarter BOOLEAN,
-                    isStorySpotlight BOOLEAN,
-                    isTextless BOOLEAN,
-                    isTimeshifted BOOLEAN,
-                    keywords TEXT,
-                    language TEXT,
-                    layout TEXT,
-                    leadershipSkills TEXT,
-                    life TEXT,
-                    loyalty TEXT,
-                    manaCost TEXT,
-                    manaValue FLOAT,
-                    name TEXT,
-                    number TEXT,
-                    originalPrintings TEXT,
-                    originalReleaseDate TEXT,
-                    originalText TEXT,
-                    originalType TEXT,
-                    otherFaceIds TEXT,
-                    power TEXT,
-                    printings TEXT,
-                    promoTypes TEXT,
-                    rarity TEXT,
-                    rebalancedPrintings TEXT,
-                    relatedCards TEXT,
-                    securityStamp TEXT,
-                    setCode TEXT,
-                    side TEXT,
-                    signature TEXT,
-                    sourceProducts TEXT,
-                    subsets TEXT,
-                    subtypes TEXT,
-                    supertypes TEXT,
-                    text TEXT,
-                    toughness TEXT,
-                    type TEXT,
-                    types TEXT,
-                    uuid VARCHAR(36) NOT NULL,
-                    variations TEXT,
-                    watermark TEXT
-                );
+            CREATE TABLE cards(
+              artist TEXT,
+              artistIds TEXT,
+              asciiName TEXT,
+              attractionLights TEXT,
+              availability TEXT,
+              boosterTypes TEXT,
+              borderColor TEXT,
+              cardParts TEXT,
+              colorIdentity TEXT,
+              colorIndicator TEXT,
+              colors TEXT,
+              defense TEXT,
+              duelDeck TEXT,
+              edhrecRank INT,
+              edhrecSaltiness REAL,
+              faceConvertedManaCost REAL,
+              faceFlavorName TEXT,
+              faceManaValue REAL,
+              faceName TEXT,
+              finishes TEXT,
+              flavorName TEXT,
+              flavorText TEXT,
+              frameEffects TEXT,
+              frameVersion TEXT,
+              hand TEXT,
+              hasAlternativeDeckLimit NUM,
+              hasContentWarning NUM,
+              hasFoil NUM,
+              hasNonFoil NUM,
+              isAlternative NUM,
+              isFullArt NUM,
+              isFunny NUM,
+              isGameChanger NUM,
+              isOnlineOnly NUM,
+              isOversized NUM,
+              isPromo NUM,
+              isRebalanced NUM,
+              isReprint NUM,
+              isReserved NUM,
+              isStarter NUM,
+              isStorySpotlight NUM,
+              isTextless NUM,
+              isTimeshifted NUM,
+              keywords TEXT,
+              language TEXT,
+              layout TEXT,
+              leadershipSkills TEXT,
+              life TEXT,
+              loyalty TEXT,
+              manaCost TEXT,
+              manaValue REAL,
+              name TEXT,
+              number TEXT,
+              originalPrintings TEXT,
+              originalReleaseDate TEXT,
+              originalText TEXT,
+              otherFaceIds TEXT,
+              power TEXT,
+              printedName TEXT,
+              printedText TEXT,
+              printedType TEXT,
+              printings TEXT,
+              promoTypes TEXT,
+              rarity TEXT,
+              rebalancedPrintings TEXT,
+              relatedCards TEXT,
+              securityStamp TEXT,
+              setCode TEXT,
+              side TEXT,
+              signature TEXT,
+              sourceProducts TEXT,
+              subsets TEXT,
+              subtypes TEXT,
+              supertypes TEXT,
+              text TEXT,
+              toughness TEXT,
+              type TEXT,
+              types TEXT,
+              uuid TEXT,
+              variations TEXT,
+              watermark TEXT
+            )
             ";
             command.ExecuteNonQuery();
 
@@ -355,6 +358,39 @@ namespace CollectaMundo.Tests.TestUtils
                             WHEN 'G' THEN 5
                             ELSE 7
                         END
+            ";
+            command.ExecuteNonQuery();
+
+            // CREATE VIEW IF NOT EXISTS: view_cardToken
+            command.CommandText = @"
+                CREATE VIEW view_cardToken AS
+                SELECT
+                    c.uuid,
+                    c.name,
+                    s.name AS setName,
+                    c.setCode,
+                    NULL AS tokenSetCode,
+                    NULL AS faceName
+                FROM
+                    cards c
+                JOIN
+                    sets s ON c.setCode = s.code
+                WHERE
+                    c.side IS NULL OR c.side = 'a'
+                UNION ALL
+                SELECT
+                    t.uuid,
+                    t.name,
+                    s.name AS setName,
+                    s.code AS setCode,
+                    s.tokenSetCode,
+                    t.faceName
+                FROM
+                    tokens t
+                JOIN
+                    sets s ON t.setCode = s.tokenSetCode
+                WHERE
+                    t.side IS NULL OR t.side = 'a'
             ";
             command.ExecuteNonQuery();
         }

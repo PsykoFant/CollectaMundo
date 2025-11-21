@@ -42,7 +42,7 @@ namespace CollectaMundo.Tests
             var allCards = _mainVM.AllCardsVM.Cards;
             var myCollection = _mainVM.MyCollectionVM.Cards;
 
-            Assert.Equal(62, allCards.Count);
+            Assert.Equal(64, allCards.Count);
             Assert.Equal(22, myCollection.Count);
         }
     }
@@ -90,6 +90,7 @@ namespace CollectaMundo.Tests
                 "Forest",
                 "Unblinking Observer // Unblinking Observer",
                 "Prismatic Ending",
+                "Prismatic Ending",
                 "Sythis, Harvest's Hand // Sythis, Harvest's Hand",
                 "Blossoming Calm // Blossoming Calm",
                 "Shadrix Silverquill // Shadrix Silverquill",
@@ -125,6 +126,7 @@ namespace CollectaMundo.Tests
                 "Hypnotic Cloud",
                 "Crenellated Wall",
                 "Renounce",
+                "Viashino Runner",
                 "Viashino Runner",
                 "Hungry Mist",
                 "Vexing Arcanix",
@@ -724,7 +726,7 @@ namespace CollectaMundo.Tests
 
             void AssertFiltersCleared()
             {
-                Assert.Equal(62, _mainVM.AllCardsVM.FilteredCards.Count);
+                Assert.Equal(64, _mainVM.AllCardsVM.FilteredCards.Count);
                 Assert.Equal(22, _mainVM.MyCollectionVM.FilteredCards.Count);
                 Assert.True(string.IsNullOrEmpty(_mainVM.FilterVM.FilterSummary));
             }
@@ -755,7 +757,7 @@ namespace CollectaMundo.Tests
             // Assert
             var expectedSummary = "Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
             Assert.Equal(expectedSummary, _mainVM.FilterVM.FilterSummary);
-            Assert.Equal(22, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(23, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(17, _mainVM.MyCollectionVM.FilteredCards.Count);
 
             // Arrange: Colors {R OR G}
@@ -773,7 +775,7 @@ namespace CollectaMundo.Tests
             // Assert
             expectedSummary = "Colors: {R OR G} AND Rarity: {NOT mythic AND NOT rare} AND ManaValue > 1";
             Assert.Equal(expectedSummary, _mainVM.FilterVM.FilterSummary);
-            Assert.Equal(12, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(13, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(10, _mainVM.MyCollectionVM.FilteredCards.Count);
 
             // Reset for main scenario
@@ -806,7 +808,7 @@ namespace CollectaMundo.Tests
             setNameFilter.SimulateTypingComplete();
 
             // Assert
-            Assert.Equal(8, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(9, _mainVM.AllCardsVM.FilteredCards.Count);
 
             // Act: Delete text to clear
             setNameFilter.FreetextSearch = "";
@@ -846,7 +848,7 @@ namespace CollectaMundo.Tests
             rulesFilter.HandleKeyLogic(Key.Enter); // skip delay, apply immediately
 
             // Assert
-            Assert.Equal(43, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(45, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal("Text: \"a\"", _mainVM.FilterVM.FilterSummary);
             Assert.Equal(21, _mainVM.MyCollectionVM.FilteredCards.Count);
 
@@ -888,7 +890,7 @@ namespace CollectaMundo.Tests
             typesFilter.OperatorSelection = OperatorType.OR;
 
             // Assert
-            Assert.Equal(28, _mainVM.AllCardsVM.FilteredCards.Count);
+            Assert.Equal(29, _mainVM.AllCardsVM.FilteredCards.Count);
             Assert.Equal(10, _mainVM.MyCollectionVM.FilteredCards.Count);
 
             // Arrange: SuperTypes {Legendary}
