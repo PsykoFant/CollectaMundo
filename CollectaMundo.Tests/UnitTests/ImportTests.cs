@@ -27,66 +27,217 @@ namespace CollectaMundo.Tests.UnitTests
             );
         }
 
-
-        // -------------------------------------------------------------
-        // TEST 1: Single Match (Name + SetCode)
-        // -------------------------------------------------------------
-        [Fact]
-        public async Task Step3_SingleMatch_ReturnsUuidAndNoMultipleUuids()
+        // ------------------------------------------------------------
+        // Helpers
+        // ------------------------------------------------------------
+        private static TempCardItem MakeItemFull(string name, string? setCode = null, string? setName = null)
         {
-            // Arrange
-            // Real card known to exist in your seeded DB
-            var item = new TempCardItem
+            var fields = new Dictionary<string, string>
             {
-                Fields = new Dictionary<string, string>
+                ["Card Name"] = name
+            };
+
+            if (!string.IsNullOrWhiteSpace(setCode))
+            {
+                fields["Set Code"] = setCode;
+            }
+
+            if (!string.IsNullOrWhiteSpace(setName))
+            {
+                fields["Set Name"] = setName;
+            }
+
+            return new TempCardItem { Fields = fields };
+        }
+        private static IReadOnlyList<NameSetColumnMapping> BuildMappings(bool includeSetCode = true, bool includeSetName = false)
+        {
+            // Determine which CSV headers should exist
+            // If SetName is used, include it in CsvHeaders list
+            var headers = new List<string> { "Card Name" };
+            if (includeSetCode)
+            {
+                headers.Add("Set Code");
+            }
+
+            if (includeSetName)
+            {
+                headers.Add("Set Name");
+            }
+
+            var list = new List<NameSetColumnMapping>
+            {
+                // Card Name mapping (always required)
+                new()
                 {
-                    ["Card Name"] = "Snapping Sailback",
-                    ["Set Code"] = "PLST"
+                    FieldToMap = "Card Name",
+                    SelectedCsvHeader = "Card Name",
+                    CsvHeaders = headers
+                },
+
+                // Set Code mapping (optional)
+                new()
+                {
+                    FieldToMap = "Set Code",
+                    SelectedCsvHeader = includeSetCode ? "Set Code" : null,
+                    CsvHeaders = headers
+                },
+
+                // Set Name mapping (optional)
+                new()
+                {
+                    FieldToMap = "Set Name",
+                    SelectedCsvHeader = includeSetName ? "Set Name" : null,
+                    CsvHeaders = headers
                 }
             };
 
-            var importList = new List<TempCardItem> { item };
+            return list;
+        }
 
-            // Create NameSetColumnMappings
-            var mappings = new List<NameSetColumnMapping>
-            {
-                new() {
-                    FieldToMap = "Card Name",
-                    SelectedCsvHeader = "Card Name",
-                    CsvHeaders = ["Card Name", "Set Code"]
-                },
-                new() {
-                    FieldToMap = "Set Code",
-                    SelectedCsvHeader = "Set Code",
-                    CsvHeaders = ["Card Name", "Set Code"]
-                },
-                new() {
-                    FieldToMap = "Set Name",
-                    SelectedCsvHeader = null,   // Not used in this scenario
-                    CsvHeaders = ["Card Name", "Set Code"]
-            }
-        };
+        private async Task<(IReadOnlyList<TempCardItem> Items, ImportMatchSummaryDto Result)> RunStep3Async(IReadOnlyList<TempCardItem> items, IReadOnlyList<NameSetColumnMapping>? mappings = null)
+        {
+            mappings ??= BuildMappings(); // defaults: Name + SetCode
 
-            // Progress sinks stub
-            var progress = ProgressSinks.NoOp;
-
-            // Act
             var result = await _service.TryResolveUuidsFromNameAndSetAsync(
-                importList,
+                items,
                 mappings,
-                progress,
-                token: CancellationToken.None
+                ProgressSinks.NoOp,
+                CancellationToken.None
             );
+
+            return (items, result);
+        }
+
+        // ------------------------------------------------------------
+
+        [Fact]
+        public async Task Step3_SingleMatch_UsingSetCode_AssignsUuid()
+        {
+            // Act
+            var (items, result) = await RunStep3Async(
+                [MakeItemFull("Snapping Sailback", setCode: "PLST")],
+                BuildMappings(includeSetCode: true, includeSetName: false)
+            );
+
+            var item = items[0];
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal(0, result.ItemsWithMultipleUuids);
 
-            Assert.True(item.Fields.ContainsKey("uuid"), "uuid field must be populated");
-            Assert.False(item.Fields.ContainsKey("uuids"), "uuids field must NOT be present");
+            Assert.True(item.Fields.ContainsKey("uuid"), "uuid must be present for single match");
+            Assert.False(item.Fields.ContainsKey("uuids"), "uuids must NOT be present for single match");
+            Assert.False(string.IsNullOrWhiteSpace(item.Fields["uuid"]));
+        }
 
-            string uuid = item.Fields["uuid"];
-            Assert.False(string.IsNullOrWhiteSpace(uuid));
+        [Fact]
+        public async Task Step3_SingleMatch_UsingSetName_AssignsUuid()
+        {
+            // Act
+            var (items, result) = await RunStep3Async(
+                [MakeItemFull("Font of Ire", setName: "Journey into Nyx")],
+                BuildMappings(includeSetCode: false, includeSetName: true)
+            );
+
+            var item = items[0];
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(0, result.ItemsWithMultipleUuids);
+
+            Assert.True(item.Fields.ContainsKey("uuid"), "uuid must be present for single match");
+            Assert.False(item.Fields.ContainsKey("uuids"), "uuids must NOT be present for single match");
+            Assert.False(string.IsNullOrWhiteSpace(item.Fields["uuid"]));
+        }
+
+        [Fact]
+        public async Task Step3_SingleMatch_UsingSetName_MissingOnSetCode_AssignsUuid()
+        {
+            // Act
+            var (items, result) = await RunStep3Async(
+                [MakeItemFull("Font of Ire", setCode: "BOGUS", setName: "Journey into Nyx")],
+                BuildMappings(includeSetCode: true, includeSetName: true)
+            );
+
+            var item = items[0];
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(0, result.ItemsWithMultipleUuids);
+
+            Assert.True(item.Fields.ContainsKey("uuid"), "uuid must be present for single match");
+            Assert.False(item.Fields.ContainsKey("uuids"), "uuids must NOT be present for single match");
+            Assert.False(string.IsNullOrWhiteSpace(item.Fields["uuid"]));
+        }
+
+        [Fact]
+        public async Task Step3_SingleMatch_UsingSetCode_MissingOnSetName_AssignsUuid()
+        {
+            // Act
+            var (items, result) = await RunStep3Async(
+                [MakeItemFull("Font of Ire", setCode: "JOU", setName: "BOGUS")],
+                BuildMappings(includeSetCode: true, includeSetName: true)
+            );
+
+            var item = items[0];
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(0, result.ItemsWithMultipleUuids);
+
+            Assert.True(item.Fields.ContainsKey("uuid"), "uuid must be present for single match");
+            Assert.False(item.Fields.ContainsKey("uuids"), "uuids must NOT be present for single match");
+            Assert.False(string.IsNullOrWhiteSpace(item.Fields["uuid"]));
+        }
+
+        [Fact]
+        public async Task Step3_MultiMatch_UsingSetCode_AssignsUuidsList()
+        {
+            // Act
+            var (items, result) = await RunStep3Async(
+                [MakeItemFull("Prismatic Ending", setCode: "MH2")],
+                BuildMappings(includeSetCode: true, includeSetName: false)
+            );
+
+            var item = items[0];
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.ItemsWithMultipleUuids);
+
+            Assert.False(item.Fields.ContainsKey("uuid"), "uuid must NOT be present for multi-match");
+            Assert.True(item.Fields.ContainsKey("uuids"), "uuids must be present for multi-match");
+
+            var raw = item.Fields["uuids"];
+            Assert.False(string.IsNullOrWhiteSpace(raw), "uuids string must not be empty");
+
+            var split = raw.Split(",", StringSplitOptions.RemoveEmptyEntries);
+            Assert.True(split.Length > 1, "multi-match must contain more than 1 uuid");
+        }
+
+        [Fact]
+        public async Task Step3_MultiMatch_UsingSetName_AssignsUuidsList()
+        {
+            // Act
+            var (items, result) = await RunStep3Async(
+                [MakeItemFull("Prismatic Ending", setName: "Modern Horizons 2")],
+                BuildMappings(includeSetCode: false, includeSetName: true)
+            );
+
+            var item = items[0];
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.ItemsWithMultipleUuids);
+
+            Assert.False(item.Fields.ContainsKey("uuid"), "uuid must NOT be present for multi-match");
+            Assert.True(item.Fields.ContainsKey("uuids"), "uuids must be present for multi-match");
+
+            var raw = item.Fields["uuids"];
+            Assert.False(string.IsNullOrWhiteSpace(raw), "uuids string must not be empty");
+
+            var split = raw.Split(",", StringSplitOptions.RemoveEmptyEntries);
+            Assert.True(split.Length > 1, "multi-match must contain more than 1 uuid");
         }
 
     }
