@@ -284,5 +284,75 @@ namespace CollectaMundo.Infrastructure.Import
 
             return result;
         }
+
+        // Name-only lookup for Step 3 fallback matching.
+        public async Task<Dictionary<string, List<string>>> QueryByNameOnlyAsync(SQLiteConnection conn, IReadOnlyList<string> names, CancellationToken token)
+        {
+            var result = new Dictionary<string, List<string>>();
+
+            if (names == null || names.Count == 0)
+            {
+                return result;
+            }
+
+            // Build IN-clause parameters
+            var nameParams = new List<SQLiteParameter>();
+            var placeholders = new List<string>();
+
+            for (int i = 0; i < names.Count; i++)
+            {
+                var p = new SQLiteParameter($"@name{i}", names[i]);
+                nameParams.Add(p);
+                placeholders.Add(p.ParameterName);
+            }
+
+            string nameInClause = string.Join(",", placeholders);
+
+            // SQL covers:
+            // - name match in view_cardToken
+            // - faceName match (e.g., double-faced cards)
+            string sql = $@"
+                SELECT uuid, name
+                FROM view_cardToken
+                WHERE name IN ({nameInClause})
+
+                UNION ALL
+
+                SELECT uuid, faceName AS name
+                FROM view_cardToken
+                WHERE faceName IN ({nameInClause});
+            ";
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+
+            foreach (var p in nameParams)
+            {
+                cmd.Parameters.Add(p);
+            }
+
+            using var reader = await cmd.ExecuteReaderAsync(token);
+            while (await reader.ReadAsync(token))
+            {
+                string uuid = reader["uuid"]?.ToString() ?? "";
+                string name = reader["name"]?.ToString() ?? "";
+
+                if (uuid == "" || name == "")
+                {
+                    continue;
+                }
+
+                if (!result.TryGetValue(name, out var list))
+                {
+                    list = [];
+                    result[name] = list;
+                }
+
+                list.Add(uuid);
+            }
+
+            return result;
+        }
+
     }
 }
