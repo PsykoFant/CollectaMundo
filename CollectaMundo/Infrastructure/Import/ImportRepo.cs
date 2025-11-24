@@ -314,13 +314,13 @@ namespace CollectaMundo.Infrastructure.Import
             string sql = $@"
                 SELECT uuid, name
                 FROM view_cardToken
-                WHERE name IN ({nameInClause})
+                WHERE name COLLATE NOCASE IN ({nameInClause})
 
                 UNION ALL
 
                 SELECT uuid, faceName AS name
                 FROM view_cardToken
-                WHERE faceName IN ({nameInClause});
+                WHERE faceName COLLATE NOCASE IN ({nameInClause});
             ";
 
             using var cmd = conn.CreateCommand();

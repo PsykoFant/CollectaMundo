@@ -259,6 +259,41 @@ namespace CollectaMundo.DomainLogic.Import
             }
         }
 
+        // Applies name-only UUID matches to the batch of TempCardItem objects. This is a fallback scenario used when neither SetCode nor SetName mappings are available.
+        public void ApplyNameOnlyMatches(IReadOnlyList<TempCardItem> batch, IReadOnlyList<string> names, Dictionary<string, List<string>> results)
+        {
+            if (batch == null || names == null || results == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < batch.Count; i++)
+            {
+                var item = batch[i];
+                var name = names[i];
+
+                // Skip if name missing or empty
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    continue;
+                }
+
+                // Look up via exact card name
+                if (!results.TryGetValue(name, out var uuidList) ||
+                    uuidList == null || uuidList.Count == 0)
+                {
+                    // No matches found → do nothing (no uuid, no uuids)
+                    continue;
+                }
+
+                // Apply domain invariant:
+                // - Exactly one UUID  → store as "uuid"
+                // - Multiple UUIDs    → store as comma-separated string in "uuids"
+                AssignUuids(item, uuidList);
+            }
+        }
+
+
         //  Assign uuid / uuids to TempCardItem, enforcing invariants
         private static void AssignUuids(TempCardItem item, List<string> uuidList)
         {
@@ -329,5 +364,6 @@ namespace CollectaMundo.DomainLogic.Import
                 ItemsWithMultipleUuids = 0
             };
         }
+
     }
 }

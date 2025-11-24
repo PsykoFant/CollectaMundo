@@ -102,7 +102,7 @@ namespace CollectaMundo.Tests.UnitTests
             return MakeItemsFull(
                 ("Viashino Runner", "USG", "Urza's Saga"),                    // single uuid hit
                 ("Prismatic Ending", "MH2", "Modern Horizons 2"),            // multi uuid hit
-                ("Realmwalker", "PKHM", null),                               // single uuid hit
+                ("realmwalker", "pkhm", null),                               // single uuid hit - also, test case insensitivity
                 ("Unblinking Observer // Unblinking Observer", null, "Midnight Hunt Art Series"), // single uuid hit
                 ("Zombie", "TM11", null),                                    // single uuid hit
                 ("Resurrection", "No Exist Code", "No Exist Name")           // no match
@@ -518,6 +518,46 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.True(raw.Split(",", StringSplitOptions.RemoveEmptyEntries).Length > 1);
         }
 
+        [Fact]
+        public async Task Step3_NameOnly_MixedItems_HandlesSingleAndMultipleMatches()
+        {
+            // Arrange:
+            // Name-only → no SetCode or SetName mappings
+            var items = MakeItemsFull(
+                ("Viashino Runner", null, null),               // multi-match
+                ("Jan Jansen, Chaos Crafter", null, null)      // single-match
+            );
+
+            // Only Card Name is mapped → triggers name-only fallback
+            var mappings = BuildMappings(
+                includeSetCode: false,
+                includeSetName: false
+            );
+
+            // Act
+            var (processed, summary) = await RunStep3Async(items, mappings);
+
+            // Assert summary
+            Assert.NotNull(summary);
+            Assert.Equal(1, summary.ItemsWithMultipleUuids);   // exactly one multi-match item
+
+            // ----- Viashino Runner → multi-match -----
+            var runner = processed.First(i => i.Fields["Card Name"] == "Viashino Runner");
+
+            Assert.True(runner.Fields.ContainsKey("uuids"), "Runner must have multiple UUIDs.");
+            Assert.False(runner.Fields.ContainsKey("uuid"), "Runner must not have single uuid.");
+
+            var runnerRaw = runner.Fields["uuids"];
+            Assert.False(string.IsNullOrWhiteSpace(runnerRaw));
+            Assert.True(runnerRaw.Split(",", StringSplitOptions.RemoveEmptyEntries).Length > 1);
+
+            // ----- Jan Jansen → single match -----
+            var jj = processed.First(i => i.Fields["Card Name"] == "Jan Jansen, Chaos Crafter");
+
+            Assert.True(jj.Fields.ContainsKey("uuid"), "Jan Jansen must have single uuid.");
+            Assert.False(jj.Fields.ContainsKey("uuids"), "Jan Jansen must not have multi uuid list.");
+            Assert.False(string.IsNullOrWhiteSpace(jj.Fields["uuid"]));
+        }
 
     }
 }

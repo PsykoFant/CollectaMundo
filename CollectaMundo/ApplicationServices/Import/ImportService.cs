@@ -119,96 +119,107 @@ namespace CollectaMundo.ApplicationServices.Import
         }
 
         // Step 3
-        public async Task<ImportMatchSummaryDto> TryResolveUuidsFromNameAndSetAsync(IReadOnlyList<TempCardItem> importCandidates, IReadOnlyList<NameSetColumnMapping> mappings, ProgressSinks progress, CancellationToken token)
+        public async Task<ImportMatchSummaryDto> TryResolveUuidsFromNameAndSetAsync(
+    IReadOnlyList<TempCardItem> importCandidates,
+    IReadOnlyList<NameSetColumnMapping> mappings,
+    ProgressSinks progress,
+    CancellationToken token)
         {
-
-            int total = importCandidates.Count;
-            int processed = 0;
-
-            progress.Percent.Report(0); // start
-
-
-            // Extract chosen mapping fields (domain logic)
-            var (HasName, HasSetName, HasSetCode, NameHeader, SetNameHeader, SetCodeHeader) = _importLogic.ExtractMappedFields(mappings);
-
-            if (!HasName || (!HasSetName && !HasSetCode))
+            if (importCandidates.Count == 0)
             {
-                throw new InvalidOperationException("Name and either Set Name or Set Code must be mapped.");
+                return new ImportMatchSummaryDto();
             }
 
-            const int BatchSize = 800;
+            // Extract final mapping selection
+            var chosen = _importLogic.ExtractMappedFields(mappings);
 
-            // Start read-only UoW (because Step 3 is SELECT-only)
+            if (!chosen.HasName)
+            {
+                // UI should prevent this, but domain must protect itself
+                throw new InvalidOperationException("Card Name must be mapped.");
+            }
+
+            // Obtain headers (may be null)
+            string nameHeader = chosen.NameHeader!;
+            string? setCodeHeader = chosen.SetCodeHeader;
+            string? setNameHeader = chosen.SetNameHeader;
+
+            // Batch all items (Step 3 always operates on full import list)
+            var items = importCandidates.ToList();
+
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginReadOnlyAsync();
 
             try
             {
-                for (int start = 0; start < importCandidates.Count; start += BatchSize)
+                // ------------------------------
+                // 1) NAME + SET CODE
+                // ------------------------------
+                if (chosen.HasSetCode)
                 {
-                    token.ThrowIfCancellationRequested();
+                    var pairs = ExtractPairs(items, nameHeader, setCodeHeader!);
 
-                    // Extract batch of unresolved items
-                    var batch = importCandidates
-                        .Skip(start)
-                        .Take(BatchSize)
-                        .Where(i => !_importLogic.IsItemResolved(i))
+                    var results = await _importRepo.QueryByNameAndSetCodeAsync(
+                        uow.CurrentConnection,
+                        pairs,
+                        token);
+
+                    _importLogic.ApplySetCodeMatches(items, pairs, results);
+                }
+
+                // ------------------------------
+                // 2) NAME + SET NAME
+                // ------------------------------
+                if (chosen.HasSetName)
+                {
+                    var pairs = ExtractPairs(items, nameHeader, setNameHeader!);
+
+                    var results = await _importRepo.QueryByNameAndSetNameAsync(
+                        uow.CurrentConnection,
+                        pairs,
+                        token);
+
+                    _importLogic.ApplySetNameMatches(items, pairs, results);
+                }
+
+                // ------------------------------
+                // 3) NAME-ONLY FALLBACK
+                //
+                // Only triggered when:
+                // - SetCode NOT mapped
+                // - SetName NOT mapped
+                // ------------------------------
+                if (!chosen.HasSetCode && !chosen.HasSetName)
+                {
+                    // Collect only the card-name values (aligned by item index)
+                    var names = items
+                        .Select(i => i.Fields.TryGetValue(nameHeader, out var n) ? n : "")
                         .ToList();
 
-                    if (batch.Count == 0)
-                    {
-                        continue;
-                    }
+                    var results = await _importRepo.QueryByNameOnlyAsync(
+                        uow.CurrentConnection,
+                        names,
+                        token);
 
-                    processed += batch.Count;
-
-                    int percent = (int)((double)processed / total * 100);
-                    progress.Percent.Report(percent);
-
-                    progress.Detail.Report($"Processing batch {start / BatchSize + 1}...");
-
-                    //  Match by SET CODE
-                    if (HasSetCode)
-                    {
-                        var pairs = ExtractPairs(batch, NameHeader!, SetCodeHeader!);
-
-                        var results = await _importRepo.QueryByNameAndSetCodeAsync(
-                            uow.CurrentConnection,
-                            pairs,
-                            token);
-
-                        _importLogic.ApplySetCodeMatches(batch, pairs, results);
-                    }
-
-                    //  Match by SET NAME
-                    if (HasSetName)
-                    {
-                        var pairs = ExtractPairs(batch, NameHeader!, SetNameHeader!);
-
-                        var results = await _importRepo.QueryByNameAndSetNameAsync(
-                            uow.CurrentConnection,
-                            pairs,
-                            token);
-
-                        _importLogic.ApplySetNameMatches(batch, pairs, results);
-                    }
+                    _importLogic.ApplyNameOnlyMatches(items, names, results);
                 }
 
                 await uow.CommitAsync();
-
-                // Final domain-level integrity & outcome evaluation
-                return _importLogic.FinalizeMatchResults(importCandidates);
             }
             catch
             {
                 await uow.RollbackAsync();
                 throw;
             }
-            finally
-            {
-                await uow.DisposeAsync();
-            }
+
+            // ------------------------------
+            // 4) Final classification
+            // ------------------------------
+            var summary = _importLogic.FinalizeMatchResults(items);
+
+            return summary;
         }
+
         private static List<(string Name, string Value)> ExtractPairs(List<TempCardItem> items, string nameHeader, string otherHeader)
         {
             return [.. items.Select(i => (
