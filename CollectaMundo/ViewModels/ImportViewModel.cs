@@ -256,6 +256,7 @@ namespace CollectaMundo.ViewModels
         {
             ImportCardList.Clear();
             IdMappings.Clear();
+            NameSetMappings.Clear();
 
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();

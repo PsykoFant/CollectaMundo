@@ -11,11 +11,9 @@ namespace CollectaMundo.DomainLogic.Import
 
         // Step 3
         (bool HasName, bool HasSetName, bool HasSetCode, string? NameHeader, string? SetNameHeader, string? SetCodeHeader) ExtractMappedFields(IReadOnlyList<NameSetColumnMapping> mappings);
-        bool IsItemResolved(TempCardItem item);
-        void ApplySetCodeMatches(IReadOnlyList<TempCardItem> items, IReadOnlyList<(string Name, string SetCode)> pairs, Dictionary<string, List<string>> results);
-        void ApplySetNameMatches(IReadOnlyList<TempCardItem> items, IReadOnlyList<(string Name, string SetName)> pairs, Dictionary<string, List<string>> results);
+        void ApplySetCodeMatches(IReadOnlyList<TempCardItem> batch, IReadOnlyList<(string Name, string SetCode)> pairs, Dictionary<string, List<string>> results);
+        void ApplySetNameMatches(IReadOnlyList<TempCardItem> batch, IReadOnlyList<(string Name, string SetName)> pairs, Dictionary<string, List<string>> results);
         void ApplyNameOnlyMatches(IReadOnlyList<TempCardItem> batch, IReadOnlyList<string> names, Dictionary<string, List<string>> results);
         ImportMatchSummaryDto FinalizeMatchResults(IReadOnlyList<TempCardItem> items);
-
     }
 }

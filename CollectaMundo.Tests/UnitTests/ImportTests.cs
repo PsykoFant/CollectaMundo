@@ -100,12 +100,17 @@ namespace CollectaMundo.Tests.UnitTests
         private static IReadOnlyList<TempCardItem> MakeStandardMixedStep3Items()
         {
             return MakeItemsFull(
-                ("Viashino Runner", "USG", "Urza's Saga"),                    // single uuid hit
-                ("Prismatic Ending", "MH2", "Modern Horizons 2"),            // multi uuid hit
-                ("realmwalker", "pkhm", null),                               // single uuid hit - also, test case insensitivity
-                ("Unblinking Observer // Unblinking Observer", null, "Midnight Hunt Art Series"), // single uuid hit
-                ("Zombie", "TM11", null),                                    // single uuid hit
-                ("Resurrection", "No Exist Code", "No Exist Name")           // no match
+                ("Viashino Runner", "USG", "Urza's Saga"),                                          // single uuid hit
+                ("Prismatic Ending", "MH2", "Modern Horizons 2"),                                   // multi uuid hit
+                ("realmwalker", "pkhm", null),                                                      // single uuid hit - also, test case insensitivity
+                ("Thallid Devourer", null, "fallen empires"),                                       // single uuid hit - also, test case insensitivity
+                ("bubbling cauldron", "ima", null),                                                 // single uuid hit - also, test case insensitivity
+                ("Unblinking Observer // Unblinking Observer", null, "Midnight Hunt Art Series"),   // single uuid hit
+                ("Zombie", "TM11", null),                                                           // single uuid hit
+                ("jan jansen, chaos crafter", null, null),                                          // single uuid hit from token faceName - also, test case insensitivity
+                ("Resurrection", "No Exist Code", "No Exist Name"),                                 // single uuid hit (fallback to name-only)
+                ("Brisela, Voice of Nightmares", "No Exist Code", "No Exist Name"),                 // no uuid hit - we don't import meld backsides
+                ("No Exist Card", "No Exist Code", "No Exist Name")                                 // no uuid hit
             );
         }
         private async Task<(IReadOnlyList<TempCardItem> Items, ImportMatchSummaryDto Result)> RunStep3Async(IReadOnlyList<TempCardItem> items, IReadOnlyList<NameSetColumnMapping>? mappings = null)
@@ -123,6 +128,7 @@ namespace CollectaMundo.Tests.UnitTests
         }
 
         // ------------------------------------------------------------
+        #region Step 3: Name + SetCode/SetName UUID resolution tests
 
         [Fact]
         public async Task Step3_SingleMatch_UsingSetCode_AssignsUuid()
@@ -296,6 +302,8 @@ namespace CollectaMundo.Tests.UnitTests
             });
         }
 
+        #endregion
+
         [Fact]
         public async Task Step3_MixedItems_UsingSetCode_UsingSetName_SingleMultiAndNone_AllowsNoneAndReturnsMultiSummary()
         {
@@ -322,8 +330,12 @@ namespace CollectaMundo.Tests.UnitTests
                 switch (name)
                 {
                     case "Viashino Runner":
-                    case "Realmwalker":
+                    case "realmwalker":
                     case "Unblinking Observer // Unblinking Observer":
+                    case "Thallid Devourer":
+                    case "bubbling cauldron":
+                    case "Resurrection":
+                    case "jan jansen, chaos crafter":
                     case "Zombie":
                         // Single-match items must have uuid only
                         Assert.True(item.Fields.ContainsKey("uuid"), $"{name} should have uuid");
@@ -342,7 +354,8 @@ namespace CollectaMundo.Tests.UnitTests
                         Assert.True(split.Length > 1, $"{name} should map to multiple UUIDs");
                         break;
 
-                    case "Resurrection":
+                    case "No Exist Card":
+                    case "Brisela, Voice of Nightmares":
                         // No-match items should have NEITHER uuid nor uuids
                         Assert.False(item.Fields.ContainsKey("uuid"), $"{name} should NOT have uuid");
                         Assert.False(item.Fields.ContainsKey("uuids"), $"{name} should NOT have uuids");
@@ -381,7 +394,12 @@ namespace CollectaMundo.Tests.UnitTests
                 switch (name)
                 {
                     case "Viashino Runner":
-                    case "Realmwalker":
+                    case "realmwalker":
+                    case "Resurrection":
+                    case "Unblinking Observer // Unblinking Observer":
+                    case "Thallid Devourer":
+                    case "bubbling cauldron":
+                    case "jan jansen, chaos crafter":
                     case "Zombie":
                         // Single-match items must have uuid only
                         Assert.True(item.Fields.ContainsKey("uuid"), $"{name} should have uuid");
@@ -400,13 +418,8 @@ namespace CollectaMundo.Tests.UnitTests
                         Assert.True(split.Length > 1, $"{name} should map to multiple UUIDs");
                         break;
 
-                    case "Unblinking Observer // Unblinking Observer":
-                        // No-match items should have NEITHER uuid nor uuids
-                        Assert.False(item.Fields.ContainsKey("uuid"), $"{name} should NOT have uuid");
-                        Assert.False(item.Fields.ContainsKey("uuids"), $"{name} should NOT have uuids");
-                        break;
-
-                    case "Resurrection":
+                    case "No Exist Card":
+                    case "Brisela, Voice of Nightmares":
                         // No-match items should have NEITHER uuid nor uuids
                         Assert.False(item.Fields.ContainsKey("uuid"), $"{name} should NOT have uuid");
                         Assert.False(item.Fields.ContainsKey("uuids"), $"{name} should NOT have uuids");
@@ -445,6 +458,12 @@ namespace CollectaMundo.Tests.UnitTests
                 switch (name)
                 {
                     case "Viashino Runner":
+                    case "realmwalker":
+                    case "Zombie":
+                    case "Thallid Devourer":
+                    case "Resurrection":
+                    case "bubbling cauldron":
+                    case "jan jansen, chaos crafter":
                     case "Unblinking Observer // Unblinking Observer":
                         // Single-match items must have uuid only
                         Assert.True(item.Fields.ContainsKey("uuid"), $"{name} should have uuid");
@@ -463,19 +482,8 @@ namespace CollectaMundo.Tests.UnitTests
                         Assert.True(split.Length > 1, $"{name} should map to multiple UUIDs");
                         break;
 
-                    case "Realmwalker":
-                        // No-match items should have NEITHER uuid nor uuids
-                        Assert.False(item.Fields.ContainsKey("uuid"), $"{name} should NOT have uuid");
-                        Assert.False(item.Fields.ContainsKey("uuids"), $"{name} should NOT have uuids");
-                        break;
-
-                    case "Zombie":
-                        // No-match items should have NEITHER uuid nor uuids
-                        Assert.False(item.Fields.ContainsKey("uuid"), $"{name} should NOT have uuid");
-                        Assert.False(item.Fields.ContainsKey("uuids"), $"{name} should NOT have uuids");
-                        break;
-
-                    case "Resurrection":
+                    case "No Exist Card":
+                    case "Brisela, Voice of Nightmares":
                         // No-match items should have NEITHER uuid nor uuids
                         Assert.False(item.Fields.ContainsKey("uuid"), $"{name} should NOT have uuid");
                         Assert.False(item.Fields.ContainsKey("uuids"), $"{name} should NOT have uuids");
@@ -524,14 +532,14 @@ namespace CollectaMundo.Tests.UnitTests
             // Arrange:
             // Name-only → no SetCode or SetName mappings
             var items = MakeItemsFull(
-                ("Viashino Runner", null, null),               // multi-match
-                ("Jan Jansen, Chaos Crafter", null, null)      // single-match
+                ("Viashino Runner", "does not exist", "does not exist"),               // multi-match
+                ("Jan Jansen, Chaos Crafter", "does not exist", "does not exist")      // single-match
             );
 
             // Only Card Name is mapped → triggers name-only fallback
             var mappings = BuildMappings(
-                includeSetCode: false,
-                includeSetName: false
+                includeSetCode: true,
+                includeSetName: true
             );
 
             // Act

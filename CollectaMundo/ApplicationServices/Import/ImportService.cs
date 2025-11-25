@@ -119,113 +119,93 @@ namespace CollectaMundo.ApplicationServices.Import
         }
 
         // Step 3
-        public async Task<ImportMatchSummaryDto> TryResolveUuidsFromNameAndSetAsync(
-    IReadOnlyList<TempCardItem> importCandidates,
-    IReadOnlyList<NameSetColumnMapping> mappings,
-    ProgressSinks progress,
-    CancellationToken token)
+        public async Task<ImportMatchSummaryDto> TryResolveUuidsFromNameAndSetAsync(IReadOnlyList<TempCardItem> importCandidates, IReadOnlyList<NameSetColumnMapping> mappings, ProgressSinks progress, CancellationToken token)
         {
-            if (importCandidates.Count == 0)
-            {
-                return new ImportMatchSummaryDto();
-            }
+            var (HasName, HasSetName, HasSetCode, NameHeader, SetNameHeader, SetCodeHeader) = _importLogic.ExtractMappedFields(mappings);
 
-            // Extract final mapping selection
-            var chosen = _importLogic.ExtractMappedFields(mappings);
-
-            if (!chosen.HasName)
+            // You still enforce UI validation before calling this
+            if (!HasName)
             {
-                // UI should prevent this, but domain must protect itself
                 throw new InvalidOperationException("Card Name must be mapped.");
             }
+            // (we do not enforce SetCode/SetName here — fallback will handle it)
 
-            // Obtain headers (may be null)
-            string nameHeader = chosen.NameHeader!;
-            string? setCodeHeader = chosen.SetCodeHeader;
-            string? setNameHeader = chosen.SetNameHeader;
+            // ---- PREPARE INPUTS ----
+            var names = importCandidates.Select(i =>
+                (i.Fields.TryGetValue(NameHeader!, out var v) ? v : "")).ToList();
 
-            // Batch all items (Step 3 always operates on full import list)
-            var items = importCandidates.ToList();
+            var nameCodePairs = HasSetCode
+                ? importCandidates.Select(i =>
+                    (
+                        i.Fields.TryGetValue(NameHeader!, out var name) ? name : "",
+                        i.Fields.TryGetValue(SetCodeHeader!, out var code) ? code : ""
+                    )
+                  ).ToList()
+                : [];
+
+            var nameSetPairs = HasSetName
+                ? importCandidates.Select(i =>
+                    (
+                        i.Fields.TryGetValue(NameHeader!, out var name) ? name : "",
+                        i.Fields.TryGetValue(SetNameHeader!, out var setName) ? setName : ""
+                    )
+                  ).ToList()
+                : [];
+
+            // ---- DATABASE QUERIES ----
+            Dictionary<string, List<string>> codeMatches = [];
+            Dictionary<string, List<string>> nameMatches = [];
+            Dictionary<string, List<string>> setMatches = [];
 
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginReadOnlyAsync();
 
-            try
+            if (HasSetCode)
             {
-                // ------------------------------
-                // 1) NAME + SET CODE
-                // ------------------------------
-                if (chosen.HasSetCode)
-                {
-                    var pairs = ExtractPairs(items, nameHeader, setCodeHeader!);
-
-                    var results = await _importRepo.QueryByNameAndSetCodeAsync(
-                        uow.CurrentConnection,
-                        pairs,
-                        token);
-
-                    _importLogic.ApplySetCodeMatches(items, pairs, results);
-                }
-
-                // ------------------------------
-                // 2) NAME + SET NAME
-                // ------------------------------
-                if (chosen.HasSetName)
-                {
-                    var pairs = ExtractPairs(items, nameHeader, setNameHeader!);
-
-                    var results = await _importRepo.QueryByNameAndSetNameAsync(
-                        uow.CurrentConnection,
-                        pairs,
-                        token);
-
-                    _importLogic.ApplySetNameMatches(items, pairs, results);
-                }
-
-                // ------------------------------
-                // 3) NAME-ONLY FALLBACK
-                //
-                // Only triggered when:
-                // - SetCode NOT mapped
-                // - SetName NOT mapped
-                // ------------------------------
-                if (!chosen.HasSetCode && !chosen.HasSetName)
-                {
-                    // Collect only the card-name values (aligned by item index)
-                    var names = items
-                        .Select(i => i.Fields.TryGetValue(nameHeader, out var n) ? n : "")
-                        .ToList();
-
-                    var results = await _importRepo.QueryByNameOnlyAsync(
-                        uow.CurrentConnection,
-                        names,
-                        token);
-
-                    _importLogic.ApplyNameOnlyMatches(items, names, results);
-                }
-
-                await uow.CommitAsync();
-            }
-            catch
-            {
-                await uow.RollbackAsync();
-                throw;
+                codeMatches = await _importRepo.QueryByNameAndSetCodeAsync(
+                    uow.CurrentConnection,
+                    nameCodePairs,
+                    token
+                );
             }
 
-            // ------------------------------
-            // 4) Final classification
-            // ------------------------------
-            var summary = _importLogic.FinalizeMatchResults(items);
+            if (HasSetName)
+            {
+                setMatches = await _importRepo.QueryByNameAndSetNameAsync(
+                    uow.CurrentConnection,
+                    nameSetPairs,
+                    token
+                );
+            }
 
-            return summary;
-        }
+            // Always fetch name-only candidates — needed for fallback
+            nameMatches = await _importRepo.QueryByNameOnlyAsync(
+                uow.CurrentConnection,
+                names,
+                token
+            );
 
-        private static List<(string Name, string Value)> ExtractPairs(List<TempCardItem> items, string nameHeader, string otherHeader)
-        {
-            return [.. items.Select(i => (
-                    i.Fields.TryGetValue(nameHeader, out var name) ? name : "",
-                    i.Fields.TryGetValue(otherHeader, out var val) ? val : ""
-                ))];
+            await uow.CommitAsync();
+
+            // ---- APPLY MATCHES IN PRIORITY ORDER ----
+
+            // 1) Try (Name + SetCode)
+            if (HasSetCode)
+            {
+                _importLogic.ApplySetCodeMatches(importCandidates, nameCodePairs, codeMatches);
+            }
+
+            // 2) Try (Name + SetName)
+            if (HasSetName)
+            {
+                _importLogic.ApplySetNameMatches(importCandidates, nameSetPairs, setMatches);
+            }
+
+            // 3) Fallback → Name Only
+            _importLogic.ApplyNameOnlyMatches(importCandidates, names, nameMatches);
+
+            // ---- SUMMARY ----
+            return _importLogic.FinalizeMatchResults(importCandidates);
         }
     }
 }

@@ -216,105 +216,104 @@ namespace CollectaMundo.DomainLogic.Import
                 SetCodeHeader: setCode
             );
         }
-        public bool IsItemResolved(TempCardItem item)
+
+        // ---------------------------------------------------------
+        //  Apply matches — per item fallback logic
+        // ---------------------------------------------------------
+
+        public void ApplySetCodeMatches(IReadOnlyList<TempCardItem> batch, IReadOnlyList<(string Name, string SetCode)> pairs, Dictionary<string, List<string>> results)
         {
-            return item.Fields.ContainsKey("uuid") || item.Fields.ContainsKey("uuids");
-        }
-
-        //  Apply Matching Results (Name + Set Code)
-        public void ApplySetCodeMatches(IReadOnlyList<TempCardItem> items, IReadOnlyList<(string Name, string SetCode)> pairs, Dictionary<string, List<string>> results)
-        {
-            for (int i = 0; i < items.Count; i++)
-            {
-                var item = items[i];
-                var (name, setCode) = pairs[i];
-
-                string key = $"{name}_{setCode}";
-
-                if (!results.TryGetValue(key, out var uuidList))
-                {
-                    continue;
-                }
-
-                AssignUuids(item, uuidList);
-            }
-        }
-
-        //  Apply Matching Results (Name + Set Name)
-        public void ApplySetNameMatches(IReadOnlyList<TempCardItem> items, IReadOnlyList<(string Name, string SetName)> pairs, Dictionary<string, List<string>> results)
-        {
-            for (int i = 0; i < items.Count; i++)
-            {
-                var item = items[i];
-                var (name, setName) = pairs[i];
-
-                string key = $"{name}_{setName}";
-
-                if (!results.TryGetValue(key, out var uuidList))
-                {
-                    continue;
-                }
-
-                AssignUuids(item, uuidList);
-            }
-        }
-
-        // Applies name-only UUID matches to the batch of TempCardItem objects. This is a fallback scenario used when neither SetCode nor SetName mappings are available.
-        public void ApplyNameOnlyMatches(IReadOnlyList<TempCardItem> batch, IReadOnlyList<string> names, Dictionary<string, List<string>> results)
-        {
-            if (batch == null || names == null || results == null)
-            {
-                return;
-            }
-
             for (int i = 0; i < batch.Count; i++)
             {
                 var item = batch[i];
-                var name = names[i];
+                var (name, setCode) = pairs[i];
 
-                // Skip if name missing or empty
+                if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(setCode))
+                {
+                    continue;
+                }
+
+                string key = $"{name}_{setCode}".ToLowerInvariant();
+
+                if (results.TryGetValue(key, out var list) && list != null && list.Count > 0)
+                {
+                    AssignUuids(item, list);
+                }
+            }
+        }
+        public void ApplySetNameMatches(IReadOnlyList<TempCardItem> batch, IReadOnlyList<(string Name, string SetName)> pairs, Dictionary<string, List<string>> results)
+        {
+            for (int i = 0; i < batch.Count; i++)
+            {
+                // skip items already matched by SetCode
+                if (batch[i].Fields.ContainsKey("uuid") || batch[i].Fields.ContainsKey("uuids"))
+                {
+                    continue;
+                }
+
+                var item = batch[i];
+                var (name, setName) = pairs[i];
+
+                if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(setName))
+                {
+                    continue;
+                }
+
+                string key = $"{name}_{setName}".ToLowerInvariant();
+
+                if (results.TryGetValue(key, out var list) && list != null && list.Count > 0)
+                {
+                    AssignUuids(item, list);
+                }
+            }
+        }
+        public void ApplyNameOnlyMatches(IReadOnlyList<TempCardItem> batch, IReadOnlyList<string> names, Dictionary<string, List<string>> results)
+        {
+            for (int i = 0; i < batch.Count; i++)
+            {
+                // skip items already matched by SetCode / SetName
+                if (batch[i].Fields.ContainsKey("uuid") || batch[i].Fields.ContainsKey("uuids"))
+                {
+                    continue;
+                }
+
+                string name = names[i];
                 if (string.IsNullOrWhiteSpace(name))
                 {
                     continue;
                 }
 
-                // Look up via exact card name
-                if (!results.TryGetValue(name, out var uuidList) ||
-                    uuidList == null || uuidList.Count == 0)
+                string key = name.ToLowerInvariant();
+
+                if (results.TryGetValue(key, out var list) && list != null && list.Count > 0)
                 {
-                    // No matches found → do nothing (no uuid, no uuids)
-                    continue;
+                    AssignUuids(batch[i], list);
                 }
-
-                // Apply domain invariant:
-                // - Exactly one UUID  → store as "uuid"
-                // - Multiple UUIDs    → store as comma-separated string in "uuids"
-                AssignUuids(item, uuidList);
             }
         }
 
+        // ---------------------------------------------------------
+        // Helper
+        // ---------------------------------------------------------
 
-        //  Assign uuid / uuids to TempCardItem, enforcing invariants
-        private static void AssignUuids(TempCardItem item, List<string> uuidList)
+        private static void AssignUuids(TempCardItem item, List<string> list)
         {
-            if (uuidList == null || uuidList.Count == 0)
+            if (list.Count == 1)
             {
-                return;
-            }
-
-            if (uuidList.Count == 1)
-            {
-                // enforce invariant: uuid + no uuids
                 item.Fields.Remove("uuids");
-                item.Fields["uuid"] = uuidList[0];
+                item.Fields["uuid"] = list[0];
             }
-            else
+            else if (list.Count > 1)
             {
-                // enforce invariant: uuids + no uuid
                 item.Fields.Remove("uuid");
-                item.Fields["uuids"] = string.Join(",", uuidList);
+                item.Fields["uuids"] = string.Join(",", list);
             }
+            // list.Count == 0 → no assignment
         }
+
+        // ---------------------------------------------------------
+        // Summary evaluation
+        // ---------------------------------------------------------
         public ImportMatchSummaryDto FinalizeMatchResults(IReadOnlyList<TempCardItem> items)
         {
             bool anyBoth = false;
@@ -338,32 +337,22 @@ namespace CollectaMundo.DomainLogic.Import
                 {
                     anyMulti = true;
                 }
-                // else → no match, but we don’t need a flag
             }
 
             if (anyBoth)
             {
-                throw new InvalidOperationException("Internal error: item has both uuid and uuids.");
+                throw new InvalidOperationException("Internal invariant broken: item has both uuid and uuids.");
             }
 
             if (!anySingle && !anyMulti)
             {
-                throw new InvalidOperationException("No matches were found using name + set mapping.");
-            }
-
-            if (anyMulti)
-            {
-                return new ImportMatchSummaryDto
-                {
-                    ItemsWithMultipleUuids = items.Count(i => i.Fields.ContainsKey("uuids"))
-                };
+                throw new InvalidOperationException("No matches were found using name, set name or set code.");
             }
 
             return new ImportMatchSummaryDto
             {
-                ItemsWithMultipleUuids = 0
+                ItemsWithMultipleUuids = items.Count(i => i.Fields.ContainsKey("uuids"))
             };
         }
-
     }
 }

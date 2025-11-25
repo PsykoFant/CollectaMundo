@@ -145,25 +145,25 @@ namespace CollectaMundo.Infrastructure.Import
             string codeInClause = string.Join(",", codePlaceholders);
 
             string sql = $@"
-            SELECT uuid, name, setCode
-            FROM view_cardToken
-            WHERE name IN ({nameInClause})
-              AND setCode IN ({codeInClause})
+                SELECT uuid, name, setCode
+                FROM view_cardToken
+                WHERE name COLLATE NOCASE IN ({nameInClause})
+                  AND setCode COLLATE NOCASE IN ({codeInClause})
 
-            UNION ALL
+                UNION ALL
 
-            SELECT uuid, name, tokenSetCode AS setCode
-            FROM view_cardToken
-            WHERE tokenSetCode <> setCode
-              AND name IN ({nameInClause})
-              AND tokenSetCode IN ({codeInClause})
+                SELECT uuid, name, tokenSetCode AS setCode
+                FROM view_cardToken
+                WHERE tokenSetCode <> setCode
+                  AND name COLLATE NOCASE IN ({nameInClause})
+                  AND tokenSetCode COLLATE NOCASE IN ({codeInClause})
 
-            UNION ALL
+                UNION ALL
 
-            SELECT uuid, faceName AS name, tokenSetCode AS setCode
-            FROM view_cardToken
-            WHERE faceName IN ({nameInClause})
-              AND tokenSetCode IN ({codeInClause});
+                SELECT uuid, faceName AS name, tokenSetCode AS setCode
+                FROM view_cardToken
+                WHERE faceName COLLATE NOCASE IN ({nameInClause})
+                  AND tokenSetCode COLLATE NOCASE IN ({codeInClause});
             ";
 
             using var cmd = conn.CreateCommand();
@@ -186,7 +186,13 @@ namespace CollectaMundo.Infrastructure.Import
                 string name = reader["name"]?.ToString() ?? "";
                 string code = reader["setCode"]?.ToString() ?? "";
 
-                string key = $"{name}_{code}";
+                if (string.IsNullOrWhiteSpace(uuid) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(code))
+                {
+                    continue;
+                }
+
+                // Normalize key to lower-case
+                string key = $"{name}_{code}".ToLowerInvariant();
 
                 if (!result.TryGetValue(key, out var list))
                 {
@@ -194,10 +200,7 @@ namespace CollectaMundo.Infrastructure.Import
                     result[key] = list;
                 }
 
-                if (!string.IsNullOrWhiteSpace(uuid))
-                {
-                    list.Add(uuid);
-                }
+                list.Add(uuid);
             }
 
             return result;
@@ -235,17 +238,17 @@ namespace CollectaMundo.Infrastructure.Import
             string setInClause = string.Join(",", setPlaceholders);
 
             string sql = $@"
-            SELECT uuid, name, setName
-            FROM view_cardToken
-            WHERE name IN ({nameInClause})
-              AND setName IN ({setInClause})
+                SELECT uuid, name, setName
+                FROM view_cardToken
+                WHERE name COLLATE NOCASE IN ({nameInClause})
+                  AND setName COLLATE NOCASE IN ({setInClause})
 
-            UNION ALL
+                UNION ALL
 
-            SELECT uuid, faceName AS name, setName
-            FROM view_cardToken
-            WHERE faceName IN ({nameInClause})
-              AND setName IN ({setInClause});
+                SELECT uuid, faceName AS name, setName
+                FROM view_cardToken
+                WHERE faceName COLLATE NOCASE IN ({nameInClause})
+                  AND setName COLLATE NOCASE IN ({setInClause});
             ";
 
             using var cmd = conn.CreateCommand();
@@ -268,7 +271,12 @@ namespace CollectaMundo.Infrastructure.Import
                 string name = reader["name"]?.ToString() ?? "";
                 string setNm = reader["setName"]?.ToString() ?? "";
 
-                string key = $"{name}_{setNm}";
+                if (string.IsNullOrWhiteSpace(uuid) || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(setNm))
+                {
+                    continue;
+                }
+
+                string key = $"{name}_{setNm}".ToLowerInvariant();
 
                 if (!result.TryGetValue(key, out var list))
                 {
@@ -276,10 +284,7 @@ namespace CollectaMundo.Infrastructure.Import
                     result[key] = list;
                 }
 
-                if (!string.IsNullOrWhiteSpace(uuid))
-                {
-                    list.Add(uuid);
-                }
+                list.Add(uuid);
             }
 
             return result;
@@ -342,10 +347,12 @@ namespace CollectaMundo.Infrastructure.Import
                     continue;
                 }
 
-                if (!result.TryGetValue(name, out var list))
+                string key = name.ToLowerInvariant();
+
+                if (!result.TryGetValue(key, out var list))
                 {
                     list = [];
-                    result[name] = list;
+                    result[key] = list;
                 }
 
                 list.Add(uuid);
