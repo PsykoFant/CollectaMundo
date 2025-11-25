@@ -216,6 +216,10 @@ namespace CollectaMundo.DomainLogic.Import
                 SetCodeHeader: setCode
             );
         }
+        public bool IsItemResolved(TempCardItem item)
+        {
+            return item.Fields.ContainsKey("uuid") || item.Fields.ContainsKey("uuids");
+        }
 
         // ---------------------------------------------------------
         //  Apply matches — per item fallback logic
