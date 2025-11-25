@@ -398,7 +398,6 @@ namespace CollectaMundo
             //MainWindow.CurrentInstance.GridImportIdColumnMapping.Visibility = Visibility.Collapsed;
             MainWindow.CurrentInstance.GridImportNameAndSetMapping.Visibility = Visibility.Visible;
         }
-
         private static async Task ProcessIdColumnMappingsAsync()
         {
             try
