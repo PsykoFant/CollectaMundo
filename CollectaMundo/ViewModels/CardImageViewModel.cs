@@ -68,7 +68,6 @@ namespace CollectaMundo.ViewModels
             image.Freeze(); // for thread safety
             return image;
         }
-
     }
 }
 

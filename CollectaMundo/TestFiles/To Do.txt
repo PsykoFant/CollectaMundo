@@ -1,8 +1,7 @@
 TO DO 
 - MVVM refactor
  - Import brug MVVM
-    - Manuel test af step 3
-    - Unit test af step 2 og 3
+
 
 
 

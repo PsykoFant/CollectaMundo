@@ -15,6 +15,5 @@ namespace CollectaMundo.DomainLogic.Import.Models
         // The logical field to map (Card Name, Set Name, Set Code)
         [ObservableProperty]
         private string fieldToMap = string.Empty;
-
     }
 }

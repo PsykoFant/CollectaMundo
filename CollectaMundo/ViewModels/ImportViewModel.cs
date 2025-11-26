@@ -13,7 +13,7 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class ImportViewModel(IImportService importService, IParentViewModelContext parentContext, IUserPromptService userPromptService) : ObservableObject
+    public partial class ImportViewModel(IImportService importService, IParentViewModelContext parentContext, IUserPromptService userPromptService, CardImageViewModel cardImageVM) : ObservableObject
     {
         private readonly IImportService _importService = importService;
         private readonly IParentViewModelContext _parentViewModelContext = parentContext;
@@ -28,6 +28,7 @@ namespace CollectaMundo.ViewModels
             Detail = new Progress<string>(v => ProgressDetailMessage = v),
             CancelEnabled = new Progress<bool>(_ => { })
         };
+        public CardImageViewModel CardImageVM { get; } = cardImageVM;
 
         [ObservableProperty]
         private string? progressHeadline;
@@ -214,14 +215,13 @@ namespace CollectaMundo.ViewModels
 
             if (result.ItemsWithMultipleUuids > 0)
             {
+                _parentViewModelContext.CardViewSectionVisibility = Visibility.Visible;
                 GoToStep(ImportStep.MultipleUuidsSelection);
             }
             else
             {
                 GoToStep(ImportStep.AdditionalFieldsMapping);
             }
-
-            DebugImportProcess();
 
             return new OperationResult(OperationResultCode.Success, "Name and set mapping ended successfully.");
         }
@@ -407,6 +407,32 @@ namespace CollectaMundo.ViewModels
             Debug.WriteLine($"Number of TempImport items with multiple uuids: {multipleUuidItems}");
             Debug.WriteLine($"Number of TempImport items with no uuid or uuids: {noUuidItems}");
         }
+        public void DebugNameSetMappings()
+        {
+            Debug.WriteLine("---- NameSetMappings ----");
 
+            foreach (var mapping in NameSetMappings)
+            {
+                Debug.WriteLine($"FieldToMap: {mapping.FieldToMap}");
+                Debug.WriteLine($"  SelectedCsvHeader: {mapping.SelectedCsvHeader}");
+
+                if (mapping.CsvHeaders is { Count: > 0 })
+                {
+                    Debug.WriteLine("  CsvHeaders:");
+                    foreach (var header in mapping.CsvHeaders)
+                    {
+                        Debug.WriteLine($"    - {header}");
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine("  CsvHeaders: (none)");
+                }
+
+                Debug.WriteLine("");
+            }
+
+            Debug.WriteLine("-------------------------");
+        }
     }
 }

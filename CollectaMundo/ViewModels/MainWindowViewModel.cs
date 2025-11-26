@@ -226,7 +226,7 @@ namespace CollectaMundo.ViewModels
             var parentContext = this;
 
             // import viewmodel
-            ImportVM = new ImportViewModel(importService, parentContext, _userPromptService);
+            ImportVM = new ImportViewModel(importService, parentContext, _userPromptService, CardImageVM);
 
             // Utility section viewmodel
             UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, statusVM, ImportVM, _userPromptService, parentContext, () => MyCollectionVM.Cards.Count, _filesystemPicker);

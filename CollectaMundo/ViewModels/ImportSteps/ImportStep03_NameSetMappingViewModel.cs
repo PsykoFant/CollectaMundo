@@ -40,9 +40,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
 
             var fieldsToMap = new[]
             {
-                new { Field = "Card Name", Guesses = new[] { "name", "card name", "card_name" } },
-                new { Field = "Set Name",  Guesses = new[] { "set name", "setname", "set", "edition" } },
-                new { Field = "Set Code",  Guesses = new[] { "set code", "setcode", "code", "edition code" } }
+                new { Field = "CardName", Guesses = new[] { "name", "card name", "card_name" } },
+                new { Field = "SetName",  Guesses = new[] { "set name", "setname", "set", "edition" } },
+                new { Field = "SetCode",  Guesses = new[] { "set code", "setcode", "code", "edition code" } }
             };
 
             foreach (var field in fieldsToMap)
@@ -86,9 +86,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
         {
             get
             {
-                var name = NameSetMappings.FirstOrDefault(m => m.FieldToMap == "Card Name");
-                var setNm = NameSetMappings.FirstOrDefault(m => m.FieldToMap == "Set Name");
-                var setCd = NameSetMappings.FirstOrDefault(m => m.FieldToMap == "Set Code");
+                var name = NameSetMappings.FirstOrDefault(m => m.FieldToMap == "CardName");
+                var setNm = NameSetMappings.FirstOrDefault(m => m.FieldToMap == "SetName");
+                var setCd = NameSetMappings.FirstOrDefault(m => m.FieldToMap == "SetCode");
 
                 bool hasName = !string.IsNullOrWhiteSpace(name?.SelectedCsvHeader);
                 bool hasSetName = !string.IsNullOrWhiteSpace(setNm?.SelectedCsvHeader);

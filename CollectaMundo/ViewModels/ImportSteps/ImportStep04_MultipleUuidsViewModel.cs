@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
@@ -31,7 +32,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
                 .Where(item => item.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrWhiteSpace(uuids))
                 .Select(item =>
                 {
-                    var name = item.Fields.TryGetValue("Card Name", out var n) ? n : "Unknown";
+                    var selectedCardNameHeader = _parent.NameSetMappings.FirstOrDefault(m => m.FieldToMap == "CardName")?.SelectedCsvHeader;
+
+                    var name = item.Fields.TryGetValue(selectedCardNameHeader, out var n) ? n : "Unknown";
                     var uuidList = item.Fields["uuids"].Split(',');
                     var versions = uuidList.Select((uuid, i) => new UuidVersion
                     {
@@ -42,9 +45,14 @@ namespace CollectaMundo.ViewModels.ImportSteps
                     return new MultipleUuidsItem
                     {
                         Name = name,
-                        CMImportKey = item.Fields["CMImportKey"],
+                        TempItemImportKey = item.Fields["TempItemImportKey"],
                         VersionedUuids = versions,
-                        SelectedUuid = null
+                        SelectedUuid = null,
+                        OnSelectionChangedCallback = uuid =>
+                        {
+                            // Show image in shared CardImageVM
+                            _parent.CardImageVM.SelectedCard = new CardSet { Uuid = uuid };
+                        }
                     };
                 });
 

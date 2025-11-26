@@ -70,7 +70,7 @@ namespace CollectaMundo.DomainLogic.Import
 
                 // Add unique key
                 item.Fields["TempItemImportKey"] = Guid.NewGuid().ToString();
-                
+
                 cardItems.Add(item);
 
                 // Report progress every 100 lines (or adjust)
@@ -206,9 +206,9 @@ namespace CollectaMundo.DomainLogic.Import
         // Step 3
         public (bool HasName, bool HasSetName, bool HasSetCode, string? NameHeader, string? SetNameHeader, string? SetCodeHeader) ExtractMappedFields(IReadOnlyList<NameSetColumnMapping> mappings)
         {
-            string? name = mappings.FirstOrDefault(m => m.FieldToMap == "Card Name")?.SelectedCsvHeader;
-            string? setName = mappings.FirstOrDefault(m => m.FieldToMap == "Set Name")?.SelectedCsvHeader;
-            string? setCode = mappings.FirstOrDefault(m => m.FieldToMap == "Set Code")?.SelectedCsvHeader;
+            string? name = mappings.FirstOrDefault(m => m.FieldToMap == "CardName")?.SelectedCsvHeader;
+            string? setName = mappings.FirstOrDefault(m => m.FieldToMap == "SetName")?.SelectedCsvHeader;
+            string? setCode = mappings.FirstOrDefault(m => m.FieldToMap == "SetCode")?.SelectedCsvHeader;
 
             return (
                 HasName: !string.IsNullOrWhiteSpace(name),

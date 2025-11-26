@@ -30,7 +30,7 @@
           CanUserAddRows="False"
           Margin="0,250,0,0"
           Width="600"
-          HorizontalAlignment="Center">
+          HorizontalAlignment="Center" VerticalAlignment="Top">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name of card to import"
                             Binding="{Binding Name}"
@@ -48,6 +48,5 @@
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
-
     </Grid>
 </UserControl>

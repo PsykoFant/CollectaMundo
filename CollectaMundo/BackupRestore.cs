@@ -200,7 +200,7 @@ namespace CollectaMundo
 
                     // Add a unique key to each item
                     string uniqueKey = Guid.NewGuid().ToString(); // Use GUID for uniqueness
-                    cardItem.Fields["CMImportKey"] = uniqueKey;
+                    cardItem.Fields["TempItemImportKey"] = uniqueKey;
 
                     cardItems.Add(cardItem);
                 }
@@ -868,7 +868,7 @@ namespace CollectaMundo
                     {
                         Name = item.Fields.ContainsKey("Card Name") ? item.Fields["Card Name"] : "Unknown",
                         VersionedUuids = item.Fields["uuids"].Split(',').Select((uuid, index) => new UuidVersion { DisplayText = $"Version {index + 1}", Uuid = uuid }).ToList(),
-                        CMImportKey = item.Fields["CMImportKey"],
+                        CMImportKey = item.Fields["TempItemImportKey"],
                         SelectedUuid = null // Set the initial selection to null
                     })
                     .ToList();
@@ -945,7 +945,7 @@ namespace CollectaMundo
             {
                 if (!string.IsNullOrEmpty(item.SelectedUuid))
                 {
-                    TempCardItem? tempItem = TempImport.FirstOrDefault(t => t.Fields.ContainsKey("CMImportKey") && t.Fields["CMImportKey"] == item.CMImportKey);
+                    TempCardItem? tempItem = TempImport.FirstOrDefault(t => t.Fields.ContainsKey("TempItemImportKey") && t.Fields["TempItemImportKey"] == item.CMImportKey);
 
                     // Remove the field uuids and add the field uuid with the selected version of the card
                     if (tempItem != null)
