@@ -68,6 +68,9 @@ namespace CollectaMundo.DomainLogic.Import
                     item.Fields[headers[i]] = cleaned;
                 }
 
+                // Add unique key
+                item.Fields["TempItemImportKey"] = Guid.NewGuid().ToString();
+                
                 cardItems.Add(item);
 
                 // Report progress every 100 lines (or adjust)
