@@ -34,17 +34,17 @@ namespace CollectaMundo.Tests.UnitTests
         {
             var fields = new Dictionary<string, string>
             {
-                ["Card Name"] = name
+                ["CardName"] = name
             };
 
             if (!string.IsNullOrWhiteSpace(setCode))
             {
-                fields["Set Code"] = setCode;
+                fields["SetCode"] = setCode;
             }
 
             if (!string.IsNullOrWhiteSpace(setName))
             {
-                fields["Set Name"] = setName;
+                fields["SetName"] = setName;
             }
 
             return new TempCardItem { Fields = fields };
@@ -57,15 +57,15 @@ namespace CollectaMundo.Tests.UnitTests
         {
             // Determine which CSV headers should exist
             // If SetName is used, include it in CsvHeaders list
-            var headers = new List<string> { "Card Name" };
+            var headers = new List<string> { "CardName" };
             if (includeSetCode)
             {
-                headers.Add("Set Code");
+                headers.Add("SetCode");
             }
 
             if (includeSetName)
             {
-                headers.Add("Set Name");
+                headers.Add("SetName");
             }
 
             var list = new List<NameSetColumnMapping>
@@ -73,24 +73,24 @@ namespace CollectaMundo.Tests.UnitTests
                 // Card Name mapping (always required)
                 new()
                 {
-                    FieldToMap = "Card Name",
-                    SelectedCsvHeader = "Card Name",
+                    FieldToMap = "CardName",
+                    SelectedCsvHeader = "CardName",
                     CsvHeaders = headers
                 },
 
                 // Set Code mapping (optional)
                 new()
                 {
-                    FieldToMap = "Set Code",
-                    SelectedCsvHeader = includeSetCode ? "Set Code" : null,
+                    FieldToMap = "SetCode",
+                    SelectedCsvHeader = includeSetCode ? "SetCode" : null,
                     CsvHeaders = headers
                 },
 
                 // Set Name mapping (optional)
                 new()
                 {
-                    FieldToMap = "Set Name",
-                    SelectedCsvHeader = includeSetName ? "Set Name" : null,
+                    FieldToMap = "SetName",
+                    SelectedCsvHeader = includeSetName ? "SetName" : null,
                     CsvHeaders = headers
                 }
             };
@@ -325,7 +325,7 @@ namespace CollectaMundo.Tests.UnitTests
             // Individual item checks
             foreach (var item in processedItems)
             {
-                var name = item.Fields["Card Name"];
+                var name = item.Fields["CardName"];
 
                 switch (name)
                 {
@@ -389,7 +389,7 @@ namespace CollectaMundo.Tests.UnitTests
             // Individual item checks
             foreach (var item in processedItems)
             {
-                var name = item.Fields["Card Name"];
+                var name = item.Fields["CardName"];
 
                 switch (name)
                 {
@@ -453,7 +453,7 @@ namespace CollectaMundo.Tests.UnitTests
             // Individual item checks
             foreach (var item in processedItems)
             {
-                var name = item.Fields["Card Name"];
+                var name = item.Fields["CardName"];
 
                 switch (name)
                 {
@@ -550,7 +550,7 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(1, summary.ItemsWithMultipleUuids);   // exactly one multi-match item
 
             // ----- Viashino Runner → multi-match -----
-            var runner = processed.First(i => i.Fields["Card Name"] == "Viashino Runner");
+            var runner = processed.First(i => i.Fields["CardName"] == "Viashino Runner");
 
             Assert.True(runner.Fields.ContainsKey("uuids"), "Runner must have multiple UUIDs.");
             Assert.False(runner.Fields.ContainsKey("uuid"), "Runner must not have single uuid.");
@@ -560,7 +560,7 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.True(runnerRaw.Split(",", StringSplitOptions.RemoveEmptyEntries).Length > 1);
 
             // ----- Jan Jansen → single match -----
-            var jj = processed.First(i => i.Fields["Card Name"] == "Jan Jansen, Chaos Crafter");
+            var jj = processed.First(i => i.Fields["CardName"] == "Jan Jansen, Chaos Crafter");
 
             Assert.True(jj.Fields.ContainsKey("uuid"), "Jan Jansen must have single uuid.");
             Assert.False(jj.Fields.ContainsKey("uuids"), "Jan Jansen must not have multi uuid list.");
