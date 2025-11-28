@@ -70,9 +70,10 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // UI Text & Visibility
         // --------------------------------------------
-        public string PrimaryActionButtonText => "  Continue  \u27A1";
-        public string SecondaryActionButtonText => string.Empty;
-        public Visibility SecondaryActionVisibility => Visibility.Collapsed;
+        public string PrimaryActionButtonText => string.Empty;
+        public string SecondaryActionButtonText => "  Continue  \u27A1";
+        public Visibility PrimaryActionVisibility => Visibility.Collapsed;
+        public Visibility SecondaryActionVisibility => Visibility.Visible;
 
         [ObservableProperty]
         private Visibility stepContentVisibility = Visibility.Visible;

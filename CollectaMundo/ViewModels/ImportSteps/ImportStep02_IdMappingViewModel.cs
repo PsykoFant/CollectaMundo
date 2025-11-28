@@ -43,6 +43,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         public string PrimaryActionButtonText => "  Proceed  \u27A1";
         public string SecondaryActionButtonText => "  Skip  \u23ED";
+        public Visibility PrimaryActionVisibility => Visibility.Visible;
         public Visibility SecondaryActionVisibility => Visibility.Visible;
 
         [ObservableProperty]
