@@ -52,11 +52,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // Step-level button enablement
         // --------------------------------------------
-        public bool CanExecutePrimaryAction =>
-            Mappings.All(m =>
-                !string.IsNullOrEmpty(m.SelectedCsvHeader) &&
-                !string.IsNullOrEmpty(m.SelectedDatabaseField));
-
+        public bool CanExecutePrimaryAction => Mappings.All(m => !string.IsNullOrEmpty(m.SelectedCsvHeader) && !string.IsNullOrEmpty(m.SelectedDatabaseField));
         public bool CanExecuteSecondaryAction => true;
 
         // --------------------------------------------
@@ -67,7 +63,11 @@ namespace CollectaMundo.ViewModels.ImportSteps
             StepContentVisibility = Visibility.Collapsed;
             return await _parent.AfterStep2Action();
         }
-        public void OnSecondaryAction() => _parent.GoToStep(ImportStep.NameAndSetMapping);
+        public Task<OperationResult> OnSecondaryAction()
+        {
+            _parent.GoToStep(ImportStep.NameAndSetMapping);
+            return Task.FromResult(new OperationResult(OperationResultCode.Success, "Navigated back"));
+        }
 
         // --------------------------------------------
         // Commands

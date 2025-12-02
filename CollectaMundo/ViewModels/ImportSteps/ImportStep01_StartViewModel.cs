@@ -33,6 +33,5 @@ namespace CollectaMundo.ViewModels.ImportSteps
             StepContentVisibility = Visibility.Collapsed;
             return await _parent.AfterStep1Action();
         }
-
     }
 }

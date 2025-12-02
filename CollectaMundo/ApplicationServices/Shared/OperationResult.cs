@@ -10,6 +10,7 @@
         NeedsUpdate = 4,
         DownloadFailed = 5,
         NoInternet = 6,
-        CancelledByUser = 7
+        CancelledByUser = 7,
+        NoOp = 8
     }
 }

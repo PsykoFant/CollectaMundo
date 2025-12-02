@@ -34,7 +34,10 @@ namespace CollectaMundo.ViewModels.ImportSteps
                 {
                     var selectedCardNameHeader = _parent.NameSetMappings.FirstOrDefault(m => m.FieldToMap == "CardName")?.SelectedCsvHeader;
 
-                    var name = item.Fields.TryGetValue(selectedCardNameHeader, out var n) ? n : "Unknown";
+                    var name = selectedCardNameHeader is not null && item.Fields.TryGetValue(selectedCardNameHeader, out var n) && !string.IsNullOrWhiteSpace(n)
+                    ? n
+                    : "Unknown";
+
                     var uuidList = item.Fields["uuids"].Split(',');
                     var versions = uuidList.Select((uuid, i) => new UuidVersion
                     {
@@ -61,10 +64,35 @@ namespace CollectaMundo.ViewModels.ImportSteps
                 MultipleChoices.Add(m);
             }
         }
-
         private void HookEvents()
         {
-            // Step 1 has no dynamic collections or item-level events.
+            foreach (var item in MultipleChoices)
+            {
+                item.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName == nameof(MultipleUuidsItem.SelectedUuid))
+                    {
+                        OnPropertyChanged(nameof(CanExecuteSecondaryAction));
+                    }
+                };
+            }
+
+            MultipleChoices.CollectionChanged += (_, e) =>
+            {
+                if (e.NewItems != null)
+                {
+                    foreach (MultipleUuidsItem item in e.NewItems)
+                    {
+                        item.PropertyChanged += (_, e2) =>
+                        {
+                            if (e2.PropertyName == nameof(MultipleUuidsItem.SelectedUuid))
+                            {
+                                OnPropertyChanged(nameof(CanExecuteSecondaryAction));
+                            }
+                        };
+                    }
+                }
+            };
         }
 
         // --------------------------------------------
@@ -81,17 +109,17 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // Step-level button enablement
         // --------------------------------------------
-        public bool CanExecutePrimaryAction => MultipleChoices.All(c => !string.IsNullOrWhiteSpace(c.SelectedUuid));
-        public bool CanExecuteSecondaryAction => false;
+        public bool CanExecutePrimaryAction => false;
+        public bool CanExecuteSecondaryAction => MultipleChoices.All(c => !string.IsNullOrWhiteSpace(c.SelectedUuid));
 
         // --------------------------------------------
         // Actions
         // --------------------------------------------
         public async Task<OperationResult> OnPrimaryAction() => await _parent.AfterStep4Action();
-
-        public void OnSecondaryAction()
+        public async Task<OperationResult> OnSecondaryAction()
         {
-            // Not used in this step (and SecondaryActionVisibility is Collapsed).
+            StepContentVisibility = Visibility.Collapsed;
+            return await _parent.AfterStep4Action();
         }
 
         // --------------------------------------------

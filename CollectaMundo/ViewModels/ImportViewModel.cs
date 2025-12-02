@@ -227,16 +227,10 @@ namespace CollectaMundo.ViewModels
         }
         public async Task<OperationResult> AfterStep4Action()
         {
-            try
-            {
-                GoToStep(ImportStep.AdditionalFieldsMapping);
+            _parentViewModelContext.CardViewSectionVisibility = Visibility.Collapsed;
 
-                return new OperationResult(OperationResultCode.Success, "Multiple uuids mapping ended successfully.");
-            }
-            catch (Exception ex)
-            {
-                return new OperationResult(OperationResultCode.Error, $"Failed during Multiple uuids mapping: {ex.Message}");
-            }
+            GoToStep(ImportStep.AdditionalFieldsMapping);
+            return new OperationResult(OperationResultCode.Success, "UI mapping bla bla.");
         }
         public async Task<OperationResult> AfterStep5Action()
         {
@@ -279,9 +273,9 @@ namespace CollectaMundo.ViewModels
         }
 
         [RelayCommand]
-        private void SecondaryAction()
+        private async Task SecondaryActionAsync()
         {
-            CurrentStepViewModel!.OnSecondaryAction();
+            await ExecuteStepAsync(() => CurrentStepViewModel!.OnSecondaryAction(), _currentStep.ToString());
         }
         private async Task ExecuteStepAsync(Func<Task<OperationResult>> stepFunc, string stepName)
         {

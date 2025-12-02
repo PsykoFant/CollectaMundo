@@ -7,7 +7,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
     {
         // Actions
         Task<OperationResult> OnPrimaryAction();
-        void OnSecondaryAction() { }
+        Task<OperationResult> OnSecondaryAction() => Task.FromResult(new OperationResult(OperationResultCode.NoOp, string.Empty));
 
         // Button texts
         string PrimaryActionButtonText { get; }
