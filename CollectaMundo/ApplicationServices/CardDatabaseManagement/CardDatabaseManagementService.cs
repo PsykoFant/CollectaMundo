@@ -30,7 +30,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
         public string BackupFolderPath => _settings.BackupFolderPath; // Expose current backup folder path from settings to viewmodel
 
         // Use case: orchestrates the first-time database preparation steps
-        public async Task<OperationResult> FirstTimeDbPrepOrchetrator(int defaultDelay = 3000)
+        public async Task<OperationResult> FirstTimeDbPrepOrchestrator(int defaultDelay = 3000)
         {
             // ---------------------------
             // Step 0. Online check
@@ -65,7 +65,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
                 if (downloadResult.Code != OperationResultCode.Success)
                 {
-                    Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
+                    Debug.WriteLine($"[FirstTimeDbPrepOrchestrator] Download failed: {downloadResult.Message}");
                     return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
                 }
 
@@ -92,7 +92,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Fatal error: {ex.Message}");
+                Debug.WriteLine($"[FirstTimeDbPrepOrchestrator] Fatal error: {ex.Message}");
                 return new OperationResult(OperationResultCode.Error, ex.Message);
             }
         }
@@ -196,7 +196,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             if (downloadResult.Code != OperationResultCode.Success)
             {
-                Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
+                Debug.WriteLine($"[FirstTimeDbPrepOrchestrator] Download failed: {downloadResult.Message}");
                 return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
             }
 
@@ -296,7 +296,7 @@ namespace CollectaMundo.ApplicationServices.CardDatabaseManagement
 
             if (downloadResult.Code != OperationResultCode.Success)
             {
-                Debug.WriteLine($"[FirstTimeDbPrepOrchetrator] Download failed: {downloadResult.Message}");
+                Debug.WriteLine($"[FirstTimeDbPrepOrchestrator] Download failed: {downloadResult.Message}");
                 return new OperationResult(OperationResultCode.DownloadFailed, downloadResult.Message);
             }
 

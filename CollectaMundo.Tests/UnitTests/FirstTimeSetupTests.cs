@@ -45,7 +45,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var svc = ctx.BuildService();
 
-            var result = await svc.FirstTimeDbPrepOrchetrator(0);
+            var result = await svc.FirstTimeDbPrepOrchestrator(0);
 
             Assert.Equal(OperationResultCode.Success, result.Code);
 
@@ -89,7 +89,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var svc = ctx.BuildService();
 
-            var result = await svc.FirstTimeDbPrepOrchetrator(0);
+            var result = await svc.FirstTimeDbPrepOrchestrator(0);
 
             Assert.Equal(OperationResultCode.Success, result.Code);
             Assert.Equal(3, attempts); // 2 failures + 1 success
@@ -115,7 +115,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var svc = ctx.BuildService();
 
-            var result = await svc.FirstTimeDbPrepOrchetrator(0);
+            var result = await svc.FirstTimeDbPrepOrchestrator(0);
 
             Assert.Equal(OperationResultCode.Error, result.Code);
             Assert.Equal(3, createCalls); // max retries
@@ -139,7 +139,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var svc = ctx.BuildService();
 
-            var result = await svc.FirstTimeDbPrepOrchetrator(0);
+            var result = await svc.FirstTimeDbPrepOrchestrator(0);
 
             Assert.Equal(OperationResultCode.DownloadFailed, result.Code);
             ctx.SchemaRepo.Verify(r => r.CreateTablesAsync(It.IsAny<SQLiteConnection>()), Times.Never);
@@ -158,7 +158,7 @@ namespace CollectaMundo.Tests.UnitTests
             ctx.RemoteLookups.Setup(r => r.IsInternetAvailableAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             var svc = ctx.BuildService();
-            var result = await svc.FirstTimeDbPrepOrchetrator(0);
+            var result = await svc.FirstTimeDbPrepOrchestrator(0);
 
             Assert.Equal(OperationResultCode.NoInternet, result.Code);
             ctx.CardDatabaseDownloaderMock.VerifyNoOtherCalls();
@@ -208,7 +208,7 @@ namespace CollectaMundo.Tests.UnitTests
 
 
             var svc = ctx.BuildService();
-            var result = await svc.FirstTimeDbPrepOrchetrator(0);
+            var result = await svc.FirstTimeDbPrepOrchestrator(0);
 
             Assert.Equal(OperationResultCode.DownloadFailed, result.Code); // Gracefully mapped
         }
@@ -325,7 +325,7 @@ namespace CollectaMundo.Tests.UnitTests
             var svc = ctx.BuildService();
 
             // Act
-            var result = await svc.FirstTimeDbPrepOrchetrator(0);
+            var result = await svc.FirstTimeDbPrepOrchestrator(0);
 
             // Assert
             Assert.Equal(OperationResultCode.Success, result.Code);
@@ -342,7 +342,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var svc = ctx.BuildService();
 
-            var result = await svc.FirstTimeDbPrepOrchetrator(0);
+            var result = await svc.FirstTimeDbPrepOrchestrator(0);
 
             Assert.Equal(OperationResultCode.DownloadFailed, result.Code);
             Debug.WriteLine(result.Message);
@@ -360,7 +360,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var svc = ctx.BuildService();
 
-            var result = await svc.FirstTimeDbPrepOrchetrator(0);
+            var result = await svc.FirstTimeDbPrepOrchestrator(0);
 
             Assert.Equal(OperationResultCode.DownloadFailed, result.Code);
             Assert.Contains("Step 1. Downloading card database and prices... failed after 3 attempts.", result.Message, StringComparison.OrdinalIgnoreCase);
@@ -402,7 +402,7 @@ namespace CollectaMundo.Tests.UnitTests
             ctx.StubAllStepsAsSuccess();
 
             var svc = ctx.BuildService();
-            var result = await svc.FirstTimeDbPrepOrchetrator(0);
+            var result = await svc.FirstTimeDbPrepOrchestrator(0);
 
             Assert.Equal(OperationResultCode.Success, result.Code);
 

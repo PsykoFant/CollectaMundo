@@ -72,7 +72,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 if (dbStatus is DatabaseStatus.Missing or DatabaseStatus.Corrupt)
                 {
-                    var prepResult = await cardDbManagementService.FirstTimeDbPrepOrchetrator();
+                    var prepResult = await cardDbManagementService.FirstTimeDbPrepOrchestrator();
                     if (prepResult.Code != OperationResultCode.Success)
                     {
                         ShowStartupFailure(statusVM, prepResult);

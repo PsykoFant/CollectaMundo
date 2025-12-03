@@ -1,12 +1,8 @@
 ﻿namespace CollectaMundo.ApplicationServices.Filtering
 {
-    namespace CollectaMundo.ApplicationServices.Filtering
+    public interface IFacetUpdateScheduler
     {
-        public interface IFacetUpdateScheduler
-        {
-            void Schedule(Action run);
-            void Cancel();
-        }
+        void Schedule(Action run);
+        void Cancel();
     }
-
 }

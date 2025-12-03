@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.ApplicationServices.Filtering;
-using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
@@ -18,7 +17,6 @@ namespace CollectaMundo.Tests
         public void Schedule(Action run) => run();
         public void Cancel() { }
     }
-
     public sealed class SeedIntegrationTests(InMemoryDatabaseFixture fx) : IClassFixture<InMemoryDatabaseFixture>, IAsyncLifetime
     {
         private IDbConnectionFactory _dbFactory = null!;

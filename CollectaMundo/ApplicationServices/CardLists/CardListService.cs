@@ -30,7 +30,7 @@ namespace CollectaMundo.ApplicationServices.CardLists
 
                 var dbIoSw = Stopwatch.StartNew();
 
-                // Phase 1: DB I/O (sequential)
+                // Phase 1: DB I/O
                 var lookupPackageTask = _lookupService.LoadLookupDataAsync(conn, CardLookupsOptions.All);
                 var coreDtosTask = _cardListRepo.ReadAllCardsCoreDtosAsync(conn);
                 var collectionRowsTask = _cardListRepo.ReadMyCollectionAsync(conn);
