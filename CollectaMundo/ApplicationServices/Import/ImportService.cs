@@ -204,7 +204,6 @@ namespace CollectaMundo.ApplicationServices.Import
                 await uow.DisposeAsync();
             }
         }
-
         private static List<(string Name, string Value)> ExtractPairs(List<TempCardItem> items, string nameHeader, string otherHeader)
         {
             return [.. items.Select(i => (
