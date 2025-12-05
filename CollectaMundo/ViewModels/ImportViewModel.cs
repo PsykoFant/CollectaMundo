@@ -228,13 +228,17 @@ namespace CollectaMundo.ViewModels
         public async Task<OperationResult> AfterStep4Action()
         {
             _parentViewModelContext.CardViewSectionVisibility = Visibility.Collapsed;
-            Progress.ProgressBarVisible.Report(true);
-            Progress.Detail.Report("Applying user selections...");
+            Debug.WriteLine("Before applying user selections:");
+            DebugImportProcess();
 
             // Pass user choices to service layer
             var result = await Task.Run(() =>
-                _importService.ApplyUserSelectedUuids(ImportCardList,GetStep4Selections(),Progress)
+                _importService.ApplyUserSelectedUuids(ImportCardList, GetStep4Selections(), Progress)
             );
+
+            Debug.WriteLine("After applying user selections:");
+            DebugImportProcess();
+
 
             if (result.ItemsWithMultipleUuids > 0)
             {
@@ -269,7 +273,6 @@ namespace CollectaMundo.ViewModels
                 return new OperationResult(OperationResultCode.Error, $"Failed during additional fields mapping: {ex.Message}");
             }
         }
-
         public async Task<OperationResult> AfterStep10Action()
         {
             ImportCardList.Clear();
@@ -377,6 +380,7 @@ namespace CollectaMundo.ViewModels
         {
             Debug.WriteLine("ImportViewModel: Cancelling import operation as per user request.");
             CancelVisibility = Visibility.Collapsed;
+            _parentViewModelContext.CardViewSectionVisibility = Visibility.Collapsed;
             _userPromptService.CancelCurrentOperation();
             ImportFailVisibility = Visibility.Visible;
             Progress.Headline.Report("Import cancelled");

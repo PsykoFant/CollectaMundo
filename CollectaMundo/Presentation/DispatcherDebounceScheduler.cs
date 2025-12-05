@@ -1,4 +1,4 @@
-﻿using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
+﻿using CollectaMundo.ApplicationServices.Filtering;
 using System.Windows;
 using System.Windows.Threading;
 

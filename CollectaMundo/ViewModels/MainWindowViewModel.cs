@@ -4,7 +4,6 @@ using CollectaMundo.ApplicationServices.CardImages;
 using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
-using CollectaMundo.ApplicationServices.Filtering.CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
