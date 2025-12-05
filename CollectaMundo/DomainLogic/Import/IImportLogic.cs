@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.Import.Models;
+﻿using System.Collections.ObjectModel;
+using CollectaMundo.DomainLogic.Import.Models;
 
 namespace CollectaMundo.DomainLogic.Import
 {
@@ -16,5 +17,8 @@ namespace CollectaMundo.DomainLogic.Import
         void ApplySetNameMatches(IReadOnlyList<TempCardItem> batch, IReadOnlyList<(string Name, string SetName)> pairs, Dictionary<string, List<string>> results);
         void ApplyNameOnlyMatches(IReadOnlyList<TempCardItem> batch, IReadOnlyList<string> names, Dictionary<string, List<string>> results);
         ImportMatchSummaryDto FinalizeMatchResults(IReadOnlyList<TempCardItem> items);
+
+        // Step 4
+        ImportMatchSummaryDto ApplySelectedUuids(ObservableCollection<TempCardItem> importCandidates, List<MultipleUuidsItem> userSelections);
     }
 }

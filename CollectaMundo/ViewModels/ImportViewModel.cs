@@ -228,10 +228,34 @@ namespace CollectaMundo.ViewModels
         public async Task<OperationResult> AfterStep4Action()
         {
             _parentViewModelContext.CardViewSectionVisibility = Visibility.Collapsed;
+            Progress.ProgressBarVisible.Report(true);
+            Progress.Detail.Report("Applying user selections...");
+
+            // Pass user choices to service layer
+            var result = await Task.Run(() =>
+                _importService.ApplyUserSelectedUuids(ImportCardList,GetStep4Selections(),Progress)
+            );
+
+            if (result.ItemsWithMultipleUuids > 0)
+            {
+                return new OperationResult(OperationResultCode.Error, "Some cards still have multiple UUIDs. Please make a selection for each.");
+            }
 
             GoToStep(ImportStep.AdditionalFieldsMapping);
-            return new OperationResult(OperationResultCode.Success, "UI mapping bla bla.");
+            return new OperationResult(OperationResultCode.Success, "User selections applied.");
+
+            // Local function to get selections from Step 4 VM
+            List<MultipleUuidsItem> GetStep4Selections()
+            {
+                if (CurrentStepViewModel is ImportStep04_MultipleUuidsViewModel step4)
+                {
+                    return [.. step4.MultipleChoices];
+                }
+
+                return [];
+            }
         }
+
         public async Task<OperationResult> AfterStep5Action()
         {
             try

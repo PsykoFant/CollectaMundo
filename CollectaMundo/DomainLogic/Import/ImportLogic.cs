@@ -1,12 +1,13 @@
-﻿using CollectaMundo.DomainLogic.Import.Models;
+﻿using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
+using CollectaMundo.DomainLogic.Import.Models;
 
 namespace CollectaMundo.DomainLogic.Import
 {
     public class ImportLogic : IImportLogic
     {
-        // Step 1
+        #region Step 1
         public async Task<List<TempCardItem>> ParseCsvFileAsync(string filePath, IProgress<int> progress, CancellationToken cancelToken)
         {
             var cardItems = new List<TempCardItem>();
@@ -147,8 +148,9 @@ namespace CollectaMundo.DomainLogic.Import
 
             return input;
         }
+        #endregion
 
-        // Step 2
+        #region Step 2
         public ImportMatchSummaryDto AssignUuidsToImportItems(List<TempCardItem> importCandidates, Dictionary<string, List<string>> idToUuids, string selectedCsvHeader, IProgress<int>? percentProgress, CancellationToken cancelToken)
         {
             int processed = 0;
@@ -202,7 +204,9 @@ namespace CollectaMundo.DomainLogic.Import
                 ItemsWithMultipleUuids = matchedMultipleUuids
             };
         }
+        #endregion
 
+        #region Step 3
         // Step 3
         public (bool HasName, bool HasSetName, bool HasSetCode, string? NameHeader, string? SetNameHeader, string? SetCodeHeader) ExtractMappedFields(IReadOnlyList<NameSetColumnMapping> mappings)
         {
@@ -224,9 +228,7 @@ namespace CollectaMundo.DomainLogic.Import
             return item.Fields.ContainsKey("uuid") || item.Fields.ContainsKey("uuids");
         }
 
-        // ---------------------------------------------------------
         //  Apply matches — per item fallback logic
-        // ---------------------------------------------------------
 
         public void ApplySetCodeMatches(IReadOnlyList<TempCardItem> batch, IReadOnlyList<(string Name, string SetCode)> pairs, Dictionary<string, List<string>> results)
         {
@@ -299,10 +301,7 @@ namespace CollectaMundo.DomainLogic.Import
             }
         }
 
-        // ---------------------------------------------------------
         // Helper
-        // ---------------------------------------------------------
-
         private static void AssignUuids(TempCardItem item, List<string> list)
         {
             if (list.Count == 1)
@@ -318,9 +317,7 @@ namespace CollectaMundo.DomainLogic.Import
             // list.Count == 0 → no assignment
         }
 
-        // ---------------------------------------------------------
         // Summary evaluation
-        // ---------------------------------------------------------
         public ImportMatchSummaryDto FinalizeMatchResults(IReadOnlyList<TempCardItem> items)
         {
             bool anyBoth = false;
@@ -361,5 +358,37 @@ namespace CollectaMundo.DomainLogic.Import
                 ItemsWithMultipleUuids = items.Count(i => i.Fields.ContainsKey("uuids"))
             };
         }
+        #endregion
+
+        #region Step 4
+        public ImportMatchSummaryDto ApplySelectedUuids(ObservableCollection<TempCardItem> importCandidates,List<MultipleUuidsItem> userSelections)
+        {
+            foreach (var item in userSelections)
+            {
+                if (!string.IsNullOrWhiteSpace(item.SelectedUuid))
+                {
+                    var match = importCandidates.FirstOrDefault(t =>
+                        t.Fields.TryGetValue("TempItemImportKey", out var key) &&
+                        key == item.TempItemImportKey);
+
+                    if (match != null)
+                    {
+                        match.Fields["uuid"] = item.SelectedUuid;
+                        match.Fields.Remove("uuids"); // remove ambiguity marker
+                    }
+                }
+            }
+
+            var stillUnresolved = importCandidates.Count(i =>
+                i.Fields.TryGetValue("uuids", out var uuids) &&
+                !string.IsNullOrWhiteSpace(uuids));
+
+            return new ImportMatchSummaryDto
+            {
+                ItemsWithMultipleUuids = stillUnresolved
+            };
+        }
+
+        #endregion
     }
 }

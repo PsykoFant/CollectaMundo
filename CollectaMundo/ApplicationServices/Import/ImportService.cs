@@ -1,10 +1,11 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
+using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.Shared;
-using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.Import
 {
@@ -211,6 +212,13 @@ namespace CollectaMundo.ApplicationServices.Import
             i.Fields.TryGetValue(otherHeader, out var val) ? val : string.Empty
             ))];
         }
+
+        // Step 4
+        public ImportMatchSummaryDto ApplyUserSelectedUuids(ObservableCollection<TempCardItem> importCandidates,List<MultipleUuidsItem> userSelections,ProgressSinks progress)
+        {
+            return _importLogic.ApplySelectedUuids(importCandidates, userSelections);
+        }
+
 
     }
 }
