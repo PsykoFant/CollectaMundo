@@ -1,5 +1,9 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.Import;
+using CollectaMundo.DomainLogic.Import.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
@@ -24,9 +28,35 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         private void Initialize()
         {
-            // Step 1 has no per-item mappings or dynamic data to initialize.
-            // FlowDocumentVisibility is already defaulted via ObservableProperty.
+            if (AdditionalMappings.Any())
+            {
+                return;
+            }
+
+            var firstItem = ImportViewModel.ImportCardList.FirstOrDefault();
+            var csvHeaders = firstItem?.Fields.Keys.ToList() ?? [];
+
+            var fieldsToMap = new[]
+            {
+                //new { Field = "Condition", Guesses = new[] { "condition", "state" } },
+                new { Field = "Condition", Guesses = new[] { "fisk", "hund" } },
+                new { Field = "Card Finish", Guesses = new[] { "finish", "foiling", "card finish" } },
+                new { Field = "Cards Owned", Guesses = new[] { "quantity", "count", "owned", "qty" } },
+                new { Field = "Cards For Trade/Selling", Guesses = new[] { "trade", "for trade", "sell", "forsale", "selling" } },
+                new { Field = "Language", Guesses = new[] { "lang", "language" } }
+    };
+
+            foreach (var field in fieldsToMap)
+            {
+                AdditionalMappings.Add(new AdditionalFieldMapping
+                {
+                    CardSetField = field.Field,
+                    CsvHeaders = [.. csvHeaders],
+                    SelectedCsvHeader = CsvHeaderMatcher.GuessCsvHeader(field.Field, field.Guesses, csvHeaders)
+                });
+            }
         }
+
 
         private void HookEvents()
         {
@@ -63,6 +93,17 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // Commands (none for this step)
         // --------------------------------------------
+        [RelayCommand]
+        private static void ClearSelectedMapping(AdditionalFieldMapping mapping)
+        {
+            mapping.SelectedCsvHeader = null;
+        }
+
+
+        // --------------------------------------------
+        // Mapping Collection
+        // --------------------------------------------
+        public ObservableCollection<AdditionalFieldMapping> AdditionalMappings => _parent.AdditionalMappings;
 
         // --------------------------------------------
         // Private helper methods (none needed)

@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -51,7 +52,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
                 {
                     FieldToMap = field.Field,
                     CsvHeaders = [.. csvHeaders],
-                    SelectedCsvHeader = GuessCsvHeader(field.Field, field.Guesses, csvHeaders)
+                    SelectedCsvHeader = CsvHeaderMatcher.GuessCsvHeader(field.Field, field.Guesses, csvHeaders)
                 });
             }
         }
@@ -150,65 +151,6 @@ namespace CollectaMundo.ViewModels.ImportSteps
             {
                 OnPropertyChanged(nameof(CanExecutePrimaryAction));
             }
-        }
-
-        // --------------------------------------------
-        // Helpers
-        // --------------------------------------------
-        private static string? GuessCsvHeader(string fieldToMap, IReadOnlyList<string> guesses, IReadOnlyList<string> csvHeaders)
-        {
-            if (csvHeaders == null || csvHeaders.Count == 0)
-            {
-                return null;
-            }
-
-            // Normalize: field + guesses → candidate patterns
-            var candidates = new List<string> { fieldToMap };
-            if (guesses != null)
-            {
-                candidates.AddRange(guesses);
-            }
-
-            candidates = [.. candidates
-                .Where(g => !string.IsNullOrWhiteSpace(g))
-                .Select(g => g.Trim())];
-
-            if (candidates.Count == 0)
-            {
-                return null;
-            }
-
-            // 1) Exact match on any candidate (case-insensitive)
-            foreach (var header in csvHeaders)
-            {
-                foreach (var candidate in candidates)
-                {
-                    if (string.Equals(header, candidate, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return header;
-                    }
-                }
-            }
-
-            // 2) "Contains" match on any candidate (case-insensitive)
-            foreach (var header in csvHeaders)
-            {
-                string headerLower = header.ToLowerInvariant();
-
-                foreach (var candidate in candidates)
-                {
-                    string candidateLower = candidate.ToLowerInvariant();
-
-                    // Symmetric-ish contains: header contains candidate or candidate contains header
-                    if (headerLower.Contains(candidateLower) || candidateLower.Contains(headerLower))
-                    {
-                        return header;
-                    }
-                }
-            }
-
-            // No match
-            return null;
         }
 
     }

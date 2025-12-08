@@ -55,6 +55,5 @@
                 </GridView>
             </ListView.View>
         </ListView>
-
     </Grid>
 </UserControl>
