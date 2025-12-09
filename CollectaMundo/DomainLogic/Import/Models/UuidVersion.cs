@@ -1,6 +1,5 @@
 ﻿namespace CollectaMundo.DomainLogic.Import.Models
 {
-
     public class UuidVersion
     {
         public required string DisplayText { get; init; }

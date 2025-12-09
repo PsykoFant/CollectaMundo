@@ -1,23 +1,27 @@
-﻿namespace CollectaMundo.DomainLogic.Import
+﻿using CollectaMundo.DomainLogic.Import.Models.Enums;
+
+namespace CollectaMundo.DomainLogic.Import
 {
     public static class CsvHeaderMatcher
     {
-        public static string? GuessCsvHeader(string fieldToMap, IReadOnlyList<string> guesses, IReadOnlyList<string> csvHeaders)
+        public static string? GuessCsvHeader(ImportField fieldToMap, IReadOnlyList<string> guesses, IReadOnlyList<string> csvHeaders)
         {
             if (csvHeaders == null || csvHeaders.Count == 0)
             {
                 return null;
             }
 
-            var candidates = new List<string> { fieldToMap };
+            // Convert enum to string candidate (e.g. "CardName" → "cardname")
+            var candidates = new List<string> { fieldToMap.ToString() };
+
             if (guesses != null)
             {
                 candidates.AddRange(guesses);
             }
 
             candidates = [.. candidates
-            .Where(g => !string.IsNullOrWhiteSpace(g))
-            .Select(g => g.Trim())];
+        .Where(g => !string.IsNullOrWhiteSpace(g))
+        .Select(g => g.Trim())];
 
             if (candidates.Count == 0)
             {
@@ -54,5 +58,6 @@
 
             return null;
         }
+
     }
 }

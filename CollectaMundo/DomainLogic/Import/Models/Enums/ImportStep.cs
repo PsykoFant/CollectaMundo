@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.DomainLogic.Import.Models
+﻿namespace CollectaMundo.DomainLogic.Import.Models.Enums
 {
     public enum ImportStep
     {

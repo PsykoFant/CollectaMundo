@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Import.Models.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -18,9 +19,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public ImportStep05_AdditionalFieldsMappingViewModel(ImportViewModel parent)
         {
             _parent = parent;
-
             Initialize();
-            HookEvents();
         }
 
         // --------------------------------------------
@@ -38,12 +37,12 @@ namespace CollectaMundo.ViewModels.ImportSteps
 
             var fieldsToMap = new[]
             {
-                new { Field = "Condition", Guesses = new[] { "condition", "state", "card condition" } },
-                new { Field = "Card Finish", Guesses = new[] { "finish", "foiling", "card finish", "foil" } },
-                new { Field = "Cards Owned", Guesses = new[] { "quantity", "count", "owned", "qty" } },
-                new { Field = "Cards For Trade/Selling", Guesses = new[] { "trade", "for trade", "sell", "forsale", "selling" } },
-                new { Field = "Language", Guesses = new[] { "lang", "language" } }
-    };
+                new { Field = ImportField.Condition,      Guesses = new[] { "condition", "state", "card condition" } },
+                new { Field = ImportField.CardFinish,     Guesses = new[] { "finish", "foiling", "card finish", "foil" } },
+                new { Field = ImportField.Language,       Guesses = new[] { "lang", "language" } },
+                new { Field = ImportField.CardsOwned,     Guesses = new[] { "quantity", "count", "owned", "qty" } },
+                new { Field = ImportField.CardsForTrade,  Guesses = new[] { "trade", "for trade", "sell", "forsale", "selling" } }
+            };
 
             foreach (var field in fieldsToMap)
             {
@@ -54,10 +53,6 @@ namespace CollectaMundo.ViewModels.ImportSteps
                     SelectedCsvHeader = CsvHeaderMatcher.GuessCsvHeader(field.Field, field.Guesses, csvHeaders)
                 });
             }
-        }
-        private void HookEvents()
-        {
-            // Step 1 has no dynamic collections or item-level events.
         }
 
         // --------------------------------------------
@@ -86,7 +81,6 @@ namespace CollectaMundo.ViewModels.ImportSteps
             return await _parent.AfterStep5Action();
         }
 
-
         // --------------------------------------------
         // Commands (none for this step)
         // --------------------------------------------
@@ -96,14 +90,10 @@ namespace CollectaMundo.ViewModels.ImportSteps
             mapping.SelectedCsvHeader = null;
         }
 
-
         // --------------------------------------------
         // Mapping Collection
         // --------------------------------------------
         public ObservableCollection<CsvFieldMapping> AdditionalMappings => _parent.AdditionalMappings;
 
-        // --------------------------------------------
-        // Private helper methods (none needed)
-        // --------------------------------------------
     }
 }

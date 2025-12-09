@@ -2,6 +2,7 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Import.Models.Enums;
 using CollectaMundo.ViewModels.ImportSteps;
 using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -230,17 +231,11 @@ namespace CollectaMundo.ViewModels
         public async Task<OperationResult> AfterStep4Action()
         {
             _parentViewModelContext.CardViewSectionVisibility = Visibility.Collapsed;
-            Debug.WriteLine("Before applying user selections:");
-            DebugImportProcess();
 
             // Pass user choices to service layer
             var result = await Task.Run(() =>
                 _importService.ApplyUserSelectedUuids(ImportCardList, GetStep4Selections(), Progress)
             );
-
-            Debug.WriteLine("After applying user selections:");
-            DebugImportProcess();
-
 
             if (result.ItemsWithMultipleUuids > 0)
             {
@@ -261,25 +256,45 @@ namespace CollectaMundo.ViewModels
                 return [];
             }
         }
-
-        public async Task<OperationResult> AfterStep5Action()
+        public Task<OperationResult> AfterStep5Action()
         {
-            try
-            {
-                GoToStep(ImportStep.AdditionalFieldsMapping);
+            var mappedFields = AdditionalMappings.Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)).Select(m => m.FieldToMap).ToHashSet();
 
-                return new OperationResult(OperationResultCode.Success, "Additional fields mapping ended successfully.");
-            }
-            catch (Exception ex)
+            // Register booleans in parent
+            var IsConditionMapped = mappedFields.Contains(ImportField.Condition);
+            var IsCardFinishMapped = mappedFields.Contains(ImportField.CardFinish);
+            var IsLanguageMapped = mappedFields.Contains(ImportField.Language);
+
+            if (IsConditionMapped)
             {
-                return new OperationResult(OperationResultCode.Error, $"Failed during additional fields mapping: {ex.Message}");
+                Debug.WriteLine("ImportViewModel: Condition field mapped, going to ConditionMapping step.");
+                //GoToStep(ImportStep.ConditionMapping);
             }
+            else if (IsCardFinishMapped)
+            {
+                Debug.WriteLine("ImportViewModel: CardFinish field mapped, going to FinishMapping step.");
+                //GoToStep(ImportStep.FinishMapping);
+            }
+            else if (IsLanguageMapped)
+            {
+                Debug.WriteLine("ImportViewModel: Language field mapped, going to LanguageMapping step.");
+                //GoToStep(ImportStep.LanguageMapping);
+            }
+            else
+            {
+                Debug.WriteLine("ImportViewModel: No additional fields mapped, going to Summary step.");
+                //GoToStep(ImportStep.Summary);
+            }
+
+            return Task.FromResult(new OperationResult(OperationResultCode.Success, "Field mappings processed."));
         }
+
         public async Task<OperationResult> AfterStep10Action()
         {
             ImportCardList.Clear();
             IdMappings.Clear();
             NameSetMappings.Clear();
+            AdditionalMappings.Clear();
 
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();

@@ -1,7 +1,8 @@
-﻿using System.Collections.ObjectModel;
+﻿using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Import.Models.Enums;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
-using CollectaMundo.DomainLogic.Import.Models;
 
 namespace CollectaMundo.DomainLogic.Import
 {
@@ -210,9 +211,9 @@ namespace CollectaMundo.DomainLogic.Import
         // Step 3
         public (bool HasName, bool HasSetName, bool HasSetCode, string? NameHeader, string? SetNameHeader, string? SetCodeHeader) ExtractMappedFields(IReadOnlyList<CsvFieldMapping> mappings)
         {
-            string? name = mappings.FirstOrDefault(m => m.FieldToMap == "CardName")?.SelectedCsvHeader;
-            string? setName = mappings.FirstOrDefault(m => m.FieldToMap == "SetName")?.SelectedCsvHeader;
-            string? setCode = mappings.FirstOrDefault(m => m.FieldToMap == "SetCode")?.SelectedCsvHeader;
+            string? name = mappings.FirstOrDefault(m => m.FieldToMap == ImportField.CardName)?.SelectedCsvHeader;
+            string? setName = mappings.FirstOrDefault(m => m.FieldToMap == ImportField.SetName)?.SelectedCsvHeader;
+            string? setCode = mappings.FirstOrDefault(m => m.FieldToMap == ImportField.SetCode)?.SelectedCsvHeader;
 
             return (
                 HasName: !string.IsNullOrWhiteSpace(name),
@@ -361,7 +362,7 @@ namespace CollectaMundo.DomainLogic.Import
         #endregion
 
         #region Step 4
-        public ImportMatchSummaryDto ApplySelectedUuids(ObservableCollection<TempCardItem> importCandidates,List<MultipleUuidsItem> userSelections)
+        public ImportMatchSummaryDto ApplySelectedUuids(ObservableCollection<TempCardItem> importCandidates, List<MultipleUuidsItem> userSelections)
         {
             foreach (var item in userSelections)
             {

@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Import.Models.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -41,10 +42,11 @@ namespace CollectaMundo.ViewModels.ImportSteps
 
             var fieldsToMap = new[]
             {
-                new { Field = "CardName", Guesses = new[] { "name", "card name", "card_name" } },
-                new { Field = "SetName",  Guesses = new[] { "set name", "setname", "set", "edition" } },
-                new { Field = "SetCode",  Guesses = new[] { "set code", "setcode", "code", "edition code" } }
+                new { Field = ImportField.CardName, Guesses = new[] { "name", "card name", "card_name" } },
+                new { Field = ImportField.SetName,  Guesses = new[] { "set name", "setname", "set", "edition" } },
+                new { Field = ImportField.SetCode,  Guesses = new[] { "set code", "setcode", "code", "edition code" } }
             };
+
 
             foreach (var field in fieldsToMap)
             {
@@ -88,9 +90,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
         {
             get
             {
-                var name = NameSetMappings.FirstOrDefault(m => m.FieldToMap == "CardName");
-                var setNm = NameSetMappings.FirstOrDefault(m => m.FieldToMap == "SetName");
-                var setCd = NameSetMappings.FirstOrDefault(m => m.FieldToMap == "SetCode");
+                var name = NameSetMappings.FirstOrDefault(m => m.FieldToMap == ImportField.CardName);
+                var setNm = NameSetMappings.FirstOrDefault(m => m.FieldToMap == ImportField.SetName);
+                var setCd = NameSetMappings.FirstOrDefault(m => m.FieldToMap == ImportField.SetCode);
 
                 bool hasName = !string.IsNullOrWhiteSpace(name?.SelectedCsvHeader);
                 bool hasSetName = !string.IsNullOrWhiteSpace(setNm?.SelectedCsvHeader);
@@ -99,6 +101,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
                 return hasName && (hasSetName || hasSetCode);
             }
         }
+
         public bool CanExecuteSecondaryAction => false;
 
         // --------------------------------------------

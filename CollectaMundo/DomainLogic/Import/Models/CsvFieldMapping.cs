@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CollectaMundo.DomainLogic.Import.Models.Enums;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace CollectaMundo.DomainLogic.Import.Models
 {
@@ -13,6 +14,6 @@ namespace CollectaMundo.DomainLogic.Import.Models
         private string? selectedCsvHeader;
 
         [ObservableProperty]
-        private string fieldToMap = string.Empty; // e.g. "Card Name", "Condition"
+        private ImportField fieldToMap; // e.g. "Card Name", "Condition"
     }
 }

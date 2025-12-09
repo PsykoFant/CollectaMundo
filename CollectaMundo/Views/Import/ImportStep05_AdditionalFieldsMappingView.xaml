@@ -50,7 +50,7 @@
                     <GridViewColumn Header="Field to map" Width="150">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding CardSetField}" />
+                                <TextBlock Text="{Binding FieldToMap}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

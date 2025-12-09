@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Import.Models.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Windows;
@@ -32,7 +33,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
                 .Where(item => item.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrWhiteSpace(uuids))
                 .Select(item =>
                 {
-                    var selectedCardNameHeader = _parent.NameSetMappings.FirstOrDefault(m => m.FieldToMap == "CardName")?.SelectedCsvHeader;
+                    var selectedCardNameHeader = _parent.NameSetMappings.FirstOrDefault(m => m.FieldToMap == ImportField.CardName)?.SelectedCsvHeader;
 
                     var name = selectedCardNameHeader is not null && item.Fields.TryGetValue(selectedCardNameHeader, out var n) && !string.IsNullOrWhiteSpace(n)
                     ? n
