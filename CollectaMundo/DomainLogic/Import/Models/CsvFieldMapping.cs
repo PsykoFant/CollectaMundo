@@ -2,7 +2,7 @@
 
 namespace CollectaMundo.DomainLogic.Import.Models
 {
-    public partial class NameSetColumnMapping : ObservableObject
+    public partial class CsvFieldMapping : ObservableObject
     {
         // Options from the CSV file (e.g. ["Name", "Card Name", "Set", ...])
         [ObservableProperty]
@@ -12,8 +12,7 @@ namespace CollectaMundo.DomainLogic.Import.Models
         [ObservableProperty]
         private string? selectedCsvHeader;
 
-        // The logical field to map (Card Name, Set Name, Set Code)
         [ObservableProperty]
-        private string fieldToMap = string.Empty;
+        private string fieldToMap = string.Empty; // e.g. "Card Name", "Condition"
     }
 }

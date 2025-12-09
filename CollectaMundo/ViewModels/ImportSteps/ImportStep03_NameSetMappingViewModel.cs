@@ -48,7 +48,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
 
             foreach (var field in fieldsToMap)
             {
-                NameSetMappings.Add(new NameSetColumnMapping
+                NameSetMappings.Add(new CsvFieldMapping
                 {
                     FieldToMap = field.Field,
                     CsvHeaders = [.. csvHeaders],
@@ -114,7 +114,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // Commands
         // --------------------------------------------
         [RelayCommand]
-        private static void ClearSelectedMapping(NameSetColumnMapping mapping)
+        private static void ClearSelectedMapping(CsvFieldMapping mapping)
         {
             mapping.SelectedCsvHeader = null;
         }
@@ -122,12 +122,12 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // Mapping Collection
         // --------------------------------------------
-        public ObservableCollection<NameSetColumnMapping> NameSetMappings => _parent.NameSetMappings;
+        public ObservableCollection<CsvFieldMapping> NameSetMappings => _parent.NameSetMappings;
         private void NameSetMappings_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.NewItems != null)
             {
-                foreach (NameSetColumnMapping m in e.NewItems)
+                foreach (CsvFieldMapping m in e.NewItems)
                 {
                     m.PropertyChanged += Mapping_PropertyChanged;
                 }
@@ -135,7 +135,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
 
             if (e.OldItems != null)
             {
-                foreach (NameSetColumnMapping m in e.OldItems)
+                foreach (CsvFieldMapping m in e.OldItems)
                 {
                     m.PropertyChanged -= Mapping_PropertyChanged;
                 }
@@ -147,7 +147,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         {
             Debug.WriteLine($"[Step3] Mapping property changed: {e.PropertyName}");
 
-            if (e.PropertyName == nameof(NameSetColumnMapping.SelectedCsvHeader))
+            if (e.PropertyName == nameof(CsvFieldMapping.SelectedCsvHeader))
             {
                 OnPropertyChanged(nameof(CanExecutePrimaryAction));
             }

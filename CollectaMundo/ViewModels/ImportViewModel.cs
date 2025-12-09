@@ -95,8 +95,8 @@ namespace CollectaMundo.ViewModels
 
         public static ObservableCollection<TempCardItem> ImportCardList { get; } = [];
         public ObservableCollection<IdColumnMapping> IdMappings { get; } = [];
-        public ObservableCollection<NameSetColumnMapping> NameSetMappings { get; } = [];
-        public ObservableCollection<AdditionalFieldMapping> AdditionalMappings { get; } = [];
+        public ObservableCollection<CsvFieldMapping> NameSetMappings { get; } = [];
+        public ObservableCollection<CsvFieldMapping> AdditionalMappings { get; } = [];
 
 
         [ObservableProperty]

@@ -53,7 +53,7 @@ namespace CollectaMundo.Tests.UnitTests
         {
             return [.. items.Select(i => MakeItemFull(i.Name, i.SetCode, i.SetName))];
         }
-        private static IReadOnlyList<NameSetColumnMapping> BuildMappings(bool includeSetCode = true, bool includeSetName = false)
+        private static IReadOnlyList<CsvFieldMapping> BuildMappings(bool includeSetCode = true, bool includeSetName = false)
         {
             // Determine which CSV headers should exist
             // If SetName is used, include it in CsvHeaders list
@@ -68,7 +68,7 @@ namespace CollectaMundo.Tests.UnitTests
                 headers.Add("SetName");
             }
 
-            var list = new List<NameSetColumnMapping>
+            var list = new List<CsvFieldMapping>
             {
                 // Card Name mapping (always required)
                 new()
@@ -113,7 +113,7 @@ namespace CollectaMundo.Tests.UnitTests
                 ("No Exist Card", "No Exist Code", "No Exist Name")                                 // no uuid hit
             );
         }
-        private async Task<(IReadOnlyList<TempCardItem> Items, ImportMatchSummaryDto Result)> RunStep3Async(IReadOnlyList<TempCardItem> items, IReadOnlyList<NameSetColumnMapping>? mappings = null)
+        private async Task<(IReadOnlyList<TempCardItem> Items, ImportMatchSummaryDto Result)> RunStep3Async(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping>? mappings = null)
         {
             mappings ??= BuildMappings(); // defaults: Name + SetCode
 

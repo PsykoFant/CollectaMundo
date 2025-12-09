@@ -47,9 +47,9 @@ namespace CollectaMundo.ViewModels.ImportSteps
 
             foreach (var field in fieldsToMap)
             {
-                AdditionalMappings.Add(new AdditionalFieldMapping
+                AdditionalMappings.Add(new CsvFieldMapping
                 {
-                    CardSetField = field.Field,
+                    FieldToMap = field.Field,
                     CsvHeaders = [.. csvHeaders],
                     SelectedCsvHeader = CsvHeaderMatcher.GuessCsvHeader(field.Field, field.Guesses, csvHeaders)
                 });
@@ -91,7 +91,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // Commands (none for this step)
         // --------------------------------------------
         [RelayCommand]
-        private static void ClearSelectedMapping(AdditionalFieldMapping mapping)
+        private static void ClearSelectedMapping(CsvFieldMapping mapping)
         {
             mapping.SelectedCsvHeader = null;
         }
@@ -100,7 +100,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // Mapping Collection
         // --------------------------------------------
-        public ObservableCollection<AdditionalFieldMapping> AdditionalMappings => _parent.AdditionalMappings;
+        public ObservableCollection<CsvFieldMapping> AdditionalMappings => _parent.AdditionalMappings;
 
         // --------------------------------------------
         // Private helper methods (none needed)
