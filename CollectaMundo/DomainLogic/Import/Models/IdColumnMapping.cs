@@ -15,6 +15,5 @@ namespace CollectaMundo.DomainLogic.Import.Models
 
         [ObservableProperty]
         private string? selectedDatabaseField;
-
     }
 }

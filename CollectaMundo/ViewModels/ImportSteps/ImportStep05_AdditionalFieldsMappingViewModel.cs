@@ -38,9 +38,8 @@ namespace CollectaMundo.ViewModels.ImportSteps
 
             var fieldsToMap = new[]
             {
-                //new { Field = "Condition", Guesses = new[] { "condition", "state" } },
-                new { Field = "Condition", Guesses = new[] { "fisk", "hund" } },
-                new { Field = "Card Finish", Guesses = new[] { "finish", "foiling", "card finish" } },
+                new { Field = "Condition", Guesses = new[] { "condition", "state", "card condition" } },
+                new { Field = "Card Finish", Guesses = new[] { "finish", "foiling", "card finish", "foil" } },
                 new { Field = "Cards Owned", Guesses = new[] { "quantity", "count", "owned", "qty" } },
                 new { Field = "Cards For Trade/Selling", Guesses = new[] { "trade", "for trade", "sell", "forsale", "selling" } },
                 new { Field = "Language", Guesses = new[] { "lang", "language" } }
@@ -56,8 +55,6 @@ namespace CollectaMundo.ViewModels.ImportSteps
                 });
             }
         }
-
-
         private void HookEvents()
         {
             // Step 1 has no dynamic collections or item-level events.
@@ -83,12 +80,12 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // Actions
         // --------------------------------------------
-        public async Task<OperationResult> OnPrimaryAction() => await _parent.AfterStep5Action();
-
-        public void OnSecondaryAction()
+        public async Task<OperationResult> OnPrimaryAction()
         {
-            // Not used in this step (and SecondaryActionVisibility is Collapsed).
+            StepContentVisibility = Visibility.Collapsed;
+            return await _parent.AfterStep5Action();
         }
+
 
         // --------------------------------------------
         // Commands (none for this step)
