@@ -120,7 +120,7 @@ namespace CollectaMundo.ApplicationServices.Import
         }
 
         // Step 3
-        public async Task<ImportMatchSummaryDto> TryResolveUuidsFromNameAndSetAsync(IReadOnlyList<TempCardItem> importCandidates, IReadOnlyList<NameSetColumnMapping> mappings, ProgressSinks progress, CancellationToken token)
+        public async Task<ImportMatchSummaryDto> TryResolveUuidsFromNameAndSetAsync(IReadOnlyList<TempCardItem> importCandidates, IReadOnlyList<CsvFieldMapping> mappings, ProgressSinks progress, CancellationToken token)
         {
             var (HasName, HasSetName, HasSetCode, NameHeader, SetNameHeader, SetCodeHeader) = _importLogic.ExtractMappedFields(mappings);
 

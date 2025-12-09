@@ -208,7 +208,7 @@ namespace CollectaMundo.DomainLogic.Import
 
         #region Step 3
         // Step 3
-        public (bool HasName, bool HasSetName, bool HasSetCode, string? NameHeader, string? SetNameHeader, string? SetCodeHeader) ExtractMappedFields(IReadOnlyList<NameSetColumnMapping> mappings)
+        public (bool HasName, bool HasSetName, bool HasSetCode, string? NameHeader, string? SetNameHeader, string? SetCodeHeader) ExtractMappedFields(IReadOnlyList<CsvFieldMapping> mappings)
         {
             string? name = mappings.FirstOrDefault(m => m.FieldToMap == "CardName")?.SelectedCsvHeader;
             string? setName = mappings.FirstOrDefault(m => m.FieldToMap == "SetName")?.SelectedCsvHeader;
