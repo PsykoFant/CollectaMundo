@@ -5,13 +5,11 @@ namespace CollectaMundo.DomainLogic.Import.Models
 {
     public partial class CsvFieldMapping : ObservableObject
     {
-        // Options from the CSV file (e.g. ["Name", "Card Name", "Set", ...])
         [ObservableProperty]
-        private List<string> csvHeaders = [];
+        private List<string> csvHeaders = []; // Options from the CSV file (e.g. ["Name", "Card Name", "Set", ...])
 
-        // Selected CSV header
         [ObservableProperty]
-        private string? selectedCsvHeader;
+        private string? selectedCsvHeader; // Selected CSV header
 
         [ObservableProperty]
         private ImportField fieldToMap; // e.g. "Card Name", "Condition"

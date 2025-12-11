@@ -12,14 +12,14 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
-    public partial class ImportStep03_NameSetMappingViewModel : ObservableObject, IImportStepViewModel
+    public partial class ImportStep06_ConditionsMappingViewModel : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent;
 
         // --------------------------------------------
         // Constructor
         // --------------------------------------------
-        public ImportStep03_NameSetMappingViewModel(ImportViewModel parent)
+        public ImportStep06_ConditionsMappingViewModel(ImportViewModel parent)
         {
             _parent = parent;
 
@@ -32,10 +32,20 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         private void Initialize()
         {
-            if (NameSetMappings.Any())
+            var csvHeader = _parent.AdditionalMappings.FirstOrDefault(m => m.FieldToMap == ImportField.Condition)?.SelectedCsvHeader;
+
+            if (string.IsNullOrWhiteSpace(csvHeader))
             {
                 return;
             }
+
+            var csvValues = _parent.ImportCardList
+        .Select(item => item.Fields.TryGetValue(csvHeader, out var value) ? value : null)
+        .Where(v => !string.IsNullOrWhiteSpace(v))
+        .Distinct()
+        .ToList();
+
+
 
             var firstItem = ImportViewModel.ImportCardList.FirstOrDefault();
             var csvHeaders = firstItem?.Fields.Keys.ToList() ?? [];
@@ -101,6 +111,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
                 return hasName && (hasSetName || hasSetCode);
             }
         }
+
         public bool CanExecuteSecondaryAction => false;
 
         // --------------------------------------------
@@ -124,7 +135,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // Mapping Collection
         // --------------------------------------------
-        public ObservableCollection<CsvFieldMapping> NameSetMappings => _parent.NameSetMappings;
+        public ObservableCollection<CsvValueMapping> ConditionMappings => _parent.ConditionMappings;
         private void NameSetMappings_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.NewItems != null)

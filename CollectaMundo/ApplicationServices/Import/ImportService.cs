@@ -1,11 +1,11 @@
-﻿using System.Collections.ObjectModel;
-using System.Diagnostics;
-using CollectaMundo.ApplicationServices.Shared;
+﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.Shared;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.Import
 {
@@ -214,9 +214,52 @@ namespace CollectaMundo.ApplicationServices.Import
         }
 
         // Step 4
-        public ImportMatchSummaryDto ApplyUserSelectedUuids(ObservableCollection<TempCardItem> importCandidates,List<MultipleUuidsItem> userSelections,ProgressSinks progress)
+        public ImportMatchSummaryDto ApplyUserSelectedUuids(ObservableCollection<TempCardItem> importCandidates, List<MultipleUuidsItem> userSelections, ProgressSinks progress)
         {
             return _importLogic.ApplySelectedUuids(importCandidates, userSelections);
+        }
+
+        // Step 5
+        public async Task<List<string>> GetAvailableFinishesAsync()
+        {
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginReadOnlyAsync();
+            try
+            {
+                var result = await DbHelpers.GetUniqueValuesAsync(uow.CurrentConnection, "cards", "finishes");
+                await uow.CommitAsync();
+                return result;
+            }
+            catch
+            {
+                await uow.RollbackAsync();
+                throw;
+            }
+            finally
+            {
+                await uow.DisposeAsync();
+            }
+        }
+
+        public async Task<List<string>> GetAvailableLanguagesAsync()
+        {
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginReadOnlyAsync();
+            try
+            {
+                var result = await DbHelpers.GetUniqueValuesAsync(uow.CurrentConnection, "cardForeignData", "language");
+                await uow.CommitAsync();
+                return result;
+            }
+            catch
+            {
+                await uow.RollbackAsync();
+                throw;
+            }
+            finally
+            {
+                await uow.DisposeAsync();
+            }
         }
 
 

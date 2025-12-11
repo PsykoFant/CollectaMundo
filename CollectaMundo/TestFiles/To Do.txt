@@ -1,8 +1,9 @@
 TO DO 
 - MVVM refactor
  - Import brug MVVM
-    - Færdiggør billedvisning 
-    - Processer uuids efter step 4
+    - CardCoreDto skal ud af infrastruktur laget
+    
+
 
 
 

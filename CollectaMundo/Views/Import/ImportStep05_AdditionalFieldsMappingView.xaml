@@ -70,8 +70,7 @@
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Content="   Clear   "
-                                Command="{Binding DataContext.ClearSelectedMappingCommand,
-                                                  RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                Command="{Binding DataContext.ClearSelectedMappingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>

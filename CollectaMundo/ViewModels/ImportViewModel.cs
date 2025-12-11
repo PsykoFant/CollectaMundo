@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
+using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Import.Models.Enums;
 using CollectaMundo.ViewModels.ImportSteps;
@@ -93,11 +94,14 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private Visibility cancelVisibility = Visibility.Collapsed;
 
-
         public static ObservableCollection<TempCardItem> ImportCardList { get; } = [];
         public ObservableCollection<IdColumnMapping> IdMappings { get; } = [];
         public ObservableCollection<CsvFieldMapping> NameSetMappings { get; } = [];
         public ObservableCollection<CsvFieldMapping> AdditionalMappings { get; } = [];
+        public ObservableCollection<CsvValueMapping> ConditionMappings { get; } = [];
+        public ObservableCollection<CsvValueMapping> FinishMappings { get; } = [];
+        public ObservableCollection<CsvValueMapping> LanguageMappings { get; } = [];
+
 
 
         [ObservableProperty]
@@ -256,7 +260,7 @@ namespace CollectaMundo.ViewModels
                 return [];
             }
         }
-        public Task<OperationResult> AfterStep5Action()
+        public async Task<OperationResult> AfterStep5Action()
         {
             var mappedFields = AdditionalMappings.Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)).Select(m => m.FieldToMap).ToHashSet();
 
@@ -268,7 +272,8 @@ namespace CollectaMundo.ViewModels
             if (IsConditionMapped)
             {
                 Debug.WriteLine("ImportViewModel: Condition field mapped, going to ConditionMapping step.");
-                //GoToStep(ImportStep.ConditionMapping);
+                // Prepare Condition Mappings object
+                GoToStep(ImportStep.ConditionMapping);
             }
             else if (IsCardFinishMapped)
             {
@@ -286,7 +291,7 @@ namespace CollectaMundo.ViewModels
                 //GoToStep(ImportStep.Summary);
             }
 
-            return Task.FromResult(new OperationResult(OperationResultCode.Success, "Field mappings processed."));
+            return new OperationResult(OperationResultCode.Success, "Field mappings processed.");
         }
 
         public async Task<OperationResult> AfterStep10Action()
@@ -309,6 +314,43 @@ namespace CollectaMundo.ViewModels
             return new(OperationResultCode.Success, "Cleanup completed");
 
         }
+
+        private async Task PrepareConditionMappingsAsync()
+        {
+            // Get the CSV header for Condition
+            var csvHeader = AdditionalMappings
+                .FirstOrDefault(m => m.FieldToMap == ImportField.Condition)
+                ?.SelectedCsvHeader;
+
+            if (string.IsNullOrWhiteSpace(csvHeader))
+            {
+                return;
+            }
+
+            // 1. Extract CSV values
+            var csvValues = ImportCardList
+                .Select(item => item.Fields.TryGetValue(csvHeader!, out var value) ? value?.Trim() : null)
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Distinct()
+                .ToList();
+
+            // 2. Get allowed values
+            var allowed = _importService.GetAvailableConditions();
+
+            // 3. Prepare mappings
+            ConditionMappings.Clear();
+            foreach (var csv in csvValues)
+            {
+                ConditionMappings.Add(new CsvValueMapping
+                {
+                    CsvValue = csv!,
+                    CardSetValues = allowed,
+                    SelectedCsvValue = CsvHeaderMatcher.GuessMapping(csv!, allowed)
+                });
+            }
+        }
+
+
 
         [RelayCommand]
         private async Task PrimaryActionAsync()

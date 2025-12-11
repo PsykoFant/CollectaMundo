@@ -1,6 +1,6 @@
-﻿using System.Collections.ObjectModel;
-using CollectaMundo.ApplicationServices.Shared.Progress;
+﻿using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.Import.Models;
+using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices.Import
 {
@@ -18,5 +18,9 @@ namespace CollectaMundo.ApplicationServices.Import
 
         // Step 4
         ImportMatchSummaryDto ApplyUserSelectedUuids(ObservableCollection<TempCardItem> importCandidates, List<MultipleUuidsItem> userSelections, ProgressSinks progress);
+
+        // Step 5
+        Task<List<string>> GetAvailableFinishesAsync();
+        Task<List<string>> GetAvailableLanguagesAsync();
     }
 }
