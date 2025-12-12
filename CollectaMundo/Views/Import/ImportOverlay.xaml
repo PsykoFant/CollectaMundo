@@ -42,7 +42,10 @@
                 <DataTemplate DataType="{x:Type vmsteps:ImportStep05_AdditionalFieldsMappingViewModel}">
                     <views:ImportStep05_AdditionalFieldsMappingView />
                 </DataTemplate>
-                <DataTemplate DataType="{x:Type vmsteps:ImportStep10_FinishViewModel}">
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep06_ConditionsMappingViewModel}">
+                    <views:ImportStep06_ConditionsMappingView />
+                </DataTemplate>            
+            <DataTemplate DataType="{x:Type vmsteps:ImportStep10_FinishViewModel}">
                     <views:ImportStep10_FinishView />
                 </DataTemplate>            
             </ContentControl.Resources>

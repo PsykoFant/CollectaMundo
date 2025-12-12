@@ -19,31 +19,39 @@
                 </Paragraph>
             </FlowDocument>
         </FlowDocumentScrollViewer>
-        <ListView ItemsSource="{Binding ConditionMappings}" Margin="0,220,0,0" Width="500" Height="180" HorizontalAlignment="Center" VerticalAlignment="Top">
+        <ListView ItemsSource="{Binding ConditionMappings}" Margin="0,220,0,0" Width="500" HorizontalAlignment="Center" VerticalAlignment="Top">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="Available conditions in database" Width="180">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding CardSetValues}" />
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
+                    <!-- LEFT COLUMN: CsvValue - just show the string -->
                     <GridViewColumn Header="Conditions found in import file" Width="200">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <ComboBox ItemsSource="{Binding CsvValue}"  SelectedItem="{Binding SelectedCsvValue, Mode=TwoWay}" />
+                                <TextBlock Text="{Binding CsvValue}" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+
+                    <!-- RIGHT COLUMN: CardSetValues - dropdown of selectable values -->
+                    <GridViewColumn Header="Available conditions in database" Width="180">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding CardSetValues}"
+                                  SelectedItem="{Binding SelectedCardSetValue, Mode=TwoWay}" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <!-- RESET BUTTON -->
                     <GridViewColumn Header="Reset" Width="100">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Content="   Clear   "
                                 Command="{Binding DataContext.ClearSelectedMappingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                 CommandParameter="{Binding}" />
-                            </DataTemplate>                        </GridViewColumn.CellTemplate>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+                    
                 </GridView>
             </ListView.View>
         </ListView>
