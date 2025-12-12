@@ -9,16 +9,17 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
-    public partial class ImportStep06_ConditionsMappingViewModel : ObservableObject, IImportStepViewModel
+    public partial class ImportStep07_FinishMappingViewModel : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent;
 
         // --------------------------------------------
         // Constructor
         // --------------------------------------------
-        public ImportStep06_ConditionsMappingViewModel(ImportViewModel parent)
+        public ImportStep07_FinishMappingViewModel(ImportViewModel parent)
         {
             _parent = parent;
+
             Initialize();
         }
 
@@ -81,7 +82,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public async Task<OperationResult> OnPrimaryAction()
         {
             StepContentVisibility = Visibility.Collapsed;
-            return await _parent.AfterStep6Action();
+            return await _parent.AfterStep3Action();
         }
 
         // --------------------------------------------

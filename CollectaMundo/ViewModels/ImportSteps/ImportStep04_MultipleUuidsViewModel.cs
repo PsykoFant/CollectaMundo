@@ -25,11 +25,11 @@ namespace CollectaMundo.ViewModels.ImportSteps
         }
 
         // --------------------------------------------
-        // Initialization (empty for this step)
+        // Initialization
         // --------------------------------------------
         private void Initialize()
         {
-            var items = ImportViewModel.ImportCardList
+            var items = _parent.ImportCardList
                 .Where(item => item.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrWhiteSpace(uuids))
                 .Select(item =>
                 {

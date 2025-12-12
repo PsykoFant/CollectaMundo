@@ -1,7 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
-using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Import.Models.Enums;
 using CollectaMundo.ViewModels.ImportSteps;
@@ -94,7 +93,7 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private Visibility cancelVisibility = Visibility.Collapsed;
 
-        public static ObservableCollection<TempCardItem> ImportCardList { get; } = [];
+        public ObservableCollection<TempCardItem> ImportCardList { get; } = [];
         public ObservableCollection<IdColumnMapping> IdMappings { get; } = [];
         public ObservableCollection<CsvFieldMapping> NameSetMappings { get; } = [];
         public ObservableCollection<CsvFieldMapping> AdditionalMappings { get; } = [];
@@ -121,6 +120,7 @@ namespace CollectaMundo.ViewModels
                 ImportStep.MultipleUuidsSelection => CreateStep(new ImportStep04_MultipleUuidsViewModel(this), "Resolve multiple UUID matches"),
                 ImportStep.AdditionalFieldsMapping => CreateStep(new ImportStep05_AdditionalFieldsMappingViewModel(this), "Additional fields mapping"),
                 ImportStep.ConditionMapping => CreateStep(new ImportStep06_ConditionsMappingViewModel(this), "Condition value mapping"),
+                ImportStep.FinishMapping => CreateStep(new ImportStep07_FinishMappingViewModel(this), "Finish value mapping"),
                 ImportStep.Finish => CreateStep(new ImportStep10_FinishViewModel(this), string.Empty),
                 _ => throw new NotSupportedException($"Unknown import step: {step}")
             };
@@ -273,7 +273,6 @@ namespace CollectaMundo.ViewModels
             if (IsConditionMapped)
             {
                 Debug.WriteLine("ImportViewModel: Condition field mapped, going to ConditionMapping step.");
-                await PrepareConditionMappingsAsync();
                 GoToStep(ImportStep.ConditionMapping);
             }
             else if (IsCardFinishMapped)
@@ -292,6 +291,32 @@ namespace CollectaMundo.ViewModels
                 //GoToStep(ImportStep.Summary);
             }
 
+            return new OperationResult(OperationResultCode.Success, "Field mappings processed.");
+        }
+
+        public async Task<OperationResult> AfterStep6Action()
+        {
+            var mappedFields = AdditionalMappings.Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)).Select(m => m.FieldToMap).ToHashSet();
+
+            // Register booleans in parent
+            var IsCardFinishMapped = mappedFields.Contains(ImportField.CardFinish);
+            var IsLanguageMapped = mappedFields.Contains(ImportField.Language);
+
+            if (IsCardFinishMapped)
+            {
+                Debug.WriteLine("ImportViewModel: CardFinish field mapped, going to FinishMapping step.");
+                GoToStep(ImportStep.FinishMapping);
+            }
+            else if (IsLanguageMapped)
+            {
+                Debug.WriteLine("ImportViewModel: Language field mapped, going to LanguageMapping step.");
+                //GoToStep(ImportStep.LanguageMapping);
+            }
+            else
+            {
+                Debug.WriteLine("ImportViewModel: No additional fields mapped, going to Summary step.");
+                //GoToStep(ImportStep.Summary);
+            }
             return new OperationResult(OperationResultCode.Success, "Field mappings processed.");
         }
 
@@ -315,43 +340,6 @@ namespace CollectaMundo.ViewModels
             return new(OperationResultCode.Success, "Cleanup completed");
 
         }
-
-        public async Task PrepareConditionMappingsAsync()
-        {
-            var csvHeader = AdditionalMappings
-                .FirstOrDefault(m => m.FieldToMap == ImportField.Condition)
-                ?.SelectedCsvHeader;
-
-            if (string.IsNullOrWhiteSpace(csvHeader))
-            {
-                return;
-            }
-
-            var csvValues = ImportCardList
-                .Select(item =>
-                    item.Fields.TryGetValue(csvHeader!, out var val) ? val?.Trim() : null)
-                .Where(v => !string.IsNullOrWhiteSpace(v))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            var allowedValues = new CardSet().Conditions;
-
-            ConditionMappings.Clear();
-
-            foreach (var csvValue in csvValues)
-            {
-                ConditionMappings.Add(new CsvValueMapping
-                {
-                    CsvValue = csvValue!,
-                    CardSetValues = [.. allowedValues],
-                    SelectedCardSetValue = null // Later guess
-                });
-            }
-        }
-
-
-
-
 
         [RelayCommand]
         private async Task PrimaryActionAsync()
@@ -456,7 +444,7 @@ namespace CollectaMundo.ViewModels
             Progress.ProgressBarVisible.Report(false);
         }
 
-        private static void DebugAllItems()
+        private void DebugAllItems()
         {
             Debug.WriteLine("\n");
             Debug.WriteLine("Debugging TempImport items:");
@@ -470,7 +458,7 @@ namespace CollectaMundo.ViewModels
                 Debug.WriteLine("\n");
             }
         }
-        private static void DebugImportProcess()
+        private void DebugImportProcess()
         {
             // Total number of items in TempImport
             int totalTempImportItems = ImportCardList.Count;

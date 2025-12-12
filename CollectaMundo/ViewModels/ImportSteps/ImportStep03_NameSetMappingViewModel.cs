@@ -37,7 +37,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
                 return;
             }
 
-            var firstItem = ImportViewModel.ImportCardList.FirstOrDefault();
+            var firstItem = _parent.ImportCardList.FirstOrDefault();
             var csvHeaders = firstItem?.Fields.Keys.ToList() ?? [];
 
             var fieldsToMap = new[]
