@@ -101,7 +101,7 @@ namespace CollectaMundo.ViewModels
         public ObservableCollection<CsvValueMapping> FinishMappings { get; } = [];
         public IReadOnlyList<string> AvailableFinishes { get; private set; } = [];
         public ObservableCollection<CsvValueMapping> LanguageMappings { get; } = [];
-
+        public IReadOnlyList<string> AvailableLanguages { get; private set; } = [];
 
 
         [ObservableProperty]
@@ -318,15 +318,42 @@ namespace CollectaMundo.ViewModels
                 Debug.WriteLine("ImportViewModel: No additional fields mapped, going to Summary step.");
                 //GoToStep(ImportStep.Summary);
             }
-            return new OperationResult(OperationResultCode.Success, "Field mappings processed.");
+            return new OperationResult(OperationResultCode.Success, "Condition mappings processed.");
         }
+        public async Task<OperationResult> AfterStep7Action()
+        {
+            var mappedFields = AdditionalMappings.Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)).Select(m => m.FieldToMap).ToHashSet();
+            var IsLanguageMapped = mappedFields.Contains(ImportField.Language);
 
+            if (IsLanguageMapped)
+            {
+                Debug.WriteLine("ImportViewModel: CardFinish field mapped, going to FinishMapping step.");
+                AvailableLanguages = await _importService.GetAvailableLanguagesAsync();
+                GoToStep(ImportStep.LanguageMapping);
+            }
+            else
+            {
+                Debug.WriteLine("ImportViewModel: No additional fields mapped, going to Summary step.");
+                GoToStep(ImportStep.Summary);
+            }
+            return new OperationResult(OperationResultCode.Success, "Finish mappings processed.");
+        }
+        public async Task<OperationResult> AfterStep8Action()
+        {
+            GoToStep(ImportStep.Summary);            
+            return new OperationResult(OperationResultCode.Success, "Finish mappings processed.");
+        }
         public async Task<OperationResult> AfterStep10Action()
         {
             ImportCardList.Clear();
             IdMappings.Clear();
             NameSetMappings.Clear();
             AdditionalMappings.Clear();
+            ConditionMappings.Clear();
+            FinishMappings.Clear();
+            LanguageMappings.Clear();
+            AvailableFinishes = [];
+            AvailableLanguages = [];
 
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();
