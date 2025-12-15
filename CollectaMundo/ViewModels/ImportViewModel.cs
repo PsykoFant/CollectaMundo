@@ -99,6 +99,7 @@ namespace CollectaMundo.ViewModels
         public ObservableCollection<CsvFieldMapping> AdditionalMappings { get; } = [];
         public ObservableCollection<CsvValueMapping> ConditionMappings { get; } = [];
         public ObservableCollection<CsvValueMapping> FinishMappings { get; } = [];
+        public IReadOnlyList<string> AvailableFinishes { get; private set; } = [];
         public ObservableCollection<CsvValueMapping> LanguageMappings { get; } = [];
 
 
@@ -293,7 +294,6 @@ namespace CollectaMundo.ViewModels
 
             return new OperationResult(OperationResultCode.Success, "Field mappings processed.");
         }
-
         public async Task<OperationResult> AfterStep6Action()
         {
             var mappedFields = AdditionalMappings.Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)).Select(m => m.FieldToMap).ToHashSet();
@@ -305,6 +305,7 @@ namespace CollectaMundo.ViewModels
             if (IsCardFinishMapped)
             {
                 Debug.WriteLine("ImportViewModel: CardFinish field mapped, going to FinishMapping step.");
+                AvailableFinishes = await _importService.GetAvailableFinishesAsync();
                 GoToStep(ImportStep.FinishMapping);
             }
             else if (IsLanguageMapped)

@@ -28,36 +28,33 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         private void Initialize()
         {
-            if (ConditionMappings.Any())
-            {
+            if (FinishMappings.Any())
                 return;
-            }
 
             var csvHeader = _parent.AdditionalMappings
-                .FirstOrDefault(m => m.FieldToMap == ImportField.Condition)
+                .FirstOrDefault(m => m.FieldToMap == ImportField.CardFinish)
                 ?.SelectedCsvHeader;
 
             if (string.IsNullOrWhiteSpace(csvHeader))
-            {
                 return;
-            }
 
             var csvValues = _parent.ImportCardList
-                .Select(item => item.Fields.TryGetValue(csvHeader, out var v) ? v?.Trim() : null)
+                .Select(item =>
+                    item.Fields.TryGetValue(csvHeader, out var val) ? val?.Trim() : null)
                 .Where(v => !string.IsNullOrWhiteSpace(v))
                 .Distinct(StringComparer.OrdinalIgnoreCase);
 
-            var allowedValues = new CardSet().Conditions;
-
             foreach (var csvValue in csvValues)
             {
-                ConditionMappings.Add(new CsvValueMapping
+                FinishMappings.Add(new CsvValueMapping
                 {
                     CsvValue = csvValue!,
-                    CardSetValues = [.. allowedValues]
+                    CardSetValues = [.. _parent.AvailableFinishes],
+                    SelectedCardSetValue = null
                 });
             }
         }
+
 
         // --------------------------------------------
         // UI Text & Visibility
@@ -82,7 +79,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public async Task<OperationResult> OnPrimaryAction()
         {
             StepContentVisibility = Visibility.Collapsed;
-            return await _parent.AfterStep3Action();
+            return await _parent.AfterStep7Action();
         }
 
         // --------------------------------------------
@@ -97,7 +94,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // Mapping Collection
         // --------------------------------------------
-        public ObservableCollection<CsvValueMapping> ConditionMappings => _parent.ConditionMappings;
+        public ObservableCollection<CsvValueMapping> FinishMappings => _parent.FinishMappings;
 
     }
 }
