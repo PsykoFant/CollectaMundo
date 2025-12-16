@@ -2,6 +2,11 @@
 {
     public class TempCardItem
     {
-        public Dictionary<string, string> Fields { get; set; } = [];
+        // Pure CSV data
+        public Dictionary<string, string> CsvFields { get; } = [];
+
+        // Internal workflow identity
+        public string TempItemImportKey { get; init; } = Guid.NewGuid().ToString();
     }
+
 }

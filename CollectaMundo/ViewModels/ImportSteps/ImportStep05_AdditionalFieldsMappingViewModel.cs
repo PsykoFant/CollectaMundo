@@ -33,12 +33,12 @@ namespace CollectaMundo.ViewModels.ImportSteps
             }
 
             var firstItem = _parent.ImportCardList.FirstOrDefault();
-            var csvHeaders = firstItem?.Fields.Keys.ToList() ?? [];
+            var csvHeaders = firstItem?.CsvFields.Keys.ToList() ?? [];
 
             var fieldsToMap = new[]
             {
                 new { Field = ImportField.Condition,      Guesses = new[] { "condition", "state", "card condition" } },
-                new { Field = ImportField.CardFinish,     Guesses = new[] { "finish", "foiling", "card finish", "foil" } },
+                new { Field = ImportField.CardFinish,     Guesses = new[] { "finish", "foiling", "card finish", "foil", "printing" } },
                 new { Field = ImportField.Language,       Guesses = new[] { "lang", "language" } },
                 new { Field = ImportField.CardsOwned,     Guesses = new[] { "quantity", "count", "owned", "qty" } },
                 new { Field = ImportField.CardsForTrade,  Guesses = new[] { "trade", "for trade", "sell", "forsale", "selling" } }

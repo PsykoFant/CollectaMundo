@@ -5,8 +5,56 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:CollectaMundo.Views.Import"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
-            
+             xmlns:vmsteps="clr-namespace:CollectaMundo.ViewModels.ImportSteps"             
+             d:DataContext="{d:DesignInstance vmsteps:ImportStep08_LanguageMappingViewModel}"
+             d:Style="{StaticResource {x:Type UserControl}}"
+             d:DesignHeight="600" d:DesignWidth="800">             
+    <Grid Visibility="{Binding StepContentVisibility}" HorizontalAlignment="Center">
+    <FlowDocumentScrollViewer Margin="0,30,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" Padding="10">
+        <FlowDocument>
+            <Paragraph>
+                Left column are the languages found in the import file. Please map them to available languages in the database.
+            </Paragraph>
+            <Paragraph>
+                Blank Languages will be imported as &quot;English&quot;
+            </Paragraph>
+        </FlowDocument>
+    </FlowDocumentScrollViewer>
+    <ListView ItemsSource="{Binding LanguageMappings}" Margin="0,220,0,0" Width="500" HorizontalAlignment="Center" VerticalAlignment="Top">
+        <ListView.View>
+            <GridView>
+                <!-- LEFT COLUMN: CsvValue - just show the string -->
+                <GridViewColumn Header="Languages found in import file" Width="200">
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding CsvValue}" />
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+
+                <!-- RIGHT COLUMN: CardSetValues - dropdown of selectable values -->
+                <GridViewColumn Header="Available languages in database" Width="180">
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{Binding CardSetValues}"
+                                  SelectedItem="{Binding SelectedCardSetValue, Mode=TwoWay}" />
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+
+                <!-- RESET BUTTON -->
+                <GridViewColumn Header="Reset" Width="100">
+                    <GridViewColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="   Clear   "
+                                Command="{Binding DataContext.ClearSelectedMappingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}" />
+                        </DataTemplate>
+                    </GridViewColumn.CellTemplate>
+                </GridViewColumn>
+
+            </GridView>
+        </ListView.View>
+    </ListView>
     </Grid>
 </UserControl>

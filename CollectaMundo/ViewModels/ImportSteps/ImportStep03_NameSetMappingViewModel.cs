@@ -38,7 +38,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
             }
 
             var firstItem = _parent.ImportCardList.FirstOrDefault();
-            var csvHeaders = firstItem?.Fields.Keys.ToList() ?? [];
+            var csvHeaders = firstItem?.CsvFields.Keys.ToList() ?? [];
 
             var fieldsToMap = new[]
             {

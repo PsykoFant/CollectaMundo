@@ -30,16 +30,16 @@ namespace CollectaMundo.ViewModels.ImportSteps
         private void Initialize()
         {
             var items = _parent.ImportCardList
-                .Where(item => item.Fields.TryGetValue("uuids", out var uuids) && !string.IsNullOrWhiteSpace(uuids))
+                .Where(item => item.CsvFields.TryGetValue("uuids", out var uuids) && !string.IsNullOrWhiteSpace(uuids))
                 .Select(item =>
                 {
                     var selectedCardNameHeader = _parent.NameSetMappings.FirstOrDefault(m => m.FieldToMap == ImportField.CardName)?.SelectedCsvHeader;
 
-                    var name = selectedCardNameHeader is not null && item.Fields.TryGetValue(selectedCardNameHeader, out var n) && !string.IsNullOrWhiteSpace(n)
+                    var name = selectedCardNameHeader is not null && item.CsvFields.TryGetValue(selectedCardNameHeader, out var n) && !string.IsNullOrWhiteSpace(n)
                     ? n
                     : "Unknown";
 
-                    var uuidList = item.Fields["uuids"].Split(',');
+                    var uuidList = item.CsvFields["uuids"].Split(',');
                     var versions = uuidList.Select((uuid, i) => new UuidVersion
                     {
                         Uuid = uuid,
@@ -49,7 +49,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
                     return new MultipleUuidsItem
                     {
                         Name = name,
-                        TempItemImportKey = item.Fields["TempItemImportKey"],
+                        TempItemImportKey = item.TempItemImportKey,
                         VersionedUuids = versions,
                         SelectedUuid = null,
                         OnSelectionChangedCallback = uuid =>

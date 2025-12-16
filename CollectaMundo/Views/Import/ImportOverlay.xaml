@@ -48,6 +48,9 @@
                 <DataTemplate DataType="{x:Type vmsteps:ImportStep07_FinishMappingViewModel}">
                     <views:ImportStep07_FinishesMappingView />
                 </DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep08_LanguageMappingViewModel}">
+                    <views:ImportStep08_LanguagesMappingView />
+                </DataTemplate>            
             <DataTemplate DataType="{x:Type vmsteps:ImportStep10_FinishViewModel}">
                     <views:ImportStep10_FinishView />
                 </DataTemplate>            

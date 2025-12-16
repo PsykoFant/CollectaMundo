@@ -42,7 +42,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
             }
 
             var csvValues = _parent.ImportCardList
-                .Select(item => item.Fields.TryGetValue(csvHeader, out var v) ? v?.Trim() : null)
+                .Select(item => item.CsvFields.TryGetValue(csvHeader, out var v) ? v?.Trim() : null)
                 .Where(v => !string.IsNullOrWhiteSpace(v))
                 .Distinct(StringComparer.OrdinalIgnoreCase);
 

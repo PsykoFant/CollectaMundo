@@ -35,7 +35,7 @@ namespace CollectaMundo.ApplicationServices.Import
                 // Calls ParseCsvFileAsync with progress reporter
                 var parsedItems = await _importLogic.ParseCsvFileAsync(filePath, progress.Percent, cancelToken);
 
-                var csvHeaders = parsedItems.FirstOrDefault()?.Fields.Keys.ToList() ?? [];
+                var csvHeaders = parsedItems.FirstOrDefault()?.CsvFields.Keys.ToList() ?? [];
                 var dbFields = await CardIdentifiersColumns();
 
                 var mapping = new IdColumnMapping
@@ -86,7 +86,7 @@ namespace CollectaMundo.ApplicationServices.Import
         // Step 2
         public async Task<ImportMatchSummaryDto> TryResolveUuidsFromMappedIdAsync(List<TempCardItem> importCandidates, IdColumnMapping mapping, ProgressSinks progress, CancellationToken cancelToken)
         {
-            var lookupValues = importCandidates.Select(item => item.Fields.TryGetValue(mapping.SelectedCsvHeader!, out var val) ? val : null)
+            var lookupValues = importCandidates.Select(item => item.CsvFields.TryGetValue(mapping.SelectedCsvHeader!, out var val) ? val : null)
                 .Where(val => !string.IsNullOrWhiteSpace(val))
                 .Select(val => val!) // safely assert non-null
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -185,7 +185,7 @@ namespace CollectaMundo.ApplicationServices.Import
                         var unresolved = batch.Where(i => !_importLogic.IsItemResolved(i)).ToList();
                         if (unresolved.Count > 0)
                         {
-                            var names = unresolved.Select(i => i.Fields.TryGetValue(NameHeader!, out var v) ? v : string.Empty).ToList();
+                            var names = unresolved.Select(i => i.CsvFields.TryGetValue(NameHeader!, out var v) ? v : string.Empty).ToList();
                             var results = await _importRepo.QueryByNameOnlyAsync(uow.CurrentConnection, names, token);
                             _importLogic.ApplyNameOnlyMatches(unresolved, names, results);
                         }
@@ -208,8 +208,8 @@ namespace CollectaMundo.ApplicationServices.Import
         private static List<(string Name, string Value)> ExtractPairs(List<TempCardItem> items, string nameHeader, string otherHeader)
         {
             return [.. items.Select(i => (
-            i.Fields.TryGetValue(nameHeader, out var name) ? name : string.Empty,
-            i.Fields.TryGetValue(otherHeader, out var val) ? val : string.Empty
+            i.CsvFields.TryGetValue(nameHeader, out var name) ? name : string.Empty,
+            i.CsvFields.TryGetValue(otherHeader, out var val) ? val : string.Empty
             ))];
         }
 
@@ -224,42 +224,46 @@ namespace CollectaMundo.ApplicationServices.Import
         {
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginReadOnlyAsync();
+
             try
             {
-                var result = await DbHelpers.GetUniqueValuesAsync(uow.CurrentConnection, "cards", "finishes");
+                var rawValues = await DbHelpers.GetUniqueValuesAsync(
+                    uow.CurrentConnection,
+                    "cards",
+                    "finishes");
+
                 await uow.CommitAsync();
-                return result;
+
+                return ImportValueNormalizer.SplitAndDistinct(rawValues);
             }
             catch
             {
                 await uow.RollbackAsync();
                 throw;
             }
-            finally
-            {
-                await uow.DisposeAsync();
-            }
         }
-
         public async Task<List<string>> GetAvailableLanguagesAsync()
         {
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginReadOnlyAsync();
+
             try
             {
-                var result = await DbHelpers.GetUniqueValuesAsync(uow.CurrentConnection, "cardForeignData", "language");
+                var rawValues = await DbHelpers.GetUniqueValuesAsync(
+                    uow.CurrentConnection,
+                    "cardForeignData",
+                    "language");
+
                 await uow.CommitAsync();
-                return result;
+
+                return ImportValueNormalizer.SplitAndDistinct(rawValues);
             }
             catch
             {
                 await uow.RollbackAsync();
                 throw;
             }
-            finally
-            {
-                await uow.DisposeAsync();
-            }
         }
+
     }
 }

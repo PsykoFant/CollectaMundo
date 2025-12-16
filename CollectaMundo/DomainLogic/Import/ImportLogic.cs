@@ -67,11 +67,8 @@ namespace CollectaMundo.DomainLogic.Import
                 for (int i = 0; i < headers.Count; i++)
                 {
                     string cleaned = RemoveUnwantedPrefixes(values.Count > i ? values[i] : string.Empty);
-                    item.Fields[headers[i]] = cleaned;
+                    item.CsvFields[headers[i]] = cleaned;
                 }
-
-                // Add unique key
-                item.Fields["TempItemImportKey"] = Guid.NewGuid().ToString();
 
                 cardItems.Add(item);
 
@@ -173,7 +170,7 @@ namespace CollectaMundo.DomainLogic.Import
                     }
                 }
 
-                if (!item.Fields.TryGetValue(selectedCsvHeader, out var csvValue) || string.IsNullOrWhiteSpace(csvValue))
+                if (!item.CsvFields.TryGetValue(selectedCsvHeader, out var csvValue) || string.IsNullOrWhiteSpace(csvValue))
                 {
                     continue;
                 }
@@ -185,12 +182,12 @@ namespace CollectaMundo.DomainLogic.Import
 
                 if (uuids.Count == 1)
                 {
-                    item.Fields["uuid"] = uuids[0];
+                    item.CsvFields["uuid"] = uuids[0];
                     matchedUuid++;
                 }
                 else
                 {
-                    item.Fields["uuids"] = string.Join(",", uuids);
+                    item.CsvFields["uuids"] = string.Join(",", uuids);
                     matchedUuid++;
                     matchedMultipleUuids++;
                 }
@@ -226,7 +223,7 @@ namespace CollectaMundo.DomainLogic.Import
         }
         public bool IsItemResolved(TempCardItem item)
         {
-            return item.Fields.ContainsKey("uuid") || item.Fields.ContainsKey("uuids");
+            return item.CsvFields.ContainsKey("uuid") || item.CsvFields.ContainsKey("uuids");
         }
 
         //  Apply matches — per item fallback logic
@@ -256,7 +253,7 @@ namespace CollectaMundo.DomainLogic.Import
             for (int i = 0; i < batch.Count; i++)
             {
                 // skip items already matched by SetCode
-                if (batch[i].Fields.ContainsKey("uuid") || batch[i].Fields.ContainsKey("uuids"))
+                if (batch[i].CsvFields.ContainsKey("uuid") || batch[i].CsvFields.ContainsKey("uuids"))
                 {
                     continue;
                 }
@@ -282,7 +279,7 @@ namespace CollectaMundo.DomainLogic.Import
             for (int i = 0; i < batch.Count; i++)
             {
                 // skip items already matched by SetCode / SetName
-                if (batch[i].Fields.ContainsKey("uuid") || batch[i].Fields.ContainsKey("uuids"))
+                if (batch[i].CsvFields.ContainsKey("uuid") || batch[i].CsvFields.ContainsKey("uuids"))
                 {
                     continue;
                 }
@@ -307,13 +304,13 @@ namespace CollectaMundo.DomainLogic.Import
         {
             if (list.Count == 1)
             {
-                item.Fields.Remove("uuids");
-                item.Fields["uuid"] = list[0];
+                item.CsvFields.Remove("uuids");
+                item.CsvFields["uuid"] = list[0];
             }
             else if (list.Count > 1)
             {
-                item.Fields.Remove("uuid");
-                item.Fields["uuids"] = string.Join(",", list);
+                item.CsvFields.Remove("uuid");
+                item.CsvFields["uuids"] = string.Join(",", list);
             }
             // list.Count == 0 → no assignment
         }
@@ -327,8 +324,8 @@ namespace CollectaMundo.DomainLogic.Import
 
             foreach (var item in items)
             {
-                bool hasUuid = item.Fields.ContainsKey("uuid");
-                bool hasUuids = item.Fields.ContainsKey("uuids");
+                bool hasUuid = item.CsvFields.ContainsKey("uuid");
+                bool hasUuids = item.CsvFields.ContainsKey("uuids");
 
                 if (hasUuid && hasUuids)
                 {
@@ -356,7 +353,7 @@ namespace CollectaMundo.DomainLogic.Import
 
             return new ImportMatchSummaryDto
             {
-                ItemsWithMultipleUuids = items.Count(i => i.Fields.ContainsKey("uuids"))
+                ItemsWithMultipleUuids = items.Count(i => i.CsvFields.ContainsKey("uuids"))
             };
         }
         #endregion
@@ -364,24 +361,26 @@ namespace CollectaMundo.DomainLogic.Import
         #region Step 4
         public ImportMatchSummaryDto ApplySelectedUuids(ObservableCollection<TempCardItem> importCandidates, List<MultipleUuidsItem> userSelections)
         {
-            foreach (var item in userSelections)
+            foreach (var selection in userSelections)
             {
-                if (!string.IsNullOrWhiteSpace(item.SelectedUuid))
+                if (string.IsNullOrWhiteSpace(selection.SelectedUuid))
                 {
-                    var match = importCandidates.FirstOrDefault(t =>
-                        t.Fields.TryGetValue("TempItemImportKey", out var key) &&
-                        key == item.TempItemImportKey);
+                    continue;
+                }
 
-                    if (match != null)
-                    {
-                        match.Fields["uuid"] = item.SelectedUuid;
-                        match.Fields.Remove("uuids"); // remove ambiguity marker
-                    }
+                // Match by first-class identity, not CSV fields
+                var match = importCandidates
+                    .FirstOrDefault(t => t.TempItemImportKey == selection.TempItemImportKey);
+
+                if (match != null)
+                {
+                    match.CsvFields["uuid"] = selection.SelectedUuid;
+                    match.CsvFields.Remove("uuids"); // remove ambiguity marker
                 }
             }
 
             var stillUnresolved = importCandidates.Count(i =>
-                i.Fields.TryGetValue("uuids", out var uuids) &&
+                i.CsvFields.TryGetValue("uuids", out var uuids) &&
                 !string.IsNullOrWhiteSpace(uuids));
 
             return new ImportMatchSummaryDto
@@ -389,6 +388,7 @@ namespace CollectaMundo.DomainLogic.Import
                 ItemsWithMultipleUuids = stillUnresolved
             };
         }
+
 
         #endregion
     }

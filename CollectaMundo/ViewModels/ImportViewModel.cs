@@ -97,15 +97,71 @@ namespace CollectaMundo.ViewModels
         public ObservableCollection<IdColumnMapping> IdMappings { get; } = [];
         public ObservableCollection<CsvFieldMapping> NameSetMappings { get; } = [];
         public ObservableCollection<CsvFieldMapping> AdditionalMappings { get; } = [];
+
         public ObservableCollection<CsvValueMapping> ConditionMappings { get; } = [];
         public ObservableCollection<CsvValueMapping> FinishMappings { get; } = [];
-        public IReadOnlyList<string> AvailableFinishes { get; private set; } = [];
         public ObservableCollection<CsvValueMapping> LanguageMappings { get; } = [];
-        public IReadOnlyList<string> AvailableLanguages { get; private set; } = [];
+
+
+        private IReadOnlyList<string>? _availableFinishes;
+        public async Task<IReadOnlyList<string>> GetAvailableFinishesAsync()
+        {
+            _availableFinishes ??= await _importService.GetAvailableFinishesAsync();
+
+            return _availableFinishes;
+        }
+
+
+        private IReadOnlyList<string>? _availableLanguages;
+        public async Task<IReadOnlyList<string>> GetAvailableLanguagesAsync()
+        {
+            _availableLanguages ??= await _importService.GetAvailableLanguagesAsync();
+
+            return _availableLanguages;
+        }
+
 
 
         [ObservableProperty]
         private Visibility importOverlayVisibility = Visibility.Collapsed;
+
+
+
+        private static readonly ImportField[] _additionalFieldOrder = [ImportField.Condition, ImportField.CardFinish, ImportField.Language];
+        private ImportStep? GetNextAdditionalFieldStep(ImportField? after = null)
+        {
+            var mappedFields = AdditionalMappings
+                .Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader))
+                .Select(m => m.FieldToMap)
+                .ToHashSet();
+
+            var fieldsToConsider = _additionalFieldOrder.AsEnumerable();
+
+            if (after is not null)
+            {
+                fieldsToConsider = fieldsToConsider
+                    .SkipWhile(f => f != after)
+                    .Skip(1);
+            }
+
+            foreach (var field in fieldsToConsider)
+            {
+                if (!mappedFields.Contains(field))
+                {
+                    continue;
+                }
+
+                return field switch
+                {
+                    ImportField.Condition => ImportStep.ConditionMapping,
+                    ImportField.CardFinish => ImportStep.FinishMapping,
+                    ImportField.Language => ImportStep.LanguageMapping,
+                    _ => null
+                };
+            }
+
+            return null;
+        }
 
         private ImportStep _currentStep = ImportStep.Start;
         public void GoToStep(ImportStep step)
@@ -122,6 +178,7 @@ namespace CollectaMundo.ViewModels
                 ImportStep.AdditionalFieldsMapping => CreateStep(new ImportStep05_AdditionalFieldsMappingViewModel(this), "Additional fields mapping"),
                 ImportStep.ConditionMapping => CreateStep(new ImportStep06_ConditionsMappingViewModel(this), "Condition value mapping"),
                 ImportStep.FinishMapping => CreateStep(new ImportStep07_FinishMappingViewModel(this), "Finish value mapping"),
+                ImportStep.LanguageMapping => CreateStep(new ImportStep08_LanguageMappingViewModel(this), "Language value mapping"),
                 ImportStep.Finish => CreateStep(new ImportStep10_FinishViewModel(this), string.Empty),
                 _ => throw new NotSupportedException($"Unknown import step: {step}")
             };
@@ -262,85 +319,33 @@ namespace CollectaMundo.ViewModels
                 return [];
             }
         }
-        public async Task<OperationResult> AfterStep5Action()
+        public Task<OperationResult> AfterStep5Action()
         {
-            var mappedFields = AdditionalMappings.Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)).Select(m => m.FieldToMap).ToHashSet();
+            var next = GetNextAdditionalFieldStep();
 
-            // Register booleans in parent
-            var IsConditionMapped = mappedFields.Contains(ImportField.Condition);
-            var IsCardFinishMapped = mappedFields.Contains(ImportField.CardFinish);
-            var IsLanguageMapped = mappedFields.Contains(ImportField.Language);
+            GoToStep(next ?? ImportStep.Summary);
 
-            if (IsConditionMapped)
-            {
-                Debug.WriteLine("ImportViewModel: Condition field mapped, going to ConditionMapping step.");
-                GoToStep(ImportStep.ConditionMapping);
-            }
-            else if (IsCardFinishMapped)
-            {
-                Debug.WriteLine("ImportViewModel: CardFinish field mapped, going to FinishMapping step.");
-                //GoToStep(ImportStep.FinishMapping);
-            }
-            else if (IsLanguageMapped)
-            {
-                Debug.WriteLine("ImportViewModel: Language field mapped, going to LanguageMapping step.");
-                //GoToStep(ImportStep.LanguageMapping);
-            }
-            else
-            {
-                Debug.WriteLine("ImportViewModel: No additional fields mapped, going to Summary step.");
-                //GoToStep(ImportStep.Summary);
-            }
-
-            return new OperationResult(OperationResultCode.Success, "Field mappings processed.");
+            return Task.FromResult(new OperationResult(OperationResultCode.Success, "Field mappings processed."));
         }
-        public async Task<OperationResult> AfterStep6Action()
+        public Task<OperationResult> AfterStep6Action()
         {
-            var mappedFields = AdditionalMappings.Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)).Select(m => m.FieldToMap).ToHashSet();
+            var next = GetNextAdditionalFieldStep(ImportField.Condition);
 
-            // Register booleans in parent
-            var IsCardFinishMapped = mappedFields.Contains(ImportField.CardFinish);
-            var IsLanguageMapped = mappedFields.Contains(ImportField.Language);
+            GoToStep(next ?? ImportStep.Summary);
 
-            if (IsCardFinishMapped)
-            {
-                Debug.WriteLine("ImportViewModel: CardFinish field mapped, going to FinishMapping step.");
-                AvailableFinishes = await _importService.GetAvailableFinishesAsync();
-                GoToStep(ImportStep.FinishMapping);
-            }
-            else if (IsLanguageMapped)
-            {
-                Debug.WriteLine("ImportViewModel: Language field mapped, going to LanguageMapping step.");
-                //GoToStep(ImportStep.LanguageMapping);
-            }
-            else
-            {
-                Debug.WriteLine("ImportViewModel: No additional fields mapped, going to Summary step.");
-                //GoToStep(ImportStep.Summary);
-            }
-            return new OperationResult(OperationResultCode.Success, "Condition mappings processed.");
+            return Task.FromResult(new OperationResult(OperationResultCode.Success, "Condition mappings processed."));
         }
-        public async Task<OperationResult> AfterStep7Action()
+        public Task<OperationResult> AfterStep7Action()
         {
-            var mappedFields = AdditionalMappings.Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)).Select(m => m.FieldToMap).ToHashSet();
-            var IsLanguageMapped = mappedFields.Contains(ImportField.Language);
+            var next = GetNextAdditionalFieldStep(ImportField.CardFinish);
 
-            if (IsLanguageMapped)
-            {
-                Debug.WriteLine("ImportViewModel: CardFinish field mapped, going to FinishMapping step.");
-                AvailableLanguages = await _importService.GetAvailableLanguagesAsync();
-                GoToStep(ImportStep.LanguageMapping);
-            }
-            else
-            {
-                Debug.WriteLine("ImportViewModel: No additional fields mapped, going to Summary step.");
-                GoToStep(ImportStep.Summary);
-            }
-            return new OperationResult(OperationResultCode.Success, "Finish mappings processed.");
+            GoToStep(next ?? ImportStep.Summary);
+
+            return Task.FromResult(new OperationResult(OperationResultCode.Success, "Finish mappings processed."));
         }
         public async Task<OperationResult> AfterStep8Action()
         {
-            GoToStep(ImportStep.Summary);            
+            GoToStep(ImportStep.Summary);
             return new OperationResult(OperationResultCode.Success, "Finish mappings processed.");
         }
         public async Task<OperationResult> AfterStep10Action()
@@ -352,8 +357,8 @@ namespace CollectaMundo.ViewModels
             ConditionMappings.Clear();
             FinishMappings.Clear();
             LanguageMappings.Clear();
-            AvailableFinishes = [];
-            AvailableLanguages = [];
+            _availableFinishes = null;
+            _availableLanguages = null;
 
             _userPromptService.CancelPendingPrompt();
             _userPromptService.ClearCancellation();
@@ -366,9 +371,9 @@ namespace CollectaMundo.ViewModels
             ImportFailVisibility = Visibility.Collapsed;
 
             return new(OperationResultCode.Success, "Cleanup completed");
-
         }
 
+        #region Commmands for step actions and cancel
         [RelayCommand]
         private async Task PrimaryActionAsync()
         {
@@ -471,6 +476,7 @@ namespace CollectaMundo.ViewModels
             Progress.Percent.Report(0);
             Progress.ProgressBarVisible.Report(false);
         }
+        #endregion
 
         private void DebugAllItems()
         {
@@ -479,7 +485,7 @@ namespace CollectaMundo.ViewModels
             foreach (TempCardItem tempItem in ImportCardList)
             {
                 Debug.WriteLine("TempItem:");
-                foreach (KeyValuePair<string, string> field in tempItem.Fields)
+                foreach (KeyValuePair<string, string> field in tempItem.CsvFields)
                 {
                     Debug.WriteLine($"{field.Key}: {field.Value}");
                 }
@@ -492,12 +498,12 @@ namespace CollectaMundo.ViewModels
             int totalTempImportItems = ImportCardList.Count;
 
             // Number of TempImport items with a single uuid
-            int singleUuidItems = ImportCardList.Count(item => item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids"));
+            int singleUuidItems = ImportCardList.Count(item => item.CsvFields.ContainsKey("uuid") && !item.CsvFields.ContainsKey("uuids"));
 
             // Number of TempImport items with multiple uuids
-            int multipleUuidItems = ImportCardList.Count(item => item.Fields.ContainsKey("uuids"));
+            int multipleUuidItems = ImportCardList.Count(item => item.CsvFields.ContainsKey("uuids"));
 
-            int noUuidItems = ImportCardList.Count(item => !item.Fields.ContainsKey("uuid") && !item.Fields.ContainsKey("uuids"));
+            int noUuidItems = ImportCardList.Count(item => !item.CsvFields.ContainsKey("uuid") && !item.CsvFields.ContainsKey("uuids"));
 
             // Debug write lines
             Debug.WriteLine($"Total number of items in TempImport: {totalTempImportItems}");

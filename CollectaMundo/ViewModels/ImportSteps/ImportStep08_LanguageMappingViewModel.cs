@@ -8,17 +8,16 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
-    public partial class ImportStep07_FinishMappingViewModel : ObservableObject, IImportStepViewModel
+    public partial class ImportStep08_LanguageMappingViewModel : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent;
 
         // --------------------------------------------
         // Constructor
         // --------------------------------------------
-        public ImportStep07_FinishMappingViewModel(ImportViewModel parent)
+        public ImportStep08_LanguageMappingViewModel(ImportViewModel parent)
         {
             _parent = parent;
-
             Initialize();
         }
 
@@ -27,7 +26,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         private void Initialize()
         {
-            if (FinishMappings.Any())
+            if (LanguageMappings.Any())
             {
                 return;
             }
@@ -37,7 +36,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         private async Task InitializeAsync()
         {
             var csvHeader = _parent.AdditionalMappings
-                .FirstOrDefault(m => m.FieldToMap == ImportField.CardFinish)
+                .FirstOrDefault(m => m.FieldToMap == ImportField.Language)
                 ?.SelectedCsvHeader;
 
             if (string.IsNullOrWhiteSpace(csvHeader))
@@ -58,19 +57,18 @@ namespace CollectaMundo.ViewModels.ImportSteps
             }
 
             // Lazy, cached, parent-owned async call
-            var availableFinishes = await _parent.GetAvailableFinishesAsync();
+            var availableLanguages = await _parent.GetAvailableLanguagesAsync();
 
             foreach (var csvValue in csvValues)
             {
-                FinishMappings.Add(new CsvValueMapping
+                LanguageMappings.Add(new CsvValueMapping
                 {
                     CsvValue = csvValue!,
-                    CardSetValues = [.. availableFinishes],
+                    CardSetValues = [.. availableLanguages],
                     SelectedCardSetValue = null
                 });
             }
         }
-
         // --------------------------------------------
         // UI Text & Visibility
         // --------------------------------------------
@@ -94,7 +92,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public async Task<OperationResult> OnPrimaryAction()
         {
             StepContentVisibility = Visibility.Collapsed;
-            return await _parent.AfterStep7Action();
+            return await _parent.AfterStep8Action();
         }
 
         // --------------------------------------------
@@ -109,7 +107,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // Mapping Collection
         // --------------------------------------------
-        public ObservableCollection<CsvValueMapping> FinishMappings => _parent.FinishMappings;
+        public ObservableCollection<CsvValueMapping> LanguageMappings => _parent.LanguageMappings;
 
     }
 }
