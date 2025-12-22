@@ -120,10 +120,8 @@ namespace CollectaMundo.ViewModels
             return _availableLanguages;
         }
 
-
         [ObservableProperty]
         private Visibility importOverlayVisibility = Visibility.Collapsed;
-
 
 
         private static readonly ImportField[] _additionalFieldOrder = [ImportField.Condition, ImportField.CardFinish, ImportField.Language];
@@ -178,6 +176,7 @@ namespace CollectaMundo.ViewModels
                 ImportStep.ConditionMapping => CreateStep(new ImportStep06_ConditionsMappingViewModel(this), "Condition value mapping"),
                 ImportStep.FinishMapping => CreateStep(new ImportStep07_FinishMappingViewModel(this), "Finish value mapping"),
                 ImportStep.LanguageMapping => CreateStep(new ImportStep08_LanguageMappingViewModel(this), "Language value mapping"),
+                ImportStep.Summary => CreateStep(new ImportStep09_SummaryViewModel(this), "Import summary"),
                 ImportStep.Finish => CreateStep(new ImportStep10_FinishViewModel(this), string.Empty),
                 _ => throw new NotSupportedException($"Unknown import step: {step}")
             };

@@ -50,8 +50,11 @@
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type vmsteps:ImportStep08_LanguageMappingViewModel}">
                     <views:ImportStep08_LanguagesMappingView />
-                </DataTemplate>            
-            <DataTemplate DataType="{x:Type vmsteps:ImportStep10_FinishViewModel}">
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep09_SummaryViewModel}">
+                    <views:ImportStep09_SummaryView />
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep10_FinishViewModel}">
                     <views:ImportStep10_FinishView />
                 </DataTemplate>            
             </ContentControl.Resources>
