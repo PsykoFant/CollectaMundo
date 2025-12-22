@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Import.Models.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -50,10 +51,17 @@ namespace CollectaMundo.ViewModels.ImportSteps
 
             foreach (var csvValue in csvValues)
             {
+                var guessed = ImportValueMatcher.MapImportValue(
+                    csvValue!,
+                    ImportField.Condition,
+                    allowedValues
+                ) ?? "Near Mint"; // Default to "Near Mint" if no match found
+
                 ConditionMappings.Add(new CsvValueMapping
                 {
                     CsvValue = csvValue!,
-                    CardSetValues = [.. allowedValues]
+                    CardSetValues = [.. allowedValues],
+                    SelectedCardSetValue = guessed
                 });
             }
         }

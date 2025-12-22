@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Import.Models.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -35,9 +36,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         }
         private async Task InitializeAsync()
         {
-            var csvHeader = _parent.AdditionalMappings
-                .FirstOrDefault(m => m.FieldToMap == ImportField.Language)
-                ?.SelectedCsvHeader;
+            var csvHeader = _parent.AdditionalMappings.FirstOrDefault(m => m.FieldToMap == ImportField.Language)?.SelectedCsvHeader;
 
             if (string.IsNullOrWhiteSpace(csvHeader))
             {
@@ -59,13 +58,23 @@ namespace CollectaMundo.ViewModels.ImportSteps
             // Lazy, cached, parent-owned async call
             var availableLanguages = await _parent.GetAvailableLanguagesAsync();
 
+            // Ensure default language is present
+            var languageOptions = availableLanguages.Append("English")
+                .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(l => l).ToList();
+
             foreach (var csvValue in csvValues)
             {
+                var guessed = ImportValueMatcher.MapImportValue(
+                    csvValue!,
+                    ImportField.Language,
+                    languageOptions
+                ) ?? "English"; // Default to "English" if no match found
+
                 LanguageMappings.Add(new CsvValueMapping
                 {
                     CsvValue = csvValue!,
-                    CardSetValues = [.. availableLanguages],
-                    SelectedCardSetValue = null
+                    CardSetValues = [.. languageOptions],
+                    SelectedCardSetValue = guessed
                 });
             }
         }

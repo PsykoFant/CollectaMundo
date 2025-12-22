@@ -121,7 +121,6 @@ namespace CollectaMundo.ViewModels
         }
 
 
-
         [ObservableProperty]
         private Visibility importOverlayVisibility = Visibility.Collapsed;
 

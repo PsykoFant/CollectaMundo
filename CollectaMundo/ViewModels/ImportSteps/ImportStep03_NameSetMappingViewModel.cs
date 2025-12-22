@@ -40,21 +40,13 @@ namespace CollectaMundo.ViewModels.ImportSteps
             var firstItem = _parent.ImportCardList.FirstOrDefault();
             var csvHeaders = firstItem?.CsvFields.Keys.ToList() ?? [];
 
-            var fieldsToMap = new[]
-            {
-                new { Field = ImportField.CardName, Guesses = new[] { "name", "card name", "card_name" } },
-                new { Field = ImportField.SetName,  Guesses = new[] { "set name", "setname", "set", "edition" } },
-                new { Field = ImportField.SetCode,  Guesses = new[] { "set code", "setcode", "code", "edition code" } }
-            };
-
-
-            foreach (var field in fieldsToMap)
+            foreach (var field in new[] { ImportField.CardName, ImportField.SetName, ImportField.SetCode })
             {
                 NameSetMappings.Add(new CsvFieldMapping
                 {
-                    FieldToMap = field.Field,
+                    FieldToMap = field,
                     CsvHeaders = [.. csvHeaders],
-                    SelectedCsvHeader = CsvHeaderMatcher.GuessCsvHeader(field.Field, field.Guesses, csvHeaders)
+                    SelectedCsvHeader = ImportValueMatcher.GuessCsvHeader(field, csvHeaders)
                 });
             }
         }

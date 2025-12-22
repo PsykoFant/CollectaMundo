@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Import.Models.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -62,11 +63,17 @@ namespace CollectaMundo.ViewModels.ImportSteps
 
             foreach (var csvValue in csvValues)
             {
+                var guessed = ImportValueMatcher.MapImportValue(
+                    csvValue!,
+                    ImportField.CardFinish,
+                    availableFinishes
+                ) ?? "nonfoil"; // Default to "nonfoil if no match found
+
                 FinishMappings.Add(new CsvValueMapping
                 {
                     CsvValue = csvValue!,
                     CardSetValues = [.. availableFinishes],
-                    SelectedCardSetValue = null
+                    SelectedCardSetValue = guessed
                 });
             }
         }
