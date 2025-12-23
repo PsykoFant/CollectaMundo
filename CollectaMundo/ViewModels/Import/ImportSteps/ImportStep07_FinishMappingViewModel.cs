@@ -1,13 +1,12 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.ViewModels.Import.ImportSteps;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Windows;
 
-namespace CollectaMundo.ViewModels.ImportSteps
+namespace CollectaMundo.ViewModels.Import.ImportSteps
 {
     public partial class ImportStep07_FinishMappingViewModel : ObservableObject, IImportStepViewModel
     {

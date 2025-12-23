@@ -1,6 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.ViewModels.Import.ImportSteps;
 using CollectaMundo.ViewModels.Import.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -10,7 +9,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 
-namespace CollectaMundo.ViewModels.ImportSteps
+namespace CollectaMundo.ViewModels.Import.ImportSteps
 {
     public partial class ImportStep02_IdMappingViewModel : ObservableObject, IImportStepViewModel
     {

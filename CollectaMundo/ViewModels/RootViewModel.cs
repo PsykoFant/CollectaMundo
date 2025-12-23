@@ -1,4 +1,6 @@
-﻿namespace CollectaMundo.ViewModels
+﻿using CollectaMundo.ViewModels.Import;
+
+namespace CollectaMundo.ViewModels
 {
     public class RootViewModel(MainWindowViewModel main, StatusViewModel status)
     {

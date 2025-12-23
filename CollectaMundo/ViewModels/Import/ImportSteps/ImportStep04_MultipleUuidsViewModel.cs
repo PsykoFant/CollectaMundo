@@ -1,12 +1,11 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.ViewModels.Import.ImportSteps;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Windows;
 
-namespace CollectaMundo.ViewModels.ImportSteps
+namespace CollectaMundo.ViewModels.Import.ImportSteps
 {
     public partial class ImportStep04_MultipleUuidsViewModel : ObservableObject, IImportStepViewModel
     {

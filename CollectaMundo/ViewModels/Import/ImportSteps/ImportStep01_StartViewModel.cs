@@ -1,9 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.ViewModels.Import.ImportSteps;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Windows;
 
-namespace CollectaMundo.ViewModels.ImportSteps
+namespace CollectaMundo.ViewModels.Import.ImportSteps
 {
     public partial class ImportStep01_StartViewModel(ImportViewModel parent) : ObservableObject, IImportStepViewModel
     {

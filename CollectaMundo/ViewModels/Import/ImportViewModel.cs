@@ -2,10 +2,8 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.ViewModels.Import;
 using CollectaMundo.ViewModels.Import.ImportSteps;
 using CollectaMundo.ViewModels.Import.Models;
-using CollectaMundo.ViewModels.ImportSteps;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -13,7 +11,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 
-namespace CollectaMundo.ViewModels
+namespace CollectaMundo.ViewModels.Import
 {
     public partial class ImportViewModel(IImportService importService, IParentViewModelContext parentContext, IUserPromptService userPromptService, CardImageViewModel cardImageVM) : ObservableObject
     {
@@ -61,10 +59,14 @@ namespace CollectaMundo.ViewModels
         partial void OnCurrentStepViewModelChanged(IImportStepViewModel? oldValue, IImportStepViewModel? newValue)
         {
             if (oldValue is INotifyPropertyChanged oldNotify)
+            {
                 oldNotify.PropertyChanged -= CurrentStep_PropertyChanged;
+            }
 
             if (newValue is INotifyPropertyChanged newNotify)
+            {
                 newNotify.PropertyChanged += CurrentStep_PropertyChanged;
+            }
         }
 
         // Forward relevant child property changes to parent computed properties
