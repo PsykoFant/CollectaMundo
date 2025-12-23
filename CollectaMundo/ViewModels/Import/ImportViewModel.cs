@@ -2,9 +2,10 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.DomainLogic.Import.Models.Enums;
+using CollectaMundo.ViewModels.Import;
+using CollectaMundo.ViewModels.Import.ImportSteps;
+using CollectaMundo.ViewModels.Import.Models;
 using CollectaMundo.ViewModels.ImportSteps;
-using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -84,6 +85,8 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private int progressValue;
 
+        #region Visibility properties
+
         [ObservableProperty]
         private Visibility progressVisibility = Visibility.Collapsed;
 
@@ -93,17 +96,25 @@ namespace CollectaMundo.ViewModels
         [ObservableProperty]
         private Visibility cancelVisibility = Visibility.Collapsed;
 
-        public ObservableCollection<TempCardItem> ImportCardList { get; } = [];
+        [ObservableProperty]
+        private Visibility importOverlayVisibility = Visibility.Collapsed;
+        #endregion
+
+        #region Data collections for import process
+        public ObservableCollection<TempCardItem> ImportCardList { get; } = []; // The master list of items being imported, generated from CSV
+
+        // Objects to hold mappings for csv-headers-to-database fields
         public ObservableCollection<IdColumnMapping> IdMappings { get; } = [];
         public ObservableCollection<CsvFieldMapping> NameSetMappings { get; } = [];
         public ObservableCollection<CsvFieldMapping> AdditionalMappings { get; } = [];
 
+        // Objects to hold value mappings for additional fields
         public ObservableCollection<CsvValueMapping> ConditionMappings { get; } = [];
         public ObservableCollection<CsvValueMapping> FinishMappings { get; } = [];
-        public ObservableCollection<CsvValueMapping> LanguageMappings { get; } = [];
-
 
         private IReadOnlyList<string>? _availableFinishes;
+
+        // Fetch available finishes from child VM lazily
         public async Task<IReadOnlyList<string>> GetAvailableFinishesAsync()
         {
             _availableFinishes ??= await _importService.GetAvailableFinishesAsync();
@@ -111,8 +122,11 @@ namespace CollectaMundo.ViewModels
             return _availableFinishes;
         }
 
+        public ObservableCollection<CsvValueMapping> LanguageMappings { get; } = [];
 
         private IReadOnlyList<string>? _availableLanguages;
+
+        // Fetch available languages from child VM lazily
         public async Task<IReadOnlyList<string>> GetAvailableLanguagesAsync()
         {
             _availableLanguages ??= await _importService.GetAvailableLanguagesAsync();
@@ -120,8 +134,11 @@ namespace CollectaMundo.ViewModels
             return _availableLanguages;
         }
 
-        [ObservableProperty]
-        private Visibility importOverlayVisibility = Visibility.Collapsed;
+
+        // Objects to hold final resolved an summary data
+        public IReadOnlyList<ResolvedImportItem> ResolvedImportItems { get; private set; } = [];
+        public ImportSummary Summary { get; } = new();
+        #endregion
 
 
         private static readonly ImportField[] _additionalFieldOrder = [ImportField.Condition, ImportField.CardFinish, ImportField.Language];
@@ -163,6 +180,11 @@ namespace CollectaMundo.ViewModels
         private ImportStep _currentStep = ImportStep.Start;
         public void GoToStep(ImportStep step)
         {
+            if (step == ImportStep.Summary)
+            {
+                FinalizeImport();
+            }
+
             _currentStep = step;
             Debug.WriteLine($"ImportViewModel: Navigating to {_currentStep}.");
 
@@ -320,31 +342,30 @@ namespace CollectaMundo.ViewModels
         public Task<OperationResult> AfterStep5Action()
         {
             var next = GetNextAdditionalFieldStep();
-
             GoToStep(next ?? ImportStep.Summary);
-
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Field mappings processed."));
         }
         public Task<OperationResult> AfterStep6Action()
         {
             var next = GetNextAdditionalFieldStep(ImportField.Condition);
-
             GoToStep(next ?? ImportStep.Summary);
-
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Condition mappings processed."));
         }
         public Task<OperationResult> AfterStep7Action()
         {
             var next = GetNextAdditionalFieldStep(ImportField.CardFinish);
-
             GoToStep(next ?? ImportStep.Summary);
-
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Finish mappings processed."));
         }
         public async Task<OperationResult> AfterStep8Action()
         {
             GoToStep(ImportStep.Summary);
             return new OperationResult(OperationResultCode.Success, "Finish mappings processed.");
+        }
+        public async Task<OperationResult> AfterStep9Action()
+        {
+            GoToStep(ImportStep.Finish);
+            return new OperationResult(OperationResultCode.Success, "Finished importing items.");
         }
         public async Task<OperationResult> AfterStep10Action()
         {
@@ -355,6 +376,12 @@ namespace CollectaMundo.ViewModels
             ConditionMappings.Clear();
             FinishMappings.Clear();
             LanguageMappings.Clear();
+
+            // Reset resolved import state
+            ResolvedImportItems = [];
+
+            // Reset summary
+            Summary.Reset();
             _availableFinishes = null;
             _availableLanguages = null;
 
@@ -369,6 +396,50 @@ namespace CollectaMundo.ViewModels
             ImportFailVisibility = Visibility.Collapsed;
 
             return new(OperationResultCode.Success, "Cleanup completed");
+        }
+        private void FinalizeImport()
+        {
+            // 1. Resolve import items via service
+            ResolvedImportItems = _importService.ResolveImportItems(
+                ImportCardList,
+                AdditionalMappings,
+                ConditionMappings,
+                FinishMappings,
+                LanguageMappings);
+
+            // 2. Build UI summary (projection)
+            BuildSummaryFromResolvedItems();
+
+            DebugResolvedImportItems();
+            DebugImportSummary();
+        }
+
+        private void BuildSummaryFromResolvedItems()
+        {
+            Summary.Reset();
+            Summary.TotalImportItems = ResolvedImportItems.Count;
+            Summary.ReadyToImportCount = ResolvedImportItems.Count(i => i.IsImportable);
+            Summary.UnableToImportCount = ResolvedImportItems.Count(i => !i.IsImportable);
+            Summary.TotalCardsToAdd = ResolvedImportItems.Where(i => i.IsImportable).Sum(i => i.CardsOwned);
+            Summary.CardsOwnedMapped = AdditionalMappings.Any(m => m.FieldToMap == ImportField.CardsOwned && !string.IsNullOrWhiteSpace(m.SelectedCsvHeader));
+
+            var indexByKey = ImportCardList.Select((t, index) => new { t.TempItemImportKey, RowNumber = index + 1 }).ToDictionary(x => x.TempItemImportKey, x => x.RowNumber);
+
+            foreach (var item in ResolvedImportItems.Where(i => !i.IsImportable))
+            {
+                var temp = ImportCardList.FirstOrDefault(t => t.TempItemImportKey == item.TempItemImportKey);
+
+                indexByKey.TryGetValue(item.TempItemImportKey, out var rowNumber);
+
+                Summary.UnimportableItems.Add(new UnimportableItem
+                {
+                    TempItemImportKey = item.TempItemImportKey,
+                    CardName = temp?.CsvFields.TryGetValue("Card Name", out var cn) == true ? cn : "Unknown",
+                    SetName = temp?.CsvFields.TryGetValue("Set Name", out var sn) == true ? sn : "Unknown",
+                    SetCode = temp?.CsvFields.TryGetValue("Set Code", out var sc) == true ? sc : "Unknown",
+                    RowNumber = rowNumber // 1-based index in ImportCardList
+                });
+            }
         }
 
         #region Commmands for step actions and cancel
@@ -476,6 +547,72 @@ namespace CollectaMundo.ViewModels
         }
         #endregion
 
+        #region Debug methods
+        private void DebugResolvedImportItems()
+        {
+            Debug.WriteLine("========== RESOLVED IMPORT ITEMS ==========");
+
+            if (ResolvedImportItems == null || ResolvedImportItems.Count == 0)
+            {
+                Debug.WriteLine("No resolved import items.");
+                return;
+            }
+
+            int index = 1;
+
+            foreach (var item in ResolvedImportItems)
+            {
+                Debug.WriteLine($"-- Item #{index++} --");
+                Debug.WriteLine($"TempItemImportKey : {item.TempItemImportKey}");
+                Debug.WriteLine($"IsImportable      : {item.IsImportable}");
+                Debug.WriteLine($"Uuid              : {item.Uuid ?? "<null>"}");
+                Debug.WriteLine($"Condition         : {item.Condition ?? "<null>"}");
+                Debug.WriteLine($"Finish            : {item.Finish ?? "<null>"}");
+                Debug.WriteLine($"Language          : {item.Language ?? "<null>"}");
+                Debug.WriteLine($"CardsOwned        : {item.CardsOwned}");
+                Debug.WriteLine($"CardsForTrade     : {item.CardsForTrade}");
+
+                if (item.Warnings?.Count > 0)
+                {
+                    Debug.WriteLine("Warnings:");
+                    foreach (var warning in item.Warnings)
+                    {
+                        Debug.WriteLine($"  - {warning}");
+                    }
+                }
+                else
+                {
+                    Debug.WriteLine("Warnings: <none>");
+                }
+
+                Debug.WriteLine(string.Empty);
+            }
+        }
+        private void DebugImportSummary()
+        {
+            Debug.WriteLine("========== IMPORT SUMMARY ==========");
+
+            Debug.WriteLine($"TotalImportItems     : {Summary.TotalImportItems}");
+            Debug.WriteLine($"ReadyToImportCount   : {Summary.ReadyToImportCount}");
+            Debug.WriteLine($"UnableToImportCount  : {Summary.UnableToImportCount}");
+            Debug.WriteLine($"TotalCardsToAdd      : {Summary.TotalCardsToAdd}");
+            Debug.WriteLine($"CardsOwnedMapped     : {Summary.CardsOwnedMapped}");
+
+            if (Summary.UnimportableItems.Count == 0)
+            {
+                Debug.WriteLine("No unimportable items.");
+                return;
+            }
+
+            Debug.WriteLine("Unimportable items:");
+
+            foreach (var item in Summary.UnimportableItems)
+            {
+                Debug.WriteLine(
+                    $"Row {item.RowNumber}: {item.CardName} | {item.SetName} | {item.SetCode} " +
+                    $"(Key={item.TempItemImportKey})");
+            }
+        }
         private void DebugAllItems()
         {
             Debug.WriteLine("\n");
@@ -536,5 +673,7 @@ namespace CollectaMundo.ViewModels
 
             Debug.WriteLine("-------------------------");
         }
+
+        #endregion
     }
 }

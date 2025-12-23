@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using System.Windows;
 
-namespace CollectaMundo.ViewModels.ImportSteps
+namespace CollectaMundo.ViewModels.Import.ImportSteps
 {
     public interface IImportStepViewModel
     {

@@ -1,4 +1,4 @@
-﻿using CollectaMundo.DomainLogic.Import.Models.Enums;
+﻿using CollectaMundo.DomainLogic.Import.Models;
 
 namespace CollectaMundo.DomainLogic.Import
 {

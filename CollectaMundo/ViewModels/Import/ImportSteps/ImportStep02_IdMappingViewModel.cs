@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.DomainLogic.Import.Models.Enums;
+using CollectaMundo.ViewModels.Import.ImportSteps;
+using CollectaMundo.ViewModels.Import.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;

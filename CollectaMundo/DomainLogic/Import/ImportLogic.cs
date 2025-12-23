@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.DomainLogic.Import.Models.Enums;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -391,5 +391,117 @@ namespace CollectaMundo.DomainLogic.Import
 
 
         #endregion
+
+        #region Step 9
+        public IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
+        {
+            var uuidHeader = "uuid"; // already normalized earlier
+            var ownedHeader = GetMappedHeader(fieldMappings, ImportField.CardsOwned);
+            var tradeHeader = GetMappedHeader(fieldMappings, ImportField.CardsForTrade);
+            var conditionHeader = GetMappedHeader(fieldMappings, ImportField.Condition);
+            var finishHeader = GetMappedHeader(fieldMappings, ImportField.CardFinish);
+            var languageHeader = GetMappedHeader(fieldMappings, ImportField.Language);
+
+            var resolved = new List<ResolvedImportItem>(items.Count);
+
+            foreach (var item in items)
+            {
+                var warnings = new List<string>();
+
+                // UUID & importability
+                item.CsvFields.TryGetValue(uuidHeader, out var uuid);
+                var isImportable = !string.IsNullOrWhiteSpace(uuid);
+
+                // Quantities
+                var owned = ParseNonNegativeWholeNumberOrDefault(item, ownedHeader, defaultValue: 1, warnings, "CardsOwned");
+                var trade = ParseNonNegativeWholeNumberOrDefault(item, tradeHeader, defaultValue: 0, warnings, "CardsForTrade");
+
+                // Additional fields mapped values
+                var condition = ResolveMappedValue(item, conditionHeader, conditionMappings) ?? "Near Mint";
+                var finish = ResolveMappedValue(item, finishHeader, finishMappings) ?? "nonfoil";
+                var language = ResolveMappedValue(item, languageHeader, languageMappings) ?? "English";
+
+                resolved.Add(new ResolvedImportItem
+                {
+                    TempItemImportKey = item.TempItemImportKey,
+                    IsImportable = isImportable,
+                    Uuid = uuid,
+                    CardsOwned = owned,
+                    CardsForTrade = trade,
+                    Condition = condition,
+                    Finish = finish,
+                    Language = language,
+                    Warnings = warnings
+                });
+            }
+
+            return resolved;
+        }
+        // build summary from ResolveImportItems logic
+        private static string? ResolveMappedValue(TempCardItem item, string? csvHeader, IReadOnlyList<CsvValueMapping> mappings)
+        {
+            if (string.IsNullOrWhiteSpace(csvHeader))
+            {
+                return null;
+            }
+
+            if (!item.CsvFields.TryGetValue(csvHeader, out var raw))
+            {
+                return null;
+            }
+
+            var mapping = mappings.FirstOrDefault(m =>
+                string.Equals(m.CsvValue, raw, StringComparison.OrdinalIgnoreCase));
+
+            return mapping?.SelectedCardSetValue;
+        }
+        private static string? GetMappedHeader(IReadOnlyList<CsvFieldMapping> mappings, ImportField field)
+        {
+            return mappings.FirstOrDefault(m => m.FieldToMap == field)?.SelectedCsvHeader;
+        }
+        private static int ParseNonNegativeWholeNumberOrDefault(TempCardItem item, string? header, int defaultValue, List<string> warnings, string warningContext)
+        {
+            if (string.IsNullOrWhiteSpace(header))
+            {
+                return defaultValue;
+            }
+
+            if (!item.CsvFields.TryGetValue(header, out var raw) ||
+                string.IsNullOrWhiteSpace(raw))
+            {
+                return defaultValue;
+            }
+
+            var trimmed = raw.Trim();
+
+            // Reject multiple separators
+            if (trimmed.Count(c => c == '.' || c == ',') > 1)
+            {
+                warnings.Add($"{warningContext}: invalid number '{raw}', defaulted to {defaultValue}");
+                return defaultValue;
+            }
+
+            var normalized = trimmed.Replace(',', '.');
+
+            if (!decimal.TryParse(
+                    normalized,
+                    NumberStyles.Number,
+                    CultureInfo.InvariantCulture,
+                    out var value))
+            {
+                warnings.Add($"{warningContext}: invalid number '{raw}', defaulted to {defaultValue}");
+                return defaultValue;
+            }
+
+            if (value < 0 || value != decimal.Truncate(value))
+            {
+                warnings.Add($"{warningContext}: non-whole number '{raw}', defaulted to {defaultValue}");
+                return defaultValue;
+            }
+
+            return (int)value;
+        }
+        #endregion
+
     }
 }

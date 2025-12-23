@@ -1,5 +1,5 @@
-﻿using System.Collections.ObjectModel;
-using CollectaMundo.DomainLogic.Import.Models;
+﻿using CollectaMundo.DomainLogic.Import.Models;
+using System.Collections.ObjectModel;
 
 namespace CollectaMundo.DomainLogic.Import
 {
@@ -20,5 +20,8 @@ namespace CollectaMundo.DomainLogic.Import
 
         // Step 4
         ImportMatchSummaryDto ApplySelectedUuids(ObservableCollection<TempCardItem> importCandidates, List<MultipleUuidsItem> userSelections);
+
+        // Step 9
+        IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> fieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings);
     }
 }

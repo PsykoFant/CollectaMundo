@@ -1,7 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.DomainLogic.Import.Models.Enums;
+using CollectaMundo.ViewModels.Import.ImportSteps;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -9,17 +10,16 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
 {
-    public partial class ImportStep07_FinishMappingViewModel : ObservableObject, IImportStepViewModel
+    public partial class ImportStep06_ConditionsMappingViewModel : ObservableObject, IImportStepViewModel
     {
         private readonly ImportViewModel _parent;
 
         // --------------------------------------------
         // Constructor
         // --------------------------------------------
-        public ImportStep07_FinishMappingViewModel(ImportViewModel parent)
+        public ImportStep06_ConditionsMappingViewModel(ImportViewModel parent)
         {
             _parent = parent;
-
             Initialize();
         }
 
@@ -28,17 +28,13 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         private void Initialize()
         {
-            if (FinishMappings.Any())
+            if (ConditionMappings.Any())
             {
                 return;
             }
 
-            _ = InitializeAsync();
-        }
-        private async Task InitializeAsync()
-        {
             var csvHeader = _parent.AdditionalMappings
-                .FirstOrDefault(m => m.FieldToMap == ImportField.CardFinish)
+                .FirstOrDefault(m => m.FieldToMap == ImportField.Condition)
                 ?.SelectedCsvHeader;
 
             if (string.IsNullOrWhiteSpace(csvHeader))
@@ -47,32 +43,24 @@ namespace CollectaMundo.ViewModels.ImportSteps
             }
 
             var csvValues = _parent.ImportCardList
-                .Select(item =>
-                    item.CsvFields.TryGetValue(csvHeader, out var val) ? val?.Trim() : null)
+                .Select(item => item.CsvFields.TryGetValue(csvHeader, out var v) ? v?.Trim() : null)
                 .Where(v => !string.IsNullOrWhiteSpace(v))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
+                .Distinct(StringComparer.OrdinalIgnoreCase);
 
-            if (csvValues.Count == 0)
-            {
-                return;
-            }
-
-            // Lazy, cached, parent-owned async call
-            var availableFinishes = await _parent.GetAvailableFinishesAsync();
+            var allowedValues = new CardSet().Conditions;
 
             foreach (var csvValue in csvValues)
             {
                 var guessed = ImportValueMatcher.MapImportValue(
                     csvValue!,
-                    ImportField.CardFinish,
-                    availableFinishes
-                ) ?? "nonfoil"; // Default to "nonfoil if no match found
+                    ImportField.Condition,
+                    allowedValues
+                ) ?? "Near Mint"; // Default to "Near Mint" if no match found
 
-                FinishMappings.Add(new CsvValueMapping
+                ConditionMappings.Add(new CsvValueMapping
                 {
                     CsvValue = csvValue!,
-                    CardSetValues = [.. availableFinishes],
+                    CardSetValues = [.. allowedValues],
                     SelectedCardSetValue = guessed
                 });
             }
@@ -101,7 +89,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public async Task<OperationResult> OnPrimaryAction()
         {
             StepContentVisibility = Visibility.Collapsed;
-            return await _parent.AfterStep7Action();
+            return await _parent.AfterStep6Action();
         }
 
         // --------------------------------------------
@@ -116,7 +104,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // Mapping Collection
         // --------------------------------------------
-        public ObservableCollection<CsvValueMapping> FinishMappings => _parent.FinishMappings;
+        public ObservableCollection<CsvValueMapping> ConditionMappings => _parent.ConditionMappings;
 
     }
 }

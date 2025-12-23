@@ -265,5 +265,10 @@ namespace CollectaMundo.ApplicationServices.Import
             }
         }
 
+        // Step 9
+        public IReadOnlyList<ResolvedImportItem> ResolveImportItems(IReadOnlyList<TempCardItem> items, IReadOnlyList<CsvFieldMapping> additionalMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
+        {
+            return _importLogic.ResolveImportItems(items, additionalMappings, conditionMappings, finishMappings, languageMappings);
+        }
     }
 }

@@ -10,7 +10,7 @@ using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
-using CollectaMundo.ViewModels.Shared;
+using CollectaMundo.ViewModels.Import;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;

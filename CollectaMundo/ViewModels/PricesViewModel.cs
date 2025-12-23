@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardPrices;
-using CollectaMundo.ViewModels.Shared;
+using CollectaMundo.ViewModels.Import;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;

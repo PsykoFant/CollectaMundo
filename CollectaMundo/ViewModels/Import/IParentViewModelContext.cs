@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace CollectaMundo.ViewModels.Shared
+namespace CollectaMundo.ViewModels.Import
 {
     public interface IParentViewModelContext
     {

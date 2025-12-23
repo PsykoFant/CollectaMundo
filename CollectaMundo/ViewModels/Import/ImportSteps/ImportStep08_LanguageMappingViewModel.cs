@@ -1,7 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.DomainLogic.Import.Models.Enums;
+using CollectaMundo.ViewModels.Import.ImportSteps;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -59,16 +59,11 @@ namespace CollectaMundo.ViewModels.ImportSteps
             var availableLanguages = await _parent.GetAvailableLanguagesAsync();
 
             // Ensure default language is present
-            var languageOptions = availableLanguages.Append("English")
-                .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(l => l).ToList();
+            var languageOptions = availableLanguages.Append("English").Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(l => l).ToList();
 
             foreach (var csvValue in csvValues)
             {
-                var guessed = ImportValueMatcher.MapImportValue(
-                    csvValue!,
-                    ImportField.Language,
-                    languageOptions
-                ) ?? "English"; // Default to "English" if no match found
+                var guessed = ImportValueMatcher.MapImportValue(csvValue!, ImportField.Language, languageOptions) ?? "English"; // Default to "English" if no match found
 
                 LanguageMappings.Add(new CsvValueMapping
                 {

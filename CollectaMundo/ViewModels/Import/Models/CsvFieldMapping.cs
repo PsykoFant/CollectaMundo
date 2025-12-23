@@ -1,5 +1,4 @@
-﻿using CollectaMundo.DomainLogic.Import.Models.Enums;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace CollectaMundo.DomainLogic.Import.Models
 {

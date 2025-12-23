@@ -1,4 +1,4 @@
-﻿namespace CollectaMundo.DomainLogic.Import.Models.Enums
+﻿namespace CollectaMundo.DomainLogic.Import.Models
 {
     public enum ImportField
     {

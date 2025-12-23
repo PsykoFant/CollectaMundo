@@ -2,7 +2,7 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.ViewModels;
-using CollectaMundo.ViewModels.Shared;
+using CollectaMundo.ViewModels.Import;
 using Moq;
 using System.Diagnostics;
 

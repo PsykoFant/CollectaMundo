@@ -1,12 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.DomainLogic.Import.Models.Enums;
+using CollectaMundo.ViewModels.Import.ImportSteps;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels.ImportSteps
@@ -21,23 +17,23 @@ namespace CollectaMundo.ViewModels.ImportSteps
         public ImportStep09_SummaryViewModel(ImportViewModel parent)
         {
             _parent = parent;
-            HookEvents();
+            Initialize();
         }
 
         // --------------------------------------------
-        // Event wiring
+        // Initialization
         // --------------------------------------------
-        private void HookEvents()
+        private void Initialize()
         {
-            // Subscribe to existing items
-            foreach (var m in Mappings)
-            {
-                m.PropertyChanged += Mapping_PropertyChanged;
-            }
 
-            // And subscribe to collection change for future additions/removals
-            Mappings.CollectionChanged += Mappings_CollectionChanged;
+            // build summary here
+
         }
+
+        // Accept whole numbers expressed as integers OR as decimals with a zero fractional part, using either . or , as the decimal separator.
+
+
+
 
         // --------------------------------------------
         // UI Text & Visibility
@@ -53,7 +49,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // Step-level button enablement
         // --------------------------------------------
-        public bool CanExecutePrimaryAction => Mappings.All(m => !string.IsNullOrEmpty(m.SelectedCsvHeader) && !string.IsNullOrEmpty(m.SelectedDatabaseField));
+        public bool CanExecutePrimaryAction => true;
         public bool CanExecuteSecondaryAction => true;
 
         // --------------------------------------------
@@ -61,12 +57,12 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         public async Task<OperationResult> OnPrimaryAction()
         {
-            StepContentVisibility = Visibility.Collapsed;
-            return await _parent.AfterStep2Action();
+            // Proceed with import
+            return await _parent.AfterStep9Action();
         }
         public Task<OperationResult> OnSecondaryAction()
         {
-            _parent.GoToStep(ImportStep.NameAndSetMapping);
+            // Save unimportable items for user review later
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Navigated back"));
         }
 
@@ -83,36 +79,7 @@ namespace CollectaMundo.ViewModels.ImportSteps
         // --------------------------------------------
         // Mapping Collection
         // --------------------------------------------
-        public ObservableCollection<IdColumnMapping> Mappings => _parent.IdMappings;
-        private void Mappings_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            if (e.NewItems != null)
-            {
-                foreach (IdColumnMapping m in e.NewItems)
-                {
-                    m.PropertyChanged += Mapping_PropertyChanged;
-                }
-            }
-
-            if (e.OldItems != null)
-            {
-                foreach (IdColumnMapping m in e.OldItems)
-                {
-                    m.PropertyChanged -= Mapping_PropertyChanged;
-                }
-            }
-
-            OnPropertyChanged(nameof(CanExecutePrimaryAction));
-        }
-        private void Mapping_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            Debug.WriteLine($"[Step2] Mapping property changed: {e.PropertyName}");
-
-            if (e.PropertyName is nameof(IdColumnMapping.SelectedCsvHeader)
-                or nameof(IdColumnMapping.SelectedDatabaseField))
-            {
-                OnPropertyChanged(nameof(CanExecutePrimaryAction));
-            }
-        }
+        public ImportSummary Summary => _parent.Summary;
+        public IReadOnlyList<ResolvedImportItem> ResolvedImportItems => _parent.ResolvedImportItems;
     }
 }
