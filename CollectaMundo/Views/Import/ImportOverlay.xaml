@@ -22,7 +22,6 @@
                    Stretch="None"
                    VerticalAlignment="Top"
                    HorizontalAlignment="Center"
-
                    Margin="0,150,0,0"/>
 
         <ContentControl Content="{Binding CurrentStepViewModel}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
@@ -89,7 +88,5 @@
                 HorizontalAlignment="Left"
                 Margin="10,610,0,0"
                 VerticalAlignment="Top"/>
-        
-
     </Grid>
 </UserControl>

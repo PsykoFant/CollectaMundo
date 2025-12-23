@@ -437,7 +437,56 @@ namespace CollectaMundo.DomainLogic.Import
 
             return resolved;
         }
-        // build summary from ResolveImportItems logic
+        public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings)
+        {
+            var summary = new ImportSummary();
+
+            if (resolvedItems == null || resolvedItems.Count == 0)
+            {
+                return summary;
+            }
+
+            summary.TotalImportItems = resolvedItems.Count;
+
+            // Precompute row numbers (1-based)
+            var rowNumbersByKey = tempItems.Select((item, index) => new { item.TempItemImportKey, RowNumber = index + 1 }).ToDictionary(x => x.TempItemImportKey, x => x.RowNumber);
+
+            // Resolve mapped headers once
+            var cardNameHeader = GetMappedHeader(nameSetMappings, ImportField.CardName);
+            var setNameHeader = GetMappedHeader(nameSetMappings, ImportField.SetName);
+            var setCodeHeader = GetMappedHeader(nameSetMappings, ImportField.SetCode);
+
+            foreach (var item in resolvedItems)
+            {
+                if (item.IsImportable)
+                {
+                    summary.ReadyToImportCount++;
+                    summary.TotalCardsToAdd += item.CardsOwned;
+                    continue;
+                }
+
+                summary.UnableToImportCount++;
+
+                // Try to find original temp item
+                var temp = tempItems.FirstOrDefault(t =>
+                    t.TempItemImportKey == item.TempItemImportKey);
+
+                summary.UnimportableItems.Add(new UnimportableItem
+                {
+                    TempItemImportKey = item.TempItemImportKey,
+                    CardName = GetCsvValue(temp, cardNameHeader),
+                    SetName = GetCsvValue(temp, setNameHeader),
+                    SetCode = GetCsvValue(temp, setCodeHeader),
+                    RowNumber = rowNumbersByKey.TryGetValue(item.TempItemImportKey, out var row)
+                        ? row
+                        : (int?)null
+                });
+            }
+
+            return summary;
+        }
+
+        // Helpers
         private static string? ResolveMappedValue(TempCardItem item, string? csvHeader, IReadOnlyList<CsvValueMapping> mappings)
         {
             if (string.IsNullOrWhiteSpace(csvHeader))
@@ -501,6 +550,18 @@ namespace CollectaMundo.DomainLogic.Import
 
             return (int)value;
         }
+        private static string GetCsvValue(TempCardItem? item, string? header, string fallback = "Unknown")
+        {
+            if (item == null || string.IsNullOrWhiteSpace(header))
+            {
+                return fallback;
+            }
+
+            return item.CsvFields.TryGetValue(header, out var value) && !string.IsNullOrWhiteSpace(value)
+                ? value
+                : fallback;
+        }
+
         #endregion
 
     }

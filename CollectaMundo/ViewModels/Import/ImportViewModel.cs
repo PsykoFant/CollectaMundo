@@ -139,7 +139,7 @@ namespace CollectaMundo.ViewModels.Import
 
         // Objects to hold final resolved an summary data
         public IReadOnlyList<ResolvedImportItem> ResolvedImportItems { get; private set; } = [];
-        public ImportSummary Summary { get; } = new();
+        public ImportSummary Summary { get; private set; } = new();
         #endregion
 
 
@@ -359,10 +359,10 @@ namespace CollectaMundo.ViewModels.Import
             GoToStep(next ?? ImportStep.Summary);
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Finish mappings processed."));
         }
-        public async Task<OperationResult> AfterStep8Action()
+        public Task<OperationResult> AfterStep8Action()
         {
             GoToStep(ImportStep.Summary);
-            return new OperationResult(OperationResultCode.Success, "Finish mappings processed.");
+            return Task.FromResult(new OperationResult(OperationResultCode.Success, "Language mappings processed."));
         }
         public async Task<OperationResult> AfterStep9Action()
         {
@@ -410,9 +410,9 @@ namespace CollectaMundo.ViewModels.Import
                 LanguageMappings);
 
             // 2. Build UI summary (projection)
-            BuildSummaryFromResolvedItems();
+            Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings);
 
-            DebugResolvedImportItems();
+            //DebugResolvedImportItems();
             DebugImportSummary();
         }
 
@@ -436,9 +436,9 @@ namespace CollectaMundo.ViewModels.Import
                 Summary.UnimportableItems.Add(new UnimportableItem
                 {
                     TempItemImportKey = item.TempItemImportKey,
-                    CardName = temp?.CsvFields.TryGetValue("Card Name", out var cn) == true ? cn : "Unknown",
-                    SetName = temp?.CsvFields.TryGetValue("Set Name", out var sn) == true ? sn : "Unknown",
-                    SetCode = temp?.CsvFields.TryGetValue("Set Code", out var sc) == true ? sc : "Unknown",
+                    CardName = temp?.CsvFields.TryGetValue("CardName", out var cn) == true ? cn : "Unknown",
+                    SetName = temp?.CsvFields.TryGetValue("SetName", out var sn) == true ? sn : "Unknown",
+                    SetCode = temp?.CsvFields.TryGetValue("SetCode", out var sc) == true ? sc : "Unknown",
                     RowNumber = rowNumber // 1-based index in ImportCardList
                 });
             }

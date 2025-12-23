@@ -270,5 +270,9 @@ namespace CollectaMundo.ApplicationServices.Import
         {
             return _importLogic.ResolveImportItems(items, additionalMappings, conditionMappings, finishMappings, languageMappings);
         }
+        public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings)
+        {
+            return _importLogic.BuildImportSummary(resolvedItems, tempItems, nameSetMappings);
+        }
     }
 }
