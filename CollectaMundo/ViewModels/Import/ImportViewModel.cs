@@ -18,7 +18,11 @@ namespace CollectaMundo.ViewModels.Import
         private readonly IImportService _importService = importService;
         private readonly IParentViewModelContext _parentViewModelContext = parentContext;
         private readonly IUserPromptService _userPromptService = userPromptService;
-        private ProgressSinks Progress => CreateProgressSinks();
+
+        private ProgressSinks? _progress;
+
+        private ProgressSinks Progress => _progress ??= CreateProgressSinks();
+
         private ProgressSinks CreateProgressSinks() => new()
         {
             Percent = new Progress<int>(v => ProgressValue = v),
@@ -542,7 +546,6 @@ namespace CollectaMundo.ViewModels.Import
         private void ClearProgress()
         {
             Progress.Headline.Report(string.Empty);
-            Progress.Step.Report(string.Empty);
             Progress.Detail.Report(string.Empty);
             Progress.Percent.Report(0);
             Progress.ProgressBarVisible.Report(false);
