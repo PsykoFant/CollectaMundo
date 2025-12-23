@@ -13,19 +13,42 @@
              Style="{StaticResource {x:Type UserControl}}"
              Visibility="{Binding ImportOverlayVisibility}">
 
-    <Grid HorizontalAlignment="Center" VerticalAlignment="Top">
-        <Label Content="{Binding ProgressStep}" Style="{StaticResource MediumHeaderLabelStyle}" />
-        <Label Content="{Binding ProgressHeadline}" Style="{StaticResource BigHeaderLabelStyle}" />
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Headers -->
+            <RowDefinition Height="Auto"/>
+            <!-- Fail image -->
+            <RowDefinition Height="*"/>
+            <!-- Step content -->
+            <RowDefinition Height="Auto"/>
+            <!-- Progress -->
+            <RowDefinition Height="Auto"/>
+            <!-- Buttons -->
+        </Grid.RowDefinitions>
 
-        <Image Source="/Resources/Images/counterspell_fail.png"
-                   Visibility="{Binding ImportFailVisibility}"
-                   Stretch="None"
-                   VerticalAlignment="Top"
-                   HorizontalAlignment="Center"
-                   Margin="0,150,0,0"/>
+        <!-- Headers -->
+        <StackPanel Grid.Row="0"
+                HorizontalAlignment="Center"
+                Margin="0,10,0,10">
+            <Label Content="{Binding ProgressStep}" Style="{StaticResource MediumHeaderLabelStyle}" />
+            <Label Content="{Binding ProgressHeadline}" Style="{StaticResource BigHeaderLabelStyle}" />
+        </StackPanel>
 
-        <ContentControl Content="{Binding CurrentStepViewModel}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-        <ContentControl.Resources>
+        <!-- Fail image -->
+        <Image Grid.Row="1"
+           Source="/Resources/Images/counterspell_fail.png"
+           Visibility="{Binding ImportFailVisibility}"
+           Stretch="None"
+           HorizontalAlignment="Center"
+           Margin="0,10,0,10"/>        
+        
+        <!-- Step content -->
+        <ContentControl Grid.Row="2"
+                        Content="{Binding CurrentStepViewModel}" 
+                        HorizontalAlignment="Stretch" 
+                        VerticalAlignment="Stretch">
+            <ContentControl.Resources>
                 <DataTemplate DataType="{x:Type vmsteps:ImportStep01_StartViewModel}">
                     <views:ImportStep01_StartView />
                 </DataTemplate>
@@ -55,38 +78,58 @@
                 </DataTemplate>
                 <DataTemplate DataType="{x:Type vmsteps:ImportStep10_FinishViewModel}">
                     <views:ImportStep10_FinishView />
-                </DataTemplate>            
+                </DataTemplate>
             </ContentControl.Resources>
         </ContentControl>
 
-        <ProgressBar Value="{Binding ProgressValue}"
+        <!-- Progress bar + message -->
+        <StackPanel Grid.Row="3"
+                Margin="0,10"
+                HorizontalAlignment="Center"
+                Visibility="{Binding ProgressVisibility}">
+
+            <ProgressBar Value="{Binding ProgressValue}"
                      Style="{StaticResource CollectaMundoProgressBarStyle}" 
                      Margin="0,580,0,0"
                      Visibility="{Binding ProgressVisibility}"/>
 
-        <Button Content="{Binding CurrentStepViewModel.PrimaryActionButtonText}"
-                Command="{Binding PrimaryActionCommand}"
-                IsEnabled="{Binding IsPrimaryActionButtonEnabled}"
-                Visibility="{Binding CurrentStepViewModel.PrimaryActionVisibility}"
-                HorizontalAlignment="Center"
-                Margin="0,610,0,0"
-                VerticalAlignment="Top"/>
+            <Label Content="{Binding ProgressDetailMessage}"
+               HorizontalAlignment="Center"
+               Margin="0,5,0,0"/>
+            
+        </StackPanel>
 
-        <Label Content="{Binding ProgressDetailMessage}" HorizontalAlignment="Center" Margin="0,640,0,0" VerticalAlignment="Top"/>
+        <!-- Buttons -->
+        <Grid Grid.Row="4" 
+              Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-        <Button Content="{Binding CurrentStepViewModel.SecondaryActionButtonText}"
-                Command="{Binding SecondaryActionCommand}"
-                IsEnabled="{Binding IsSecondaryActionButtonEnabled}"
-                Visibility="{Binding CurrentStepViewModel.SecondaryActionVisibility}"
-                HorizontalAlignment="Right"
-                Margin="0,610,10,0"
-                VerticalAlignment="Top"/>
-        
-        <Button Content="  Cancel import &#x274C;  "
-                Command="{Binding CancelCommand}"
-                Visibility="{Binding CancelVisibility}"
-                HorizontalAlignment="Left"
-                Margin="10,610,0,0"
-                VerticalAlignment="Top"/>
+            <!-- Cancel -->
+            <Button Grid.Column="0"
+                    Content="  Cancel import &#x274C;  "
+                    Command="{Binding CancelCommand}"
+                    Visibility="{Binding CancelVisibility}"
+                    Margin="0,0,0,100"/>
+
+            <Button Grid.Column="1"
+                    Content="{Binding CurrentStepViewModel.PrimaryActionButtonText}"
+                    Command="{Binding PrimaryActionCommand}"
+                    IsEnabled="{Binding IsPrimaryActionButtonEnabled}"
+                    Visibility="{Binding CurrentStepViewModel.PrimaryActionVisibility}"
+                    HorizontalAlignment="Center"
+                    Margin="0,0,0,100"/>
+
+            <Button Grid.Column="2"
+                    Content="{Binding CurrentStepViewModel.SecondaryActionButtonText}"
+                    Command="{Binding SecondaryActionCommand}"
+                    IsEnabled="{Binding IsSecondaryActionButtonEnabled}"
+                    Visibility="{Binding CurrentStepViewModel.SecondaryActionVisibility}"
+                    HorizontalAlignment="Center" 
+                    Margin="0,0,0,100"/>
+        </Grid>
     </Grid>
 </UserControl>
