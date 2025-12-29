@@ -9,7 +9,13 @@
              d:Style="{StaticResource {x:Type UserControl}}"
              d:DesignHeight="600" d:DesignWidth="800">
     <Grid Visibility="{Binding StepContentVisibility}" HorizontalAlignment="Center">
-        <FlowDocumentScrollViewer Margin="0,30,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" Padding="10">
+        <Grid.RowDefinitions>
+            <!-- Explainer -->
+            <RowDefinition Height="Auto"/>
+            <!-- Listview -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <FlowDocumentScrollViewer Grid.Row="0" VerticalAlignment="Top" HorizontalAlignment="Center">
             <FlowDocument>
                 <Paragraph>
                     Left column are the conditions found in the import file. Please map them to available conditions in the database (latter based on MCM conditions).
@@ -19,7 +25,7 @@
                 </Paragraph>
             </FlowDocument>
         </FlowDocumentScrollViewer>
-        <ListView ItemsSource="{Binding ConditionMappings}" Margin="0,220,0,0" Width="500" HorizontalAlignment="Center" VerticalAlignment="Top">
+        <ListView Grid.Row="1" ItemsSource="{Binding ConditionMappings}" HorizontalAlignment="Center" VerticalAlignment="Top">
             <ListView.View>
                 <GridView>
                     <!-- LEFT COLUMN: CsvValue - just show the string -->

@@ -10,7 +10,13 @@
              d:Style="{StaticResource {x:Type UserControl}}"
              d:DesignHeight="600" d:DesignWidth="800">
     <Grid Visibility="{Binding StepContentVisibility}" HorizontalAlignment="Center">
-        <FlowDocumentScrollViewer Margin="0,30,0,0" VerticalAlignment="Top" HorizontalAlignment="Center" Padding="10">
+        <Grid.RowDefinitions>
+            <!-- Explainer -->
+            <RowDefinition Height="Auto"/>
+            <!-- Listview -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <FlowDocumentScrollViewer Grid.Row="0" VerticalAlignment="Top" HorizontalAlignment="Center">
             <FlowDocument>
                 <Paragraph>
                     Left column are the finishes found in the import file. Please map them to available finishes in the database.
@@ -20,7 +26,7 @@
                 </Paragraph>
             </FlowDocument>
         </FlowDocumentScrollViewer>
-        <ListView ItemsSource="{Binding FinishMappings}" Margin="0,220,0,0" Width="500" HorizontalAlignment="Center" VerticalAlignment="Top">
+        <ListView Grid.Row="1" ItemsSource="{Binding FinishMappings}" HorizontalAlignment="Center" VerticalAlignment="Top">
             <ListView.View>
                 <GridView>
                     <!-- LEFT COLUMN: CsvValue - just show the string -->

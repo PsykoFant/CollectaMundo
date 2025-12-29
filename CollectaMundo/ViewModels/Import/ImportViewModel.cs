@@ -204,7 +204,7 @@ namespace CollectaMundo.ViewModels.Import
                 ImportStep.ConditionMapping => CreateStep(new ImportStep06_ConditionsMappingViewModel(this), "Condition value mapping"),
                 ImportStep.FinishMapping => CreateStep(new ImportStep07_FinishMappingViewModel(this), "Finish value mapping"),
                 ImportStep.LanguageMapping => CreateStep(new ImportStep08_LanguageMappingViewModel(this), "Language value mapping"),
-                ImportStep.Summary => CreateStep(new ImportStep09_SummaryViewModel(this), "Import summary"),
+                ImportStep.Summary => CreateStep(new ImportStep09_SummaryViewModel(this), "Summary and confirmation"),
                 ImportStep.Finish => CreateStep(new ImportStep10_FinishViewModel(this), string.Empty),
                 _ => throw new NotSupportedException($"Unknown import step: {step}")
             };
@@ -382,6 +382,14 @@ namespace CollectaMundo.ViewModels.Import
             ConditionMappings.Clear();
             FinishMappings.Clear();
             LanguageMappings.Clear();
+
+            // Reset card image view model
+            _parentViewModelContext.CardViewSectionVisibility = Visibility.Collapsed;
+            CardImageVM.SelectedCard = null;
+            CardImageVM.FrontImageSource = null;
+            CardImageVM.BackImageSource = null;
+            CardImageVM.ImageSet = string.Empty;
+            CardImageVM.ImagePromoType = string.Empty;
 
             // Reset resolved import state
             ResolvedImportItems = [];

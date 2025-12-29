@@ -1,6 +1,8 @@
 TO DO 
 - MVVM refactor
  - Import brug MVVM
+    - Null billed preview efter cancel...
+    
     - Additional field er mapped men der er ingen values...
     
     

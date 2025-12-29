@@ -9,10 +9,13 @@
              d:Style="{StaticResource {x:Type UserControl}}"
              d:DesignHeight="600" d:DesignWidth="800">
     <Grid HorizontalAlignment="Center">
-        <FlowDocumentScrollViewer Margin="0,30,0,0"
-                          VerticalAlignment="Top"
-                          HorizontalAlignment="Center"
-                          Padding="10">
+        <Grid.RowDefinitions>
+            <!-- Explainer -->
+            <RowDefinition Height="Auto"/>
+            <!-- Datagrid -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <FlowDocumentScrollViewer Grid.Row="0" VerticalAlignment="Top" HorizontalAlignment="Center">
             <FlowDocument>
                 <Paragraph>
                     The Good News: We found some of your imported cards in the card database. The Bad News: We found more than one version of the cards matching by card name + set name and/or set code.
@@ -25,11 +28,10 @@
                 </Paragraph>
             </FlowDocument>
         </FlowDocumentScrollViewer>
-        <DataGrid ItemsSource="{Binding MultipleChoices}"
+        <DataGrid Grid.Row="1" ItemsSource="{Binding MultipleChoices}"
           AutoGenerateColumns="False"
           CanUserAddRows="False"
-          Margin="0,250,0,0"
-          Width="600"
+          Width="550"
           HorizontalAlignment="Center" VerticalAlignment="Top">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Name of card to import"

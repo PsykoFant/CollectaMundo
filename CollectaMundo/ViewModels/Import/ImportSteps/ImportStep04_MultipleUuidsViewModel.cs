@@ -72,7 +72,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                 {
                     if (e.PropertyName == nameof(MultipleUuidsItem.SelectedUuid))
                     {
-                        OnPropertyChanged(nameof(CanExecuteSecondaryAction));
+                        OnPropertyChanged(nameof(CanExecutePrimaryAction));
                     }
                 };
             }
@@ -87,7 +87,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                         {
                             if (e2.PropertyName == nameof(MultipleUuidsItem.SelectedUuid))
                             {
-                                OnPropertyChanged(nameof(CanExecuteSecondaryAction));
+                                OnPropertyChanged(nameof(CanExecutePrimaryAction));
                             }
                         };
                     }
@@ -98,10 +98,10 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         // UI Text & Visibility
         // --------------------------------------------
-        public string PrimaryActionButtonText => string.Empty;
-        public string SecondaryActionButtonText => "  Continue  \u27A1";
-        public Visibility PrimaryActionVisibility => Visibility.Collapsed;
-        public Visibility SecondaryActionVisibility => Visibility.Visible;
+        public string PrimaryActionButtonText => "  Continue  \u27A1";
+        public string SecondaryActionButtonText => string.Empty;
+        public Visibility PrimaryActionVisibility => Visibility.Visible;
+        public Visibility SecondaryActionVisibility => Visibility.Collapsed;
 
         [ObservableProperty]
         private Visibility stepContentVisibility = Visibility.Visible;
@@ -109,14 +109,13 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         // Step-level button enablement
         // --------------------------------------------
-        public bool CanExecutePrimaryAction => false;
-        public bool CanExecuteSecondaryAction => MultipleChoices.All(c => !string.IsNullOrWhiteSpace(c.SelectedUuid));
+        public bool CanExecutePrimaryAction => MultipleChoices.All(c => !string.IsNullOrWhiteSpace(c.SelectedUuid));
+        public bool CanExecuteSecondaryAction => false;
 
         // --------------------------------------------
         // Actions
         // --------------------------------------------
-        public async Task<OperationResult> OnPrimaryAction() => await _parent.AfterStep4Action();
-        public async Task<OperationResult> OnSecondaryAction()
+        public async Task<OperationResult> OnPrimaryAction()
         {
             StepContentVisibility = Visibility.Collapsed;
             return await _parent.AfterStep4Action();
