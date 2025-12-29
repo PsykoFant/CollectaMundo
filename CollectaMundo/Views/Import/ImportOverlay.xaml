@@ -22,105 +22,73 @@
             </Grid.RowDefinitions>
 
         <!-- Headers -->
-        <Border Grid.Row="0" BorderBrush="Red" BorderThickness="1" Margin="0">            
-            <StackPanel Grid.Row="0"
+        <StackPanel Grid.Row="0"
                 HorizontalAlignment="Center"
                 Margin="0,10,0,10">
                 <Label Content="{Binding ProgressStep}" Style="{StaticResource MediumHeaderLabelStyle}" />
                 <Label Content="{Binding ProgressHeadline}" Style="{StaticResource BigHeaderLabelStyle}" />
             </StackPanel>
-        </Border>
 
         <!-- Fail image -->
-        <Border Grid.Row="1" BorderBrush="Orange" BorderThickness="1" Margin="0">            
-            <Image Grid.Row="1"
+        <Image Grid.Row="1"
            Source="/Resources/Images/counterspell_fail.png"
            Visibility="{Binding ImportFailVisibility}"
            Stretch="None"
            HorizontalAlignment="Center"
            Margin="0,10,0,10"/>
-        </Border>
             
         <!-- Step content -->
-        <Border Grid.Row="2" BorderBrush="Blue" BorderThickness="1" Margin="0">
-            <ContentControl Grid.Row="2" Width="550"
-                        Content="{Binding CurrentStepViewModel}">
+        <ContentControl Grid.Row="2" Width="550" Content="{Binding CurrentStepViewModel}">
             <ContentControl.Resources>
-                    <DataTemplate DataType="{x:Type vmsteps:ImportStep01_StartViewModel}">
-                        <views:ImportStep01_StartView />
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type vmsteps:ImportStep02_IdMappingViewModel}">
-                        <views:ImportStep02_IdMappingView />
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type vmsteps:ImportStep03_NameSetMappingViewModel}">
-                        <views:ImportStep03_NameSetMappingView />
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type vmsteps:ImportStep04_MultipleUuidsViewModel}">
-                        <views:ImportStep04_MultipleUuuidsView />
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type vmsteps:ImportStep05_AdditionalFieldsMappingViewModel}">
-                        <views:ImportStep05_AdditionalFieldsMappingView />
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type vmsteps:ImportStep06_ConditionsMappingViewModel}">
-                        <views:ImportStep06_ConditionsMappingView />
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type vmsteps:ImportStep07_FinishMappingViewModel}">
-                        <views:ImportStep07_FinishesMappingView />
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type vmsteps:ImportStep08_LanguageMappingViewModel}">
-                        <views:ImportStep08_LanguagesMappingView />
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type vmsteps:ImportStep09_SummaryViewModel}">
-                        <views:ImportStep09_SummaryView />
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type vmsteps:ImportStep10_FinishViewModel}">
-                        <views:ImportStep10_FinishView />
-                    </DataTemplate>
-                </ContentControl.Resources>
-            </ContentControl>
-        </Border>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep01_StartViewModel}"><views:ImportStep01_StartView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep02_IdMappingViewModel}"><views:ImportStep02_IdMappingView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep03_NameSetMappingViewModel}"><views:ImportStep03_NameSetMappingView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep04_MultipleUuidsViewModel}"><views:ImportStep04_MultipleUuuidsView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep05_AdditionalFieldsMappingViewModel}"><views:ImportStep05_AdditionalFieldsMappingView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep06_ConditionsMappingViewModel}"><views:ImportStep06_ConditionsMappingView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep07_FinishMappingViewModel}"><views:ImportStep07_FinishesMappingView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep08_LanguageMappingViewModel}"><views:ImportStep08_LanguagesMappingView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep09_SummaryViewModel}"><views:ImportStep09_SummaryView /></DataTemplate>
+                <DataTemplate DataType="{x:Type vmsteps:ImportStep10_FinishViewModel}"><views:ImportStep10_FinishView /></DataTemplate>
+            </ContentControl.Resources>
+        </ContentControl>
+
         <!-- Progress bar + message -->
-        <Border Grid.Row="3" BorderBrush="Green" BorderThickness="1" Margin="0">
-            <StackPanel Grid.Row="3" HorizontalAlignment="Center">
-                <ProgressBar Value="{Binding ProgressValue}"
-                     Style="{StaticResource CollectaMundoProgressBarStyle}" 
-                     Visibility="{Binding ProgressVisibility}"/>
+        <StackPanel Grid.Row="3" HorizontalAlignment="Center">
+            <ProgressBar Value="{Binding ProgressValue}" Style="{StaticResource CollectaMundoProgressBarStyle}" Visibility="{Binding ProgressVisibility}"/>
+            <Label Content="{Binding ProgressDetailMessage}" HorizontalAlignment="Center"/>
+        </StackPanel>
+            
+        <!-- Buttons --> 
+        <Grid Grid.Row="4" Width="550">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Cancel -->
+            <Button Grid.Column="0"
+                    Content="  Cancel import &#x274C;  " 
+                    Command="{Binding CancelCommand}" 
+                    Visibility="{Binding CancelVisibility}" 
+                    HorizontalAlignment="Left"/>
 
-                <Label Content="{Binding ProgressDetailMessage}"
-               HorizontalAlignment="Center"/>
-
-            </StackPanel>
-        </Border>
-        <!-- Buttons -->
-        <Border Grid.Row="4" BorderBrush="Purple" BorderThickness="1" Margin="0">
-            <Grid Grid.Row="4" Width="550">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Cancel -->
-                <Button Grid.Column="0"
-                    Content="  Cancel import &#x274C;  "
-                        Command="{Binding CancelCommand}"
-                        Visibility="{Binding CancelVisibility}"
-                        HorizontalAlignment="Left"/>
-
-                <Button Grid.Column="1"
+            <!-- Primary Action -->
+            <Button Grid.Column="1"
                     Content="{Binding CurrentStepViewModel.PrimaryActionButtonText}"
                     Command="{Binding PrimaryActionCommand}"
                     IsEnabled="{Binding IsPrimaryActionButtonEnabled}"
                     Visibility="{Binding CurrentStepViewModel.PrimaryActionVisibility}"
                     HorizontalAlignment="Center"/>
 
-                <Button Grid.Column="2"
+            <!-- Secondary Action -->
+            <Button Grid.Column="2"
                     Content="{Binding CurrentStepViewModel.SecondaryActionButtonText}"
                     Command="{Binding SecondaryActionCommand}"
                     IsEnabled="{Binding IsSecondaryActionButtonEnabled}"
                     Visibility="{Binding CurrentStepViewModel.SecondaryActionVisibility}"
                     HorizontalAlignment="Right"/>
-            </Grid>
-        </Border>
+        </Grid>
     </Grid>
 </UserControl>

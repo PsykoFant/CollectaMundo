@@ -29,16 +29,18 @@
             </FlowDocument>
         </FlowDocumentScrollViewer>
         <DataGrid Grid.Row="1" ItemsSource="{Binding MultipleChoices}"
-          AutoGenerateColumns="False"
-          CanUserAddRows="False"
-          Width="550"
-          HorizontalAlignment="Center" VerticalAlignment="Top">
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  HeadersVisibility="Column"
+                  Width="550"
+                  MaxHeight="300"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Name of card to import"
-                            Binding="{Binding Name}"
-                            Width="*" />
-                <DataGridTemplateColumn Header="Select a version"
-                                Width="*">
+                <DataGridTextColumn Header="Name of card to import" Binding="{Binding Name}" Width="*" />
+                <DataGridTemplateColumn Header="Select a version" Width="*">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <ComboBox ItemsSource="{Binding VersionedUuids}"
