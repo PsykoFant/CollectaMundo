@@ -27,24 +27,14 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         private void Initialize()
         {
-            if (ConditionMappings.Any())
-            {
-                return;
-            }
 
-            var csvHeader = _parent.AdditionalMappings
-                .FirstOrDefault(m => m.FieldToMap == ImportField.Condition)
-                ?.SelectedCsvHeader;
-
-            if (string.IsNullOrWhiteSpace(csvHeader))
-            {
-                return;
-            }
-
-            var csvValues = _parent.ImportCardList
-                .Select(item => item.CsvFields.TryGetValue(csvHeader, out var v) ? v?.Trim() : null)
+            var csvHeader = _parent.AdditionalMappings.First(m => m.FieldToMap == ImportField.Condition).SelectedCsvHeader!;
+            var csvValues = _parent.ImportCardList.Select(item => item.CsvFields.TryGetValue(csvHeader, out var val)
+            ? val?.Trim()
+            : null)
                 .Where(v => !string.IsNullOrWhiteSpace(v))
-                .Distinct(StringComparer.OrdinalIgnoreCase);
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
             var allowedValues = new CardSet().Conditions;
 

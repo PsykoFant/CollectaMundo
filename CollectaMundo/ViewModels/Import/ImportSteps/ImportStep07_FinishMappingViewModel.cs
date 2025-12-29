@@ -18,7 +18,6 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         public ImportStep07_FinishMappingViewModel(ImportViewModel parent)
         {
             _parent = parent;
-
             Initialize();
         }
 
@@ -27,37 +26,18 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         private void Initialize()
         {
-            if (FinishMappings.Any())
-            {
-                return;
-            }
-
             _ = InitializeAsync();
         }
         private async Task InitializeAsync()
         {
-            var csvHeader = _parent.AdditionalMappings
-                .FirstOrDefault(m => m.FieldToMap == ImportField.CardFinish)
-                ?.SelectedCsvHeader;
-
-            if (string.IsNullOrWhiteSpace(csvHeader))
-            {
-                return;
-            }
-
-            var csvValues = _parent.ImportCardList
-                .Select(item =>
-                    item.CsvFields.TryGetValue(csvHeader, out var val) ? val?.Trim() : null)
+            var csvHeader = _parent.AdditionalMappings.First(m => m.FieldToMap == ImportField.CardFinish).SelectedCsvHeader!;
+            var csvValues = _parent.ImportCardList.Select(item => item.CsvFields.TryGetValue(csvHeader, out var val)
+            ? val?.Trim()
+            : null)
                 .Where(v => !string.IsNullOrWhiteSpace(v))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            if (csvValues.Count == 0)
-            {
-                return;
-            }
-
-            // Lazy, cached, parent-owned async call
             var availableFinishes = await _parent.GetAvailableFinishesAsync();
 
             foreach (var csvValue in csvValues)
@@ -66,7 +46,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                     csvValue!,
                     ImportField.CardFinish,
                     availableFinishes
-                ) ?? "nonfoil"; // Default to "nonfoil if no match found
+                ) ?? "nonfoil";
 
                 FinishMappings.Add(new CsvValueMapping
                 {
@@ -76,6 +56,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                 });
             }
         }
+
 
         // --------------------------------------------
         // UI Text & Visibility

@@ -150,37 +150,52 @@ namespace CollectaMundo.ViewModels.Import
         private static readonly ImportField[] _additionalFieldOrder = [ImportField.Condition, ImportField.CardFinish, ImportField.Language];
         private ImportStep? GetNextAdditionalFieldStep(ImportField? after = null)
         {
-            var mappedFields = AdditionalMappings
-                .Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader))
-                .Select(m => m.FieldToMap)
-                .ToHashSet();
+            var mappedFields = AdditionalMappings.Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)).Select(m => m.FieldToMap).ToHashSet();
 
-            var fieldsToConsider = _additionalFieldOrder.AsEnumerable();
+            var fields = after is null
+                ? _additionalFieldOrder
+                : _additionalFieldOrder.SkipWhile(f => f != after).Skip(1);
 
-            if (after is not null)
-            {
-                fieldsToConsider = fieldsToConsider
-                    .SkipWhile(f => f != after)
-                    .Skip(1);
-            }
-
-            foreach (var field in fieldsToConsider)
+            foreach (var field in fields)
             {
                 if (!mappedFields.Contains(field))
                 {
                     continue;
                 }
 
-                return field switch
+                if (!ShouldRunValueMapping(field))
                 {
-                    ImportField.Condition => ImportStep.ConditionMapping,
-                    ImportField.CardFinish => ImportStep.FinishMapping,
-                    ImportField.Language => ImportStep.LanguageMapping,
-                    _ => null
-                };
+                    continue;
+                }
+
+                return ToImportStep(field);
             }
 
             return null;
+
+            // Determine ImportStep from ImportField
+            static ImportStep ToImportStep(ImportField field) => field switch
+            {
+                ImportField.Condition => ImportStep.ConditionMapping,
+                ImportField.CardFinish => ImportStep.FinishMapping,
+                ImportField.Language => ImportStep.LanguageMapping,
+                _ => throw new ArgumentOutOfRangeException(nameof(field), field, null)
+            };
+
+            // Determine if step should be run
+            bool ShouldRunValueMapping(ImportField field)
+            {
+                var csvHeader = AdditionalMappings
+                    .FirstOrDefault(m => m.FieldToMap == field)
+                    ?.SelectedCsvHeader;
+
+                if (string.IsNullOrWhiteSpace(csvHeader))
+                {
+                    return false;
+                }
+
+                return ImportCardList.Select(item => item.CsvFields.TryGetValue(csvHeader, out var val) ? val?.Trim() : null).Any(v => !string.IsNullOrWhiteSpace(v));
+            }
         }
 
         private ImportStep _currentStep = ImportStep.Start;

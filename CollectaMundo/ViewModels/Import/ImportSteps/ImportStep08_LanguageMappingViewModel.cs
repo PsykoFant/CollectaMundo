@@ -26,33 +26,17 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         private void Initialize()
         {
-            if (LanguageMappings.Any())
-            {
-                return;
-            }
-
             _ = InitializeAsync();
         }
         private async Task InitializeAsync()
         {
-            var csvHeader = _parent.AdditionalMappings.FirstOrDefault(m => m.FieldToMap == ImportField.Language)?.SelectedCsvHeader;
-
-            if (string.IsNullOrWhiteSpace(csvHeader))
-            {
-                return;
-            }
-
-            var csvValues = _parent.ImportCardList
-                .Select(item =>
-                    item.CsvFields.TryGetValue(csvHeader, out var val) ? val?.Trim() : null)
+            var csvHeader = _parent.AdditionalMappings.First(m => m.FieldToMap == ImportField.Language).SelectedCsvHeader!;
+            var csvValues = _parent.ImportCardList.Select(item => item.CsvFields.TryGetValue(csvHeader, out var val)
+            ? val?.Trim()
+            : null)
                 .Where(v => !string.IsNullOrWhiteSpace(v))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
-
-            if (csvValues.Count == 0)
-            {
-                return;
-            }
 
             // Lazy, cached, parent-owned async call
             var availableLanguages = await _parent.GetAvailableLanguagesAsync();
