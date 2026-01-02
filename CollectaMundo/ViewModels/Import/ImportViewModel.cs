@@ -141,10 +141,10 @@ namespace CollectaMundo.ViewModels.Import
             return _availableLanguages;
         }
 
-
         // Objects to hold final resolved an summary data
         public IReadOnlyList<ResolvedImportItem> ResolvedImportItems { get; private set; } = [];
         public ImportSummary Summary { get; private set; } = new();
+
         #endregion
 
 
@@ -204,7 +204,11 @@ namespace CollectaMundo.ViewModels.Import
         {
             if (step == ImportStep.Summary)
             {
-                FinalizeImport();
+                // 1. Resolve import items via service
+                ResolvedImportItems = _importService.ResolveImportItems(ImportCardList, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
+
+                // 2. Build UI summary (projection)
+                Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
             }
 
             _currentStep = step;
@@ -338,9 +342,7 @@ namespace CollectaMundo.ViewModels.Import
             _parentViewModelContext.CardViewSectionVisibility = Visibility.Collapsed;
 
             // Pass user choices to service layer
-            var result = await Task.Run(() =>
-                _importService.ApplyUserSelectedUuids(ImportCardList, GetStep4Selections(), Progress)
-            );
+            var result = await Task.Run(() => _importService.ApplyUserSelectedUuids(ImportCardList, GetStep4Selections(), Progress));
 
             if (result.ItemsWithMultipleUuids > 0)
             {
@@ -427,17 +429,32 @@ namespace CollectaMundo.ViewModels.Import
 
             return new(OperationResultCode.Success, "Cleanup completed");
         }
-        private void FinalizeImport()
+
+        public Task<OperationResult> SaveUnimportableItemsAsync()
         {
-            // 1. Resolve import items via service
-            ResolvedImportItems = _importService.ResolveImportItems(ImportCardList, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
+            Debug.WriteLine("=== SaveUnimportableItemsAsync invoked ===");
 
-            // 2. Build UI summary (projection)
-            Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
+            if (Summary.UnableToImportCount == 0)
+            {
+                Debug.WriteLine("No unimportable items to save.");
+                return Task.FromResult(
+                    new OperationResult(OperationResultCode.Success, "No unimportable items."));
+            }
 
-            //DebugResolvedImportItems();
-            DebugImportSummary();
+            foreach (var item in Summary.UnimportableItems)
+            {
+                Debug.WriteLine(
+                    $"Row {item.RowNumber}: {item.CardName} | {item.SetName} | {item.SetCode}");
+            }
+
+            Debug.WriteLine("=== End SaveUnimportableItemsAsync ===");
+
+            return Task.FromResult(
+                new OperationResult(OperationResultCode.Success, "Unimportable items logged."));
         }
+
+
+
 
         #region Commmands for step actions and cancel
         [RelayCommand]

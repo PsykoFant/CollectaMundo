@@ -33,5 +33,4 @@ namespace CollectaMundo.Infrastructure.Shared
             return result == true ? dialog.SelectedPath : null;
         }
     }
-
 }

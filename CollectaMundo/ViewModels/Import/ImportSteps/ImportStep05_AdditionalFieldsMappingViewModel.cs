@@ -34,12 +34,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
             var firstItem = _parent.ImportCardList.FirstOrDefault();
             var csvHeaders = firstItem?.CsvFields.Keys.ToList() ?? [];
 
-            foreach (var field in new[]{
-                ImportField.Condition,
-                ImportField.CardFinish,
-                ImportField.Language,
-                ImportField.CardsOwned,
-                ImportField.CardsForTrade})
+            foreach (var field in new[] { ImportField.Condition, ImportField.CardFinish, ImportField.Language, ImportField.CardsOwned, ImportField.CardsForTrade })
             {
                 AdditionalMappings.Add(new CsvFieldMapping
                 {

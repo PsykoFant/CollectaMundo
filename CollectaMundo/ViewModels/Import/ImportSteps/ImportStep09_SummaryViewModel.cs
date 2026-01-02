@@ -1,8 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.ViewModels.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import.ImportSteps
@@ -17,26 +15,16 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         public ImportStep09_SummaryViewModel(ImportViewModel parent)
         {
             _parent = parent;
-            Initialize();
-        }
-
-        // --------------------------------------------
-        // Initialization
-        // --------------------------------------------
-        private void Initialize()
-        {
-
-            // build summary here
-
         }
 
         // --------------------------------------------
         // UI Text & Visibility
         // --------------------------------------------
-        public string PrimaryActionButtonText => "  Proceed  \u27A1";
-        public string SecondaryActionButtonText => "  Skip  \u23ED";
+        public string PrimaryActionButtonText => "  Start the import...  \u27A1";
+        public string SecondaryActionButtonText => "  Save unrecognized items  \U0001F4BE";
+
         public Visibility PrimaryActionVisibility => Visibility.Visible;
-        public Visibility SecondaryActionVisibility => Visibility.Visible;
+        public Visibility SecondaryActionVisibility => _parent.Summary.UnableToImportCount == 0 ? Visibility.Collapsed : Visibility.Visible;
 
         [ObservableProperty]
         private Visibility stepContentVisibility = Visibility.Visible;
@@ -57,24 +45,13 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         }
         public Task<OperationResult> OnSecondaryAction()
         {
-            // Save unimportable items for user review later
-            return Task.FromResult(new OperationResult(OperationResultCode.Success, "Navigated back"));
+            return _parent.SaveUnimportableItemsAsync();
         }
 
-        // --------------------------------------------
-        // Commands
-        // --------------------------------------------
-        [RelayCommand]
-        private static void ClearSelectedMapping(IdColumnMapping mapping)
-        {
-            mapping.SelectedCsvHeader = null;
-            mapping.SelectedDatabaseField = null;
-        }
 
         // --------------------------------------------
         // Mapping Collection
         // --------------------------------------------
         public ImportSummary Summary => _parent.Summary;
-        public IReadOnlyList<ResolvedImportItem> ResolvedImportItems => _parent.ResolvedImportItems;
     }
 }

@@ -490,34 +490,31 @@ namespace CollectaMundo.DomainLogic.Import
             // -----------------------------
             // Field mappings (Step 5)
             // -----------------------------
-            summary.FieldMappings = additionalFieldMappings
+            summary.FieldMappings = [.. additionalFieldMappings
                 .Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader))
-                .Select(m => new FieldMappingSummary(
-                    m.FieldToMap,
-                    m.SelectedCsvHeader!))
-                .ToList();
+                .Select(m => new FieldMappingSummary(m.FieldToMap,m.SelectedCsvHeader!))];
 
             // -----------------------------
             // Value mappings (Steps 6–8)
             // -----------------------------
             summary.ValueMappings =
-                conditionMappings.Select(m =>
+            [
+                .. conditionMappings.Select(m =>
                     new ValueMappingSummary(
                         ImportField.Condition,
                         m.CsvValue,
-                        m.SelectedCardSetValue))
-                .Concat(finishMappings.Select(m =>
-                    new ValueMappingSummary(
-                        ImportField.CardFinish,
-                        m.CsvValue,
-                        m.SelectedCardSetValue)))
-                .Concat(languageMappings.Select(m =>
-                    new ValueMappingSummary(
-                        ImportField.Language,
-                        m.CsvValue,
-                        m.SelectedCardSetValue)))
-                .ToList();
-
+                        m.SelectedCardSetValue!)),
+                .. finishMappings.Select(m =>
+                new ValueMappingSummary(
+                ImportField.CardFinish,
+                m.CsvValue,
+                m.SelectedCardSetValue!)),
+                .. languageMappings.Select(m =>
+                new ValueMappingSummary(
+                ImportField.Language,
+                m.CsvValue,
+                m.SelectedCardSetValue!)),
+            ];
 
             return summary;
         }
