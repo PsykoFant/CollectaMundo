@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.ViewModels.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Windows;
@@ -28,11 +29,6 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
             // build summary here
 
         }
-
-        // Accept whole numbers expressed as integers OR as decimals with a zero fractional part, using either . or , as the decimal separator.
-
-
-
 
         // --------------------------------------------
         // UI Text & Visibility

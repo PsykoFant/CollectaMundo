@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.ViewModels.Models;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
@@ -146,6 +147,7 @@ namespace CollectaMundo.DomainLogic.Import
 
             return input;
         }
+
         #endregion
 
         #region Step 2
@@ -202,6 +204,7 @@ namespace CollectaMundo.DomainLogic.Import
                 ItemsWithMultipleUuids = matchedMultipleUuids
             };
         }
+
         #endregion
 
         #region Step 3
@@ -437,7 +440,8 @@ namespace CollectaMundo.DomainLogic.Import
 
             return resolved;
         }
-        public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings)
+        public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
+
         {
             var summary = new ImportSummary();
 
@@ -482,6 +486,38 @@ namespace CollectaMundo.DomainLogic.Import
                         : (int?)null
                 });
             }
+
+            // -----------------------------
+            // Field mappings (Step 5)
+            // -----------------------------
+            summary.FieldMappings = additionalFieldMappings
+                .Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader))
+                .Select(m => new FieldMappingSummary(
+                    m.FieldToMap,
+                    m.SelectedCsvHeader!))
+                .ToList();
+
+            // -----------------------------
+            // Value mappings (Steps 6–8)
+            // -----------------------------
+            summary.ValueMappings =
+                conditionMappings.Select(m =>
+                    new ValueMappingSummary(
+                        ImportField.Condition,
+                        m.CsvValue,
+                        m.SelectedCardSetValue))
+                .Concat(finishMappings.Select(m =>
+                    new ValueMappingSummary(
+                        ImportField.CardFinish,
+                        m.CsvValue,
+                        m.SelectedCardSetValue)))
+                .Concat(languageMappings.Select(m =>
+                    new ValueMappingSummary(
+                        ImportField.Language,
+                        m.CsvValue,
+                        m.SelectedCardSetValue)))
+                .ToList();
+
 
             return summary;
         }

@@ -4,6 +4,7 @@ using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.Shared;
+using CollectaMundo.ViewModels.Models;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 
@@ -270,9 +271,9 @@ namespace CollectaMundo.ApplicationServices.Import
         {
             return _importLogic.ResolveImportItems(items, additionalMappings, conditionMappings, finishMappings, languageMappings);
         }
-        public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings)
+        public ImportSummary BuildImportSummary(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> tempItems, IReadOnlyList<CsvFieldMapping> nameSetMappings, IReadOnlyList<CsvFieldMapping> additionalFieldMappings, IReadOnlyList<CsvValueMapping> conditionMappings, IReadOnlyList<CsvValueMapping> finishMappings, IReadOnlyList<CsvValueMapping> languageMappings)
         {
-            return _importLogic.BuildImportSummary(resolvedItems, tempItems, nameSetMappings);
+            return _importLogic.BuildImportSummary(resolvedItems, tempItems, nameSetMappings, additionalFieldMappings, conditionMappings, finishMappings, languageMappings);
         }
     }
 }

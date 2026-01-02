@@ -4,6 +4,7 @@ using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.ViewModels.Import.ImportSteps;
 using CollectaMundo.ViewModels.Import.Models;
+using CollectaMundo.ViewModels.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -429,46 +430,13 @@ namespace CollectaMundo.ViewModels.Import
         private void FinalizeImport()
         {
             // 1. Resolve import items via service
-            ResolvedImportItems = _importService.ResolveImportItems(
-                ImportCardList,
-                AdditionalMappings,
-                ConditionMappings,
-                FinishMappings,
-                LanguageMappings);
+            ResolvedImportItems = _importService.ResolveImportItems(ImportCardList, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
 
             // 2. Build UI summary (projection)
-            Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings);
+            Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
 
             //DebugResolvedImportItems();
             DebugImportSummary();
-        }
-
-        private void BuildSummaryFromResolvedItems()
-        {
-            Summary.Reset();
-            Summary.TotalImportItems = ResolvedImportItems.Count;
-            Summary.ReadyToImportCount = ResolvedImportItems.Count(i => i.IsImportable);
-            Summary.UnableToImportCount = ResolvedImportItems.Count(i => !i.IsImportable);
-            Summary.TotalCardsToAdd = ResolvedImportItems.Where(i => i.IsImportable).Sum(i => i.CardsOwned);
-            Summary.CardsOwnedMapped = AdditionalMappings.Any(m => m.FieldToMap == ImportField.CardsOwned && !string.IsNullOrWhiteSpace(m.SelectedCsvHeader));
-
-            var indexByKey = ImportCardList.Select((t, index) => new { t.TempItemImportKey, RowNumber = index + 1 }).ToDictionary(x => x.TempItemImportKey, x => x.RowNumber);
-
-            foreach (var item in ResolvedImportItems.Where(i => !i.IsImportable))
-            {
-                var temp = ImportCardList.FirstOrDefault(t => t.TempItemImportKey == item.TempItemImportKey);
-
-                indexByKey.TryGetValue(item.TempItemImportKey, out var rowNumber);
-
-                Summary.UnimportableItems.Add(new UnimportableItem
-                {
-                    TempItemImportKey = item.TempItemImportKey,
-                    CardName = temp?.CsvFields.TryGetValue("CardName", out var cn) == true ? cn : "Unknown",
-                    SetName = temp?.CsvFields.TryGetValue("SetName", out var sn) == true ? sn : "Unknown",
-                    SetCode = temp?.CsvFields.TryGetValue("SetCode", out var sc) == true ? sc : "Unknown",
-                    RowNumber = rowNumber // 1-based index in ImportCardList
-                });
-            }
         }
 
         #region Commmands for step actions and cancel

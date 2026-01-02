@@ -11,17 +11,35 @@
              d:DesignWidth="800">
 
     <Grid Visibility="{Binding StepContentVisibility}"
-          HorizontalAlignment="Center"
-          Width="550">
+      HorizontalAlignment="Center"
+      Width="600"
+      Margin="0,20,0,0">
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <!-- Header -->
             <RowDefinition Height="Auto"/>
+            <!-- Totals -->
+            <RowDefinition Height="Auto"/>
+            <!-- Field mappings -->
+            <RowDefinition Height="Auto"/>
+            <!-- Value mappings -->
+            <RowDefinition Height="Auto"/>
+            <!-- Unimportable header -->
             <RowDefinition Height="*"/>
+            <!-- Unimportable table -->
         </Grid.RowDefinitions>
 
-        <!-- Summary counts -->
-        <Grid Grid.Row="0" Margin="0,0,0,20">
+        <!-- ================= HEADER ================= -->
+        <TextBlock Grid.Row="0"
+               Text="Summary and confirmation"
+               FontSize="24"
+               HorizontalAlignment="Center"
+               Margin="0,0,0,20"
+               Style="{StaticResource BelerenBold}" />
+
+        <!-- ================= TOTAL COUNTS ================= -->
+        <Grid Grid.Row="1" Margin="0,0,0,20">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -34,55 +52,102 @@
             </Grid.RowDefinitions>
 
             <TextBlock Grid.Row="0" Grid.Column="0"
-                       Text="Number of individual cards that will be added:"
-                       Style="{StaticResource BelerenBold}" />
-
+                   Text="Number of individual cards that will be added:"
+                   Style="{StaticResource BelerenBold}" />
             <TextBlock Grid.Row="0" Grid.Column="1"
-                       Text="{Binding Summary.ReadyToImportCount}"
-                       Margin="10,0,0,0"/>
+                   Text="{Binding Summary.ReadyToImportCount}"
+                   Margin="10,0,0,0"/>
 
             <TextBlock Grid.Row="1" Grid.Column="0"
-                       Text="Total count of cards added to collection:"
-                       Style="{StaticResource BelerenBold}" />
-
+                   Text="Total count of cards added to collection:"
+                   Style="{StaticResource BelerenBold}" />
             <TextBlock Grid.Row="1" Grid.Column="1"
-                       Text="{Binding Summary.TotalCardsToAdd}"
-                       Margin="10,0,0,0"/>
+                   Text="{Binding Summary.TotalCardsToAdd}"
+                   Margin="10,0,0,0"/>
 
             <TextBlock Grid.Row="2" Grid.Column="0"
-                       Text="Number of cards not possible to import:"
-                       Style="{StaticResource BelerenBold}" />
-
+                   Text="Number of cards not possible to import:"
+                   Style="{StaticResource BelerenBold}" />
             <TextBlock Grid.Row="2" Grid.Column="1"
-                       Text="{Binding Summary.UnableToImportCount}"
-                       Margin="10,0,0,0"/>
+                   Text="{Binding Summary.UnableToImportCount}"
+                   Margin="10,0,0,0"/>
         </Grid>
 
-        <!-- Unimportable header -->
-        <TextBlock Grid.Row="1"
-                   Text="Unable to import the following cards:"
-                   FontSize="16"
-                   Style="{StaticResource BelerenBold}"
-                   Visibility="{Binding Summary.UnableToImportCount, Converter={StaticResource CountToVisibilityConverter}}"
-                   Margin="0,0,0,10"/>
+        <!-- ================= FIELD MAPPINGS ================= -->
+        <GroupBox Grid.Row="2"
+              Header="Field mappings"
+              Margin="0,0,0,15">
+            <ItemsControl ItemsSource="{Binding Summary.FieldMappings}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <TextBlock Text="{Binding Field}"
+                                   FontWeight="Bold"/>
+                            <TextBlock Text=" → " Margin="6,0"/>
+                            <TextBlock Text="{Binding CsvHeader}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </GroupBox>
 
-        <!-- Unimportable items table -->
-        <DataGrid Grid.Row="2"
-                  ItemsSource="{Binding Summary.UnimportableItems}"
+        <!-- ================= VALUE MAPPINGS ================= -->
+        <GroupBox Grid.Row="3"
+              Header="Value mappings"
+              Margin="0,0,0,15">
+            <DataGrid ItemsSource="{Binding Summary.ValueMappings}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   HeadersVisibility="Column"
-                  Visibility="{Binding Summary.UnableToImportCount, Converter={StaticResource CountToVisibilityConverter}}"
-                  Margin="0,10,0,0"
-                  MaxHeight="300"
-                  HorizontalAlignment="Stretch"
-                  VerticalAlignment="Stretch"
-                  ScrollViewer.VerticalScrollBarVisibility="Auto"
-                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                  MaxHeight="200">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Field"
+                                    Binding="{Binding Field}"
+                                    Width="120"/>
+                    <DataGridTextColumn Header="CSV value"
+                                    Binding="{Binding CsvValue}"
+                                    Width="*"/>
+                    <DataGridTextColumn Header="Mapped value"
+                                    Binding="{Binding MappedValue}"
+                                    Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </GroupBox>
+
+        <!-- ================= UNIMPORTABLE HEADER ================= -->
+        <TextBlock Grid.Row="4"
+               Text="Unable to import the following cards:"
+               FontSize="16"
+               Style="{StaticResource BelerenBold}"
+               Visibility="{Binding Summary.UnableToImportCount,
+                                    Converter={StaticResource CountToVisibilityConverter}}"
+               Margin="0,0,0,10"/>
+
+        <!-- ================= UNIMPORTABLE ITEMS TABLE ================= -->
+        <DataGrid Grid.Row="5"
+              ItemsSource="{Binding Summary.UnimportableItems}"
+              AutoGenerateColumns="False"
+              CanUserAddRows="False"
+              HeadersVisibility="Column"
+              Visibility="{Binding Summary.UnableToImportCount,
+                                   Converter={StaticResource CountToVisibilityConverter}}"
+              Margin="0,0,0,0"
+              MaxHeight="300"
+              ScrollViewer.VerticalScrollBarVisibility="Auto">
+
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Card Name" Binding="{Binding CardName}" Width="*"/>
-                <DataGridTextColumn Header="Set Name" Binding="{Binding SetName}" Width="*"/>
-                <DataGridTextColumn Header="Set Code" Binding="{Binding SetCode}" Width="100"/>
+                <DataGridTextColumn Header="Row"
+                                Binding="{Binding RowNumber}"
+                                Width="60"/>
+                <DataGridTextColumn Header="Card Name"
+                                Binding="{Binding CardName}"
+                                Width="*"/>
+                <DataGridTextColumn Header="Set Name"
+                                Binding="{Binding SetName}"
+                                Width="*"/>
+                <DataGridTextColumn Header="Set Code"
+                                Binding="{Binding SetCode}"
+                                Width="100"/>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

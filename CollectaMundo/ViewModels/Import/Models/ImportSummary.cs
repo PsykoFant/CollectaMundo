@@ -1,7 +1,8 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CollectaMundo.DomainLogic.Import.Models;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
 
-namespace CollectaMundo.DomainLogic.Import.Models
+namespace CollectaMundo.ViewModels.Models
 {
     public partial class ImportSummary : ObservableObject
     {
@@ -24,6 +25,11 @@ namespace CollectaMundo.DomainLogic.Import.Models
         // Detail table
         public ObservableCollection<UnimportableItem> UnimportableItems { get; } = [];
 
+        // Field mappings
+        public List<FieldMappingSummary> FieldMappings { get; set; } = [];
+        // Value mappings
+        public List<ValueMappingSummary> ValueMappings { get; set; } = [];
+
         // Convenience for XAML
         public bool HasUnimportableItems => UnableToImportCount > 0;
 
@@ -39,4 +45,7 @@ namespace CollectaMundo.DomainLogic.Import.Models
             UnimportableItems.Clear();
         }
     }
+    public record FieldMappingSummary(ImportField Field, string CsvHeader);
+    public record ValueMappingSummary(ImportField Field, string CsvValue, string MappedValue);
+
 }
