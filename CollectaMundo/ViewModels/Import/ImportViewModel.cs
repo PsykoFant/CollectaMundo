@@ -209,6 +209,9 @@ namespace CollectaMundo.ViewModels.Import
 
                 // 2. Build UI summary (projection)
                 Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
+
+                DebugResolvedImportItems();
+                DebugImportSummary();
             }
 
             _currentStep = step;
@@ -432,28 +435,8 @@ namespace CollectaMundo.ViewModels.Import
 
         public Task<OperationResult> SaveUnimportableItemsAsync()
         {
-            Debug.WriteLine("=== SaveUnimportableItemsAsync invoked ===");
-
-            if (Summary.UnableToImportCount == 0)
-            {
-                Debug.WriteLine("No unimportable items to save.");
-                return Task.FromResult(
-                    new OperationResult(OperationResultCode.Success, "No unimportable items."));
-            }
-
-            foreach (var item in Summary.UnimportableItems)
-            {
-                Debug.WriteLine(
-                    $"Row {item.RowNumber}: {item.CardName} | {item.SetName} | {item.SetCode}");
-            }
-
-            Debug.WriteLine("=== End SaveUnimportableItemsAsync ===");
-
-            return Task.FromResult(
-                new OperationResult(OperationResultCode.Success, "Unimportable items logged."));
+            return _importService.SaveUnimportableItemsAsync(Summary, ResolvedImportItems, ImportCardList);
         }
-
-
 
 
         #region Commmands for step actions and cancel
@@ -486,6 +469,12 @@ namespace CollectaMundo.ViewModels.Import
                 catch (Exception ex)
                 {
                     result = new OperationResult(OperationResultCode.Error, $"Unexpected error in {stepName}: {ex.Message}");
+                }
+
+                if (result.Code == OperationResultCode.NoOp)
+                {
+                    Debug.WriteLine($"{stepName} resulted in NoOp; staying on current step.");
+                    return;
                 }
 
                 if (result.Code != OperationResultCode.Success)

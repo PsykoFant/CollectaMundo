@@ -57,9 +57,9 @@ namespace CollectaMundo.DomainLogic.Import
                 string? line = await reader.ReadLineAsync(cancelToken);
                 currentLine++;
 
-                if (line == null)
+                if (string.IsNullOrWhiteSpace(line))
                 {
-                    continue;
+                    continue; // skip empty CSV rows
                 }
 
                 var values = ParseCsvLine(line, delimiter);
@@ -490,34 +490,107 @@ namespace CollectaMundo.DomainLogic.Import
             // -----------------------------
             // Field mappings (Step 5)
             // -----------------------------
-            summary.FieldMappings = [.. additionalFieldMappings
-                .Where(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader))
-                .Select(m => new FieldMappingSummary(m.FieldToMap,m.SelectedCsvHeader!))];
+            summary.FieldMappings =
+            [
+                .. additionalFieldMappings.Select(m =>
+        !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)
+            ? new FieldMappingSummary(
+                m.FieldToMap,
+                m.SelectedCsvHeader!)
+            : new FieldMappingSummary(
+                m.FieldToMap,
+                $"{GetDefaultValueLabel(m.FieldToMap)} (default value)"))
+            ];
+
 
             // -----------------------------
             // Value mappings (Steps 6–8)
             // -----------------------------
             summary.ValueMappings =
             [
-                .. conditionMappings.Select(m =>
+                // -------- Condition --------
+                .. (conditionMappings.Count > 0
+                ? conditionMappings.Select(m =>
                     new ValueMappingSummary(
                         ImportField.Condition,
                         m.CsvValue,
-                        m.SelectedCardSetValue!)),
-                .. finishMappings.Select(m =>
-                new ValueMappingSummary(
-                ImportField.CardFinish,
-                m.CsvValue,
-                m.SelectedCardSetValue!)),
-                .. languageMappings.Select(m =>
-                new ValueMappingSummary(
-                ImportField.Language,
-                m.CsvValue,
-                m.SelectedCardSetValue!)),
+                        m.SelectedCardSetValue!))
+                : [ new ValueMappingSummary(
+                        ImportField.Condition,
+                        "(any)",
+                        "Near Mint") ]),
+
+                // -------- Card Finish --------
+                .. (finishMappings.Count > 0
+                    ? finishMappings.Select(m =>
+                        new ValueMappingSummary(
+                            ImportField.CardFinish,
+                            m.CsvValue,
+                            m.SelectedCardSetValue!))
+                    : [ new ValueMappingSummary(
+                            ImportField.CardFinish,
+                            "(any)",
+                            "nonfoil") ]),
+
+                // -------- Language --------
+                .. (languageMappings.Count > 0
+                    ? languageMappings.Select(m =>
+                        new ValueMappingSummary(
+                            ImportField.Language,
+                            m.CsvValue,
+                            m.SelectedCardSetValue!))
+                    : [ new ValueMappingSummary(
+                            ImportField.Language,
+                            "(any)",
+                            "English") ]),
             ];
+
 
             return summary;
         }
+        public string BuildUnimportableItemsCsv(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> importItems)
+        {
+            var sb = new StringBuilder();
+
+            // Identify unimportable rows using FINAL import decision
+            var unimportableKeys = resolvedItems
+                .Where(r => !r.IsImportable)
+                .Select(r => r.TempItemImportKey)
+                .ToHashSet();
+
+            var rows = importItems
+                .Where(i => unimportableKeys.Contains(i.TempItemImportKey))
+                .ToList();
+
+            if (rows.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            // Preserve original column order as best as possible
+            var headers = rows
+                .SelectMany(r => r.CsvFields.Keys)
+                .Distinct()
+                .ToList();
+
+            // Header row
+            sb.AppendLine(string.Join(";", headers.Select(ToCsvCell)));
+
+            // Data rows
+            foreach (var row in rows)
+            {
+                var values = headers.Select(h =>
+                    row.CsvFields.TryGetValue(h, out var v)
+                        ? ToCsvCell(v)
+                        : string.Empty);
+
+                sb.AppendLine(string.Join(";", values));
+            }
+
+            return sb.ToString();
+        }
+
+
 
         // Helpers
         private static string? ResolveMappedValue(TempCardItem item, string? csvHeader, IReadOnlyList<CsvValueMapping> mappings)
@@ -594,6 +667,40 @@ namespace CollectaMundo.DomainLogic.Import
                 ? value
                 : fallback;
         }
+        private static string ToCsvCell(string? value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            var needsQuotes =
+                value.Contains(' ') ||
+                value.Contains(';') ||
+                value.Contains('"') ||
+                value.Contains('\n') ||
+                value.Contains('\r');
+
+            if (!needsQuotes)
+            {
+                return value;
+            }
+
+            var escaped = value.Replace("\"", "\"\"");
+            return $"\"{escaped}\"";
+        }
+
+        string GetDefaultValueLabel(ImportField field) => field switch
+        {
+            ImportField.Condition => "Near Mint",
+            ImportField.CardFinish => "nonfoil",
+            ImportField.Language => "English",
+            ImportField.CardsOwned => "1",
+            ImportField.CardsForTrade => "0",
+            _ => "default"
+        };
+
+
 
         #endregion
 

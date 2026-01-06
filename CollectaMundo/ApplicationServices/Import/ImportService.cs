@@ -7,6 +7,8 @@ using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.ViewModels.Models;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
+using System.Text;
 
 namespace CollectaMundo.ApplicationServices.Import
 {
@@ -275,5 +277,45 @@ namespace CollectaMundo.ApplicationServices.Import
         {
             return _importLogic.BuildImportSummary(resolvedItems, tempItems, nameSetMappings, additionalFieldMappings, conditionMappings, finishMappings, languageMappings);
         }
+        public async Task<OperationResult> SaveUnimportableItemsAsync(ImportSummary summary, IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<TempCardItem> importItems)
+        {
+            // Guard: nothing to save
+            if (summary.UnableToImportCount == 0)
+            {
+                return new OperationResult(
+                    OperationResultCode.Success,
+                    "No unimportable items to save.");
+            }
+
+            // Suggest a default filename (user can change both name and location)
+            var defaultFileName = $"unimportable-items-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
+
+            // Ask user where and under what name to save
+            var filePath = _fileSystemPicker.PickSaveFile(title: "Save unimportable items", defaultFileName: defaultFileName, filter: "CSV Files (*.csv)|*.csv");
+
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return new OperationResult(
+                    OperationResultCode.NoOp,
+                    "User cancelled save dialog.");
+            }
+
+            // Build CSV contents using FINAL importability result
+            var content = _importLogic.BuildUnimportableItemsCsv(
+                resolvedItems,
+                importItems);
+
+            // Write file using UTF-8 with BOM (Excel-compatible)
+            var utf8WithBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
+            await File.WriteAllTextAsync(filePath, content, utf8WithBom);
+
+            return new OperationResult(
+                OperationResultCode.Success,
+                $"Saved unimportable items to {filePath}");
+        }
+
+
+
+
     }
 }

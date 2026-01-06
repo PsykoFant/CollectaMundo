@@ -18,7 +18,6 @@ namespace CollectaMundo.Infrastructure.Shared
             var result = dialog.ShowDialog(Application.Current?.MainWindow);
             return result == true ? dialog.FileName : null;
         }
-
         public string? PickFolder(string title, string? initialPath = null)
         {
             var dialog = new VistaFolderBrowserDialog
@@ -31,6 +30,21 @@ namespace CollectaMundo.Infrastructure.Shared
 
             var result = dialog.ShowDialog(Application.Current?.MainWindow);
             return result == true ? dialog.SelectedPath : null;
+        }
+        public string? PickSaveFile(string title, string defaultFileName, string filter)
+        {
+            var dialog = new SaveFileDialog
+            {
+                Title = title,
+                FileName = defaultFileName,
+                Filter = filter,
+                DefaultExt = ".csv",
+                AddExtension = true,
+                OverwritePrompt = true
+            };
+
+            var result = dialog.ShowDialog(Application.Current?.MainWindow);
+            return result == true ? dialog.FileName : null;
         }
     }
 }
