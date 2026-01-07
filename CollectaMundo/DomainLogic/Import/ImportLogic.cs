@@ -492,59 +492,93 @@ namespace CollectaMundo.DomainLogic.Import
             // -----------------------------
             summary.FieldMappings =
             [
-                .. additionalFieldMappings.Select(m =>
-        !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)
-            ? new FieldMappingSummary(
-                m.FieldToMap,
-                m.SelectedCsvHeader!)
-            : new FieldMappingSummary(
-                m.FieldToMap,
-                $"{GetDefaultValueLabel(m.FieldToMap)} (default value)"))
+                .. additionalFieldMappings.Select(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)
+                ? new FieldMappingSummary(m.FieldToMap,m.SelectedCsvHeader!)
+                : new FieldMappingSummary(m.FieldToMap,$"{GetDefaultValueLabel(m.FieldToMap)} (default value)"))
             ];
-
 
             // -----------------------------
             // Value mappings (Steps 6–8)
             // -----------------------------
-            summary.ValueMappings =
-            [
-                // -------- Condition --------
-                .. (conditionMappings.Count > 0
-                ? conditionMappings.Select(m =>
-                    new ValueMappingSummary(
-                        ImportField.Condition,
-                        m.CsvValue,
-                        m.SelectedCardSetValue!))
-                : [ new ValueMappingSummary(
-                        ImportField.Condition,
-                        "(any)",
-                        "Near Mint") ]),
+            var valueMappings = new List<ValueMappingSummary>();
 
-                // -------- Card Finish --------
-                .. (finishMappings.Count > 0
-                    ? finishMappings.Select(m =>
+            // -----------------------------
+            // Condition
+            // -----------------------------
+            if (additionalFieldMappings.Any(m => m.FieldToMap == ImportField.Condition &&
+                                                 !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)))
+            {
+                if (conditionMappings.Count > 0)
+                {
+                    valueMappings.AddRange(
+                        conditionMappings.Select(m =>
+                            new ValueMappingSummary(
+                                ImportField.Condition,
+                                m.CsvValue,
+                                m.SelectedCardSetValue!)));
+                }
+                else
+                {
+                    // Field mapped, but no values → implicit default
+                    valueMappings.Add(
+                        new ValueMappingSummary(
+                            ImportField.Condition,
+                            "(blank)",
+                            "Near Mint"));
+                }
+            }
+
+            // -----------------------------
+            // Card Finish
+            // -----------------------------
+            if (additionalFieldMappings.Any(m => m.FieldToMap == ImportField.CardFinish &&
+                                                 !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)))
+            {
+                if (finishMappings.Count > 0)
+                {
+                    valueMappings.AddRange(
+                        finishMappings.Select(m =>
+                            new ValueMappingSummary(
+                                ImportField.CardFinish,
+                                m.CsvValue,
+                                m.SelectedCardSetValue!)));
+                }
+                else
+                {
+                    valueMappings.Add(
                         new ValueMappingSummary(
                             ImportField.CardFinish,
-                            m.CsvValue,
-                            m.SelectedCardSetValue!))
-                    : [ new ValueMappingSummary(
-                            ImportField.CardFinish,
-                            "(any)",
-                            "nonfoil") ]),
+                            "(blank)",
+                            "nonfoil"));
+                }
+            }
 
-                // -------- Language --------
-                .. (languageMappings.Count > 0
-                    ? languageMappings.Select(m =>
+            // -----------------------------
+            // Language
+            // -----------------------------
+            if (additionalFieldMappings.Any(m => m.FieldToMap == ImportField.Language &&
+                                                 !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)))
+            {
+                if (languageMappings.Count > 0)
+                {
+                    valueMappings.AddRange(
+                        languageMappings.Select(m =>
+                            new ValueMappingSummary(
+                                ImportField.Language,
+                                m.CsvValue,
+                                m.SelectedCardSetValue!)));
+                }
+                else
+                {
+                    valueMappings.Add(
                         new ValueMappingSummary(
                             ImportField.Language,
-                            m.CsvValue,
-                            m.SelectedCardSetValue!))
-                    : [ new ValueMappingSummary(
-                            ImportField.Language,
-                            "(any)",
-                            "English") ]),
-            ];
+                            "(blank)",
+                            "English"));
+                }
+            }
 
+            summary.ValueMappings = valueMappings;
 
             return summary;
         }
@@ -699,8 +733,6 @@ namespace CollectaMundo.DomainLogic.Import
             ImportField.CardsForTrade => "0",
             _ => "default"
         };
-
-
 
         #endregion
 
