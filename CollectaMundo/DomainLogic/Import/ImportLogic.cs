@@ -567,6 +567,36 @@ namespace CollectaMundo.DomainLogic.Import
 
             return sb.ToString();
         }
+        public IReadOnlyList<CollectionUpsertItem> CollapseResolvedItemsForCollection(IReadOnlyList<ResolvedImportItem> resolvedItems)
+        {
+            return resolvedItems
+                .Where(r => r.IsImportable && !string.IsNullOrWhiteSpace(r.Uuid))
+                .Select(r => new
+                {
+                    Uuid = r.Uuid!, // already checked
+                    Language = r.Language ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Language),
+                    Finish = r.Finish ?? CollectionCardItemDefaults.GetDefaultString(ImportField.CardFinish),
+                    Condition = r.Condition ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Condition),
+                    r.CardsOwned,
+                    r.CardsForTrade
+                })
+                .GroupBy(r => new
+                {
+                    r.Uuid,
+                    r.Language,
+                    r.Finish,
+                    r.Condition
+                })
+                .Select(g => new CollectionUpsertItem(
+                    Uuid: g.Key.Uuid,
+                    Language: g.Key.Language,
+                    Finish: g.Key.Finish,
+                    Condition: g.Key.Condition,
+                    CardsOwned: g.Sum(x => x.CardsOwned),
+                    CardsForTrade: g.Sum(x => x.CardsForTrade)
+                ))
+                .ToList();
+        }
 
         // Helpers
         private static string? ResolveMappedValue(TempCardItem item, string? csvHeader, IReadOnlyList<CsvValueMapping> mappings)

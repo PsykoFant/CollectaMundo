@@ -313,30 +313,56 @@ namespace CollectaMundo.ApplicationServices.Import
                 OperationResultCode.Success,
                 $"Saved unimportable items to {filePath}");
         }
-
         public async Task<OperationResult> ImportResolvedItems(IReadOnlyList<ResolvedImportItem> resolvedItems, ProgressSinks progress, CancellationToken token)
         {
-            Debug.WriteLine("[SaveUnimportableItemsAsync] Saving unimportable items ... ");
+            if (resolvedItems == null || resolvedItems.Count == 0)
+            {
+                return new(OperationResultCode.Empty, "No resolved items to import.");
+            }
+
+            progress.Detail.Report("Preparing import items...");
+
+            var collapsed = _importLogic.CollapseResolvedItemsForCollection(resolvedItems);
+
+            if (collapsed.Count == 0)
+            {
+                return new(OperationResultCode.Success, "No importable items found.");
+            }
 
             await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginReadOnlyAsync();
+            await uow.BeginAsync(); // write transaction
+
             try
             {
-                // call to infrastructure to save items
+                token.ThrowIfCancellationRequested();
+
+                progress.Detail.Report("Importing cards to collection...");
+                progress.Percent.Report(0);
+
+                await _importRepo.UpsertMyCollectionAsync(collapsed, uow.CurrentConnection, uow.CurrentTransaction, progress.Percent, token);
+
+
                 await uow.CommitAsync();
+
+                progress.Detail.Report("Import completed.");
+                return new OperationResult(
+                    OperationResultCode.Success,
+                    $"Finished importing {collapsed.Count} unique collection rows.");
             }
-            catch
+            catch (OperationCanceledException)
             {
                 await uow.RollbackAsync();
-                throw;
+                return new(OperationResultCode.CancelledByUser, "Import cancelled by user.");
             }
-            finally
+            catch (Exception ex)
             {
-                await uow.DisposeAsync();
+                await uow.RollbackAsync();
+                return new(OperationResultCode.Error, $"Import failed: {ex.Message}");
             }
-
-            // if everything went well:
-            return new OperationResult(OperationResultCode.Success, $"Finished importing items");
         }
+
+
+
+
     }
 }

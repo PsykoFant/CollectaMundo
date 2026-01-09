@@ -1,4 +1,6 @@
-﻿using System.Data.SQLite;
+﻿using CollectaMundo.DomainLogic.Import.Models;
+using System.Data;
+using System.Data.SQLite;
 using System.Text;
 
 namespace CollectaMundo.Infrastructure.Import
@@ -359,6 +361,82 @@ namespace CollectaMundo.Infrastructure.Import
             }
 
             return result;
+        }
+
+        // Step 9
+        public async Task UpsertMyCollectionAsync(IReadOnlyList<CollectionUpsertItem> items, SQLiteConnection conn, SQLiteTransaction tx, IProgress<int>? percent, CancellationToken token)
+        {
+            ArgumentNullException.ThrowIfNull(items);
+
+            ArgumentNullException.ThrowIfNull(conn);
+
+            ArgumentNullException.ThrowIfNull(tx);
+
+            if (items.Count == 0)
+            {
+                percent?.Report(100);
+                return;
+            }
+
+            // SQLite UPSERT requires a UNIQUE constraint/index on the conflict target:
+            //   (uuid, language, finish, condition)
+            const string sql = @"
+                INSERT INTO myCollection
+                    (uuid, language, finish, condition, cardsOwned, cardsForTrade)
+                VALUES
+                    (@uuid, @language, @finish, @condition, @owned, @trade)
+                ON CONFLICT(uuid, language, finish, condition) DO UPDATE SET
+                    cardsOwned    = cardsOwned + excluded.cardsOwned,
+                    cardsForTrade = cardsForTrade + excluded.cardsForTrade;
+                ";
+
+            // Update progress at a reasonable interval (avoid UI spam)
+            const int reportEvery = 250;
+
+            // Prepared statement with reusable parameters
+            using var cmd = new SQLiteCommand(sql, conn, tx);
+
+            var pUuid = cmd.Parameters.Add("@uuid", DbType.String);
+            var pLanguage = cmd.Parameters.Add("@language", DbType.String);
+            var pFinish = cmd.Parameters.Add("@finish", DbType.String);
+            var pCondition = cmd.Parameters.Add("@condition", DbType.String);
+            var pOwned = cmd.Parameters.Add("@owned", DbType.Int32);
+            var pTrade = cmd.Parameters.Add("@trade", DbType.Int32);
+
+            // Optional: if you expect very high volume, bump command timeout
+            // cmd.CommandTimeout = 60;
+
+            int total = items.Count;
+
+            for (int i = 0; i < total; i++)
+            {
+                token.ThrowIfCancellationRequested();
+
+                var it = items[i];
+
+                // Defensive: your Collapser should already guarantee these are valid
+                // but keep the repo resilient.
+                if (string.IsNullOrWhiteSpace(it.Uuid))
+                {
+                    continue;
+                }
+
+                pUuid.Value = it.Uuid;
+                pLanguage.Value = it.Language;
+                pFinish.Value = it.Finish;
+                pCondition.Value = it.Condition;
+                pOwned.Value = it.CardsOwned;
+                pTrade.Value = it.CardsForTrade;
+
+                await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+
+                // Progress
+                if (percent != null && (i % reportEvery == 0 || i == total - 1))
+                {
+                    int pct = (int)(((i + 1) / (double)total) * 100);
+                    percent.Report(pct);
+                }
+            }
         }
     }
 }
