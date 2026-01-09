@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -40,7 +41,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
 
             // Lazy, cached, parent-owned async call
             var availableLanguages = await _parent.GetAvailableLanguagesAsync();
-            var defaultLanguage = ImportDefaults.GetDefaultString(ImportField.Language);
+            var defaultLanguage = CollectionCardItemDefaults.GetDefaultString(ImportField.Language);
 
             // Ensure default language is present
             var languageOptions = availableLanguages.Append(defaultLanguage).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(l => l).ToList();

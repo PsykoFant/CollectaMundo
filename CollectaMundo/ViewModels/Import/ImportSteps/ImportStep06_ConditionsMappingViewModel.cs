@@ -2,6 +2,7 @@
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -41,7 +42,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                     csvValue!,
                     ImportField.Condition,
                     allowedValues
-                ) ?? ImportDefaults.GetDefaultString(ImportField.Condition); // Default to "Near Mint" if no match found
+                ) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Condition); // Default to "Near Mint" if no match found
 
                 ConditionMappings.Add(new CsvValueMapping
                 {

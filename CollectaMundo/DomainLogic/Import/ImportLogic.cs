@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.ViewModels.Models;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -416,13 +417,13 @@ namespace CollectaMundo.DomainLogic.Import
                 var isImportable = !string.IsNullOrWhiteSpace(uuid);
 
                 // Quantities
-                var owned = ParseNonNegativeWholeNumberOrDefault(item, ownedHeader, defaultValue: ImportDefaults.GetDefaultInt(ImportField.CardsOwned), warnings, "CardsOwned");
-                var trade = ParseNonNegativeWholeNumberOrDefault(item, tradeHeader, defaultValue: ImportDefaults.GetDefaultInt(ImportField.CardsForTrade), warnings, "CardsForTrade");
+                var owned = ParseNonNegativeWholeNumberOrDefault(item, ownedHeader, defaultValue: CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsOwned), warnings, "CardsOwned");
+                var trade = ParseNonNegativeWholeNumberOrDefault(item, tradeHeader, defaultValue: CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsForTrade), warnings, "CardsForTrade");
 
                 // Additional fields mapped values
-                var condition = ResolveMappedValue(item, conditionHeader, conditionMappings) ?? ImportDefaults.GetDefaultString(ImportField.Condition);
-                var finish = ResolveMappedValue(item, finishHeader, finishMappings) ?? ImportDefaults.GetDefaultString(ImportField.CardFinish);
-                var language = ResolveMappedValue(item, languageHeader, languageMappings) ?? ImportDefaults.GetDefaultString(ImportField.Language);
+                var condition = ResolveMappedValue(item, conditionHeader, conditionMappings) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Condition);
+                var finish = ResolveMappedValue(item, finishHeader, finishMappings) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.CardFinish);
+                var language = ResolveMappedValue(item, languageHeader, languageMappings) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Language);
 
                 resolved.Add(new ResolvedImportItem
                 {
@@ -497,7 +498,7 @@ namespace CollectaMundo.DomainLogic.Import
                         ? new FieldMappingSummary(m.FieldToMap, m.SelectedCsvHeader!)
                         : new FieldMappingSummary(
                             m.FieldToMap,
-                            $"{ImportDefaults.GetDefaultDisplayValue(m.FieldToMap)} (default value)")
+                            $"{CollectionCardItemDefaults.GetDefaultDisplayValue(m.FieldToMap)} (default value)")
                 )
             ];
 
@@ -517,7 +518,7 @@ namespace CollectaMundo.DomainLogic.Import
                     return;
                 }
 
-                var defaultValue = ImportDefaults.GetDefaultDisplayValue(field);
+                var defaultValue = CollectionCardItemDefaults.GetDefaultDisplayValue(field);
 
                 valueMappings.AddRange(mappings.Select(m =>
                     {

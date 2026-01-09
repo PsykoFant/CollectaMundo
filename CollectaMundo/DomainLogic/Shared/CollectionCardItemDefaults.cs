@@ -1,9 +1,9 @@
 ﻿using CollectaMundo.DomainLogic.Import.Models;
 using System.Globalization;
 
-namespace CollectaMundo.DomainLogic.Import
+namespace CollectaMundo.DomainLogic.Shared
 {
-    public static class ImportDefaults
+    public static class CollectionCardItemDefaults
     {
         // ---------- String defaults ----------
         public static string GetDefaultString(ImportField field) => field switch
@@ -32,6 +32,5 @@ namespace CollectaMundo.DomainLogic.Import
 
             _ => throw new NotSupportedException($"No default display value defined for {field}")
         };
-
     }
 }

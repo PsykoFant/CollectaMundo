@@ -1,5 +1,7 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
+using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.EditCollection;
 using System.Data.SQLite;
 
@@ -8,6 +10,7 @@ namespace CollectaMundo.DomainLogic.EditCollection
     public class EditCollectionLogic(IEditCollectionRepo repo) : IEditCollectionLogic
     {
         private readonly IEditCollectionRepo _repo = repo;
+        private static readonly string _defaultLanguage = CollectionCardItemDefaults.GetDefaultString(ImportField.Language);
         public async Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit, SQLiteConnection connection)
         {
             var clone = await CloneWithMetadataHelperAsync(selectedCard, connection);
@@ -41,9 +44,9 @@ namespace CollectaMundo.DomainLogic.EditCollection
         private static void ApplyNewDefaults(CardSet clone)
         {
             clone.CardId = null;
-            clone.CardsOwned = 1;
-            clone.CardsForTrade = 0;
-            clone.SelectedCondition = "Near Mint";
+            clone.CardsOwned = CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsOwned);
+            clone.CardsForTrade = CollectionCardItemDefaults.GetDefaultInt(ImportField.CardsForTrade);
+            clone.SelectedCondition = CollectionCardItemDefaults.GetDefaultString(ImportField.Condition);
             clone.SelectedFinish = ChooseDefaultFinish(clone.AvailableFinishes);
 
             // prefer English; else first; else "English"
@@ -74,15 +77,15 @@ namespace CollectaMundo.DomainLogic.EditCollection
         {
             if (langs == null || langs.Count == 0)
             {
-                return "English";
+                return _defaultLanguage;
             }
 
-            var english = langs.FirstOrDefault(l => l.Equals("English", StringComparison.OrdinalIgnoreCase));
+            var english = langs.FirstOrDefault(l => l.Equals(_defaultLanguage, StringComparison.OrdinalIgnoreCase));
             return english ?? langs[0];
         }
         private static List<string> NormalizeLanguages(IEnumerable<string>? langs, string? primary)
         {
-            var list = (langs ?? Enumerable.Empty<string>())
+            var list = (langs ?? [])
                 .Where(s => !string.IsNullOrWhiteSpace(s))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
@@ -96,8 +99,8 @@ namespace CollectaMundo.DomainLogic.EditCollection
 
             // Sort with English first (if present), then primary (if not English), then alphabetical
             list.Sort(StringComparer.OrdinalIgnoreCase);
-            MoveToFront(list, "English");
-            if (!string.Equals(primary, "English", StringComparison.OrdinalIgnoreCase) &&
+            MoveToFront(list, _defaultLanguage);
+            if (!string.Equals(primary, _defaultLanguage, StringComparison.OrdinalIgnoreCase) &&
                 !string.IsNullOrWhiteSpace(primary))
             {
                 MoveToFront(list, primary);
@@ -179,78 +182,70 @@ namespace CollectaMundo.DomainLogic.EditCollection
         }
         private async Task<CardChangeEventArgs> PersistAddedCardsAndReturnChangesAsync(CardSet card, SQLiteConnection connection)
         {
-            // Do we already have a db row?
-            var existingId = await _repo.FindExistingCardReturnIdAsync(card, connection);
-            if (existingId.HasValue)
-            {
-                // update counts in db
-                card.CardId = existingId.Value;
-                await _repo.UpdateCardCountsAsync(card, connection);
+            using var transaction = connection.BeginTransaction();
 
-                // Get new totals
-                int sumOwned;
-                int sumTrade;
-                (sumOwned, sumTrade) = await _repo.GetTotalsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, connection);
-
-                card.CardsOwned = sumOwned;
-                card.CardsForTrade = sumTrade;
-            }
-            else
+            try
             {
-                // Insert and grab the new PK in one shot
-                card.CardId = await _repo.AddCardAndReturnIdAsync(card, connection);
+                // Treat add as an upsert + merge
+                var mergeResult = await _repo.UpdateOrMergeAsync(card, connection, transaction);
+
+                transaction.Commit();
+
+                // Sync in-memory card to DB survivor
+                card.CardId = mergeResult.Survivor.CardId;
+                card.CardsOwned = mergeResult.Survivor.CardsOwned;
+                card.CardsForTrade = mergeResult.Survivor.CardsForTrade;
+                card.SelectedCondition = mergeResult.Survivor.SelectedCondition;
+                card.SelectedFinish = mergeResult.Survivor.SelectedFinish;
+                card.Language = mergeResult.Survivor.Language;
+
+                return new CardChangeEventArgs(card, mergeResult.Removed);
             }
-            return new CardChangeEventArgs(card, []);
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
+
         private async Task<CardChangeEventArgs> PersistEditedCardsAndReturnChangesAsync(CardSet card, SQLiteConnection connection)
         {
-            // 1) Deletion-by-zero?
+            // Deletion-by-zero still valid
             if (card.CardsOwned == 0)
             {
-                // delete in DB
                 await _repo.DeleteCardByIdAsync(card, connection);
 
-                // make sure we have an ID
                 var deletedId = card.CardId
                     ?? throw new InvalidOperationException("Cannot delete a card without an ID");
 
                 return new CardChangeEventArgs(deletedId);
             }
 
-            // Persist edits
-            int keepId;
-            int sumOwned;
-            int sumTrade;
+            using var transaction = connection.BeginTransaction();
 
-            int[] removedIds = [];
-
-            await _repo.UpdateCardAsync(card, connection);
-
-            // Now we check for duplicate values for a merge scenario
-            var allIds = await _repo.FindRecordByIdAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, connection);
-
-            if (allIds.Count > 1)
+            try
             {
-                // pick lowest‐PK as “keeper”
-                allIds.Sort();
-                keepId = allIds[0];
-                removedIds = [.. allIds.Skip(1)];
+                var mergeResult = await _repo.UpdateOrMergeAsync(card, connection, transaction);
 
-                // get the total sums in one shot
-                (sumOwned, sumTrade) = await _repo.GetTotalsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, connection);
+                transaction.Commit();
 
-                // merge in DB
-                await _repo.MergeDuplicateRecordsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, keepId, connection);
+                // Update in-memory card to reflect DB survivor
+                card.CardId = mergeResult.Survivor.CardId;
+                card.CardsOwned = mergeResult.Survivor.CardsOwned;
+                card.CardsForTrade = mergeResult.Survivor.CardsForTrade;
+                card.SelectedCondition = mergeResult.Survivor.SelectedCondition;
+                card.SelectedFinish = mergeResult.Survivor.SelectedFinish;
+                card.Language = mergeResult.Survivor.Language;
 
-                // Build the final in‐memory survivor
-                card.CardsOwned = sumOwned;
-                card.CardsForTrade = sumTrade;
-                card.CardId = keepId;
-
+                return new CardChangeEventArgs(card, mergeResult.Removed);
             }
-
-            // Return upsert event
-            return new CardChangeEventArgs(card, removedIds);
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
+
+
     }
 }

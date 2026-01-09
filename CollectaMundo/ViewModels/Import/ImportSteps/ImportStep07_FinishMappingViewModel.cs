@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
@@ -43,7 +44,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                     csvValue!,
                     ImportField.CardFinish,
                     availableFinishes
-                ) ?? ImportDefaults.GetDefaultString(ImportField.CardFinish);
+                ) ?? CollectionCardItemDefaults.GetDefaultString(ImportField.CardFinish);
 
                 FinishMappings.Add(new CsvValueMapping
                 {
