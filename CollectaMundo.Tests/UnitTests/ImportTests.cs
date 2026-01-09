@@ -32,23 +32,23 @@ namespace CollectaMundo.Tests.UnitTests
         // ------------------------------------------------------------
         private static TempCardItem MakeItemFull(string name, string? setCode = null, string? setName = null)
         {
-            var fields = new Dictionary<string, string>
-            {
-                ["CardName"] = name
-            };
+            var item = new TempCardItem();
+
+            item.CsvFields["CardName"] = name;
 
             if (!string.IsNullOrWhiteSpace(setCode))
             {
-                fields["SetCode"] = setCode;
+                item.CsvFields["SetCode"] = setCode;
             }
 
             if (!string.IsNullOrWhiteSpace(setName))
             {
-                fields["SetName"] = setName;
+                item.CsvFields["SetName"] = setName;
             }
 
-            return new TempCardItem { CsvFields = fields };
+            return item;
         }
+
         private static IReadOnlyList<TempCardItem> MakeItemsFull(params (string Name, string? SetCode, string? SetName)[] items)
         {
             return [.. items.Select(i => MakeItemFull(i.Name, i.SetCode, i.SetName))];
@@ -73,7 +73,7 @@ namespace CollectaMundo.Tests.UnitTests
                 // Card Name mapping (always required)
                 new()
                 {
-                    FieldToMap = "CardName",
+                    FieldToMap = ImportField.CardName,
                     SelectedCsvHeader = "CardName",
                     CsvHeaders = headers
                 },
@@ -81,7 +81,7 @@ namespace CollectaMundo.Tests.UnitTests
                 // Set Code mapping (optional)
                 new()
                 {
-                    FieldToMap = "SetCode",
+                    FieldToMap = ImportField.SetCode,
                     SelectedCsvHeader = includeSetCode ? "SetCode" : null,
                     CsvHeaders = headers
                 },
@@ -89,7 +89,7 @@ namespace CollectaMundo.Tests.UnitTests
                 // Set Name mapping (optional)
                 new()
                 {
-                    FieldToMap = "SetName",
+                    FieldToMap = ImportField.SetName,
                     SelectedCsvHeader = includeSetName ? "SetName" : null,
                     CsvHeaders = headers
                 }
@@ -564,7 +564,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             Assert.True(jj.CsvFields.ContainsKey("uuid"), "Jan Jansen must have single uuid.");
             Assert.False(jj.CsvFields.ContainsKey("uuids"), "Jan Jansen must not have multi uuid list.");
-            Assert.False(string.IsNullOrWhiteSpace(jj.Fields["uuid"]));
+            Assert.False(string.IsNullOrWhiteSpace(jj.CsvFields["uuid"]));
         }
 
     }

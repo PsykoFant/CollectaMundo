@@ -4,6 +4,7 @@ using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.EditCollection;
 using System.Data.SQLite;
+using System.Diagnostics;
 
 namespace CollectaMundo.DomainLogic.EditCollection
 {
@@ -183,21 +184,24 @@ namespace CollectaMundo.DomainLogic.EditCollection
         private async Task<CardChangeEventArgs> PersistAddedCardsAndReturnChangesAsync(CardSet card, SQLiteConnection connection)
         {
             using var transaction = connection.BeginTransaction();
-
             try
             {
                 // Treat add as an upsert + merge
-                var mergeResult = await _repo.UpdateOrMergeAsync(card, connection, transaction);
+                var mergeResult = await UpdateOrMergeCardAsync(card, connection);
 
                 transaction.Commit();
 
                 // Sync in-memory card to DB survivor
-                card.CardId = mergeResult.Survivor.CardId;
-                card.CardsOwned = mergeResult.Survivor.CardsOwned;
-                card.CardsForTrade = mergeResult.Survivor.CardsForTrade;
-                card.SelectedCondition = mergeResult.Survivor.SelectedCondition;
-                card.SelectedFinish = mergeResult.Survivor.SelectedFinish;
-                card.Language = mergeResult.Survivor.Language;
+                Debug.Assert(mergeResult.Survivor is not null, "Survivor should never be null for Add flow.");
+                var survivor = mergeResult.Survivor!;
+
+                card.CardId = survivor.CardId;
+                card.CardsOwned = survivor.CardsOwned;
+                card.CardsForTrade = survivor.CardsForTrade;
+                card.SelectedCondition = survivor.SelectedCondition;
+                card.SelectedFinish = survivor.SelectedFinish;
+                card.Language = survivor.Language;
+
 
                 return new CardChangeEventArgs(card, mergeResult.Removed);
             }
@@ -207,7 +211,6 @@ namespace CollectaMundo.DomainLogic.EditCollection
                 throw;
             }
         }
-
         private async Task<CardChangeEventArgs> PersistEditedCardsAndReturnChangesAsync(CardSet card, SQLiteConnection connection)
         {
             // Deletion-by-zero still valid
@@ -225,11 +228,15 @@ namespace CollectaMundo.DomainLogic.EditCollection
 
             try
             {
-                var mergeResult = await _repo.UpdateOrMergeAsync(card, connection, transaction);
+                var mergeResult = await UpdateOrMergeCardAsync(card, connection);
 
                 transaction.Commit();
 
                 // Update in-memory card to reflect DB survivor
+                // Sync in-memory card to DB survivor
+                Debug.Assert(mergeResult.Survivor is not null, "Survivor should never be null for Add flow.");
+                var survivor = mergeResult.Survivor!;
+
                 card.CardId = mergeResult.Survivor.CardId;
                 card.CardsOwned = mergeResult.Survivor.CardsOwned;
                 card.CardsForTrade = mergeResult.Survivor.CardsForTrade;
@@ -245,7 +252,64 @@ namespace CollectaMundo.DomainLogic.EditCollection
                 throw;
             }
         }
+        private async Task<CardChangeEventArgs> UpdateOrMergeCardAsync(CardSet card, SQLiteConnection conn)
+        {
+            // Handle delete-by-zero
+            if (card.CardsOwned == 0)
+            {
+                await _repo.DeleteCardByIdAsync(card, conn);
+                return new CardChangeEventArgs(card.CardId ?? throw new InvalidOperationException("Cannot delete card without ID"));
+            }
 
+            // 1. Find rows that would match this card *after* change
+            var matchIds = await _repo.FindRecordByIdAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn) ?? [];
 
+            // -----------------------------
+            // CASE 1: Pure INSERT (no matches)
+            // -----------------------------
+            if (matchIds.Count == 0)
+            {
+                var newId = await _repo.AddCardAndReturnIdAsync(card, conn);
+
+                card.CardId = newId;
+                return new CardChangeEventArgs(card);
+            }
+
+            // -----------------------------
+            // CASE 2: Merge with existing row(s)
+            // -----------------------------
+
+            // Make sure current card is included
+            if (card.CardId.HasValue && !matchIds.Contains(card.CardId.Value))
+            {
+                matchIds.Add(card.CardId.Value);
+            }
+
+            matchIds.Sort();
+
+            var keepId = matchIds[0];
+            var removedIds = matchIds.Skip(1).ToList();
+
+            var (existingOwned, existingTrade) = await _repo.GetTotalsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn);
+
+            var sumOwned = existingOwned + card.CardsOwned;
+            var sumTrade = existingTrade + card.CardsForTrade;
+
+            // Delete duplicates
+            if (removedIds.Count > 0)
+            {
+                await _repo.DeleteCardsByIdsAsync(removedIds, conn);
+            }
+
+            // Update survivor
+            await _repo.UpdateCardFieldsByIdAsync(keepId, sumOwned, sumTrade, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn);
+
+            // Update in-memory state
+            card.CardId = keepId;
+            card.CardsOwned = sumOwned;
+            card.CardsForTrade = sumTrade;
+
+            return new CardChangeEventArgs(card, removedIds);
+        }
     }
 }

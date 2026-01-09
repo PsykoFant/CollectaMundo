@@ -13,14 +13,19 @@ namespace CollectaMundo.Tests.UnitTests
         public async Task SaveBatchAsync_AddNewCard_WhenNotExisting()
         {
             var repo = new Mock<IEditCollectionRepo>();
-            var dummyConn = new SQLiteConnection();
+            var dummyConn = new SQLiteConnection("Data Source=:memory:");
+            dummyConn.Open();
 
-            // When we ask “find existing?”, return “no”
-            repo.Setup(r => r.FindExistingCardReturnIdAsync(It.IsAny<CardSet>(), It.IsAny<SQLiteConnection>())).ReturnsAsync((int?)null);
+            // This simulates: no existing record matches this card
+            repo.Setup(r => r.FindRecordByIdAsync(
+                "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn))
+                .ReturnsAsync(new List<int>()); // Pure insert
 
-
-            // When we add, return card id 123
-            repo.Setup(r => r.AddCardAndReturnIdAsync(It.IsAny<CardSet>(), It.IsAny<SQLiteConnection>())).ReturnsAsync(123);
+            // When inserting, return card ID 123
+            repo.Setup(r => r.AddCardAndReturnIdAsync(
+                It.Is<CardSet>(c => c.Uuid == "foo-uuid"),
+                dummyConn))
+                .ReturnsAsync(123);
 
             var logic = new EditCollectionLogic(repo.Object);
 
@@ -41,33 +46,51 @@ namespace CollectaMundo.Tests.UnitTests
             var evt = Assert.Single(results);
             Assert.Equal(CardChangeEventArgs.ChangeType.Upsert, evt.Type);
             Assert.NotNull(evt.Survivor);
-            Assert.Equal(123, evt.Survivor.CardId);
-            Assert.Equal("foo-uuid", evt.Survivor.Uuid);
-            Assert.Equal("Near Mint", evt.Survivor.SelectedCondition);
-            Assert.Equal("nonfoil", evt.Survivor.SelectedFinish);
-            Assert.Equal("German", evt.Survivor.Language);
-            Assert.Equal(2, evt.Survivor.CardsOwned);
-            Assert.Equal(1, evt.Survivor.CardsForTrade);
 
-            // verify repo was called
-            repo.Verify(r => r.AddCardAndReturnIdAsync(newCard, dummyConn), Times.Once);
+            var survivor = evt.Survivor!;
+            Assert.Equal(123, survivor.CardId);
+            Assert.Equal("foo-uuid", survivor.Uuid);
+            Assert.Equal("Near Mint", survivor.SelectedCondition);
+            Assert.Equal("nonfoil", survivor.SelectedFinish);
+            Assert.Equal("German", survivor.Language);
+            Assert.Equal(2, survivor.CardsOwned);
+            Assert.Equal(1, survivor.CardsForTrade);
+
+            // Verify repo methods called correctly
+            repo.Verify(r => r.FindRecordByIdAsync(
+                "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn), Times.Once);
+
+            repo.Verify(r => r.AddCardAndReturnIdAsync(
+                It.Is<CardSet>(c =>
+                    c.Uuid == "foo-uuid" &&
+                    c.SelectedCondition == "Near Mint" &&
+                    c.SelectedFinish == "nonfoil" &&
+                    c.Language == "German" &&
+                    c.CardsOwned == 2 &&
+                    c.CardsForTrade == 1),
+                dummyConn), Times.Once);
         }
+
         [Fact]
         public async Task SaveBatchAsync_AddNewCard_AddToExisting()
         {
             var repo = new Mock<IEditCollectionRepo>();
-            var dummyConn = new SQLiteConnection();
+            var dummyConn = new SQLiteConnection("Data Source=:memory:");
+            dummyConn.Open();
 
-            // When we ask “find existing?”, return card id 123
-            repo.Setup(r => r.FindExistingCardReturnIdAsync(It.IsAny<CardSet>(), It.IsAny<SQLiteConnection>())).ReturnsAsync(123);
+            repo.Setup(r => r.FindRecordByIdAsync("foo-uuid", "Near Mint", "German", "nonfoil", dummyConn)).ReturnsAsync([123]);
 
+            // Existing totals in DB
+            repo.Setup(r => r.GetTotalsAsync("foo-uuid", "Near Mint", "German", "nonfoil", dummyConn)).ReturnsAsync((6, 4));
 
-            // No-op
-            repo.Setup(r => r.UpdateCardCountsAsync(It.IsAny<CardSet>(), It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
-
-
-            // Return somewhat arbitrary owned/trade counts
-            repo.Setup(r => r.GetTotalsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SQLiteConnection>())).ReturnsAsync((6, 4));
+            // New logic updates survivor row
+            repo.Setup(r => r.UpdateCardFieldsByIdAsync(
+                    123,
+                    8, // 6 + 2
+                    5, // 4 + 1
+                    "Near Mint", "German", "nonfoil",
+                    dummyConn))
+                .Returns(Task.CompletedTask);
 
             var logic = new EditCollectionLogic(repo.Object);
 
@@ -89,17 +112,24 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(CardChangeEventArgs.ChangeType.Upsert, evt.Type);
             Assert.NotNull(evt.Survivor);
             Assert.Equal(123, evt.Survivor.CardId);
-            Assert.Equal("foo-uuid", evt.Survivor.Uuid);
-            Assert.Equal("Near Mint", evt.Survivor.SelectedCondition);
-            Assert.Equal("nonfoil", evt.Survivor.SelectedFinish);
-            Assert.Equal("German", evt.Survivor.Language);
-            Assert.Equal(6, evt.Survivor.CardsOwned);
-            Assert.Equal(4, evt.Survivor.CardsForTrade);
 
-            // verify repo was called
-            repo.Verify(r => r.UpdateCardCountsAsync(newCard, dummyConn), Times.Once);
-            repo.Verify(r => r.GetTotalsAsync(newCard.Uuid, newCard.SelectedCondition, newCard.Language, newCard.SelectedFinish, dummyConn), Times.Once);
+            // IMPORTANT: totals should include incoming card
+            Assert.Equal(8, evt.Survivor.CardsOwned);    // 6 + 2
+            Assert.Equal(5, evt.Survivor.CardsForTrade); // 4 + 1
 
+            repo.Verify(r => r.FindRecordByIdAsync(
+                "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn),
+                Times.Once);
+
+            repo.Verify(r => r.GetTotalsAsync(
+                "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn),
+                Times.Once);
+
+            repo.Verify(r => r.UpdateCardFieldsByIdAsync(
+                123, 8, 5,
+                "Near Mint", "German", "nonfoil",
+                dummyConn),
+                Times.Once);
         }
 
         [Fact]
@@ -139,13 +169,27 @@ namespace CollectaMundo.Tests.UnitTests
         public async Task SaveBatchAsync_EditCard_Update_no_merge()
         {
             var repo = new Mock<IEditCollectionRepo>();
-            var dummyConn = new SQLiteConnection();
 
-            // Mock update
-            repo.Setup(r => r.UpdateCardCountsAsync(It.IsAny<CardSet>(), It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
+            // IMPORTANT: connection must be OPEN, because logic begins a transaction
+            var dummyConn = new SQLiteConnection("Data Source=:memory:");
+            dummyConn.Open();
 
-            // Return a single id
-            repo.Setup(r => r.FindRecordByIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SQLiteConnection>())).ReturnsAsync([123]);
+            // Arrange: Return single existing match (no merge)
+            repo.Setup(r => r.FindRecordByIdAsync(
+                    "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn))
+                .ReturnsAsync(new List<int> { 123 });
+
+            // Arrange: Simulate totals already in DB (0,0 means only this card contributes)
+            repo.Setup(r => r.GetTotalsAsync(
+                    "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn))
+                .ReturnsAsync((0, 0));
+
+            // Arrange: Expect survivor row update
+            repo.Setup(r => r.UpdateCardFieldsByIdAsync(
+                    123, 3, 1,
+                    "Near Mint", "German", "nonfoil",
+                    dummyConn))
+                .Returns(Task.CompletedTask);
 
             var logic = new EditCollectionLogic(repo.Object);
 
@@ -163,40 +207,70 @@ namespace CollectaMundo.Tests.UnitTests
             // Act
             var results = await logic.SaveBatchAsync([newCard], isEdit: true, dummyConn);
 
-            // Assert
+            // Assert: business logic
             var evt = Assert.Single(results);
             Assert.Equal(CardChangeEventArgs.ChangeType.Upsert, evt.Type);
             Assert.NotNull(evt.Survivor);
-            Assert.Equal(123, evt.Survivor.CardId);
-            Assert.Equal("foo-uuid", evt.Survivor.Uuid);
-            Assert.Equal("Near Mint", evt.Survivor.SelectedCondition);
-            Assert.Equal("nonfoil", evt.Survivor.SelectedFinish);
-            Assert.Equal("German", evt.Survivor.Language);
-            Assert.Equal(3, evt.Survivor.CardsOwned);
-            Assert.Equal(1, evt.Survivor.CardsForTrade);
 
-            // verify repo was called
-            repo.Verify(r => r.UpdateCardAsync(newCard, dummyConn), Times.Once);
+            var survivor = evt.Survivor!;
+            Assert.Equal(123, survivor.CardId);
+            Assert.Equal("foo-uuid", survivor.Uuid);
+            Assert.Equal("Near Mint", survivor.SelectedCondition);
+            Assert.Equal("nonfoil", survivor.SelectedFinish);
+            Assert.Equal("German", survivor.Language);
+            Assert.Equal(3, survivor.CardsOwned);
+            Assert.Equal(1, survivor.CardsForTrade);
 
-            // verify this was NOT called
-            repo.Verify(r => r.MergeDuplicateRecordsAsync(newCard.Uuid, newCard.SelectedCondition, newCard.Language, newCard.SelectedFinish, 123, dummyConn), Times.Never);
+            // Verify: correct repo interaction (no merge = no delete call)
+            repo.Verify(r => r.FindRecordByIdAsync(
+                "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn), Times.Once);
+
+            repo.Verify(r => r.GetTotalsAsync(
+                "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn), Times.Once);
+
+            repo.Verify(r => r.UpdateCardFieldsByIdAsync(
+                123, 3, 1,
+                "Near Mint", "German", "nonfoil",
+                dummyConn), Times.Once);
+
+            repo.Verify(r => r.DeleteCardsByIdsAsync(
+                It.IsAny<IEnumerable<int>>(),
+                It.IsAny<SQLiteConnection>()), Times.Never);
         }
 
         [Fact]
         public async Task SaveBatchAsync_EditCard_Update_merge()
         {
             var repo = new Mock<IEditCollectionRepo>();
-            var dummyConn = new SQLiteConnection();
 
-            // Mock update
-            repo.Setup(r => r.UpdateCardCountsAsync(It.IsAny<CardSet>(), It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
+            // IMPORTANT: must be OPEN because logic begins a transaction
+            var dummyConn = new SQLiteConnection("Data Source=:memory:");
+            dummyConn.Open();
 
-            // Return multiple ids
-            repo.Setup(r => r.FindRecordByIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SQLiteConnection>())).ReturnsAsync([123, 456, 789]);
+            // Simulate finding multiple matches for the business key
+            repo.Setup(r => r.FindRecordByIdAsync(
+                    "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn))
+                .ReturnsAsync(new List<int> { 123, 456, 789 });
 
-            // Return somewhat arbitrary owned/trade counts
-            repo.Setup(r => r.GetTotalsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SQLiteConnection>())).ReturnsAsync((6, 4));
+            // Return existing totals before applying this edit
+            repo.Setup(r => r.GetTotalsAsync(
+                    "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn))
+                .ReturnsAsync((6, 4));
 
+            // Expect update of survivor row (keepId=123) with combined totals
+            repo.Setup(r => r.UpdateCardFieldsByIdAsync(
+                    123,
+                    9,  // 6 + 3
+                    5,  // 4 + 1
+                    "Near Mint", "German", "nonfoil",
+                    dummyConn))
+                .Returns(Task.CompletedTask);
+
+            // Expect deletion of duplicates
+            repo.Setup(r => r.DeleteCardsByIdsAsync(
+                    It.Is<IEnumerable<int>>(ids => ids.SequenceEqual(new[] { 456, 789 })),
+                    dummyConn))
+                .Returns(Task.CompletedTask);
 
             var logic = new EditCollectionLogic(repo.Object);
 
@@ -214,24 +288,36 @@ namespace CollectaMundo.Tests.UnitTests
             // Act
             var results = await logic.SaveBatchAsync([newCard], isEdit: true, dummyConn);
 
-            // Assert
+            // Assert - business logic
             var evt = Assert.Single(results);
             Assert.Equal(CardChangeEventArgs.ChangeType.Upsert, evt.Type);
             Assert.NotNull(evt.Survivor);
-            Assert.Equal(123, evt.Survivor.CardId);
-            Assert.Equal("foo-uuid", evt.Survivor.Uuid);
-            Assert.Equal("Near Mint", evt.Survivor.SelectedCondition);
-            Assert.Equal("nonfoil", evt.Survivor.SelectedFinish);
-            Assert.Equal("German", evt.Survivor.Language);
-            Assert.Equal(6, evt.Survivor.CardsOwned);
-            Assert.Equal(4, evt.Survivor.CardsForTrade);
-            Assert.Equal([456, 789], evt.Removed);
 
-            // verify repo was called
-            repo.Verify(r => r.UpdateCardAsync(newCard, dummyConn), Times.Once);
+            var survivor = evt.Survivor!;
+            Assert.Equal(123, survivor.CardId);
+            Assert.Equal("foo-uuid", survivor.Uuid);
+            Assert.Equal("Near Mint", survivor.SelectedCondition);
+            Assert.Equal("nonfoil", survivor.SelectedFinish);
+            Assert.Equal("German", survivor.Language);
+            Assert.Equal(9, survivor.CardsOwned);     // 6 + 3
+            Assert.Equal(5, survivor.CardsForTrade);  // 4 + 1
 
-            // verify this was NOT called
-            repo.Verify(r => r.MergeDuplicateRecordsAsync(newCard.Uuid, newCard.SelectedCondition, newCard.Language, newCard.SelectedFinish, 123, dummyConn), Times.Once);
+            // Removed IDs should be the non-survivors
+            Assert.True(evt.Removed.SequenceEqual(new[] { 456, 789 }));
+
+            // Verify repo interactions
+            repo.Verify(r => r.FindRecordByIdAsync(
+                "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn), Times.Once);
+
+            repo.Verify(r => r.GetTotalsAsync(
+                "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn), Times.Once);
+
+            repo.Verify(r => r.DeleteCardsByIdsAsync(
+                It.Is<IEnumerable<int>>(ids => ids.SequenceEqual(new[] { 456, 789 })),
+                dummyConn), Times.Once);
+
+            repo.Verify(r => r.UpdateCardFieldsByIdAsync(
+                123, 9, 5, "Near Mint", "German", "nonfoil", dummyConn), Times.Once);
         }
     }
 }

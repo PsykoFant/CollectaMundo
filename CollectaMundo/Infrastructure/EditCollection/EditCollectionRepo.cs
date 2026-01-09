@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.EditCollection.Models;
 using System.Data.SQLite;
 using System.Diagnostics;
 
@@ -282,109 +281,33 @@ namespace CollectaMundo.Infrastructure.EditCollection
                 throw;
             }
         }
-        public async Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId, SQLiteConnection conn)
+
+        public async Task DeleteCardsByIdsAsync(IEnumerable<int> ids, SQLiteConnection conn)
         {
-            const string updateSql = @"
-                    UPDATE myCollection
-                       SET cardsOwned    = @sumOwned,
-                           cardsForTrade = @sumTrade
-                     WHERE id = @keepId;
-                ";
-            const string deleteSql = @"
-                    DELETE FROM myCollection
-                     WHERE uuid      = @uuid
-                       AND condition = @cond
-                       AND language  = @lang
-                       AND finish    = @fin
-                       AND id       <> @keepId;
-                ";
-            try
+            var idList = ids?.ToList() ?? [];
+            if (idList.Count == 0)
             {
-                // 1) Compute the new totals via your helper
-                var (totalOwned, totalTrade) = await GetTotalsAsync(uuid, condition, language, finish, conn);
-
-                // 2) Update the survivor row
-                using (var upd = new SQLiteCommand(updateSql, conn))
-                {
-                    upd.Parameters.AddWithValue("@sumOwned", totalOwned);
-                    upd.Parameters.AddWithValue("@sumTrade", totalTrade);
-                    upd.Parameters.AddWithValue("@keepId", keepId);
-                    await upd.ExecuteNonQueryAsync();
-                }
-
-                // 3) Delete the duplicates
-                using (var del = new SQLiteCommand(deleteSql, conn))
-                {
-                    del.Parameters.AddWithValue("@uuid", uuid);
-                    del.Parameters.AddWithValue("@cond", condition);
-                    del.Parameters.AddWithValue("@lang", language);
-                    del.Parameters.AddWithValue("@fin", finish);
-                    del.Parameters.AddWithValue("@keepId", keepId);
-                    await del.ExecuteNonQueryAsync();
-                }
+                return;
             }
-            catch (Exception ex)
+
+            var paramNames = idList.Select((_, i) => $"@id{i}").ToArray();
+            var sql = $"DELETE FROM myCollection WHERE id IN ({string.Join(",", paramNames)});";
+
+            using var cmd = new SQLiteCommand(sql, conn);
+            for (int i = 0; i < idList.Count; i++)
             {
-                Debug.WriteLine($"Error in MergeDuplicateRecordsAsync: {ex}");
-                throw;
+                cmd.Parameters.AddWithValue(paramNames[i], idList[i]);
             }
+
+            await cmd.ExecuteNonQueryAsync();
         }
-        public async Task<CardChangeEventArgs> UpdateOrMergeAsync(CardSet card, SQLiteConnection conn, SQLiteTransaction tx)
+
+
+
+
+        public async Task UpdateCardFieldsByIdAsync(int id, int owned, int trade, string condition, string language, string finish, SQLiteConnection conn)
         {
-            // 1. Find rows that WOULD match after edit/add
-            var ids = await FindRecordByIdAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn);
-
-            // -----------------------------
-            // CASE 1: Pure INSERT (no matches)
-            // -----------------------------
-            if (ids.Count == 0)
-            {
-                // Insert new row
-                var newId = await AddCardAndReturnIdAsync(card, conn);
-
-                card.CardId = newId;
-
-                return new CardChangeEventArgs(card);
-            }
-
-            // Ensure edited card participates in merge
-            if (card.CardId.HasValue && !ids.Contains(card.CardId.Value))
-            {
-                ids.Add(card.CardId.Value);
-            }
-
-            ids.Sort();
-
-            var keepId = ids[0];
-            var removedIds = ids.Skip(1).ToArray();
-
-            // 2. Calculate final totals
-            var (sumOwned, sumTrade) = await GetTotalsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn);
-
-            sumOwned += card.CardsOwned;
-            sumTrade += card.CardsForTrade;
-
-            // 3. Delete duplicates FIRST
-            if (removedIds.Length > 0)
-            {
-                var paramNames = removedIds.Select((_, i) => $"@id{i}").ToArray();
-
-                var deleteSql = $@"
-                    DELETE FROM myCollection
-                    WHERE id IN ({string.Join(",", paramNames)});
-                ";
-
-                using var deleteCmd = new SQLiteCommand(deleteSql, conn, tx);
-                for (int i = 0; i < removedIds.Length; i++)
-                {
-                    deleteCmd.Parameters.AddWithValue(paramNames[i], removedIds[i]);
-                }
-
-                await deleteCmd.ExecuteNonQueryAsync();
-            }
-
-            // 4. Update survivor
-            const string updateSql = @"
+            const string sql = @"
                 UPDATE myCollection
                    SET cardsOwned    = @owned,
                        cardsForTrade = @trade,
@@ -394,24 +317,16 @@ namespace CollectaMundo.Infrastructure.EditCollection
                  WHERE id = @id;
             ";
 
-            using (var cmd = new SQLiteCommand(updateSql, conn, tx))
-            {
-                cmd.Parameters.AddWithValue("@owned", sumOwned);
-                cmd.Parameters.AddWithValue("@trade", sumTrade);
-                cmd.Parameters.AddWithValue("@cond", card.SelectedCondition);
-                cmd.Parameters.AddWithValue("@lang", card.Language);
-                cmd.Parameters.AddWithValue("@fin", card.SelectedFinish);
-                cmd.Parameters.AddWithValue("@id", keepId);
+            using var cmd = new SQLiteCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@owned", owned);
+            cmd.Parameters.AddWithValue("@trade", trade);
+            cmd.Parameters.AddWithValue("@cond", condition);
+            cmd.Parameters.AddWithValue("@lang", language);
+            cmd.Parameters.AddWithValue("@fin", finish);
+            cmd.Parameters.AddWithValue("@id", id);
 
-                await cmd.ExecuteNonQueryAsync();
-            }
-
-            // 5. Sync in-memory card
-            card.CardId = keepId;
-            card.CardsOwned = sumOwned;
-            card.CardsForTrade = sumTrade;
-
-            return new CardChangeEventArgs(card, removedIds);
+            await cmd.ExecuteNonQueryAsync();
         }
+
     }
 }

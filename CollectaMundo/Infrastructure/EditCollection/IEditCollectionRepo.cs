@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.EditCollection.Models;
 using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.EditCollection
@@ -17,7 +16,8 @@ namespace CollectaMundo.Infrastructure.EditCollection
         Task UpdateCardAsync(CardSet card, SQLiteConnection conn);
         Task UpdateCardCountsAsync(CardSet card, SQLiteConnection conn);
         Task DeleteCardByIdAsync(CardSet card, SQLiteConnection conn);
-        Task MergeDuplicateRecordsAsync(string uuid, string condition, string language, string finish, int keepId, SQLiteConnection conn);
-        Task<CardChangeEventArgs> UpdateOrMergeAsync(CardSet card, SQLiteConnection conn, SQLiteTransaction tx);
+        Task DeleteCardsByIdsAsync(IEnumerable<int> ids, SQLiteConnection conn);
+
+        Task UpdateCardFieldsByIdAsync(int id, int owned, int trade, string condition, string language, string finish, SQLiteConnection conn);
     }
 }
