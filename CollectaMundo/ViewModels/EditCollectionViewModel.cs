@@ -147,6 +147,12 @@ namespace CollectaMundo.ViewModels
             if (card is not null && card.CardsOwned > 0)
             {
                 card.CardsOwned--;
+
+                if (card.CardsOwned < card.CardsForTrade)
+                {
+                    card.CardsForTrade = card.CardsOwned;
+                }
+
                 RefreshColumnsTrigger++;
             }
         }
@@ -195,11 +201,15 @@ namespace CollectaMundo.ViewModels
         private async Task SubmitNewCardsWithDefaults(object? param)
         {
             if (param is not IEnumerable<object> sel)
+            {
                 return;
+            }
 
             var originals = sel.OfType<CardSet>().ToList();
             if (originals.Count == 0)
+            {
                 return;
+            }
 
             await SubmitBatchAsync(
                 originals,
@@ -212,11 +222,15 @@ namespace CollectaMundo.ViewModels
         private async Task DeleteSelectedCardsAsync(object? param)
         {
             if (param is not IEnumerable<object> sel)
+            {
                 return;
+            }
 
             var originals = sel.OfType<CardSet>().ToList();
             if (originals.Count == 0)
+            {
                 return;
+            }
 
             var toDelete = originals.Select(o => new CardSet
             {
@@ -239,33 +253,37 @@ namespace CollectaMundo.ViewModels
         private async Task PutAllForTradeAsync(object? param)
         {
             if (param is not IEnumerable<object> sel)
+            {
                 return;
+            }
 
             var cards = sel.OfType<CardSet>().ToList();
             if (cards.Count == 0)
+            {
                 return;
+            }
 
             foreach (var c in cards)
             {
                 c.CardsForTrade = c.CardsOwned;
             }
 
-            await SubmitBatchAsync(
-                cards,
-                cards => _service.SubmitCardBatchAsync(cards),
-                clearAfter: false,
-                summaryTitle: "Put the following cards up for trade:");
+            await SubmitBatchAsync(cards, cards => _service.SubmitCardBatchAsync(cards), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
         }
 
         [RelayCommand]
         private async Task SetNoneForTradeAsync(object? param)
         {
             if (param is not IEnumerable<object> sel)
+            {
                 return;
+            }
 
             var cards = sel.OfType<CardSet>().ToList();
             if (cards.Count == 0)
+            {
                 return;
+            }
 
             foreach (var c in cards)
             {

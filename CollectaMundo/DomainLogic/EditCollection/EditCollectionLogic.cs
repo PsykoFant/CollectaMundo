@@ -187,7 +187,7 @@ namespace CollectaMundo.DomainLogic.EditCollection
             try
             {
                 // Treat add as an upsert + merge
-                var mergeResult = await UpdateOrMergeCardAsync(card, connection);
+                var mergeResult = await UpdateOrMergeCardAsync(card, connection, false);
 
                 transaction.Commit();
 
@@ -228,7 +228,7 @@ namespace CollectaMundo.DomainLogic.EditCollection
 
             try
             {
-                var mergeResult = await UpdateOrMergeCardAsync(card, connection);
+                var mergeResult = await UpdateOrMergeCardAsync(card, connection, true);
 
                 transaction.Commit();
 
@@ -252,64 +252,86 @@ namespace CollectaMundo.DomainLogic.EditCollection
                 throw;
             }
         }
-        private async Task<CardChangeEventArgs> UpdateOrMergeCardAsync(CardSet card, SQLiteConnection conn)
+        private async Task<CardChangeEventArgs> UpdateOrMergeCardAsync(CardSet card, SQLiteConnection conn, bool isEdit)
         {
-            // Handle delete-by-zero
-            if (card.CardsOwned == 0)
+            if (isEdit && card.CardsOwned == 0)
             {
                 await _repo.DeleteCardByIdAsync(card, conn);
                 return new CardChangeEventArgs(card.CardId ?? throw new InvalidOperationException("Cannot delete card without ID"));
             }
 
-            // 1. Find rows that would match this card *after* change
-            var matchIds = await _repo.FindRecordByIdAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn) ?? [];
+            var matchIds = await _repo.FindRecordByIdAsync(
+                card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn) ?? [];
 
-            // -----------------------------
-            // CASE 1: Pure INSERT (no matches)
-            // -----------------------------
-            if (matchIds.Count == 0)
+            if (!isEdit && matchIds.Count == 0)
             {
                 var newId = await _repo.AddCardAndReturnIdAsync(card, conn);
-
                 card.CardId = newId;
                 return new CardChangeEventArgs(card);
             }
 
-            // -----------------------------
-            // CASE 2: Merge with existing row(s)
-            // -----------------------------
-
-            // Make sure current card is included
-            if (card.CardId.HasValue && !matchIds.Contains(card.CardId.Value))
+            if (isEdit && card.CardId.HasValue && !matchIds.Contains(card.CardId.Value))
             {
                 matchIds.Add(card.CardId.Value);
             }
 
             matchIds.Sort();
-
             var keepId = matchIds[0];
             var removedIds = matchIds.Skip(1).ToList();
 
-            var (existingOwned, existingTrade) = await _repo.GetTotalsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn);
+            // Edit with no merge: skip totals
+            if (isEdit && removedIds.Count == 0 && keepId == card.CardId)
+            {
+                await _repo.UpdateCardFieldsByIdAsync(
+                    keepId,
+                    card.CardsOwned,
+                    card.CardsForTrade,
+                    card.SelectedCondition!,
+                    card.Language!,
+                    card.SelectedFinish!,
+                    conn);
 
-            var sumOwned = existingOwned + card.CardsOwned;
-            var sumTrade = existingTrade + card.CardsForTrade;
+                return new CardChangeEventArgs(card);
+            }
 
-            // Delete duplicates
+            // Compute correct totals for merge
+            int sumOwned;
+            int sumTrade;
+
+            if (!isEdit)
+            {
+                // ADD: get full totals
+                var (existingOwned, existingTrade) = await _repo.GetTotalsAsync(
+                    card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn);
+
+                sumOwned = existingOwned + card.CardsOwned;
+                sumTrade = existingTrade + card.CardsForTrade;
+            }
+            else
+            {
+                // EDIT: exclude the current row
+                var currentId = card.CardId ?? throw new InvalidOperationException("Edit requires CardId");
+
+                var (ownedWithoutCurrent, tradeWithoutCurrent) = await _repo.GetTotalsExcludingIdAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, currentId, conn);
+
+                sumOwned = ownedWithoutCurrent + card.CardsOwned;
+                sumTrade = tradeWithoutCurrent + card.CardsForTrade;
+            }
+
             if (removedIds.Count > 0)
             {
                 await _repo.DeleteCardsByIdsAsync(removedIds, conn);
             }
 
-            // Update survivor
             await _repo.UpdateCardFieldsByIdAsync(keepId, sumOwned, sumTrade, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn);
 
-            // Update in-memory state
             card.CardId = keepId;
             card.CardsOwned = sumOwned;
             card.CardsForTrade = sumTrade;
 
             return new CardChangeEventArgs(card, removedIds);
         }
+
+
     }
 }

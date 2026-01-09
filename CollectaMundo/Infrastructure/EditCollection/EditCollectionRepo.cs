@@ -82,38 +82,6 @@ namespace CollectaMundo.Infrastructure.EditCollection
 
             return finishes;
         }
-        public async Task<int?> FindExistingCardReturnIdAsync(CardSet card, SQLiteConnection conn)
-        {
-
-            string selectSql = @"
-                SELECT id FROM myCollection 
-                WHERE uuid = @uuid 
-                  AND condition = @condition 
-                  AND language = @language 
-                  AND finish = @finish";
-            try
-            {
-
-
-                using var selectCommand = new SQLiteCommand(selectSql, conn);
-                selectCommand.Parameters.AddWithValue("@uuid", card.Uuid);
-                selectCommand.Parameters.AddWithValue("@condition", card.SelectedCondition);
-                selectCommand.Parameters.AddWithValue("@language", card.Language);
-                selectCommand.Parameters.AddWithValue("@finish", card.SelectedFinish);
-
-                using var reader = await selectCommand.ExecuteReaderAsync();
-                if (await reader.ReadAsync())
-                {
-                    return reader.GetInt32(0); // Return the id if found
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in FindExistingCardReturnIdAsync: {ex.Message}");
-                throw;
-            }
-            return null;
-        }
         public async Task<List<int>> FindRecordByIdAsync(string uuid, string condition, string language, string finish, SQLiteConnection conn)
         {
             const string sql = @"
@@ -176,6 +144,35 @@ namespace CollectaMundo.Infrastructure.EditCollection
             int totalTrade = rdr.GetInt32(1);
             return (totalOwned, totalTrade);
         }
+        public async Task<(int TotalOwned, int TotalTrade)> GetTotalsExcludingIdAsync(string uuid, string condition, string language, string finish, int excludedId, SQLiteConnection conn)
+        {
+            const string sql = @"
+                SELECT 
+                  COALESCE(SUM(cardsOwned), 0)    AS TotalOwned,
+                  COALESCE(SUM(cardsForTrade), 0) AS TotalTrade
+                FROM myCollection
+                WHERE uuid      = @uuid
+                  AND condition = @cond
+                  AND language  = @lang
+                  AND finish    = @fin
+                  AND id       <> @excluded;
+            ";
+
+            using var cmd = new SQLiteCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@uuid", uuid);
+            cmd.Parameters.AddWithValue("@cond", condition);
+            cmd.Parameters.AddWithValue("@lang", language);
+            cmd.Parameters.AddWithValue("@fin", finish);
+            cmd.Parameters.AddWithValue("@excluded", excludedId);
+
+            using var rdr = await cmd.ExecuteReaderAsync();
+            if (!await rdr.ReadAsync())
+            {
+                return (0, 0);
+            }
+
+            return (rdr.GetInt32(0), rdr.GetInt32(1));
+        }
 
         // CRUD
         public async Task<int> AddCardAndReturnIdAsync(CardSet card, SQLiteConnection conn)
@@ -212,60 +209,6 @@ namespace CollectaMundo.Infrastructure.EditCollection
                 throw;
             }
         }
-        public async Task UpdateCardAsync(CardSet card, SQLiteConnection conn)
-        {
-
-            string updateSql = @"
-                UPDATE myCollection 
-                SET 
-                    condition = @condition,
-                    language = @language,
-                    finish = @finish,
-                    cardsOwned = @cardsOwned,
-                    cardsForTrade = @cardsForTrade
-                WHERE id = @cardId";
-            try
-            {
-                using var cmd = new SQLiteCommand(updateSql, conn);
-                cmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
-                cmd.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
-                cmd.Parameters.AddWithValue("@condition", card.SelectedCondition);
-                cmd.Parameters.AddWithValue("@language", card.Language);
-                cmd.Parameters.AddWithValue("@finish", card.SelectedFinish);
-                cmd.Parameters.AddWithValue("@cardId", card.CardId);
-
-                await cmd.ExecuteNonQueryAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in UpdateCardCountsAsync: {ex.Message}");
-                throw;
-            }
-        }
-        public async Task UpdateCardCountsAsync(CardSet card, SQLiteConnection conn)
-        {
-            // We treat card.CardsOwned and card.CardsForTrade as the *increment* amounts.
-            string updateSql = @"
-                UPDATE myCollection 
-                SET 
-                  cardsOwned = cardsOwned + @addCount,
-                  cardsForTrade = cardsForTrade + @addTrade
-                WHERE id = @cardId";
-            try
-            {
-                using var cmd = new SQLiteCommand(updateSql, conn);
-                cmd.Parameters.AddWithValue("@addCount", card.CardsOwned);
-                cmd.Parameters.AddWithValue("@addTrade", card.CardsForTrade);
-                cmd.Parameters.AddWithValue("@cardId", card.CardId);
-
-                await cmd.ExecuteNonQueryAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in UpdateCardCountsAsync: {ex.Message}");
-                throw;
-            }
-        }
         public async Task DeleteCardByIdAsync(CardSet card, SQLiteConnection conn)
         {
             string deleteSql = "DELETE FROM myCollection WHERE id = @id";
@@ -281,7 +224,6 @@ namespace CollectaMundo.Infrastructure.EditCollection
                 throw;
             }
         }
-
         public async Task DeleteCardsByIdsAsync(IEnumerable<int> ids, SQLiteConnection conn)
         {
             var idList = ids?.ToList() ?? [];
@@ -301,10 +243,6 @@ namespace CollectaMundo.Infrastructure.EditCollection
 
             await cmd.ExecuteNonQueryAsync();
         }
-
-
-
-
         public async Task UpdateCardFieldsByIdAsync(int id, int owned, int trade, string condition, string language, string finish, SQLiteConnection conn)
         {
             const string sql = @"
