@@ -517,7 +517,7 @@ namespace CollectaMundo.DomainLogic.Import
                     return;
                 }
 
-                var defaultValue = ImportDefaults.GetDefaultString(field);
+                var defaultValue = ImportDefaults.GetDefaultDisplayValue(field);
 
                 valueMappings.AddRange(mappings.Select(m =>
                     {
@@ -548,7 +548,7 @@ namespace CollectaMundo.DomainLogic.Import
             }
 
             // Preserve original column order as best as possible
-            var headers = rows.SelectMany(r => r.CsvFields.Keys).Distinct().ToList();
+            var headers = rows.First().CsvFields.Keys.ToList();
 
             // Header row
             sb.AppendLine(string.Join(";", headers.Select(ToCsvCell)));

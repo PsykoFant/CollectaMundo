@@ -401,6 +401,10 @@ namespace CollectaMundo.ViewModels.Import
             FinishMappings.Clear();
             LanguageMappings.Clear();
 
+            // Reset progress
+            _progress = null;
+            ClearProgress();
+
             // Reset card image view model
             _parentViewModelContext.CardViewSectionVisibility = Visibility.Collapsed;
             CardImageVM.SelectedCard = null;
@@ -411,6 +415,8 @@ namespace CollectaMundo.ViewModels.Import
 
             // Reset resolved import state
             ResolvedImportItems = [];
+
+
 
             // Reset summary
             Summary.Reset();
@@ -543,6 +549,9 @@ namespace CollectaMundo.ViewModels.Import
             Progress.Detail.Report(string.Empty);
             Progress.Percent.Report(0);
             Progress.ProgressBarVisible.Report(false);
+            ProgressStep = null;
+            ProgressHeadline = null;
+            ProgressDetailMessage = null;
         }
         #endregion
 
