@@ -24,6 +24,6 @@
         public string? Language { get; init; }
 
         // Warnings generated while resolving this item
-        public IReadOnlyList<string> Warnings { get; init; } = System.Array.Empty<string>();
+        public IReadOnlyList<string> Warnings { get; init; } = [];
     }
 }

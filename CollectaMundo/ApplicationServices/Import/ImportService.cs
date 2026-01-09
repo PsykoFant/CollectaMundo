@@ -314,8 +314,29 @@ namespace CollectaMundo.ApplicationServices.Import
                 $"Saved unimportable items to {filePath}");
         }
 
+        public async Task<OperationResult> ImportResolvedItems(IReadOnlyList<ResolvedImportItem> resolvedItems, ProgressSinks progress, CancellationToken token)
+        {
+            Debug.WriteLine("[SaveUnimportableItemsAsync] Saving unimportable items ... ");
 
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginReadOnlyAsync();
+            try
+            {
+                // call to infrastructure to save items
+                await uow.CommitAsync();
+            }
+            catch
+            {
+                await uow.RollbackAsync();
+                throw;
+            }
+            finally
+            {
+                await uow.DisposeAsync();
+            }
 
-
+            // if everything went well:
+            return new OperationResult(OperationResultCode.Success, $"Finished importing items");
+        }
     }
 }
