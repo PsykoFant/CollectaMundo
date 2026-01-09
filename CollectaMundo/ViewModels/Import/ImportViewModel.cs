@@ -209,9 +209,6 @@ namespace CollectaMundo.ViewModels.Import
 
                 // 2. Build UI summary (projection)
                 Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
-
-                DebugResolvedImportItems();
-                DebugImportSummary();
             }
 
             _currentStep = step;

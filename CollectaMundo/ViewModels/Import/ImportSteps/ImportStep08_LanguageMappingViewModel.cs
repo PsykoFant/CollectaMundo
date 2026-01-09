@@ -40,13 +40,14 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
 
             // Lazy, cached, parent-owned async call
             var availableLanguages = await _parent.GetAvailableLanguagesAsync();
+            var defaultLanguage = ImportDefaults.GetDefaultString(ImportField.Language);
 
             // Ensure default language is present
-            var languageOptions = availableLanguages.Append("English").Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(l => l).ToList();
+            var languageOptions = availableLanguages.Append(defaultLanguage).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(l => l).ToList();
 
             foreach (var csvValue in csvValues)
             {
-                var guessed = ImportValueMatcher.MapImportValue(csvValue!, ImportField.Language, languageOptions) ?? "English"; // Default to "English" if no match found
+                var guessed = ImportValueMatcher.MapImportValue(csvValue!, ImportField.Language, languageOptions) ?? defaultLanguage; // Default to "English" if no match found
 
                 LanguageMappings.Add(new CsvValueMapping
                 {
@@ -56,6 +57,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                 });
             }
         }
+
         // --------------------------------------------
         // UI Text & Visibility
         // --------------------------------------------

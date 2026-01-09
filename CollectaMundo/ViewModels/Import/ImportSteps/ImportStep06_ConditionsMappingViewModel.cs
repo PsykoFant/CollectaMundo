@@ -31,10 +31,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
             var csvHeader = _parent.AdditionalMappings.First(m => m.FieldToMap == ImportField.Condition).SelectedCsvHeader!;
             var csvValues = _parent.ImportCardList.Select(item => item.CsvFields.TryGetValue(csvHeader, out var val)
             ? val?.Trim()
-            : null)
-                .Where(v => !string.IsNullOrWhiteSpace(v))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            : null).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
             var allowedValues = new CardSet().Conditions;
 
@@ -44,7 +41,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                     csvValue!,
                     ImportField.Condition,
                     allowedValues
-                ) ?? "Near Mint"; // Default to "Near Mint" if no match found
+                ) ?? ImportDefaults.GetDefaultString(ImportField.Condition); // Default to "Near Mint" if no match found
 
                 ConditionMappings.Add(new CsvValueMapping
                 {

@@ -416,13 +416,13 @@ namespace CollectaMundo.DomainLogic.Import
                 var isImportable = !string.IsNullOrWhiteSpace(uuid);
 
                 // Quantities
-                var owned = ParseNonNegativeWholeNumberOrDefault(item, ownedHeader, defaultValue: 1, warnings, "CardsOwned");
-                var trade = ParseNonNegativeWholeNumberOrDefault(item, tradeHeader, defaultValue: 0, warnings, "CardsForTrade");
+                var owned = ParseNonNegativeWholeNumberOrDefault(item, ownedHeader, defaultValue: ImportDefaults.GetDefaultInt(ImportField.CardsOwned), warnings, "CardsOwned");
+                var trade = ParseNonNegativeWholeNumberOrDefault(item, tradeHeader, defaultValue: ImportDefaults.GetDefaultInt(ImportField.CardsForTrade), warnings, "CardsForTrade");
 
                 // Additional fields mapped values
-                var condition = ResolveMappedValue(item, conditionHeader, conditionMappings) ?? "Near Mint";
-                var finish = ResolveMappedValue(item, finishHeader, finishMappings) ?? "nonfoil";
-                var language = ResolveMappedValue(item, languageHeader, languageMappings) ?? "English";
+                var condition = ResolveMappedValue(item, conditionHeader, conditionMappings) ?? ImportDefaults.GetDefaultString(ImportField.Condition);
+                var finish = ResolveMappedValue(item, finishHeader, finishMappings) ?? ImportDefaults.GetDefaultString(ImportField.CardFinish);
+                var language = ResolveMappedValue(item, languageHeader, languageMappings) ?? ImportDefaults.GetDefaultString(ImportField.Language);
 
                 resolved.Add(new ResolvedImportItem
                 {
@@ -492,9 +492,13 @@ namespace CollectaMundo.DomainLogic.Import
             // -----------------------------
             summary.FieldMappings =
             [
-                .. additionalFieldMappings.Select(m => !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)
-                ? new FieldMappingSummary(m.FieldToMap,m.SelectedCsvHeader!)
-                : new FieldMappingSummary(m.FieldToMap,$"{GetDefaultValueLabel(m.FieldToMap)} (default value)"))
+                .. additionalFieldMappings.Select(m =>
+                    !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)
+                        ? new FieldMappingSummary(m.FieldToMap, m.SelectedCsvHeader!)
+                        : new FieldMappingSummary(
+                            m.FieldToMap,
+                            $"{ImportDefaults.GetDefaultDisplayValue(m.FieldToMap)} (default value)")
+                )
             ];
 
             // -----------------------------
@@ -502,80 +506,27 @@ namespace CollectaMundo.DomainLogic.Import
             // -----------------------------
             var valueMappings = new List<ValueMappingSummary>();
 
-            // -----------------------------
-            // Condition
-            // -----------------------------
-            if (additionalFieldMappings.Any(m => m.FieldToMap == ImportField.Condition &&
-                                                 !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)))
-            {
-                if (conditionMappings.Count > 0)
-                {
-                    valueMappings.AddRange(
-                        conditionMappings.Select(m =>
-                            new ValueMappingSummary(
-                                ImportField.Condition,
-                                m.CsvValue,
-                                m.SelectedCardSetValue!)));
-                }
-                else
-                {
-                    // Field mapped, but no values → implicit default
-                    valueMappings.Add(
-                        new ValueMappingSummary(
-                            ImportField.Condition,
-                            "(blank)",
-                            "Near Mint"));
-                }
-            }
+            AddValueMappingsIfFieldMapped(ImportField.Condition, conditionMappings);
+            AddValueMappingsIfFieldMapped(ImportField.CardFinish, finishMappings);
+            AddValueMappingsIfFieldMapped(ImportField.Language, languageMappings);
 
-            // -----------------------------
-            // Card Finish
-            // -----------------------------
-            if (additionalFieldMappings.Any(m => m.FieldToMap == ImportField.CardFinish &&
-                                                 !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)))
+            void AddValueMappingsIfFieldMapped(ImportField field, IReadOnlyList<CsvValueMapping> mappings)
             {
-                if (finishMappings.Count > 0)
+                if (!additionalFieldMappings.Any(m => m.FieldToMap == field && !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)))
                 {
-                    valueMappings.AddRange(
-                        finishMappings.Select(m =>
-                            new ValueMappingSummary(
-                                ImportField.CardFinish,
-                                m.CsvValue,
-                                m.SelectedCardSetValue!)));
+                    return;
                 }
-                else
-                {
-                    valueMappings.Add(
-                        new ValueMappingSummary(
-                            ImportField.CardFinish,
-                            "(blank)",
-                            "nonfoil"));
-                }
-            }
 
-            // -----------------------------
-            // Language
-            // -----------------------------
-            if (additionalFieldMappings.Any(m => m.FieldToMap == ImportField.Language &&
-                                                 !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)))
-            {
-                if (languageMappings.Count > 0)
-                {
-                    valueMappings.AddRange(
-                        languageMappings.Select(m =>
-                            new ValueMappingSummary(
-                                ImportField.Language,
-                                m.CsvValue,
-                                m.SelectedCardSetValue!)));
-                }
-                else
-                {
-                    valueMappings.Add(
-                        new ValueMappingSummary(
-                            ImportField.Language,
-                            "(blank)",
-                            "English"));
-                }
+                var defaultValue = ImportDefaults.GetDefaultString(field);
+
+                valueMappings.AddRange(mappings.Select(m =>
+                    {
+                        var isBlank = string.IsNullOrWhiteSpace(m.SelectedCardSetValue);
+
+                        return new ValueMappingSummary(field, m.CsvValue, isBlank
+                            ? $"(blank -> {defaultValue})"
+                            : m.SelectedCardSetValue!);
+                    }));
             }
 
             summary.ValueMappings = valueMappings;
@@ -587,14 +538,9 @@ namespace CollectaMundo.DomainLogic.Import
             var sb = new StringBuilder();
 
             // Identify unimportable rows using FINAL import decision
-            var unimportableKeys = resolvedItems
-                .Where(r => !r.IsImportable)
-                .Select(r => r.TempItemImportKey)
-                .ToHashSet();
+            var unimportableKeys = resolvedItems.Where(r => !r.IsImportable).Select(r => r.TempItemImportKey).ToHashSet();
 
-            var rows = importItems
-                .Where(i => unimportableKeys.Contains(i.TempItemImportKey))
-                .ToList();
+            var rows = importItems.Where(i => unimportableKeys.Contains(i.TempItemImportKey)).ToList();
 
             if (rows.Count == 0)
             {
@@ -602,10 +548,7 @@ namespace CollectaMundo.DomainLogic.Import
             }
 
             // Preserve original column order as best as possible
-            var headers = rows
-                .SelectMany(r => r.CsvFields.Keys)
-                .Distinct()
-                .ToList();
+            var headers = rows.SelectMany(r => r.CsvFields.Keys).Distinct().ToList();
 
             // Header row
             sb.AppendLine(string.Join(";", headers.Select(ToCsvCell)));
@@ -623,8 +566,6 @@ namespace CollectaMundo.DomainLogic.Import
 
             return sb.ToString();
         }
-
-
 
         // Helpers
         private static string? ResolveMappedValue(TempCardItem item, string? csvHeader, IReadOnlyList<CsvValueMapping> mappings)
@@ -723,16 +664,6 @@ namespace CollectaMundo.DomainLogic.Import
             var escaped = value.Replace("\"", "\"\"");
             return $"\"{escaped}\"";
         }
-
-        string GetDefaultValueLabel(ImportField field) => field switch
-        {
-            ImportField.Condition => "Near Mint",
-            ImportField.CardFinish => "nonfoil",
-            ImportField.Language => "English",
-            ImportField.CardsOwned => "1",
-            ImportField.CardsForTrade => "0",
-            _ => "default"
-        };
 
         #endregion
 

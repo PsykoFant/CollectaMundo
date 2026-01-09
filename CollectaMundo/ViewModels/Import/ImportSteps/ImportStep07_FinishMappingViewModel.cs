@@ -33,10 +33,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
             var csvHeader = _parent.AdditionalMappings.First(m => m.FieldToMap == ImportField.CardFinish).SelectedCsvHeader!;
             var csvValues = _parent.ImportCardList.Select(item => item.CsvFields.TryGetValue(csvHeader, out var val)
             ? val?.Trim()
-            : null)
-                .Where(v => !string.IsNullOrWhiteSpace(v))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            : null).Where(v => !string.IsNullOrWhiteSpace(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
             var availableFinishes = await _parent.GetAvailableFinishesAsync();
 
@@ -46,7 +43,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                     csvValue!,
                     ImportField.CardFinish,
                     availableFinishes
-                ) ?? "nonfoil";
+                ) ?? ImportDefaults.GetDefaultString(ImportField.CardFinish);
 
                 FinishMappings.Add(new CsvValueMapping
                 {

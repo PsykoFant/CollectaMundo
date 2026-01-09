@@ -67,19 +67,25 @@ namespace CollectaMundo.DomainLogic.Import
         }
         public static string? MapImportValue(string importValue, ImportField field, IReadOnlyList<string> canonicalValues)
         {
+            // Guard: empty or whitespace input
             if (string.IsNullOrWhiteSpace(importValue))
             {
                 return null;
             }
 
+            // Guard: no aliases defined for this field
             if (!_aliases.TryGetValue(field, out var aliasesForField))
             {
                 return null;
             }
 
+            // Normalize once
             var normalizedImport = importValue.Trim().ToLowerInvariant();
 
+            // -------------------------------------------------
             // 1) Exact match against canonical values
+            // -------------------------------------------------
+            // Example: "Near Mint" -> "Near Mint"
             foreach (var canonical in canonicalValues)
             {
                 if (string.Equals(canonical, importValue, StringComparison.OrdinalIgnoreCase))
@@ -88,26 +94,38 @@ namespace CollectaMundo.DomainLogic.Import
                 }
             }
 
-            // NOTE: alias dictionary order defines precedence
+            // -------------------------------------------------
+            // Tokenize import value
+            // -------------------------------------------------
+            // Supports:
+            //   "nm/m"        -> ["nm", "m"]
+            //   "near-mint"   -> ["near", "mint"]
+            //   "light played"-> ["light", "played"]
+            var tokens = normalizedImport.Split([' ', '-', '/', '\\', '_'], StringSplitOptions.RemoveEmptyEntries);
 
-            // 2) Alias exact match
+            // NOTE:
+            // Alias dictionary order defines precedence
+            // (first matching canonical value wins)
+
+            // -------------------------------------------------
+            // 2) Alias token match (safe, no substring bugs)
+            // -------------------------------------------------
+            // Examples:
+            //   "m"       -> Mint
+            //   "nm"      -> Near Mint
+            //   "nm/m"    -> Near Mint (wins by order)
+            //   "normal"  -> NO MATCH 
             foreach (var (canonical, knownAliases) in aliasesForField)
             {
-                if (knownAliases.Any(a => normalizedImport == a))
+                if (knownAliases.Any(alias => tokens.Contains(alias)))
                 {
                     return canonical;
                 }
             }
 
-            // 3) Alias contains match
-            foreach (var (canonical, knownAliases) in aliasesForField)
-            {
-                if (knownAliases.Any(a => normalizedImport.Contains(a)))
-                {
-                    return canonical;
-                }
-            }
-
+            // -------------------------------------------------
+            // No match found
+            // -------------------------------------------------
             return null;
         }
 
