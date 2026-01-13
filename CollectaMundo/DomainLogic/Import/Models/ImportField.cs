@@ -9,7 +9,8 @@
         CardFinish,
         Language,
         CardsOwned,
-        CardsForTrade
+        CardsForTrade,
+        None
     }
 
 }

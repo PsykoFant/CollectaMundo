@@ -511,22 +511,54 @@ namespace CollectaMundo.DomainLogic.Import
             AddValueMappingsIfFieldMapped(ImportField.CardFinish, finishMappings);
             AddValueMappingsIfFieldMapped(ImportField.Language, languageMappings);
 
+            // If NONE of the value-mapped fields are mapped to a CSV column, show a single explanatory row so the grid isn't empty.
+            var anyValueFieldMapped =
+                additionalFieldMappings.Any(m =>
+                    (m.FieldToMap == ImportField.Condition ||
+                     m.FieldToMap == ImportField.CardFinish ||
+                     m.FieldToMap == ImportField.Language) &&
+                    !string.IsNullOrWhiteSpace(m.SelectedCsvHeader));
+
+            if (!anyValueFieldMapped)
+            {
+                valueMappings.Add(new ValueMappingSummary(
+                    ImportField.None,
+                    CsvValue: "—",
+                    MappedValue: "All values use defaults"));
+            }
+
             void AddValueMappingsIfFieldMapped(ImportField field, IReadOnlyList<CsvValueMapping> mappings)
             {
-                if (!additionalFieldMappings.Any(m => m.FieldToMap == field && !string.IsNullOrWhiteSpace(m.SelectedCsvHeader)))
+                var fieldMapping = additionalFieldMappings
+                    .FirstOrDefault(m => m.FieldToMap == field && !string.IsNullOrWhiteSpace(m.SelectedCsvHeader));
+
+                if (fieldMapping is null)
                 {
                     return;
                 }
 
                 var defaultValue = CollectionCardItemDefaults.GetDefaultDisplayValue(field);
 
-                valueMappings.AddRange(mappings.Select(m =>
+                // Case 4: mapped field, but CSV column contained no values
+                if (mappings.Count == 0)
+                {
+                    valueMappings.Add(new ValueMappingSummary(field, $"(no values in '{fieldMapping.SelectedCsvHeader}')", $"(default -> {defaultValue})"));
+
+                    return;
+                }
+
+                // Cases 2 & 3
+                valueMappings.AddRange(
+                    mappings.Select(m =>
                     {
                         var isBlank = string.IsNullOrWhiteSpace(m.SelectedCardSetValue);
 
-                        return new ValueMappingSummary(field, m.CsvValue, isBlank
-                            ? $"(blank -> {defaultValue})"
-                            : m.SelectedCardSetValue!);
+                        return new ValueMappingSummary(
+                            field,
+                            m.CsvValue,
+                            isBlank
+                                ? $"(blank -> {defaultValue})"
+                                : m.SelectedCardSetValue!);
                     }));
             }
 

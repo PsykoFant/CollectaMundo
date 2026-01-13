@@ -101,6 +101,9 @@ namespace CollectaMundo.ViewModels.Import
         private Visibility importFailVisibility = Visibility.Collapsed;
 
         [ObservableProperty]
+        private Visibility importSuccessVisibility = Visibility.Collapsed;
+
+        [ObservableProperty]
         private Visibility cancelVisibility = Visibility.Collapsed;
 
         [ObservableProperty]
@@ -435,9 +438,12 @@ namespace CollectaMundo.ViewModels.Import
             CurrentStepViewModel = null;
             _currentStep = ImportStep.Start;
 
+            await _parentViewModelContext.ReloadAllCardListsAndFiltersAsync();
+
             _parentViewModelContext.SetUiBusy(false);
             ImportOverlayVisibility = Visibility.Collapsed;
             ImportFailVisibility = Visibility.Collapsed;
+            ImportSuccessVisibility = Visibility.Collapsed;
 
             return new(OperationResultCode.Success, "Cleanup completed");
         }

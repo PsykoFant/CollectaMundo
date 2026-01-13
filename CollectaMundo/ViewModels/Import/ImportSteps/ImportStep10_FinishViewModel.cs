@@ -14,9 +14,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         public ImportStep10_FinishViewModel(ImportViewModel parent)
         {
             _parent = parent;
-
             Initialize();
-            HookEvents();
         }
 
         // --------------------------------------------
@@ -24,19 +22,15 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         private void Initialize()
         {
+            _parent.ImportSuccessVisibility = Visibility.Visible;
             // Step 1 has no per-item mappings or dynamic data to initialize.
             // FlowDocumentVisibility is already defaulted via ObservableProperty.
-        }
-
-        private void HookEvents()
-        {
-            // Step 1 has no dynamic collections or item-level events.
         }
 
         // --------------------------------------------
         // UI Text & Visibility
         // --------------------------------------------
-        public string PrimaryActionButtonText => "   OK   ";
+        public string PrimaryActionButtonText => "   Click here to reload your collection!   ";
         public string SecondaryActionButtonText => string.Empty;
         public Visibility PrimaryActionVisibility => Visibility.Visible;
         public Visibility SecondaryActionVisibility => Visibility.Collapsed;
@@ -55,17 +49,5 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         // --------------------------------------------
         public async Task<OperationResult> OnPrimaryAction() => await _parent.AfterStep10Action();
 
-        public void OnSecondaryAction()
-        {
-            // Not used in this step (and SecondaryActionVisibility is Collapsed).
-        }
-
-        // --------------------------------------------
-        // Commands (none for this step)
-        // --------------------------------------------
-
-        // --------------------------------------------
-        // Private helper methods (none needed)
-        // --------------------------------------------
     }
 }

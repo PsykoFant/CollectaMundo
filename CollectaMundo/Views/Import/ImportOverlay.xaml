@@ -36,7 +36,15 @@
            Stretch="None"
            HorizontalAlignment="Center"
            Margin="0,10,0,10"/>
-            
+
+        <!-- Success image -->
+        <Image Grid.Row="1"
+           Source="/Resources/Images/IxidorsWill.jpg"
+           Visibility="{Binding ImportSuccessVisibility}"
+           Stretch="None"
+           HorizontalAlignment="Center"
+           Margin="0,10,0,10"/>
+
         <!-- Step content -->
         <ScrollViewer Grid.Row="2" MaxHeight="600" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <ContentControl Width="550" Content="{Binding CurrentStepViewModel}">

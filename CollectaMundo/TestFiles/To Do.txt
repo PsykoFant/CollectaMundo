@@ -8,6 +8,14 @@ TO DO
 
 
 
+| Case                           | Field mappings      | Value mappings                 |
+| ------------------------------ | ------------------- | ------------------------------ |
+| 1. No fields mapped            | Default value shown | **Single explanatory row**     |
+| 2. Field mapped, blank values  | CSV header shown    | `(blank --> default)` rows       |
+| 3. Field mapped, user mappings | CSV header shown    | Explicit mappings              |
+| 4. Field mapped, no CSV values | CSV header shown    | `(no values in 'X' --> default)` |
+
+
 
 
 
@@ -127,3 +135,5 @@ TO DO
         //      //ManaCostImageBytes = GetFieldValue<byte[]>(r, "ManaCostImage"),
         //      ManaCostRaw = GetFieldValue<string>(r, "ManaCost") ?? string.Empty
         //  };
+
+

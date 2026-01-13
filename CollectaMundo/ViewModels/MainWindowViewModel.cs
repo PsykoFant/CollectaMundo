@@ -78,6 +78,7 @@ namespace CollectaMundo.ViewModels
             _userPromptService.CancelCurrentOperation();
             _userPromptService.ClearCancellation();
             _statusVM.HideStatusOverlay();
+            ImportVM.ImportOverlayVisibility = Visibility.Collapsed;
 
             if (newValue == Page.MyCollection)
             {

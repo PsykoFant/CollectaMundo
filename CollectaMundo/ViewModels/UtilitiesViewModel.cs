@@ -10,30 +10,19 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels
 {
-    public partial class UtilitiesViewModel : ObservableObject
+    public partial class UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, ImportViewModel importVM, IUserPromptService userPromptService, IParentViewModelContext parentViewModelcontext, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker) : ObservableObject
     {
-        private readonly ICardDatabaseManagementService _cardDbManagementService;
-        private readonly StatusViewModel _statusVM;
-        private readonly ImportViewModel _importVM;
-        private readonly IUserPromptService _userPromptService;
-        private readonly IParentViewModelContext _parentViewModelContext;
-        private readonly Func<int> _getMyCollectionCount;
-        private readonly IFileSystemPicker _fileSystemPicker;
+        private readonly ICardDatabaseManagementService _cardDbManagementService = cardDbService;
+        private readonly StatusViewModel _statusVM = statusVM;
+        private readonly ImportViewModel _importVM = importVM;
+        private readonly IUserPromptService _userPromptService = userPromptService;
+        private readonly IParentViewModelContext _parentViewModelContext = parentViewModelcontext;
+        private readonly Func<int> _getMyCollectionCount = collectionCountProvider;
+        private readonly IFileSystemPicker _fileSystemPicker = fileSystemPicker;
 
         // Visibility property
         [ObservableProperty]
         private Visibility updateDbVisibility = Visibility.Collapsed;
-
-        public UtilitiesViewModel(ICardDatabaseManagementService cardDbService, StatusViewModel statusVM, ImportViewModel importVM, IUserPromptService userPromptService, IParentViewModelContext parentViewModelcontext, Func<int> collectionCountProvider, IFileSystemPicker fileSystemPicker)
-        {
-            _cardDbManagementService = cardDbService;
-            _statusVM = statusVM;
-            _importVM = importVM;
-            _userPromptService = userPromptService;
-            _parentViewModelContext = parentViewModelcontext;
-            _getMyCollectionCount = collectionCountProvider;
-            _fileSystemPicker = fileSystemPicker;
-        }
 
         // Use case: Backup collection
         [RelayCommand]
