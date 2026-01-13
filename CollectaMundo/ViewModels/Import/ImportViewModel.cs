@@ -209,6 +209,7 @@ namespace CollectaMundo.ViewModels.Import
 
                 // 2. Build UI summary (projection)
                 Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
+                DebugImportSummary();
             }
 
             _currentStep = step;
@@ -234,6 +235,7 @@ namespace CollectaMundo.ViewModels.Import
         private IImportStepViewModel CreateStep(IImportStepViewModel vm, string progressStepText)
         {
             Progress.Step.Report(progressStepText);
+            Debug.WriteLine($"Reported this string for Step.Report: {progressStepText}.");
             return vm;
         }
 
@@ -393,6 +395,7 @@ namespace CollectaMundo.ViewModels.Import
 
             var cancelToken = _userPromptService.GetNewCancellationToken();
             var result = await Task.Run(() => _importService.ImportResolvedItems(ResolvedImportItems, Progress, cancelToken));
+
             GoToStep(ImportStep.Finish);
             return new OperationResult(OperationResultCode.Success, result.Message);
         }
@@ -420,8 +423,6 @@ namespace CollectaMundo.ViewModels.Import
 
             // Reset resolved import state
             ResolvedImportItems = [];
-
-
 
             // Reset summary
             Summary.Reset();
@@ -495,6 +496,14 @@ namespace CollectaMundo.ViewModels.Import
                 switch (result.Code)
                 {
                     case OperationResultCode.Success:
+                        if (_currentStep == ImportStep.Finish)
+                        {
+                            Progress.Step.Report("Success!");
+                            Progress.Headline.Report("Import complete!");
+                            Progress.Detail.Report($"Added {Summary.TotalImportItems} individual cards and {Summary.TotalCardsToAdd} total cards to your collection.");
+
+                            CancelVisibility = Visibility.Collapsed;
+                        }
                         Debug.WriteLine($"{stepName} completed successfully: {result.Message}");
                         break;
 
@@ -529,7 +538,6 @@ namespace CollectaMundo.ViewModels.Import
             }
             finally
             {
-                Progress.ProgressBarVisible.Report(false);
                 _userPromptService.ClearCancellation();
                 IsProcessing = false;
             }
@@ -554,9 +562,6 @@ namespace CollectaMundo.ViewModels.Import
             Progress.Detail.Report(string.Empty);
             Progress.Percent.Report(0);
             Progress.ProgressBarVisible.Report(false);
-            ProgressStep = null;
-            ProgressHeadline = null;
-            ProgressDetailMessage = null;
         }
         #endregion
 
