@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.EditCollection.Models;
+using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ServiceStack;
@@ -14,14 +15,20 @@ namespace CollectaMundo.ViewModels
     public partial class EditCollectionViewModel : ObservableObject
     {
         public event EventHandler<CardChangeEventArgs>? CardChanged;
+
+        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
 
         private readonly IEditCollectionService _service;
+        private readonly ICollectionChangeApplier<CardSet> _collectionChangeApplier;
         private readonly bool _removeCardWhenZero;
+
+
         // Constructor
-        public EditCollectionViewModel(IEditCollectionService service, bool removeCardWhenZero)
+        public EditCollectionViewModel(IEditCollectionService service, ICollectionChangeApplier<CardSet> collectionChangeApplier, bool removeCardWhenZero)
         {
             _service = service;
+            _collectionChangeApplier = collectionChangeApplier;
             _removeCardWhenZero = removeCardWhenZero;
             CardsToAdd.CollectionChanged += CardsToAdd_CollectionChanged;
         }
@@ -310,11 +317,10 @@ namespace CollectaMundo.ViewModels
                 ClearSelectionTrigger++;
             }
 
-            // 3) Fire UI updates
-            foreach (var change in changes)
-            {
-                CardChanged?.Invoke(this, change);
-            }
+            // 3) Build and apply collection changes
+            var changeSet = CollectionChangeBuilder.Build(changes);
+            _collectionChangeApplier.Apply(CardsToAdd, changeSet);
+            CollectionChanged?.Invoke(this, changeSet);
 
             // 4) Build summary
             var sb = new StringBuilder();

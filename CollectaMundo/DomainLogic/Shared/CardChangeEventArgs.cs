@@ -1,6 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 
-namespace CollectaMundo.DomainLogic.EditCollection.Models
+namespace CollectaMundo.DomainLogic.Shared
 {
     public class CardChangeEventArgs : EventArgs
     {

@@ -1,8 +1,8 @@
 ﻿using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Filtering.Enums;
+using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Tests.TestUtils;

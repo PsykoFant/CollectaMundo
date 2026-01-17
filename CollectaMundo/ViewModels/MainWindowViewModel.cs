@@ -7,16 +7,17 @@ using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
-using CollectaMundo.DomainLogic.EditCollection.Models;
+using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Presentation;
 using CollectaMundo.ViewModels.Import;
+using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows;
-using static CollectaMundo.DomainLogic.EditCollection.Models.CardChangeEventArgs;
+using static CollectaMundo.DomainLogic.Shared.CardChangeEventArgs;
 
 namespace CollectaMundo.ViewModels
 {
@@ -214,8 +215,9 @@ namespace CollectaMundo.ViewModels
             ColorIcons = new CardViewModel { Cards = [.. ManaKeys.Select(CardSet.FromManaKey)] };
 
             // edit collection viewmodels
-            AddCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: true);
-            EditCardsVM = new EditCollectionViewModel(editService, removeCardWhenZero: false);
+
+            AddCardsVM = new EditCollectionViewModel(editService, new CollectionChangeApplier(), true);
+            EditCardsVM = new EditCollectionViewModel(editService, new CollectionChangeApplier(), false);
 
             // filtering viewmodel
             FilterVM = new FilterViewModel(_filteringService);

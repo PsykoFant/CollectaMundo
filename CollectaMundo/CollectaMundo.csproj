@@ -94,5 +94,9 @@
      <InternalsVisibleTo Include="CollectaMundo.Tests" />
  </ItemGroup>
 	
+ <ItemGroup>
+   <Folder Include="DomainLogic\EditCollection\Models\" />
+ </ItemGroup>
+	
 	
 </Project>
