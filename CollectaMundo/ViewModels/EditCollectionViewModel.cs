@@ -302,54 +302,73 @@ namespace CollectaMundo.ViewModels
                 summaryTitle: "Set the following cards not for trade:");
         }
 
-
         // Shared helper
-        private async Task SubmitBatchAsync(IEnumerable<CardSet> originals, Func<IEnumerable<CardSet>, Task<List<CardChangeEventArgs>>> persistBatch, bool clearAfter, string summaryTitle)
+        private async Task SubmitBatchAsync(IEnumerable<CardSet> originals, Func<IEnumerable<CardSet>, Task<CollectionChangeSet<CardSet>>> persistBatch, bool clearAfter, string summaryTitle)
         {
             var list = originals.ToList();
-            var changes = await persistBatch(list);
 
+            // 1) Persist + get atomic change set
+            var changeSet = await persistBatch(list);
+
+            // 2) Clear UI selection if requested
             if (clearAfter)
             {
                 CardsToAdd.Clear();
                 ClearSelectionTrigger++;
             }
 
-            // 3) Build and apply collection changes
-            var changeSet = CollectionChangeBuilder.Build(changes);
+            // 3) Apply in-memory collection changes
             CollectionChanged?.Invoke(this, changeSet);
 
-            // 4) Build summary
+            // 4) Build user-facing summary
             var sb = new StringBuilder();
 
-            var ups = changes.Where(c => c.Type == CardChangeEventArgs.ChangeType.Upsert).Select(c => c.Survivor!).ToList();
-            if (ups.Count != 0)
+            // ---- Upserts (added or updated cards)
+            if (changeSet.AddedOrUpdated.Count > 0)
             {
                 sb.AppendLine(summaryTitle).AppendLine();
-                foreach (var c in ups)
+
+                foreach (var c in changeSet.AddedOrUpdated)
                 {
-                    sb.AppendLine($"- {c.Name} (Condition: {c.SelectedCondition}, Language: {c.Language}, Finish: {c.SelectedFinish}, Owned: {c.CardsOwned}, Trade: {c.CardsForTrade})");
+                    sb.AppendLine(
+                        $"- {c.Name} " +
+                        $"(Condition: {c.SelectedCondition}, " +
+                        $"Language: {c.Language}, " +
+                        $"Finish: {c.SelectedFinish}, " +
+                        $"Owned: {c.CardsOwned}, " +
+                        $"Trade: {c.CardsForTrade})");
                 }
             }
 
-            var deletedIds = System.Linq.Enumerable.ToHashSet(changes.Where(ch => ch.Type == CardChangeEventArgs.ChangeType.Delete).SelectMany(ch => ch.Removed));
-            var deletedCards = list.Where(c => c.CardId.HasValue && deletedIds.Contains(c.CardId.Value)).ToList();
-            if (deletedCards.Count != 0)
+            // ---- Deletions
+            if (changeSet.RemovedIds.Count > 0)
             {
                 if (sb.Length > 0)
                 {
                     sb.AppendLine();
                 }
 
-                sb.AppendLine("Deleted the following cards from your collection:").AppendLine();
+                sb.AppendLine("Deleted the following cards from your collection:")
+                  .AppendLine();
+
+                // Best-effort lookup from originals (safe + sufficient for UI)
+                var deletedCards = list
+                    .Where(c => c.CardId.HasValue && changeSet.RemovedIds.Contains(c.CardId.Value))
+                    .ToList();
+
                 foreach (var c in deletedCards)
                 {
-                    sb.AppendLine($"- {c.Name} (Condition: {c.SelectedCondition}, Language: {c.Language}, Finish: {c.SelectedFinish})");
+                    sb.AppendLine(
+                        $"- {c.Name} " +
+                        $"(Condition: {c.SelectedCondition}, " +
+                        $"Language: {c.Language}, " +
+                        $"Finish: {c.SelectedFinish})");
                 }
             }
 
             StatusMessage = sb.ToString().TrimEnd();
         }
+
 
         [ObservableProperty]
         private string statusMessage = string.Empty;
@@ -358,9 +377,8 @@ namespace CollectaMundo.ViewModels
             OnPropertyChanged(nameof(StatusVisibility));
         }
 
-        public Visibility StatusVisibility
-            => string.IsNullOrEmpty(StatusMessage)
-                ? Visibility.Collapsed
-                : Visibility.Visible;
+        public Visibility StatusVisibility => string.IsNullOrEmpty(StatusMessage)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
     }
 }

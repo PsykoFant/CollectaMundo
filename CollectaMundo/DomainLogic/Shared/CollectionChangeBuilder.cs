@@ -5,9 +5,9 @@ namespace CollectaMundo.DomainLogic.Shared
     // Pure domain logic for collapsing a sequence of card changes into a deterministic set of collection mutations.
     public static class CollectionChangeBuilder
     {
-        public static CollectionChangeSet<CardSet> Build(IEnumerable<CardChangeEventArgs> changes)
+        public static CollectionChangeSet<CardSet> Build(IEnumerable<CollectionChangeSet<CardSet>> changeSets)
         {
-            if (changes is null)
+            if (changeSets is null)
             {
                 return new CollectionChangeSet<CardSet>();
             }
@@ -15,21 +15,23 @@ namespace CollectaMundo.DomainLogic.Shared
             var removedIds = new HashSet<int>();
             var upsertsByKey = new Dictionary<string, CardSet>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var change in changes)
+            foreach (var changeSet in changeSets)
             {
-                foreach (var id in change.Removed)
+                // Collect removals
+                foreach (var id in changeSet.RemovedIds)
                 {
                     removedIds.Add(id);
                 }
 
-                if (change.Type == CardChangeEventArgs.ChangeType.Upsert && change.Survivor is not null)
+                // Collect upserts (last writer wins per business key)
+                foreach (var card in changeSet.AddedOrUpdated)
                 {
-                    var s = change.Survivor;
-                    var key = BuildKey(s.Uuid!, s.Language!, s.SelectedFinish!, s.SelectedCondition!);
+                    var key = BuildKey(card.Uuid!, card.Language!, card.SelectedFinish!, card.SelectedCondition!);
 
-                    upsertsByKey[key] = s;
+                    upsertsByKey[key] = card;
 
-                    if (s.CardId is int survivorId)
+                    // A survivor must never be removed
+                    if (card.CardId is int survivorId)
                     {
                         removedIds.Remove(survivorId);
                     }
@@ -44,5 +46,6 @@ namespace CollectaMundo.DomainLogic.Shared
         }
         private static string BuildKey(string uuid, string language, string finish, string condition) => $"{uuid}|{language}|{finish}|{condition}";
     }
+
 }
 

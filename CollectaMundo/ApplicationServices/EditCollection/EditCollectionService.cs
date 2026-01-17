@@ -67,18 +67,14 @@ namespace CollectaMundo.ApplicationServices.EditCollection
         }
 
         // Submitting new cards or card edits
-        public async Task<List<CardChangeEventArgs>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<CardSet> cards)
+        public async Task<CollectionChangeSet<CardSet>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<CardSet> cards)
         {
-            // For with defaults you know these are all new, so isEdit will be false,
-            bool isEdit = cards.Any(c => c.CardId != null);
-
-            // Open / Begin
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
 
             try
             {
-                // Prepare each raw into a fully‐populated CardSet
+                // 1) Prepare cards
                 var prepared = new List<CardSet>();
 
                 foreach (var raw in cards)
@@ -86,53 +82,41 @@ namespace CollectaMundo.ApplicationServices.EditCollection
                     prepared.Add(await _editLogic.PrepareNewCardWithDefaultsAsync(raw, uow.CurrentConnection));
                 }
 
-                // Hand off to your pure domain‐logic batch (no further UoW calls inside)
-                var changes = await _editLogic.SaveBatchAsync(prepared, isEdit, uow.CurrentConnection);
+                // 2) Persist + collect per-card change sets
+                var changeSets = await _editLogic.SaveBatchAsync(prepared, isEdit: false, uow.CurrentConnection);
 
-                // Commit on success
                 await uow.CommitAsync();
 
-                // 5) Return a concrete List
-                return [.. changes];
+                // 3) Collapse into ONE change set
+                return CollectionChangeBuilder.Build(changeSets);
             }
             catch
             {
-                // Roll back on any error
                 await uow.RollbackAsync();
                 throw;
             }
-            finally
-            {
-                // Clean up / close connection
-                await uow.DisposeAsync();
-            }
         }
-        public async Task<List<CardChangeEventArgs>> SubmitCardBatchAsync(IEnumerable<CardSet> cards)
+        public async Task<CollectionChangeSet<CardSet>> SubmitCardBatchAsync(IEnumerable<CardSet> cards)
         {
-            bool isEdit = cards.Any(c => c.CardId != null);
+            var isEdit = cards.Any(c => c.CardId != null);
 
-            // Start transaction
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
 
             try
             {
-                var results = await _editLogic.SaveBatchAsync(cards, isEdit, uow.CurrentConnection);
+                var changeSets = await _editLogic.SaveBatchAsync(cards, isEdit, uow.CurrentConnection);
 
                 await uow.CommitAsync();
-                return [.. results];
+
+                return CollectionChangeBuilder.Build(changeSets);
             }
             catch
             {
-                // Rollback on any error
                 await uow.RollbackAsync();
                 throw;
             }
-            finally
-            {
-                // Tear down connection
-                await uow.DisposeAsync();
-            }
         }
+
     }
 }

@@ -158,10 +158,9 @@ namespace CollectaMundo.DomainLogic.EditCollection
         }
 
         // Save a card and return the changes to viewmodel
-        public async Task<IReadOnlyList<CardChangeEventArgs>> SaveBatchAsync(IEnumerable<CardSet> cards, bool isEdit, SQLiteConnection connection)
+        public async Task<IReadOnlyList<CollectionChangeSet<CardSet>>> SaveBatchAsync(IEnumerable<CardSet> cards, bool isEdit, SQLiteConnection connection)
         {
-            // Using a single SQLiteConnection: do NOT parallelize DB ops.
-            var results = new List<CardChangeEventArgs>();
+            var results = new List<CollectionChangeSet<CardSet>>();
 
             if (isEdit)
             {
@@ -180,20 +179,23 @@ namespace CollectaMundo.DomainLogic.EditCollection
 
             return results;
         }
-        private async Task<CardChangeEventArgs> PersistAddedCardsAndReturnChangesAsync(CardSet card, SQLiteConnection connection)
+        private async Task<CollectionChangeSet<CardSet>> PersistAddedCardsAndReturnChangesAsync(CardSet card, SQLiteConnection connection)
         {
             using var transaction = connection.BeginTransaction();
+
             try
             {
                 // Treat add as an upsert + merge
-                var mergeResult = await UpdateOrMergeCardAsync(card, connection, false);
+                var mergeResult = await UpdateOrMergeCardAsync(card, connection, isEdit: false);
 
                 transaction.Commit();
 
-                // Sync in-memory card to DB survivor
+                // Survivor must exist for add flow
                 Debug.Assert(mergeResult.Survivor is not null, "Survivor should never be null for Add flow.");
+
                 var survivor = mergeResult.Survivor!;
 
+                // Sync caller-owned instance with DB survivor
                 card.CardId = survivor.CardId;
                 card.CardsOwned = survivor.CardsOwned;
                 card.CardsForTrade = survivor.CardsForTrade;
@@ -201,8 +203,11 @@ namespace CollectaMundo.DomainLogic.EditCollection
                 card.SelectedFinish = survivor.SelectedFinish;
                 card.Language = survivor.Language;
 
-
-                return new CardChangeEventArgs(card, mergeResult.Removed);
+                return new CollectionChangeSet<CardSet>
+                {
+                    AddedOrUpdated = [card],
+                    RemovedIds = mergeResult.Removed
+                };
             }
             catch
             {
@@ -210,40 +215,47 @@ namespace CollectaMundo.DomainLogic.EditCollection
                 throw;
             }
         }
-        private async Task<CardChangeEventArgs> PersistEditedCardsAndReturnChangesAsync(CardSet card, SQLiteConnection connection)
+        private async Task<CollectionChangeSet<CardSet>> PersistEditedCardsAndReturnChangesAsync(CardSet card, SQLiteConnection connection)
         {
-            // Deletion-by-zero still valid
+            // Deletion-by-zero
             if (card.CardsOwned == 0)
             {
                 await _repo.DeleteCardByIdAsync(card, connection);
 
-                var deletedId = card.CardId
-                    ?? throw new InvalidOperationException("Cannot delete a card without an ID");
+                var deletedId = card.CardId ?? throw new InvalidOperationException("Cannot delete a card without an ID");
 
-                return new CardChangeEventArgs(deletedId);
+                return new CollectionChangeSet<CardSet>
+                {
+                    RemovedIds = [deletedId]
+                };
             }
 
             using var transaction = connection.BeginTransaction();
 
             try
             {
-                var mergeResult = await UpdateOrMergeCardAsync(card, connection, true);
+                var mergeResult = await UpdateOrMergeCardAsync(card, connection, isEdit: true);
 
                 transaction.Commit();
 
-                // Update in-memory card to reflect DB survivor
-                // Sync in-memory card to DB survivor
-                Debug.Assert(mergeResult.Survivor is not null, "Survivor should never be null for Add flow.");
+                // Survivor must exist for edit flow
+                Debug.Assert(mergeResult.Survivor is not null, "Survivor should never be null for Edit flow.");
+
                 var survivor = mergeResult.Survivor!;
 
-                card.CardId = mergeResult.Survivor.CardId;
-                card.CardsOwned = mergeResult.Survivor.CardsOwned;
-                card.CardsForTrade = mergeResult.Survivor.CardsForTrade;
-                card.SelectedCondition = mergeResult.Survivor.SelectedCondition;
-                card.SelectedFinish = mergeResult.Survivor.SelectedFinish;
-                card.Language = mergeResult.Survivor.Language;
+                // Sync in-memory card with DB survivor
+                card.CardId = survivor.CardId;
+                card.CardsOwned = survivor.CardsOwned;
+                card.CardsForTrade = survivor.CardsForTrade;
+                card.SelectedCondition = survivor.SelectedCondition;
+                card.SelectedFinish = survivor.SelectedFinish;
+                card.Language = survivor.Language;
 
-                return new CardChangeEventArgs(card, mergeResult.Removed);
+                return new CollectionChangeSet<CardSet>
+                {
+                    AddedOrUpdated = [card],
+                    RemovedIds = mergeResult.Removed
+                };
             }
             catch
             {
@@ -251,24 +263,29 @@ namespace CollectaMundo.DomainLogic.EditCollection
                 throw;
             }
         }
-        private async Task<CardChangeEventArgs> UpdateOrMergeCardAsync(CardSet card, SQLiteConnection conn, bool isEdit)
+        private async Task<MergeResult> UpdateOrMergeCardAsync(CardSet card, SQLiteConnection conn, bool isEdit)
         {
             if (isEdit && card.CardsOwned == 0)
             {
                 await _repo.DeleteCardByIdAsync(card, conn);
-                return new CardChangeEventArgs(card.CardId ?? throw new InvalidOperationException("Cannot delete card without ID"));
+
+                var deletedId = card.CardId ?? throw new InvalidOperationException("Cannot delete card without ID");
+
+                return new MergeResult(Survivor: null, Removed: [deletedId]);
             }
 
-            var matchIds = await _repo.FindRecordByIdAsync(
-                card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn) ?? [];
+            var matchIds = await _repo.FindRecordByIdAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn) ?? [];
 
+            // ADD without merge
             if (!isEdit && matchIds.Count == 0)
             {
                 var newId = await _repo.AddCardAndReturnIdAsync(card, conn);
                 card.CardId = newId;
-                return new CardChangeEventArgs(card);
+
+                return new MergeResult(Survivor: card, Removed: []);
             }
 
+            // EDIT: ensure current row participates
             if (isEdit && card.CardId.HasValue && !matchIds.Contains(card.CardId.Value))
             {
                 matchIds.Add(card.CardId.Value);
@@ -278,40 +295,32 @@ namespace CollectaMundo.DomainLogic.EditCollection
             var keepId = matchIds[0];
             var removedIds = matchIds.Skip(1).ToList();
 
-            // Edit with no merge: skip totals
+            // EDIT with no merge -> simple update
             if (isEdit && removedIds.Count == 0 && keepId == card.CardId)
             {
-                await _repo.UpdateCardFieldsByIdAsync(
-                    keepId,
-                    card.CardsOwned,
-                    card.CardsForTrade,
-                    card.SelectedCondition!,
-                    card.Language!,
-                    card.SelectedFinish!,
-                    conn);
-
-                return new CardChangeEventArgs(card);
+                await _repo.UpdateCardFieldsByIdAsync(keepId, card.CardsOwned, card.CardsForTrade, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn);
+                return new MergeResult(Survivor: card, Removed: []);
             }
 
-            // Compute correct totals for merge
+            // Compute totals
             int sumOwned;
             int sumTrade;
 
             if (!isEdit)
             {
-                // ADD: get full totals
-                var (existingOwned, existingTrade) = await _repo.GetTotalsAsync(
-                    card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn);
+                // ADD: include all existing
+                var (existingOwned, existingTrade) = await _repo.GetTotalsAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, conn);
 
                 sumOwned = existingOwned + card.CardsOwned;
                 sumTrade = existingTrade + card.CardsForTrade;
             }
             else
             {
-                // EDIT: exclude the current row
+                // EDIT: exclude current row
                 var currentId = card.CardId ?? throw new InvalidOperationException("Edit requires CardId");
 
-                var (ownedWithoutCurrent, tradeWithoutCurrent) = await _repo.GetTotalsExcludingIdAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, currentId, conn);
+                var (ownedWithoutCurrent, tradeWithoutCurrent) =
+                    await _repo.GetTotalsExcludingIdAsync(card.Uuid!, card.SelectedCondition!, card.Language!, card.SelectedFinish!, currentId, conn);
 
                 sumOwned = ownedWithoutCurrent + card.CardsOwned;
                 sumTrade = tradeWithoutCurrent + card.CardsForTrade;
@@ -328,9 +337,9 @@ namespace CollectaMundo.DomainLogic.EditCollection
             card.CardsOwned = sumOwned;
             card.CardsForTrade = sumTrade;
 
-            return new CardChangeEventArgs(card, removedIds);
+            return new MergeResult(Survivor: card, Removed: removedIds);
         }
-
+        private sealed record MergeResult(CardSet? Survivor, IReadOnlyList<int> Removed);
 
     }
 }
