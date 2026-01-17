@@ -12,6 +12,7 @@ using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLists;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.Filtering;
 using CollectaMundo.DomainLogic.Filtering.Enums;
@@ -34,10 +35,8 @@ namespace CollectaMundo.Tests.TestUtils;
 
 public static class TestAppBuilder
 {
-    public static async Task<(MainWindowViewModel VM, StatusViewModel Status)> BuildAsync(
-    InMemoryDatabaseFixture fixture,
-    IDbConnectionFactory dbFactory,
-    List<CardChangeEventArgs>? eventSink = null)
+    public static async Task<(MainWindowViewModel VM, StatusViewModel Status)> BuildAsync(InMemoryDatabaseFixture fixture, IDbConnectionFactory dbFactory, List<CollectionChangeSet<CardSet>>? eventSink = null)
+
     {
         await fixture.InitializeAsync();
 
@@ -100,8 +99,8 @@ public static class TestAppBuilder
 
         if (eventSink is not null)
         {
-            mainVM.AddCardsVM.CardChanged += (_, e) => eventSink.Add(e);
-            mainVM.EditCardsVM.CardChanged += (_, e) => eventSink.Add(e);
+            mainVM.AddCardsVM.CollectionChanged += (_, e) => eventSink.Add(e);
+            mainVM.EditCardsVM.CollectionChanged += (_, e) => eventSink.Add(e);
         }
 
         var searchLogic = new FilterItemSearchLogic();
