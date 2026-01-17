@@ -312,60 +312,6 @@ namespace CollectaMundo.ViewModels
             _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters));
         }
 
-
-        // When a card is added/updated/deleted from collection
-        //private void OnCardChanged(object? sender, CardChangeEventArgs e)
-        //{
-        //    switch (e.Type)
-        //    {
-        //        case ChangeType.Delete:
-        //            var dead = e.Removed.Single();
-        //            var toRm = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == dead);
-        //            if (toRm != null)
-        //            {
-        //                MyCollectionVM.Cards.Remove(toRm);
-        //            }
-
-        //            break;
-
-        //        case ChangeType.Upsert:
-        //            var inc = e.Survivor!;
-        //            var exist = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == inc.CardId);
-        //            if (exist != null)
-        //            {
-        //                exist.CardsOwned = inc.CardsOwned;
-        //                exist.CardsForTrade = inc.CardsForTrade;
-        //                exist.SelectedCondition = inc.SelectedCondition;
-        //                exist.Language = inc.Language;
-        //                exist.SelectedFinish = inc.SelectedFinish;
-        //            }
-        //            else
-        //            {
-        //                MyCollectionVM.Cards.Add(inc);
-        //            }
-
-        //            foreach (var dupId in e.Removed)
-        //            {
-        //                var dup = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == dupId);
-        //                if (dup != null)
-        //                {
-        //                    MyCollectionVM.Cards.Remove(dup);
-        //                }
-        //            }
-        //            break;
-        //    }
-
-        //    // reapply filters
-        //    MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
-
-
-        //    // debounce via scheduler (no direct DispatcherTimer usage here anymore)
-        //    _facetScheduler.Cancel();
-        //    _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters));
-        //}
-
-
-
         // When filters are updated
         private void OnFilterChanged(object? sender, EventArgs e)
         {
