@@ -1,6 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
-using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.EditCollection;
 using Moq;
 using System.Data.SQLite;
@@ -19,7 +18,7 @@ namespace CollectaMundo.Tests.UnitTests
             // This simulates: no existing record matches this card
             repo.Setup(r => r.FindRecordByIdAsync(
                 "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn))
-                .ReturnsAsync(new List<int>()); // Pure insert
+                .ReturnsAsync([]); // Pure insert
 
             // When inserting, return card ID 123
             repo.Setup(r => r.AddCardAndReturnIdAsync(
@@ -40,14 +39,17 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var results = await logic.SaveBatchAsync([newCard], isEdit: false, dummyConn);
+            var changeSets = await logic.SaveBatchAsync([newCard], isEdit: false, dummyConn);
 
-            // Assert
-            var evt = Assert.Single(results);
-            Assert.Equal(CardChangeEventArgs.ChangeType.Upsert, evt.Type);
-            Assert.NotNull(evt.Survivor);
+            // Assert: one batch -> one change set
+            var changeSet = Assert.Single(changeSets);
 
-            var survivor = evt.Survivor!;
+            // No removals on pure insert
+            Assert.Empty(changeSet.RemovedIds);
+
+            // Exactly one upsert
+            var survivor = Assert.Single(changeSet.AddedOrUpdated);
+
             Assert.Equal(123, survivor.CardId);
             Assert.Equal("foo-uuid", survivor.Uuid);
             Assert.Equal("Near Mint", survivor.SelectedCondition);
@@ -56,7 +58,7 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(2, survivor.CardsOwned);
             Assert.Equal(1, survivor.CardsForTrade);
 
-            // Verify repo methods called correctly
+            // Verify repo calls
             repo.Verify(r => r.FindRecordByIdAsync(
                 "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn), Times.Once);
 
@@ -78,12 +80,17 @@ namespace CollectaMundo.Tests.UnitTests
             var dummyConn = new SQLiteConnection("Data Source=:memory:");
             dummyConn.Open();
 
-            repo.Setup(r => r.FindRecordByIdAsync("foo-uuid", "Near Mint", "German", "nonfoil", dummyConn)).ReturnsAsync([123]);
+            // Existing matching record
+            repo.Setup(r => r.FindRecordByIdAsync(
+                    "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn))
+                .ReturnsAsync(new List<int> { 123 });
 
             // Existing totals in DB
-            repo.Setup(r => r.GetTotalsAsync("foo-uuid", "Near Mint", "German", "nonfoil", dummyConn)).ReturnsAsync((6, 4));
+            repo.Setup(r => r.GetTotalsAsync(
+                    "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn))
+                .ReturnsAsync((6, 4));
 
-            // New logic updates survivor row
+            // Survivor row update
             repo.Setup(r => r.UpdateCardFieldsByIdAsync(
                     123,
                     8, // 6 + 2
@@ -105,18 +112,31 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var results = await logic.SaveBatchAsync([newCard], isEdit: false, dummyConn);
+            var changeSets = await logic.SaveBatchAsync(
+                new[] { newCard },
+                isEdit: false,
+                dummyConn);
 
-            // Assert
-            var evt = Assert.Single(results);
-            Assert.Equal(CardChangeEventArgs.ChangeType.Upsert, evt.Type);
-            Assert.NotNull(evt.Survivor);
-            Assert.Equal(123, evt.Survivor.CardId);
+            // Assert: single batch → single change set
+            var changeSet = Assert.Single(changeSets);
 
-            // IMPORTANT: totals should include incoming card
-            Assert.Equal(8, evt.Survivor.CardsOwned);    // 6 + 2
-            Assert.Equal(5, evt.Survivor.CardsForTrade); // 4 + 1
+            // No rows removed in add-to-existing scenario
+            Assert.Empty(changeSet.RemovedIds);
 
+            // Exactly one upsert (the survivor)
+            var survivor = Assert.Single(changeSet.AddedOrUpdated);
+
+            Assert.Equal(123, survivor.CardId);
+            Assert.Equal("foo-uuid", survivor.Uuid);
+            Assert.Equal("Near Mint", survivor.SelectedCondition);
+            Assert.Equal("nonfoil", survivor.SelectedFinish);
+            Assert.Equal("German", survivor.Language);
+
+            // IMPORTANT: totals include incoming card
+            Assert.Equal(8, survivor.CardsOwned);    // 6 + 2
+            Assert.Equal(5, survivor.CardsForTrade); // 4 + 1
+
+            // Verify repo interactions
             repo.Verify(r => r.FindRecordByIdAsync(
                 "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn),
                 Times.Once);
@@ -126,7 +146,9 @@ namespace CollectaMundo.Tests.UnitTests
                 Times.Once);
 
             repo.Verify(r => r.UpdateCardFieldsByIdAsync(
-                123, 8, 5,
+                123,
+                8,
+                5,
                 "Near Mint", "German", "nonfoil",
                 dummyConn),
                 Times.Once);
@@ -136,33 +158,46 @@ namespace CollectaMundo.Tests.UnitTests
         public async Task SaveBatchAsync_EditCard_DeleteByZero()
         {
             var repo = new Mock<IEditCollectionRepo>();
-            var dummyConn = new SQLiteConnection();
+            var dummyConn = new SQLiteConnection("Data Source=:memory:");
+            dummyConn.Open();
 
-            // Delete Card 
-            repo.Setup(r => r.DeleteCardByIdAsync(It.IsAny<CardSet>(), It.IsAny<SQLiteConnection>())).Returns(Task.CompletedTask);
+            // Arrange: deletion path
+            repo.Setup(r => r.DeleteCardByIdAsync(
+                    It.IsAny<CardSet>(),
+                    dummyConn))
+                .Returns(Task.CompletedTask);
+
             var logic = new EditCollectionLogic(repo.Object);
 
-            var newCard = new CardSet
+            var card = new CardSet
             {
                 CardId = 123,
                 Uuid = "foo-uuid",
                 SelectedCondition = "Near Mint",
                 SelectedFinish = "nonfoil",
                 Language = "German",
-                CardsOwned = 0,
+                CardsOwned = 0,   // ← deletion trigger
                 CardsForTrade = 1
             };
 
             // Act
-            var results = await logic.SaveBatchAsync([newCard], isEdit: true, dummyConn);
+            var changeSets = await logic.SaveBatchAsync(
+                new[] { card },
+                isEdit: true,
+                dummyConn);
 
-            // Assert
-            var evt = Assert.Single(results);
-            Assert.Equal(CardChangeEventArgs.ChangeType.Delete, evt.Type);
+            // Assert: exactly one change set
+            var changeSet = Assert.Single(changeSets);
 
-            // verify repo was called
-            repo.Verify(r => r.DeleteCardByIdAsync(newCard, dummyConn), Times.Once);
+            // Delete-by-zero → no upserts
+            Assert.Empty(changeSet.AddedOrUpdated);
 
+            // Exactly one removed ID
+            var removedId = Assert.Single(changeSet.RemovedIds);
+            Assert.Equal(123, removedId);
+
+            // Verify repo interaction
+            repo.Verify(r => r.DeleteCardByIdAsync(card, dummyConn), Times.Once);
         }
 
         [Fact]
@@ -187,7 +222,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var logic = new EditCollectionLogic(repo.Object);
 
-            var newCard = new CardSet
+            var card = new CardSet
             {
                 CardId = 123,
                 Uuid = "foo-uuid",
@@ -199,14 +234,20 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var results = await logic.SaveBatchAsync([newCard], isEdit: true, dummyConn);
+            var changeSets = await logic.SaveBatchAsync(
+                [card],
+                isEdit: true,
+                dummyConn);
 
-            // Assert: business logic
-            var evt = Assert.Single(results);
-            Assert.Equal(CardChangeEventArgs.ChangeType.Upsert, evt.Type);
-            Assert.NotNull(evt.Survivor);
+            // Assert: exactly one change set
+            var changeSet = Assert.Single(changeSets);
 
-            var survivor = evt.Survivor!;
+            // No merge → no removals
+            Assert.Empty(changeSet.RemovedIds);
+
+            // Exactly one upsert
+            var survivor = Assert.Single(changeSet.AddedOrUpdated);
+
             Assert.Equal(123, survivor.CardId);
             Assert.Equal("foo-uuid", survivor.Uuid);
             Assert.Equal("Near Mint", survivor.SelectedCondition);
@@ -217,14 +258,16 @@ namespace CollectaMundo.Tests.UnitTests
 
             // Verify: correct repo interaction
             repo.Verify(r => r.FindRecordByIdAsync(
-                "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn), Times.Once);
+                "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn),
+                Times.Once);
 
             repo.Verify(r => r.UpdateCardFieldsByIdAsync(
                 123, 3, 1,
                 "Near Mint", "German", "nonfoil",
-                dummyConn), Times.Once);
+                dummyConn),
+                Times.Once);
 
-            // ✅ NEW: totals should NOT be used in a simple edit
+            // ✅ Simple edit → totals NOT used
             repo.Verify(r => r.GetTotalsAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<SQLiteConnection>()), Times.Never);
@@ -233,7 +276,7 @@ namespace CollectaMundo.Tests.UnitTests
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<int>(), It.IsAny<SQLiteConnection>()), Times.Never);
 
-            // ✅ no merge = no deletions
+            // ✅ No merge → no deletions
             repo.Verify(r => r.DeleteCardsByIdsAsync(
                 It.IsAny<IEnumerable<int>>(),
                 It.IsAny<SQLiteConnection>()), Times.Never);
@@ -251,7 +294,7 @@ namespace CollectaMundo.Tests.UnitTests
                     "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn))
                 .ReturnsAsync(new List<int> { 123, 456, 789 });
 
-            // New: use GetTotalsExcludingIdAsync instead of GetTotalsAsync
+            // EDIT + MERGE → exclude current row
             repo.Setup(r => r.GetTotalsExcludingIdAsync(
                     "foo-uuid", "Near Mint", "German", "nonfoil", 123, dummyConn))
                 .ReturnsAsync((6, 4)); // from rows 456 + 789
@@ -259,7 +302,7 @@ namespace CollectaMundo.Tests.UnitTests
             // Expect update of survivor row
             repo.Setup(r => r.UpdateCardFieldsByIdAsync(
                     123,
-                    9, 5, // 6+3, 4+1
+                    9, 5, // 6 + 3, 4 + 1
                     "Near Mint", "German", "nonfoil",
                     dummyConn))
                 .Returns(Task.CompletedTask);
@@ -272,7 +315,7 @@ namespace CollectaMundo.Tests.UnitTests
 
             var logic = new EditCollectionLogic(repo.Object);
 
-            var newCard = new CardSet
+            var card = new CardSet
             {
                 CardId = 123,
                 Uuid = "foo-uuid",
@@ -284,14 +327,17 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var results = await logic.SaveBatchAsync([newCard], isEdit: true, dummyConn);
+            var changeSets = await logic.SaveBatchAsync([card], isEdit: true, dummyConn);
 
-            // Assert - business logic
-            var evt = Assert.Single(results);
-            Assert.Equal(CardChangeEventArgs.ChangeType.Upsert, evt.Type);
-            Assert.NotNull(evt.Survivor);
+            // Assert: exactly one change set
+            var changeSet = Assert.Single(changeSets);
 
-            var survivor = evt.Survivor!;
+            // Removed IDs should be the non-survivors
+            Assert.Equal(new[] { 456, 789 }, changeSet.RemovedIds.OrderBy(x => x));
+
+            // Exactly one upsert (the survivor)
+            var survivor = Assert.Single(changeSet.AddedOrUpdated);
+
             Assert.Equal(123, survivor.CardId);
             Assert.Equal("foo-uuid", survivor.Uuid);
             Assert.Equal("Near Mint", survivor.SelectedCondition);
@@ -300,29 +346,32 @@ namespace CollectaMundo.Tests.UnitTests
             Assert.Equal(9, survivor.CardsOwned);     // 6 + 3
             Assert.Equal(5, survivor.CardsForTrade);  // 4 + 1
 
-            // Removed IDs should be the non-survivors
-            Assert.True(evt.Removed.SequenceEqual(new[] { 456, 789 }));
-
             // Verify correct calls
             repo.Verify(r => r.FindRecordByIdAsync(
-                "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn), Times.Once);
+                "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn),
+                Times.Once);
 
             repo.Verify(r => r.GetTotalsExcludingIdAsync(
-                "foo-uuid", "Near Mint", "German", "nonfoil", 123, dummyConn), Times.Once);
+                "foo-uuid", "Near Mint", "German", "nonfoil", 123, dummyConn),
+                Times.Once);
 
             repo.Verify(r => r.UpdateCardFieldsByIdAsync(
-                123, 9, 5, "Near Mint", "German", "nonfoil", dummyConn), Times.Once);
+                123, 9, 5,
+                "Near Mint", "German", "nonfoil",
+                dummyConn),
+                Times.Once);
 
             repo.Verify(r => r.DeleteCardsByIdsAsync(
                 It.Is<IEnumerable<int>>(ids => ids.SequenceEqual(new[] { 456, 789 })),
-                dummyConn), Times.Once);
+                dummyConn),
+                Times.Once);
 
             // ✅ Confirm GetTotalsAsync is NOT called
             repo.Verify(r => r.GetTotalsAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<SQLiteConnection>()),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<SQLiteConnection>()),
                 Times.Never);
         }
-
         [Fact]
         public async Task SaveBatchAsync_EditCard_Merge_ExcludesSelfFromTotals()
         {
@@ -333,15 +382,16 @@ namespace CollectaMundo.Tests.UnitTests
             // Setup: Find multiple matches, causing a merge
             repo.Setup(r => r.FindRecordByIdAsync(
                     "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn))
-                .ReturnsAsync(new List<int> { 123, 456 });
+                .ReturnsAsync([123, 456]);
 
             // Setup: Return only the *other* row's totals when excluding self
             repo.Setup(r => r.GetTotalsExcludingIdAsync(
                     "foo-uuid", "Near Mint", "German", "nonfoil", 123, dummyConn))
                 .ReturnsAsync((5, 2));  // Row 456's values
 
-            // Expect merged total to be: 5 (other) + 2 (current) = 7 owned
-            //                            2 (other) + 1 (current) = 3 trade
+            // Expect merged totals:
+            // Owned: 5 (other) + 2 (current) = 7
+            // Trade: 2 (other) + 1 (current) = 3
             repo.Setup(r => r.UpdateCardFieldsByIdAsync(
                     123,
                     7, 3,
@@ -369,25 +419,52 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var results = await logic.SaveBatchAsync([editedCard], isEdit: true, dummyConn);
+            var changeSets = await logic.SaveBatchAsync(
+                new[] { editedCard },
+                isEdit: true,
+                dummyConn);
 
-            // Assert
-            var evt = Assert.Single(results);
-            Assert.Equal(CardChangeEventArgs.ChangeType.Upsert, evt.Type);
-            Assert.Equal(123, evt.Survivor?.CardId);
-            Assert.Equal(7, evt.Survivor?.CardsOwned);     // 5 + 2
-            Assert.Equal(3, evt.Survivor?.CardsForTrade);  // 2 + 1
-            Assert.True(evt.Removed.SequenceEqual(new[] { 456 }));
+            // Assert: exactly one change set
+            var changeSet = Assert.Single(changeSets);
+
+            // Removed IDs should include only the duplicate
+            Assert.Equal(new[] { 456 }, changeSet.RemovedIds);
+
+            // Exactly one upsert (the survivor)
+            var survivor = Assert.Single(changeSet.AddedOrUpdated);
+
+            Assert.Equal(123, survivor.CardId);
+            Assert.Equal("foo-uuid", survivor.Uuid);
+            Assert.Equal("Near Mint", survivor.SelectedCondition);
+            Assert.Equal("nonfoil", survivor.SelectedFinish);
+            Assert.Equal("German", survivor.Language);
+            Assert.Equal(7, survivor.CardsOwned);     // 5 + 2
+            Assert.Equal(3, survivor.CardsForTrade);  // 2 + 1
 
             // Verify exclusion logic
             repo.Verify(r => r.GetTotalsExcludingIdAsync(
-                "foo-uuid", "Near Mint", "German", "nonfoil", 123, dummyConn), Times.Once);
+                "foo-uuid", "Near Mint", "German", "nonfoil", 123, dummyConn),
+                Times.Once);
 
             // Verify delete and update
-            repo.Verify(r => r.DeleteCardsByIdsAsync(It.IsAny<IEnumerable<int>>(), dummyConn), Times.Once);
+            repo.Verify(r => r.DeleteCardsByIdsAsync(
+                It.Is<IEnumerable<int>>(ids => ids.SequenceEqual(new[] { 456 })),
+                dummyConn),
+                Times.Once);
+
             repo.Verify(r => r.UpdateCardFieldsByIdAsync(
-                123, 7, 3, "Near Mint", "German", "nonfoil", dummyConn), Times.Once);
+                123, 7, 3,
+                "Near Mint", "German", "nonfoil",
+                dummyConn),
+                Times.Once);
+
+            // ✅ Ensure GetTotalsAsync is NOT used
+            repo.Verify(r => r.GetTotalsAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<SQLiteConnection>()),
+                Times.Never);
         }
+
 
     }
 }

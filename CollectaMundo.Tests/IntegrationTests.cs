@@ -2,7 +2,6 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Filtering.Enums;
-using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.Tests.TestUtils;
@@ -696,7 +695,6 @@ namespace CollectaMundo.Tests
     {
         private MainWindowViewModel _mainVM = null!;
         private readonly InMemoryDatabaseFixture _fx = fx;
-        private readonly List<CardChangeEventArgs> _changedEvents = [];
         private readonly FilteringService _filteringService = new();
         private IDbConnectionFactory _dbFactory = null!;
 
