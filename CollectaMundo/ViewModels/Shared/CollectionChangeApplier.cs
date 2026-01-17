@@ -1,58 +1,54 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared;
-using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ViewModels.Shared
 {
     public sealed class CollectionChangeApplier : ICollectionChangeApplier<CardSet>
     {
-        public void Apply(ObservableCollection<CardSet> collection, CollectionChangeSet<CardSet> changes)
+        public void Apply(IList<CardSet> collection, CollectionChangeSet<CardSet> changes)
         {
             if (collection == null || changes == null)
             {
                 return;
             }
 
-            // -----------------------------
-            // Remove deleted / merged cards
-            // -----------------------------
+            // Remove
             if (changes.RemovedIds.Count > 0)
             {
-                var toRemove = collection
-                    .Where(c => c.CardId.HasValue && changes.RemovedIds.Contains(c.CardId.Value)).ToList();
-
-                foreach (var card in toRemove)
+                // iterate backwards to avoid index issues on IList
+                for (int i = collection.Count - 1; i >= 0; i--)
                 {
-                    collection.Remove(card);
+                    var c = collection[i];
+                    if (c.CardId is int id && changes.RemovedIds.Contains(id))
+                    {
+                        collection.RemoveAt(i);
+                    }
                 }
             }
 
-            // -----------------------------
-            // Add or update survivors
-            // -----------------------------
+            // Upsert
             foreach (var incoming in changes.AddedOrUpdated)
             {
                 if (incoming.CardId is int cardId)
                 {
-                    var existing = collection.FirstOrDefault(c => c.CardId == cardId);
-
-                    if (existing != null)
+                    var index = -1;
+                    for (int i = 0; i < collection.Count; i++)
                     {
-                        ReplaceCard(existing, incoming, collection);
+                        if (collection[i].CardId == cardId)
+                        {
+                            index = i;
+                            break;
+                        }
+                    }
+
+                    if (index >= 0)
+                    {
+                        collection[index] = incoming; // works for ObservableCollection too
                         continue;
                     }
                 }
 
                 collection.Add(incoming);
-            }
-        }
-
-        private static void ReplaceCard(CardSet oldCard, CardSet newCard, ObservableCollection<CardSet> collection)
-        {
-            var index = collection.IndexOf(oldCard);
-            if (index >= 0)
-            {
-                collection[index] = newCard;
             }
         }
     }

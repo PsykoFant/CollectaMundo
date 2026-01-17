@@ -14,7 +14,7 @@ namespace CollectaMundo.ViewModels
 {
     public partial class EditCollectionViewModel : ObservableObject
     {
-        public event EventHandler<CardChangeEventArgs>? CardChanged;
+        //public event EventHandler<CardChangeEventArgs>? CardChanged;
 
         public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
@@ -319,7 +319,6 @@ namespace CollectaMundo.ViewModels
 
             // 3) Build and apply collection changes
             var changeSet = CollectionChangeBuilder.Build(changes);
-            _collectionChangeApplier.Apply(CardsToAdd, changeSet);
             CollectionChanged?.Invoke(this, changeSet);
 
             // 4) Build summary

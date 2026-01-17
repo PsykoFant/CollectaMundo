@@ -17,7 +17,6 @@ using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Windows;
-using static CollectaMundo.DomainLogic.Shared.CardChangeEventArgs;
 
 namespace CollectaMundo.ViewModels
 {
@@ -43,6 +42,9 @@ namespace CollectaMundo.ViewModels
 
         // File system picker
         private readonly FileSystemPicker _filesystemPicker;
+
+        // Collection change applier
+        private readonly ICollectionChangeApplier<CardSet> _collectionChangeApplier;
 
         // Mana keys for ColorIcons
         private readonly string[] ManaKeys = ["{W}", "{U}", "{B}", "{R}", "{G}", "{C}", "{X}"];
@@ -192,18 +194,14 @@ namespace CollectaMundo.ViewModels
             IFacetUpdater? facetUpdater = null)
         {
             _statusVM = statusVM;
-
             _settings = settings;
-
             _filteringService = filteringService;
             _cardListService = cardListService;
-
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
             _facetUpdater = facetUpdater ?? new FacetUpdater();
-
             _userPromptService = userPromptService;
-
             _filesystemPicker = fileSystemPicker;
+            _collectionChangeApplier = new CollectionChangeApplier();
 
             CurrentPage = Page.SearchAndFilter;
 
@@ -216,8 +214,8 @@ namespace CollectaMundo.ViewModels
 
             // edit collection viewmodels
 
-            AddCardsVM = new EditCollectionViewModel(editService, new CollectionChangeApplier(), true);
-            EditCardsVM = new EditCollectionViewModel(editService, new CollectionChangeApplier(), false);
+            AddCardsVM = new EditCollectionViewModel(editService, _collectionChangeApplier, true);
+            EditCardsVM = new EditCollectionViewModel(editService, _collectionChangeApplier, false);
 
             // filtering viewmodel
             FilterVM = new FilterViewModel(_filteringService);
@@ -288,69 +286,85 @@ namespace CollectaMundo.ViewModels
         #region event wiring (subscribe/unsubscribe)
         private void SubscribeChildVmEvents()
         {
-            AddCardsVM.CardChanged += OnCardChanged;
-            EditCardsVM.CardChanged += OnCardChanged;
+            AddCardsVM.CollectionChanged += OnCollectionChanged;
+            EditCardsVM.CollectionChanged += OnCollectionChanged;
             FilterVM.FilterChanged += OnFilterChanged;
         }
         private void UnsubscribeChildVmEvents()
         {
-            AddCardsVM.CardChanged -= OnCardChanged;
-            EditCardsVM.CardChanged -= OnCardChanged;
+            AddCardsVM.CollectionChanged -= OnCollectionChanged;
+            EditCardsVM.CollectionChanged += OnCollectionChanged;
             FilterVM.FilterChanged -= OnFilterChanged;
         }
         #endregion
 
         #region event handlers (FilterChanged, CardChanged)
-        // When a card is added/updated/deleted from collection
-        private void OnCardChanged(object? sender, CardChangeEventArgs e)
+        private void OnCollectionChanged(object? sender, CollectionChangeSet<CardSet> changeSet)
         {
-            switch (e.Type)
-            {
-                case ChangeType.Delete:
-                    var dead = e.Removed.Single();
-                    var toRm = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == dead);
-                    if (toRm != null)
-                    {
-                        MyCollectionVM.Cards.Remove(toRm);
-                    }
+            // Apply add/update/remove to the REAL collection
+            _collectionChangeApplier.Apply(MyCollectionVM.Cards, changeSet);
 
-                    break;
-
-                case ChangeType.Upsert:
-                    var inc = e.Survivor!;
-                    var exist = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == inc.CardId);
-                    if (exist != null)
-                    {
-                        exist.CardsOwned = inc.CardsOwned;
-                        exist.CardsForTrade = inc.CardsForTrade;
-                        exist.SelectedCondition = inc.SelectedCondition;
-                        exist.Language = inc.Language;
-                        exist.SelectedFinish = inc.SelectedFinish;
-                    }
-                    else
-                    {
-                        MyCollectionVM.Cards.Add(inc);
-                    }
-
-                    foreach (var dupId in e.Removed)
-                    {
-                        var dup = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == dupId);
-                        if (dup != null)
-                        {
-                            MyCollectionVM.Cards.Remove(dup);
-                        }
-                    }
-                    break;
-            }
-
-            // reapply filters
+            // Reapply filters
             MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
 
-
-            // debounce via scheduler (no direct DispatcherTimer usage here anymore)
+            // Debounced facet refresh
             _facetScheduler.Cancel();
             _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters));
         }
+
+
+        // When a card is added/updated/deleted from collection
+        //private void OnCardChanged(object? sender, CardChangeEventArgs e)
+        //{
+        //    switch (e.Type)
+        //    {
+        //        case ChangeType.Delete:
+        //            var dead = e.Removed.Single();
+        //            var toRm = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == dead);
+        //            if (toRm != null)
+        //            {
+        //                MyCollectionVM.Cards.Remove(toRm);
+        //            }
+
+        //            break;
+
+        //        case ChangeType.Upsert:
+        //            var inc = e.Survivor!;
+        //            var exist = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == inc.CardId);
+        //            if (exist != null)
+        //            {
+        //                exist.CardsOwned = inc.CardsOwned;
+        //                exist.CardsForTrade = inc.CardsForTrade;
+        //                exist.SelectedCondition = inc.SelectedCondition;
+        //                exist.Language = inc.Language;
+        //                exist.SelectedFinish = inc.SelectedFinish;
+        //            }
+        //            else
+        //            {
+        //                MyCollectionVM.Cards.Add(inc);
+        //            }
+
+        //            foreach (var dupId in e.Removed)
+        //            {
+        //                var dup = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == dupId);
+        //                if (dup != null)
+        //                {
+        //                    MyCollectionVM.Cards.Remove(dup);
+        //                }
+        //            }
+        //            break;
+        //    }
+
+        //    // reapply filters
+        //    MyCollectionVM.FilteredCards = _filteringService.ApplyFilters(MyCollectionVM.Cards, FilterVM.Filters.Values);
+
+
+        //    // debounce via scheduler (no direct DispatcherTimer usage here anymore)
+        //    _facetScheduler.Cancel();
+        //    _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters));
+        //}
+
+
 
         // When filters are updated
         private void OnFilterChanged(object? sender, EventArgs e)
