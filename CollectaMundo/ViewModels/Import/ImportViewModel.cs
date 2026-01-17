@@ -438,8 +438,6 @@ namespace CollectaMundo.ViewModels.Import
             CurrentStepViewModel = null;
             _currentStep = ImportStep.Start;
 
-            await _parentViewModelContext.ReloadAllCardListsAndFiltersAsync();
-
             _parentViewModelContext.SetUiBusy(false);
             ImportOverlayVisibility = Visibility.Collapsed;
             ImportFailVisibility = Visibility.Collapsed;
