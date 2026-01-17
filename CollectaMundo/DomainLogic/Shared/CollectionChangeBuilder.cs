@@ -25,7 +25,7 @@ namespace CollectaMundo.DomainLogic.Shared
                 if (change.Type == CardChangeEventArgs.ChangeType.Upsert && change.Survivor is not null)
                 {
                     var s = change.Survivor;
-                    var key = Build(s.Uuid!, s.Language!, s.SelectedFinish!, s.SelectedCondition!);
+                    var key = BuildKey(s.Uuid!, s.Language!, s.SelectedFinish!, s.SelectedCondition!);
 
                     upsertsByKey[key] = s;
 
@@ -42,7 +42,7 @@ namespace CollectaMundo.DomainLogic.Shared
                 AddedOrUpdated = [.. upsertsByKey.Values]
             };
         }
-        private static string Build(string uuid, string language, string finish, string condition) => $"{uuid}|{language}|{finish}|{condition}";
+        private static string BuildKey(string uuid, string language, string finish, string condition) => $"{uuid}|{language}|{finish}|{condition}";
     }
 }
 
