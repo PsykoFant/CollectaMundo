@@ -1,7 +1,9 @@
 ﻿using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.ViewModels.Import.ImportSteps;
 using CollectaMundo.ViewModels.Import.Models;
 using CollectaMundo.ViewModels.Models;
@@ -21,7 +23,6 @@ namespace CollectaMundo.ViewModels.Import
         private readonly IUserPromptService _userPromptService = userPromptService;
 
         private ProgressSinks? _progress;
-
         private ProgressSinks Progress => _progress ??= CreateProgressSinks();
 
         private ProgressSinks CreateProgressSinks() => new()
@@ -147,6 +148,9 @@ namespace CollectaMundo.ViewModels.Import
         // Objects to hold final resolved an summary data
         public IReadOnlyList<ResolvedImportItem> ResolvedImportItems { get; private set; } = [];
         public ImportSummary Summary { get; private set; } = new();
+
+        // Publish events when collection changes
+        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
 
         #endregion
 
@@ -394,16 +398,22 @@ namespace CollectaMundo.ViewModels.Import
         public async Task<OperationResult> AfterStep9Action()
         {
             Progress.ProgressBarVisible.Report(true);
-            Progress.Detail.Report("Please wait - importing items...");
 
-            var cancelToken = _userPromptService.GetNewCancellationToken();
+            Progress.Detail.Report("Importing cards…");
 
-            // Snapshot current collection (read-only)
-            var currentCollection = _parent.MyCollectionVM.Cards.ToList();
+            var token = _userPromptService.GetNewCancellationToken();
 
-            var importResult = await Task.Run(() => _importService.ImportResolvedItems(ResolvedImportItems, currentCollection, Progress, cancelToken));
+            var importResult = await _importService.ImportResolvedItems(
+                ResolvedImportItems,
+                Progress,
+                token);
 
-
+            if (importResult.Code == OperationResultCode.Success &&
+                importResult.CollectionChanges is not null)
+            {
+                // 🔑 THIS IS THE KEY LINE
+                CollectionChanged?.Invoke(this, importResult.CollectionChanges);
+            }
 
             GoToStep(ImportStep.Finish);
             return new OperationResult(OperationResultCode.Success, importResult.Message);
