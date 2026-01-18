@@ -1,7 +1,6 @@
 ﻿using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared;
-using CollectaMundo.ViewModels.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ServiceStack;
@@ -18,15 +17,13 @@ namespace CollectaMundo.ViewModels
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
 
         private readonly IEditCollectionService _service;
-        private readonly ICollectionChangeApplier<CardSet> _collectionChangeApplier;
         private readonly bool _removeCardWhenZero;
 
 
         // Constructor
-        public EditCollectionViewModel(IEditCollectionService service, ICollectionChangeApplier<CardSet> collectionChangeApplier, bool removeCardWhenZero)
+        public EditCollectionViewModel(IEditCollectionService service, bool removeCardWhenZero)
         {
             _service = service;
-            _collectionChangeApplier = collectionChangeApplier;
             _removeCardWhenZero = removeCardWhenZero;
             CardsToAdd.CollectionChanged += CardsToAdd_CollectionChanged;
         }

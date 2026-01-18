@@ -214,8 +214,8 @@ namespace CollectaMundo.ViewModels
 
             // edit collection viewmodels
 
-            AddCardsVM = new EditCollectionViewModel(editService, _collectionChangeApplier, true);
-            EditCardsVM = new EditCollectionViewModel(editService, _collectionChangeApplier, false);
+            AddCardsVM = new EditCollectionViewModel(editService, true);
+            EditCardsVM = new EditCollectionViewModel(editService, false);
 
             // filtering viewmodel
             FilterVM = new FilterViewModel(_filteringService);
@@ -286,14 +286,16 @@ namespace CollectaMundo.ViewModels
         #region event wiring (subscribe/unsubscribe)
         private void SubscribeChildVmEvents()
         {
+            ImportVM.CollectionChanged += OnCollectionChanged;
             AddCardsVM.CollectionChanged += OnCollectionChanged;
             EditCardsVM.CollectionChanged += OnCollectionChanged;
             FilterVM.FilterChanged += OnFilterChanged;
         }
         private void UnsubscribeChildVmEvents()
         {
+            ImportVM.CollectionChanged -= OnCollectionChanged;
             AddCardsVM.CollectionChanged -= OnCollectionChanged;
-            EditCardsVM.CollectionChanged += OnCollectionChanged;
+            EditCardsVM.CollectionChanged -= OnCollectionChanged;
             FilterVM.FilterChanged -= OnFilterChanged;
         }
         #endregion

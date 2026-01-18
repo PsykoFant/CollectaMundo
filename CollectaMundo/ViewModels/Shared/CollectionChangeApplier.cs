@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Shared;
 
 namespace CollectaMundo.ViewModels.Shared
@@ -49,6 +50,57 @@ namespace CollectaMundo.ViewModels.Shared
                 }
 
                 collection.Add(incoming);
+            }
+        }
+        public void ApplyImportUpserts(IList<CardSet> collection, IReadOnlyList<CollectionUpsertItem> upserts)
+        {
+            if (upserts.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var upsert in upserts)
+            {
+                // Match by business key
+                var matches = collection
+                    .Where(c =>
+                        string.Equals(c.Uuid, upsert.Uuid, StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(c.Language, upsert.Language, StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(c.SelectedFinish, upsert.Finish, StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(c.SelectedCondition, upsert.Condition, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (matches.Count == 0)
+                {
+                    // ADD
+                    var card = new CardSet
+                    {
+                        Uuid = upsert.Uuid,
+                        Language = upsert.Language,
+                        SelectedFinish = upsert.Finish,
+                        SelectedCondition = upsert.Condition,
+                        CardsOwned = upsert.CardsOwned,
+                        CardsForTrade = upsert.CardsForTrade
+                    };
+
+                    card.RecomputeCollectionPrice();
+                    collection.Add(card);
+                }
+                else
+                {
+                    // UPDATE survivor (first is deterministic)
+                    var survivor = matches[0];
+
+                    survivor.CardsOwned = upsert.CardsOwned;
+                    survivor.CardsForTrade = upsert.CardsForTrade;
+                    survivor.RecomputeCollectionPrice();
+
+                    // REMOVE duplicates
+                    foreach (var dup in matches.Skip(1))
+                    {
+                        collection.Remove(dup);
+                    }
+                }
             }
         }
     }

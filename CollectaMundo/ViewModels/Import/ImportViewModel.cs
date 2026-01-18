@@ -403,20 +403,18 @@ namespace CollectaMundo.ViewModels.Import
 
             var token = _userPromptService.GetNewCancellationToken();
 
-            var importResult = await _importService.ImportResolvedItems(
-                ResolvedImportItems,
-                Progress,
-                token);
+            var importResult = await _importService.ImportResolvedItems(ResolvedImportItems, Progress, token);
 
-            if (importResult.Code == OperationResultCode.Success &&
-                importResult.CollectionChanges is not null)
+            if (importResult.Upserts.Count > 0)
             {
-                // 🔑 THIS IS THE KEY LINE
-                CollectionChanged?.Invoke(this, importResult.CollectionChanges);
+                _collectionChangeApplier.ApplyImportUpserts(_parentViewModelContext.MyCollectionVM.Cards, importResult.Upserts);
             }
 
+            CollectionChanged?.Invoke(this, importResult);
+
+
             GoToStep(ImportStep.Finish);
-            return new OperationResult(OperationResultCode.Success, importResult.Message);
+            return new OperationResult(OperationResultCode.Success, "Import completed succesfully");
         }
         public async Task<OperationResult> AfterStep10Action()
         {
