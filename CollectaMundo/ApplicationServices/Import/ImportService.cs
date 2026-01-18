@@ -300,7 +300,7 @@ namespace CollectaMundo.ApplicationServices.Import
                     "User cancelled save dialog.");
             }
 
-            // Build CSV contents using FINAL importability result
+            // CreateCollectionChangeSetFromEdits CSV contents using FINAL importability result
             var content = _importLogic.BuildUnimportableItemsCsv(
                 resolvedItems,
                 importItems);

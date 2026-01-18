@@ -5,7 +5,7 @@ namespace CollectaMundo.DomainLogic.Shared
     // Pure domain logic for collapsing a sequence of card changes into a deterministic set of collection mutations.
     public static class CollectionChangeBuilder
     {
-        public static CollectionChangeSet<CardSet> Build(IEnumerable<CollectionChangeSet<CardSet>> changeSets)
+        public static CollectionChangeSet<CardSet> CreateCollectionChangeSetFromEdits(IEnumerable<CollectionChangeSet<CardSet>> changeSets)
         {
             if (changeSets is null)
             {

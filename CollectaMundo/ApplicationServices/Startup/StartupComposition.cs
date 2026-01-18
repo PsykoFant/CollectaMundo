@@ -104,7 +104,7 @@ namespace CollectaMundo.ApplicationServices.Startup
                 var coreAggregator = new CardCoreAggregator();
                 var cardListService = new CardListService(dbFactory, cardListRepo, filterDefaultsLogic, cardLookupsService, coreAggregator);
 
-                // Build view model off UI thread
+                // CreateCollectionChangeSetFromEdits view model off UI thread
                 var mainVM = await Task.Run(() => MainWindowViewModel.CreateAsync(filteringService, editService, cardImageService, cardDbManagementService, importService, statusVM, userPromptService, fileSystemPicker, cardListService, settings));
 
                 mainVM.FilterVM.NotifyFilterChanged();

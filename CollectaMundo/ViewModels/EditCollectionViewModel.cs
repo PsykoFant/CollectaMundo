@@ -320,7 +320,7 @@ namespace CollectaMundo.ViewModels
             // 3) Apply in-memory collection changes
             CollectionChanged?.Invoke(this, changeSet);
 
-            // 4) Build user-facing summary
+            // 4) CreateCollectionChangeSetFromEdits user-facing summary
             var sb = new StringBuilder();
 
             // ---- Upserts (added or updated cards)

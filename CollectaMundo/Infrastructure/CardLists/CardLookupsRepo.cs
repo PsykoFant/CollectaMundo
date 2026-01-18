@@ -103,7 +103,7 @@ namespace CollectaMundo.Infrastructure.CardLists
                 );
             }
 
-            // 2) Build validated column identifiers and alias them
+            // 2) CreateCollectionChangeSetFromEdits validated column identifiers and alias them
             string prefix = normalized; // columns are like "cardmarketNormal", "cardmarketFoil", "cardmarketEtched"
             string sql = $@"
             SELECT uuid,

@@ -30,7 +30,7 @@ namespace CollectaMundo.DomainLogic.Filtering
                 // Special case for color filtering
                 if (CriteriaKey.Equals("Colors", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Build sets for mana cost and colors.
+                    // CreateCollectionChangeSetFromEdits sets for mana cost and colors.
                     var manaCostSymbols = new HashSet<string>(
                         card.ManaCost != null ? card.ManaCost.Split(',').Select(s => s.Trim()) : [],
                         StringComparer.OrdinalIgnoreCase);

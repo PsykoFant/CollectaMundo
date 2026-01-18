@@ -13,7 +13,7 @@ namespace CollectaMundo.Tests.TestUtils
         // Unique DB name per fixture instance
         public string DbName { get; } = $"MasterDb_{Guid.NewGuid():N}";
 
-        // Build a connection string that points to this instance's DB name
+        // CreateCollectionChangeSetFromEdits a connection string that points to this instance's DB name
         private string MasterConnectionString => $"Data Source=file:{DbName}?mode=memory&cache=shared;Version=3;URI=True;";
 
         // Instance fields 
@@ -459,7 +459,7 @@ namespace CollectaMundo.Tests.TestUtils
             // Discover which columns are BLOBs in this table
             var blobColumns = await GetBlobColumnsAsync(tableName);
 
-            // Build the INSERT command.
+            // CreateCollectionChangeSetFromEdits the INSERT command.
             var parameters = string.Join(", ", headers.Select((h, i) => $"@p{i}"));
             string insertSql = $"INSERT INTO {tableName} ({string.Join(", ", headers)}) VALUES ({parameters});";
             Debug.WriteLine($"Seeding table '{tableName}' using SQL: {insertSql}");

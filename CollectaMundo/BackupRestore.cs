@@ -422,7 +422,7 @@ namespace CollectaMundo
 
                 await DBAccess.OpenConnectionAsync();
 
-                // Build a dictionary to hold CSV values and their corresponding UUIDs
+                // CreateCollectionChangeSetFromEdits a dictionary to hold CSV values and their corresponding UUIDs
                 Dictionary<string, List<string>> csvToUuidsMap = [];
 
                 // Use a StringBuilder to build a batch SQL query

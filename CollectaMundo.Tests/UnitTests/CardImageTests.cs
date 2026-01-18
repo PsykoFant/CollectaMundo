@@ -60,7 +60,7 @@ namespace CollectaMundo.Tests.UnitTests
             downloader.Setup(d => d.DownloadAsync(It.IsAny<string>(), "abc", "back"))
                       .ReturnsAsync([4, 5, 6]);
 
-            // Build the service with our mocks + real in-memory DB factory
+            // CreateCollectionChangeSetFromEdits the service with our mocks + real in-memory DB factory
             var service = new CardImageService(
                 dbFactory,
                 remoteLookups.Object,

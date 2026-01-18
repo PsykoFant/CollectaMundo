@@ -601,7 +601,7 @@ namespace CollectaMundo.DomainLogic.Import
         }
         public IReadOnlyList<CollectionUpsertItem> CollapseResolvedItemsForCollection(IReadOnlyList<ResolvedImportItem> resolvedItems)
         {
-            return resolvedItems
+            return [.. resolvedItems
                 .Where(r => r.IsImportable && !string.IsNullOrWhiteSpace(r.Uuid))
                 .Select(r => new
                 {
@@ -626,8 +626,7 @@ namespace CollectaMundo.DomainLogic.Import
                     Condition: g.Key.Condition,
                     CardsOwned: g.Sum(x => x.CardsOwned),
                     CardsForTrade: g.Sum(x => x.CardsForTrade)
-                ))
-                .ToList();
+                ))];
         }
 
         // Helpers

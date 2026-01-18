@@ -13,7 +13,7 @@ namespace CollectaMundo.DomainLogic.CardLists.CardLookups
             IReadOnlyDictionary<string, SetDto> sets,
             IReadOnlyDictionary<string, PriceDto> prices)
         {
-            // Build alias map: tokenSetCode → setCode
+            // CreateCollectionChangeSetFromEdits alias map: tokenSetCode → setCode
             var tokenToCodeMap = sets.Values.Where(s => !string.IsNullOrWhiteSpace(s.TokenCode)).ToDictionary(
                     s => s.TokenCode,
                     s => s.Code,

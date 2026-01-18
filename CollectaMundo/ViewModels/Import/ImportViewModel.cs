@@ -210,7 +210,7 @@ namespace CollectaMundo.ViewModels.Import
                 // 1. Resolve import items via service
                 ResolvedImportItems = _importService.ResolveImportItems(ImportCardList, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
 
-                // 2. Build UI summary (projection)
+                // 2. CreateCollectionChangeSetFromEdits UI summary (projection)
                 Summary = _importService.BuildImportSummary(ResolvedImportItems, ImportCardList, NameSetMappings, AdditionalMappings, ConditionMappings, FinishMappings, LanguageMappings);
                 DebugImportSummary();
             }

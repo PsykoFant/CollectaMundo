@@ -45,7 +45,7 @@ namespace CollectaMundo.Infrastructure.Import
             // Prepare result dictionary with empty lists for each lookup value
             var result = values.Distinct().ToDictionary(v => v, v => new List<string>());
 
-            // Build the parameterized SQL query that unions cardIdentifiers & tokenIdentifiers.
+            // CreateCollectionChangeSetFromEdits the parameterized SQL query that unions cardIdentifiers & tokenIdentifiers.
             // We'll create parameters @v0, @v1, ...
             var sb = new StringBuilder();
             sb.Append("SELECT ci.uuid AS uuid, ci.").Append(identifierFieldName).Append(" AS idval ")
@@ -124,7 +124,7 @@ namespace CollectaMundo.Infrastructure.Import
                 return result;
             }
 
-            // Build parameterized IN clauses
+            // CreateCollectionChangeSetFromEdits parameterized IN clauses
             var nameParams = new List<SQLiteParameter>();
             var codeParams = new List<SQLiteParameter>();
 
@@ -302,7 +302,7 @@ namespace CollectaMundo.Infrastructure.Import
                 return result;
             }
 
-            // Build IN-clause parameters
+            // CreateCollectionChangeSetFromEdits IN-clause parameters
             var nameParams = new List<SQLiteParameter>();
             var placeholders = new List<string>();
 

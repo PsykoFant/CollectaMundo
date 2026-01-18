@@ -20,7 +20,7 @@ namespace CollectaMundo.Infrastructure.CardDatabaseManagement
                 .SelectMany(kvp => kvp.Value.Keys)
                 .Distinct(StringComparer.OrdinalIgnoreCase);
 
-            // Build columns like: cardmarketNormal, cardmarketFoil, cardmarketEtched, ...
+            // CreateCollectionChangeSetFromEdits columns like: cardmarketNormal, cardmarketFoil, cardmarketEtched, ...
             var retailerColumns = retailerIds
                 .SelectMany(id => finishes.Select(f => $"{id}{f} DECIMAL(10, 2)"))
                 .ToList();

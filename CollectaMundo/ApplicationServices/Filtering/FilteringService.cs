@@ -125,7 +125,7 @@ namespace CollectaMundo.ApplicationServices.Filtering
                                     _ => ""
                                 };
 
-                                // Build the filter segment. If the operator is NOT, prefix each option with "NOT ".
+                                // CreateCollectionChangeSetFromEdits the filter segment. If the operator is NOT, prefix each option with "NOT ".
                                 string filterSegment = filter.OperatorSelection == OperatorType.NOT
                                     ? string.Join($" {operatorSymbol} ", filter.SelectedOptions.Select(opt => $"NOT {opt}"))
                                     : string.Join($" {operatorSymbol} ", filter.SelectedOptions);

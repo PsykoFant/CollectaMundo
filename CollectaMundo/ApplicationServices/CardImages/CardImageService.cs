@@ -51,7 +51,7 @@ namespace CollectaMundo.ApplicationServices.CardImages
                 return null;
             }
 
-            // Build image URLs
+            // CreateCollectionChangeSetFromEdits image URLs
             var (FrontUrl, BackUrl) = _logic.BuildImageUrls(scryfallID, card);
             string frontUrl = FrontUrl;
             string? backUrl = BackUrl;
