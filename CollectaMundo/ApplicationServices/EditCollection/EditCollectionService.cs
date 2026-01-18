@@ -88,7 +88,7 @@ namespace CollectaMundo.ApplicationServices.EditCollection
                 await uow.CommitAsync();
 
                 // 3) Collapse into ONE change set
-                return CollectionChangeBuilder.CreateCollectionChangeSetFromEdits(changeSets);
+                return _editLogic.CreateCollectionChangeSetFromEdits(changeSets);
             }
             catch
             {
@@ -109,7 +109,7 @@ namespace CollectaMundo.ApplicationServices.EditCollection
 
                 await uow.CommitAsync();
 
-                return CollectionChangeBuilder.CreateCollectionChangeSetFromEdits(changeSets);
+                return _editLogic.CreateCollectionChangeSetFromEdits(changeSets);
             }
             catch
             {

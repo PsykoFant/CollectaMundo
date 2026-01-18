@@ -9,5 +9,6 @@ namespace CollectaMundo.DomainLogic.EditCollection
         Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit, SQLiteConnection connection);
         Task<IReadOnlyList<CollectionChangeSet<CardSet>>> SaveBatchAsync(IEnumerable<CardSet> cards, bool isEdit, SQLiteConnection connection);
         Task<CardSet> PrepareNewCardWithDefaultsAsync(CardSet selectedCard, SQLiteConnection connection);
+        CollectionChangeSet<CardSet> CreateCollectionChangeSetFromEdits(IEnumerable<CollectionChangeSet<CardSet>> changeSets);
     }
 }
