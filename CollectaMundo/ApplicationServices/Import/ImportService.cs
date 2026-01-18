@@ -1,7 +1,9 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import;
 using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.Import;
 using CollectaMundo.Infrastructure.Shared;
 using CollectaMundo.ViewModels.Models;
@@ -313,24 +315,29 @@ namespace CollectaMundo.ApplicationServices.Import
                 OperationResultCode.Success,
                 $"Saved unimportable items to {filePath}");
         }
-        public async Task<OperationResult> ImportResolvedItems(IReadOnlyList<ResolvedImportItem> resolvedItems, ProgressSinks progress, CancellationToken token)
+        public async Task<ImportExecutionResult> ImportResolvedItems(IReadOnlyList<ResolvedImportItem> resolvedItems, IReadOnlyList<CardSet> currentCollection, ProgressSinks progress, CancellationToken token)
         {
             if (resolvedItems == null || resolvedItems.Count == 0)
             {
-                return new(OperationResultCode.Empty, "No resolved items to import.");
+                return new ImportExecutionResult(
+                    new OperationResult(OperationResultCode.Empty, "No resolved items to import."),
+                    new CollectionChangeSet<CardSet>());
             }
 
             progress.Detail.Report("Preparing import items...");
 
+            // DomainLogic: collapse import rows into unique collection upserts
             var collapsed = _importLogic.CollapseResolvedItemsForCollection(resolvedItems);
 
             if (collapsed.Count == 0)
             {
-                return new(OperationResultCode.Success, "No importable items found.");
+                return new ImportExecutionResult(
+                    new OperationResult(OperationResultCode.Success, "No importable items found."),
+                    new CollectionChangeSet<CardSet>());
             }
 
             await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync(); // write transaction
+            await uow.BeginAsync();
 
             try
             {
@@ -339,28 +346,43 @@ namespace CollectaMundo.ApplicationServices.Import
                 progress.Detail.Report("Importing cards to collection...");
                 progress.Percent.Report(0);
 
-                await _importRepo.UpsertMyCollectionAsync(collapsed, uow.CurrentConnection, uow.CurrentTransaction, progress.Percent, token);
-
+                // Infrastructure: persist to DB
+                await _importRepo.UpsertMyCollectionAsync(
+                    collapsed,
+                    uow.CurrentConnection,
+                    uow.CurrentTransaction,
+                    progress.Percent,
+                    token);
 
                 await uow.CommitAsync();
 
+                // DomainLogic.Import: compute in-memory delta
+                var changeSet = ImportCollectionChangeFactory.CreateCollectionChangeSet(collapsed, currentCollection);
+
                 progress.Detail.Report("Import completed.");
-                return new OperationResult(
-                    OperationResultCode.Success,
-                    $"Finished importing {collapsed.Count} unique collection rows.");
+
+                return new ImportExecutionResult(
+                    new OperationResult(
+                        OperationResultCode.Success,
+                        $"Finished importing {collapsed.Count} unique collection rows."),
+                    changeSet);
             }
             catch (OperationCanceledException)
             {
                 await uow.RollbackAsync();
-                return new(OperationResultCode.CancelledByUser, "Import cancelled by user.");
+                return new ImportExecutionResult(
+                    new OperationResult(OperationResultCode.CancelledByUser, "Import cancelled by user."),
+                    new CollectionChangeSet<CardSet>());
             }
             catch (Exception ex)
             {
                 await uow.RollbackAsync();
-                return new(OperationResultCode.Error, $"Import failed: {ex.Message}");
+                return new ImportExecutionResult(
+                    new OperationResult(OperationResultCode.Error, $"Import failed: {ex.Message}"),
+                    new CollectionChangeSet<CardSet>());
             }
         }
-
+        public sealed record ImportExecutionResult(OperationResult Result, CollectionChangeSet<CardSet> CollectionChanges);
 
 
 

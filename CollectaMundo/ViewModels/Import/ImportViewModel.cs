@@ -394,13 +394,19 @@ namespace CollectaMundo.ViewModels.Import
         public async Task<OperationResult> AfterStep9Action()
         {
             Progress.ProgressBarVisible.Report(true);
-            Progress.Detail.Report("Please wait - importin items...");
+            Progress.Detail.Report("Please wait - importing items...");
 
             var cancelToken = _userPromptService.GetNewCancellationToken();
-            var result = await Task.Run(() => _importService.ImportResolvedItems(ResolvedImportItems, Progress, cancelToken));
+
+            // Snapshot current collection (read-only)
+            var currentCollection = _parent.MyCollectionVM.Cards.ToList();
+
+            var importResult = await Task.Run(() => _importService.ImportResolvedItems(ResolvedImportItems, currentCollection, Progress, cancelToken));
+
+
 
             GoToStep(ImportStep.Finish);
-            return new OperationResult(OperationResultCode.Success, result.Message);
+            return new OperationResult(OperationResultCode.Success, importResult.Message);
         }
         public async Task<OperationResult> AfterStep10Action()
         {
