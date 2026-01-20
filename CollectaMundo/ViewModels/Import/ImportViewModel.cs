@@ -405,14 +405,6 @@ namespace CollectaMundo.ViewModels.Import
 
             var importResult = await _importService.ImportResolvedItems(ResolvedImportItems, Progress, token);
 
-            if (importResult.Upserts.Count > 0)
-            {
-                _collectionChangeApplier.ApplyImportUpserts(_parentViewModelContext.MyCollectionVM.Cards, importResult.Upserts);
-            }
-
-            CollectionChanged?.Invoke(this, importResult);
-
-
             GoToStep(ImportStep.Finish);
             return new OperationResult(OperationResultCode.Success, "Import completed succesfully");
         }

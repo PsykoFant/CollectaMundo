@@ -82,97 +82,33 @@ namespace CollectaMundo.Infrastructure.EditCollection
 
             return finishes;
         }
-        public async Task<List<int>> FindRecordByIdAsync(string uuid, string condition, string language, string finish, SQLiteConnection conn)
+        public async Task<int?> FindCardIdByCollectionIdentityAsync(string uuid, string condition, string language, string finish, SQLiteConnection conn)
         {
-            const string sql = @"
+            const string sql =
+            @"
                 SELECT id
-                  FROM myCollection
-                 WHERE uuid      = @uuid
-                   AND condition = @cond
-                   AND language  = @lang
-                   AND finish    = @fin;
-            ";
-
-            var ids = new List<int>();
-            try
-            {
-                using var cmd = new SQLiteCommand(sql, conn);
-                cmd.Parameters.AddWithValue("@uuid", uuid);
-                cmd.Parameters.AddWithValue("@cond", condition);
-                cmd.Parameters.AddWithValue("@lang", language);
-                cmd.Parameters.AddWithValue("@fin", finish);
-
-                using var rdr = await cmd.ExecuteReaderAsync();
-                while (await rdr.ReadAsync())
-                {
-                    ids.Add(rdr.GetInt32(0));
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in FindRecordByIdAsync: {ex}");
-                throw;
-            }
-            return ids;
-        }
-        public async Task<(int TotalOwned, int TotalTrade)> GetTotalsAsync(string uuid, string condition, string language, string finish, SQLiteConnection conn)
-        {
-            const string sql = @"
-                SELECT 
-                  COALESCE(SUM(cardsOwned), 0)    AS TotalOwned,
-                  COALESCE(SUM(cardsForTrade), 0) AS TotalTrade
                 FROM myCollection
-                WHERE uuid      = @uuid
-                  AND condition = @cond
-                  AND language  = @lang
-                  AND finish    = @fin;
+                WHERE uuid = @uuid
+                  AND condition = @condition
+                  AND language = @language
+                  AND finish = @finish
+                LIMIT 1;
             ";
 
             using var cmd = new SQLiteCommand(sql, conn);
+
             cmd.Parameters.AddWithValue("@uuid", uuid);
-            cmd.Parameters.AddWithValue("@cond", condition);
-            cmd.Parameters.AddWithValue("@lang", language);
-            cmd.Parameters.AddWithValue("@fin", finish);
+            cmd.Parameters.AddWithValue("@condition", condition);
+            cmd.Parameters.AddWithValue("@language", language);
+            cmd.Parameters.AddWithValue("@finish", finish);
 
-            using var rdr = await cmd.ExecuteReaderAsync();
-            if (!await rdr.ReadAsync())
-            {
-                return (0, 0);
-            }
+            var result = await cmd.ExecuteScalarAsync();
 
-            int totalOwned = rdr.GetInt32(0);
-            int totalTrade = rdr.GetInt32(1);
-            return (totalOwned, totalTrade);
+            return result is null || result is DBNull
+                ? null
+                : Convert.ToInt32(result);
         }
-        public async Task<(int TotalOwned, int TotalTrade)> GetTotalsExcludingIdAsync(string uuid, string condition, string language, string finish, int excludedId, SQLiteConnection conn)
-        {
-            const string sql = @"
-                SELECT 
-                  COALESCE(SUM(cardsOwned), 0)    AS TotalOwned,
-                  COALESCE(SUM(cardsForTrade), 0) AS TotalTrade
-                FROM myCollection
-                WHERE uuid      = @uuid
-                  AND condition = @cond
-                  AND language  = @lang
-                  AND finish    = @fin
-                  AND id       <> @excluded;
-            ";
 
-            using var cmd = new SQLiteCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@uuid", uuid);
-            cmd.Parameters.AddWithValue("@cond", condition);
-            cmd.Parameters.AddWithValue("@lang", language);
-            cmd.Parameters.AddWithValue("@fin", finish);
-            cmd.Parameters.AddWithValue("@excluded", excludedId);
-
-            using var rdr = await cmd.ExecuteReaderAsync();
-            if (!await rdr.ReadAsync())
-            {
-                return (0, 0);
-            }
-
-            return (rdr.GetInt32(0), rdr.GetInt32(1));
-        }
 
         // CRUD
         public async Task<int> AddCardAndReturnIdAsync(CardSet card, SQLiteConnection conn)
