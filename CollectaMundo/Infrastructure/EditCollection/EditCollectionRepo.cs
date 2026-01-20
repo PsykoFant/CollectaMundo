@@ -82,110 +82,96 @@ namespace CollectaMundo.Infrastructure.EditCollection
 
             return finishes;
         }
-        public async Task<List<int>> FindRecordByIdAsync(string uuid, string condition, string language, string finish, SQLiteConnection conn)
+        public async Task<int?> FindCardIdByCollectionIdentityAsync(    string uuid,    string condition,    string language,    string finish,    SQLiteConnection conn)
         {
             const string sql = @"
                 SELECT id
-                  FROM myCollection
-                 WHERE uuid      = @uuid
-                   AND condition = @cond
-                   AND language  = @lang
-                   AND finish    = @fin;
-            ";
-
-            var ids = new List<int>();
-            try
-            {
-                using var cmd = new SQLiteCommand(sql, conn);
-                cmd.Parameters.AddWithValue("@uuid", uuid);
-                cmd.Parameters.AddWithValue("@cond", condition);
-                cmd.Parameters.AddWithValue("@lang", language);
-                cmd.Parameters.AddWithValue("@fin", finish);
-
-                using var rdr = await cmd.ExecuteReaderAsync();
-                while (await rdr.ReadAsync())
-                {
-                    ids.Add(rdr.GetInt32(0));
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in FindRecordByIdAsync: {ex}");
-                throw;
-            }
-            return ids;
-        }
-        public async Task<(int TotalOwned, int TotalTrade)> GetTotalsAsync(string uuid, string condition, string language, string finish, SQLiteConnection conn)
-        {
-            const string sql = @"
-                SELECT 
-                  COALESCE(SUM(cardsOwned), 0)    AS TotalOwned,
-                  COALESCE(SUM(cardsForTrade), 0) AS TotalTrade
                 FROM myCollection
-                WHERE uuid      = @uuid
-                  AND condition = @cond
-                  AND language  = @lang
-                  AND finish    = @fin;
+                WHERE uuid = @uuid
+                  AND condition = @condition
+                  AND language = @language
+                  AND finish = @finish
+                LIMIT 2;
             ";
 
             using var cmd = new SQLiteCommand(sql, conn);
             cmd.Parameters.AddWithValue("@uuid", uuid);
-            cmd.Parameters.AddWithValue("@cond", condition);
-            cmd.Parameters.AddWithValue("@lang", language);
-            cmd.Parameters.AddWithValue("@fin", finish);
+            cmd.Parameters.AddWithValue("@condition", condition);
+            cmd.Parameters.AddWithValue("@language", language);
+            cmd.Parameters.AddWithValue("@finish", finish);
 
-            using var rdr = await cmd.ExecuteReaderAsync();
-            if (!await rdr.ReadAsync())
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            if (!await reader.ReadAsync())
             {
-                return (0, 0);
+                // No match
+                return null;
             }
 
-            int totalOwned = rdr.GetInt32(0);
-            int totalTrade = rdr.GetInt32(1);
-            return (totalOwned, totalTrade);
+            var id = reader.GetInt32(0);
+
+            if (await reader.ReadAsync())
+            {
+                // Second row exists → uniqueness violated
+                throw new InvalidOperationException(
+                    "Multiple rows found for a single CollectionIdentity. Database invariant violated.");
+            }
+
+            return id;
         }
-        public async Task<(int TotalOwned, int TotalTrade)> GetTotalsExcludingIdAsync(string uuid, string condition, string language, string finish, int excludedId, SQLiteConnection conn)
+
+        public async Task<(int CardsOwned, int CardsForTrade)> GetTotalsByCollectionIdentityAsync(string uuid,string condition,string language,string finish,SQLiteConnection conn)
         {
             const string sql = @"
-                SELECT 
-                  COALESCE(SUM(cardsOwned), 0)    AS TotalOwned,
-                  COALESCE(SUM(cardsForTrade), 0) AS TotalTrade
+                SELECT cardsOwned, cardsForTrade
                 FROM myCollection
-                WHERE uuid      = @uuid
-                  AND condition = @cond
-                  AND language  = @lang
-                  AND finish    = @fin
-                  AND id       <> @excluded;
+                WHERE uuid = @uuid
+                  AND condition = @condition
+                  AND language = @language
+                  AND finish = @finish
+                LIMIT 2;
             ";
 
             using var cmd = new SQLiteCommand(sql, conn);
             cmd.Parameters.AddWithValue("@uuid", uuid);
-            cmd.Parameters.AddWithValue("@cond", condition);
-            cmd.Parameters.AddWithValue("@lang", language);
-            cmd.Parameters.AddWithValue("@fin", finish);
-            cmd.Parameters.AddWithValue("@excluded", excludedId);
+            cmd.Parameters.AddWithValue("@condition", condition);
+            cmd.Parameters.AddWithValue("@language", language);
+            cmd.Parameters.AddWithValue("@finish", finish);
 
-            using var rdr = await cmd.ExecuteReaderAsync();
-            if (!await rdr.ReadAsync())
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            if (!await reader.ReadAsync())
             {
+                // No row exists → valid for ADD flows
                 return (0, 0);
             }
 
-            return (rdr.GetInt32(0), rdr.GetInt32(1));
+            var owned = reader.GetInt32(0);
+            var trade = reader.GetInt32(1);
+
+            // Enforce uniqueness invariant
+            if (await reader.ReadAsync())
+            {
+                throw new InvalidOperationException(
+                    $"CollectionIdentity invariant violated: multiple rows exist for " +
+                    $"({uuid}, {condition}, {language}, {finish})");
+            }
+
+            return (owned, trade);
         }
 
         // CRUD
         public async Task<int> AddCardAndReturnIdAsync(CardSet card, SQLiteConnection conn)
         {
             const string insertSql = @"
-                INSERT INTO myCollection (uuid, cardsOwned, cardsForTrade, condition, language, finish)
-                VALUES (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish)";
+                INSERT INTO myCollection
+                    (uuid, cardsOwned, cardsForTrade, condition, language, finish)
+                VALUES
+                    (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish);
+            ";
+
             try
             {
-
-
-
-                // 1) Perform the insert
                 using var insertCmd = new SQLiteCommand(insertSql, conn);
                 insertCmd.Parameters.AddWithValue("@uuid", card.Uuid);
                 insertCmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
@@ -196,19 +182,32 @@ namespace CollectaMundo.Infrastructure.EditCollection
 
                 await insertCmd.ExecuteNonQueryAsync();
 
+                // Deterministic lookup by CollectionIdentity
+                var id = await FindCardIdByCollectionIdentityAsync(
+                    card.Uuid!,
+                    card.SelectedCondition!,
+                    card.Language!,
+                    card.SelectedFinish!,
+                    conn);
 
+                if (id is null)
+                {
+                    throw new InvalidOperationException(
+                        "Insert succeeded but failed to resolve CollectionIdentity.");
+                }
 
-                // 2) Retrieve the newly-generated rowid
-                using var idCmd = new SQLiteCommand("SELECT last_insert_rowid()", conn);
-                var result = await idCmd.ExecuteScalarAsync();
-                return Convert.ToInt32(result);
+                return id.Value;
             }
-            catch (Exception ex)
+            catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
             {
-                Debug.WriteLine($"Error in AddCardAndReturnIdAsync: {ex}");
-                throw;
+                // Unique constraint violation = identity already exists
+                // This should not normally happen if logic is correct,
+                // but this makes behavior explicit and safe.
+                throw new InvalidOperationException(
+                    "Attempted to insert duplicate CollectionIdentity.", ex);
             }
         }
+
         public async Task DeleteCardByIdAsync(CardSet card, SQLiteConnection conn)
         {
             string deleteSql = "DELETE FROM myCollection WHERE id = @id";
