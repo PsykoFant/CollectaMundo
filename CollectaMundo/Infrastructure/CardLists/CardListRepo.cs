@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.Shared;
 using System.Data.Common;
 using System.Data.SQLite;
 
@@ -91,18 +92,22 @@ namespace CollectaMundo.Infrastructure.CardLists
             using var rdr = await cmd.ExecuteReaderAsync();
             while (await rdr.ReadAsync())
             {
+                var uuid = rdr["uuid"]?.ToString() ?? throw new InvalidOperationException("uuid must not be null");
+                var condition = rdr["condition"]?.ToString() ?? throw new InvalidOperationException("condition must not be null");
+                var language = rdr["language"]?.ToString() ?? throw new InvalidOperationException("language must not be null");
+                var finish = rdr["finish"]?.ToString() ?? throw new InvalidOperationException("finish must not be null");
+
                 list.Add(new MyCollectionRow
                 {
-                    Id = rdr["id"] is long li ? (int)li : (int)(rdr["id"] ?? 0),
-                    Uuid = rdr["uuid"]?.ToString() ?? "",
-                    CardsOwned = rdr["cardsOwned"] is long lo ? (int)lo : (int)(rdr["cardsOwned"] ?? 0),
-                    CardsForTrade = rdr["cardsForTrade"] is long lt ? (int)lt : (int)(rdr["cardsForTrade"] ?? 0),
-                    Condition = rdr["condition"]?.ToString(),
-                    Language = rdr["language"]?.ToString(),
-                    Finish = rdr["finish"]?.ToString()
+                    CardId = rdr["id"] is long li ? (int)li : Convert.ToInt32(rdr["id"]),
+                    Identity = new CollectionIdentity(uuid, condition, language, finish),
+                    CardsOwned = rdr["cardsOwned"] is long lo ? (int)lo : Convert.ToInt32(rdr["cardsOwned"]),
+                    CardsForTrade = rdr["cardsForTrade"] is long lt ? (int)lt : Convert.ToInt32(rdr["cardsForTrade"])
                 });
             }
+
             return list;
+
         }
         private static T? GetFieldValue<T>(DbDataReader reader, string columnName)
         {

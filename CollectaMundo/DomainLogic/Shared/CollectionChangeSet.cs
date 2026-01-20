@@ -9,5 +9,4 @@
         // Cards to add or update in-memory
         public IReadOnlyList<T> AddedOrUpdated { get; init; } = [];
     }
-
 }

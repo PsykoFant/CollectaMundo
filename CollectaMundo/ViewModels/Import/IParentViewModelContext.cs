@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using CollectaMundo.DomainLogic.Shared;
+using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import
 {
@@ -10,6 +11,7 @@ namespace CollectaMundo.ViewModels.Import
         bool IsTopMenuEnabled { get; set; }
 
         // Cardlist and filter refresh
+        ICollectionSnapshot CreateMyCollectionSnapshot();
         Task ReloadAllCardListsAndFiltersAsync();
         public void RefreshAllPrices();
         public void SetUiBusy(bool isBusy);

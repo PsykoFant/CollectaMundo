@@ -82,10 +82,16 @@ namespace CollectaMundo.ApplicationServices.CardLists
                 {
                     var myCollection = collectionRows
                         .AsParallel()
-                        .Select(r =>
-                            byUuid.TryGetValue(r.Uuid, out var core)
-                                ? CardSet.FromCoreWithCollection(core, r.Id, r.CardsOwned, r.CardsForTrade, r.Condition, r.Language, r.Finish)
-                                : null)
+                        .Select(r => byUuid.TryGetValue(r.Identity.Uuid, out var core)
+                        ? CardSet.FromCoreWithCollection(
+                            core,
+                            r.CardId,
+                            r.CardsOwned,
+                            r.CardsForTrade,
+                            r.Identity.Condition,
+                            r.Identity.Language,
+                            r.Identity.Finish)
+                        : null)
                         .Where(c => c is not null)
                         .Cast<CardSet>()
                         .ToList();

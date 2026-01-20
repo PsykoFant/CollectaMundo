@@ -87,8 +87,7 @@ namespace CollectaMundo.ApplicationServices.Startup
 
                 var filteringService = new FilteringService();
 
-                var editCollectionRepo = new EditCollectionRepo();
-                var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(editCollectionRepo));
+                var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(), new EditCollectionRepo());
 
                 var fileSystemPicker = new FileSystemPicker();
                 var importService = new ImportService(dbFactory, new ImportRepo(), fileSystemPicker, new ImportLogic());

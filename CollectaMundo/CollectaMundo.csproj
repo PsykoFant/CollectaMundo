@@ -14,13 +14,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="DomainLogic\EditCollection\Models\**" />
-    <EmbeddedResource Remove="DomainLogic\EditCollection\Models\**" />
-    <None Remove="DomainLogic\EditCollection\Models\**" />
-    <Page Remove="DomainLogic\EditCollection\Models\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="Resources\Fonts\Beleren2016-Bold.ttf" />
     <None Remove="Resources\Fonts\mplantin.ttf" />
     <None Remove="Resources\Images\counterspell_fail.png" />

@@ -2,15 +2,17 @@
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Infrastructure.Shared;
 using System.Collections.ObjectModel;
 
 namespace CollectaMundo.ApplicationServices.EditCollection
 {
-    public class EditCollectionService(IDbConnectionFactory dbFactory, IEditCollectionLogic editLogic) : IEditCollectionService
+    public class EditCollectionService(IDbConnectionFactory dbFactory, IEditCollectionLogic editLogic, IEditCollectionRepo repo) : IEditCollectionService
     {
         private readonly IDbConnectionFactory _dbFactory = dbFactory;
         private readonly IEditCollectionLogic _editLogic = editLogic;
+        private readonly IEditCollectionRepo _repo = repo;
 
         // Adding cards to an add or edit listview
         public Task AddCardToAddCardsListViewAsync(CardSet selectedCard, ObservableCollection<CardSet> targetCollection) => AddCardToListViewHelperAsync(selectedCard, targetCollection, false);
@@ -96,27 +98,70 @@ namespace CollectaMundo.ApplicationServices.EditCollection
                 throw;
             }
         }
-        public async Task<CollectionChangeSet<CardSet>> SubmitCardBatchAsync(IEnumerable<CardSet> cards)
+        public async Task<CollectionChangeSet<CardSet>> SubmitCardBatchAsync(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot)
         {
+            // 0. Determine intent
             var isEdit = cards.Any(c => c.CardId != null);
 
+            // 1. Ask DomainLogic to PLAN the operation (pure, in-memory)
+            // This returns:
+            //  - what DB operations must occur
+            //  - the final CollectionChangeSet<CardSet>
+            var planResult = _editLogic.PlanBatch(cards, snapshot, isEdit);
+
+            // 2. Execute persistence plan inside a UoW
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
 
             try
             {
-                var changeSets = await _editLogic.SaveBatchAsync(cards, isEdit, uow.CurrentConnection);
+                // 3a. Apply deletes
+                foreach (var deleteId in planResult.DeleteIds)
+                {
+                    await _repo.DeleteCardByIdAsync(deleteId, uow.CurrentConnection);
+                }
+
+                // 3b. Apply updates
+                foreach (var update in planResult.Updates)
+                {
+                    await _repo.UpdateCardFieldsByIdAsync(
+                        update.CardId,
+                        update.CardsOwned,
+                        update.CardsForTrade,
+                        update.Identity.Condition,
+                        update.Identity.Language,
+                        update.Identity.Finish,
+                        uow.CurrentConnection);
+                }
+
+                // 3c. Apply inserts
+                foreach (var insert in planResult.Inserts)
+                {
+                    var newId = await _repo.AddCardAndReturnIdAsync(
+                        insert.Identity.Uuid,
+                        insert.Identity.Condition,
+                        insert.Identity.Language,
+                        insert.Identity.Finish,
+                        insert.CardsOwned,
+                        insert.CardsForTrade,
+                        uow.CurrentConnection);
+
+                    insert.BindCardId(newId);
+                }
 
                 await uow.CommitAsync();
-
-                return _editLogic.CreateCollectionChangeSetFromEdits(changeSets);
             }
             catch
             {
                 await uow.RollbackAsync();
                 throw;
             }
+
+            // 4. Return the already-computed change set
+            // MainWindowVM will apply it identically to Edit and Import
+            return planResult.ChangeSet;
         }
+
 
     }
 }

@@ -1,5 +1,4 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
-using System.Data.SQLite;
+﻿using System.Data.SQLite;
 using System.Diagnostics;
 
 namespace CollectaMundo.Infrastructure.EditCollection
@@ -109,56 +108,49 @@ namespace CollectaMundo.Infrastructure.EditCollection
                 : Convert.ToInt32(result);
         }
 
-
         // CRUD
-        public async Task<int> AddCardAndReturnIdAsync(CardSet card, SQLiteConnection conn)
+        public async Task<int> AddCardAndReturnIdAsync(string uuid, string condition, string language, string finish, int cardsOwned, int cardsForTrade, SQLiteConnection conn)
         {
             const string insertSql = @"
-                INSERT INTO myCollection (uuid, cardsOwned, cardsForTrade, condition, language, finish)
-                VALUES (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish)";
+                INSERT INTO myCollection
+                    (uuid, cardsOwned, cardsForTrade, condition, language, finish)
+                VALUES
+                    (@uuid, @cardsOwned, @cardsForTrade, @condition, @language, @finish);
+            ";
+
             try
             {
-
-
-
-                // 1) Perform the insert
                 using var insertCmd = new SQLiteCommand(insertSql, conn);
-                insertCmd.Parameters.AddWithValue("@uuid", card.Uuid);
-                insertCmd.Parameters.AddWithValue("@cardsOwned", card.CardsOwned);
-                insertCmd.Parameters.AddWithValue("@cardsForTrade", card.CardsForTrade);
-                insertCmd.Parameters.AddWithValue("@condition", card.SelectedCondition);
-                insertCmd.Parameters.AddWithValue("@language", card.Language);
-                insertCmd.Parameters.AddWithValue("@finish", card.SelectedFinish);
+                insertCmd.Parameters.AddWithValue("@uuid", uuid);
+                insertCmd.Parameters.AddWithValue("@cardsOwned", cardsOwned);
+                insertCmd.Parameters.AddWithValue("@cardsForTrade", cardsForTrade);
+                insertCmd.Parameters.AddWithValue("@condition", condition);
+                insertCmd.Parameters.AddWithValue("@language", language);
+                insertCmd.Parameters.AddWithValue("@finish", finish);
 
                 await insertCmd.ExecuteNonQueryAsync();
 
-
-
-                // 2) Retrieve the newly-generated rowid
-                using var idCmd = new SQLiteCommand("SELECT last_insert_rowid()", conn);
+                using var idCmd = new SQLiteCommand("SELECT last_insert_rowid();", conn);
                 var result = await idCmd.ExecuteScalarAsync();
+
                 return Convert.ToInt32(result);
             }
-            catch (Exception ex)
+            catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
             {
-                Debug.WriteLine($"Error in AddCardAndReturnIdAsync: {ex}");
-                throw;
+                throw new InvalidOperationException(
+                    $"Duplicate CollectionIdentity detected. " +
+                    $"Uuid={uuid}, Language={language}, Finish={finish}, Condition={condition}.",
+                    ex);
             }
         }
-        public async Task DeleteCardByIdAsync(CardSet card, SQLiteConnection conn)
+        public async Task DeleteCardByIdAsync(int cardId, SQLiteConnection conn)
         {
-            string deleteSql = "DELETE FROM myCollection WHERE id = @id";
-            try
-            {
-                using var deleteCommand = new SQLiteCommand(deleteSql, conn);
-                deleteCommand.Parameters.AddWithValue("@id", card.CardId);
-                await deleteCommand.ExecuteNonQueryAsync();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error in DeleteCardByIdAsync: {ex.Message}");
-                throw;
-            }
+            const string sql = @"DELETE FROM myCollection WHERE id = @id;";
+
+            using var cmd = new SQLiteCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@id", cardId);
+
+            await cmd.ExecuteNonQueryAsync();
         }
         public async Task DeleteCardsByIdsAsync(IEnumerable<int> ids, SQLiteConnection conn)
         {

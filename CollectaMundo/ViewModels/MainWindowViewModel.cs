@@ -213,9 +213,8 @@ namespace CollectaMundo.ViewModels
             ColorIcons = new CardViewModel { Cards = [.. ManaKeys.Select(CardSet.FromManaKey)] };
 
             // edit collection viewmodels
-
-            AddCardsVM = new EditCollectionViewModel(editService, true);
-            EditCardsVM = new EditCollectionViewModel(editService, false);
+            AddCardsVM = new EditCollectionViewModel(editService, this, removeCardWhenZero: true);
+            EditCardsVM = new EditCollectionViewModel(editService, this, removeCardWhenZero: false);
 
             // filtering viewmodel
             FilterVM = new FilterViewModel(_filteringService);
@@ -358,6 +357,10 @@ namespace CollectaMundo.ViewModels
 
             Debug.WriteLine($"latest price date from settings: {_settings.PriceInfo.PricesUpdatedDate}");
             PricesVM.RefreshLatestPriceDate();
+        }
+        public ICollectionSnapshot CreateMyCollectionSnapshot()
+        {
+            return CollectionSnapshot.From(MyCollectionVM.Cards);
         }
 
         #endregion

@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
+using CollectaMundo.DomainLogic.Shared;
 using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.CardLists

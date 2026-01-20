@@ -1,6 +1,7 @@
 ﻿using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared;
+using CollectaMundo.ViewModels.Import;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ServiceStack;
@@ -17,12 +18,13 @@ namespace CollectaMundo.ViewModels
         public ObservableCollection<CardSet> CardsToAdd { get; } = [];
 
         private readonly IEditCollectionService _service;
+        private readonly IParentViewModelContext _parentContext;
         private readonly bool _removeCardWhenZero;
 
-
         // Constructor
-        public EditCollectionViewModel(IEditCollectionService service, bool removeCardWhenZero)
+        public EditCollectionViewModel(IEditCollectionService service, IParentViewModelContext parentContext, bool removeCardWhenZero)
         {
+            _parentContext = parentContext;
             _service = service;
             _removeCardWhenZero = removeCardWhenZero;
             CardsToAdd.CollectionChanged += CardsToAdd_CollectionChanged;
@@ -192,9 +194,11 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task SubmitCardEditsAsync()
         {
+            var snapshot = _parentContext.CreateMyCollectionSnapshot();
+
             await SubmitBatchAsync(
                 CardsToAdd,
-                cards => _service.SubmitCardBatchAsync(cards),
+                cards => _service.SubmitCardBatchAsync(cards, snapshot),
                 clearAfter: true,
                 summaryTitle: "Updated the following cards with these values:");
         }

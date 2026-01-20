@@ -6,7 +6,6 @@ namespace CollectaMundo.ViewModels.Shared
     public interface ICollectionChangeApplier<T>
     {
         void Apply(IList<T> collection, CollectionChangeSet<T> changes);
-
         void ApplyImportUpserts(IList<T> collection, IReadOnlyList<CollectionUpsertItem> upserts);
     }
 }
