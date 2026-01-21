@@ -11,10 +11,14 @@ namespace CollectaMundo.DomainLogic.EditCollection.Models
         public CollectionChangeSet<CardSet> ChangeSet { get; set; } = new();
     }
     public sealed record UpdateCommand(int CardId, CollectionIdentity Identity, int CardsOwned, int CardsForTrade);
-    public sealed record InsertCommand(CollectionIdentity Identity, int CardsOwned, int CardsForTrade)
+    public sealed record InsertCommand(CollectionIdentity Identity, int CardsOwned, int CardsForTrade, CardSet Card)
     {
-        // Filled in later by service
         public int? AssignedCardId { get; private set; }
-        public void BindCardId(int id) => AssignedCardId = id;
+        public void BindCardId(int id)
+        {
+            AssignedCardId = id;
+            Card.CardId = id;
+        }
     }
+
 }

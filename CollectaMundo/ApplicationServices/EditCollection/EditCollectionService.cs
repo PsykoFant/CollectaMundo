@@ -69,7 +69,7 @@ namespace CollectaMundo.ApplicationServices.EditCollection
         }
 
         // Submitting new cards or card edits
-        public async Task<CollectionChangeSet<CardSet>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<CardSet> cards,ICollectionSnapshot snapshot)
+        public async Task<CollectionChangeSet<CardSet>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot)
         {
             // 1. Prepare cards (metadata fetch + pure logic)
             var prepared = new List<CardSet>();
@@ -81,11 +81,9 @@ namespace CollectaMundo.ApplicationServices.EditCollection
             {
                 foreach (var raw in cards)
                 {
-                    var finishes = await _repo.FetchFinishesForCardAsync(
-                        raw.Uuid!, uow.CurrentConnection);
+                    var finishes = await _repo.FetchFinishesForCardAsync(raw.Uuid!, uow.CurrentConnection);
 
-                    var languages = await _repo.FetchLanguagesForCardAsync(
-                        raw.Uuid!, uow.CurrentConnection);
+                    var languages = await _repo.FetchLanguagesForCardAsync(raw.Uuid!, uow.CurrentConnection);
 
                     var metadata = new CardToAddMetadataDto
                     {
@@ -99,7 +97,7 @@ namespace CollectaMundo.ApplicationServices.EditCollection
                 }
 
                 // 2. PLAN using snapshot
-                var plan = _editLogic.PlanBatch(prepared,snapshot,isEdit: false);
+                var plan = _editLogic.PlanBatch(prepared, snapshot, isEdit: false);
 
                 // 3. Execute persistence plan
                 foreach (var deleteId in plan.DeleteIds)
@@ -132,6 +130,15 @@ namespace CollectaMundo.ApplicationServices.EditCollection
 
                     insert.BindCardId(newId);
                 }
+
+#if DEBUG
+                var unbound = plan.Inserts.Where(i => i.AssignedCardId is null).ToList();
+                if (unbound.Count > 0)
+                {
+                    throw new InvalidOperationException($"Unbound insert ids: {unbound.Count}");
+                }
+#endif
+
 
                 await uow.CommitAsync();
 
@@ -207,7 +214,5 @@ namespace CollectaMundo.ApplicationServices.EditCollection
             // MainWindowVM will apply it identically to Edit and Import
             return planResult.ChangeSet;
         }
-
-
     }
 }

@@ -184,7 +184,7 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task SubmitNewCardsAsync()
         {
-            var snapshot = _parentContext.CreateMyCollectionSnapshot()
+            var snapshot = _parentContext.CreateMyCollectionSnapshot();
 
             await SubmitBatchAsync(
                 CardsToAdd,
@@ -197,12 +197,7 @@ namespace CollectaMundo.ViewModels
         private async Task SubmitCardEditsAsync()
         {
             var snapshot = _parentContext.CreateMyCollectionSnapshot();
-
-            await SubmitBatchAsync(
-                CardsToAdd,
-                cards => _service.SubmitCardBatchAsync(cards, snapshot),
-                clearAfter: true,
-                summaryTitle: "Updated the following cards with these values:");
+            await SubmitBatchAsync(CardsToAdd, cards => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Updated the following cards with these values:");
         }
 
         [RelayCommand]
@@ -219,11 +214,8 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
-            await SubmitBatchAsync(
-                originals,
-                cards => _service.SubmitNewCardsWithDefaultsBatchAsync(cards),
-                clearAfter: false,
-                summaryTitle: "Added the following cards with default values:");
+            var snapshot = _parentContext.CreateMyCollectionSnapshot();
+            await SubmitBatchAsync(originals, cards => _service.SubmitNewCardsWithDefaultsBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Added the following cards with default values:");
         }
 
         [RelayCommand]
@@ -250,11 +242,9 @@ namespace CollectaMundo.ViewModels
                 CardsOwned = 0,
             }).ToList();
 
-            await SubmitBatchAsync(
-                toDelete,
-                cards => _service.SubmitCardBatchAsync(cards),
-                clearAfter: true,
-                summaryTitle: "Deleted the following cards from your collection:");
+            var snapshot = _parentContext.CreateMyCollectionSnapshot();
+
+            await SubmitBatchAsync(toDelete, cards => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Deleted the following cards from your collection:");
         }
 
         [RelayCommand]
@@ -276,7 +266,8 @@ namespace CollectaMundo.ViewModels
                 c.CardsForTrade = c.CardsOwned;
             }
 
-            await SubmitBatchAsync(cards, cards => _service.SubmitCardBatchAsync(cards), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
+            var snapshot = _parentContext.CreateMyCollectionSnapshot();
+            await SubmitBatchAsync(cards, cards => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
         }
 
         [RelayCommand]
@@ -298,11 +289,8 @@ namespace CollectaMundo.ViewModels
                 c.CardsForTrade = 0;
             }
 
-            await SubmitBatchAsync(
-                cards,
-                cards => _service.SubmitCardBatchAsync(cards),
-                clearAfter: false,
-                summaryTitle: "Set the following cards not for trade:");
+            var snapshot = _parentContext.CreateMyCollectionSnapshot();
+            await SubmitBatchAsync(cards, cards => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
         }
 
         // Shared helper
