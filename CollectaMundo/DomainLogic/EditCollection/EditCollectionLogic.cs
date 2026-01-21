@@ -1,4 +1,5 @@
-﻿using CollectaMundo.DomainLogic.CardLists.Models;
+﻿using CollectaMundo.ApplicationServices.EditCollection.Models;
+using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Import.Models;
 using CollectaMundo.DomainLogic.Shared;
@@ -9,30 +10,42 @@ namespace CollectaMundo.DomainLogic.EditCollection
     public class EditCollectionLogic() : IEditCollectionLogic
     {
         private static readonly string _defaultLanguage = CollectionCardItemDefaults.GetDefaultString(ImportField.Language);
-        public async Task<CardSet> PrepareCardForListAsync(CardSet selectedCard, bool isEdit, SQLiteConnection connection)
+        public CardSet PrepareCardForList(CardSet selectedCard,CardToAddMetadataDto metadata,bool isEdit)
         {
-            var clone = await CloneWithMetadataHelperAsync(selectedCard, connection);
+            if (selectedCard.Core is null)
+            {
+                throw new InvalidOperationException("CardSet.Core must be set. Use CardSet.FromCore.");
+            }
+
+            var clone = CardSet.FromCore(selectedCard.Core);
+
+            // carry over view-only fields
+            clone.SelectedFinish = selectedCard.SelectedFinish;
+            clone.SelectedCondition = selectedCard.SelectedCondition;
+            clone.Count = selectedCard.Count;
+
+            // attach metadata
+            clone.AvailableFinishes = metadata.AvailableFinishes;
+            clone.OtherLanguages = NormalizeLanguages(metadata.AvailableLanguages,selectedCard.Language);
 
             if (isEdit)
             {
-                // carry forward existing collection fields
                 clone.CardId = selectedCard.CardId;
                 clone.CardsOwned = selectedCard.CardsOwned;
                 clone.CardsForTrade = selectedCard.CardsForTrade;
-                clone.SelectedCondition = selectedCard.SelectedCondition!;
-                clone.SelectedFinish = selectedCard.SelectedFinish!;
                 clone.Language = selectedCard.Language!;
-
-                clone.RecomputeCollectionPrice(); // raises PropertyChanged for CardInCollectionPrice
-
+                clone.SelectedFinish = selectedCard.SelectedFinish!;
+                clone.SelectedCondition = selectedCard.SelectedCondition!;
             }
             else
             {
                 ApplyNewDefaults(clone);
             }
 
+            clone.RecomputeCollectionPrice();
             return clone;
         }
+
         public async Task<CardSet> PrepareNewCardWithDefaultsAsync(CardSet selectedCard, SQLiteConnection connection)
         {
             var clone = await CloneWithMetadataHelperAsync(selectedCard, connection);

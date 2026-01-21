@@ -1,4 +1,5 @@
-﻿using CollectaMundo.ApplicationServices.Shared;
+﻿using CollectaMundo.ApplicationServices.EditCollection.Models;
+using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.Shared;
@@ -21,22 +22,20 @@ namespace CollectaMundo.ApplicationServices.EditCollection
         {
             CardSet newItem;
 
-            // Start a UoW 
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
+
             try
             {
-                newItem = await _editLogic.PrepareCardForListAsync(selectedCard, isEdit, uow.CurrentConnection);
+                // FETCH metadata here
+                var finishes = await _repo.FetchFinishesForCardAsync(selectedCard.Uuid!, uow.CurrentConnection);
+                var languages = await _repo.FetchLanguagesForCardAsync(selectedCard.Uuid!, uow.CurrentConnection);
 
-                // Commit if everything succeeded
-                await uow.CommitAsync();
-            }
-            catch
-            {
-                // Roll back on any error
-                await uow.RollbackAsync();
-                throw;
-            }
+                var metadata = new CardToAddMetadataDto {AvailableFinishes = finishes ?? [],AvailableLanguages = languages ?? []};
+
+                // DomainLogic now receives data instead of fetching it
+                newItem = _editLogic.PrepareCardForList(selectedCard, metadata, isEdit);
+
             finally
             {
                 // Tear down the connection
