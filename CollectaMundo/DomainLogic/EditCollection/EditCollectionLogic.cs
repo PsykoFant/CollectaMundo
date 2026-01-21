@@ -25,7 +25,7 @@ namespace CollectaMundo.DomainLogic.EditCollection
             clone.Count = selectedCard.Count;
 
             // attach metadata
-            clone.AvailableFinishes = metadata.AvailableFinishes;
+            clone.AvailableFinishes = [.. metadata.AvailableFinishes];
             clone.OtherLanguages = NormalizeLanguages(metadata.AvailableLanguages,selectedCard.Language);
 
             if (isEdit)
@@ -45,13 +45,29 @@ namespace CollectaMundo.DomainLogic.EditCollection
             clone.RecomputeCollectionPrice();
             return clone;
         }
-
-        public async Task<CardSet> PrepareNewCardWithDefaultsAsync(CardSet selectedCard, SQLiteConnection connection)
+        public CardSet PrepareNewCardWithDefaults(CardSet selectedCard,CardToAddMetadataDto metadata)
         {
-            var clone = await CloneWithMetadataHelperAsync(selectedCard, connection);
+            if (selectedCard.Core is null)
+            {
+                throw new InvalidOperationException(
+                    "CardSet.Core must be set. Use CardSet.FromCore.");
+            }
+
+            var clone = CardSet.FromCore(selectedCard.Core);
+
+            // Attach metadata (copy, do not share)
+            clone.AvailableFinishes = metadata.AvailableFinishes.ToList();
+            clone.OtherLanguages = NormalizeLanguages(
+                metadata.AvailableLanguages,
+                selectedCard.Language);
+
+            // Apply defaults for new cards
             ApplyNewDefaults(clone);
+
+            clone.RecomputeCollectionPrice();
             return clone;
         }
+
         private static void ApplyNewDefaults(CardSet clone)
         {
             clone.CardId = null;
@@ -129,46 +145,6 @@ namespace CollectaMundo.DomainLogic.EditCollection
                 list.Insert(0, v);
             }
         }
-        private async Task<CardSet> CloneWithMetadataHelperAsync(CardSet src, SQLiteConnection connection)
-        {
-            if (src?.Uuid == null)
-            {
-                throw new ArgumentException("UUID cannot be null", nameof(src));
-            }
-
-            // fetch just once
-            var finishes = await _repo.FetchFinishesForCardAsync(src.Uuid, connection);
-            var languages = await _repo.FetchLanguagesForCardAsync(src.Uuid, connection);
-
-            // Require Core in the new flow to avoid silent inconsistencies.
-            // If you really want the fallback, keep it — but log loudly.
-            CardSet clone;
-            if (src.Core != null)
-            {
-                clone = CardSet.FromCore(src.Core);
-            }
-            else
-            {
-                // Strong fail is safer in the refactored world:
-                throw new InvalidOperationException("CardSet.Core must be set. Use CardSet.FromCore to create instances.");
-            }
-
-            // carry over view-only fields if needed
-            clone.SelectedFinish = src.SelectedFinish;
-            clone.SelectedCondition = src.SelectedCondition;
-            clone.Count = src.Count;
-
-            // Attach lookup lists (never null)
-            clone.AvailableFinishes = finishes ?? [];
-
-            // Distinct, English-first normalization; include src.Language as secondary if present
-            clone.OtherLanguages = NormalizeLanguages(languages, src.Language) ?? [];
-
-            clone.RecomputeCollectionPrice();
-            return clone;
-        }
-
-
 
         // Save a card and return the changes to viewmodel
         public EditBatchPlan PlanBatch(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot, bool isEdit)

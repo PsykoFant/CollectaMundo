@@ -184,9 +184,11 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task SubmitNewCardsAsync()
         {
+            var snapshot = _parentContext.CreateMyCollectionSnapshot()
+
             await SubmitBatchAsync(
                 CardsToAdd,
-                cards => _service.SubmitCardBatchAsync(cards),
+                cards => _service.SubmitCardBatchAsync(cards, snapshot),
                 clearAfter: true,
                 summaryTitle: "Added the following cards to your collection:");
         }

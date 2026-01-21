@@ -31,10 +31,11 @@ namespace CollectaMundo.ApplicationServices.EditCollection
                 var finishes = await _repo.FetchFinishesForCardAsync(selectedCard.Uuid!, uow.CurrentConnection);
                 var languages = await _repo.FetchLanguagesForCardAsync(selectedCard.Uuid!, uow.CurrentConnection);
 
-                var metadata = new CardToAddMetadataDto {AvailableFinishes = finishes ?? [],AvailableLanguages = languages ?? []};
+                var metadata = new CardToAddMetadataDto { AvailableFinishes = finishes ?? [], AvailableLanguages = languages ?? [] };
 
                 // DomainLogic now receives data instead of fetching it
                 newItem = _editLogic.PrepareCardForList(selectedCard, metadata, isEdit);
+            }
 
             finally
             {
@@ -68,28 +69,74 @@ namespace CollectaMundo.ApplicationServices.EditCollection
         }
 
         // Submitting new cards or card edits
-        public async Task<CollectionChangeSet<CardSet>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<CardSet> cards)
+        public async Task<CollectionChangeSet<CardSet>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<CardSet> cards,ICollectionSnapshot snapshot)
         {
+            // 1. Prepare cards (metadata fetch + pure logic)
+            var prepared = new List<CardSet>();
+
             await using var uow = new UnitOfWork(_dbFactory);
             await uow.BeginAsync();
 
             try
             {
-                // 1) Prepare cards
-                var prepared = new List<CardSet>();
-
                 foreach (var raw in cards)
                 {
-                    prepared.Add(await _editLogic.PrepareNewCardWithDefaultsAsync(raw, uow.CurrentConnection));
+                    var finishes = await _repo.FetchFinishesForCardAsync(
+                        raw.Uuid!, uow.CurrentConnection);
+
+                    var languages = await _repo.FetchLanguagesForCardAsync(
+                        raw.Uuid!, uow.CurrentConnection);
+
+                    var metadata = new CardToAddMetadataDto
+                    {
+                        AvailableFinishes = finishes ?? [],
+                        AvailableLanguages = languages ?? []
+                    };
+
+                    var preparedCard = _editLogic.PrepareNewCardWithDefaults(raw, metadata);
+
+                    prepared.Add(preparedCard);
                 }
 
-                // 2) Persist + collect per-card change sets
-                var changeSets = await _editLogic.SaveBatchAsync(prepared, isEdit: false, uow.CurrentConnection);
+                // 2. PLAN using snapshot
+                var plan = _editLogic.PlanBatch(prepared,snapshot,isEdit: false);
+
+                // 3. Execute persistence plan
+                foreach (var deleteId in plan.DeleteIds)
+                {
+                    await _repo.DeleteCardByIdAsync(deleteId, uow.CurrentConnection);
+                }
+
+                foreach (var update in plan.Updates)
+                {
+                    await _repo.UpdateCardFieldsByIdAsync(
+                        update.CardId,
+                        update.CardsOwned,
+                        update.CardsForTrade,
+                        update.Identity.Condition,
+                        update.Identity.Language,
+                        update.Identity.Finish,
+                        uow.CurrentConnection);
+                }
+
+                foreach (var insert in plan.Inserts)
+                {
+                    var newId = await _repo.AddCardAndReturnIdAsync(
+                        insert.Identity.Uuid,
+                        insert.Identity.Condition,
+                        insert.Identity.Language,
+                        insert.Identity.Finish,
+                        insert.CardsOwned,
+                        insert.CardsForTrade,
+                        uow.CurrentConnection);
+
+                    insert.BindCardId(newId);
+                }
 
                 await uow.CommitAsync();
 
-                // 3) Collapse into ONE change set
-                return _editLogic.CreateCollectionChangeSetFromEdits(changeSets);
+                // 4. Return the already-built change set
+                return plan.ChangeSet;
             }
             catch
             {
