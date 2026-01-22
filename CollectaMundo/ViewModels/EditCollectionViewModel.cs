@@ -184,20 +184,17 @@ namespace CollectaMundo.ViewModels
         [RelayCommand]
         private async Task SubmitNewCardsAsync()
         {
-            var snapshot = _parentContext.CreateMyCollectionSnapshot();
-
-            await SubmitBatchAsync(
-                CardsToAdd,
-                cards => _service.SubmitCardBatchAsync(cards, snapshot),
-                clearAfter: true,
-                summaryTitle: "Added the following cards to your collection:");
+            await SubmitBatchAsync(CardsToAdd,(cards, snapshot) => 
+            _service.SubmitCardBatchAsync(cards, snapshot),
+            clearAfter: true,summaryTitle: "Added the following cards to your collection:");
         }
 
         [RelayCommand]
         private async Task SubmitCardEditsAsync()
         {
-            var snapshot = _parentContext.CreateMyCollectionSnapshot();
-            await SubmitBatchAsync(CardsToAdd, cards => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Updated the following cards with these values:");
+            await SubmitBatchAsync(CardsToAdd, (cards, snapshot) =>
+            _service.SubmitCardBatchAsync(cards, snapshot),
+            clearAfter: true, summaryTitle: "Updated the following cards with these values:");
         }
 
         [RelayCommand]
@@ -214,8 +211,9 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
-            var snapshot = _parentContext.CreateMyCollectionSnapshot();
-            await SubmitBatchAsync(originals, cards => _service.SubmitNewCardsWithDefaultsBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Added the following cards with default values:");
+            await SubmitBatchAsync(CardsToAdd, (cards, snapshot) =>
+            _service.SubmitCardBatchAsync(cards, snapshot),
+            clearAfter: false, summaryTitle: "Added the following cards with default values:");
         }
 
         [RelayCommand]
@@ -241,10 +239,10 @@ namespace CollectaMundo.ViewModels
                 SelectedFinish = o.SelectedFinish,
                 CardsOwned = 0,
             }).ToList();
-
-            var snapshot = _parentContext.CreateMyCollectionSnapshot();
-
-            await SubmitBatchAsync(toDelete, cards => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: true, summaryTitle: "Deleted the following cards from your collection:");
+            
+            await SubmitBatchAsync(CardsToAdd, (cards, snapshot) =>
+            _service.SubmitCardBatchAsync(cards, snapshot),
+            clearAfter: true, summaryTitle: "Deleted the following cards from your collection:");
         }
 
         [RelayCommand]
@@ -266,8 +264,9 @@ namespace CollectaMundo.ViewModels
                 c.CardsForTrade = c.CardsOwned;
             }
 
-            var snapshot = _parentContext.CreateMyCollectionSnapshot();
-            await SubmitBatchAsync(cards, cards => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Put the following cards up for trade:");
+            await SubmitBatchAsync(CardsToAdd, (cards, snapshot) =>
+            _service.SubmitCardBatchAsync(cards, snapshot),
+            clearAfter: false, summaryTitle: "Put the following cards up for trade:");
         }
 
         [RelayCommand]
@@ -289,17 +288,20 @@ namespace CollectaMundo.ViewModels
                 c.CardsForTrade = 0;
             }
 
-            var snapshot = _parentContext.CreateMyCollectionSnapshot();
-            await SubmitBatchAsync(cards, cards => _service.SubmitCardBatchAsync(cards, snapshot), clearAfter: false, summaryTitle: "Set the following cards not for trade:");
+            await SubmitBatchAsync(CardsToAdd, (cards, snapshot) =>
+            _service.SubmitCardBatchAsync(cards, snapshot),
+            clearAfter: false, summaryTitle: "Set the following cards not for trade:");
         }
 
         // Shared helper
-        private async Task SubmitBatchAsync(IEnumerable<CardSet> originals, Func<IEnumerable<CardSet>, Task<CollectionChangeSet<CardSet>>> persistBatch, bool clearAfter, string summaryTitle)
+        private async Task SubmitBatchAsync(IEnumerable<CardSet> cards,
+            Func<IEnumerable<CardSet>, ICollectionSnapshot, Task<CollectionChangeSet<CardSet>>> submit,
+            bool clearAfter,string summaryTitle)
         {
-            var list = originals.ToList();
+            var snapshot = _parentContext.CreateMyCollectionSnapshot();
 
-            // 1) Persist + get atomic change set
-            var changeSet = await persistBatch(list);
+            // 1) Submit to service
+            var changeSet = await submit(cards, snapshot);
 
             // 2) Clear UI selection if requested
             if (clearAfter)
@@ -343,7 +345,7 @@ namespace CollectaMundo.ViewModels
                   .AppendLine();
 
                 // Best-effort lookup from originals (safe + sufficient for UI)
-                var deletedCards = list
+                var deletedCards = cards
                     .Where(c => c.CardId.HasValue && changeSet.RemovedIds.Contains(c.CardId.Value))
                     .ToList();
 
