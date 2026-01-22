@@ -2,10 +2,12 @@
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
+using CollectaMundo.DomainLogic.EditCollection.Models;
 using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.EditCollection;
 using CollectaMundo.Infrastructure.Shared;
 using System.Collections.ObjectModel;
+using System.Data.SQLite;
 
 namespace CollectaMundo.ApplicationServices.EditCollection
 {
@@ -69,9 +71,29 @@ namespace CollectaMundo.ApplicationServices.EditCollection
         }
 
         // Submitting new cards or card edits
-        public async Task<CollectionChangeSet<CardSet>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot)
+        public async Task<CollectionChangeSet<CardSet>> SubmitCardBatchAsync(IEnumerable<CardSet> cards,ICollectionSnapshot snapshot)
         {
-            // 1. Prepare cards (metadata fetch + pure logic)
+            var isEdit = cards.Any(c => c.CardId != null);
+
+            var plan = _editLogic.PlanBatch(cards, snapshot, isEdit);
+
+            await using var uow = new UnitOfWork(_dbFactory);
+            await uow.BeginAsync();
+
+            try
+            {
+                await ExecutePlanAsync(plan, uow.CurrentConnection);
+                await uow.CommitAsync();
+                return plan.ChangeSet;
+            }
+            catch
+            {
+                await uow.RollbackAsync();
+                throw;
+            }
+        }
+        public async Task<CollectionChangeSet<CardSet>> SubmitNewCardsWithDefaultsBatchAsync(IEnumerable<CardSet> cards,ICollectionSnapshot snapshot)
+        {
             var prepared = new List<CardSet>();
 
             await using var uow = new UnitOfWork(_dbFactory);
@@ -82,7 +104,6 @@ namespace CollectaMundo.ApplicationServices.EditCollection
                 foreach (var raw in cards)
                 {
                     var finishes = await _repo.FetchFinishesForCardAsync(raw.Uuid!, uow.CurrentConnection);
-
                     var languages = await _repo.FetchLanguagesForCardAsync(raw.Uuid!, uow.CurrentConnection);
 
                     var metadata = new CardToAddMetadataDto
@@ -91,58 +112,14 @@ namespace CollectaMundo.ApplicationServices.EditCollection
                         AvailableLanguages = languages ?? []
                     };
 
-                    var preparedCard = _editLogic.PrepareNewCardWithDefaults(raw, metadata);
-
-                    prepared.Add(preparedCard);
+                    prepared.Add(_editLogic.PrepareNewCardWithDefaults(raw, metadata));
                 }
 
-                // 2. PLAN using snapshot
                 var plan = _editLogic.PlanBatch(prepared, snapshot, isEdit: false);
 
-                // 3. Execute persistence plan
-                foreach (var deleteId in plan.DeleteIds)
-                {
-                    await _repo.DeleteCardByIdAsync(deleteId, uow.CurrentConnection);
-                }
-
-                foreach (var update in plan.Updates)
-                {
-                    await _repo.UpdateCardFieldsByIdAsync(
-                        update.CardId,
-                        update.CardsOwned,
-                        update.CardsForTrade,
-                        update.Identity.Condition,
-                        update.Identity.Language,
-                        update.Identity.Finish,
-                        uow.CurrentConnection);
-                }
-
-                foreach (var insert in plan.Inserts)
-                {
-                    var newId = await _repo.AddCardAndReturnIdAsync(
-                        insert.Identity.Uuid,
-                        insert.Identity.Condition,
-                        insert.Identity.Language,
-                        insert.Identity.Finish,
-                        insert.CardsOwned,
-                        insert.CardsForTrade,
-                        uow.CurrentConnection);
-
-                    insert.BindCardId(newId);
-                }
-
-#if DEBUG
-                var unbound = plan.Inserts.Where(i => i.AssignedCardId is null).ToList();
-                if (unbound.Count > 0)
-                {
-                    throw new InvalidOperationException($"Unbound insert ids: {unbound.Count}");
-                }
-#endif
-
-
+                await ExecutePlanAsync(plan, uow.CurrentConnection);
                 await uow.CommitAsync();
 
-                // 4. Return the already-built change set
                 return plan.ChangeSet;
             }
             catch
@@ -151,68 +128,49 @@ namespace CollectaMundo.ApplicationServices.EditCollection
                 throw;
             }
         }
-        public async Task<CollectionChangeSet<CardSet>> SubmitCardBatchAsync(IEnumerable<CardSet> cards, ICollectionSnapshot snapshot)
+        private async Task ExecutePlanAsync(EditBatchPlan plan, SQLiteConnection connection)
         {
-            // 0. Determine intent
-            var isEdit = cards.Any(c => c.CardId != null);
-
-            // 1. Ask DomainLogic to PLAN the operation (pure, in-memory)
-            // This returns:
-            //  - what DB operations must occur
-            //  - the final CollectionChangeSet<CardSet>
-            var planResult = _editLogic.PlanBatch(cards, snapshot, isEdit);
-
-            // 2. Execute persistence plan inside a UoW
-            await using var uow = new UnitOfWork(_dbFactory);
-            await uow.BeginAsync();
-
-            try
+            // Deletes
+            foreach (var deleteId in plan.DeleteIds)
             {
-                // 3a. Apply deletes
-                foreach (var deleteId in planResult.DeleteIds)
-                {
-                    await _repo.DeleteCardByIdAsync(deleteId, uow.CurrentConnection);
-                }
-
-                // 3b. Apply updates
-                foreach (var update in planResult.Updates)
-                {
-                    await _repo.UpdateCardFieldsByIdAsync(
-                        update.CardId,
-                        update.CardsOwned,
-                        update.CardsForTrade,
-                        update.Identity.Condition,
-                        update.Identity.Language,
-                        update.Identity.Finish,
-                        uow.CurrentConnection);
-                }
-
-                // 3c. Apply inserts
-                foreach (var insert in planResult.Inserts)
-                {
-                    var newId = await _repo.AddCardAndReturnIdAsync(
-                        insert.Identity.Uuid,
-                        insert.Identity.Condition,
-                        insert.Identity.Language,
-                        insert.Identity.Finish,
-                        insert.CardsOwned,
-                        insert.CardsForTrade,
-                        uow.CurrentConnection);
-
-                    insert.BindCardId(newId);
-                }
-
-                await uow.CommitAsync();
-            }
-            catch
-            {
-                await uow.RollbackAsync();
-                throw;
+                await _repo.DeleteCardByIdAsync(deleteId, connection);
             }
 
-            // 4. Return the already-computed change set
-            // MainWindowVM will apply it identically to Edit and Import
-            return planResult.ChangeSet;
+            // Updates
+            foreach (var update in plan.Updates)
+            {
+                await _repo.UpdateCardFieldsByIdAsync(
+                    update.CardId,
+                    update.CardsOwned,
+                    update.CardsForTrade,
+                    update.Identity.Condition,
+                    update.Identity.Language,
+                    update.Identity.Finish,
+                    connection);
+            }
+
+            // Inserts
+            foreach (var insert in plan.Inserts)
+            {
+                var newId = await _repo.AddCardAndReturnIdAsync(
+                    insert.Identity.Uuid,
+                    insert.Identity.Condition,
+                    insert.Identity.Language,
+                    insert.Identity.Finish,
+                    insert.CardsOwned,
+                    insert.CardsForTrade,
+                    connection);
+
+                insert.BindCardId(newId);
+            }
+
+#if DEBUG
+            var unbound = plan.Inserts.Where(i => i.AssignedCardId is null).ToList();
+            if (unbound.Count > 0)
+            {
+                throw new InvalidOperationException($"Unbound insert ids: {unbound.Count}");
+            }
+#endif
         }
     }
 }
