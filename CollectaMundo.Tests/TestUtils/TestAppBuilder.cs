@@ -74,7 +74,7 @@ public static class TestAppBuilder
             cardLookupsService,
             new CardCoreAggregator());
 
-        var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(new EditCollectionRepo()));
+        var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(), new EditCollectionRepo());
 
         var cardImageService = new CardImageService(
             dbFactory, remoteLookups, new CardImageLogic(),
