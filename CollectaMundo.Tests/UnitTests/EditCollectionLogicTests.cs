@@ -1,5 +1,6 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
+using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.Infrastructure.EditCollection;
 using Moq;
 using System.Data.SQLite;
@@ -8,25 +9,31 @@ namespace CollectaMundo.Tests.UnitTests
 {
     public class EditCollectionLogicTests
     {
-        [Fact]
-        public async Task SaveBatchAsync_AddNewCard_WhenNotExisting()
+        // Snapshot stub for unit tests: represents an empty in-memory collection.
+        private sealed class EmptySnapshot : ICollectionSnapshot
         {
-            var repo = new Mock<IEditCollectionRepo>();
-            var dummyConn = new SQLiteConnection("Data Source=:memory:");
-            dummyConn.Open();
+            public bool TryGetById(int cardId, out MyCollectionRow row)
+            {
+                row = default!;
+                return false;
+            }
 
-            // This simulates: no existing record matches this card
-            repo.Setup(r => r.FindRecordByIdAsync(
-                "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn))
-                .ReturnsAsync([]); // Pure insert
+            public bool TryGetByIdentity(CollectionIdentity identity, out MyCollectionRow row)
+            {
+                row = default!;
+                return false;
+            }
+        }
 
-            // When inserting, return card ID 123
-            repo.Setup(r => r.AddCardAndReturnIdAsync(
-                It.Is<CardSet>(c => c.Uuid == "foo-uuid"),
-                dummyConn))
-                .ReturnsAsync(123);
+        [Fact]
+        public void PlanBatch_AddNewCard_WhenNotExisting_SchedulesInsert()
+        {
+            // Arrange: snapshot contains nothing (no existing identity)
+            var snapshot = new EmptySnapshot();
 
-            var logic = new EditCollectionLogic(repo.Object);
+            var logic = new EditCollectionLogic();
+            // ^ assuming your refactored logic no longer needs repo in ctor.
+            // If it still has dependencies, inject them here (but repo should be gone).
 
             var newCard = new CardSet
             {
@@ -39,38 +46,33 @@ namespace CollectaMundo.Tests.UnitTests
             };
 
             // Act
-            var changeSets = await logic.SaveBatchAsync([newCard], isEdit: false, dummyConn);
+            var plan = logic.PlanBatch([newCard], snapshot, isEdit: false);
 
-            // Assert: one batch -> one change set
-            var changeSet = Assert.Single(changeSets);
+            // Assert: Insert scheduled
+            Assert.Empty(plan.DeleteIds);
+            Assert.Empty(plan.Updates);
 
-            // No removals on pure insert
-            Assert.Empty(changeSet.RemovedIds);
+            var insert = Assert.Single(plan.Inserts);
+            Assert.Equal("foo-uuid", insert.Identity.Uuid);
+            Assert.Equal("Near Mint", insert.Identity.Condition);
+            Assert.Equal("German", insert.Identity.Language);
+            Assert.Equal("nonfoil", insert.Identity.Finish);
+            Assert.Equal(2, insert.CardsOwned);
+            Assert.Equal(1, insert.CardsForTrade);
 
-            // Exactly one upsert
-            var survivor = Assert.Single(changeSet.AddedOrUpdated);
+            // Assert: ChangeSet represents the in-memory upsert (CardId is still null at plan time)
+            Assert.Empty(plan.ChangeSet.RemovedIds);
 
-            Assert.Equal(123, survivor.CardId);
+            var survivor = Assert.Single(plan.ChangeSet.AddedOrUpdated);
+            Assert.Same(newCard, survivor); // important: plan uses the same object for apply
+            Assert.Null(survivor.CardId);
+
             Assert.Equal("foo-uuid", survivor.Uuid);
             Assert.Equal("Near Mint", survivor.SelectedCondition);
             Assert.Equal("nonfoil", survivor.SelectedFinish);
             Assert.Equal("German", survivor.Language);
             Assert.Equal(2, survivor.CardsOwned);
             Assert.Equal(1, survivor.CardsForTrade);
-
-            // Verify repo calls
-            repo.Verify(r => r.FindRecordByIdAsync(
-                "foo-uuid", "Near Mint", "German", "nonfoil", dummyConn), Times.Once);
-
-            repo.Verify(r => r.AddCardAndReturnIdAsync(
-                It.Is<CardSet>(c =>
-                    c.Uuid == "foo-uuid" &&
-                    c.SelectedCondition == "Near Mint" &&
-                    c.SelectedFinish == "nonfoil" &&
-                    c.Language == "German" &&
-                    c.CardsOwned == 2 &&
-                    c.CardsForTrade == 1),
-                dummyConn), Times.Once);
         }
 
         [Fact]
