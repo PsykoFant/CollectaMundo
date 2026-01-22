@@ -121,6 +121,7 @@ namespace CollectaMundo.ViewModels
         }
 
         // Commands - manipulate listviews
+
         [RelayCommand]
         private void ClearCardsToAdd()
         {
@@ -130,6 +131,7 @@ namespace CollectaMundo.ViewModels
             // Increment the trigger to signal the view to clear selection.
             ClearSelectionTrigger++;
         }
+
         [RelayCommand]
         private void RefreshColumns()
         {

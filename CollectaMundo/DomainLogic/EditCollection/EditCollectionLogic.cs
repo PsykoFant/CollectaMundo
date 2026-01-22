@@ -177,7 +177,7 @@ namespace CollectaMundo.DomainLogic.EditCollection
             // prefer English; else first; else "English"
             clone.Language = ChooseDefaultLanguage(clone.OtherLanguages);
         }
-        private static string? ChooseDefaultFinish(IList<string>? finishes)
+        private static string? ChooseDefaultFinish(IReadOnlyList<string>? finishes)
         {
             if (finishes == null || finishes.Count == 0)
             {
@@ -198,7 +198,7 @@ namespace CollectaMundo.DomainLogic.EditCollection
                 .ThenBy(s => s, StringComparer.OrdinalIgnoreCase)
                 .First();
         }
-        private static string ChooseDefaultLanguage(IList<string>? langs)
+        private static string ChooseDefaultLanguage(IReadOnlyList<string>? langs)
         {
             if (langs == null || langs.Count == 0)
             {
