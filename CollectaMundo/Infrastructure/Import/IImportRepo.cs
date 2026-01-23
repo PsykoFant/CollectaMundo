@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Shared;
 using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.Import
@@ -14,6 +15,6 @@ namespace CollectaMundo.Infrastructure.Import
         Task<Dictionary<string, List<string>>> QueryByNameOnlyAsync(SQLiteConnection conn, IReadOnlyList<string> names, CancellationToken token);
 
         // step 9
-        Task UpsertMyCollectionAsync(IReadOnlyList<CollectionUpsertItem> items, SQLiteConnection conn, SQLiteTransaction tx, IProgress<int>? percent, CancellationToken token);
+        Task<IReadOnlyList<MyCollectionRow>> UpsertMyCollectionAsync(IReadOnlyList<CollectionUpsertItem> items, SQLiteConnection conn, SQLiteTransaction tx, IProgress<int>? percent, CancellationToken token);
     }
 }

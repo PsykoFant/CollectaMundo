@@ -302,19 +302,17 @@ namespace CollectaMundo.ViewModels
         {
             var addedOrUpdated = new List<CardSet>();
 
-            foreach (var upsert in mutation.Upserts)
+            foreach (var row in mutation.UpsertedRows)
             {
-                // CASE A: already exists in collection → UPDATE
-                var existing = MyCollectionVM.Cards.FirstOrDefault(c =>
-                    string.Equals(c.Uuid, upsert.Uuid, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(c.Language, upsert.Language, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(c.SelectedFinish, upsert.Finish, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(c.SelectedCondition, upsert.Condition, StringComparison.OrdinalIgnoreCase));
+                var identity = row.Identity;
+
+                // CASE A: row already exists in-memory --> UPDATE ABSOLUTE VALUES
+                var existing = MyCollectionVM.Cards.FirstOrDefault(c => c.CardId == row.CardId);
 
                 if (existing != null)
                 {
-                    existing.CardsOwned = upsert.CardsOwned + existing.CardsOwned;
-                    existing.CardsForTrade = upsert.CardsForTrade + existing.CardsForTrade;
+                    existing.CardsOwned = row.CardsOwned + existing.CardsOwned;
+                    existing.CardsForTrade = row.CardsForTrade + existing.CardsForTrade;
 
                     existing.RecomputeCollectionPrice();
 
@@ -322,23 +320,21 @@ namespace CollectaMundo.ViewModels
                     continue;
                 }
 
-                // CASE B: new card → hydrate from AllCards
-                var core = AllCardsVM.Cards
-                    .Select(c => c.Core)
-                    .Single(c => string.Equals(c.Uuid, upsert.Uuid, StringComparison.OrdinalIgnoreCase));
+                // CASE B: new card --> hydrate from AllCards using Core
+                var uuid = identity.Uuid ?? throw new InvalidOperationException("Import identity must have a UUID.");
 
-                var card = CardSet.FromCore(core);
+                var core = AllCardsVM.Cards.Select(c => c.Core!).Single(c => string.Equals(c.Uuid, uuid, StringComparison.OrdinalIgnoreCase));
 
-                card.Uuid = upsert.Uuid;
-                card.Language = upsert.Language;
-                card.SelectedFinish = upsert.Finish;
-                card.SelectedCondition = upsert.Condition;
-                card.CardsOwned = upsert.CardsOwned;
-                card.CardsForTrade = upsert.CardsForTrade;
-
-                card.RecomputeCollectionPrice();
+                var card = CardSet.FromCoreWithCollection(core,
+                    cardId: row.CardId,
+                    cardsOwned: row.CardsOwned,
+                    cardsForTrade: row.CardsForTrade,
+                    condition: identity.Condition,
+                    language: identity.Language,
+                    finish: identity.Finish);
 
                 addedOrUpdated.Add(card);
+
             }
 
             var changeSet = new CollectionChangeSet<CardSet>
@@ -349,6 +345,7 @@ namespace CollectaMundo.ViewModels
 
             OnCollectionChanged(sender, changeSet);
         }
+
 
 
 

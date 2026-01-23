@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.Import.Models;
+using CollectaMundo.DomainLogic.Shared;
 using System.Data;
 using System.Data.SQLite;
 using System.Text;
@@ -364,22 +365,8 @@ namespace CollectaMundo.Infrastructure.Import
         }
 
         // Step 9
-        public async Task UpsertMyCollectionAsync(IReadOnlyList<CollectionUpsertItem> items, SQLiteConnection conn, SQLiteTransaction tx, IProgress<int>? percent, CancellationToken token)
+        public async Task<IReadOnlyList<MyCollectionRow>> UpsertMyCollectionAsync(IReadOnlyList<CollectionUpsertItem> items, SQLiteConnection conn, SQLiteTransaction tx, IProgress<int>? percent, CancellationToken token)
         {
-            ArgumentNullException.ThrowIfNull(items);
-
-            ArgumentNullException.ThrowIfNull(conn);
-
-            ArgumentNullException.ThrowIfNull(tx);
-
-            if (items.Count == 0)
-            {
-                percent?.Report(100);
-                return;
-            }
-
-            // SQLite UPSERT requires a UNIQUE constraint/index on the conflict target:
-            //   (uuid, language, finish, condition)
             const string sql = @"
                 INSERT INTO myCollection
                     (uuid, language, finish, condition, cardsOwned, cardsForTrade)
@@ -387,13 +374,10 @@ namespace CollectaMundo.Infrastructure.Import
                     (@uuid, @language, @finish, @condition, @owned, @trade)
                 ON CONFLICT(uuid, language, finish, condition) DO UPDATE SET
                     cardsOwned    = cardsOwned + excluded.cardsOwned,
-                    cardsForTrade = cardsForTrade + excluded.cardsForTrade;
-                ";
+                    cardsForTrade = cardsForTrade + excluded.cardsForTrade
+                RETURNING id;
+            ";
 
-            // Update progress at a reasonable interval (avoid UI spam)
-            const int reportEvery = 250;
-
-            // Prepared statement with reusable parameters
             using var cmd = new SQLiteCommand(sql, conn, tx);
 
             var pUuid = cmd.Parameters.Add("@uuid", DbType.String);
@@ -403,23 +387,13 @@ namespace CollectaMundo.Infrastructure.Import
             var pOwned = cmd.Parameters.Add("@owned", DbType.Int32);
             var pTrade = cmd.Parameters.Add("@trade", DbType.Int32);
 
-            // Optional: if you expect very high volume, bump command timeout
-            // cmd.CommandTimeout = 60;
+            var result = new List<MyCollectionRow>(items.Count);
 
-            int total = items.Count;
-
-            for (int i = 0; i < total; i++)
+            for (int i = 0; i < items.Count; i++)
             {
                 token.ThrowIfCancellationRequested();
 
                 var it = items[i];
-
-                // Defensive: your Collapser should already guarantee these are valid
-                // but keep the repo resilient.
-                if (string.IsNullOrWhiteSpace(it.Uuid))
-                {
-                    continue;
-                }
 
                 pUuid.Value = it.Uuid;
                 pLanguage.Value = it.Language;
@@ -428,15 +402,21 @@ namespace CollectaMundo.Infrastructure.Import
                 pOwned.Value = it.CardsOwned;
                 pTrade.Value = it.CardsForTrade;
 
-                await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+                var id = Convert.ToInt32(await cmd.ExecuteScalarAsync(token));
 
-                // Progress
-                if (percent != null && (i % reportEvery == 0 || i == total - 1))
+                result.Add(new MyCollectionRow
                 {
-                    int pct = (int)(((i + 1) / (double)total) * 100);
-                    percent.Report(pct);
-                }
+                    CardId = id,
+                    Identity = new CollectionIdentity(it.Uuid, it.Condition, it.Language, it.Finish),
+                    CardsOwned = it.CardsOwned,
+                    CardsForTrade = it.CardsForTrade
+                });
+
+                percent?.Report((int)(((i + 1) / (double)items.Count) * 100));
             }
+
+            return result;
         }
+
     }
 }

@@ -81,32 +81,6 @@ namespace CollectaMundo.Infrastructure.EditCollection
 
             return finishes;
         }
-        public async Task<int?> FindCardIdByCollectionIdentityAsync(string uuid, string condition, string language, string finish, SQLiteConnection conn)
-        {
-            const string sql =
-            @"
-                SELECT id
-                FROM myCollection
-                WHERE uuid = @uuid
-                  AND condition = @condition
-                  AND language = @language
-                  AND finish = @finish
-                LIMIT 1;
-            ";
-
-            using var cmd = new SQLiteCommand(sql, conn);
-
-            cmd.Parameters.AddWithValue("@uuid", uuid);
-            cmd.Parameters.AddWithValue("@condition", condition);
-            cmd.Parameters.AddWithValue("@language", language);
-            cmd.Parameters.AddWithValue("@finish", finish);
-
-            var result = await cmd.ExecuteScalarAsync();
-
-            return result is null || result is DBNull
-                ? null
-                : Convert.ToInt32(result);
-        }
 
         // CRUD
         public async Task<int> AddCardAndReturnIdAsync(string uuid, string condition, string language, string finish, int cardsOwned, int cardsForTrade, SQLiteConnection conn)
@@ -149,25 +123,6 @@ namespace CollectaMundo.Infrastructure.EditCollection
 
             using var cmd = new SQLiteCommand(sql, conn);
             cmd.Parameters.AddWithValue("@id", cardId);
-
-            await cmd.ExecuteNonQueryAsync();
-        }
-        public async Task DeleteCardsByIdsAsync(IEnumerable<int> ids, SQLiteConnection conn)
-        {
-            var idList = ids?.ToList() ?? [];
-            if (idList.Count == 0)
-            {
-                return;
-            }
-
-            var paramNames = idList.Select((_, i) => $"@id{i}").ToArray();
-            var sql = $"DELETE FROM myCollection WHERE id IN ({string.Join(",", paramNames)});";
-
-            using var cmd = new SQLiteCommand(sql, conn);
-            for (int i = 0; i < idList.Count; i++)
-            {
-                cmd.Parameters.AddWithValue(paramNames[i], idList[i]);
-            }
 
             await cmd.ExecuteNonQueryAsync();
         }
