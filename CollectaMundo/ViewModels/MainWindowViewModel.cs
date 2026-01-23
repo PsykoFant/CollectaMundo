@@ -5,6 +5,7 @@ using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.EditCollection;
 using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.Import;
+using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared;
@@ -285,7 +286,7 @@ namespace CollectaMundo.ViewModels
         #region event wiring (subscribe/unsubscribe)
         private void SubscribeChildVmEvents()
         {
-            ImportVM.CollectionChanged += OnCollectionChanged;
+            ImportVM.CollectionMutationRequested += OnImportCollectionMutationRequested;
             AddCardsVM.CollectionChanged += OnCollectionChanged;
             EditCardsVM.CollectionChanged += OnCollectionChanged;
             FilterVM.FilterChanged += OnFilterChanged;
@@ -297,6 +298,62 @@ namespace CollectaMundo.ViewModels
             EditCardsVM.CollectionChanged -= OnCollectionChanged;
             FilterVM.FilterChanged -= OnFilterChanged;
         }
+        private void OnImportCollectionMutationRequested(object? sender, CollectionMutation mutation)
+        {
+            var addedOrUpdated = new List<CardSet>();
+
+            foreach (var upsert in mutation.Upserts)
+            {
+                // CASE A: already exists in collection → UPDATE
+                var existing = MyCollectionVM.Cards.FirstOrDefault(c =>
+                    string.Equals(c.Uuid, upsert.Uuid, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(c.Language, upsert.Language, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(c.SelectedFinish, upsert.Finish, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(c.SelectedCondition, upsert.Condition, StringComparison.OrdinalIgnoreCase));
+
+                if (existing != null)
+                {
+                    existing.CardsOwned = upsert.CardsOwned + existing.CardsOwned;
+                    existing.CardsForTrade = upsert.CardsForTrade + existing.CardsForTrade;
+
+                    existing.RecomputeCollectionPrice();
+
+                    addedOrUpdated.Add(existing);
+                    continue;
+                }
+
+                // CASE B: new card → hydrate from AllCards
+                var core = AllCardsVM.Cards
+                    .Select(c => c.Core)
+                    .Single(c => string.Equals(c.Uuid, upsert.Uuid, StringComparison.OrdinalIgnoreCase));
+
+                var card = CardSet.FromCore(core);
+
+                card.Uuid = upsert.Uuid;
+                card.Language = upsert.Language;
+                card.SelectedFinish = upsert.Finish;
+                card.SelectedCondition = upsert.Condition;
+                card.CardsOwned = upsert.CardsOwned;
+                card.CardsForTrade = upsert.CardsForTrade;
+
+                card.RecomputeCollectionPrice();
+
+                addedOrUpdated.Add(card);
+            }
+
+            var changeSet = new CollectionChangeSet<CardSet>
+            {
+                RemovedIds = mutation.RemovedIds,
+                AddedOrUpdated = addedOrUpdated
+            };
+
+            OnCollectionChanged(sender, changeSet);
+        }
+
+
+
+
+
         #endregion
 
         #region event handlers (FilterChanged, CardChanged)

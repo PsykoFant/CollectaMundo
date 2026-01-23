@@ -1,4 +1,5 @@
 ﻿using CollectaMundo.ApplicationServices.Import;
+using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.DomainLogic.CardLists.Models;
@@ -35,6 +36,7 @@ namespace CollectaMundo.ViewModels.Import
             CancelEnabled = new Progress<bool>(_ => { })
         };
         public CardImageViewModel CardImageVM { get; } = cardImageVM;
+        public event EventHandler<CollectionMutation>? CollectionMutationRequested;
 
         [ObservableProperty]
         private string? progressHeadline;
@@ -402,13 +404,17 @@ namespace CollectaMundo.ViewModels.Import
             Progress.Detail.Report("Importing cards…");
 
             var token = _userPromptService.GetNewCancellationToken();
-
             var importResult = await _importService.ImportResolvedItems(ResolvedImportItems, Progress, token);
+
+            if (importResult.Mutation != null)
+            {
+                CollectionMutationRequested?.Invoke(this, importResult.Mutation);
+            }
 
             GoToStep(ImportStep.Finish);
             return new OperationResult(OperationResultCode.Success, "Import completed succesfully");
         }
-        public async Task<OperationResult> AfterStep10Action()
+        public Task<OperationResult> AfterStep10Action()
         {
             ImportCardList.Clear();
             IdMappings.Clear();
@@ -449,7 +455,7 @@ namespace CollectaMundo.ViewModels.Import
             ImportFailVisibility = Visibility.Collapsed;
             ImportSuccessVisibility = Visibility.Collapsed;
 
-            return new(OperationResultCode.Success, "Cleanup completed");
+            return Task.FromResult(new OperationResult(OperationResultCode.Success, "Cleanup completed"));
         }
 
         public Task<OperationResult> SaveUnimportableItemsAsync()

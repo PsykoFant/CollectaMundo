@@ -318,17 +318,18 @@ namespace CollectaMundo.ApplicationServices.Import
         {
             if (resolvedItems == null || resolvedItems.Count == 0)
             {
-                return new ImportExecutionResult(new OperationResult(OperationResultCode.Empty, "No resolved items to import."), upserts: []);
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.Empty, "No resolved items to import."), Mutation: null);
             }
 
             progress.Detail.Report("Preparing import items...");
+
 
             // DomainLogic: collapse import rows into unique collection upserts
             var collapsed = _importLogic.CollapseResolvedItemsForCollection(resolvedItems);
 
             if (collapsed.Count == 0)
             {
-                return new ImportExecutionResult(new OperationResult(OperationResultCode.Success, "No importable items found."), upserts: []);
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.Success, "No importable items found."), Mutation: null);
             }
 
             await using var uow = new UnitOfWork(_dbFactory);
@@ -347,19 +348,27 @@ namespace CollectaMundo.ApplicationServices.Import
                 await uow.CommitAsync();
 
                 progress.Detail.Report("Import completed.");
+                // build mutation from facts
+                var mutation = new CollectionMutation
+                {
+                    // Import never deletes rows
+                    RemovedIds = [],
 
-                // We return *facts* (what was upserted),
-                return new ImportExecutionResult(new OperationResult(OperationResultCode.Success, $"Finished importing {collapsed.Count} unique collection rows."), upserts: collapsed);
+                    // These identities are now guaranteed to exist in DB
+                    Upserts = collapsed
+                };
+
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.Success, $"Finished importing {collapsed.Count} unique collection rows."), mutation);
             }
             catch (OperationCanceledException)
             {
                 await uow.RollbackAsync();
-                return new ImportExecutionResult(new OperationResult(OperationResultCode.CancelledByUser, "Import cancelled by user."), upserts: []);
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.CancelledByUser, "Import cancelled by user."), Mutation: null);
             }
             catch (Exception ex)
             {
                 await uow.RollbackAsync();
-                return new ImportExecutionResult(new OperationResult(OperationResultCode.Error, $"Import failed: {ex.Message}"), upserts: []);
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.Error, $"Import failed: {ex.Message}"), Mutation: null);
             }
         }
     }
