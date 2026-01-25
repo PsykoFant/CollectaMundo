@@ -601,32 +601,26 @@ namespace CollectaMundo.DomainLogic.Import
         }
         public IReadOnlyList<CollectionUpsertItem> CollapseResolvedItemsForCollection(IReadOnlyList<ResolvedImportItem> resolvedItems)
         {
-            return [.. resolvedItems
-                .Where(r => r.IsImportable && !string.IsNullOrWhiteSpace(r.Uuid))
-                .Select(r => new
-                {
-                    Uuid = r.Uuid!, // already checked
-                    Language = r.Language ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Language),
-                    Finish = r.Finish ?? CollectionCardItemDefaults.GetDefaultString(ImportField.CardFinish),
-                    Condition = r.Condition ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Condition),
-                    r.CardsOwned,
-                    r.CardsForTrade
-                })
-                .GroupBy(r => new
-                {
+            return
+            [.. resolvedItems.Where(r => r.IsImportable).Select(r => new
+            {
+                Identity = CollectionIdentityFactory.Create(
                     r.Uuid,
-                    r.Language,
-                    r.Finish,
-                    r.Condition
-                })
-                .Select(g => new CollectionUpsertItem(
-                    Uuid: g.Key.Uuid,
-                    Language: g.Key.Language,
-                    Finish: g.Key.Finish,
-                    Condition: g.Key.Condition,
-                    CardsOwned: g.Sum(x => x.CardsOwned),
-                    CardsForTrade: g.Sum(x => x.CardsForTrade)
-                ))];
+                    r.Condition ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Condition),
+                    r.Language ?? CollectionCardItemDefaults.GetDefaultString(ImportField.Language),
+                    r.Finish ?? CollectionCardItemDefaults.GetDefaultString(ImportField.CardFinish)),
+                r.CardsOwned,
+                r.CardsForTrade
+            })
+            .GroupBy(x => x.Identity)
+            .Select(g => new CollectionUpsertItem(
+                Uuid: g.Key.Uuid,
+                Language: g.Key.Language,
+                Finish: g.Key.Finish,
+                Condition: g.Key.Condition,
+                CardsOwned: g.Sum(x => x.CardsOwned),
+                CardsForTrade: g.Sum(x => x.CardsForTrade)
+            ))];
         }
 
         // Helpers

@@ -49,7 +49,11 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         {
             get
             {
-                if (_resolvedSetCodeCached) return _resolvedSetCode;
+                if (_resolvedSetCodeCached)
+                {
+                    return _resolvedSetCode;
+                }
+
                 _resolvedSetCodeCached = true;
                 _resolvedSetCode = SetCode ?? Core?.SetCode;
                 return _resolvedSetCode;
@@ -62,11 +66,18 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         {
             get
             {
-                if (_setNameCached) return _setName;
+                if (_setNameCached)
+                {
+                    return _setName;
+                }
+
                 _setNameCached = true;
 
                 var code = ResolvedSetCode;
-                if (string.IsNullOrWhiteSpace(code)) return null;
+                if (string.IsNullOrWhiteSpace(code))
+                {
+                    return null;
+                }
 
                 _setName = SetMetaProvider?.Get(code)?.Name;
                 return _setName;
@@ -78,10 +89,16 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
         {
             get
             {
-                if (_releaseDate.HasValue) return _releaseDate;
+                if (_releaseDate.HasValue)
+                {
+                    return _releaseDate;
+                }
 
                 var code = ResolvedSetCode;
-                if (string.IsNullOrWhiteSpace(code)) return null;
+                if (string.IsNullOrWhiteSpace(code))
+                {
+                    return null;
+                }
 
                 _releaseDate = SetMetaProvider?.Get(code)?.ReleaseDate;
                 return _releaseDate;
@@ -195,7 +212,6 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
 
             return c;
         }
-
         public static CardSet FromCoreWithCollection(CardCore core, int cardId, int cardsOwned, int cardsForTrade, string? condition, string? language, string? finish)
         {
             var c = FromCore(core);
@@ -211,7 +227,6 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
 
             return c;
         }
-
         public static CardSet FromManaKey(string key)
         {
             return new CardSet { ManaCostRaw = key };
@@ -228,6 +243,9 @@ namespace CollectaMundo.DomainLogic.CardLists.Models
             OnPropertyChanged(nameof(CardInCollectionPrice));
         }
 
+        // -------------------------------
+        // Recompute derived values
+        // -------------------------------
         public void RecomputeCollectionPrice()
         {
             OnPropertyChanged(nameof(CardInCollectionPrice));

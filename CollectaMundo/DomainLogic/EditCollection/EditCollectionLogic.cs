@@ -85,7 +85,7 @@ namespace CollectaMundo.DomainLogic.EditCollection
                     continue;
                 }
 
-                var identity = GetIdentity(card);
+                var identity = CollectionIdentityFactory.Create(card.Uuid, card.SelectedCondition, card.Language, card.SelectedFinish);
 
                 snapshot.TryGetByIdentity(identity, out var existingByIdentity);
 
@@ -242,14 +242,6 @@ namespace CollectaMundo.DomainLogic.EditCollection
                 list.RemoveAt(idx);
                 list.Insert(0, v);
             }
-        }
-        private static CollectionIdentity GetIdentity(CardSet card)
-        {
-            return new CollectionIdentity(
-                card.Uuid ?? throw new InvalidOperationException("Uuid required"),
-                card.SelectedCondition ?? throw new InvalidOperationException("Condition required"),
-                card.Language ?? throw new InvalidOperationException("Language required"),
-                card.SelectedFinish ?? throw new InvalidOperationException("Finish required"));
         }
     }
 }
