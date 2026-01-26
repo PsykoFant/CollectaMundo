@@ -1,6 +1,5 @@
 ﻿using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Shared;
-using System.Diagnostics;
 
 namespace CollectaMundo.ApplicationServices.Shared
 {
@@ -50,20 +49,20 @@ namespace CollectaMundo.ApplicationServices.Shared
                 byIdentity[identity] = row;
             }
 
-#if DEBUG
-            Debug.WriteLine("[CollectionSnapshot] === SNAPSHOT START ===");
-            Debug.WriteLine($"[CollectionSnapshot] Rows byId = {byId.Count}, byIdentity = {byIdentity.Count}");
+            //#if DEBUG
+            //            Debug.WriteLine("[CollectionSnapshot] === SNAPSHOT START ===");
+            //            Debug.WriteLine($"[CollectionSnapshot] Rows byId = {byId.Count}, byIdentity = {byIdentity.Count}");
 
-            foreach (var row in byId.Values.OrderBy(r => r.CardId))
-            {
-                Debug.WriteLine(
-                    $"[CollectionSnapshot] CardId={row.CardId} " +
-                    $"Identity=[{row.Identity.Uuid}, {row.Identity.Language}, {row.Identity.Finish}, {row.Identity.Condition}] " +
-                    $"Owned={row.CardsOwned} Trade={row.CardsForTrade}");
-            }
+            //            foreach (var row in byId.Values.OrderBy(r => r.CardId))
+            //            {
+            //                Debug.WriteLine(
+            //                    $"[CollectionSnapshot] CardId={row.CardId} " +
+            //                    $"Identity=[{row.Identity.Uuid}, {row.Identity.Language}, {row.Identity.Finish}, {row.Identity.Condition}] " +
+            //                    $"Owned={row.CardsOwned} Trade={row.CardsForTrade}");
+            //            }
 
-            Debug.WriteLine("[CollectionSnapshot] === SNAPSHOT END ===");
-#endif
+            //            Debug.WriteLine("[CollectionSnapshot] === SNAPSHOT END ===");
+            //#endif
 
             return new CollectionSnapshot(byId, byIdentity);
         }

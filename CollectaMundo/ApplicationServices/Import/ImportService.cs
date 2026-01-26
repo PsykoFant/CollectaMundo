@@ -318,21 +318,20 @@ namespace CollectaMundo.ApplicationServices.Import
         {
             if (resolvedItems == null || resolvedItems.Count == 0)
             {
-                return new ImportExecutionResult(
-                    new OperationResult(OperationResultCode.Empty, "No resolved items to import."),
-                    Mutation: null);
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.Empty, "No resolved items to import."), Mutation: null);
             }
 
             progress.Detail.Report("Preparing import items...");
 
             // DomainLogic: collapse import rows into unique collection upserts
+
+            Debug.WriteLine("[ImportResolvedItems] Collapsing resolved items ... ");
+
             var collapsed = _importLogic.CollapseResolvedItemsForCollection(resolvedItems);
 
             if (collapsed.Count == 0)
             {
-                return new ImportExecutionResult(
-                    new OperationResult(OperationResultCode.Success, "No importable items found."),
-                    Mutation: null);
+                return new ImportExecutionResult(new OperationResult(OperationResultCode.Success, "No importable items found."), Mutation: null);
             }
 
             await using var uow = new UnitOfWork(_dbFactory);
@@ -344,6 +343,8 @@ namespace CollectaMundo.ApplicationServices.Import
 
                 progress.Detail.Report("Importing cards to collection...");
                 progress.Percent.Report(0);
+
+                Debug.WriteLine("[ImportResolvedItems] Upserting collapsed items ... ");
 
                 // Capture returned rows WITH CardId
                 var upsertedRows = await _importRepo.UpsertMyCollectionAsync(collapsed, uow.CurrentConnection, uow.CurrentTransaction, progress.Percent, token);
@@ -361,6 +362,9 @@ namespace CollectaMundo.ApplicationServices.Import
                     // Fully resolved rows (CardId + Identity + totals)
                     UpsertedRows = upsertedRows
                 };
+
+
+                Debug.WriteLine("[ImportResolvedItems] Finished upserting collapsed items ... ");
 
                 return new ImportExecutionResult(new OperationResult(OperationResultCode.Success, $"Finished importing {upsertedRows.Count} unique collection rows."), Mutation: mutation);
             }

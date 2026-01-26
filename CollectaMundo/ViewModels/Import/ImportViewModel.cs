@@ -8,7 +8,6 @@ using CollectaMundo.ViewModels.Import.Models;
 using CollectaMundo.ViewModels.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -404,12 +403,16 @@ namespace CollectaMundo.ViewModels.Import
             Progress.Detail.Report("Importing cards…");
 
             var token = _userPromptService.GetNewCancellationToken();
-            var importResult = await _importService.ImportResolvedItems(ResolvedImportItems, Progress, token);
+            var importResult = await Task.Run(() => _importService.ImportResolvedItems(ResolvedImportItems, Progress, token));
+
+            Debug.WriteLine("ImportViewModel: Import to db process completed.");
 
             if (importResult.Mutation != null)
             {
                 CollectionMutationRequested?.Invoke(this, importResult.Mutation);
             }
+
+            Debug.WriteLine("ImportViewModel: CollectionMutationRequested event invoked.");
 
             GoToStep(ImportStep.Finish);
             return new OperationResult(OperationResultCode.Success, "Import completed succesfully");

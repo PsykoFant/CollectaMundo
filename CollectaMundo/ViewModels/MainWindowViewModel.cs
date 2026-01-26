@@ -303,6 +303,9 @@ namespace CollectaMundo.ViewModels
         private void OnImportCollectionMutationRequested(object? sender, CollectionMutation mutation)
         {
             var addedOrUpdated = new List<CardSet>();
+            Debug.WriteLine($"Import mutation: {mutation.RemovedIds.Count} removed, {mutation.UpsertedRows.Count} upserted.");
+
+            Debug.WriteLine("Processing upserted rows...");
 
             foreach (var row in mutation.UpsertedRows)
             {
@@ -344,6 +347,8 @@ namespace CollectaMundo.ViewModels
                 RemovedIds = mutation.RemovedIds,
                 AddedOrUpdated = addedOrUpdated
             };
+
+            Debug.WriteLine("Raising CollectionChanged event from import...");
 
             OnCollectionChanged(sender, changeSet);
         }
