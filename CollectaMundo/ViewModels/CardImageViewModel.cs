@@ -28,7 +28,16 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
+            // Capture the card we are loading for
+            var requestedCard = selectedCard;
+
             var imageResult = await _cardImageService.GetImageForCardAsync(selectedCard);
+
+            // Guard: selection changed while awaiting
+            if (!ReferenceEquals(SelectedCard, requestedCard))
+            {
+                return;
+            }
 
             FrontImageSource = imageResult?.FrontImageBytes is not null
                 ? LoadBitmapFromBytes(imageResult.FrontImageBytes)
@@ -38,8 +47,13 @@ namespace CollectaMundo.ViewModels
                 ? LoadBitmapFromBytes(imageResult.BackImageBytes)
                 : null;
 
-            ImageSet = imageResult?.SetName ?? string.Empty;
-            ImagePromoType = imageResult?.PromoType ?? string.Empty;
+            ImageSet = !string.IsNullOrWhiteSpace(imageResult?.SetName)
+                ? imageResult?.SetName
+                : string.Empty;
+
+            ImagePromoType = string.IsNullOrWhiteSpace(imageResult?.PromoType)
+                ? null
+                : imageResult.PromoType;
         }
 
         [ObservableProperty]

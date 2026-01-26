@@ -147,7 +147,7 @@ namespace CollectaMundo.Tests.TestUtils
 
             var userPromptService = new UserPromptService();
             var statusVM = new StatusViewModel(userPromptService);
-            var importVM = new ImportViewModel(null!, null!, userPromptService, null!);
+            var importVM = new ImportViewModel(null!, null!, userPromptService);
             var parentCtx = new Mock<IParentViewModelContext>();
 
             var utilitiesVM = new TestableUtilitiesViewModel(dbService.Object, statusVM, importVM, userPromptService, parentCtx.Object, _collectionCount ?? (() => 5), new FileSystemPicker());
