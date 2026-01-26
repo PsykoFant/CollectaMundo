@@ -8,6 +8,7 @@ using CollectaMundo.ViewModels.Import.Models;
 using CollectaMundo.ViewModels.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -23,7 +24,6 @@ namespace CollectaMundo.ViewModels.Import
 
         private ProgressSinks? _progress;
         private ProgressSinks Progress => _progress ??= CreateProgressSinks();
-
         private ProgressSinks CreateProgressSinks() => new()
         {
             Percent = new Progress<int>(v => ProgressValue = v),
@@ -34,7 +34,7 @@ namespace CollectaMundo.ViewModels.Import
             CancelEnabled = new Progress<bool>(_ => { })
         };
         public event EventHandler<CollectionMutation>? CollectionMutationRequested; // To notify parent VM of collection changes
-        public event EventHandler<string>? CardImageSelectionRequested; // To notify parent VM to show card image for given UUID
+        public event EventHandler<string?>? CardImageSelectionRequested; // To notify parent VM to show card image for given UUID
 
         [ObservableProperty]
         private string? progressHeadline;
@@ -430,11 +430,7 @@ namespace CollectaMundo.ViewModels.Import
 
             // Reset card image view model
             _parentViewModelContext.CardViewSectionVisibility = Visibility.Collapsed;
-            //CardImageVM.SelectedCard = null;
-            //CardImageVM.FrontImageSource = null;
-            //CardImageVM.BackImageSource = null;
-            //CardImageVM.ImageSet = string.Empty;
-            //CardImageVM.ImagePromoType = string.Empty;
+            CardImageSelectionRequested?.Invoke(this, null);
 
             // Reset resolved import state
             ResolvedImportItems = [];

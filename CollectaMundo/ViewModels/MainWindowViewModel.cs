@@ -347,15 +347,17 @@ namespace CollectaMundo.ViewModels
 
             OnCollectionChanged(sender, changeSet);
         }
-
-        private void OnCardImageSelectionRequested(object? sender, string request)
+        private void OnCardImageSelectionRequested(object? sender, string? uuid)
         {
-            CardImageVM.SelectedCard = new CardSet { Uuid = request };
+            if (string.IsNullOrWhiteSpace(uuid))
+            {
+                CardImageVM.SelectedCard = null; // reset UI
+            }
+            else
+            {
+                CardImageVM.SelectedCard = new CardSet { Uuid = uuid };
+            }
         }
-
-
-
-
 
         #endregion
 
