@@ -1524,6 +1524,11 @@
                                                   CommandParameter="{Binding SelectedItems, ElementName=MyCollectionDataGrid}" />
                                     </i:EventTrigger>
                                 </i:Interaction.Triggers>
+                        <DataGrid.InputBindings>
+                            <KeyBinding Key="Delete"
+                                        Command="{Binding EditCardsVM.DeleteSelectedCardsCommand}"
+                                        CommandParameter="{Binding SelectedItems,RelativeSource={RelativeSource AncestorType=DataGrid}}" />
+                        </DataGrid.InputBindings>
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Name" Width="*" SortMemberPath="Name">
                                 <DataGridTemplateColumn.HeaderTemplate>
