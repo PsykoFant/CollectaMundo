@@ -214,7 +214,7 @@ namespace CollectaMundo.ViewModels
             }
 
             await SubmitBatchAsync(CardsToAdd, (cards, snapshot) =>
-            _service.SubmitCardBatchAsync(cards, snapshot),
+            _service.SubmitNewCardsWithDefaultsBatchAsync(cards, snapshot),
             clearAfter: false, summaryTitle: "Added the following cards with default values:");
         }
 
