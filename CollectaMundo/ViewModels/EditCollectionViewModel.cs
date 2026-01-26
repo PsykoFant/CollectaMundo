@@ -213,7 +213,7 @@ namespace CollectaMundo.ViewModels
                 return;
             }
 
-            await SubmitBatchAsync(CardsToAdd, (cards, snapshot) =>
+            await SubmitBatchAsync(originals, (cards, snapshot) =>
             _service.SubmitNewCardsWithDefaultsBatchAsync(cards, snapshot),
             clearAfter: false, summaryTitle: "Added the following cards with default values:");
         }

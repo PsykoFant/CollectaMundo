@@ -1,7 +1,7 @@
 TO DO 
 - MVVM refactor
  - Import brug MVVM
-    - Bug: add with defaults....
+    - Bug: delete direkte i viewet
     - Import polish... 
 
     - CardCoreDto skal ud af infrastruktur laget
