@@ -69,21 +69,5 @@ namespace CollectaMundo
                 MessageBox.Show($"Closing connection failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        public static async Task OptimizeDb()
-        {
-            List<string> optimizeCommands = new()
-            {
-                "VACUUM;",
-                "ANALYZE;",
-                "PRAGMA optimize;"
-            };
-
-            // Execute each command asynchronously
-            foreach (var item in optimizeCommands)
-            {
-                using var command = new SQLiteCommand(item, DBAccess.connection);
-                await command.ExecuteNonQueryAsync();
-            }
-        }
     }
 }

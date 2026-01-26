@@ -8,8 +8,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using static CollectaMundo.BackupRestore;
-
 namespace CollectaMundo
 {
     public partial class MainWindow : Window, INotifyPropertyChanged
@@ -31,10 +29,6 @@ namespace CollectaMundo
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected virtual void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
 
         // Objects for deck management
         public readonly List<Deck> allDecks = [];
@@ -445,90 +439,6 @@ namespace CollectaMundo
             saveButton.Visibility = Visibility.Hidden;
             cancelButton.Visibility = Visibility.Hidden;
         }
-
-        #endregion
-
-        #region UI elements for utilities
-
-        #region Import wizard
-
-        // Import wizard different steps button methods
-        private async void ButtonIdColumnMappingNext_Click(object sender, RoutedEventArgs e)
-        {
-            await ButtonIdColumnMappingNext();
-        }
-        private void ButtonSkipIdColumnMapping_Click(object sender, RoutedEventArgs e)
-        {
-            ButtonSkipIdColumnMapping();
-        }
-        private async void ButtonNameAndSetMappingNext_Click(object sender, RoutedEventArgs e)
-        {
-            await ButtonNameAndSetMappingNext();
-        }
-        private void ButtonMultipleUuidsNext_Click(object sender, RoutedEventArgs e)
-        {
-            ButtonMultipleUuidsNext();
-        }
-        private async void ButtonAdditionalFieldsNext_Click(object sender, RoutedEventArgs e)
-        {
-            await ButtonAdditionalFieldsNext();
-        }
-        private async void ButtonConditionMappingNext_Click(object sender, RoutedEventArgs e)
-        {
-            await ButtonConditionMappingNext();
-        }
-        private async void ButtonFinishesMappingNext_Click(object sender, RoutedEventArgs e)
-        {
-            await ButtonFinishesMappingNext();
-        }
-        private void ButtonLanguageMappingNext_Click(object sender, RoutedEventArgs e)
-        {
-            ButtonLanguageMappingNext();
-        }
-        private async void ButtonImportConfirm_Click(object sender, RoutedEventArgs e)
-        {
-            await AddItemsToDatabaseAsync();
-        }
-        private async void ButtonEndImportWizard_Click(object sender, RoutedEventArgs e)
-        {
-            await EndImportWizard();
-        }
-
-        // Import wizards misc. buttons and helper methods
-        private void ClearMappingButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button)
-            {
-                if (button.DataContext is ColumnMapping columnMapping)
-                {
-                    if (columnMapping.DatabaseFields != null && columnMapping.CsvHeaders != null)
-                    {
-                        // Clear both database and CSV header fields for IdColumnMappingListView
-                        columnMapping.SelectedDatabaseField = null;
-                        columnMapping.SelectedCsvHeader = null;
-                    }
-                    else
-                    {
-                        // Clear only CSV header field for other ListViews
-                        columnMapping.CsvHeader = null;
-                    }
-                }
-                else if (button.DataContext is ValueMapping valueMapping)
-                {
-                    valueMapping.SelectedCardSetValue = null;
-                }
-            }
-        }
-        private void SaveListOfUnimportedItems_Click(object sender, RoutedEventArgs e)
-        {
-            SaveUnimportedItemsToFile();
-        }
-        private void CancelImport_Click(object sender, RoutedEventArgs e)
-        {
-            EndImport();
-        }
-
-        #endregion
 
         #endregion
 
