@@ -1,4 +1,5 @@
-﻿using System.Data.SQLite;
+﻿using CollectaMundo.Infrastructure.CardImages.Models;
+using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.CardImages
 {
@@ -6,6 +7,7 @@ namespace CollectaMundo.Infrastructure.CardImages
     {
         Task<string?> GetScryfallIdByUuidAsync(string uuid, SQLiteConnection conn);
         Task<string?> GetImagePromoTypeByUuidAsync(string uuid, SQLiteConnection conn);
+        Task<CardImageMetadata?> GetImageMetadataByUuidAsync(string uuid, SQLiteConnection conn);
         Task<(string ScryfallId, string Uuid)?> GetScryfallIdByNameAsync(string name, SQLiteConnection conn);
         Task<string?> GetOtherFaceScryfallIdByUuidAsync(string uuid, SQLiteConnection conn);
     }

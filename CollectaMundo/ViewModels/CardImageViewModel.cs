@@ -38,15 +38,9 @@ namespace CollectaMundo.ViewModels
                 ? LoadBitmapFromBytes(imageResult.BackImageBytes)
                 : null;
 
-            ImageSet = !string.IsNullOrWhiteSpace(selectedCard.SetName)
-                ? selectedCard.SetName
-                : string.Empty;
-
-            ImagePromoType = string.IsNullOrWhiteSpace(imageResult?.PromoType)
-                ? null
-                : imageResult.PromoType;
+            ImageSet = imageResult?.SetName ?? string.Empty;
+            ImagePromoType = imageResult?.PromoType ?? string.Empty;
         }
-
 
         [ObservableProperty]
         private BitmapImage? frontImageSource;

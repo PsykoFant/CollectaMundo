@@ -3,6 +3,7 @@ using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardImages.Models.CollectaMundo.DomainLogic.CardImages.Models;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.Infrastructure.CardImages;
+using CollectaMundo.Infrastructure.CardImages.Models;
 using CollectaMundo.Infrastructure.RemoteLookups;
 using CollectaMundo.Infrastructure.Shared;
 using System.Data.SQLite;
@@ -21,15 +22,15 @@ namespace CollectaMundo.ApplicationServices.CardImages
         public async Task<CardImageDto?> GetImageForCardAsync(CardSet card)
         {
             string? scryfallID = null;
-            string? promoteTypes = null;
+            CardImageMetadata? metadata = null;
 
-            // Get IDs
+            // Get IDs + metadata
             if (!string.IsNullOrWhiteSpace(card.Uuid))
             {
                 await WithReadOnlyUowAsync(async conn =>
                 {
                     scryfallID = await _repo.GetScryfallIdByUuidAsync(card.Uuid, conn);
-                    promoteTypes = await _repo.GetImagePromoTypeByUuidAsync(card.Uuid, conn);
+                    metadata = await _repo.GetImageMetadataByUuidAsync(card.Uuid, conn);
                     return true;
                 });
             }
@@ -38,7 +39,14 @@ namespace CollectaMundo.ApplicationServices.CardImages
                 var idTuple = await WithReadOnlyUowAsync(conn => _repo.GetScryfallIdByNameAsync(card.Name, conn));
                 scryfallID = idTuple.Value.ScryfallId;
                 card.Uuid = idTuple.Value.Uuid;
+
+                // Now that we have UUID, fetch metadata (same UoW style, read-only)
+                if (!string.IsNullOrWhiteSpace(card.Uuid))
+                {
+                    metadata = await WithReadOnlyUowAsync(conn => _repo.GetImageMetadataByUuidAsync(card.Uuid, conn));
+                }
             }
+
             else
             {
                 Debug.WriteLine("Both card UUID and name are missing. Cannot fetch image.");
@@ -78,12 +86,12 @@ namespace CollectaMundo.ApplicationServices.CardImages
                 ? null
                 : await _downloader.DownloadAsync(backUrl, card.Uuid, "back");
 
-
             return new CardImageDto
             {
                 FrontImageBytes = frontBytes,
                 BackImageBytes = backBytes,
-                PromoType = promoteTypes
+                PromoType = metadata?.PromoType,
+                SetName = metadata?.SetName
             };
         }
 

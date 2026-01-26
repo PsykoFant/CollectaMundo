@@ -1,4 +1,5 @@
-﻿using System.Data.SQLite;
+﻿using CollectaMundo.Infrastructure.CardImages.Models;
+using System.Data.SQLite;
 
 namespace CollectaMundo.Infrastructure.CardImages
 {
@@ -27,6 +28,40 @@ namespace CollectaMundo.Infrastructure.CardImages
             {
                 return reader["promoTypes"].ToString();
             }
+            return null;
+        }
+        public async Task<CardImageMetadata?> GetImageMetadataByUuidAsync(string uuid,SQLiteConnection conn)
+        {
+            const string sql = @"
+                SELECT
+                    c.promoTypes AS PromoType,
+                    s.name       AS SetName
+                FROM cards c
+                JOIN sets s ON s.code = c.setCode
+                WHERE c.uuid = @uuid
+
+                UNION ALL
+
+                SELECT
+                    t.promoTypes AS PromoType,
+                    s.name       AS SetName
+                FROM tokens t
+                JOIN sets s ON s.tokenSetCode = t.setCode
+                WHERE t.uuid = @uuid
+                LIMIT 1;
+            ";
+
+            using var cmd = new SQLiteCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@uuid", uuid);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return new CardImageMetadata(
+                    reader["PromoType"]?.ToString(),
+                    reader["SetName"]?.ToString());
+            }
+
             return null;
         }
         public async Task<(string ScryfallId, string Uuid)?> GetScryfallIdByNameAsync(string name, SQLiteConnection conn)

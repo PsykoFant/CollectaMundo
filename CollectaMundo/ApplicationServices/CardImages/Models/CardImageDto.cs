@@ -7,6 +7,7 @@
             public byte[]? FrontImageBytes { get; init; }
             public byte[]? BackImageBytes { get; init; }
             public string? PromoType { get; init; }
+            public string? SetName { get; init; }
         }
     }
 }
