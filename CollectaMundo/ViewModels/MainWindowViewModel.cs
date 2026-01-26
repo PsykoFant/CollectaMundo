@@ -226,7 +226,7 @@ namespace CollectaMundo.ViewModels
             var parentContext = this;
 
             // import viewmodel
-            ImportVM = new ImportViewModel(importService, parentContext, _userPromptService, CardImageVM);
+            ImportVM = new ImportViewModel(importService, parentContext, _userPromptService);
 
             // Utility section viewmodel
             UtilitiesVM = new UtilitiesViewModel(cardDbManagementService, statusVM, ImportVM, _userPromptService, parentContext, () => MyCollectionVM.Cards.Count, _filesystemPicker);
@@ -287,13 +287,15 @@ namespace CollectaMundo.ViewModels
         private void SubscribeChildVmEvents()
         {
             ImportVM.CollectionMutationRequested += OnImportCollectionMutationRequested;
+            ImportVM.CardImageSelectionRequested += OnCardImageSelectionRequested;
             AddCardsVM.CollectionChanged += OnCollectionChanged;
             EditCardsVM.CollectionChanged += OnCollectionChanged;
             FilterVM.FilterChanged += OnFilterChanged;
         }
         private void UnsubscribeChildVmEvents()
         {
-            ImportVM.CollectionChanged -= OnCollectionChanged;
+            ImportVM.CollectionMutationRequested -= OnImportCollectionMutationRequested;
+            ImportVM.CardImageSelectionRequested -= OnCardImageSelectionRequested;
             AddCardsVM.CollectionChanged -= OnCollectionChanged;
             EditCardsVM.CollectionChanged -= OnCollectionChanged;
             FilterVM.FilterChanged -= OnFilterChanged;
@@ -346,6 +348,10 @@ namespace CollectaMundo.ViewModels
             OnCollectionChanged(sender, changeSet);
         }
 
+        private void OnCardImageSelectionRequested(object? sender, string request)
+        {
+            CardImageVM.SelectedCard = new CardSet { Uuid = request };
+        }
 
 
 

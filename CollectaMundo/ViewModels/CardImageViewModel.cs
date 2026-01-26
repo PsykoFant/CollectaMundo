@@ -21,6 +21,8 @@ namespace CollectaMundo.ViewModels
         {
             if (selectedCard is null)
             {
+                ImagePromoType = string.Empty;
+                ImageSet = string.Empty;
                 FrontImageSource = null;
                 BackImageSource = null;
                 return;

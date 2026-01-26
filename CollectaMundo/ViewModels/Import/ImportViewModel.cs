@@ -2,9 +2,7 @@
 using CollectaMundo.ApplicationServices.Import.Models;
 using CollectaMundo.ApplicationServices.Shared;
 using CollectaMundo.ApplicationServices.Shared.Progress;
-using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import.Models;
-using CollectaMundo.DomainLogic.Shared;
 using CollectaMundo.ViewModels.Import.ImportSteps;
 using CollectaMundo.ViewModels.Import.Models;
 using CollectaMundo.ViewModels.Models;
@@ -17,7 +15,7 @@ using System.Windows;
 
 namespace CollectaMundo.ViewModels.Import
 {
-    public partial class ImportViewModel(IImportService importService, IParentViewModelContext parentContext, IUserPromptService userPromptService, CardImageViewModel cardImageVM) : ObservableObject
+    public partial class ImportViewModel(IImportService importService, IParentViewModelContext parentContext, IUserPromptService userPromptService) : ObservableObject
     {
         private readonly IImportService _importService = importService;
         private readonly IParentViewModelContext _parentViewModelContext = parentContext;
@@ -35,8 +33,8 @@ namespace CollectaMundo.ViewModels.Import
             Detail = new Progress<string>(v => ProgressDetailMessage = v),
             CancelEnabled = new Progress<bool>(_ => { })
         };
-        public CardImageViewModel CardImageVM { get; } = cardImageVM;
-        public event EventHandler<CollectionMutation>? CollectionMutationRequested;
+        public event EventHandler<CollectionMutation>? CollectionMutationRequested; // To notify parent VM of collection changes
+        public event EventHandler<string>? CardImageSelectionRequested; // To notify parent VM to show card image for given UUID
 
         [ObservableProperty]
         private string? progressHeadline;
@@ -77,6 +75,12 @@ namespace CollectaMundo.ViewModels.Import
             }
         }
 
+        // Method to request card image display for given UUID
+        public void RequestCardImage(string uuid)
+        {
+            CardImageSelectionRequested?.Invoke(this, uuid);
+        }
+
         // Forward relevant child property changes to parent computed properties
         private void CurrentStep_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
@@ -90,7 +94,6 @@ namespace CollectaMundo.ViewModels.Import
                 OnPropertyChanged(nameof(IsSecondaryActionButtonEnabled));
             }
         }
-
 
         [ObservableProperty]
         private int progressValue;
@@ -150,9 +153,6 @@ namespace CollectaMundo.ViewModels.Import
         // Objects to hold final resolved an summary data
         public IReadOnlyList<ResolvedImportItem> ResolvedImportItems { get; private set; } = [];
         public ImportSummary Summary { get; private set; } = new();
-
-        // Publish events when collection changes
-        public event EventHandler<CollectionChangeSet<CardSet>>? CollectionChanged;
 
         #endregion
 
@@ -430,11 +430,11 @@ namespace CollectaMundo.ViewModels.Import
 
             // Reset card image view model
             _parentViewModelContext.CardViewSectionVisibility = Visibility.Collapsed;
-            CardImageVM.SelectedCard = null;
-            CardImageVM.FrontImageSource = null;
-            CardImageVM.BackImageSource = null;
-            CardImageVM.ImageSet = string.Empty;
-            CardImageVM.ImagePromoType = string.Empty;
+            //CardImageVM.SelectedCard = null;
+            //CardImageVM.FrontImageSource = null;
+            //CardImageVM.BackImageSource = null;
+            //CardImageVM.ImageSet = string.Empty;
+            //CardImageVM.ImagePromoType = string.Empty;
 
             // Reset resolved import state
             ResolvedImportItems = [];
@@ -457,12 +457,10 @@ namespace CollectaMundo.ViewModels.Import
 
             return Task.FromResult(new OperationResult(OperationResultCode.Success, "Cleanup completed"));
         }
-
         public Task<OperationResult> SaveUnimportableItemsAsync()
         {
             return _importService.SaveUnimportableItemsAsync(Summary, ResolvedImportItems, ImportCardList);
         }
-
 
         #region Commmands for step actions and cancel
         [RelayCommand]

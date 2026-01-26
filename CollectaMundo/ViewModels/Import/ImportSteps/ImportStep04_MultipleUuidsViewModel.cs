@@ -1,5 +1,4 @@
 ﻿using CollectaMundo.ApplicationServices.Shared;
-using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.Import.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
@@ -54,7 +53,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
                         OnSelectionChangedCallback = uuid =>
                         {
                             // Show image in shared CardImageVM
-                            _parent.CardImageVM.SelectedCard = new CardSet { Uuid = uuid };
+                            _parent.RequestCardImage(uuid);
                         }
                     };
                 });
