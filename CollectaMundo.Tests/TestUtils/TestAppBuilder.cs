@@ -4,7 +4,6 @@ using CollectaMundo.ApplicationServices.CardLists;
 using CollectaMundo.ApplicationServices.CardLists.CardLookups;
 using CollectaMundo.ApplicationServices.CardPrices;
 using CollectaMundo.ApplicationServices.EditCollection;
-using CollectaMundo.ApplicationServices.Filtering;
 using CollectaMundo.ApplicationServices.GenerateMissingPng;
 using CollectaMundo.ApplicationServices.Import;
 using CollectaMundo.ApplicationServices.Shared;
@@ -12,6 +11,7 @@ using CollectaMundo.ApplicationServices.Shared.Progress;
 using CollectaMundo.Data.Filtering;
 using CollectaMundo.DomainLogic.CardImages;
 using CollectaMundo.DomainLogic.CardLists;
+using CollectaMundo.DomainLogic.CardLists.Aggregation;
 using CollectaMundo.DomainLogic.CardLists.Models;
 using CollectaMundo.DomainLogic.EditCollection;
 using CollectaMundo.DomainLogic.Filtering;
@@ -72,7 +72,8 @@ public static class TestAppBuilder
             new CardListRepo(),
             new FilterDefaultsLogic(),
             cardLookupsService,
-            new CardCoreAggregator());
+            new CardCoreAggregator(),
+            new MyCollectionChangeLogic());
 
         var editService = new EditCollectionService(dbFactory, new EditCollectionLogic(), new EditCollectionRepo());
 
@@ -81,11 +82,9 @@ public static class TestAppBuilder
             new CardImageRepo(), new CardImageDownloader(settings));
 
         var importService = new ImportService(dbFactory, new ImportRepo(), new FileSystemPicker(), new ImportLogic());
-        var filteringService = new FilteringService();
         var scheduler = new ImmediateScheduler();
 
         var mainVM = await MainWindowViewModel.CreateAsync(
-            filteringService,
             editService,
             cardImageService,
             prepService,

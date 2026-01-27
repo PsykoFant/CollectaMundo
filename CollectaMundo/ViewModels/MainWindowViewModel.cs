@@ -177,7 +177,6 @@ namespace CollectaMundo.ViewModels
         #region Constructor and factory method
         // Constructor
         private MainWindowViewModel(
-            IFilteringService filteringService,
             IEditCollectionService editService,
             ICardImageService cardImageService,
             ICardDatabaseManagementService cardDbManagementService,
@@ -192,7 +191,7 @@ namespace CollectaMundo.ViewModels
         {
             _statusVM = statusVM;
             _settings = settings;
-            _filteringService = filteringService;
+            _filteringService = new FilteringService();
             _cardListService = cardListService;
             _facetScheduler = facetScheduler ?? new DispatcherDebounceScheduler(TimeSpan.FromMilliseconds(150));
             _facetUpdater = facetUpdater ?? new FacetUpdater();
@@ -234,7 +233,6 @@ namespace CollectaMundo.ViewModels
             MiniLogoVisibilityFlipper();
         }
         public static async Task<MainWindowViewModel> CreateAsync(
-            IFilteringService filteringService,
             IEditCollectionService editService,
             ICardImageService cardImageService,
             ICardDatabaseManagementService prepService,
@@ -248,7 +246,7 @@ namespace CollectaMundo.ViewModels
             IFacetUpdater? facetUpdater = null,
             Action? onStartupComplete = null)
         {
-            var vm = new MainWindowViewModel(filteringService, editService, cardImageService, prepService, importService, statusVM, userPromptService, fileSystemPicker, cardListService, settings, facetScheduler, facetUpdater)
+            var vm = new MainWindowViewModel(editService, cardImageService, prepService, importService, statusVM, userPromptService, fileSystemPicker, cardListService, settings, facetScheduler, facetUpdater)
             {
                 OnStartupComplete = onStartupComplete
             };
@@ -295,38 +293,15 @@ namespace CollectaMundo.ViewModels
             EditCardsVM.CollectionChanged -= OnCollectionChanged;
             FilterVM.FilterChanged -= OnFilterChanged;
         }
+
+        #endregion
+
+        #region event handlers (FilterChanged, CardChanged, CollectionChanged)
+
         private void OnImportCollectionMutationRequested(object? sender, CollectionMutation mutation)
         {
             var changeSet = _cardListService.BuildCollectionChangeSet(mutation, MyCollectionVM, AllCardsVM);
             OnCollectionChanged(sender, changeSet);
-        }
-
-
-        private void DebugLogCollectionMutation(CollectionMutation mutation)
-        {
-            Debug.WriteLine("======== DEBUG: CollectionMutation Contents ========");
-            Debug.WriteLine($"RemovedIds: {mutation.RemovedIds.Count}");
-
-            if (mutation.RemovedIds.Count > 0)
-            {
-                Debug.WriteLine("Removed CardIds:");
-                foreach (var id in mutation.RemovedIds)
-                {
-                    Debug.WriteLine($"  - {id}");
-                }
-            }
-
-            Debug.WriteLine($"UpsertedRows: {mutation.UpsertedRows.Count}");
-
-            foreach (var row in mutation.UpsertedRows)
-            {
-                var id = row.CardId;
-                var ident = row.Identity;
-
-                Debug.WriteLine($"  CardId={id}, Uuid={ident.Uuid}, Condition={ident.Condition}, Language={ident.Language}, Finish={ident.Finish}, Owned={row.CardsOwned}, Trade={row.CardsForTrade}");
-            }
-
-            Debug.WriteLine("======== END DEBUG: CollectionMutation Contents ========");
         }
         private void OnCardImageSelectionRequested(object? sender, string? uuid)
         {
@@ -339,10 +314,6 @@ namespace CollectaMundo.ViewModels
                 CardImageVM.SelectedCard = new CardSet { Uuid = uuid };
             }
         }
-
-        #endregion
-
-        #region event handlers (FilterChanged, CardChanged)
         private void OnCollectionChanged(object? sender, CollectionChangeSet<CardSet> changeSet)
         {
             // Apply add/update
@@ -355,8 +326,6 @@ namespace CollectaMundo.ViewModels
             _facetScheduler.Cancel();
             _facetScheduler.Schedule(() => _facetUpdater.RefreshFromCollection(MyCollectionVM.Cards, FilterVM.Filters));
         }
-
-        // When filters are updated
         private void OnFilterChanged(object? sender, EventArgs e)
         {
             AllCardsVM.FilteredCards = _filteringService.ApplyFilters(AllCardsVM.Cards, FilterVM.Filters.Values);
