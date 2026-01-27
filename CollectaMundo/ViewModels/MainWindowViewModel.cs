@@ -97,6 +97,8 @@ namespace CollectaMundo.ViewModels
             }
             else if (newValue == Page.Utilities)
             {
+                AddCardsVM.StatusMessage = string.Empty;
+                EditCardsVM.StatusMessage = string.Empty;
                 SideMenuFilterVisibility = Visibility.Collapsed;
                 SideMenuUtilsVisibility = Visibility.Visible;
                 CardViewSectionVisibility = Visibility.Collapsed;

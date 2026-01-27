@@ -33,6 +33,7 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         public async Task<OperationResult> OnPrimaryAction()
         {
             // Proceed with import
+            StepContentVisibility = Visibility.Collapsed;
             return await _parent.AfterStep9Action();
         }
         public Task<OperationResult> OnSecondaryAction()

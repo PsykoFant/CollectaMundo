@@ -323,10 +323,6 @@ namespace CollectaMundo.ApplicationServices.Import
 
             progress.Detail.Report("Preparing import items...");
 
-            // DomainLogic: collapse import rows into unique collection upserts
-
-            Debug.WriteLine("[ImportResolvedItems] Collapsing resolved items ... ");
-
             var collapsed = _importLogic.CollapseResolvedItemsForCollection(resolvedItems);
 
             if (collapsed.Count == 0)

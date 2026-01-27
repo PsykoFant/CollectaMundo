@@ -155,7 +155,6 @@ namespace CollectaMundo.ViewModels.Import
 
         #endregion
 
-
         private static readonly ImportField[] _additionalFieldOrder = [ImportField.Condition, ImportField.CardFinish, ImportField.Language];
         private ImportStep? GetNextAdditionalFieldStep(ImportField? after = null)
         {
@@ -399,20 +398,15 @@ namespace CollectaMundo.ViewModels.Import
         public async Task<OperationResult> AfterStep9Action()
         {
             Progress.ProgressBarVisible.Report(true);
-
             Progress.Detail.Report("Importing cards…");
 
             var token = _userPromptService.GetNewCancellationToken();
             var importResult = await Task.Run(() => _importService.ImportResolvedItems(ResolvedImportItems, Progress, token));
 
-            Debug.WriteLine("ImportViewModel: Import to db process completed.");
-
             if (importResult.Mutation != null)
             {
                 CollectionMutationRequested?.Invoke(this, importResult.Mutation);
             }
-
-            Debug.WriteLine("ImportViewModel: CollectionMutationRequested event invoked.");
 
             GoToStep(ImportStep.Finish);
             return new OperationResult(OperationResultCode.Success, "Import completed succesfully");
@@ -511,6 +505,7 @@ namespace CollectaMundo.ViewModels.Import
                     case OperationResultCode.Success:
                         if (_currentStep == ImportStep.Finish)
                         {
+                            ImportSuccessVisibility = Visibility.Visible;
                             Progress.Step.Report("Success!");
                             Progress.Headline.Report("Import complete!");
                             Progress.Detail.Report($"Added {Summary.TotalImportItems} individual cards and {Summary.TotalCardsToAdd} total cards to your collection.");

@@ -14,23 +14,17 @@ namespace CollectaMundo.ViewModels.Import.ImportSteps
         public ImportStep10_FinishViewModel(ImportViewModel parent)
         {
             _parent = parent;
-            Initialize();
         }
 
         // --------------------------------------------
         // Initialization (empty for this step)
         // --------------------------------------------
-        private void Initialize()
-        {
-            _parent.ImportSuccessVisibility = Visibility.Visible;
-            // Step 1 has no per-item mappings or dynamic data to initialize.
-            // FlowDocumentVisibility is already defaulted via ObservableProperty.
-        }
+
 
         // --------------------------------------------
         // UI Text & Visibility
         // --------------------------------------------
-        public string PrimaryActionButtonText => "   Click here to reload your collection!   ";
+        public string PrimaryActionButtonText => "   OK   ";
         public string SecondaryActionButtonText => string.Empty;
         public Visibility PrimaryActionVisibility => Visibility.Visible;
         public Visibility SecondaryActionVisibility => Visibility.Collapsed;
