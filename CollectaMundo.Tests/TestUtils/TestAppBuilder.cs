@@ -36,7 +36,6 @@ namespace CollectaMundo.Tests.TestUtils;
 public static class TestAppBuilder
 {
     public static async Task<(MainWindowViewModel VM, StatusViewModel Status)> BuildAsync(InMemoryDatabaseFixture fixture, IDbConnectionFactory dbFactory, List<CollectionChangeSet<CardSet>>? eventSink = null)
-
     {
         await fixture.InitializeAsync();
 
@@ -138,15 +137,12 @@ public static class TestAppBuilder
 
         return (mainVM, statusVM);
     }
-
-
     private static ProgressSinks CreateProgressSinks(StatusViewModel vm) => new()
     {
         Headline = new Progress<string>(s => vm.StatusLabel1 = s),
         Detail = new Progress<string>(s => vm.StatusLabel2 = s),
         Step = new Progress<string>(s => vm.StatusLabel3 = s),
         Percent = new Progress<int>(p => vm.ProgressValue = p),
-        ProgressBarVisible = new Progress<bool>(v =>
-            vm.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
+        ProgressBarVisible = new Progress<bool>(v => vm.ProgressVisibility = v ? Visibility.Visible : Visibility.Collapsed)
     };
 }
