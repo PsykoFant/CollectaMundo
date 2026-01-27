@@ -307,6 +307,9 @@ namespace CollectaMundo.ViewModels
 
             Debug.WriteLine("Processing upserted rows...");
 
+            DebugLogCollectionMutation(mutation);
+
+
             foreach (var row in mutation.UpsertedRows)
             {
                 var identity = row.Identity;
@@ -351,6 +354,33 @@ namespace CollectaMundo.ViewModels
             Debug.WriteLine("Raising CollectionChanged event from import...");
 
             OnCollectionChanged(sender, changeSet);
+        }
+
+        private void DebugLogCollectionMutation(CollectionMutation mutation)
+        {
+            Debug.WriteLine("======== DEBUG: CollectionMutation Contents ========");
+            Debug.WriteLine($"RemovedIds: {mutation.RemovedIds.Count}");
+
+            if (mutation.RemovedIds.Count > 0)
+            {
+                Debug.WriteLine("Removed CardIds:");
+                foreach (var id in mutation.RemovedIds)
+                {
+                    Debug.WriteLine($"  - {id}");
+                }
+            }
+
+            Debug.WriteLine($"UpsertedRows: {mutation.UpsertedRows.Count}");
+
+            foreach (var row in mutation.UpsertedRows)
+            {
+                var id = row.CardId;
+                var ident = row.Identity;
+
+                Debug.WriteLine($"  CardId={id}, Uuid={ident.Uuid}, Condition={ident.Condition}, Language={ident.Language}, Finish={ident.Finish}, Owned={row.CardsOwned}, Trade={row.CardsForTrade}");
+            }
+
+            Debug.WriteLine("======== END DEBUG: CollectionMutation Contents ========");
         }
         private void OnCardImageSelectionRequested(object? sender, string? uuid)
         {
